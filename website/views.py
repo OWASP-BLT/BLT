@@ -4,12 +4,20 @@ from django.views.generic import DetailView
 from django.views.generic.edit import CreateView
 from website.models import Issue
 from django.contrib.auth import get_user_model
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render_to_response, RequestContext
 from django.http import HttpResponseRedirect
 from django.contrib import messages
+from django.http import Http404
+from actstream.models import Action, user_stream
 
-def index(request):
-    return render(request, 'index.html')
+def index(request, template="index.html"):
+    activities = Action.objects.all()[0:10] 
+    context = {
+        'activities': activities,
+    }
+    return render_to_response(template, context, context_instance=RequestContext(request))
+
+
 
 class IssueCreate(CreateView):
     model = Issue
@@ -26,7 +34,7 @@ class IssueCreate(CreateView):
 
 def profile(request):
     try:
-        return redirect('/accounts/profile/' + request.user.username)
+        return redirect('/profile/' + request.user.username)
     except Exception:
         return redirect('/')
 

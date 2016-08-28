@@ -54,7 +54,7 @@
                {% if user.is_authenticated %}
                 <li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                        <i class="fa fa-user fa-fw"></i> <i class="fa fa-caret-down"></i>
+                        <i class="fa fa-user fa-fw"></i>{{user.username}} (20pts) <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-user">
                         <li><a href="/accounts/profile/"><i class="fa fa-user fa-fw"></i> User Profile</a>
@@ -278,51 +278,37 @@
                         <!-- /.panel-heading -->
                         <div class="panel-body">
                             <div class="list-group">
-                                <a href="#" class="list-group-item">
-                                    <i class="fa fa-comment fa-fw"></i> Amazon.com All of the buttons are the wrong size.  See screenshot for more details.
-                                    <span class="pull-right text-muted small"><em>Found 1 day ago</em>
+                            {% for activity in activities %}
+                                <div class="list-group-item">
+                                {% if activity.verb == "logged in" %}
+                                    <i class="fa fa-sign-in fa-fw"></i>
+                                {% endif %}
+                                    {% if activity.actor.get_absolute_url %}
+                                        <a href="{{ activity.actor.get_absolute_url }}">{{ activity.actor }}</a>
+                                    {% else %}
+                                        <a href="{{ activity.actor_url }}">{{ activity.actor }}</a>
+                                    {% endif %}
+                                    {{ activity.verb }}
+                                    {% if activity.action_object %}
+                                        {% if activity.action_object.get_absolute_url %}
+                                            <a href="{{ activity.action_object.get_absolute_url }}">{{ activity.action_object }}</a>
+                                        {% else %}
+                                            <a href="{{ activity.action_object_url }}">{{ activity.action_object }}</a>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if activity.action_object and activity.target %}to{% endif %}
+                                    {% if activity.target %}
+                                        {% if activity.target.get_absolute_url %}
+                                            <a href="{{ activity.target.get_absolute_url }}">{{ activity.target }}</a>
+                                        {% else %}
+                                            <a href="{{ activity.target_url }}">{{ activity.target }}</a>
+                                        {% endif %}
+                                    {% endif %}
+                                    <span class="pull-right text-muted small"><em>{{ activity.timestamp|timesince }} ago</em>
                                     </span>
-                                </a>
-                                <a href="#" class="list-group-item">
-                                    <i class="fa fa-twitter fa-fw"></i> 3 New Followers
-                                    <span class="pull-right text-muted small"><em>12 minutes ago</em>
-                                    </span>
-                                </a>
-                                <a href="#" class="list-group-item">
-                                    <i class="fa fa-envelope fa-fw"></i> Message Sent
-                                    <span class="pull-right text-muted small"><em>27 minutes ago</em>
-                                    </span>
-                                </a>
-                                <a href="#" class="list-group-item">
-                                    <i class="fa fa-tasks fa-fw"></i> New Task
-                                    <span class="pull-right text-muted small"><em>43 minutes ago</em>
-                                    </span>
-                                </a>
-                                <a href="#" class="list-group-item">
-                                    <i class="fa fa-upload fa-fw"></i> Server Rebooted
-                                    <span class="pull-right text-muted small"><em>11:32 AM</em>
-                                    </span>
-                                </a>
-                                <a href="#" class="list-group-item">
-                                    <i class="fa fa-bolt fa-fw"></i> Server Crashed!
-                                    <span class="pull-right text-muted small"><em>11:13 AM</em>
-                                    </span>
-                                </a>
-                                <a href="#" class="list-group-item">
-                                    <i class="fa fa-warning fa-fw"></i> Server Not Responding
-                                    <span class="pull-right text-muted small"><em>10:57 AM</em>
-                                    </span>
-                                </a>
-                                <a href="#" class="list-group-item">
-                                    <i class="fa fa-shopping-cart fa-fw"></i> New Order Placed
-                                    <span class="pull-right text-muted small"><em>9:49 AM</em>
-                                    </span>
-                                </a>
-                                <a href="#" class="list-group-item">
-                                    <i class="fa fa-money fa-fw"></i> Payment Received
-                                    <span class="pull-right text-muted small"><em>Yesterday</em>
-                                    </span>
-                                </a>
+                                </div>
+                            {% endfor %}
+                               
                             </div>
                             <!-- /.list-group -->
                             <a href="#" class="btn btn-default btn-block">View All Activity</a>
@@ -338,6 +324,17 @@
 
     </div>
     <!-- /#wrapper -->
+
+    <!-- jQuery -->
+    <script src="{% static "vendor/jquery/jquery.min.js" %}"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="{% static "vendor/bootstrap/js/bootstrap.min.js" %}"></script>
+
+    <!-- Metis Menu Plugin JavaScript -->
+    <script src="{% static "vendor/metisMenu/metisMenu.min.js" %}"></script>
+
+
 
 </body>
 
