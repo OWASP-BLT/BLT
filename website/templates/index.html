@@ -1,5 +1,7 @@
 {% load staticfiles %}
 {% load gravatar %}
+{% load socialaccount %}
+{% providers_media_js %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -129,14 +131,16 @@
                                 <i class="fa fa-envelope fa-2x"></i>
                             </button>
                             </a>
-                            <!--
+                            <a href="{% provider_login_url "facebook" method="js_sdk" %}">
                             <button class="btn btn-default btn-caution" style="float:right;">
                                 <i class="fa fa-facebook fa-2x"></i>
                             </button>  
+                            </a>
+                            <!--
                             <button class="btn btn-default btn-caution" style="float:right;">
                                 <i class="fa fa-google fa-2x"></i>
                             </button>  -->
-                            <a href="/accounts/github/login/?method=js_sdk">          
+                            <a href="{% provider_login_url "github" method="js_sdk" %}">          
                             <button class="btn btn-default btn-caution" style="float:right;">
                                 <i class="fa fa-github fa-2x"></i>
                             </button>
