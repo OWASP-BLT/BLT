@@ -9,6 +9,13 @@ from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.http import Http404
 from actstream.models import Action, user_stream
+from actstream import action
+from django.contrib.auth.models import User
+from actstream import registry
+from website.models import Issue
+
+registry.register(User)
+registry.register(Issue)
 
 def index(request, template="index.html"):
     activities = Action.objects.all()[0:10] 
@@ -28,6 +35,7 @@ class IssueCreate(CreateView):
         obj = form.save(commit=False)
         obj.user = self.request.user
         obj.save()
+        action.send(self.request.user, verb='entered issue', target=obj)
         messages.success(self.request, 'Issue added! +1 point!')
         return HttpResponseRedirect("/") 
         
