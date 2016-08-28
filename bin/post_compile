@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-./manage.py migrate
+python manage.py migrate
