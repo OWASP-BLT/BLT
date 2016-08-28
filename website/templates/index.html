@@ -69,8 +69,9 @@
                     <!-- /.dropdown-user -->
                 </li>
                 {% else %}
-                <a href="/accounts/login/">
-                <button class="btn btn-default btn-caution" style="float:right; height:43px; font-size:24px;"><i class="fa fa-sign-in fa-fw"></i>Login</button></a>
+                    <a href="/accounts/login/">
+                    <button class="btn btn-default btn-caution" style="float:right; height:43px; font-size:24px;">
+                    <i class="fa fa-sign-in fa-fw"></i>Login</button></a>
                 {% endif %}
                 <!-- /.dropdown -->
             </ul>
@@ -98,7 +99,7 @@
             </div>
             <div class="row">
                 <div class="col-lg-6">
-                    <form role="form" action="/issue/" method="post">
+                    <form role="form" action="/issue/" method="post" enctype="multipart/form-data" >
                     {% csrf_token %}
        
                         <div class="form-group">
@@ -309,6 +310,9 @@
                                         {% endif %}
                                     {% endif %}
                                     <span class="pull-right text-muted small"><em>{{ activity.timestamp|timesince }} ago</em>
+                                    {% if activity.target.screenshot %} 
+                                        <img src="{{ activity.target.screenshot.url }}" height="25">
+                                    {% endif %}
                                     </span>
                                 </div>
                             {% endfor %}
