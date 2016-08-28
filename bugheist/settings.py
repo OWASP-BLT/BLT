@@ -122,7 +122,8 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-
+MEDIA_ROOT = "media"
+MEDIA_URL = '/media/'
 # Update database configuration with $DATABASE_URL.
 db_from_env = dj_database_url.config(conn_max_age=500)
 DATABASES['default'].update(db_from_env)
@@ -138,6 +139,11 @@ if 'DATABASE_URL' in os.environ:
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
 
+    GS_ACCESS_KEY_ID = os.environ.get('GS_ACCESS_KEY_ID', 'blank')
+    GS_SECRET_ACCESS_KEY = os.environ.get('GS_SECRET_ACCESS_KEY', 'blank')
+    GS_BUCKET_NAME = 'bhfiles'
+    DEFAULT_FILE_STORAGE = 'storages.backends.gs.GSBotoStorage'
+    GS_QUERYSTRING_AUTH = False
 
 if DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
