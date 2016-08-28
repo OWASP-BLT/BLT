@@ -1,4 +1,5 @@
 {% load staticfiles %}
+{% load gravatar %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -54,7 +55,7 @@
                {% if user.is_authenticated %}
                 <li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                        <i class="fa fa-user fa-fw"></i>{{user.username}} (20pts) <i class="fa fa-caret-down"></i>
+                        {% gravatar user.email 20 %} {{user.username}} (20pts) <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-user">
                         <li><a href="/accounts/profile/"><i class="fa fa-user fa-fw"></i> User Profile</a>
@@ -280,8 +281,11 @@
                             <div class="list-group">
                             {% for activity in activities %}
                                 <div class="list-group-item">
+                                {% gravatar activity.actor.email 20 %}
                                 {% if activity.verb == "logged in" %}
                                     <i class="fa fa-sign-in fa-fw"></i>
+                                {% elif activity.verb == "entered issue" %}
+                                    <i class="fa fa-bug fa-fw"></i>
                                 {% endif %}
                                     {% if activity.actor.get_absolute_url %}
                                         <a href="{{ activity.actor.get_absolute_url }}">{{ activity.actor }}</a>

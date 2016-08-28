@@ -44,6 +44,7 @@ INSTALLED_APPS = (
     'allauth.account',
     'allauth.socialaccount',
     'actstream',
+    'django_gravatar',
 )
 
 MIDDLEWARE_CLASSES = (
