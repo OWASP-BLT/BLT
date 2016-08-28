@@ -14,4 +14,5 @@ urlpatterns = [
     url(r'^accounts/profile/(?P<slug>[^/]+)/$', UserProfileDetailView.as_view(), name="profile"),
     url(r'^accounts/profile/', website.views.profile),
     url(r'^accounts/', include('allauth.urls')), 
+    url('^activity/', include('actstream.urls')),
 ]
