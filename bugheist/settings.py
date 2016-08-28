@@ -131,6 +131,9 @@ DATABASES['default'].update(db_from_env)
 EMAIL_HOST = 'localhost'
 EMAIL_PORT = 1025
 # python -m smtpd -n -c DebuggingServer localhost:1025
+#if DEBUG:
+#    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 
 if 'DATABASE_URL' in os.environ:
     EMAIL_HOST = 'smtp.sendgrid.net'
@@ -145,10 +148,10 @@ if 'DATABASE_URL' in os.environ:
     DEFAULT_FILE_STORAGE = 'storages.backends.gs.GSBotoStorage'
     GS_QUERYSTRING_AUTH = False
 
-if DEBUG:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 
 # Honor the 'X-Forwarded-Proto' header for request.is_secure()
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
