@@ -45,6 +45,7 @@ INSTALLED_APPS = (
     'allauth.socialaccount',
     'allauth.socialaccount.providers.github',
     'allauth.socialaccount.providers.facebook',
+    'allauth.socialaccount.providers.google',
     'actstream',
     'django_gravatar',
 )
