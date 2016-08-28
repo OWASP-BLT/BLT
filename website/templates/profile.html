@@ -1,5 +1,8 @@
 {% extends "base.html" %}
+{% load gravatar %}
+
 {% block content %}
 <h1> {{user.username}}</h1>
+{% gravatar user.email 150 %}
 <h1> 20 points</h1>
 {% endblock %}

@@ -13,6 +13,14 @@ class Issue(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
+    def __unicode__(self):
+ 		return self.description
+
+#class Domain(models.Model):
+#    name = models.TextField()
+#    logo = models.URLField()
+#    hunt_url = models.URLField()
+
 
 @receiver(user_logged_in, dispatch_uid="some.unique.string.id.for.allauth.user_logged_in")
 def user_logged_in_(request, user, **kwargs):
