@@ -25,6 +25,7 @@ registry.register(Issue)
 
 def index(request, template="index.html"):
     activities = Action.objects.all()[0:10] 
+    my_score = 0 
     try:
         my_score = Points.objects.filter(user=request.user).annotate(total_score=Sum('score'))
     except:
