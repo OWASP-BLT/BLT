@@ -73,6 +73,7 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
+                'django.core.context_processors.media',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -150,6 +151,7 @@ if 'DATABASE_URL' in os.environ:
     GS_BUCKET_NAME = 'bhfiles'
     DEFAULT_FILE_STORAGE = 'storages.backends.gs.GSBotoStorage'
     GS_QUERYSTRING_AUTH = False
+    MEDIA_URL="https://bhfiles.storage.googleapis.com/"
 
 
 ACCOUNT_EMAIL_REQUIRED = True
