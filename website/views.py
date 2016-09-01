@@ -20,6 +20,7 @@ from .forms import UploadFileForm
 from django.core.files import File
 from django.db.models import Sum
 from django.core.files.storage import default_storage
+from django.views.generic import View
 
 registry.register(User)
 registry.register(Issue)
@@ -62,13 +63,13 @@ class IssueCreate(CreateView):
         messages.success(self.request, 'Issue added! +'+ str(score))
         return HttpResponseRedirect("/") 
         
-class UploadCreate(CreateView):
-    form_class = UploadFileForm
+class UploadCreate(View):
     template_name = "index.html"
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
         return super(UploadCreate, self).dispatch(request, *args, **kwargs)
+
 
     def post(self, request, *args, **kwargs):
         destination = default_storage.open('uploads\/'+self.kwargs['hash'] +'.png', 'wb+')
