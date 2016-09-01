@@ -66,9 +66,9 @@ class UploadCreate(CreateView):
     form_class = UploadFileForm
     template_name = "index.html"
 
-    @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
-        return super(UploadCreate, self).dispatch(request, *args, **kwargs)
+    #@method_decorator(csrf_exempt)
+    #def dispatch(self, request, *args, **kwargs):
+    #    return super(UploadCreate, self).dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         destination = default_storage.open('media\uploads\/'+self.kwargs['hash'] +'.png', 'wb+')
