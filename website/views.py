@@ -35,7 +35,7 @@ def index(request, template="index.html"):
         pass # not logged in - fix this to check if logged in
     context = {
         'activities': activities,
-        'leaderboard': Points.objects.values('user').annotate(total_score=Sum('score')).order_by('-total_score'),
+        'leaderboard':  Points.objects.values('user__username','user__email').annotate(total_score=Sum('score')).order_by('-total_score'),
         'my_score': my_score,
     }
     return render_to_response(template, context, context_instance=RequestContext(request))
@@ -96,3 +96,8 @@ class UserProfileDetailView(DetailView):
             messages.error(self.request, 'That user was not found.')
             return redirect("/")
         return super(UserProfileDetailView, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(UserProfileDetailView, self).get_context_data(**kwargs)
+        context['my_score'] = Points.objects.filter(user=self.request.user).aggregate(total_score=Sum('score')).values()[0]
+        return context
