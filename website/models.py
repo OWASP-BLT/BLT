@@ -14,7 +14,13 @@ class Issue(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
- 		return self.description
+        return self.description
+
+class Points(models.Model):
+    user = models.ForeignKey(User)
+    issue = models.ForeignKey(Issue)
+    score = models.IntegerField()
+
 
 #class Domain(models.Model):
 #    name = models.TextField()

@@ -15,9 +15,10 @@ from actstream import action
 from django.contrib.auth.models import User
 from actstream import registry
 from django.http import JsonResponse
-from website.models import Issue
+from website.models import Issue, Points
 from .forms import UploadFileForm
 from django.core.files import File
+from django.db.models import Sum
 
 registry.register(User)
 registry.register(Issue)
@@ -26,6 +27,8 @@ def index(request, template="index.html"):
     activities = Action.objects.all()[0:10] 
     context = {
         'activities': activities,
+        'leaderboard': Points.objects.annotate(total_score=Sum('score')),
+        'my_score': Points.objects.filter(user=request.user).annotate(total_score=Sum('score')),
     }
     return render_to_response(template, context, context_instance=RequestContext(request))
 
@@ -37,15 +40,20 @@ class IssueCreate(CreateView):
     template_name = "index.html"
 
     def form_valid(self, form):
+        score = 1
         obj = form.save(commit=False)
         obj.user = self.request.user
         if self.request.POST.get('screenshot-hash'):
             reopen = open('media\uploads\/'+ self.request.POST.get('screenshot-hash') +'.png', 'rb')
             django_file = File(reopen)
             obj.screenshot.save(self.request.POST.get('screenshot-hash') +'.png', django_file, save=True)
+            
         obj.save()
+        if obj.screenshot:
+            score = score + 2
+        p = Points.objects.create(user=self.request.user,issue=obj,score=score)
         action.send(self.request.user, verb='entered issue', target=obj)
-        messages.success(self.request, 'Issue added! +1 point!')
+        messages.success(self.request, 'Issue added! +'+score)
         return HttpResponseRedirect("/") 
         
 class UploadCreate(CreateView):
