@@ -73,7 +73,7 @@ class UploadCreate(View):
 
     def post(self, request, *args, **kwargs):
         destination = default_storage.open('uploads\/'+self.kwargs['hash'] +'.png', 'wb+')
-        for chunk in request.FILES['image'].chunks():
+        for chunk in request.FILES.get('image').chunks():
             destination.write(chunk)
         destination.close()
         return JsonResponse({'status':'success'})
