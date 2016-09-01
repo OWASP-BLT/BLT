@@ -32,7 +32,7 @@ def index(request, template="index.html"):
     context = {
         'activities': activities,
         'leaderboard': Points.objects.annotate(total_score=Sum('score')),
-        'my_score': ,
+        'my_score': my_score,
     }
     return render_to_response(template, context, context_instance=RequestContext(request))
 
