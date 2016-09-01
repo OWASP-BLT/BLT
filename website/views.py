@@ -52,7 +52,7 @@ class IssueCreate(CreateView):
         obj = form.save(commit=False)
         obj.user = self.request.user
         if self.request.POST.get('screenshot-hash'):
-            reopen = open('media\uploads\/'+ self.request.POST.get('screenshot-hash') +'.png', 'rb')
+            reopen = default_storage.open('uploads\/'+ self.request.POST.get('screenshot-hash') +'.png', 'rb')
             django_file = File(reopen)
             obj.screenshot.save(self.request.POST.get('screenshot-hash') +'.png', django_file, save=True)
             
