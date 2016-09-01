@@ -32,7 +32,8 @@
         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
-
+<!-- Place this tag in your head or just before your close body tag. -->
+<script async defer src="https://buttons.github.io/buttons.js"></script>
 </head>
 
 <body>
@@ -53,7 +54,9 @@
             <!-- /.navbar-header -->
 
             <ul class="nav navbar-top-links navbar-right">
- 
+ <!-- Place this tag where you want the button to render. -->
+ <div class="github-button" >
+<a class="github-button"  href="https://github.com/bugheist/website" data-icon="octicon-star" data-style="mega" data-count-href="/bugheist/website/stargazers" data-count-api="/repos/bugheist/website#stargazers_count" data-count-aria-label="# stargazers on GitHub" aria-label="Star bugheist/website on GitHub">Star</a></div>
                {% if user.is_authenticated %}
                 <li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">
@@ -93,7 +96,9 @@
                         {% for message in messages %}
                             {{ message }}
                         {% endfor %}
-                    {% endif %}&nbsp;
+                    {% endif %}&nbsp;<center>
+                    <button type="submit" class="btn btn-default btn-warning" style="height:40px; font-size:20px;">Get Chrome Extension</button>
+                    </center>
                     </h1>
             </div>
 
@@ -110,7 +115,11 @@
                                 <span style="color:#DD4351; margin-left:170px;">* login required</span>
                             {% endif %}
                             </label>{{form.url.errors}}
-                            <input class="form-control" placeholder="Website URL" name="url" value="{{form.url.value|default:""}}">
+                            {% if request.GET.url %}
+                            <input class="form-control" placeholder="Website URL" name="url" value="{{request.GET.url}}">
+                            {% else %}
+                             <input class="form-control" placeholder="Website URL" name="url" value="{{form.url.value|default:""}}">
+                             {% endif %}
                         </div>
                         <div class="form-group">
                             <label>Describe Issue:</label>{{form.description.errors}}
@@ -120,7 +129,12 @@
 
                         <div class="form-group">
                             <label>Attach Screenshot (+2pts)</label>{{form.screenshot.errors}}
+                            {% if request.GET.hash %}</br>
+                            <img src="/media/uploads/{{request.GET.hash}}.png" height="100" style=" border: 1px solid #d43f3a;">
+                            <input type="hidden" name="screenshot-hash" value="{{request.GET.hash}}">
+                            {% else %}
                             <input type="file" name="screenshot">
+                            {% endif %}
                         </div>
                         
                         <div class="form-group">
