@@ -358,8 +358,8 @@
                             <div class="list-group">
                             {% for leader in leaderboard %}
                                 <div class="list-group-item">
-                                {% gravatar leader.user.email 20 %}
-                                <a href="/profile/{{user.username}}">{{leader.user.username}}</a>
+                                {% gravatar leader.user__email 20 %}
+                                <a href="/profile/{{leader.user__username}}">{{leader.user__username}}</a>
                                    
                                     <span class="pull-right text-muted small"><em>{{leader.total_score}} points</em>
                                     
