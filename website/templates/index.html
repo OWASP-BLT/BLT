@@ -288,16 +288,7 @@
                 <div class="col-lg-9">
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                                <ul class="nav nav-tabs">
-                                <li class="active"><a href="#home" data-toggle="tab">All ({{activities|length}})</a>
-                                </li>
-                                <li><a href="#profile" data-toggle="tab">Found (23)</a>
-                                </li>
-                                <li><a href="#messages" data-toggle="tab">Confirmed (23)</a>
-                                </li>
-                                <li><a href="#settings" data-toggle="tab">Closed (23)</a>
-                                </li>
-                            </ul>
+                                Latest
                         </div>
                         <!-- /.panel-heading -->
                         <div class="panel-body">
@@ -324,11 +315,12 @@
                                         {% endif %}
                                     {% endif %}
                                     {% if activity.action_object and activity.target %}to{% endif %}
+
                                     {% if activity.target %}
                                         {% if activity.target.get_absolute_url %}
                                             <a href="{{ activity.target.get_absolute_url }}">{{ activity.target }}</a>
                                         {% else %}
-                                            <a href="{{ activity.target_url }}">{{ activity.target }}</a>
+                                            <a href="{{ activity.target_url }}">{{ activity.target.domain }} - {{ activity.target }}</a>
                                         {% endif %}
                                     {% endif %}
                                     <span class="pull-right text-muted small"><em>{{ activity.timestamp|timesince }} ago</em>

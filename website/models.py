@@ -4,6 +4,7 @@ from django.conf import settings
 from allauth.account.signals import user_signed_up, user_logged_in
 from actstream import action
 from django.dispatch import receiver
+from urlparse import urlparse
 
 class Issue(models.Model):
     user = models.ForeignKey(User)
@@ -15,6 +16,11 @@ class Issue(models.Model):
 
     def __unicode__(self):
         return self.description
+
+    def domain(self):
+        parsed_url = urlparse(self.url)
+        return parsed_url.netloc.split(".")[-2:][0].title()
+
 
 class Points(models.Model):
     user = models.ForeignKey(User)
