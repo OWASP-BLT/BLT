@@ -21,6 +21,7 @@ from django.core.files import File
 from django.db.models import Sum
 from django.core.files.storage import default_storage
 from django.views.generic import View
+from django.core.files.base import ContentFile
 
 registry.register(User)
 registry.register(Issue)
@@ -72,10 +73,8 @@ class UploadCreate(View):
 
 
     def post(self, request, *args, **kwargs):
-        destination = default_storage.open('uploads\/'+self.kwargs['hash'] +'.png', 'wb+')
-        for chunk in request.FILES.get('image').chunks():
-            destination.write(chunk)
-        destination.close()
+        data = request.FILES.get('image')
+        default_storage.save('uploads\/'+self.kwargs['hash'] +'.png', ContentFile(data.read()))
         return JsonResponse({'status':'success'})
 
 def profile(request):
