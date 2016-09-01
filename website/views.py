@@ -30,12 +30,12 @@ def index(request, template="index.html"):
     activities = Action.objects.all()[0:10] 
     my_score = 0 
     try:
-        my_score = Points.objects.filter(user=request.user).annotate(total_score=Sum('score'))
+        my_score = Points.objects.filter(user=request.user).aggregate(total_score=Sum('score')).values()
     except:
         pass # not logged in - fix this to check if logged in
     context = {
         'activities': activities,
-        'leaderboard': Points.objects.annotate(total_score=Sum('score')),
+        'leaderboard': Points.objects.values('user').annotate(total_score=Sum('score')).order_by('-total_score'),
         'my_score': my_score,
     }
     return render_to_response(template, context, context_instance=RequestContext(request))
