@@ -19,6 +19,7 @@ from website.models import Issue, Points
 from .forms import UploadFileForm
 from django.core.files import File
 from django.db.models import Sum
+from django.core.files.storage import default_storage
 
 registry.register(User)
 registry.register(Issue)
@@ -58,7 +59,7 @@ class IssueCreate(CreateView):
             score = score + 2
         p = Points.objects.create(user=self.request.user,issue=obj,score=score)
         action.send(self.request.user, verb='entered issue', target=obj)
-        messages.success(self.request, 'Issue added! +'+score)
+        messages.success(self.request, 'Issue added! +'+ str(score))
         return HttpResponseRedirect("/") 
         
 class UploadCreate(CreateView):
@@ -70,7 +71,7 @@ class UploadCreate(CreateView):
         return super(UploadCreate, self).dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        destination = open('media\uploads\/'+self.kwargs['hash'] +'.png', 'wb+')
+        destination = default_storage.open('media\uploads\/'+self.kwargs['hash'] +'.png', 'wb+')
         for chunk in request.FILES['image'].chunks():
             destination.write(chunk)
         destination.close()
