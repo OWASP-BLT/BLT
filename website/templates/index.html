@@ -132,7 +132,7 @@
                         <div class="form-group">
                             <label>Attach Screenshot (+2pts)</label>{{form.screenshot.errors}}
                             {% if request.GET.hash %}</br>
-                            <img src="/media/uploads/{{request.GET.hash}}.png" height="100" style=" border: 1px solid #d43f3a;">
+                            <img src="{{ MEDIA_URL }}/uploads/{{request.GET.hash}}.png" height="100" style=" border: 1px solid #d43f3a;">
                             <input type="hidden" name="screenshot-hash" value="{{request.GET.hash}}">
                             {% else %}
                             <input type="file" name="screenshot">
