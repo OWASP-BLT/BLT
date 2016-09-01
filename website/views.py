@@ -74,7 +74,7 @@ class UploadCreate(View):
 
     def post(self, request, *args, **kwargs):
         data = request.FILES.get('image')
-        default_storage.save('uploads\/'+self.kwargs['hash'] +'.png', ContentFile(data.read()))
+        default_storage.save(self.kwargs['hash'] +'.png', ContentFile(data.read()))
         return JsonResponse({'status':'success'})
 
 def profile(request):
