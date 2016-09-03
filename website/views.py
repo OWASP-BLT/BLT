@@ -99,5 +99,5 @@ class UserProfileDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
-        context['my_score'] = Points.objects.filter(user=self.request.user).aggregate(total_score=Sum('score')).values()[0]
+        context['my_score'] = Points.objects.filter(user=self.object).aggregate(total_score=Sum('score')).values()[0]
         return context
