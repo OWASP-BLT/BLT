@@ -27,6 +27,7 @@ class Issue(models.Model):
         parsed_url = urlparse(self.url)
         return parsed_url.hostname
 
+    @property
     def get_absolute_url(self):
         return "/issue/" + str(self.id)
 
