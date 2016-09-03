@@ -292,10 +292,14 @@
                         </div>
                         <!-- /.panel-heading -->
                         <div class="panel-body">
-                            <div class="list-group">
+                            <div class="list-group" >
                             {% for activity in activities %}
-                                <div class="list-group-item">
-                                {% gravatar activity.actor.email 20 %}
+                                <div class="list-group-item" style="height:100px;">
+                                
+                                <div style=" overflow:hidden; float:left;width:800px; " >
+                                <div style="float:left;margin-right:10px">
+                                {% gravatar activity.actor.email 50 %}
+                                </div>
                                 {% if activity.verb == "logged in" %}
                                     <i class="fa fa-sign-in fa-fw"></i>
                                 {% elif activity.verb == "entered issue" %}
@@ -323,11 +327,16 @@
                                             <a href="{{ activity.target_url }}">{{ activity.target.domain }} - {{ activity.target }}</a>
                                         {% endif %}
                                     {% endif %}
-                                    <span class="pull-right text-muted small"><em>{{ activity.timestamp|timesince }} ago</em>
-                                    {% if activity.target.screenshot %} 
-                                        <img src="{{ activity.target.screenshot.url }}" height="25">
-                                    {% endif %}
-                                    </span>
+                                   
+                                </div>
+                                    <div style="float:right; ">
+                                    <span class=" text-muted small" style="float:right; height:77px; overflow:hidden;"><em>{{ activity.timestamp|timesince }} ago</em></br>
+                                        {% if activity.target.screenshot %} 
+                                            <img src="{{ activity.target.screenshot.url }}" width="100" style="float:right;" >
+                                        {% endif %}
+                                        
+                                        </span>
+                                    </div>
                                 </div>
                             {% endfor %}
                                
