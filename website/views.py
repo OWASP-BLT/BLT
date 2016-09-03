@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from django.views.generic import DetailView, TemplateView
+from django.views.generic import DetailView, TemplateView, ListView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.generic.edit import CreateView, FormView
@@ -101,6 +101,11 @@ class UserProfileDetailView(DetailView):
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
         context['my_score'] = Points.objects.filter(user=self.object).aggregate(total_score=Sum('score')).values()[0]
         return context
+
+
+class AllIssuesView(ListView):
+    model = Issue
+    template_name = "list_view.html"
 
 
 class IssueView(DetailView):
