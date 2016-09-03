@@ -322,7 +322,7 @@
 
                                     {% if activity.target %}
                                         {% if activity.target.get_absolute_url %}
-                                            <a href="{{ activity.target.get_absolute_url }}">{{ activity.target }}</a>
+                                            <a href="{{ activity.target.get_absolute_url }}"><img src="http://{{activity.target.hostname_domain}}/favicon.ico" height="16" onerror="this.onerror=null; this.style.display ='none';"> {{ activity.target.domain }} - {{ activity.target }}</a>
                                         {% else %}
                                             <a href="{{ activity.target_url }}">{{ activity.target.domain }} - {{ activity.target }}</a>
                                         {% endif %}
