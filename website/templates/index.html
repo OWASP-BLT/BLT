@@ -294,7 +294,7 @@
                         <div class="panel-body">
                             <div class="list-group" >
                             {% for activity in activities %}
-                                <div class="list-group-item" style="height:100px;">
+                                <div class="list-group-item" style="height:96px; overflow:hidden;">
                                 
                                 <div style=" overflow:hidden; float:left;width:800px; " >
                                 <div style="float:left;margin-right:10px">
@@ -332,7 +332,9 @@
                                     <div style="float:right; ">
                                     <span class=" text-muted small" style="float:right; height:77px; overflow:hidden;"><em>{{ activity.timestamp|timesince }} ago</em></br>
                                         {% if activity.target.screenshot %} 
+                                        <a href="{{ activity.target.get_absolute_url }}">
                                             <img src="{{ activity.target.screenshot.url }}" width="100" style="float:right;" >
+                                        </a>
                                         {% endif %}
                                         
                                         </span>
