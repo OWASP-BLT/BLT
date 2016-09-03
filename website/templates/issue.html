@@ -1,0 +1,158 @@
+{% load staticfiles %}
+{% load gravatar %}
+{% load socialaccount %}
+{% providers_media_js %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Bugheist</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="{% static "vendor/bootstrap/css/bootstrap.min.css" %}" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="{% static "css/sb-admin-2.css" %}" rel="stylesheet">
+
+
+
+    <!-- Custom Fonts -->
+    <link href="{% static "vendor/font-awesome/css/font-awesome.min.css" %}" rel="stylesheet" type="text/css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+<!-- Place this tag in your head or just before your close body tag. -->
+<script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+<body>
+
+    <div id="wrapper">
+        <!-- Navigation -->
+        <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="/">
+                <img src="{% static "img/logo-small-transparent.png" %}" style="margin-left:20px;"></a>
+            </div>
+            <!-- /.navbar-header -->
+
+            <ul class="nav navbar-top-links navbar-right">
+ <!-- Place this tag where you want the button to render. -->
+ <div class="github-button" >
+<a class="github-button"  href="https://github.com/bugheist/website" data-icon="octicon-star" data-style="mega" data-count-href="/bugheist/website/stargazers" data-count-api="/repos/bugheist/website#stargazers_count" data-count-aria-label="# stargazers on GitHub" aria-label="Star bugheist/website on GitHub">Star</a></div>
+               {% if user.is_authenticated %}
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                        {% gravatar user.email 20 %} {{user.username}} ({{my_score.0}}pts) <i class="fa fa-caret-down"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-user">
+                        <li><a href="/accounts/profile/"><i class="fa fa-user fa-fw"></i> User Profile</a>
+                        </li>
+                        <li><a href="/accounts/password/change/"><i class="fa fa-gear fa-fw"></i> Settings</a>
+                        </li>
+                        <li class="divider"></li>
+                        <li><a href="/accounts/logout/"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
+                        </li>
+                    </ul>
+                    <!-- /.dropdown-user -->
+                </li>
+                {% else %}
+                    <a href="/accounts/login/">
+                    <button class="btn btn-default btn-caution" style="float:right; height:43px; font-size:24px;">
+                    <i class="fa fa-sign-in fa-fw"></i>Login</button></a>
+                {% endif %}
+                <!-- /.dropdown -->
+            </ul>
+
+        </nav>
+
+        <div id="page-wrapper">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h2 class="page-header"> {{object.description}} </h2>
+                    <a href="{{object.url}}" target="_new">{{object.url}}</a>
+                    <hr>
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>                                 
+            <!-- /.row -->
+            <div class="row">
+                <div class="col-lg-3 col-md-6">
+                    <div class="panel" style="background-color:white">
+                        <div class="panel-heading">Issue on:
+                            <div class="row">
+                                <div class="col-xs-3">
+                                <img src="http://{{object.hostname_domain}}/favicon.ico" height="75">
+
+                                   
+                                </div>
+                                <div class="col-xs-9 text-right">
+                                    <div class="huge">{{object.domain}}</div>
+                                    <div>{{issue_count}} issues</div>
+                                </div>
+                            </div>
+                        </div>
+                       
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="panel"  style="background-color:white">
+                        <div class="panel-heading">Found {{object.created}} by: 
+                            <div class="row">
+                                <div class="col-xs-3">
+                                 {% gravatar object.user.email 75 %}
+                                </div>
+                                <div class="col-xs-9 text-right " >
+                                    <div class="huge">{{object.user.username}}</div>
+                                    <div>{{users_score}} points</div>
+                                </div>
+                            </div>
+                        </div>
+                       
+                    </div>
+                </div>
+
+            </div>
+           <div class="row">
+                 <div class="col-lg-12">
+                    <img src="{{object.screenshot.url}}">
+                    <hr>
+                </div>
+           </div>
+        </div>
+        <!-- /#page-wrapper -->
+
+    </div>
+    <!-- /#wrapper -->
+
+    <!-- jQuery -->
+    <script src="{% static "vendor/jquery/jquery.min.js" %}"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="{% static "vendor/bootstrap/js/bootstrap.min.js" %}"></script>
+
+    <!-- Metis Menu Plugin JavaScript -->
+    <script src="{% static "vendor/metisMenu/metisMenu.min.js" %}"></script>
+
+
+
+</body>
+
+</html>
