@@ -17,9 +17,18 @@ class Issue(models.Model):
     def __unicode__(self):
         return self.description
 
+    @property
     def domain(self):
         parsed_url = urlparse(self.url)
         return parsed_url.netloc.split(".")[-2:][0].title()
+
+    @property
+    def hostname_domain(self):
+        parsed_url = urlparse(self.url)
+        return parsed_url.hostname
+
+    def get_absolute_url(self):
+        return "/issue/" + str(self.id)
 
 
 class Points(models.Model):

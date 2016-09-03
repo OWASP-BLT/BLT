@@ -101,3 +101,23 @@ class UserProfileDetailView(DetailView):
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
         context['my_score'] = Points.objects.filter(user=self.object).aggregate(total_score=Sum('score')).values()[0]
         return context
+
+
+class IssueView(DetailView):
+    model = Issue
+    slug_field = "id"
+    template_name = "issue.html"
+
+    def get(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+        except Http404:
+            messages.error(self.request, 'That issue was not found.')
+            return redirect("/")
+        return super(IssueView, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(IssueView, self).get_context_data(**kwargs)
+        context['users_score'] = Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
+        context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain).count()
+        return context
