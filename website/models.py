@@ -30,6 +30,9 @@ class Issue(models.Model):
     @property
     def get_absolute_url(self):
         return "/issue/" + str(self.id)
+    
+    class Meta:
+        ordering = ['-created']
 
 
 class Points(models.Model):
