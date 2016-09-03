@@ -115,6 +115,7 @@
                 <div class="col-lg-3 col-md-6">
                     <div class="panel"  style="background-color:white">
                         <div class="panel-heading">Found {{object.created}} by: 
+                        <a href="/profile/">
                             <div class="row">
                                 <div class="col-xs-3">
                                  {% gravatar object.user.email 75 %}
@@ -124,6 +125,7 @@
                                     <div>{{users_score}} points</div>
                                 </div>
                             </div>
+                        </a>
                         </div>
                        
                     </div>
