@@ -131,12 +131,14 @@
 
             </div>
            <div class="row">
+                 {% if object.screenshot %} 
                  <div class="col-lg-12">
                  Screenshot:
                  <hr>
-                    <img src="{{object.screenshot.url}}">
+                    <img src="{{object.screenshot.url}}" style=" border: 1px solid #d43f3a;">
                     <hr>
                 </div>
+                {% endif %}
            </div>
         </div>
         <!-- /#page-wrapper -->
