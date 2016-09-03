@@ -119,5 +119,5 @@ class IssueView(DetailView):
     def get_context_data(self, **kwargs):
         context = super(IssueView, self).get_context_data(**kwargs)
         context['users_score'] = Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
-        context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain).count()
+        context['issue_count'] = Issue.objects.filter(url__contains=self.object.hostname_domain).count()
         return context
