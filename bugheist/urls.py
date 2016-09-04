@@ -4,9 +4,12 @@ from django.contrib import admin
 from django.views.generic import TemplateView
 from website.views import UserProfileDetailView, IssueCreate, UploadCreate, IssueView, AllIssuesView, HuntCreate
 from django.contrib.auth.decorators import login_required
-
-
+from django.views.generic.base import RedirectView
 from django.conf.urls.static import static
+
+favicon_view = RedirectView.as_view(url='/static/favicon.ico', permanent=True)
+
+
 
 admin.autodiscover()
 
@@ -26,6 +29,7 @@ urlpatterns = patterns('',
     url(r'^start/$', TemplateView.as_view(template_name="hunt.html")),
     url(r'^hunt/$', login_required(HuntCreate.as_view()), name="hunt"),
 	url(r'^buttons/$', TemplateView.as_view(template_name="buttons.html")),
+	url(r'^favicon\.ico$', favicon_view),
 
 ) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
