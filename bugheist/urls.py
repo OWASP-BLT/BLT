@@ -1,7 +1,8 @@
 from django.conf.urls import include, url, patterns
 from django.conf import settings
 from django.contrib import admin
-from website.views import UserProfileDetailView, IssueCreate, UploadCreate, IssueView, AllIssuesView
+from django.views.generic import TemplateView
+from website.views import UserProfileDetailView, IssueCreate, UploadCreate, IssueView, AllIssuesView, HuntCreate
 from django.contrib.auth.decorators import login_required
 
 
@@ -22,6 +23,9 @@ urlpatterns = patterns('',
     url(r'^accounts/profile/', website.views.profile),
     url(r'^accounts/', include('allauth.urls')), 
     url(r'^activity/', include('actstream.urls')),
+    url(r'^start/$', TemplateView.as_view(template_name="hunt.html")),
+    url(r'^hunt/$', login_required(HuntCreate.as_view()), name="hunt"),
+	url(r'^buttons/$', TemplateView.as_view(template_name="buttons.html")),
 
 ) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
