@@ -4,7 +4,7 @@ from django.views.generic import DetailView, TemplateView, ListView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.generic.edit import CreateView, FormView
-from website.models import Issue
+from website.models import Issue, Hunt
 from django.contrib.auth import get_user_model
 from django.shortcuts import redirect, render_to_response, RequestContext
 from django.http import HttpResponseRedirect
@@ -106,6 +106,27 @@ class UserProfileDetailView(DetailView):
 class AllIssuesView(ListView):
     model = Issue
     template_name = "list_view.html"
+
+
+class HuntCreate(CreateView):
+    model = Hunt
+    fields = ['url','logo','prize']
+    template_name = "hunt.html"
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.user = self.request.user
+        self.object.save()
+        return super(HuntCreate, self).form_valid(form)
+
+    def get_success_url(self):
+        if self.request.POST.get('plan') == "Ant":
+           return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HHPNDVH3999AJ"
+        if self.request.POST.get('plan') == "Wasp":
+           return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=VSEVRU69QSY9G"
+        if self.request.POST.get('plan') == "Scorpion":
+           return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=ARD6HFRM92DJU"
+        return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=3H596KRUY7N7Q"
 
 
 class IssueView(DetailView):
