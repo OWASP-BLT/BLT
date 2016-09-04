@@ -22,6 +22,7 @@ from django.db.models import Sum
 from django.core.files.storage import default_storage
 from django.views.generic import View
 from django.core.files.base import ContentFile
+from urlparse import urlparse
 
 registry.register(User)
 registry.register(Issue)
@@ -102,6 +103,18 @@ class UserProfileDetailView(DetailView):
         context['my_score'] = Points.objects.filter(user=self.object).aggregate(total_score=Sum('score')).values()[0]
         return context
 
+
+class DomainDetailView(TemplateView):
+    template_name = "domain.html"
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(DomainDetailView, self).get_context_data(*args, **kwargs)
+        parsed_url = urlparse("http://"+self.kwargs['slug'])
+        context['name'] = parsed_url.netloc.split(".")[-2:][0].title()
+        context['domain'] = self.kwargs['slug']
+        context['issues'] = Issue.objects.filter(url__contains=self.kwargs['slug'])
+        return context
+        
 
 class AllIssuesView(ListView):
     model = Issue
