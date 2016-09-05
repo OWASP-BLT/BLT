@@ -1,6 +1,7 @@
 {% load staticfiles %}
 {% load gravatar %}
 {% load socialaccount %}
+{% load user_score %}
 {% providers_media_js %}
 <!DOCTYPE html>
 <html lang="en">
@@ -60,7 +61,7 @@
                {% if user.is_authenticated %}
                 <li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                        {% gravatar user.email 20 %} {{user.username}} ({{my_score.0}}pts) <i class="fa fa-caret-down"></i>
+                        {% gravatar user.email 20 %} {{user.username}} ({{ user|score }} pts) <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-user">
                         <li><a href="/accounts/profile/"><i class="fa fa-user fa-fw"></i> User Profile</a>
