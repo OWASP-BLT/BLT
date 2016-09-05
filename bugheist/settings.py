@@ -48,7 +48,6 @@ INSTALLED_APPS = (
     'allauth.socialaccount.providers.google',
     'actstream',
     'django_gravatar',
-    'corsheaders',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -60,10 +59,8 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 )
 
-CORS_ORIGIN_ALLOW_ALL = True   
 
 ROOT_URLCONF = 'bugheist.urls'
 
@@ -152,10 +149,10 @@ if 'DATABASE_URL' in os.environ:
 
     GS_ACCESS_KEY_ID = os.environ.get('GS_ACCESS_KEY_ID', 'blank')
     GS_SECRET_ACCESS_KEY = os.environ.get('GS_SECRET_ACCESS_KEY', 'blank')
-    GS_BUCKET_NAME = 'cdn.bugheist.com'
+    GS_BUCKET_NAME = 'bhfiles'
     DEFAULT_FILE_STORAGE = 'storages.backends.gs.GSBotoStorage'
     GS_QUERYSTRING_AUTH = False
-    MEDIA_URL="http://cdn.bugheist.com/"
+    MEDIA_URL="https://bhfiles.storage.googleapis.com/"
 
 
 ACCOUNT_EMAIL_REQUIRED = True
