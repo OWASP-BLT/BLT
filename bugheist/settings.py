@@ -148,10 +148,10 @@ if 'DATABASE_URL' in os.environ:
 
     GS_ACCESS_KEY_ID = os.environ.get('GS_ACCESS_KEY_ID', 'blank')
     GS_SECRET_ACCESS_KEY = os.environ.get('GS_SECRET_ACCESS_KEY', 'blank')
-    GS_BUCKET_NAME = 'bhfiles'
+    GS_BUCKET_NAME = 'cdn.bugheist.com'
     DEFAULT_FILE_STORAGE = 'storages.backends.gs.GSBotoStorage'
     GS_QUERYSTRING_AUTH = False
-    MEDIA_URL="https://bhfiles.storage.googleapis.com/"
+    MEDIA_URL="http://cdn.bugheist.com/"
 
 
 ACCOUNT_EMAIL_REQUIRED = True
