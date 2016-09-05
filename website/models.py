@@ -6,6 +6,7 @@ from actstream import action
 from django.dispatch import receiver
 from urlparse import urlparse
 
+
 class Issue(models.Model):
     user = models.ForeignKey(User)
     url = models.URLField()
@@ -52,6 +53,11 @@ class Hunt(models.Model):
     plan = models.CharField(max_length=10)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
+
+    @property
+    def domain(self):
+        parsed_url = urlparse(self.url)
+        return parsed_url.netloc.split(".")[-2:][0].title()
 
 class Points(models.Model):
     user = models.ForeignKey(User)
