@@ -11,6 +11,11 @@
                 <div class="col-lg-12">
                     <h2 class="page-header"> {{object.description}} </h2>
                     <a href="{{object.url}}" target="_new">{{object.url}}</a>
+                    {% if request.user.is_superuser or request.user == object.user %}
+                    <a href="/delete_issue/{{object.id}}" onclick="return confirm('Are you sure?')">
+                    <button type="button" class="btn btn-danger pull-right" >Delete</button>
+                    </a>
+                    {% endif %}
                     <hr>
                 </div>
                 <!-- /.col-lg-12 -->

@@ -104,6 +104,13 @@ class UserProfileDetailView(DetailView):
         return context
 
 
+def delete_issue(request, id):
+    issue = Issue.objects.get(id=id)
+    if request.user.is_superuser or request.user == issue.user:
+        issue.delete()
+        messages.success(request, 'Issue deleted')
+    return redirect('/')
+
 class DomainDetailView(TemplateView):
     template_name = "domain.html"
 
