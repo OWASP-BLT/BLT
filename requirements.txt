@@ -3,6 +3,7 @@ dj-database-url==0.4.0
 Django==1.9.2
 django-activity-stream==0.6.3
 django-allauth==0.27.0
+django-cors-headers==1.1.0
 django-gravatar2==1.4.0
 django-storages==1.5.0
 gunicorn==19.4.5

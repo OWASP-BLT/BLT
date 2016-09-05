@@ -48,6 +48,7 @@ INSTALLED_APPS = (
     'allauth.socialaccount.providers.google',
     'actstream',
     'django_gravatar',
+    'corsheaders',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -59,7 +60,10 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 )
+
+CORS_ORIGIN_ALLOW_ALL = True   
 
 ROOT_URLCONF = 'bugheist.urls'
 
