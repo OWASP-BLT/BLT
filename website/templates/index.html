@@ -204,12 +204,12 @@
                                  var colorThief = new ColorThief();
 
                                  var img = new Image();
-    img.onload = function () {
-      var colorThief = new ColorThief();
-      var color = colorThief.getColor(img)
-                                 $('#hunt_{{hunt.id}}').css('background-color', "rgb(" + color + ")");
-                                 $('#hunt_icon{{hunt.id}}').css('color', "rgb(" + color + ")");
-                                 $('#hunt_link{{hunt.id}}').css('color', "rgb(" + color + ")");
+                                img.onload = function () {
+                                  var colorThief = new ColorThief();
+                                  var color = colorThief.getColor(img)
+                                 $('#hunt_{{hunt.id}}').css('background-color', "452A20");
+                                 $('#hunt_icon{{hunt.id}}').css('color', "452A20");
+                                 $('#hunt_link{{hunt.id}}').css('color', "452A20");
     };
 img.crossOrigin = 'Anonymous';
 
