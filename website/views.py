@@ -24,6 +24,7 @@ from django.views.generic import View
 from django.core.files.base import ContentFile
 from urlparse import urlparse
 
+
 registry.register(User)
 registry.register(Issue)
 
@@ -36,6 +37,7 @@ def index(request, template="index.html"):
         pass # not logged in - fix this to check if logged in
     context = {
         'activities': activities,
+        'hunts': Hunt.objects.all()[:4],
         'leaderboard':  Points.objects.values('user__username','user__email').annotate(total_score=Sum('score')).order_by('-total_score'),
         'my_score': my_score,
     }
