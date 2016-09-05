@@ -202,12 +202,23 @@
                     </div>
                             <script>
                                  var colorThief = new ColorThief();
-                                 var sourceImage = document.getElementById("hunt_image{{hunt.id}}");
-                                 sourceImage.setAttribute('crossOrigin', '');
-                                 var color = colorThief.getColor(sourceImage)
+
+                                 var img = new Image();
+    img.onload = function () {
+      var colorThief = new ColorThief();
+      var color = colorThief.getColor(img)
                                  $('#hunt_{{hunt.id}}').css('background-color', "rgb(" + color + ")");
                                  $('#hunt_icon{{hunt.id}}').css('color', "rgb(" + color + ")");
                                  $('#hunt_link{{hunt.id}}').css('color', "rgb(" + color + ")");
+    };
+img.crossOrigin = 'Anonymous';
+
+
+    img.src = "{{MEDIA_URL}}{{hunt.logo}}";
+
+                                 //var sourceImage = document.getElementById("hunt_image{{hunt.id}}");
+                                 //sourceImage.setAttribute('crossOrigin', '');
+                                 
                          </script>
                 </div>
                 {% endfor %}
