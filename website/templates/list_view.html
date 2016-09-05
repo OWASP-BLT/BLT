@@ -35,7 +35,7 @@
                                             {% gravatar activity.user.email 50 %}
                                         </div>
                                             {{ activity.user.username }} entered issue
-                                             <a href="{{ activity.get_absolute_url }}"><img src="http://{{activity.hostname_domain}}/favicon.ico" height="16" onerror="this.onerror=null; this.style.display ='none';"> {{ activity.domain }} - {{ activity }}</a>
+                                             <a href="{{ activity.get_absolute_url }}"><img src="http://{{activity.domain_name}}/favicon.ico" height="16" onerror="this.onerror=null; this.style.display ='none';"> {{ activity.domain }} - {{ activity }}</a>
                                          </div>
                                         <div style="float:right;">
                                             <span class=" text-muted small" style="float:right; height:77px; overflow:hidden;">
