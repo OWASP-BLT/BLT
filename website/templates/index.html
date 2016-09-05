@@ -203,7 +203,7 @@
                             <script>
                                  var colorThief = new ColorThief();
                                  var sourceImage = document.getElementById("hunt_image{{hunt.id}}");
-                                 sourceImage.crossOrigin = "Anonymous";
+                                 sourceImage.setAttribute('crossOrigin', '');
                                  var color = colorThief.getColor(sourceImage)
                                  $('#hunt_{{hunt.id}}').css('background-color', "rgb(" + color + ")");
                                  $('#hunt_icon{{hunt.id}}').css('color', "rgb(" + color + ")");
