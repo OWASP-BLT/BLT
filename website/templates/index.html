@@ -244,7 +244,7 @@
 
                                     {% if activity.target %}
                                         {% if activity.target.get_absolute_url %}
-                                            <a href="/domain/{{ activity.target.hostname_domain }}"><img src="http://{{activity.target.hostname_domain}}/favicon.ico" height="16" onerror="this.onerror=null; this.style.display ='none';"> {{ activity.target.domain }}</a> - <a href="{{ activity.target.get_absolute_url }}">{{ activity.target }}</a>
+                                            <a href="/domain/{{ activity.target.domain_name }}"><img src="http://{{activity.target.domain_name}}/favicon.ico" height="16" onerror="this.onerror=null; this.style.display ='none';"> {{ activity.target.domain }}</a> - <a href="{{ activity.target.get_absolute_url }}">{{ activity.target }}</a>
 
                                         {% else %}
                                             <a href="{{ activity.target_url }}"> - {{ activity.target }}</a>
