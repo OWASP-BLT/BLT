@@ -63,7 +63,7 @@ class IssueCreate(CreateView):
         if obj.screenshot:
             score = score + 2
         p = Points.objects.create(user=self.request.user,issue=obj,score=score)
-        action.send(self.request.user, verb='entered issue', target=obj)
+        action.send(self.request.user, verb='found a bug on website', target=obj)
         messages.success(self.request, 'Issue added! +'+ str(score))
         return HttpResponseRedirect("/") 
         
