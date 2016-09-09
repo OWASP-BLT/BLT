@@ -32,7 +32,12 @@
                                 
                                     <div style=" overflow:hidden; float:left;width:800px; " >
                                         <div style="float:left;margin-right:10px">
-                                            {% gravatar activity.user.email 50 %}
+
+                                            {% if user.get_avatar_url %}
+                                            <img src="{{user.get_avatar_url}}" width="50" height="50">
+                                            {% else %}
+                                            {% gravatar user.email 50 %} 
+                                            {% endif %}
                                         </div>
                                             {{ activity.user.username }} entered issue
                                              <a href="{{ activity.get_absolute_url }}"><img src="http://www.{{activity.domain_name}}/favicon.ico" height="16" onerror="this.onerror=null; this.style.display ='none';"> {{ activity.domain }} - {{ activity }}</a>
