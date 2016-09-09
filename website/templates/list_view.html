@@ -33,7 +33,7 @@
                                     <div style=" overflow:hidden; float:left;width:800px; " >
                                         <div style="float:left;margin-right:10px">
 
-                                            {% if user.get_avatar_url %}
+                                            {% if activity.user.get_avatar_url %}
                                             <img src="{{user.get_avatar_url}}" width="50" height="50">
                                             {% else %}
                                             {% gravatar user.email 50 %} 
