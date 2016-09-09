@@ -49,8 +49,9 @@ class Hunt(models.Model):
     user = models.ForeignKey(User)
     url = models.URLField()
     prize = models.IntegerField()
-    logo = models.ImageField(upload_to="logos")
+    logo = models.ImageField(upload_to="logos", null=True, blank=True)
     plan = models.CharField(max_length=10)
+    color = models.CharField(max_length=10, null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
