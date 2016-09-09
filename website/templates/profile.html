@@ -3,6 +3,12 @@
 
 {% block content %}
 <h1> {{user.username}}</h1>
-{% gravatar user.email 150 %}
+
+ {% if user.socialaccount_set.all.0.get_avatar_url %}
+<img src="{{user.socialaccount_set.all.0.get_avatar_url}}" width="150" height="150">
+{% else %}
+{% gravatar user.email 150 %} 
+{% endif %}
+
 <h1> {{my_score}} points</h1>
 {% endblock %}
