@@ -245,7 +245,11 @@
                                 
                                 <div style=" overflow:hidden; float:left;width:800px; " >
                                 <div style="float:left;margin-right:10px">
-                                {% gravatar activity.actor.email 50 %}
+                                 {% if activity.actor.socialaccount_set.all.0.get_avatar_url %}
+                                            <img src="{{activity.actor.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
+                                            {% else %}
+                                            {% gravatar activity.actor.email 50 %} 
+                                            {% endif %}
                                 </div>
                                 {% if activity.verb == "logged in" %}
                                     <i class="fa fa-sign-in fa-fw"></i>
