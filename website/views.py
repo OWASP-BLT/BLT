@@ -37,7 +37,7 @@ def index(request, template="index.html"):
         pass # not logged in - fix this to check if logged in
     context = {
         'activities': activities,
-        'hunts': Hunt.objects.all()[:4],
+        'hunts': Hunt.objects.exclude(plan="Free")[:4],
         'leaderboard':  Points.objects.values('user__username','user__email').annotate(total_score=Sum('score')).order_by('-total_score'),
         'my_score': my_score,
     }
