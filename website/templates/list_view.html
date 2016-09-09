@@ -33,10 +33,10 @@
                                     <div style=" overflow:hidden; float:left;width:800px; " >
                                         <div style="float:left;margin-right:10px">
 
-                                            {% if activity.user.get_avatar_url %}
-                                            <img src="{{activity.user.get_avatar_url}}" width="50" height="50">
+                                            {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
+                                            <img src="{{activity.user.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
                                             {% else %}
-                                            {% gravatar user.email 50 %} 
+                                            {% gravatar activity.user.email 50 %} 
                                             {% endif %}
                                         </div>
                                             {{ activity.user.username }} entered issue
