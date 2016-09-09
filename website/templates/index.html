@@ -243,7 +243,7 @@
                             {% for activity in activities %}
                                 <div class="list-group-item" style="height:96px; overflow:hidden;">
                                 
-                                <div style=" overflow:hidden; float:left; width:800px; clear:both; display:inline;" >
+                                <div style=" overflow:hidden; float:left; width:800px; height: 61px; clear:both; display:inline;" >
                                 <div style="float:left;margin-right:10px">
                                  {% if activity.actor.socialaccount_set.all.0.get_avatar_url %}
                                             <img src="{{activity.actor.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
@@ -277,7 +277,7 @@
                                     {% endif %}
                                    
                                 </div>
-                                <div style="clear:both; width:50%; display:inline-block; margin-top:5px;">
+                                <div style="clear:both; width:50%; display:inline-block; margin-top:2px; ">
                                  {% if activity.actor.get_absolute_url %}
                                         <a href="{{ activity.actor.get_absolute_url }}">{{ activity.actor }}</a>
                                     {% else %}
@@ -286,7 +286,7 @@
                                     {{ activity.verb }} <a href="/domain/{{ activity.target.domain_name }}">{{ activity.target.domain }}</a> {{ activity.timestamp|timesince }} ago
                                 </div>
                                     
-                                    <div style="float:right;  display:block; margin-top: -54px;">
+                                    <div style="float:right;  display:block; margin-top: -48px; overflow:hidden; height: 72px;">
                                          
                                         {% if activity.target.screenshot %} 
                                         <a href="{{ activity.target.get_absolute_url }}">
