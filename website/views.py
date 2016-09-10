@@ -4,7 +4,6 @@ from django.views.generic import DetailView, TemplateView, ListView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.generic.edit import CreateView, FormView
-from website.models import Issue, Hunt
 from django.contrib.auth import get_user_model
 from django.shortcuts import redirect, render_to_response, RequestContext
 from django.http import HttpResponseRedirect
@@ -15,7 +14,7 @@ from actstream import action
 from django.contrib.auth.models import User
 from actstream import registry
 from django.http import JsonResponse
-from website.models import Issue, Points
+from website.models import Issue, Points, Hunt
 from .forms import UploadFileForm
 from django.core.files import File
 from django.db.models import Sum
@@ -124,6 +123,17 @@ class DomainDetailView(TemplateView):
         context['issues'] = Issue.objects.filter(url__contains=self.kwargs['slug'])
         return context
         
+
+
+class StatsDetailView(TemplateView):
+    template_name = "stats.html"
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(StatsDetailView, self).get_context_data(*args, **kwargs)
+        context['bug_count'] = Issue.objects.all().count()
+        context['user_count'] = User.objects.all().count()
+        context['hunt_count'] = Hunt.objects.all().count()
+        return context
 
 class AllIssuesView(ListView):
     model = Issue
