@@ -60,6 +60,9 @@ class Hunt(models.Model):
         parsed_url = urlparse(self.url)
         return parsed_url.netloc.split(".")[-2:][0].title()
 
+    class Meta:
+        ordering = ['-id']
+
 class Points(models.Model):
     user = models.ForeignKey(User)
     issue = models.ForeignKey(Issue)

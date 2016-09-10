@@ -108,7 +108,43 @@
             </div>                                 
             <!-- /.row -->
             <div class="row">
+
+
+
+                {% for hunt in hunts %}
                 <div class="col-lg-3 col-md-6">
+                    <div class="panel"  id="hunt_{{hunt.id}}">
+                        <div class="panel-heading">
+                            <div class="row">
+                                <div class="col-xs-3" >
+                                <img src="{{MEDIA_URL}}{{hunt.logo}}" width="75" height="75" id="hunt_image{{hunt.id}}" style="background-color:white;">
+                                </div>
+                                <div class="col-xs-9 text-right" style="color:white;">
+                                    <div class="huge">{{hunt.domain}}</div>
+                                    <div>Grand Prize ${{hunt.prize}}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="{{hunt.url}}" target="_new">
+                            <div class="panel-footer">
+                                <span class="pull-left" id="hunt_link{{hunt.id}}">View Website</span>
+                                <span class="pull-right"><i class="fa fa-arrow-circle-right" id="hunt_icon{{hunt.id}}"></i></span>
+                                <div class="clearfix"></div>
+                            </div>
+                        </a>
+                    </div>
+                            <script>
+
+                                 $('#hunt_{{hunt.id}}').css('background-color', "{{hunt.color}}");
+                                 $('#hunt_icon{{hunt.id}}').css('color', "{{hunt.color}}");
+                                 $('#hunt_link{{hunt.id}}').css('color', "{{hunt.color}}");
+
+                                 
+                         </script>
+                </div>
+                {% endfor %}
+
+                                <div class="col-lg-3 col-md-6">
                     <div class="panel"  style="background-color:#234082">
                         <div class="panel-heading">
                             <div class="row">
@@ -154,52 +190,7 @@
                         </a>
                     </div>
                 </div>
-
-
-                {% for hunt in hunts %}
-                <div class="col-lg-3 col-md-6">
-                    <div class="panel"  id="hunt_{{hunt.id}}">
-                        <div class="panel-heading">
-                            <div class="row">
-                                <div class="col-xs-3" >
-                                <img src="{{MEDIA_URL}}{{hunt.logo}}" width="75" height="75" id="hunt_image{{hunt.id}}" style="background-color:white;">
-                                </div>
-                                <div class="col-xs-9 text-right" style="color:white;">
-                                    <div class="huge">{{hunt.domain}}</div>
-                                    <div>Grand Prize ${{hunt.prize}}</div>
-                                </div>
-                            </div>
-                        </div>
-                        <a href="{{hunt.url}}" target="_new">
-                            <div class="panel-footer">
-                                <span class="pull-left" id="hunt_link{{hunt.id}}">View Website</span>
-                                <span class="pull-right"><i class="fa fa-arrow-circle-right" id="hunt_icon{{hunt.id}}"></i></span>
-                                <div class="clearfix"></div>
-                            </div>
-                        </a>
-                    </div>
-                            <script>
-                                //  var colorThief = new ColorThief();
-
-                                //  var img = new Image();
-                                // img.onload = function () {
-                                //   var colorThief = new ColorThief();
-                                //   var color = colorThief.getColor(img)
-                                 $('#hunt_{{hunt.id}}').css('background-color', "{{hunt.color}}");
-                                 $('#hunt_icon{{hunt.id}}').css('color', "{{hunt.color}}");
-                                 $('#hunt_link{{hunt.id}}').css('color', "{{hunt.color}}");
-    //};
-// img.crossOrigin = 'Anonymous';
-
-
-//     img.src = "{{MEDIA_URL}}{{hunt.logo}}";
-
-                                 //var sourceImage = document.getElementById("hunt_image{{hunt.id}}");
-                                 //sourceImage.setAttribute('crossOrigin', '');
-                                 
-                         </script>
-                </div>
-                {% endfor %}
+                
             </div>
             <!-- /.row -->
                 <div class="row">
