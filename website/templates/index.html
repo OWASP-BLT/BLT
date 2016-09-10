@@ -287,8 +287,14 @@
                             <div class="list-group">
                             {% for leader in leaderboard %}
                                 <div class="list-group-item">
-                                {% gravatar leader.user__email 20 %}
-                                <a href="/profile/{{leader.user__username}}">{{leader.user__username}}</a>
+
+                                 {% if leader.socialaccount_set.all.0.get_avatar_url %}
+                                            <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="20" height="20">
+                                            {% else %}
+                                            {% gravatar leader.email 20 %} 
+                                            {% endif %}
+
+                                <a href="/profile/{{leader.username}}">{{leader.username}}</a>
                                    
                                     <span class="pull-right text-muted small"><em>{{leader.total_score}} points</em>
                                     

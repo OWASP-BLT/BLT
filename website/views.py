@@ -31,14 +31,14 @@ registry.register(Issue)
 def index(request, template="index.html"):
     activities = Action.objects.all()[0:10] 
     my_score = 0 
-    try:
+    if request.user.is_authenticated:
         my_score = Points.objects.filter(user=request.user).aggregate(total_score=Sum('score')).values()
-    except:
-        pass # not logged in - fix this to check if logged in
+
     context = {
         'activities': activities,
         'hunts': Hunt.objects.exclude(plan="Free")[:4],
-        'leaderboard':  Points.objects.values('user__username','user__email').annotate(total_score=Sum('score')).order_by('-total_score'),
+        'leaderboard':  User.objects.annotate(total_score=Sum('points__score')).order_by('-total_score').filter(total_score__gt=0),
+        
         'my_score': my_score,
     }
     return render_to_response(template, context, context_instance=RequestContext(request))

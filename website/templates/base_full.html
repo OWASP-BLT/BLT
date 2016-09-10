@@ -61,11 +61,12 @@
                {% if user.is_authenticated %}
                 <li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                        {% if user.get_avatar_url %}
-                        <img src="{{user.get_avatar_url}}" width="20" height="20">
-                        {% else %}
-                        {% gravatar user.email 20 %} 
-                        {% endif %} {{user.username}} ({{ user|score|default:"0" }} pts) <i class="fa fa-caret-down"></i>
+                       {% if user.socialaccount_set.all.0.get_avatar_url %}
+                                            <img src="{{user.socialaccount_set.all.0.get_avatar_url}}" width="20" height="20">
+                                            {% else %}
+                                            {% gravatar user.email 20 %} 
+                                            {% endif %}
+                     {{user.username}} ({{ user|score|default:"0" }} pts) <i class="fa fa-caret-down"></i>
                         
                     </a>
                     <ul class="dropdown-menu dropdown-user">
