@@ -289,14 +289,14 @@
                                 <div class="list-group-item">
 
                                  {% if leader.socialaccount_set.all.0.get_avatar_url %}
-                                            <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="20" height="20">
+                                            <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
                                             {% else %}
-                                            {% gravatar leader.email 20 %} 
+                                            {% gravatar leader.email 50 %} 
                                             {% endif %}
 
-                                <a href="/profile/{{leader.username}}">{{leader.username}}</a>
+                                <a href="/profile/{{leader.username}}" style="margin-left:5px;">{{leader.username}}</a>
                                    
-                                    <span class="pull-right text-muted small"><em>{{leader.total_score}} points</em>
+                                    <span class="pull-right text-muted small"><em> {{leader.total_score}} points</em>
                                     
                                     </span>
                                 </div>
