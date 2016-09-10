@@ -31,7 +31,7 @@ registry.register(Issue)
 def index(request, template="index.html"):
     activities = Action.objects.all()[0:10] 
     my_score = 0 
-    if request.user.is_authenticated:
+    if request.user.is_authenticated():
         my_score = Points.objects.filter(user=request.user).aggregate(total_score=Sum('score')).values()
 
     context = {
