@@ -17,7 +17,7 @@ import website.views
 
 urlpatterns = patterns('',
     url(r'^$', website.views.index, name='index'),
-    url(r'^admin/', include(admin.site.urls)),
+    url(r'^' + settings.ADMIN_URL + '/', include(admin.site.urls)),
     url(r'^issue/(?P<slug>\w+)/$', IssueView.as_view(), name="issue_view"),
     url(r'^all_activity/$', AllIssuesView.as_view(), name="all_activity"),
     url(r'^issue/$', login_required(IssueCreate.as_view()), name="issue"),

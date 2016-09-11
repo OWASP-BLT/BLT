@@ -11,11 +11,13 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 
 import os
 import dj_database_url
+from django.http import Http404
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+ADMIN_URL = os.environ.get('ADMIN_URL', 'admin')
 
 
 # Quick-start development settings - unsuitable for production
@@ -25,7 +27,7 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 SECRET_KEY = 'i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 TESTING = False
 
 SITE_ID = 1
@@ -59,6 +61,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
 )
 
 
@@ -154,6 +157,17 @@ if 'DATABASE_URL' in os.environ:
     GS_QUERYSTRING_AUTH = False
     MEDIA_URL="https://bhfiles.storage.googleapis.com/"
 
+    ROLLBAR = {
+        'access_token': os.environ.get('ROLLBAR_ACCESS_TOKEN', 'blank'), 
+        'environment': 'development' if DEBUG else 'production',
+        'root': BASE_DIR,
+        'exception_level_filters': [
+            (Http404, 'warning')
+        ]
+    }
+    import rollbar
+    rollbar.init(**ROLLBAR)
+
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
@@ -184,18 +198,17 @@ LOGIN_REDIRECT_URL = "/"
 
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
     'handlers': {
-        'mail_admins': {
-            'level': 'ERROR',
-            'class': 'django.utils.log.AdminEmailHandler'
-        }
+        'console':{
+            'level':'DEBUG',
+            'class':'logging.StreamHandler',
+        },
     },
     'loggers': {
         'django.request': {
-            'handlers': ['mail_admins'],
-            'level': 'ERROR',
+            'handlers':['console'],
             'propagate': True,
-        },
-    }
+            'level':'DEBUG',
+        }
+    },
 }
