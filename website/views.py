@@ -63,7 +63,7 @@ class IssueCreate(CreateView):
         context = super(IssueCreate, self).get_context_data(**kwargs)
         context['activities'] = Action.objects.all()[0:10]
         context['hunts'] = Hunt.objects.exclude(plan="Free")[:4]
-        context['leaderboard'] = User.objects.annotate(total_score=Sum('points__score')).order_by('-total_score').filter(total_score__gt=0),
+        context['leaderboard'] = User.objects.annotate(total_score=Sum('points__score')).order_by('-total_score').filter(total_score__gt=0)
         return context
 
 class UploadCreate(View):
