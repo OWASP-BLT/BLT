@@ -174,7 +174,7 @@ class IssueView(DetailView):
     def get(self, request, *args, **kwargs):
         try:
             self.object = self.get_object()
-        except Http404:
+        except:
             messages.error(self.request, 'That issue was not found.')
             return redirect("/")
         return super(IssueView, self).get(request, *args, **kwargs)
@@ -182,5 +182,5 @@ class IssueView(DetailView):
     def get_context_data(self, **kwargs):
         context = super(IssueView, self).get_context_data(**kwargs)
         context['users_score'] = Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
-        context['issue_count'] = Issue.objects.filter(url__contains=self.object.hostname_domain).count()
+        context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain).count()
         return context
