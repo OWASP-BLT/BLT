@@ -28,17 +28,10 @@ registry.register(User)
 registry.register(Issue)
 
 def index(request, template="index.html"):
-    activities = Action.objects.all()[0:10] 
-    my_score = 0 
-    if request.user.is_authenticated():
-        my_score = Points.objects.filter(user=request.user).aggregate(total_score=Sum('score')).values()
-
     context = {
-        'activities': activities,
+        'activities': Action.objects.all()[0:10],
         'hunts': Hunt.objects.exclude(plan="Free")[:4],
         'leaderboard':  User.objects.annotate(total_score=Sum('points__score')).order_by('-total_score').filter(total_score__gt=0),
-        
-        'my_score': my_score,
     }
     return render_to_response(template, context, context_instance=RequestContext(request))
 
@@ -65,7 +58,14 @@ class IssueCreate(CreateView):
         action.send(self.request.user, verb='found a bug on website', target=obj)
         messages.success(self.request, 'Issue added! +'+ str(score))
         return HttpResponseRedirect("/") 
-        
+
+    def get_context_data(self, **kwargs):
+        context = super(IssueCreate, self).get_context_data(**kwargs)
+        context['activities'] = Action.objects.all()[0:10]
+        context['hunts'] = Hunt.objects.exclude(plan="Free")[:4]
+        context['leaderboard'] = User.objects.annotate(total_score=Sum('points__score')).order_by('-total_score').filter(total_score__gt=0),
+        return context
+
 class UploadCreate(View):
     template_name = "index.html"
 
