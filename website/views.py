@@ -128,11 +128,16 @@ class DomainDetailView(TemplateView):
 class StatsDetailView(TemplateView):
     template_name = "stats.html"
 
+
     def get_context_data(self, *args, **kwargs):
+        domain_values = [res.domain for res in Issue.objects.all()]
+        unique_domains = set(domain_values)
+        unique_domain_count = len(unique_domains)
         context = super(StatsDetailView, self).get_context_data(*args, **kwargs)
         context['bug_count'] = Issue.objects.all().count()
         context['user_count'] = User.objects.all().count()
         context['hunt_count'] = Hunt.objects.all().count()
+        context['domain_count'] = unique_domain_count
         return context
 
 class AllIssuesView(ListView):
@@ -142,7 +147,7 @@ class AllIssuesView(ListView):
 
 class HuntCreate(CreateView):
     model = Hunt
-    fields = ['url','logo','prize']
+    fields = ['url','logo','prize','plan']
     template_name = "hunt.html"
 
     def form_valid(self, form):
