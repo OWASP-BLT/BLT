@@ -8,7 +8,7 @@
     <div id="page-wrapper">
         <div class="row">
             <div class="col-lg-6">
-                <h1 class="page-header">Get points for testing and finding issues.</h1>
+                <h1 class="page-header">Find bugs on the internet</h1>
             </div>
             <div class="col-lg-6">
                 <h1 class="page-header">
@@ -27,24 +27,24 @@
                 <form role="form" action="/issue/" method="post" enctype="multipart/form-data" >
                     {% csrf_token %}      
                     <div class="form-group">
-                        <label>Find an issue on any website: e.g. example.com/page-with-issue
+                        <label>Find a bug on any website
                             {% if not user.is_authenticated %}
-                                <span style="color:#DD4351; margin-left:170px;">* login required</span>
+                                <span style="color:#DD4252; margin-left:70px;">* login required</span>
                             {% endif %}
                         </label>{{form.url.errors}}
                         {% if request.GET.url %}
-                            <input class="form-control" placeholder="Website URL" name="url" value="{{request.GET.url}}">
+                            <input class="form-control" placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
                         {% else %}
-                            <input class="form-control" placeholder="Website URL" name="url" value="{{form.url.value|default:""}}">
+                            <input class="form-control" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
                         {% endif %}
                     </div>
                     <div class="form-group">
-                        <label>Describe Issue:</label>{{form.description.errors}}
-                        <textarea class="form-control" rows="3" placeholder="Describe the issue..."  name="description">{{form.description.value|default:""}}</textarea>
+                        <label>Describe the Bug</label>{{form.description.errors}}
+                        <textarea class="form-control" rows="3" placeholder="I found a bug on this site and..."  name="description">{{form.description.value|default:""}}</textarea>
                     </div>
                     
                     <div class="form-group">
-                        <label>Attach Screenshot (+2pts)</label>{{form.screenshot.errors}}
+                        <label>Attach Screenshot</label>{{form.screenshot.errors}}
                         {% if request.GET.hash %}</br>
                             <img src="{{ MEDIA_URL }}uploads/{{request.GET.hash}}.png" height="100" style=" border: 1px solid #d43f3a;">
                             <input type="hidden" name="screenshot-hash" value="{{request.GET.hash}}">
@@ -54,7 +54,7 @@
                     </div>
                     
                     <div class="form-group">
-                        <button type="submit" class="btn btn-default btn-danger" style="height:44px; font-size:24px;">Enter Issue (+1pt)</button>
+                        <button type="submit" class="btn btn-default btn-danger" style="background:#dd4252; height:43px; font-size:14px;">Enter Issue</button>
                         {% if not user.is_authenticated %}
                             <a href="/accounts/login">
                                 <button class="btn btn-default btn-caution" style="float:right;">
@@ -77,7 +77,7 @@
                                 </button>
                             </a>
                             <a href="/accounts/login">
-                                <button class="btn btn-default btn-caution" style="float:right; height:43px; font-size:24px;"><i class="fa fa-sign-in fa-fw"></i>Login</button>
+                                <button class="btn btn-default btn-caution" style="color:#bb4252; float:right; height:43px; font-size:14px;">Login</button>
                             </a>
                         {% endif %}
                     </div>
@@ -91,9 +91,7 @@
         <div class="row">
             <div class="col-lg-12">
                 <h1 class="page-header">Sponsored Bug Hunts
-                <a href="/start">
-                    <button type="submit" class="btn btn-default btn-danger" style="height:40px; font-size:20px;margin-left:20px;">Start a Hunt</button>
-                </a>
+                
                 </h1>
 
             </div>
@@ -179,8 +177,13 @@
             
         </div>
         <!-- /.row -->
-        <div class="row">
-            <div class="col-lg-12">
+        <div class="row"> 
+            </div>
+            <a href="/start">
+                    <button type="submit" class="btn btn-default btn-caution" style="color:#dd4252; height:43px; font-size:14px;">Start a Hunt</button>
+                </a>
+                <div class="row">
+            <div class="col-lg-9">
                 <h1 class="page-header">Activity</h1>
             </div>
             <!-- /.col-lg-12 -->
