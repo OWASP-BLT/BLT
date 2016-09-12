@@ -144,6 +144,11 @@ class AllIssuesView(ListView):
     model = Issue
     template_name = "list_view.html"
 
+    def get_context_data(self, *args, **kwargs):
+        context = super(AllIssuesView, self).get_context_data(*args, **kwargs)
+        context['activities'] = Action.objects.all()
+        return context
+
 
 class HuntCreate(CreateView):
     model = Hunt
