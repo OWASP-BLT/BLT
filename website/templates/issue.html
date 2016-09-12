@@ -48,7 +48,11 @@
                         <a href="/profile/{{object.user.username}}">
                             <div class="row">
                                 <div class="col-xs-3">
-                                 {% gravatar object.user.email 75 %}
+                                 {% if object.user.socialaccount_set.all.0.get_avatar_url %}
+                                <img src="{{object.user.socialaccount_set.all.0.get_avatar_url}}" width="75" height="57">
+                                {% else %}
+                                {% gravatar object.user.email 75 %} 
+                                {% endif %}
                                 </div>
                                 <div class="col-xs-9 text-right " >
                                     <div class="huge">{{object.user.username}}</div>
