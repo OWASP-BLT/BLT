@@ -49,7 +49,7 @@
                             <div class="row">
                                 <div class="col-xs-3">
                                  {% if object.user.socialaccount_set.all.0.get_avatar_url %}
-                                <img src="{{object.user.socialaccount_set.all.0.get_avatar_url}}" width="75" height="57">
+                                <img src="{{object.user.socialaccount_set.all.0.get_avatar_url}}" width="75" height="75">
                                 {% else %}
                                 {% gravatar object.user.email 75 %} 
                                 {% endif %}
