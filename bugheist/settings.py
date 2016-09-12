@@ -27,7 +27,7 @@ ADMIN_URL = os.environ.get('ADMIN_URL', 'admin')
 SECRET_KEY = 'i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 TESTING = False
 
 SITE_ID = 1
@@ -144,6 +144,7 @@ EMAIL_PORT = 1025
 
 
 if 'DATABASE_URL' in os.environ:
+    DEBUG = False
     EMAIL_HOST = 'smtp.sendgrid.net'
     EMAIL_HOST_USER = os.environ.get('SENDGRID_USERNAME', 'blank')
     EMAIL_HOST_PASSWORD = os.environ.get('SENDGRID_PASSWORD', 'blank')
