@@ -11,7 +11,14 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="">
         <meta name="author" content="">
-        <title>Bugheist</title>
+        
+        <title>{% block title %}Bugheist{% endblock %}</title>
+       
+        <meta property="og:title" content="{% block og_title %}Bugheist{% endblock %}" />
+        <meta property="og:image" content="{% block og_image %}{% static "img/screenshot.png" %}{% endblock %} " />
+        <meta property="og:type"  content="website" />
+
+
         <!-- Bootstrap Core CSS -->
         <link href="{% static "vendor/bootstrap/css/bootstrap.min.css" %}" rel="stylesheet">
         <!-- Custom CSS -->
