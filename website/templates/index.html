@@ -83,8 +83,12 @@
                     </div>
                 </form>
             </div>
-            <div class="col-lg-6"><center>
-                <iframe width="560" height="315" src="https://www.youtube.com/embed/o-t6HDXjpP8?rel=0&amp;controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe></center>
+            <div class="col-lg-6">
+                <center>
+                <span id="video_span">
+                <iframe width="560" height="315" id="video_iframe" src="https://www.youtube.com/embed/o-t6HDXjpP8?rel=0&amp;controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
+                </span>
+                </center>
             </div>
             
         </div>
@@ -248,4 +252,41 @@
     <script src="/static/vendor/raphael/raphael.min.js"></script>
     <script src="/static/vendor/morrisjs/morris.min.js"></script>
     <script src="/static/data/morris-data.js"></script>
+
+    <script>
+
+// See note below
+var player_width = 560;
+var player_height = 315;
+
+var responsiveVideo = function() {
+
+
+//see note below
+ var player_window_buffer = 120;
+ var window_width = $(window).width();
+ var aspect_ratio = player_width/player_height;
+ var player_span = $('#video_span');
+ var player_iframe = $('#video_iframe');
+
+
+ if (window_width >= player_width) {
+  $(player_span).width(player_width)
+  $(player_span).height(player_height).css('line-height', player_height + 'px');          
+  $(player_iframe).width(player_width);
+  $(player_iframe).height(player_height);
+ } else {
+  $(player_span).width(window_width-player_window_buffer);
+  var new_wrapper_height = $(player_span).width()/aspect_ratio;
+  $(player_span).height(new_wrapper_height).css('line-height', new_wrapper_height + 'px');         
+  $(player_iframe).width(window_width-player_window_buffer);
+  $(player_iframe).height(($(player_span).width()/aspect_ratio));
+ }     
+}
+
+$(document).ready(function(){responsiveVideo();});
+$(window).resize(function() {responsiveVideo();});
+
+</script>
+
 {% endblock %}
