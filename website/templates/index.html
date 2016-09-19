@@ -8,7 +8,7 @@
     <div id="page-wrapper">
         <div class="row">
             <div class="col-lg-6">
-                <h1 class="page-header">Find bugs on the internet</h1>
+                <h1 class="page-header">Find bugs. Win points and cash.</h1>
             </div>
             <div class="col-lg-6">
                 <h1 class="page-header">
@@ -16,20 +16,18 @@
                     {% for message in messages %}
                         {{ message }}
                     {% endfor %}
-                {% endif %}&nbsp;<center>
-                
-                </center>
+                {% endif %}&nbsp;
                 </h1>
             </div>
         </div>
         <div class="row">
             <div class="col-lg-6">
                 <form role="form" action="/issue/" method="post" enctype="multipart/form-data" >
-                    {% csrf_token %}      
+                    {% csrf_token %}
                     <div class="form-group">
                         <label>Find a bug on any website
                             {% if not user.is_authenticated %}
-                                <span style="color:#DD4252; margin-left:70px;">* login required</span>
+                                <span style="color:#DD4252; margin-left:60px;">* login required</span>
                             {% endif %}
                         </label>{{form.url.errors}}
                         {% if request.GET.url %}
@@ -39,12 +37,13 @@
                         {% endif %}
                     </div>
                     <div class="form-group">
-                        <label>Describe the Bug</label>{{form.description.errors}}
-                        <textarea class="form-control" rows="3" placeholder="I found a bug on this site and..."  name="description">{{form.description.value|default:""}}</textarea>
+                        <label>Describe the bug</label>{{form.description.errors}}
+                        <textarea class="form-control" rows="3" placeholder="I found a bug on a site and..."  name="description">{{form.description.value|default:""}}</textarea>
                     </div>
                     
                     <div class="form-group">
-                        <label>Attach Screenshot</label>{{form.screenshot.errors}}
+                        <label>Attach Screenshot</label>
+                        {{form.screenshot.errors}}
                         {% if request.GET.hash %}</br>
                             <img src="{{ MEDIA_URL }}uploads/{{request.GET.hash}}.png" height="100" style=" border: 1px solid #d43f3a;">
                             <input type="hidden" name="screenshot-hash" value="{{request.GET.hash}}">
@@ -54,7 +53,7 @@
                     </div>
                     
                     <div class="form-group">
-                        <button type="submit" class="btn btn-default btn-danger" style="background:#dd4252; height:43px; font-size:14px;">Enter Issue</button>
+                        <button type="submit" class="btn btn-default btn-danger" style="background:#dd4252; height:43px; font-size:14px;">Enter Bug</button><label style="color:#dd4252; margin-left: 20px"> Win +3 points!</label>
                         {% if not user.is_authenticated %}
                             <a href="/accounts/login">
                                 <button class="btn btn-default btn-caution" style="float:right;">
@@ -77,7 +76,7 @@
                                 </button>
                             </a>
                             <a href="/accounts/login">
-                                <button class="btn btn-default btn-caution" style="color:#bb4252; float:right; height:43px; font-size:14px;">Login</button>
+                                <button class="btn btn-default btn-caution" style="color:#dd4252; float:right; height:43px; font-size:14px;">Login</button>
                             </a>
                         {% endif %}
                     </div>
@@ -86,7 +85,7 @@
             <div class="col-lg-6">
                 <center>
                 <span id="video_span">
-                <iframe width="560" height="315" id="video_iframe" src="https://www.youtube.com/embed/o-t6HDXjpP8?rel=0&amp;controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
+                    <iframe width="560" height="315" id="video_iframe" src="https://www.youtube.com/embed/o-t6HDXjpP8?rel=0&amp;controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
                 </span>
                 </center>
             </div>
@@ -97,7 +96,6 @@
                 <h1 class="page-header">Sponsored Bug Hunts
                 
                 </h1>
-
             </div>
             <!-- /.col-lg-12 -->
         </div>
@@ -181,12 +179,12 @@
             
         </div>
         <!-- /.row -->
-        <div class="row"> 
-            </div>
-            <a href="/start">
-                    <button type="submit" class="btn btn-default btn-caution" style="color:#dd4252; height:43px; font-size:14px;">Start a Hunt</button>
-                </a>
-                <div class="row">
+        <div class="row">
+        </div>
+        <a href="/start">
+            <button type="submit" class="btn btn-default btn-danger" style="background:#dd4252; height:43px; font-size:14px;">Start a Hunt</button>
+        </a>
+        <div class="row">
             <div class="col-lg-9">
                 <h1 class="page-header">Activity</h1>
             </div>
@@ -247,46 +245,32 @@
         </div>
         <!-- /.row -->
     </div>
-    <!-- /#page-wrapper -->
-    <!-- Morris Charts JavaScript -->
-    <script src="/static/vendor/raphael/raphael.min.js"></script>
-    <script src="/static/vendor/morrisjs/morris.min.js"></script>
-    <script src="/static/data/morris-data.js"></script>
-
     <script>
 
-// See note below
-var player_width = 560;
-var player_height = 315;
-
-var responsiveVideo = function() {
-
-
-//see note below
- var player_window_buffer = 120;
- var window_width = $(window).width();
- var aspect_ratio = player_width/player_height;
- var player_span = $('#video_span');
- var player_iframe = $('#video_iframe');
-
-
- if (window_width >= player_width) {
-  $(player_span).width(player_width)
-  $(player_span).height(player_height).css('line-height', player_height + 'px');          
-  $(player_iframe).width(player_width);
-  $(player_iframe).height(player_height);
- } else {
-  $(player_span).width(window_width-player_window_buffer);
-  var new_wrapper_height = $(player_span).width()/aspect_ratio;
-  $(player_span).height(new_wrapper_height).css('line-height', new_wrapper_height + 'px');         
-  $(player_iframe).width(window_width-player_window_buffer);
-  $(player_iframe).height(($(player_span).width()/aspect_ratio));
- }     
-}
-
-$(document).ready(function(){responsiveVideo();});
-$(window).resize(function() {responsiveVideo();});
-
-</script>
-
+    var player_width = 560;
+    var player_height = 315;
+    var responsiveVideo = function() {
+        var player_window_buffer = 120;
+        var window_width = $(window).width();
+        var aspect_ratio = player_width/player_height;
+        var player_span = $('#video_span');
+        var player_iframe = $('#video_iframe');
+        if (window_width >= player_width) {
+            $(player_span).width(player_width)
+            $(player_span).height(player_height).css('line-height', player_height + 'px');
+            $(player_iframe).width(player_width);
+            $(player_iframe).height(player_height);
+            $('#chrome_ext').show();
+        } else {
+            $(player_span).width(window_width-player_window_buffer);
+            var new_wrapper_height = $(player_span).width()/aspect_ratio;
+            $(player_span).height(new_wrapper_height).css('line-height', new_wrapper_height + 'px');
+            $(player_iframe).width(window_width-player_window_buffer);
+            $(player_iframe).height(($(player_span).width()/aspect_ratio));
+            $('#chrome_ext').hide();
+        }
+    }
+    $(document).ready(function(){responsiveVideo();});
+    $(window).resize(function() {responsiveVideo();});
+    </script>
 {% endblock %}
