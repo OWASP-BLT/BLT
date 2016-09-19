@@ -37,7 +37,7 @@
                 </div>
                 <!-- /.navbar-header -->
                 <ul class="nav navbar-top-links navbar-right">
-                    <a href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new">
+                    <a id="chrome_ext" href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new">
                         <img src="{% static 'img/ChromeWebStore_Badge_v2_496x150.png' %}"  style="margin-right:200px; border:1px solid gray; border-radius:5px">
                     </a>
                     {% if user.is_authenticated %}
@@ -63,7 +63,7 @@
             </li>
         {% else %}
             <a href="/accounts/login/">
-                <button class="btn btn-default" style="float:right; height:43px; font-size:14px;margin-top:3px; margin-right:15px; color:#4252">
+                <button class="btn btn-default" style="float:right; height:43px; font-size:14px;margin-top:3px; margin-right:15px; color:#dd4252">
             Login</button></a>
         {% endif %}
         <!-- /.dropdown -->
