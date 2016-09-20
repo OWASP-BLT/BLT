@@ -1,127 +1,105 @@
-{% extends "base_full.html" %}
+{% extends "base.html" %}
 {% load staticfiles %}
 {% load gravatar %}
 {% load socialaccount %}
 {% providers_media_js %}
-
-{% block title %}Bugheist - {{object.description}}{% endblock %}
-{% block og_title %}Bugheist - {{object.description}}{% endblock %}
+{% block title %}Bug on {{object.domain}} - {{object.description}}{% endblock %}
+{% block og_title %}Bug on {{object.domain}}{% endblock %}
 {% block og_image %}{{object.screenshot.url}}{% endblock %}
-
+{% block og_description %}{{object.description}}{% endblock %}
 {% block content %}
-<script>window.twttr = (function(d, s, id) {
-  var js, fjs = d.getElementsByTagName(s)[0],
+    <div id="fb-root"></div>
+    <script>
+    window.twttr = (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0],
     t = window.twttr || {};
-  if (d.getElementById(id)) return t;
-  js = d.createElement(s);
-  js.id = id;
-  js.src = "https://platform.twitter.com/widgets.js";
-  fjs.parentNode.insertBefore(js, fjs);
- 
-  t._e = [];
-  t.ready = function(f) {
+    if (d.getElementById(id)) return t;
+    js = d.createElement(s);
+    js.id = id;
+    js.src = "https://platform.twitter.com/widgets.js";
+    fjs.parentNode.insertBefore(js, fjs);
+    t._e = [];
+    t.ready = function(f) {
     t._e.push(f);
-  };
- 
-  return t;
-}(document, "script", "twitter-wjs"));</script>
-
-<div id="fb-root"></div>
-                    <script>(function(d, s, id) {
-                      var js, fjs = d.getElementsByTagName(s)[0];
-                      if (d.getElementById(id)) return;
-                      js = d.createElement(s); js.id = id;
-                      js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.7&appId=236647900066394";
-                      fjs.parentNode.insertBefore(js, fjs);
-                    }(document, 'script', 'facebook-jssdk'));</script>
-
-        <div id="page-wrapper">
-
-            <div class="row">
-
-                <div class="col-lg-12">
-
-                    <h2 class="page-header"> {{object.description}} </h2>
-                    <a href="{{object.url}}" target="_new">{{object.url}}</a></br>
-                    <div style="padding-top:10px;">
-                     <a class="twitter-share-button" 
+    };
+    return t;
+    }(document, "script", "twitter-wjs"));
+    (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.7&appId=236647900066394";
+    fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+    </script>
+    <div class="row">
+        <div class="col-lg-12">
+            <h2 class="page-header"> {{object.description}} </h2>
+            <a href="{{object.url}}" target="_new">{{object.url}}</a></br>
+            <div style="padding-top:10px;">
+                <a class="twitter-share-button"
                     href="https://twitter.com/intent/tweet?text=Bug on @{{object.domain}} - {{object.description}}"
-                    data-size="small">Tweet</a>
-                    <div class="fb-share-button" data-href="http://www.bugheist.com/issue/{{object.id}} " data-layout="button_count" data-size="small" data-mobile-iframe="true"><a class="fb-xfbml-parse-ignore" target="_blank" >Share</a></div>
-                    </div>
-                    {% if request.user.is_superuser or request.user == object.user %}
-                    <a href="/delete_issue/{{object.id}}" onclick="return confirm('Are you sure you want to delete this issue?')">
-                    <button type="button" class="btn btn-danger pull-right" >Delete</button>
-                    </a>
-                    {% endif %}
-                    <hr>
+                data-size="small">Tweet</a>
+                <div class="fb-share-button" data-href="http://www.bugheist.com/issue/{{object.id}} " data-layout="button_count" data-size="small" data-mobile-iframe="true">
+                    <a class="fb-xfbml-parse-ignore" target="_blank" >Share</a>
                 </div>
-                <!-- /.col-lg-12 -->
-            </div>                                 
-            <!-- /.row -->
-            <div class="row">
-                <div class="col-lg-3 col-md-6">
-                    <div class="panel" style="background-color:white">
-                        <div class="panel-heading">Issue on:
-                        <a href="/domain/{{object.domain_name}}">
-                            <div class="row">
-                                <div class="col-xs-3">
-                                <img src="http://www.{{object.domain_name}}/favicon.ico" height="75" onerror="this.onerror=null; this.style.display ='none';">
-
-                                   
-                                </div>
-                                <div class="col-xs-9 text-right">
-                                    <div class="huge">{{object.domain}}</div>
-                                    <div>{{issue_count}} issues</div>
-                                </div>
-                            </div>
-                            </a>
-                        </div>
-                       
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="panel"  style="background-color:white">
-                        <div class="panel-heading">Found {{object.created}} by: 
-                        <a href="/profile/{{object.user.username}}">
-                            <div class="row">
-                                <div class="col-xs-3">
-                                 {% if object.user.socialaccount_set.all.0.get_avatar_url %}
-                                <img src="{{object.user.socialaccount_set.all.0.get_avatar_url}}" width="75" height="75">
-                                {% else %}
-                                {% gravatar object.user.email 75 %} 
-                                {% endif %}
-                                </div>
-                                <div class="col-xs-9 text-right " >
-                                    <div class="huge">{{object.user.username}}</div>
-                                    <div>{{users_score}} points</div>
-                                </div>
-                            </div>
-                        </a>
-                        </div>
-                       
-                    </div>
-                </div>
-
             </div>
-           <div class="row">
-                 {% if object.screenshot %} 
-                 <div class="col-lg-12">
-                 
-                  
-                 Screenshot: 
-               
-                
-                
-                
-                    
-                
-                 <hr>
-                 <img src="{{object.screenshot.url}}" style=" border: 1px solid #d43f3a;">
-                 <hr>
-                </div>
-                {% endif %}
-           </div>
+            {% if request.user.is_superuser or request.user == object.user %}
+                <a href="/delete_issue/{{object.id}}" onclick="return confirm('Are you sure you want to delete this issue?')">
+                    <button type="button" class="btn btn-danger pull-right" >Delete</button>
+                </a>
+            {% endif %}
+            <hr>
         </div>
-        <!-- /#page-wrapper -->
+    </div>
+    <div class="row">
+        <div class="col-lg-3 col-md-6">
+            <div class="panel" style="background-color:white">
+                <div class="panel-heading">Issue on:
+                    <a href="/domain/{{object.domain_name}}">
+                        <div class="row">
+                            <div class="col-xs-3">
+                                <img src="http://www.{{object.domain_name}}/favicon.ico" height="75" onerror="this.onerror=null; this.style.display ='none';">
+                            </div>
+                            <div class="col-xs-9 text-right">
+                                <div class="huge">{{object.domain}}</div>
+                                <div>{{issue_count}} issues</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="panel"  style="background-color:white">
+                <div class="panel-heading">Found {{object.created}} by:
+                    <a href="/profile/{{object.user.username}}">
+                        <div class="row">
+                            <div class="col-xs-3">
+                                {% if object.user.socialaccount_set.all.0.get_avatar_url %}
+                                    <img src="{{object.user.socialaccount_set.all.0.get_avatar_url}}" width="75" height="75">
+                                {% else %}
+                                    {% gravatar object.user.email 75 %}
+                                {% endif %}
+                            </div>
+                            <div class="col-xs-9 text-right " >
+                                <div class="huge">{{object.user.username}}</div>
+                                <div>{{users_score}} points</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        {% if object.screenshot %}
+            <div class="col-lg-12">
+                Screenshot:
+                <hr>
+                <img src="{{object.screenshot.url}}" style=" border: 1px solid #d43f3a;">
+                <hr>
+            </div>
+        {% endif %}
+    </div>
 {% endblock %}
