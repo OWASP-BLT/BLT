@@ -7,8 +7,49 @@ from django.dispatch import receiver
 from urlparse import urlparse
 
 
+class Domain(models.Model):
+    name = models.CharField(max_length=255, null=True, blank=True)
+    url = models.URLField()
+    logo = models.ImageField(upload_to="logos", null=True, blank=True)
+    clicks = models.IntegerField(null=True, blank=True)
+    color = models.CharField(max_length=10, null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
+    twitter = models.CharField(max_length=30, null=True, blank=True)
+    facebook = models.URLField(null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+   
+
+    def __unicode__(self):
+        return self.name
+
+    @property
+    def domain(self):
+        parsed_url = urlparse(self.url)
+        return parsed_url.netloc.split(".")[-2:][0].title()
+
+    @property
+    def hostname_domain(self):
+        parsed_url = urlparse(self.url)
+        return parsed_url.hostname
+
+    @property
+    def domain_name(self):
+        parsed_url = urlparse(self.url)
+        domain = parsed_url.hostname
+        temp = domain.rsplit('.')
+        if(len(temp) == 3):
+            domain = temp[1] + '.' + temp[2]
+        return domain
+
+    @property
+    def get_absolute_url(self):
+        return "/domain/" + str(self.domain_name)
+
+
 class Issue(models.Model):
     user = models.ForeignKey(User)
+    domain = models.ForeignKey(Domain, null=True, blank=True) #temporary
     url = models.URLField()
     description = models.TextField()
     screenshot = models.ImageField(null=True, blank=True, upload_to="screenshots")
@@ -19,7 +60,7 @@ class Issue(models.Model):
         return self.description
 
     @property
-    def domain(self):
+    def domain_title(self):
         parsed_url = urlparse(self.url)
         return parsed_url.netloc.split(".")[-2:][0].title()
 
@@ -70,10 +111,6 @@ class Points(models.Model):
 
 
 
-#class Domain(models.Model):
-#    name = models.TextField()
-#    logo = models.URLField()
-#    hunt_url = models.URLField()
 
 
 #@receiver(user_logged_in, dispatch_uid="some.unique.string.id.for.allauth.user_logged_in")
