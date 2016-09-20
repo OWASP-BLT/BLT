@@ -1,17 +1,11 @@
-{% extends "base_full.html" %}
-{% load staticfiles %}
-{% load gravatar %}
-{% load socialaccount %}
-{% providers_media_js %}
+{% extends "base.html" %}
 {% block content %}
-    <div id="page-wrapper">
         <div class="row">
             <div class="col-lg-6">
                 <h1 class="page-header">Latest Issues All</h1>
             </div>
         </div>
         <div class="row">
-            
             <div class="col-lg-9">
                 <div class="panel panel-default">
                     <div class="panel-heading">
@@ -23,13 +17,8 @@
                                 {% include '_activity.html' %}
                             {% endfor %}
                         </div>
-                        <!-- /.list-group -->
                     </div>
-                    <!-- /.panel-body -->
                 </div>
             </div>
         </div>
-        <!-- /.row -->
-    </div>
-    <!-- /#page-wrapper -->
 {% endblock %}

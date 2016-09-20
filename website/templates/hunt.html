@@ -1,195 +1,160 @@
-{% extends "base_full.html" %}
+{% extends "base.html" %}
 {% load staticfiles %}
 {% block content %}
- <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
-
-  
-
-        <div id="page-wrapper">
-        <form role="form" action="/hunt/" method="post" enctype="multipart/form-data" >
-            <div class="row">
-                <div class="col-lg-6">
-                    <h1 class="page-header">Start a bug hunt!</h1>
-                </div>
-                
-
-                <!-- /.col-lg-12 -->
+    <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
+    <form role="form" action="/hunt/" method="post" enctype="multipart/form-data" >
+        <div class="row">
+            <div class="col-lg-6">
+                <h1 class="page-header">Start a bug hunt!</h1>
             </div>
-            <div class="row">
-            
-                <div class="col-lg-6">
-                    
-                    {% csrf_token %}
-                        <input type="hidden" name="plan" value="Flea" id="plan">
-                        <div class="form-group">
-                            <label>URL: 
-                            {% if not user.is_authenticated %}
-                                <span style="color:#DD4351; margin-left:170px;">* login required</span>
-                            {% endif %}
-                            </label>{{form.url.errors}}
-                            <input class="form-control" placeholder="Website URL.  e.g.  http://example.com" name="url" value="{{form.url.value|default:""}}">
-                        </div>
-                         <div class="form-group">
-                            <label>Logo (square)</label>{{form.logo.errors}}
-                            <input type="file" name="logo">
-                        </div>
-                        <div class="form-group" style="margin-top:10px;">
-                            <label style="margin-bottom:35px;">Grand Prize:</label>
-                            (Maximum tip Amount)
-                            <div style="display:inline;margin-left:25px;padding-top:20px;">
-                            <input class="slider" style="width:100%"
-                            type="text"
-                            name="prize"
-                            value="100"
-                            data-provide="slider"
-                            data-slider-min="100"
-                            data-slider-max="10000"
-                            data-slider-step="100"
-                            data-slider-value="100">
-                            </div>{{form.prize.errors}}
-                        </div>
-
-                    
-                </div>
-                
-            </div>
-            <div class="row">
-                <div class="col-lg-12">
-                    <h1 class="page-header">Subscription:</h1>
-                </div>
-                <!-- /.col-lg-12 -->
-            </div>                                 
-            <!-- /.row -->
-            <div class="row">
-                <div class="col-lg-3 col-md-6">
-                    <div class="panel" style="background-color:#F76B78">
-                        <div class="panel-heading">
-                            <div class="row">
-                                <div class="col-xs-3">
-                                    <img src="{% static 'img/flea.svg' %}" width="100" height="100">
-                                </div>
-                                <div class="col-xs-9 text-right" style="color:white;">
-                                    <div class="huge">Flea</div>
-                                    <span style="font-size:24pt">$9</span> / month
-                                </div>
-                            </div>
-                        </div>
-                        
-                            <div class="panel-footer">
-                                
-                                <span class="pull-left" ><i class="fa fa-balance-scale"></i> $4 Bugheist / $5 tips</span>
-                                <span class="pull-right"></span>
-                                <div class="clearfix"></div></br><center>
-                                <button type="submit" onclick="javascript:document.getElementById('plan').value='Flea'"  class="btn btn-primary btn-lg " style="background-color:#F76B78;border-color:#F76B78">Start</button></center>
-                            </div>
-                       
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="panel"  style="background-color:#DC4353">
-                        <div class="panel-heading">
-                            <div class="row">
-                                <div class="col-xs-3" >
-                                <img src="{% static 'img/ant.svg' %}" width="100" height="100">
-                                </div>
-                                <div class="col-xs-9 text-right " style="color:white;">
-                                    <div class="huge">Ant</div>
-                                    <span style="font-size:24pt">$99</span> / month
-                                </div>
-                            </div>
-                        </div>
-                        
-                            <div class="panel-footer">
-                                <span class="pull-left" ><i class="fa fa-balance-scale" style="width:20px;"></i> $49 Bugheist / $50 tips</span></br>
-                                <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> Weekly Announcement</span>
-                                <div class="clearfix"></div></br><center>
-                                <button type="submit" onclick="javascript:document.getElementById('plan').value='Ant'"  onclick="changeValue(this)" class="btn btn-primary btn-lg " style="background-color:#DC4353;border-color:#DC4353">Start </button></center>
-                            </div>
-                      
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="panel" style="background-color:#C41E2E ">
-                        <div class="panel-heading">
-                            <div class="row">
-                                <div class="col-xs-3">
-                                <img src="{% static 'img/wasp.svg' %}" width="100" height="100">
-
-                                
-                                </div>
-                                <div class="col-xs-9 text-right" style="color:white;">
-                                    <div class="huge">Wasp</div>
-                                    <span style="font-size:24pt">$499</span> / month
-                                </div>
-                            </div>
-                        </div>
-                        <div class="panel-footer">
-                                <span class="pull-left" ><i class="fa fa-balance-scale" style="width:20px;"></i> $99 Bugheist / $400 tips</span></br>
-                                <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> Weekly Announcement</span>
-                                <span class="pull-left" style="font-size:20pt;"><i class="fa fa-globe"  style="width:25px;"></i> Homepage Featured</span>
-                                <div class="clearfix"></div></br><center>
-                                <button type="submit"onclick="javascript:document.getElementById('plan').value='Wasp'"  class="btn btn-primary btn-lg " style="background-color:#C41E2E;border-color:#C41E2E">Start </button></center>
-                            </div>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="panel" style="background-color:#9B0C1A">
-                        <div class="panel-heading">
-                            <div class="row">
-                                <div class="col-xs-3">
-                                 <img src="{% static 'img/scorpion.svg' %}" width="100" height="100">
-                                </div>
-                                <div class="col-xs-9 text-right" style="color:white;">
-                                    <div class="huge">Scorpion</div>
-                                    <span style="font-size:24pt">$1,499</span> / month
-                                </div>
-                            </div>
-                        </div>
-                        <div class="panel-footer">
-                                <span class="pull-left" ><i class="fa fa-balance-scale" style="width:20px;"></i> $199 Bugheist / $1,300 tips</span></br>
-                                <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> Weekly Announcement</span>
-                                <span class="pull-left" style="font-size:20pt;"><i class="fa fa-globe"  style="width:25px;"></i> Homepage Featured</span>
-                                <span class="pull-left" style="font-size:23pt;"><i class="fa fa-trophy"  style="width:25px;"></i> Monthly Hackathon</span>
-                                <div class="clearfix"></div></br><center>
-                                <button type="submit"  onclick="javascript:document.getElementById('plan').value='Scorpion'" class="btn btn-primary btn-lg " style="background-color:#9B0C1A;border-color:#9B0C1A">Start </button></center>
-                            </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-lg-12">
-                    <h2>Free Plan:</h2>Limited to 5 bugs per month:</br> <button type="submit"  onclick="javascript:document.getElementById('plan').value='Free'" class="btn btn-primary btn-lg " >Start</button>
-                </div>
-                <!-- /.col-lg-12 -->
-            </div>       
-
         </div>
-        <!-- /#page-wrapper -->
-        
-</form>
-    </div>
-    <!-- /#wrapper -->
- 
-
+        <div class="row">
+            <div class="col-lg-6">
+                {% csrf_token %}
+                <input type="hidden" name="plan" value="Flea" id="plan">
+                <div class="form-group">
+                    <label>URL:
+                        {% if not user.is_authenticated %}
+                            <span style="color:#DD4351; margin-left:170px;">* login required</span>
+                        {% endif %}
+                    </label>{{form.url.errors}}
+                    <input class="form-control" placeholder="Website URL.  e.g.  http://example.com" name="url" value="{{form.url.value|default:""}}">
+                </div>
+                <div class="form-group">
+                    <label>Logo (square)</label>{{form.logo.errors}}
+                    <input type="file" name="logo">
+                </div>
+                <div class="form-group" style="margin-top:10px;">
+                    <label style="margin-bottom:35px;">Grand Prize:</label>
+                    (Maximum tip Amount)
+                    <div style="display:inline;margin-left:25px;padding-top:20px;">
+                        <input class="slider" style="width:100%"
+                        type="text"
+                        name="prize"
+                        value="100"
+                        data-provide="slider"
+                        data-slider-min="100"
+                        data-slider-max="10000"
+                        data-slider-step="100"
+                        data-slider-value="100">
+                    </div>{{form.prize.errors}}
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">Subscription:</h1>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-3 col-md-6">
+                <div class="panel" style="background-color:#F76B78">
+                    <div class="panel-heading">
+                        <div class="row">
+                            <div class="col-xs-3">
+                                <img src="{% static 'img/flea.svg' %}" width="100" height="100">
+                            </div>
+                            <div class="col-xs-9 text-right" style="color:white;">
+                                <div class="huge">Flea</div>
+                                <span style="font-size:24pt">$9</span> / month
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <span class="pull-left" ><i class="fa fa-balance-scale"></i> $4 Bugheist / $5 tips</span>
+                        <span class="pull-right"></span>
+                        <div class="clearfix"></div></br><center>
+                        <button type="submit" onclick="javascript:document.getElementById('plan').value='Flea'"  class="btn btn-primary btn-lg " style="background-color:#F76B78;border-color:#F76B78">Start</button></center>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="panel"  style="background-color:#DC4353">
+                    <div class="panel-heading">
+                        <div class="row">
+                            <div class="col-xs-3" >
+                                <img src="{% static 'img/ant.svg' %}" width="100" height="100">
+                            </div>
+                            <div class="col-xs-9 text-right " style="color:white;">
+                                <div class="huge">Ant</div>
+                                <span style="font-size:24pt">$99</span> / month
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <span class="pull-left" ><i class="fa fa-balance-scale" style="width:20px;"></i> $49 Bugheist / $50 tips</span></br>
+                        <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> Weekly Announcement</span>
+                        <div class="clearfix"></div></br><center>
+                        <button type="submit" onclick="javascript:document.getElementById('plan').value='Ant'"  onclick="changeValue(this)" class="btn btn-primary btn-lg " style="background-color:#DC4353;border-color:#DC4353">Start </button></center>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="panel" style="background-color:#C41E2E ">
+                    <div class="panel-heading">
+                        <div class="row">
+                            <div class="col-xs-3">
+                                <img src="{% static 'img/wasp.svg' %}" width="100" height="100">
+                            </div>
+                            <div class="col-xs-9 text-right" style="color:white;">
+                                <div class="huge">Wasp</div>
+                                <span style="font-size:24pt">$499</span> / month
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <span class="pull-left" ><i class="fa fa-balance-scale" style="width:20px;"></i> $99 Bugheist / $400 tips</span></br>
+                        <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> Weekly Announcement</span>
+                        <span class="pull-left" style="font-size:20pt;"><i class="fa fa-globe"  style="width:25px;"></i> Homepage Featured</span>
+                        <div class="clearfix"></div></br><center>
+                        <button type="submit"onclick="javascript:document.getElementById('plan').value='Wasp'"  class="btn btn-primary btn-lg " style="background-color:#C41E2E;border-color:#C41E2E">Start </button></center>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="panel" style="background-color:#9B0C1A">
+                    <div class="panel-heading">
+                        <div class="row">
+                            <div class="col-xs-3">
+                                <img src="{% static 'img/scorpion.svg' %}" width="100" height="100">
+                            </div>
+                            <div class="col-xs-9 text-right" style="color:white;">
+                                <div class="huge">Scorpion</div>
+                                <span style="font-size:24pt">$1,499</span> / month
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <span class="pull-left" ><i class="fa fa-balance-scale" style="width:20px;"></i> $199 Bugheist / $1,300 tips</span></br>
+                        <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> Weekly Announcement</span>
+                        <span class="pull-left" style="font-size:20pt;"><i class="fa fa-globe"  style="width:25px;"></i> Homepage Featured</span>
+                        <span class="pull-left" style="font-size:23pt;"><i class="fa fa-trophy"  style="width:25px;"></i> Monthly Hackathon</span>
+                        <div class="clearfix"></div></br><center>
+                        <button type="submit"  onclick="javascript:document.getElementById('plan').value='Scorpion'" class="btn btn-primary btn-lg " style="background-color:#9B0C1A;border-color:#9B0C1A">Start </button></center>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12">
+                <h2>Free Plan:</h2>Limited to 5 bugs per month:</br> <button type="submit"  onclick="javascript:document.getElementById('plan').value='Free'" class="btn btn-primary btn-lg " >Start</button>
+            </div>
+        </div>
+    </form>
 {% endblock %}
-
 {% block after_js %}
-<script src="{% static "js/bootstrap-slider.js" %}"></script>
-<script>
-function numberWithCommas(x) {
+    <script src="{% static "js/bootstrap-slider.js" %}"></script>
+    <script>
+    function numberWithCommas(x) {
     var parts = x.toString().split(".");
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     return parts.join(".");
-}
-$(".slider").slider({
+    }
+    $(".slider").slider({
     tooltip: 'always',
     formatter: function (value) {
-      return '$'+numberWithCommas(value);
+    return '$'+numberWithCommas(value);
     }
-});
-
-
-</script>
-
- {% endblock %}
+    });
+    </script>
+{% endblock %}

@@ -2,7 +2,7 @@ from django.conf.urls import include, url, patterns
 from django.conf import settings
 from django.contrib import admin
 from django.views.generic import TemplateView
-from website.views import UserProfileDetailView, IssueCreate, UploadCreate, IssueView, AllIssuesView, HuntCreate, DomainDetailView, StatsDetailView
+from website.views import UserProfileDetailView, IssueCreate, UploadCreate, IssueView, AllIssuesView, HuntCreate, DomainDetailView, StatsDetailView, InviteCreate
 from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView
 from django.conf.urls.static import static
@@ -30,9 +30,10 @@ urlpatterns = patterns('',
     url(r'^activity/', include('actstream.urls')),
     url(r'^start/$', TemplateView.as_view(template_name="hunt.html")),
     url(r'^hunt/$', login_required(HuntCreate.as_view()), name="hunt"),
-	url(r'^buttons/$', TemplateView.as_view(template_name="buttons.html")),
+    url(r'^invite/$', InviteCreate.as_view(template_name="invite.html")),
+    url(r'^terms/$', TemplateView.as_view(template_name="terms.html")),
     url(r'^stats/$', StatsDetailView.as_view()),
-	url(r'^favicon\.ico$', favicon_view),
+    url(r'^favicon\.ico$', favicon_view),
 
 ) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

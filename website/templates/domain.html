@@ -1,82 +1,65 @@
-{% extends "base_full.html" %}
+{% extends "base.html" %}
 {% load staticfiles %}
 {% load gravatar %}
 {% load socialaccount %}
 {% providers_media_js %}
-
 {% block content %}
-
-        <div id="page-wrapper">
-
-            <div class="row">
-                <div class="col-lg-3 col-md-3">
-                    <div class="panel" style="background-color:white">
-                        <div class="panel-heading">
-                            <div class="row">
-                                <div class="col-xs-3">
-                                <img src="http://{{domain}}/favicon.ico" height="75" onerror="this.onerror=null; this.style.display ='none';">
-
-                                   
-                                </div>
-                                <div class="col-xs-9 text-right">
-                                    <div class="huge">{{name}}</div>
-                                    <div>{{issues|length}} issues</div>
-                                </div>
-                            </div>
+    <div class="row">
+        <div class="col-lg-3 col-md-3">
+            <div class="panel" style="background-color:white">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-xs-3">
+                            <img src="http://{{domain}}/favicon.ico" height="75" onerror="this.onerror=null; this.style.display ='none';">
                         </div>
-                       
+                        <div class="col-xs-9 text-right">
+                            <div class="huge">{{name}}</div>
+                            <div>{{issues|length}} issues</div>
+                        </div>
                     </div>
                 </div>
-                
-
             </div>
-            <div class="row">
-                
-                <div class="col-lg-9">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                                Latest
-                        </div>
-                        <!-- /.panel-heading -->
-                        <div class="panel-body">
-                            <div class="list-group" >
-                            {% for activity in issues %}
-                                <div class="list-group-item" style="height:96px; overflow:hidden;">
-                                
-                                    <div style=" overflow:hidden; float:left;width:800px; " >
-                                        <div style="float:left;margin-right:10px">
-                                             {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
-                                            <img src="{{activity.user.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
-                                            {% else %}
-                                            {% gravatar activity.user.email 50 %} 
-                                            {% endif %}
-                                        </div>
-                                            {{ activity.user.username }} entered issue
-                                             <a href="{{ activity.get_absolute_url }}"><img src="http://{{activity.hostname_domain}}/favicon.ico" height="16" onerror="this.onerror=null; this.style.display ='none';"> {{ activity.domain }} - {{ activity }}</a>
-                                         </div>
-                                        <div style="float:right;">
-                                            <span class=" text-muted small" style="float:right; height:77px; overflow:hidden;">
-                                                <em>{{ activity.created|timesince }} ago</em></br>
-                                                {% if activity.screenshot %} 
-                                                    <a href="{{ activity.get_absolute_url }}">
-                                                        <img src="{{ activity.screenshot.url }}" width="100" style="float:right;" >
-                                                    </a>
-                                                {% endif %}
-                                            </span>
-                                        </div>
-                                   
-                                </div>
-                            {% endfor %}
-                            </div>
-                            <!-- /.list-group -->
-                        </div>
-                        <!-- /.panel-body -->
-                    </div>
-                </div>
-
-
-            </div>
-            <!-- /.row -->
         </div>
-        <!-- /#page-wrapper -->
+    </div>
+    <div class="row">
+        <div class="col-lg-9">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    Latest Issues
+                </div>
+                <div class="panel-body">
+                    <div class="list-group" >
+                        {% for activity in issues %}
+                            <div class="list-group-item" style="height:96px; overflow:hidden;">
+                                <div style=" overflow:hidden; float:left;width:800px; " >
+                                    <div style="float:left;margin-right:10px">
+                                        {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
+                                            <img src="{{activity.user.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
+                                        {% else %}
+                                            {% gravatar activity.user.email 50 %}
+                                        {% endif %}
+                                    </div>
+                                    {{ activity.user.username }} entered issue
+                                    <a href="{{ activity.get_absolute_url }}">
+                                        <img src="http://{{activity.hostname_domain}}/favicon.ico" height="16" onerror="this.onerror=null; this.style.display ='none';">
+                                        {{ activity.domain }} - {{ activity }}
+                                    </a>
+                                </div>
+                                <div style="float:right;">
+                                    <span class=" text-muted small" style="float:right; height:77px; overflow:hidden;">
+                                        <em>{{ activity.created|timesince }} ago</em></br>
+                                        {% if activity.screenshot %}
+                                            <a href="{{ activity.get_absolute_url }}">
+                                                <img src="{{ activity.screenshot.url }}" width="100" style="float:right;" >
+                                            </a>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
