@@ -191,6 +191,10 @@ STATICFILES_DIRS = (
     os.path.join(PROJECT_ROOT, 'static'),
 )
 
+ABSOLUTE_URL_OVERRIDES = {
+    'auth.user': lambda u: "/profile/%s/" % u.username,
+}
+
 # Simplified static file serving.
 # https://warehouse.python.org/project/whitenoise/
 STATICFILES_STORAGE = 'whitenoise.django.GzipManifestStaticFilesStorage'

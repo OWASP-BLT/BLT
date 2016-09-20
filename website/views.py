@@ -9,7 +9,7 @@ from django.shortcuts import redirect, render_to_response, RequestContext
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.http import Http404
-from actstream.models import Action, user_stream
+from actstream.models import Action, user_stream, actor_stream
 from actstream import action
 from django.contrib.auth.models import User
 from actstream import registry
@@ -22,6 +22,7 @@ from django.core.files.storage import default_storage
 from django.views.generic import View
 from django.core.files.base import ContentFile
 from urlparse import urlparse
+import urllib2
 
 
 registry.register(User)
@@ -56,7 +57,7 @@ class IssueCreate(CreateView):
             score = score + 2
         p = Points.objects.create(user=self.request.user,issue=obj,score=score)
         action.send(self.request.user, verb='found a bug on website', target=obj)
-        messages.success(self.request, 'Issue added! +'+ str(score))
+        messages.success(self.request, 'Bug added! +'+ str(score))
         return HttpResponseRedirect("/") 
 
     def get_context_data(self, **kwargs):
@@ -73,12 +74,34 @@ class UploadCreate(View):
     def dispatch(self, request, *args, **kwargs):
         return super(UploadCreate, self).dispatch(request, *args, **kwargs)
 
-
     def post(self, request, *args, **kwargs):
         data = request.FILES.get('image')
         result = default_storage.save("uploads\/" + self.kwargs['hash'] +'.png', ContentFile(data.read()))
-        print result
         return JsonResponse({'status':result})
+
+
+class InviteCreate(TemplateView):
+    template_name = "invite.html"
+
+    def post(self, request, *args, **kwargs):
+        email = request.POST.get('email')
+        exists = False
+        domain = None
+        if email:
+            domain = email.split("@")[-1] 
+            try:
+                ret = urllib2.urlopen('http://' + domain + '/favicon.ico')
+                if ret.code == 200:
+                    exists = "exists"
+            except:
+                pass
+        context = {
+            'exists': exists,
+            'domain': domain,
+            'email': email,
+        }
+        return render_to_response("invite.html", context, context_instance=RequestContext(request))
+
 
 def profile(request):
     try:
@@ -102,6 +125,8 @@ class UserProfileDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
         context['my_score'] = Points.objects.filter(user=self.object).aggregate(total_score=Sum('score')).values()[0]
+        #context['websites'] = Issue.objects.filter(user=self.object).group_by('domain')
+        context['activities'] = user_stream(self.object, with_user_activity=True)
         return context
 
 
