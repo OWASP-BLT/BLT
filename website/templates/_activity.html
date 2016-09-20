@@ -39,7 +39,7 @@
         {% else %}
             <a href="{{ activity.actor_url }}">{{ activity.actor }}</a>
         {% endif %}
-        {{ activity.verb }} <a href="/domain/{{ activity.target.domain_name }}">{{ activity.target.domain }}</a> {{ activity.timestamp|timesince }} ago
+        {{ activity.verb }} <a href="/domain/{{ activity.target.domain_name }}">{{ activity.target.domain_title }}</a> {{ activity.timestamp|timesince }} ago
     </div>
     <div style="float:right;  display:block; margin-top: -60px; overflow:hidden; height: 72px;">
         {% if activity.target.screenshot %}

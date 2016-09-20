@@ -155,7 +155,7 @@ class StatsDetailView(TemplateView):
 
 
     def get_context_data(self, *args, **kwargs):
-        domain_values = [res.domain for res in Issue.objects.all()]
+        domain_values = [res.domain_title for res in Issue.objects.all()]
         unique_domains = set(domain_values)
         unique_domain_count = len(unique_domains)
         context = super(StatsDetailView, self).get_context_data(*args, **kwargs)
