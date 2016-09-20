@@ -24,7 +24,10 @@
         {% if activity.action_object and activity.target %}to{% endif %}
         {% if activity.target %}
             {% if activity.target.get_absolute_url %}
-                <a href="/domain/{{ activity.target.domain_name }}"><img src="http://www.{{activity.target.domain_name}}/favicon.ico" height="25" onerror="this.onerror=null; this.style.display ='none';"></a><a href="{{ activity.target.get_absolute_url }}" style="margin-left:10px;">{{ activity.target }}</a>
+                <a href="/domain/{{ activity.target.domain_name }}">
+                    <img src="http://www.{{activity.target.domain_name}}/favicon.ico" height="25" onerror="this.onerror=null; this.style.display ='none';">
+                </a>
+                <a href="{{ activity.target.get_absolute_url }}" style="margin-left:10px;">{{ activity.target }}</a>
             {% else %}
                 <a href="{{ activity.target_url }}"> - {{ activity.target }}</a>
             {% endif %}
