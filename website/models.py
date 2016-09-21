@@ -97,7 +97,7 @@ class Hunt(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
     @property
-    def domain(self):
+    def domain_title(self):
         parsed_url = urlparse(self.url)
         return parsed_url.netloc.split(".")[-2:][0].title()
 
