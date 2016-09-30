@@ -14,7 +14,7 @@ from actstream import action
 from django.contrib.auth.models import User
 from actstream import registry
 from django.http import JsonResponse
-from website.models import Issue, Points, Hunt
+from website.models import Issue, Points, Hunt, Domain
 from .forms import UploadFileForm
 from django.core.files import File
 from django.db.models import Sum
@@ -27,6 +27,7 @@ import urllib2
 
 registry.register(User)
 registry.register(Issue)
+registry.register(Domain)
 
 def index(request, template="index.html"):
     context = {
@@ -79,6 +80,45 @@ class UploadCreate(View):
         result = default_storage.save("uploads\/" + self.kwargs['hash'] +'.png', ContentFile(data.read()))
         return JsonResponse({'status':result})
 
+class DomainCreate(TemplateView):
+    template_name = "domain.html"
+    model = Domain
+
+    def get(self, request, *args, **kwargs):
+
+
+        parsed_url = urlparse(request.GET.get('domain'))
+        domain, created = Domain.objects.get_or_create(name=parsed_url.path.replace("www.", ""), url="http://"+parsed_url.path.replace("www.", ""))
+
+        if created:
+            from selenium import webdriver
+            driver = webdriver.Firefox()
+            
+            driver.get("http://"+parsed_url.path)
+            driver.get_screenshot_as_file('media\webshots\/'+parsed_url.path +'.png')
+            driver.quit()
+        
+            reopen = default_storage.open('webshots\/'+ parsed_url.path +'.png', 'rb')
+            django_file = File(reopen)
+            domain.webshot.save(parsed_url.path +'.png', django_file, save=True)
+            #messages.success(self.request, 'New domain detected, what email address will receive new bug found emails?')
+
+            if self.request.user:
+                p = Points.objects.create(user=self.request.user,domain=domain,score=1)
+                action.send(self.request.user, verb='added domain', target=domain)
+                messages.success(self.request, 'Domain added! + 1')
+
+        return super(DomainCreate, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(DomainCreate, self).get_context_data(*args, **kwargs)
+        parsed_url = urlparse(self.request.GET.get('domain'))
+        domain = Domain.objects.get(name=parsed_url.path.replace("www.", ""))
+
+        context['name'] = domain.get_name
+        context['domain'] = domain
+        context['issues'] = Issue.objects.filter(url__contains=domain)
+        return context
 
 class InviteCreate(TemplateView):
     template_name = "invite.html"
@@ -144,7 +184,8 @@ class DomainDetailView(TemplateView):
         context = super(DomainDetailView, self).get_context_data(*args, **kwargs)
         parsed_url = urlparse("http://"+self.kwargs['slug'])
         context['name'] = parsed_url.netloc.split(".")[-2:][0].title()
-        context['domain'] = self.kwargs['slug']
+        
+        context['domain'] = Domain.objects.get(name=self.kwargs['slug'])
         context['issues'] = Issue.objects.filter(url__contains=self.kwargs['slug'])
         return context
         

@@ -8,9 +8,10 @@ from urlparse import urlparse
 
 
 class Domain(models.Model):
-    name = models.CharField(max_length=255, null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True, unique=True)
     url = models.URLField()
     logo = models.ImageField(upload_to="logos", null=True, blank=True)
+    webshot = models.ImageField(upload_to="webshots", null=True, blank=True)
     clicks = models.IntegerField(null=True, blank=True)
     color = models.CharField(max_length=10, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
@@ -24,7 +25,7 @@ class Domain(models.Model):
         return self.name
 
     @property
-    def domain(self):
+    def get_name(self):
         parsed_url = urlparse(self.url)
         return parsed_url.netloc.split(".")[-2:][0].title()
 
@@ -49,7 +50,7 @@ class Domain(models.Model):
 
 class Issue(models.Model):
     user = models.ForeignKey(User)
-    domain = models.ForeignKey(Domain, null=True, blank=True) #temporary
+    domain = models.ForeignKey(Domain, null=True, blank=True)
     url = models.URLField()
     description = models.TextField()
     screenshot = models.ImageField(null=True, blank=True, upload_to="screenshots")
@@ -106,7 +107,8 @@ class Hunt(models.Model):
 
 class Points(models.Model):
     user = models.ForeignKey(User)
-    issue = models.ForeignKey(Issue)
+    issue = models.ForeignKey(Issue, null=True, blank=True)
+    domain = models.ForeignKey(Domain, null=True, blank=True)
     score = models.IntegerField()
 
 
