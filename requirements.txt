@@ -5,14 +5,16 @@ django-activity-stream==0.6.3
 django-allauth==0.27.0
 django-cors-headers==1.1.0
 django-gravatar2==1.4.0
+django-screamshot==0.6.0
 django-storages==1.5.0
 django-timedeltafield==0.7.10
+EasyProcess==0.2.2
 gunicorn==19.4.5
 oauthlib==1.1.2
 Pillow==3.3.1
-psycopg2==2.6.1
 python-openid==2.2.5
 pytz==2016.6.1
+PyVirtualDisplay==0.2
 requests==2.11.1
 requests-oauthlib==0.6.2
 rollbar==0.13.3
