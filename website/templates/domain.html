@@ -5,21 +5,26 @@
 {% providers_media_js %}
 {% block content %}
     <div class="row">
-        <div class="col-lg-3 col-md-3">
+        <div class="col-lg-3 col-md-3"><a href="http://{{domain}}" target="/new">
             <div class="panel" style="background-color:white">
                 <div class="panel-heading">
                     <div class="row">
                         <div class="col-xs-3">
                             <img src="http://{{domain}}/favicon.ico" height="75" onerror="this.onerror=null; this.style.display ='none';">
                         </div>
+                        
                         <div class="col-xs-9 text-right">
                             <div class="huge">{{name}}</div>
                             <div>{{issues|length}} issues</div>
                         </div>
+
                     </div>
                 </div>
             </div>
+            </a>
         </div>
+
+
     </div>
     <div class="row">
         <div class="col-lg-9">
@@ -60,6 +65,15 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div><a href="http://{{domain}}" target="/new">
+                <div class="col-lg-3 col-md-3 ">
+        {% if domain.webshot %}
+            <div class="col-lg-12">
+             
+                <img src="{{domain.webshot.url}}" style=" border: 1px solid #d43f3a; width:300px">
+                
+            </div>
+        {% endif %}
+        </div></a>
     </div>
 {% endblock %}
