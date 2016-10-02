@@ -94,15 +94,15 @@ class DomainCreate(TemplateView):
             from selenium import webdriver
             from pyvirtualdisplay import Display
 
-            display = Display(visible=0, size=(1024, 768))
-            display.start()
+            #display = Display(visible=0, size=(1024, 768))
+            #display.start()
 
             driver = webdriver.Firefox()
             
             driver.get("http://"+parsed_url.path)
             driver.get_screenshot_as_file('media\webshots\/'+parsed_url.path +'.png')
             driver.quit()
-            display.stop()
+            #display.stop()
             reopen = default_storage.open('webshots\/'+ parsed_url.path +'.png', 'rb')
             django_file = File(reopen)
             domain.webshot.save(parsed_url.path +'.png', django_file, save=True)
