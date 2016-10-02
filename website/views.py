@@ -190,7 +190,10 @@ class DomainDetailView(TemplateView):
         parsed_url = urlparse("http://"+self.kwargs['slug'])
         context['name'] = parsed_url.netloc.split(".")[-2:][0].title()
         
-        context['domain'] = Domain.objects.get(name=self.kwargs['slug'])
+        try:
+            context['domain'] = Domain.objects.get(name=self.kwargs['slug'])
+        except:
+            context['domain'] = self.kwargs['slug']
         context['issues'] = Issue.objects.filter(url__contains=self.kwargs['slug'])
         return context
         
