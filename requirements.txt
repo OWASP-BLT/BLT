@@ -12,6 +12,7 @@ EasyProcess==0.2.2
 gunicorn==19.4.5
 oauthlib==1.1.2
 Pillow==3.3.1
+psycopg2==2.6.1
 python-openid==2.2.5
 pytz==2016.6.1
 PyVirtualDisplay==0.2
