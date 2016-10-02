@@ -23,6 +23,7 @@ from django.views.generic import View
 from django.core.files.base import ContentFile
 from urlparse import urlparse
 import urllib2
+from selenium.webdriver import PhantomJS
 
 
 registry.register(User)
@@ -97,8 +98,9 @@ class DomainCreate(TemplateView):
             #display = Display(visible=0, size=(1024, 768))
             #display.start()
 
-            driver = webdriver.Firefox()
-            
+            #driver = webdriver.Firefox()
+            driver = webdriver.PhantomJS()
+            driver.set_window_size(1120, 550)
             driver.get("http://"+parsed_url.path)
             driver.get_screenshot_as_file('media\webshots\/'+parsed_url.path +'.png')
             driver.quit()
