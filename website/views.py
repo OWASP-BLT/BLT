@@ -24,7 +24,16 @@ from django.core.files.base import ContentFile
 from urlparse import urlparse
 import urllib2
 from selenium.webdriver import PhantomJS
+import time
+from bs4 import BeautifulSoup
+import requests
+import requests.exceptions
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from urlparse import urlsplit
 
+from collections import deque
+import re
 
 registry.register(User)
 registry.register(Issue)
@@ -110,10 +119,30 @@ class DomainCreate(TemplateView):
             domain.webshot.save(parsed_url.path +'.png', django_file, save=True)
             #messages.success(self.request, 'New domain detected, what email address will receive new bug found emails?')
 
-            if self.request.user:
+            if self.request.user.is_authenticated():
                 p = Points.objects.create(user=self.request.user,domain=domain,score=1)
                 action.send(self.request.user, verb='added domain', target=domain)
                 messages.success(self.request, 'Domain added! + 1')
+
+
+            email_to = get_email_from_domain(parsed_url.path)
+            if not email_to:
+                email_to = "support@"+parsed_url.path
+            domain.email = email_to
+            domain.save()
+
+            name = email_to.split("@")[0]
+
+            msg_plain = render_to_string('email/domain_added.txt', {'domain': domain.name,'name':name})
+            msg_html = render_to_string('email/domain_added.txt', {'domain': domain.name,'name':name})
+
+            send_mail(
+                domain.name + ' added to Bugheist',
+                msg_plain,
+                'Bugheist <support@bugheist.com>',
+                [email_to],
+                html_message=msg_html,
+            )
 
         return super(DomainCreate, self).get(request, *args, **kwargs)
 
@@ -265,3 +294,57 @@ class IssueView(DetailView):
         context['users_score'] = Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
         context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         return context
+
+
+
+class EmailDetailView(TemplateView):
+    template_name = "email.html"
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(EmailDetailView, self).get_context_data(*args, **kwargs)
+        context['emails'] = get_email_from_domain(self.kwargs['slug'])
+        return context
+        
+ 
+def get_email_from_domain(domain_name):
+        new_urls = deque(['http://'+domain_name])
+        processed_urls = set()
+        emails = set()
+        emails_out = set()
+        t_end = time.time() + 20
+         
+        while len(new_urls) and time.time() < t_end:
+         
+            url = new_urls.popleft()
+            processed_urls.add(url)
+            print url
+            parts = urlsplit(url)
+            base_url = "{0.scheme}://{0.netloc}".format(parts)
+            path = url[:url.rfind('/')+1] if '/' in parts.path else url
+            try:
+                response = requests.get(url)
+            except:
+                continue
+            new_emails = set(re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", response.text, re.I))
+            if new_emails:
+                emails.update(new_emails)
+                break
+            soup = BeautifulSoup(response.text)
+            for anchor in soup.find_all("a"):
+                link = anchor.attrs["href"] if "href" in anchor.attrs else ''
+                if link.startswith('/'):
+                    link = base_url + link
+                elif not link.startswith('http'):
+                    link = path + link
+                if not link in new_urls and not link in processed_urls and link.find(domain_name)>0:
+                    print link
+                    new_urls.append(link)
+        
+        for email in emails:
+            if email.find(domain_name)>0:
+                emails_out.add(email)
+        try:
+            return list(emails_out)[0]
+        except:
+            return False
+

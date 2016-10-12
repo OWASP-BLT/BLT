@@ -169,6 +169,9 @@ if 'DATABASE_URL' in os.environ:
     import rollbar
     rollbar.init(**ROLLBAR)
 
+# local dev needs to set SMTP backend or fail at startup
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True

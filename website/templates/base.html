@@ -20,6 +20,7 @@
         <link href="{% static "css/sb-admin-2.css" %}" rel="stylesheet">
         <link href="{% static "vendor/font-awesome/css/font-awesome.min.css" %}" rel="stylesheet" type="text/css">
         <script src="{% static "vendor/jquery/jquery.min.js" %}"></script>
+        <script src="{% static "js/notify.js" %}"></script>
         <!--[if lt IE 9]>
         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
@@ -86,5 +87,10 @@
 <script src="{% static "vendor/metisMenu/metisMenu.min.js" %}"></script>
 {% block after_js %}
 {% endblock %}
+ {% if messages %}
+        {% for message in messages %}
+           <script> $.notify("{{ message }}",{ position: 'top center', className: "{{message.level_tag }}" }); </script>
+        {% endfor %}
+ {% endif %}
 </body>
 </html>

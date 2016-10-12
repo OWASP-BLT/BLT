@@ -1,0 +1,13 @@
+Dear {{name}},
+
+Your site {{domain}} has been added to Bugheist and you have been added as the primary contact. Bugheist allows anyone to find bugs on the internet and get points for reporting them.
+
+We'd love to feature your website on our homepage to attract more testers.
+
+Feel free to signup to one of our plans:
+
+http://www.bugheist.com/start/
+
+Best,
+
+The Bugheist Team
