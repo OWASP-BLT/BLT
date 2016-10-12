@@ -1,4 +1,7 @@
+BeautifulSoup==3.2.1
+beautifulsoup4==4.5.1
 boto==2.42.0
+bs4==0.0.1
 dj-database-url==0.4.0
 Django==1.9.2
 django-activity-stream==0.6.3
@@ -11,6 +14,7 @@ django-timedeltafield==0.7.10
 EasyProcess==0.2.2
 gunicorn==19.4.5
 oauthlib==1.1.2
+parse==1.6.6
 Pillow==3.3.1
 psycopg2==2.6.1
 python-openid==2.2.5
