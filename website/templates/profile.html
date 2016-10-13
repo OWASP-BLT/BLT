@@ -37,10 +37,10 @@
 					<div class="list-group">
 						{% for website in websites %}
 							<div class="list-group-item">
-								<a href="/domain/{{ website }}">
-                    				<img src="http://www.{{website}}/favicon.ico" height="25" onerror="this.onerror=null; this.style.display ='none';">
+								<a href="/domain/{{ website.name }}">
+                    				<img src="http://www.{{website.name}}/favicon.ico" height="25" onerror="this.onerror=null; this.style.display ='none';">
                 				</a>
-								<a href="/domain/{{ website }}" style="margin-left:5px;">{{website.domain}}</a>
+								<a href="/domain/{{ website.name }}" style="margin-left:5px;">{{website.name}}</a>
 								<span class="pull-right text-muted small"><em> {{website.total}} bugs</em>
 								</span>
 							</div>

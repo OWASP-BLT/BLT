@@ -203,7 +203,7 @@ class UserProfileDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
         context['my_score'] = Points.objects.filter(user=self.object).aggregate(total_score=Sum('score')).values()[0]
-        context['websites'] = Issue.objects.filter(user=self.object).defer("domain").annotate(total=Count('domain')).order_by('-total')
+        context['websites'] = Domain.objects.filter(issue__user=self.object).annotate(total=Count('issue')).order_by('-total')
         context['activities'] = user_stream(self.object, with_user_activity=True)
         return context
 
