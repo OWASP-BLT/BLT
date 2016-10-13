@@ -50,6 +50,7 @@ INSTALLED_APPS = (
     'allauth.socialaccount.providers.google',
     'actstream',
     'django_gravatar',
+    'email_obfuscator',
 )
 
 MIDDLEWARE_CLASSES = (
