@@ -27,7 +27,7 @@
 				</div>
 			</div>
 		</div>
-		{% comment %}
+
 		<div class="col-lg-3">
 			<div class="panel panel-default">
 				<div class="panel-heading">
@@ -35,23 +35,21 @@
 				</div>
 				<div class="panel-body">
 					<div class="list-group">
-						{% for leader in leaderboard %}
+						{% for website in websites %}
 							<div class="list-group-item">
-								{% if leader.socialaccount_set.all.0.get_avatar_url %}
-									<img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
-								{% else %}
-									{% gravatar leader.email 50 %}
-								{% endif %}
-								<a href="/profile/{{leader.username}}" style="margin-left:5px;">{{leader.username}}</a>
-								<span class="pull-right text-muted small"><em> {{leader.total_score}} bugs</em>
+								<a href="/domain/{{ website }}">
+                    				<img src="http://www.{{website}}/favicon.ico" height="25" onerror="this.onerror=null; this.style.display ='none';">
+                				</a>
+								<a href="/domain/{{ website }}" style="margin-left:5px;">{{website.domain}}</a>
+								<span class="pull-right text-muted small"><em> {{website.total}} bugs</em>
 								</span>
 							</div>
 						{% endfor %}
 					</div>
-					<!-- <a href="#" class="btn btn-default btn-block">View All</a>-->
+					
 				</div>
 			</div>
 		</div>
-	{% endcomment %}
+
 </div>
 {% endblock %}
