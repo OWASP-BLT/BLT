@@ -51,13 +51,15 @@ def index(request, template="index.html"):
 
 class IssueCreate(CreateView):
     model = Issue
-    fields = ['url','description','screenshot']
+    fields = ['url','description','screenshot','domain']
     template_name = "index.html"
 
     def form_valid(self, form):
         score = 1
         obj = form.save(commit=False)
         obj.user = self.request.user
+        domain, created = Domain.objects.get_or_create(name=obj.domain_name, url="http://"+obj.domain_name)
+        obj.domain=domain
         if self.request.POST.get('screenshot-hash'):
             reopen = default_storage.open('uploads\/'+ self.request.POST.get('screenshot-hash') +'.png', 'rb')
             django_file = File(reopen)
