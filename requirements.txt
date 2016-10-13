@@ -7,6 +7,7 @@ Django==1.9.2
 django-activity-stream==0.6.3
 django-allauth==0.27.0
 django-cors-headers==1.1.0
+django-email-obfuscator==0.1.4
 django-gravatar2==1.4.0
 django-screamshot==0.6.0
 django-storages==1.5.0
