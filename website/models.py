@@ -53,7 +53,7 @@ class Issue(models.Model):
     domain = models.ForeignKey(Domain, null=True, blank=True)
     url = models.URLField()
     description = models.TextField()
-    screenshot = models.ImageField(null=True, blank=True, upload_to="screenshots")
+    screenshot = models.ImageField(upload_to="screenshots")
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
