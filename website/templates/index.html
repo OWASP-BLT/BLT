@@ -4,6 +4,11 @@
 {% load socialaccount %}
 {% providers_media_js %}
 {% block content %}
+    <style>
+    .ds-btn li{ list-style:none; float:left; padding:10px; }
+    .ds-btn li a span{padding-left:15px;padding-right:5px;width:100%;display:inline-block; text-align:left;}
+    .ds-btn li a span small{width:100%; display:inline-block; text-align:left;}
+    </style>
     <div class="row">
         <div class="col-lg-6">
             <h1 class="page-header">Get points for testing and finding issues!</h1>
@@ -161,11 +166,28 @@
         </div>
         
     </div>
-    <div class="row">
-    </div>
     <a href="/start">
         <button type="submit" class="btn btn-default btn-danger" style="background:#dd4252; height:43px; font-size:14px;">Start a Hunt</button>
     </a>
+    <div class="row">
+        <div class="col-lg-12">
+            <h1 class="page-header">Random Domains
+            </h1>
+        </div>
+    </div>
+    <div class="row">
+        <ul class="ds-btn">
+        {% for domain in domains %}
+            <li>
+                <a class="btn btn-lg" style="background-color:{{domain.color}}" href="/domain/{{domain}}">
+                    <img src="http://www.{{domain.domain_name}}/favicon.ico" height="25" width="25" style="vertical-align:top" onerror="this.onerror=null; this.style.visibility ='hidden';">
+                    <span>{{domain.domain_name}}<br><small>{{domain.issues_set.all|length}} issues </small></span>
+                </a>
+            </li>
+           {% endfor %}
+        </ul>
+        
+    </div>
     <div class="row">
         <div class="col-lg-9">
             <h1 class="page-header">Activity</h1>
@@ -190,22 +212,26 @@
         <div class="col-lg-3">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    Leaderboard
+                    {% now "F" %} Leaderboard
                 </div>
                 <div class="panel-body">
                     <div class="list-group">
-                        {% for leader in leaderboard %}
-                            <div class="list-group-item">
-                                {% if leader.socialaccount_set.all.0.get_avatar_url %}
-                                    <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
-                                {% else %}
-                                    {% gravatar leader.email 50 %}
-                                {% endif %}
-                                <a href="/profile/{{leader.username}}" style="margin-left:5px;">{{leader.username}}</a>
-                                <span class="pull-right text-muted small"><em> {{leader.total_score}} points</em>
-                                </span>
-                            </div>
-                        {% endfor %}
+                        {% if leaderboard %}
+                            {% for leader in leaderboard %}
+                                <div class="list-group-item">
+                                    {% if leader.socialaccount_set.all.0.get_avatar_url %}
+                                        <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
+                                    {% else %}
+                                        {% gravatar leader.email 50 %}
+                                    {% endif %}
+                                    <a href="/profile/{{leader.username}}" style="margin-left:5px;">{{leader.username}}</a>
+                                    <span class="pull-right text-muted small"><em> {{leader.total_score}} points</em>
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            Leaderboard reset for {% now "F" %}. Be first to find issues!
+                        {% endif %}
                     </div>
                     <!-- <a href="#" class="btn btn-default btn-block">View All</a>-->
                 </div>

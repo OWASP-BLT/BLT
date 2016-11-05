@@ -31,7 +31,7 @@ import requests.exceptions
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from urlparse import urlsplit
-
+from datetime import datetime
 from collections import deque
 import re
 
@@ -42,8 +42,9 @@ registry.register(Domain)
 def index(request, template="index.html"):
     context = {
         'activities': Action.objects.all()[0:10],
+        'domains': Domain.objects.all().order_by('?')[0:16],
         'hunts': Hunt.objects.exclude(plan="Free")[:4],
-        'leaderboard':  User.objects.annotate(total_score=Sum('points__score')).order_by('-total_score').filter(total_score__gt=0),
+        'leaderboard':  User.objects.annotate(total_score=Sum('points__score')).order_by('-total_score').filter(total_score__gt=0, points__created__month=datetime.now().month),
     }
     return render_to_response(template, context, context_instance=RequestContext(request))
 
@@ -77,7 +78,7 @@ class IssueCreate(CreateView):
         context = super(IssueCreate, self).get_context_data(**kwargs)
         context['activities'] = Action.objects.all()[0:10]
         context['hunts'] = Hunt.objects.exclude(plan="Free")[:4]
-        context['leaderboard'] = User.objects.annotate(total_score=Sum('points__score')).order_by('-total_score').filter(total_score__gt=0)
+        context['leaderboard'] = User.objects.annotate(total_score=Sum('points__score')).order_by('-total_score').filter(total_score__gt=0, created__month=datetime.now().month)
         return context
 
 class UploadCreate(View):
