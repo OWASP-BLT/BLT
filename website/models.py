@@ -110,9 +110,8 @@ class Points(models.Model):
     issue = models.ForeignKey(Issue, null=True, blank=True)
     domain = models.ForeignKey(Domain, null=True, blank=True)
     score = models.IntegerField()
-
-
-
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
 
 
 #@receiver(user_logged_in, dispatch_uid="some.unique.string.id.for.allauth.user_logged_in")
