@@ -181,7 +181,7 @@
             <li>
                 <a class="btn btn-lg" style="background-color:{{domain.color}}" href="/domain/{{domain}}">
                     <img src="http://www.{{domain.domain_name}}/favicon.ico" height="25" width="25" style="vertical-align:top" onerror="this.onerror=null; this.style.visibility ='hidden';">
-                    <span>{{domain.domain_name}}<br><small>{{domain.issues_set.all|length}} issues </small></span>
+                    <span>{{domain.domain_name}}<br><small>{{domain.issue_set.all|length}} issues </small></span>
                 </a>
             </li>
            {% endfor %}
