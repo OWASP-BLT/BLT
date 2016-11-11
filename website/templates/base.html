@@ -47,52 +47,54 @@
                                 {{request.user.username}} ({{ request.user|score|default:"0" }} pts) <i class="fa fa-caret-down"></i>
                             </a>
                             <ul class="dropdown-menu dropdown-user">
-                                <li><a href="/accounts/profile/"><i class="fa fa-user fa-fw"></i> User Profile</a>
-                            </li>
-                            <li><a href="/accounts/password/change/"><i class="fa fa-gear fa-fw"></i> Settings</a>
+                                <li>
+                                    <a href="/accounts/profile/"><i class="fa fa-user fa-fw"></i> User Profile</a>
+                                </li>
+                                <li>
+                                    <a href="/accounts/password/change/"><i class="fa fa-gear fa-fw"></i> Settings</a>
+                                </li>
+                                <li class="divider"></li>
+                                <li>
+                                    <a href="/accounts/logout/"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
+                                </li>
+                            </ul>
                         </li>
-                        <li class="divider"></li>
-                        <li><a href="/accounts/logout/"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
-                    </li>
+                    {% else %}
+                        <a href="/accounts/login/">
+                            <button class="btn btn-default" style="float:right; height:43px; font-size:14px;margin-top:3px; margin-right:15px; color:#dd4252">
+                            Login
+                            </button>
+                        </a>
+                    {% endif %}
                 </ul>
-            </li>
-        {% else %}
-            <a href="/accounts/login/">
-                <button class="btn btn-default" style="float:right; height:43px; font-size:14px;margin-top:3px; margin-right:15px; color:#dd4252">
-                Login
-                </button>
-            </a>
-        {% endif %}
-    </ul>
-</nav>
-<div id="page-wrapper" >
-    <div class="container-fluid" >
-        {% block content %}
-        {% endblock %}
-    </div>
-
-</div>
-
-    <div class="panel-footer"  >
-        <div class="col-lg-3 col-md-6 col-md-offset-3">
-            <ul>
-                <li><a href="/terms">Terms of Service</a></li>
-            </ul>
+            </nav>
+            <div id="page-wrapper" >
+                <div class="container-fluid" >
+                    {% block content %}
+                    {% endblock %}
+                </div>
+            </div>
+            <div class="panel-footer"  >
+                <div class="col-lg-3 col-md-6 col-md-offset-3">
+                    <ul>
+                        <li><a href="/terms">Terms of Service</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6 ">
+                    <ul>
+                        <li><a href="/stats">Stats</a></li>
+                    </ul>
+                </div>
+            </div>
+            <script src="{% static "vendor/bootstrap/js/bootstrap.min.js" %}"></script>
+            <script src="{% static "vendor/metisMenu/metisMenu.min.js" %}"></script>
+            {% block after_js %}
+            {% endblock %}
+            {% if messages %}
+                {% for message in messages %}
+                    <script> $.notify("{{ message }}",{ position: 'top center', className: "{{message.level_tag }}" }); </script>
+                {% endfor %}
+            {% endif %}
         </div>
-        <div class="col-lg-3 col-md-6 ">
-            <ul>
-                <li><a href="/stats">Stats</a></li>
-            </ul>
-        </div>
-    </div>
-<script src="{% static "vendor/bootstrap/js/bootstrap.min.js" %}"></script>
-<script src="{% static "vendor/metisMenu/metisMenu.min.js" %}"></script>
-{% block after_js %}
-{% endblock %}
- {% if messages %}
-        {% for message in messages %}
-           <script> $.notify("{{ message }}",{ position: 'top center', className: "{{message.level_tag }}" }); </script>
-        {% endfor %}
- {% endif %}
-</body>
+    </body>
 </html>

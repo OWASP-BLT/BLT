@@ -21,11 +21,6 @@ body {
     border-left: 1px solid #e7e7e7;
   }
 }
-
-.ds-btn li{ list-style:none; float:left; padding:10px; }
-.ds-btn li a span{padding-left:15px;padding-right:5px;width:100%;display:inline-block; text-align:left;}
-.ds-btn li a span small{width:100%; display:inline-block; text-align:left;}
-
 .navbar-top-links {
   margin-right: 0;
 }
