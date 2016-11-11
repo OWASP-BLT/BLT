@@ -44,7 +44,7 @@ def index(request, template="index.html"):
         'activities': Action.objects.all()[0:10],
         'domains': Domain.objects.all().order_by('?')[0:16],
         'hunts': Hunt.objects.exclude(plan="Free")[:4],
-        'leaderboard':  User.objects.annotate(total_score=Sum('points__score')).order_by('-total_score').filter(total_score__gt=0, points__created__month=datetime.now().month),
+        'leaderboard':  User.objects.filter(points__created__month=datetime.now().month).annotate(total_score=Sum('points__score')).order_by('-total_score'),
     }
     return render_to_response(template, context, context_instance=RequestContext(request))
 
