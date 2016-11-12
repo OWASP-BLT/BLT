@@ -128,10 +128,9 @@ def post_to_twitter(sender, instance, *args, **kwargs):
             auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
             auth.set_access_token(access_key, access_secret)
             api = tweepy.API(auth)
-            #api.update_status(mesg)
-            fn = os.path.abspath(instance.screenshot.url)
-            api.update_with_media(fn, status=mesg)
-
+            media_ids = api.media_upload(filename=instance.screenshot.file.name)
+            params = {'status': mesg, 'media_ids': [media_ids.media_id_string]}
+            api.update_status(**params)
         except urllib2.HTTPError, ex:
             print 'ERROR:', str(ex)
             return False
