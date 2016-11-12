@@ -55,6 +55,12 @@ class IssueCreate(CreateView):
     fields = ['url','description','screenshot','domain']
     template_name = "index.html"
 
+    def get_initial(self):
+        initial = super(IssueCreate, self).get_initial()
+        if self.request.POST.get('screenshot-hash'):
+            initial['screenshot'] = "filled"
+        return initial
+
     def form_valid(self, form):
         score = 1
         obj = form.save(commit=False)
