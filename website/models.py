@@ -128,7 +128,10 @@ def post_to_twitter(sender, instance, *args, **kwargs):
             auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
             auth.set_access_token(access_key, access_secret)
             api = tweepy.API(auth)
-            api.update_status(mesg)
+            #api.update_status(mesg)
+            fn = os.path.abspath(instance.screenshot)
+            api.update_with_media(fn, status=mesg)
+
         except urllib2.HTTPError, ex:
             print 'ERROR:', str(ex)
             return False
