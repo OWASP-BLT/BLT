@@ -7,6 +7,7 @@ from django.dispatch import receiver
 from urlparse import urlparse
 from django.db.models import signals
 import os
+import urllib2
 
 class Domain(models.Model):
     name = models.CharField(max_length=255, null=True, blank=True, unique=True)
