@@ -5,7 +5,8 @@ from allauth.account.signals import user_signed_up, user_logged_in
 from actstream import action
 from django.dispatch import receiver
 from urlparse import urlparse
-
+from django.db.models import signals
+import os
 
 class Domain(models.Model):
     name = models.CharField(max_length=255, null=True, blank=True, unique=True)
@@ -79,6 +80,13 @@ class Issue(models.Model):
             domain = temp[1] + '.' + temp[2]
         return domain
 
+    def get_twitter_message(self):
+        issue_link = " http://bugheist.com/issue/"+str(self.id)
+        prefix = "Bug found on @"
+        spacer = " | "
+        msg =  prefix + self.domain_title + spacer + self.description[:140-(len(prefix)+len(self.domain_title)+len(spacer)+len(issue_link))] + issue_link
+        return msg
+
     @property
     def get_absolute_url(self):
         return "/issue/" + str(self.id)
@@ -86,6 +94,43 @@ class Issue(models.Model):
     class Meta:
         ordering = ['-created']
 
+
+
+def post_to_twitter(sender, instance, *args, **kwargs):
+
+    if not kwargs.get('created'):
+        return False
+
+    try:
+        consumer_key = os.environ['TWITTER_CONSUMER_KEY']
+        consumer_secret = os.environ['TWITTER_CONSUMER_SECRET']
+        access_key = os.environ['TWITTER_ACCESS_KEY']
+        access_secret = os.environ['TWITTER_ACCESS_SECRET']
+    except KeyError:
+        print 'WARNING: Twitter account not configured.'
+        return False
+
+    try:
+        text = instance.get_twitter_message()
+    except AttributeError:
+        text = unicode(instance)
+
+    mesg = u'%s' % (text)
+    if len(mesg) > TWITTER_MAXLENGTH:
+        size = len(mesg + '...') - TWITTER_MAXLENGTH
+        mesg = u'%s...' % (text[:-size])
+
+    if not settings.DEBUG:
+        try:
+            auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+            auth.set_access_token(access_key, access_secret)
+            api = tweepy.API(auth)
+            api.update_status(mesg)
+        except urllib2.HTTPError, ex:
+            print 'ERROR:', str(ex)
+            return False
+
+signals.post_save.connect(post_to_twitter, sender=Issue)
 
 class Hunt(models.Model):
     user = models.ForeignKey(User)
