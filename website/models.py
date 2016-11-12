@@ -95,6 +95,7 @@ class Issue(models.Model):
         ordering = ['-created']
 
 
+TWITTER_MAXLENGTH = getattr(settings, 'TWITTER_MAXLENGTH', 140)
 
 def post_to_twitter(sender, instance, *args, **kwargs):
 
