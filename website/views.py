@@ -62,7 +62,7 @@ class IssueCreate(CreateView):
         return initial
 
     def form_valid(self, form):
-        score = 1
+        score = 3
         obj = form.save(commit=False)
         obj.user = self.request.user
         domain, created = Domain.objects.get_or_create(name=obj.domain_name, url="http://"+obj.domain_name)
@@ -73,8 +73,6 @@ class IssueCreate(CreateView):
             obj.screenshot.save(self.request.POST.get('screenshot-hash') +'.png', django_file, save=True)
             
         obj.save()
-        if obj.screenshot:
-            score = score + 2
         p = Points.objects.create(user=self.request.user,issue=obj,score=score)
         action.send(self.request.user, verb='found a bug on website', target=obj)
         messages.success(self.request, 'Bug added! +'+ str(score))
