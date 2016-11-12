@@ -238,14 +238,11 @@ class StatsDetailView(TemplateView):
 
 
     def get_context_data(self, *args, **kwargs):
-        domain_values = [res.domain_title for res in Issue.objects.all()]
-        unique_domains = set(domain_values)
-        unique_domain_count = len(unique_domains)
         context = super(StatsDetailView, self).get_context_data(*args, **kwargs)
         context['bug_count'] = Issue.objects.all().count()
         context['user_count'] = User.objects.all().count()
         context['hunt_count'] = Hunt.objects.all().count()
-        context['domain_count'] = unique_domain_count
+        context['domain_count'] = Domain.objects.all().count()
         return context
 
 class AllIssuesView(ListView):
