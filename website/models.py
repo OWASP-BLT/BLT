@@ -10,6 +10,7 @@ import os
 import urllib2
 import tweepy
 import tempfile
+from django.core.files.storage import default_storage
 
 class Domain(models.Model):
     name = models.CharField(max_length=255, null=True, blank=True, unique=True)
@@ -133,16 +134,10 @@ def post_to_twitter(sender, instance, *args, **kwargs):
             auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
             auth.set_access_token(access_key, access_secret)
             api = tweepy.API(auth)
-
-            with tempfile.NamedTemporaryFile(delete=True) as f:
-
-                name = instance.screenshot.file.name
-                logger.info(name)
-                f.write(instance.screenshot.read())
-                logger.info(f)
-                media_ids = api.media_upload(filename=name, f=f)
-                params = dict(status=mesg, media_ids=[media_ids.media_id_string])
-                api.update_status(**params)
+            file = default_storage.open(instance.screenshot, 'rb')
+            media_ids = api.media_upload(filename=instance.screenshot.file.name, file=file)
+            params = dict(status=mesg, media_ids=[media_ids.media_id_string])
+            api.update_status(**params)
 
         except urllib2.HTTPError, ex:
             print 'ERROR:', str(ex)
