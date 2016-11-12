@@ -9,6 +9,7 @@ from django.db.models import signals
 import os
 import urllib2
 import tweepy
+import tempfile
 
 class Domain(models.Model):
     name = models.CharField(max_length=255, null=True, blank=True, unique=True)
@@ -128,9 +129,14 @@ def post_to_twitter(sender, instance, *args, **kwargs):
             auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
             auth.set_access_token(access_key, access_secret)
             api = tweepy.API(auth)
-            media_ids = api.media_upload(filename=instance.screenshot.file.name)
-            params = {'status': mesg, 'media_ids': [media_ids.media_id_string]}
-            api.update_status(**params)
+
+            with tempfile.NamedTemporaryFile(delete=True) as f:
+                name = instance.screenshot.file.name
+                f.write(instance.screenshot.read())
+                media_ids = api.media_upload(filename=name, f=f)
+                params = dict(status=mesg, media_ids=[media_ids.media_id_string])
+                api.update_status(**params)
+
         except urllib2.HTTPError, ex:
             print 'ERROR:', str(ex)
             return False
