@@ -134,7 +134,7 @@ def post_to_twitter(sender, instance, *args, **kwargs):
             auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
             auth.set_access_token(access_key, access_secret)
             api = tweepy.API(auth)
-            file = default_storage.open(instance.screenshot, 'rb')
+            file = default_storage.open(instance.screenshot.file.name, 'rb')
             media_ids = api.media_upload(filename=instance.screenshot.file.name, file=file)
             params = dict(status=mesg, media_ids=[media_ids.media_id_string])
             api.update_status(**params)
