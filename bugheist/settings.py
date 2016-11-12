@@ -218,6 +218,10 @@ LOGGING = {
             'handlers':['console'],
             'propagate': True,
             'level':'DEBUG',
+        },
+        'testlogger': {
+            'handlers': ['console'],
+            'level': 'INFO',
         }
     },
 }

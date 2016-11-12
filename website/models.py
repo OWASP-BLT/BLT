@@ -124,6 +124,10 @@ def post_to_twitter(sender, instance, *args, **kwargs):
         size = len(mesg + '...') - TWITTER_MAXLENGTH
         mesg = u'%s...' % (text[:-size])
 
+    import logging
+    logger = logging.getLogger('testlogger')
+    
+
     if not settings.DEBUG:
         try:
             auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
@@ -131,8 +135,11 @@ def post_to_twitter(sender, instance, *args, **kwargs):
             api = tweepy.API(auth)
 
             with tempfile.NamedTemporaryFile(delete=True) as f:
+
                 name = instance.screenshot.file.name
+                logger.info(name)
                 f.write(instance.screenshot.read())
+                logger.info(f)
                 media_ids = api.media_upload(filename=name, f=f)
                 params = dict(status=mesg, media_ids=[media_ids.media_id_string])
                 api.update_status(**params)
