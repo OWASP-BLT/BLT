@@ -103,6 +103,9 @@ class DomainCreate(TemplateView):
 
     def get(self, request, *args, **kwargs):
 
+        if not request.GET.get('domain'):
+            messages.error(self.request, 'Please enter a value for domain.')
+            return redirect('/')
 
         parsed_url = urlparse(request.GET.get('domain'))
         domain, created = Domain.objects.get_or_create(name=parsed_url.path.replace("www.", ""), url="http://"+parsed_url.path.replace("www.", ""))
