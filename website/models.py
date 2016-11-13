@@ -11,6 +11,7 @@ import urllib2
 import tweepy
 import tempfile
 from django.core.files.storage import default_storage
+from django.core.exceptions import ValidationError
 
 class Domain(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -52,13 +53,18 @@ class Domain(models.Model):
     def get_absolute_url(self):
         return "/domain/" + str(self.domain_name)
 
+def validate_image(fieldfile_obj):
+        filesize = fieldfile_obj.file.size
+        megabyte_limit = 3.0
+        if filesize > megabyte_limit*1024*1024:
+            raise ValidationError("Max file size is %sMB" % str(megabyte_limit))
 
 class Issue(models.Model):
     user = models.ForeignKey(User)
     domain = models.ForeignKey(Domain, null=True, blank=True)
     url = models.URLField()
     description = models.TextField()
-    screenshot = models.ImageField(upload_to="screenshots")
+    screenshot = models.ImageField(upload_to="screenshots", validators=[validate_image])
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
