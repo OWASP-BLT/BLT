@@ -13,7 +13,7 @@ import tempfile
 from django.core.files.storage import default_storage
 
 class Domain(models.Model):
-    name = models.CharField(max_length=255, null=True, blank=True, unique=True)
+    name = models.CharField(max_length=255, unique=True)
     url = models.URLField()
     logo = models.ImageField(upload_to="logos", null=True, blank=True)
     webshot = models.ImageField(upload_to="webshots", null=True, blank=True)
