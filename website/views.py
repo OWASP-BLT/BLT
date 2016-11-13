@@ -15,7 +15,6 @@ from django.contrib.auth.models import User
 from actstream import registry
 from django.http import JsonResponse
 from website.models import Issue, Points, Hunt, Domain
-from .forms import UploadFileForm
 from django.core.files import File
 from django.db.models import Sum, Count
 from django.core.files.storage import default_storage

@@ -5,7 +5,8 @@
     <form role="form" action="/hunt/" method="post" enctype="multipart/form-data" >
         <div class="row">
             <div class="col-lg-6">
-                <h1 class="page-header">Start a bug hunt!</h1>
+                <h1 class="page-header">Start a bug hunt!</h1> 
+                All paid plans are currently featured on the homepage under the sponsored bug hunt area.
             </div>
         </div>
         <div class="row">
@@ -24,9 +25,10 @@
                     <label>Logo (square)</label>{{form.logo.errors}}
                     <input type="file" name="logo">
                 </div>
+
                 <div class="form-group" style="margin-top:10px;">
                     <label style="margin-bottom:35px;">Grand Prize:</label>
-                    (Maximum tip Amount)
+                    (Maximum tip Amount, you are encouraged to tip the bug finders, this is the maximum amount they can expect)
                     <div style="display:inline;margin-left:25px;padding-top:20px;">
                         <input class="slider" style="width:100%"
                         type="text"
