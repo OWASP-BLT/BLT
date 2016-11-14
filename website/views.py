@@ -51,13 +51,13 @@ def index(request, template="index.html"):
 
 class IssueCreate(CreateView):
     model = Issue
-    fields = ['url','description','screenshot','domain']
+    fields = ['url','description','domain']
     template_name = "index.html"
 
     def get_initial(self):
         initial = super(IssueCreate, self).get_initial()
         if self.request.POST.get('screenshot-hash'):
-            initial['screenshot'] = self.request.POST.get('screenshot-hash')
+            initial['screenshot'] = 'uploads\/'+ self.request.POST.get('screenshot-hash') +'.png'
         return initial
 
     def form_valid(self, form):
