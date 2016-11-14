@@ -57,7 +57,7 @@ class IssueCreate(CreateView):
     def get_initial(self):
         initial = super(IssueCreate, self).get_initial()
         if self.request.POST.get('screenshot-hash'):
-            initial['screenshot'] = "filled"
+            initial['screenshot'] = self.request.POST.get('screenshot-hash')
         return initial
 
     def form_valid(self, form):
