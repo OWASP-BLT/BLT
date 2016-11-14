@@ -51,7 +51,7 @@ def index(request, template="index.html"):
 
 class IssueCreate(CreateView):
     model = Issue
-    fields = ['url','description','domain']
+    fields = ['url','description','screenshot','domain']
     template_name = "index.html"
 
     def get_initial(self):
