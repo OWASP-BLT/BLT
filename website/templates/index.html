@@ -50,7 +50,6 @@
                     {% if request.GET.hash %}</br>
                         <img src="{{ MEDIA_URL }}uploads/{{request.GET.hash}}.png" height="100" style=" border: 1px solid #d43f3a;">
                         <input type="hidden" name="screenshot-hash" value="{{request.GET.hash}}">
-                        <input type="file" name="screenshot" value="{{request.GET.hash}}" style="visibility:hidden;">
                     {% else %}
                         <input type="file" name="screenshot">
                     {% endif %}
