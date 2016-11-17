@@ -20,6 +20,7 @@ class Domain(models.Model):
     webshot = models.ImageField(upload_to="webshots", null=True, blank=True)
     clicks = models.IntegerField(null=True, blank=True)
     color = models.CharField(max_length=10, null=True, blank=True)
+    github = models.CharField(max_length=255, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
     twitter = models.CharField(max_length=30, null=True, blank=True)
     facebook = models.URLField(null=True, blank=True)

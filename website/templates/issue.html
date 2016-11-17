@@ -45,6 +45,12 @@
                     <a class="fb-xfbml-parse-ignore" target="_blank" >Share</a>
                 </div>
             </div>
+            {% if object.domain.github %}
+                <a href="{{object.domain.github}}/issues/new?title={{object.description|urlencode}}&body=![0]({{object.screenshot.url}})%20http://bugheist.com/issue/{{object.id}}" target="_new">
+                    <button type="button" class="btn btn-warning pull-right" style="margin-left:100px;">Add to Github</button>
+                </a>
+            {% endif %}
+
             {% if request.user.is_superuser or request.user == object.user %}
                 <a href="/delete_issue/{{object.id}}" onclick="return confirm('Are you sure you want to delete this issue?')">
                     <button type="button" class="btn btn-danger pull-right" >Delete</button>
