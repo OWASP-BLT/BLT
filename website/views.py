@@ -42,7 +42,7 @@ def index(request, template="index.html"):
     context = {
         'activities': Action.objects.all()[0:10],
         'domains': Domain.objects.all().order_by('?')[0:16],
-        'hunts': Hunt.objects.exclude(txn_id="")[:4],
+        'hunts': Hunt.objects.exclude(txn_id__isnull=True)[:4],
         'leaderboard':  User.objects.filter(points__created__month=datetime.now().month).annotate(total_score=Sum('points__score')).order_by('-total_score'),
     }
     return render_to_response(template, context, context_instance=RequestContext(request))
