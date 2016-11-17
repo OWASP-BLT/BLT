@@ -270,6 +270,20 @@ table.dataTable thead .sorting:after {
 .panel-red > a:hover {
   color: #b52b27;
 }
+.panel-purple {
+  border-color: #9c27b0;
+}
+.panel-purple > .panel-heading {
+  border-color: #9c27b0;
+  color: white;
+  background-color: #9c27b0;
+}
+.panel-purple > a {
+  color: #9c27b0;
+}
+.panel-purple > a:hover {
+  color: #9c27b0;
+}
 .panel-yellow {
   border-color: #f0ad4e;
 }
