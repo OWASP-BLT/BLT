@@ -64,7 +64,7 @@ class IssueCreate(CreateView):
         score = 3
         obj = form.save(commit=False)
         obj.user = self.request.user
-        domain, created = Domain.objects.get_or_create(name=obj.domain_name, url="http://"+obj.domain_name)
+        domain, created = Domain.objects.get_or_create(name=obj.domain_name.replace("www.", ""), url="http://"+obj.domain_name.replace("www.", ""))
         obj.domain=domain
         if self.request.POST.get('screenshot-hash'):
             reopen = default_storage.open('uploads\/'+ self.request.POST.get('screenshot-hash') +'.png', 'rb')
