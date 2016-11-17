@@ -12,6 +12,7 @@ import tweepy
 import tempfile
 from django.core.files.storage import default_storage
 from django.core.exceptions import ValidationError
+from unidecode import unidecode
 
 class Domain(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -141,8 +142,8 @@ def post_to_twitter(sender, instance, *args, **kwargs):
             auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
             auth.set_access_token(access_key, access_secret)
             api = tweepy.API(auth)
-            file = default_storage.open(instance.screenshot.file.name.encode('utf-8'), 'rb')
-            media_ids = api.media_upload(filename=instance.screenshot.file.name.encode('utf-8'), file=file)
+            file = default_storage.open(instance.screenshot.file.name, 'rb')
+            media_ids = api.media_upload(filename=unidecode(instance.screenshot.file.name), file=file)
             params = dict(status=mesg, media_ids=[media_ids.media_id_string])
             api.update_status(**params)
 
