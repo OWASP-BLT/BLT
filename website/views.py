@@ -159,75 +159,7 @@ class UploadCreate(View):
         result = default_storage.save("uploads\/" + self.kwargs['hash'] +'.png', ContentFile(data.read()))
         return JsonResponse({'status':result})
 
-class DomainCreate(TemplateView):
-    template_name = "domain.html"
-    model = Domain
-
-    def get(self, request, *args, **kwargs):
-
-        if not request.GET.get('domain'):
-            messages.error(self.request, 'Please enter a value for domain.')
-            return redirect('/')
-
-        parsed_url = urlparse(request.GET.get('domain'))
-        domain, created = Domain.objects.get_or_create(name=parsed_url.path.replace("www.", ""), url="http://"+parsed_url.path.replace("www.", ""))
-
-        if created:
-            from selenium import webdriver
-            from pyvirtualdisplay import Display
-
-            #display = Display(visible=0, size=(1024, 768))
-            #display.start()
-
-            #driver = webdriver.Firefox()
-            driver = webdriver.PhantomJS()
-            driver.set_window_size(1120, 550)
-            driver.get("http://"+parsed_url.path)
-            png_data = driver.get_screenshot_as_png()
-            default_storage.save('webshots\/'+parsed_url.path +'.png', ContentFile(png_data))
-            driver.quit()
-            reopen = default_storage.open('webshots\/'+ parsed_url.path +'.png', 'rb')
-            django_file = File(reopen)
-            domain.webshot.save(parsed_url.path +'.png', django_file, save=True)
-            #messages.success(self.request, 'New domain detected, what email address will receive new bug found emails?')
-
-            if self.request.user.is_authenticated():
-                p = Points.objects.create(user=self.request.user,domain=domain,score=1)
-                action.send(self.request.user, verb='added domain', target=domain)
-                messages.success(self.request, 'Domain added! + 1')
-
-
-            email_to = get_email_from_domain(parsed_url.path)
-            if not email_to:
-                email_to = "support@"+parsed_url.path
-            domain.email = email_to
-            domain.save()
-
-            name = email_to.split("@")[0]
-
-            msg_plain = render_to_string('email/domain_added.txt', {'domain': domain.name,'name':name})
-            msg_html = render_to_string('email/domain_added.txt', {'domain': domain.name,'name':name})
-
-            send_mail(
-                domain.name + ' added to Bugheist',
-                msg_plain,
-                'Bugheist <support@bugheist.com>',
-                [email_to],
-                html_message=msg_html,
-            )
-
-        return super(DomainCreate, self).get(request, *args, **kwargs)
-
-    def get_context_data(self, *args, **kwargs):
-        context = super(DomainCreate, self).get_context_data(*args, **kwargs)
-        parsed_url = urlparse(self.request.GET.get('domain'))
-        domain = Domain.objects.get(name=parsed_url.path.replace("www.", ""))
-
-        context['name'] = domain.get_name
-        context['domain'] = domain
-        context['issues'] = Issue.objects.filter(url__contains=domain)
-        return context
-
+       
 class InviteCreate(TemplateView):
     template_name = "invite.html"
 
