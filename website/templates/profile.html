@@ -41,7 +41,7 @@
                     				<img src="http://www.{{website.name}}/favicon.ico" height="25" onerror="this.onerror=null; this.style.display ='none';">
                 				</a>
 								<a href="/domain/{{ website.name }}" style="margin-left:5px;">{{website.name}}</a>
-								<span class="pull-right text-muted small"><em> {{website.total}} bugs</em>
+								<span class="pull-right text-muted small"><em> {{website.total}} bug{{website.total|pluralize}}</em>
 								</span>
 							</div>
 						{% endfor %}
