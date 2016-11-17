@@ -240,6 +240,12 @@ class StatsDetailView(TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(StatsDetailView, self).get_context_data(*args, **kwargs)
+        response = requests.get("https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en")
+        soup = BeautifulSoup(response.text)
+
+        for item in  soup.findAll("span", { "class" : "e-f-ih" }):
+            stats = item.attrs['title']
+        context['extension_users'] = stats.replace(" users", "")
         context['bug_count'] = Issue.objects.all().count()
         context['user_count'] = User.objects.all().count()
         context['hunt_count'] = Hunt.objects.all().count()
