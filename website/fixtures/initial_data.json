@@ -1,0 +1,27 @@
+[
+   {
+      "model":"socialaccount.socialapp",
+      "pk":1,
+      "fields":{
+         "provider":"facebook",
+         "name":"facebook",
+         "client_id":"asdf",
+         "secret":"asdf",
+         "key":"",
+         "sites":[
+            1
+         ]
+      }
+   },
+   {
+      "model":"auth.user",
+      "pk":1,
+      "fields":{
+         "first_name":"Bug",
+         "last_name":"Tester",
+         "username":"bugbug",
+         "email":"bugbug@bugbug.com",
+         "password":"pbkdf2_sha256$20000$GOVz4ND4RG0F$J4Z48PYW3VFY58wimhBGX5m4CVIQ2dxAmptO3b92Gdc="
+      }
+   }
+]

@@ -75,6 +75,69 @@ class IssueCreate(CreateView):
         p = Points.objects.create(user=self.request.user,issue=obj,score=score)
         action.send(self.request.user, verb='found a bug on website', target=obj)
         messages.success(self.request, 'Bug added! +'+ str(score))
+
+    
+        if created:
+            from selenium import webdriver
+            from pyvirtualdisplay import Display
+
+            driver = webdriver.PhantomJS()
+            driver.set_window_size(1120, 550)
+            parsed_url = urlparse(obj.domain_name)
+            driver.get("http://"+parsed_url.path)
+            png_data = driver.get_screenshot_as_png()
+            default_storage.save('webshots\/'+parsed_url.path +'.png', ContentFile(png_data))
+            driver.quit()
+            reopen = default_storage.open('webshots\/'+ parsed_url.path +'.png', 'rb')
+            django_file = File(reopen)
+            domain.webshot.save(parsed_url.path +'.png', django_file, save=True)
+
+            if self.request.user.is_authenticated():
+                p = Points.objects.create(user=self.request.user,domain=domain,score=1)
+                action.send(self.request.user, verb='added domain', target=domain)
+                messages.success(self.request, 'Domain added! + 1')
+
+            email_to = get_email_from_domain(parsed_url.path)
+            if not email_to:
+                email_to = "support@"+parsed_url.path
+            domain.email = email_to
+            domain.save()
+
+            name = email_to.split("@")[0]
+
+            msg_plain = render_to_string('email/domain_added.txt', {'domain': domain.name,'name':name})
+            msg_html = render_to_string('email/domain_added.txt', {'domain': domain.name,'name':name})
+
+            send_mail(
+                domain.name + ' added to Bugheist',
+                msg_plain,
+                'Bugheist <support@bugheist.com>',
+                [email_to],
+                html_message=msg_html,
+            )
+        else:
+            email_to = domain.email
+            name = email_to.split("@")[0]
+
+            msg_plain = render_to_string('email/bug_added.txt', {
+                'domain': domain.name,
+                'name':name,
+                'username':self.request.user,
+                'id':obj.id,
+                })
+            msg_html = render_to_string('email/bug_added.txt', {
+                'domain': domain.name,
+                'name':name,
+                'username':self.request.user,
+                'id':obj.id,
+                })
+            send_mail(
+                'Bug found on ' + domain.name,
+                msg_plain,
+                'Bugheist <support@bugheist.com>',
+                [email_to],
+                html_message=msg_html,
+            )           
         return HttpResponseRedirect("/") 
 
     def get_context_data(self, **kwargs):

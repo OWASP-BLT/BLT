@@ -1,0 +1,15 @@
+Dear {{name}},
+
+A bug has been found on {{domain}} by {{username}}
+
+You can see more info here:
+
+http://www.bugheist.com/issue/{{id}}
+
+Feel free to signup to one of our plans:
+
+http://www.bugheist.com/start/
+
+Best,
+
+The Bugheist Team
