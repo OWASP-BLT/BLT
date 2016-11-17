@@ -4,6 +4,7 @@
 {% load socialaccount %}
 {% providers_media_js %}
 {% block content %}
+    <script src="{% static "js/jquery.validate.js" %}"></script>
     <style>
     .ds-btn li{ list-style:none; float:left; padding:10px; }
     .ds-btn li a span{padding-left:15px;padding-right:5px;width:100%;display:inline-block; text-align:left;}
@@ -25,38 +26,46 @@
     </div>
     <div class="row">
         <div class="col-lg-6">
-            <form role="form" action="/issue/" method="post" enctype="multipart/form-data" >
+            <form role="form" action="/issue/" method="post" id="form1" enctype="multipart/form-data" >
                 {% csrf_token %}
                 <div class="form-group">
                     <label>Find a bug on any website
                         {% if not user.is_authenticated %}
                             <span style="color:#DD4252; margin-left:60px;">* login required</span>
                         {% endif %}
-                    </label>{{form.url.errors}}
+                    </label>
                     {% if request.GET.url %}
-                        <input class="form-control" placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
+                        <input class="form-control required"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
                     {% else %}
-                        <input class="form-control" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
+                        <input class="form-control required" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
+                    {% endif %}
+                    {% if form.url.errors %}
+                    <label id="description-error" class="error" for="description">{{form.url.errors}}</label>
                     {% endif %}
                 </div>
                 <div class="form-group">
-                    <label>Describe the bug</label>{{form.description.errors}}
-                    <textarea class="form-control" rows="3" placeholder="I found a bug on a site."  id="description" name="description">{{form.description.value|default:""}}</textarea>
+                    <label>Describe the bug</label>
+                    <textarea data-required="true" class="form-control required" rows="3" placeholder="I found a bug on a site."  id="description" name="description">{{form.description.value|default:""}}</textarea>
+                    {% if form.description.errors %}
+                    <label id="description-error" class="error" for="description">{{form.description.errors}}</label>
+                    {% endif %}
                 </div>
                 
                 <div class="form-group">
                     <label>Attach Screenshot</label>
-                    {{form.screenshot.errors}}
                     {% if request.GET.hash %}</br>
                         <img src="{{ MEDIA_URL }}uploads/{{request.GET.hash}}.png" height="100" style=" border: 1px solid #d43f3a;">
-                        <input type="hidden" name="screenshot-hash" value="{{request.GET.hash}}">
+                        <input type="hidden" class="required" name="screenshot-hash" value="{{request.GET.hash}}">
                     {% else %}
-                        <input type="file" name="screenshot">
+                        <input type="file" class="required" name="screenshot">
+                    {% endif %}
+                    {% if form.screenshot.errors %}
+                    <label id="description-error" class="error" for="description">{{form.screenshot.errors}}</label>
                     {% endif %}
                 </div>
                 
                 <div class="form-group">
-                    <button type="submit" class="btn btn-default btn-danger" style="background:#dd4252; height:43px; font-size:14px;">Enter Bug</button>
+                    <button type="submit" id="btn" class="btn btn-default btn-danger" style="background:#dd4252; height:43px; font-size:14px;">Enter Bug</button>
                     <label style="color:#dd4252; margin-left: 20px"> Win +3 points!</label>
                     {% if not user.is_authenticated %}
                         <a href="/accounts/login">
@@ -265,5 +274,6 @@
     }
     $(document).ready(function(){responsiveVideo();});
     $(window).resize(function() {responsiveVideo();});
+    $('#btn').on('click', function() { $("#form1").valid(); });
     </script>
 {% endblock %}
