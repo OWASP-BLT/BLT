@@ -18,7 +18,7 @@ from django.http import Http404
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 ADMIN_URL = os.environ.get('ADMIN_URL', 'admin')
-
+DEFAULT_FROM_EMAIL = "no-reply@bugheist.com"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
