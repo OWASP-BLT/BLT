@@ -2,7 +2,7 @@ from django.conf.urls import include, url, patterns
 from django.conf import settings
 from django.contrib import admin
 from django.views.generic import TemplateView
-from website.views import UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView, IssueView, AllIssuesView, HuntCreate, DomainDetailView, StatsDetailView, InviteCreate
+from website.views import UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView, LeaderboardView, IssueView, AllIssuesView, HuntCreate, DomainDetailView, StatsDetailView, InviteCreate
 from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView
 from django.conf.urls.static import static
@@ -20,6 +20,7 @@ urlpatterns = patterns('',
     url(r'^' + settings.ADMIN_URL + '/', include(admin.site.urls)),
     url(r'^issue/(?P<slug>\w+)/$', IssueView.as_view(), name="issue_view"),
     url(r'^all_activity/$', AllIssuesView.as_view(), name="all_activity"),
+    url(r'^leaderboard/$', LeaderboardView.as_view(), name="leaderboard"),
     url(r'^issue/$', login_required(IssueCreate.as_view()), name="issue"),
     url(r'^upload/(?P<time>[^/]+)/(?P<hash>[^/]+)/', UploadCreate.as_view(), name="upload"),
     url(r'^profile/(?P<slug>[^/]+)/$', UserProfileDetailView.as_view(), name="profile"),
