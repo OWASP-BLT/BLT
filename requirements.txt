@@ -27,5 +27,6 @@ rollbar==0.13.3
 selenium==2.53.6
 six==1.10.0
 tweepy==3.5.0
+Unidecode==0.4.19
 virtualenv==15.0.1
 whitenoise==2.0.6
