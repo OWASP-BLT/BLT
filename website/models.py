@@ -159,6 +159,7 @@ class Hunt(models.Model):
     prize = models.IntegerField()
     logo = models.ImageField(upload_to="logos", null=True, blank=True)
     plan = models.CharField(max_length=10)
+    txn_id = models.CharField(max_length=50, null=True, blank=True)
     color = models.CharField(max_length=10, null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
