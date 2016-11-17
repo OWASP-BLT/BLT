@@ -255,6 +255,14 @@ class AllIssuesView(ListView):
         context['activities'] = Action.objects.all()
         return context
 
+class LeaderboardView(ListView):
+    model = User
+    template_name = "leaderboard.html"
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(LeaderboardView, self).get_context_data(*args, **kwargs)
+        context['leaderboard'] = User.objects.annotate(total_score=Sum('points__score')).order_by('-total_score').filter(total_score__gt=0)
+        return context
 
 class HuntCreate(CreateView):
     model = Hunt

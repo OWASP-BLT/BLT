@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load gravatar %}
+{% block content %}
+        <div class="row">
+            <div class="col-lg-6">
+                <h1 class="page-header">Global Leaderboard</h1>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-9">
+                <div class="panel panel-default">
+
+                    <div class="panel-body">
+                        <div class="list-group" >
+                            {% for leader in leaderboard %}
+                                <div class="list-group-item">
+                                    {% if leader.socialaccount_set.all.0.get_avatar_url %}
+                                        <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
+                                    {% else %}
+                                        {% gravatar leader.email 50 %}
+                                    {% endif %}
+                                    <a href="/profile/{{leader.username}}" style="margin-left:5px;">{{leader.username}}</a>
+                                    <span class="pull-right text-muted small"><em> {{leader.total_score}} points</em>
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+{% endblock %}
