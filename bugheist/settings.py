@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 import os
 import dj_database_url
 from django.http import Http404
+import sys
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -28,7 +29,7 @@ SECRET_KEY = 'i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-TESTING = False
+TESTING = sys.argv[1:2] == ['test']
 
 SITE_ID = 1
 # Application definition
@@ -151,6 +152,8 @@ if 'DATABASE_URL' in os.environ:
     EMAIL_HOST_PASSWORD = os.environ.get('SENDGRID_PASSWORD', 'blank')
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
+    if not TESTING:
+        SECURE_SSL_REDIRECT = True
 
     GS_ACCESS_KEY_ID = os.environ.get('GS_ACCESS_KEY_ID', 'blank')
     GS_SECRET_ACCESS_KEY = os.environ.get('GS_SECRET_ACCESS_KEY', 'blank')
@@ -179,7 +182,7 @@ ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "optional"
 
 # Honor the 'X-Forwarded-Proto' header for request.is_secure()
-SECURE_SSL_REDIRECT = True
+
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Allow all host headers
