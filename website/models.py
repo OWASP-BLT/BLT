@@ -147,8 +147,9 @@ def post_to_twitter(sender, instance, *args, **kwargs):
             params = dict(status=mesg, media_ids=[media_ids.media_id_string])
             api.update_status(**params)
 
-        except urllib2.HTTPError, ex:
-            print 'ERROR:', str(ex)
+        except Exception, ex:
+            print 'ERROR:', str(ex), params
+            logger.debug('rem %s'%str(ex))
             return False
 
 signals.post_save.connect(post_to_twitter, sender=Issue)
