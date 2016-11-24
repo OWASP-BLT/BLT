@@ -33,6 +33,7 @@ from urlparse import urlsplit
 from datetime import datetime
 from collections import deque
 import re
+import os
 
 registry.register(User)
 registry.register(Issue)
@@ -47,6 +48,15 @@ def index(request, template="index.html"):
     }
     return render_to_response(template, context, context_instance=RequestContext(request))
 
+
+def find_key(request, token):
+    if token == os.environ.get("ACME_TOKEN"):
+        return HttpResponse(os.environ.get("ACME_KEY"))
+    for k, v in os.environ.items():  #  os.environ.iteritems() in Python 2
+        if v == token and k.startswith("ACME_TOKEN_"):
+            n = k.replace("ACME_TOKEN_", "")
+            return HttpResponse(os.environ.get("ACME_KEY_%s" % n))
+    raise Http404("Token or key does not exist")
 
 
 class IssueCreate(CreateView):
