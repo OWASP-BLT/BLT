@@ -312,7 +312,6 @@ class IssueView(DetailView):
         return context
 
 
-
 class EmailDetailView(TemplateView):
     template_name = "email.html"
 
@@ -333,7 +332,6 @@ def get_email_from_domain(domain_name):
          
             url = new_urls.popleft()
             processed_urls.add(url)
-            print url
             parts = urlsplit(url)
             base_url = "{0.scheme}://{0.netloc}".format(parts)
             path = url[:url.rfind('/')+1] if '/' in parts.path else url
@@ -353,7 +351,6 @@ def get_email_from_domain(domain_name):
                 elif not link.startswith('http'):
                     link = path + link
                 if not link in new_urls and not link in processed_urls and link.find(domain_name)>0:
-                    print link
                     new_urls.append(link)
         
         for email in emails:
