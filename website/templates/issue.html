@@ -79,12 +79,12 @@
                 </div>
             </div>
             <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
-<input type="hidden" name="cmd" value="_s-xclick">
-<input type="hidden" name="hosted_button_id" value="SC7E9NRCWHGTL">
-<input type="hidden" name="hcustom" value="{{domian.name}}">
-<button type="submit" class="btn btn-danger btn-small" >
- <i class="fa fa-envelope fa-lg" style="margin-right:10px;"></i>Subscribe to {{object.domain_title}} bugs</button>
-</form>
+                <input type="hidden" name="cmd" value="_s-xclick">
+                <input type="hidden" name="hosted_button_id" value="SC7E9NRCWHGTL">
+                <input type="hidden" name="hcustom" value="{{domian.name}}">
+                <button type="submit" class="btn btn-danger btn-small" >
+                <i class="fa fa-envelope fa-lg" style="margin-right:10px;"></i>Subscribe to {{object.domain_title}} bugs</button>
+            </form>
         </div>
         <div class="col-lg-3 col-md-6">
             <div class="panel"  style="background-color:white">
@@ -106,33 +106,59 @@
                     </a>
                 </div>
             </div>
-          <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr"  method="post">
-              <input type="hidden" name="cmd" value="_xclick">
-              <input type="hidden" name="business" value="coderbounty@gmail.com">
-              <input type="hidden" name="item_name" value="tip for {{object.user.username}} on bugheist.com bug # {{object.id}}">
-              <input type="hidden" name="currency_code" value="USD">
-              <button type="submit" class="btn btn-danger btn-small pull-right" >
+            <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr"  method="post">
+                <input type="hidden" name="cmd" value="_xclick">
+                <input type="hidden" name="business" value="coderbounty@gmail.com">
+                <input type="hidden" name="item_name" value="tip for {{object.user.username}} on bugheist.com bug # {{object.id}}">
+                <input type="hidden" name="currency_code" value="USD">
+                <button type="submit" class="btn btn-danger btn-small pull-right" >
                 <i class="fa fa-money fa-lg" style="margin-right:5px;"></i> send a tip</button>
-          </form>
-            
+            </form>
+        </div>
+        <div class="col-lg-3 col-md-6" >
+            <div class="panel "  style="background-color: {% if object.status == "closed" %}#bd2c00{% else %}#6cc644;{% endif %}">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-xs-3">
+                            <svg width="75px" height="75px" viewBox="0 0 14 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                                <g id="Octicons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                    <g id="issue-opened" fill="#ffffff">
+                                    {% if object.status == "closed" %}
+                                        <path d="M7,10 L9,10 L9,12 L7,12 L7,10 L7,10 Z M9,4 L7,4 L7,9 L9,9 L9,4 L9,4 Z M10.5,5.5 L9.5,6.5 L12,9 L16,4.5 L15,3.5 L12,7 L10.5,5.5 L10.5,5.5 Z M8,13.7 C4.86,13.7 2.3,11.14 2.3,8 C2.3,4.86 4.86,2.3 8,2.3 C9.83,2.3 11.45,3.18 12.5,4.5 L13.42,3.58 C12.14,2 10.19,1 8,1 C4.14,1 1,4.14 1,8 C1,11.86 4.14,15 8,15 C11.86,15 15,11.86 15,8 L13.48,9.52 C12.82,11.93 10.62,13.71 8,13.71 L8,13.7 Z" id="Shape"></path>
+                                    {% else %}
+                                        <path d="M7,2.3 C10.14,2.3 12.7,4.86 12.7,8 C12.7,11.14 10.14,13.7 7,13.7 C3.86,13.7 1.3,11.14 1.3,8 C1.3,4.86 3.86,2.3 7,2.3 L7,2.3 Z M7,1 C3.14,1 0,4.14 0,8 C0,11.86 3.14,15 7,15 C10.86,15 14,11.86 14,8 C14,4.14 10.86,1 7,1 L7,1 Z M8,4 L6,4 L6,9 L8,9 L8,4 L8,4 Z M8,10 L6,10 L6,12 L8,12 L8,10 L8,10 Z" id="Shape"></path>
+                                    {% endif %}
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="col-xs-9 text-right">
+                        <div class="huge" style="color:white;">{{object.status|default:"open"|title}}</div>
+                        <form action="/update/" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="id" value="{{issue.id}}">
+                        <input type="hidden" name="action" value="{% if object.status == "closed" %}open{% else %}close{% endif %}">
+                        <button type="submit" class="btn btn-xs pull-right" >{% if object.status == "closed" %}Open{% else %}Close{% endif %} Issue</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <div class="row">
-            <div class="col-lg-12">
-                Screenshot:
-                <hr>
-                <img src="{{object.screenshot.url}}" style=" border: 1px solid #d43f3a;">
-                <hr>
-            </div>
-
-            <div class="col-lg-12">
-                OCR Results:
-                <hr>
-                <div style=" border: 1px solid blue;">
+        <div class="col-lg-12">
+            Screenshot:
+            <hr>
+            <img src="{{object.screenshot.url}}" style=" border: 1px solid #d43f3a;">
+            <hr>
+        </div>
+        <div class="col-lg-12">
+            OCR Results:
+            <hr>
+            <div style=" border: 1px solid blue;">
                 {{object.get_ocr}}
-                </div>
-                <hr>
             </div>
-
+            <hr>
+        </div>
     </div>
 {% endblock %}

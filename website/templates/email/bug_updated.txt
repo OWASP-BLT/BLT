@@ -1,0 +1,11 @@
+Dear {{name}},
+
+{{domain}} bug # {{id}} has been {{action}} by {{username}}
+
+You can see more info here:
+
+https://www.bugheist.com/issue/{{id}}
+
+Best,
+
+The Bugheist Team
