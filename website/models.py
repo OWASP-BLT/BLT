@@ -15,6 +15,7 @@ from django.core.exceptions import ValidationError
 from unidecode import unidecode
 from django.core.files.base import ContentFile
 import requests
+from PIL import Image
 
 class Domain(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -77,6 +78,7 @@ class Issue(models.Model):
     domain = models.ForeignKey(Domain, null=True, blank=True)
     url = models.URLField()
     description = models.TextField()
+    ocr = models.TextField(default="", null=True, blank=True)
     screenshot = models.ImageField(upload_to="screenshots", validators=[validate_image])
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
@@ -109,6 +111,16 @@ class Issue(models.Model):
         spacer = " | "
         msg =  prefix + self.domain_title + spacer + self.description[:140-(len(prefix)+len(self.domain_title)+len(spacer)+len(issue_link))] + issue_link
         return msg
+
+    def get_ocr(self):
+        if self.ocr:
+            return self.ocr
+        else:
+            import pytesseract
+            self.ocr = pytesseract.image_to_string(Image.open(self.screenshot))
+            self.save()
+            return self.ocr
+
 
     @property
     def get_absolute_url(self):
