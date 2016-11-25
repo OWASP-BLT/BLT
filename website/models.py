@@ -79,6 +79,7 @@ class Issue(models.Model):
     url = models.URLField()
     description = models.TextField()
     status = models.CharField(max_length=10, default="open", null=True, blank=True)
+    user_agent = models.CharField(max_length=255, default="", null=True, blank=True)
     ocr = models.TextField(default="", null=True, blank=True)
     screenshot = models.ImageField(upload_to="screenshots", validators=[validate_image])
     created = models.DateTimeField(auto_now_add=True)
