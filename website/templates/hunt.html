@@ -20,7 +20,7 @@
                             <span style="color:#DD4351; margin-left:170px;">* login required</span>
                         {% endif %}
                     </label>
-                    <input class="form-control required" placeholder="Website URL.  e.g.  http://example.com" name="url" value="{{form.url.value|default:""}}">
+                    <input class="form-control required url" placeholder="Website URL.  e.g.  http://example.com" name="url" value="{{form.url.value|default:""}}">
                     {% if form.url.errors %}
                     <label id="url-error" class="error" for="url">{{form.url.errors}}</label>
                     {% endif %}
@@ -41,12 +41,12 @@
                         <input class="slider" style="width:100%"
                         type="text"
                         name="prize"
-                        value="100"
+                        value="{{form.prize.value|default:'100'}}"
                         data-provide="slider"
                         data-slider-min="100"
                         data-slider-max="10000"
                         data-slider-step="100"
-                        data-slider-value="100">
+                        data-slider-value="{{form.prize.value|default:'100'}}">
                     </div>{{form.prize.errors}}
                 </div>
             </div>
