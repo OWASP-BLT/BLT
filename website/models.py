@@ -64,9 +64,8 @@ class Domain(models.Model):
             domain = temp[1] + '.' + temp[2]
         return domain
 
-    @property
     def get_absolute_url(self):
-        return "/domain/" + str(self.domain_name)
+        return "/domain/" + self.name
 
 def validate_image(fieldfile_obj):
         filesize = fieldfile_obj.file.size
