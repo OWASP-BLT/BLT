@@ -117,10 +117,13 @@ class Issue(models.Model):
         if self.ocr:
             return self.ocr
         else:
-            import pytesseract
-            self.ocr = pytesseract.image_to_string(Image.open(self.screenshot))
-            self.save()
-            return self.ocr
+            try:
+                import pytesseract
+                self.ocr = pytesseract.image_to_string(Image.open(self.screenshot))
+                self.save()
+                return self.ocr
+            except:
+                return "OCR not installed"
 
 
     @property
