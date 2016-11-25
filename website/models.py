@@ -23,6 +23,7 @@ class Domain(models.Model):
     logo = models.ImageField(upload_to="logos", null=True, blank=True)
     webshot = models.ImageField(upload_to="webshots", null=True, blank=True)
     clicks = models.IntegerField(null=True, blank=True)
+    email_event = models.CharField(max_length=255, default="", null=True, blank=True)
     color = models.CharField(max_length=10, null=True, blank=True)
     github = models.CharField(max_length=255, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)

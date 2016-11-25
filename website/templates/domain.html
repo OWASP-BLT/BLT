@@ -34,7 +34,9 @@
                             
                             <div class="col-xs-9 text-right">
                                 <div class="huge">{{ domain.email|obfuscate_mailto  }}</div>
-                                <div>Email clicks: {{domain.clicks|default:"0"}}</div>
+                                {% if domain.email_event %}
+                                <div>Last email {{domain.email_event|default:""}} {{domain.modified|timesince }} ago | Clicks {{domain.clicks|default:"0"}}</div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
