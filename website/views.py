@@ -393,3 +393,41 @@ class InboundParseWebhookView(View):
                 pass
 
         return JsonResponse({'detail': 'Inbound Sendgrid Webhook recieved'})
+
+class UpdateIssue(View):
+    def post(self, request, *args, **kwargs):
+        issue = Issue.objects.get(id=request.POST.get('id'))
+        if request.POST.get('action') == "close":
+            messages.success(self.request, 'Issue Closed')
+            issue.status = "closed"
+            msg_plain = msg_html = render_to_string('email/bug_updated.txt', {
+                'domain': issue.domain.name,
+                'name':issue.user.username,
+                'id':issue.id,
+                'username':request.user.username,
+                'action':"closed",
+                })
+            subject = issue.domain.name + ' bug # ' + str(issue.id) + ' closed by ' + request.user.username
+            email_to = issue.user.email
+
+        elif request.POST.get('action') == "open":
+            messages.success(self.request, 'Issue Opened')
+            issue.status = "open"
+            msg_plain = msg_html = render_to_string('email/bug_updated.txt', {
+                'domain': issue.domain.name,
+                'name':issue.domain.email.split("@")[0],
+                'id':issue.id,
+                'username':request.user.username,
+                'action':"opened",
+                })
+            subject = issue.domain.name + ' bug # ' + str(issue.id) + ' opened by ' + request.user.username
+            email_to = issue.user.email
+        send_mail(
+            subject,
+            msg_plain,
+            'Bugheist <support@bugheist.com>',
+            [email_to],
+            html_message=msg_html,
+        )
+        issue.save()
+        return HttpResponseRedirect(issue.get_absolute_url) 
