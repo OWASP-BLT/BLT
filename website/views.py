@@ -104,10 +104,10 @@ class IssueCreate(CreateView):
             django_file = File(reopen)
             domain.webshot.save(parsed_url.path +'.png', django_file, save=True)
 
-            if self.request.user.is_authenticated():
-                p = Points.objects.create(user=self.request.user,domain=domain,score=1)
-                action.send(self.request.user, verb='added domain', target=domain)
-                messages.success(self.request, 'Domain added! + 1')
+            # if self.request.user.is_authenticated():
+            #     p = Points.objects.create(user=self.request.user,domain=domain,score=1)
+            #     action.send(self.request.user, verb='added domain', target=domain)
+            #     messages.success(self.request, 'Domain added! + 1')
 
             email_to = get_email_from_domain(parsed_url.path)
             if not email_to:
@@ -129,7 +129,13 @@ class IssueCreate(CreateView):
             )
         else:
             email_to = domain.email
-            name = email_to.split("@")[0]
+            try:
+                name = email_to.split("@")[0]
+            except:
+                email_to = "support@"+domain.name
+                name = "support"
+                domain.email = email_to
+                domain.save()
 
             msg_plain = render_to_string('email/bug_added.txt', {
                 'domain': domain.name,
