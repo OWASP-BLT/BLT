@@ -107,7 +107,7 @@ class Issue(models.Model):
         return domain
 
     def get_twitter_message(self):
-        issue_link = " http://bugheist.com/issue/"+str(self.id)
+        issue_link = " bugheist.com/issue/"+str(self.id)
         prefix = "Bug found on @"
         spacer = " | "
         msg =  prefix + self.domain_title + spacer + self.description[:140-(len(prefix)+len(self.domain_title)+len(spacer)+len(issue_link))] + issue_link
