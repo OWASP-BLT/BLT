@@ -384,7 +384,7 @@ class InboundParseWebhookView(View):
         data = request.body
         for event in json.loads(data):
             try:
-                domain = Domain.objects.get(email=event.get('email'))
+                domain = Domain.objects.get(email__iexact=event.get('email'))
                 domain.email_event = event.get('event')
                 if event.get('event') == "click":
                     domain.clicks = int(domain.clicks or 0) + 1
