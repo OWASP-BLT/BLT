@@ -12,12 +12,7 @@
                     <div class="panel-heading">
                         <div class="row">
                             <div class="col-xs-3">
-                                {% if domain.logo %}
-                                    <img src="{{domain.logo}}" height="75">
-                                    
-                                {% else %}
-                                    <img src="http://{{domain}}/favicon.ico" height="75" onerror="this.onerror=null; this.style.display ='none';">
-                                {% endif %}
+                                <img src="{{domain.get_logo}}" height="75">
                             </div>
                             
                             <div class="col-xs-9 text-right">

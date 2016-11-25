@@ -13,6 +13,8 @@ import tempfile
 from django.core.files.storage import default_storage
 from django.core.exceptions import ValidationError
 from unidecode import unidecode
+from django.core.files.base import ContentFile
+import requests
 
 class Domain(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -36,6 +38,15 @@ class Domain(models.Model):
     def get_name(self):
         parsed_url = urlparse(self.url)
         return parsed_url.netloc.split(".")[-2:][0].title()
+
+    @property
+    def get_logo(self):
+        if self.logo:
+            return self.logo.url
+        else:
+            image_content = ContentFile(requests.get("https://logo.clearbit.com/"+self.name).content)
+            self.logo.save(self.name +".jpg", image_content)
+            return self.logo.url
 
     @property
     def hostname_domain(self):

@@ -11,17 +11,8 @@
     .ds-btn li a span small{width:100%; display:inline-block; text-align:left;}
     </style>
     <div class="row">
-        <div class="col-lg-6">
+        <div class="col-lg-12">
             <h1 class="page-header">Win points for reporting bugs on any website!</h1>
-        </div>
-        <div class="col-lg-6">
-            <h1 class="page-header">
-            {% if messages %}
-                {% for message in messages %}
-                    {{ message }}
-                {% endfor %}
-            {% endif %}&nbsp;
-            </h1>
         </div>
     </div>
     <div class="row">
@@ -97,17 +88,6 @@
         </div>
         
         <div class="col-lg-6">
-        <!--
-            <div class="col-lg-6" style="margin-bottom:20px;">
-                <div class="form-group">
-                    <form role="form" action="/add_domain/" method="get">
-                        <label>Search domains (+1 point for adding new)</label>
-                        <input class="form-control" style="float:left;display:inline-block;width:200px;" placeholder="www.testsite.com" name="domain" value="{{request.GET.domain}}">
-                        <button class="btn btn-default btn-caution" style="float:right; display:inline-block;"  >Search</button>
-                    </form>
-                </div>
-            </div>
-            -->
             <center>
             <span id="video_span">
                 <iframe width="560" height="315" id="video_iframe" src="https://www.youtube.com/embed/o-t6HDXjpP8?rel=0&amp;controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
