@@ -35,6 +35,7 @@ from collections import deque
 import re
 import os
 import json
+from user_agents import parse
 
 
 registry.register(User)
@@ -82,7 +83,7 @@ class IssueCreate(CreateView):
             reopen = default_storage.open('uploads\/'+ self.request.POST.get('screenshot-hash') +'.png', 'rb')
             django_file = File(reopen)
             obj.screenshot.save(self.request.POST.get('screenshot-hash') +'.png', django_file, save=True)
-            
+        obj.user_agent = self.request.META.get('HTTP_USER_AGENT')    
         obj.save()
         p = Points.objects.create(user=self.request.user,issue=obj,score=score)
         action.send(self.request.user, verb='found a bug on website', target=obj)
@@ -325,6 +326,12 @@ class IssueView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(IssueView, self).get_context_data(**kwargs)
+        if self.object.user_agent:
+            user_agent = parse(self.object.user_agent)
+            context['browser_family'] = user_agent.browser.family
+            context['browser_version'] = user_agent.browser.version_string   
+            context['os_family'] = user_agent.os.family
+            context['os_version'] = user_agent.os.version_string   
         context['users_score'] = Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
         context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         return context
