@@ -203,6 +203,14 @@
             <div class="panel panel-default">
                 <div class="panel-heading">
                     {% now "F" %} Leaderboard
+            <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr"  method="post" style="display:inline;">
+              <input type="hidden" name="cmd" value="_xclick">
+              <input type="hidden" name="business" value="coderbounty@gmail.com">
+              <input type="hidden" name="item_name" value="Sponsor a Prize for the {% now "F" %} Leaderboard on Bugheist">
+              <input type="hidden" name="currency_code" value="USD">
+              <button type="submit" class="btn btn-danger btn-xs pull-right" >
+                <i class="fa fa-money" style="margin-right:5px;"></i> Sponsor a Prize</button>
+          </form>
                 </div>
                 <div class="panel-body">
                     <div class="list-group">
