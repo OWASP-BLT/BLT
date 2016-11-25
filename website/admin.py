@@ -11,7 +11,7 @@ class HuntAdmin(admin.ModelAdmin):
     list_display = ('user','url','prize','logo','plan','created','modified')
 
 class DomainAdmin(admin.ModelAdmin):
-    list_display = ('name','url','logo','clicks','color','email','twitter','facebook','created','modified')
+    list_display = ('name','url','logo','clicks','color','email','email_event','twitter','facebook','created','modified')
 
 class PointsAdmin(admin.ModelAdmin):
     list_display = ('user','issue','domain','score','created','modified')
