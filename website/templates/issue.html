@@ -102,13 +102,19 @@
         </div>
     </div>
     <div class="row">
-        {% if object.screenshot %}
             <div class="col-lg-12">
                 Screenshot:
                 <hr>
                 <img src="{{object.screenshot.url}}" style=" border: 1px solid #d43f3a;">
                 <hr>
             </div>
-        {% endif %}
+
+            <div class="col-lg-12">
+                OCR Results:
+                <hr>
+                <img src="{{object.get_ocr}}" style=" border: 1px solid blue;">
+                <hr>
+            </div>
+
     </div>
 {% endblock %}
