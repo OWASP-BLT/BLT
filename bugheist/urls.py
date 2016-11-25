@@ -2,10 +2,11 @@ from django.conf.urls import include, url, patterns
 from django.conf import settings
 from django.contrib import admin
 from django.views.generic import TemplateView
-from website.views import UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView, LeaderboardView, IssueView, AllIssuesView, HuntCreate, DomainDetailView, StatsDetailView, InviteCreate
+from website.views import UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView, InboundParseWebhookView, LeaderboardView, IssueView, AllIssuesView, HuntCreate, DomainDetailView, StatsDetailView, InviteCreate
 from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView
 from django.conf.urls.static import static
+from django.views.decorators.csrf import csrf_exempt
 
 favicon_view = RedirectView.as_view(url='/static/favicon.ico', permanent=True)
 
@@ -37,6 +38,7 @@ urlpatterns = patterns('',
     url(r'^terms/$', TemplateView.as_view(template_name="terms.html")),
     url(r'^stats/$', StatsDetailView.as_view()),
     url(r'^favicon\.ico$', favicon_view),
+    url(r'^sendgrid_webhook/$', csrf_exempt(InboundParseWebhookView.as_view()), name='inbound_event_webhook_callback'),
 
 ) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
