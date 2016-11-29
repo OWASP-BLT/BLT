@@ -2,6 +2,7 @@ BeautifulSoup==3.2.1
 beautifulsoup4==4.5.1
 boto==2.42.0
 bs4==0.0.1
+diff-match-patch==20121119
 dj-database-url==0.4.0
 Django==1.9.2
 django-activity-stream==0.6.3
@@ -9,6 +10,7 @@ django-allauth==0.27.0
 django-cors-headers==1.1.0
 django-email-obfuscator==0.1.4
 django-gravatar2==1.4.0
+django-import-export==0.5.1
 django-screamshot==0.6.0
 django-storages==1.5.0
 django-timedeltafield==0.7.10
@@ -27,6 +29,7 @@ requests-oauthlib==0.6.2
 rollbar==0.13.3
 selenium==2.53.6
 six==1.10.0
+tablib==0.11.2
 tweepy==3.5.0
 ua-parser==0.7.2
 Unidecode==0.4.19

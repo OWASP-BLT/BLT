@@ -52,6 +52,7 @@ INSTALLED_APPS = (
     'actstream',
     'django_gravatar',
     'email_obfuscator',
+    'import_export',
 )
 
 MIDDLEWARE_CLASSES = (
