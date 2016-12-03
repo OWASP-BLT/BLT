@@ -3,6 +3,7 @@ from django.contrib import admin
 from website.models import Issue, Points, Hunt, Domain
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin
+from django.template.defaultfilters import truncatechars
 
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
@@ -28,7 +29,9 @@ class DomainAdmin(ImportExportModelAdmin):
     list_display = ('name','url','logo','clicks','color','email','email_event','twitter','facebook','created','modified')
 
 class PointsAdmin(admin.ModelAdmin):
-    list_display = ('user','issue','domain','score','created','modified')
+    list_display = ('user','short_description','domain','score','created','modified')
+    def short_description(self, obj):
+        return truncatechars(obj.issue, 100)
 
 admin.site.unregister(User)
 

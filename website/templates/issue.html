@@ -147,7 +147,7 @@
                                 {% with 'img/browser-logos/'|add:browser_family|add:'/'|add:browser_family|add:'_64x64.png'|lower as image_static %}
 
                                 <img src="{% static image_static %}"> {{browser_version}}
-                                {% endwith %}
+                            {% endwith %}
                             </div>
                         
                             <div class="small">{{os_family}} {{os_version}}</div>
