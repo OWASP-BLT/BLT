@@ -25,7 +25,7 @@ class Command(BaseCommand):
                     'responsive': Domain.objects.filter(email_event__in=['open', 'delivered','click']).order_by('-modified')[:3],
                     'closed_issues': Domain.objects.filter(issue__status="closed").annotate(count=Count('issue')).order_by('-count')[:3],
                     'open_issues': Domain.objects.exclude(issue__status="closed").annotate(count=Count('issue')).order_by('-count')[:3],
-                    'most_viewed': Issue.objects.all().order_by('-views')[:3],
+                    'most_viewed': Issue.objects.filter(views__gte=0).order_by('-views')[:3],
                     })
 
             result_list = sorted(
