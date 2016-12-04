@@ -19,13 +19,14 @@ class Command(BaseCommand):
             lastMonth = first - datetime.timedelta(days=1)
 
             subject = 'Bugheist ' + lastMonth.strftime("%B") + ' summary'
+            for issue in Issue.objects.all().order_by('-views')[:3]:
             msg_plain = msg_html = render_to_string('email/bug_summary.txt', {
                     'month': lastMonth.strftime("%B"),
                     'leaderboard': User.objects.filter(points__created__month=lastMonth.strftime("%m")).annotate(total_score=Sum('points__score')).order_by('-total_score')[:5],
                     'responsive': Domain.objects.filter(email_event__in=['open', 'delivered','click']).order_by('-modified')[:3],
                     'closed_issues': Domain.objects.filter(issue__status="closed").annotate(count=Count('issue')).order_by('-count')[:3],
                     'open_issues': Domain.objects.exclude(issue__status="closed").annotate(count=Count('issue')).order_by('-count')[:3],
-                    'most_viewed': Issue.objects.all().order_by('views')[:3],
+                    'most_viewed': Issue.objects.all().order_by('-views')[:3],
                     })
 
             result_list = sorted(
