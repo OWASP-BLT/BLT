@@ -9,7 +9,7 @@ The leaderboard has been reset, go forth and find bugs!<br>
 <br>
 <br>
 [[[ Sponsor the Leaderboard ]]]<br>
-http://bugheist.com/ (click sponsor on the leaderboard)<br>
+http://bugheist.com/ (click "Sponsor a Prize" on the leaderboard)<br>
 <br>
 Website Stats:<br>
 --------------<br>
@@ -33,7 +33,7 @@ Bug Stats:<br>
 <br>
 Most Viewed:<br>
 {% for issue in most_viewed %}
-{{ issue.domain }} - {{issue.description|truncatewords:20}} (viewed {{issue.views:default:"0"}} times)<br>{% endfor %}
+{{ issue.domain }} - {{issue.description|truncatewords:20}} (viewed {{issue.views|default:"0"}} times)<br>{% endfor %}
 <br>
 Keep your website bug free<br>
 [[[ Sponsor a Bug Hunt Today ]]]<br>
