@@ -19,7 +19,6 @@ class Command(BaseCommand):
             lastMonth = first - datetime.timedelta(days=1)
 
             subject = 'Bugheist ' + lastMonth.strftime("%B") + ' summary'
-            for issue in Issue.objects.all().order_by('-views')[:3]:
             msg_plain = msg_html = render_to_string('email/bug_summary.txt', {
                     'month': lastMonth.strftime("%B"),
                     'leaderboard': User.objects.filter(points__created__month=lastMonth.strftime("%m")).annotate(total_score=Sum('points__score')).order_by('-total_score')[:5],
