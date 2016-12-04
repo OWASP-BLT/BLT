@@ -43,5 +43,5 @@ class Command(BaseCommand):
                                 msg_plain,
                                 'Bugheist <support@bugheist.com>',
                                 [user.email],
-                                #html_message=msg_html,
+                                html_message=msg_html,
                             )
