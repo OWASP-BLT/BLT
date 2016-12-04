@@ -1,0 +1,47 @@
+from django.core.management.base import BaseCommand, CommandError
+from website.models import Points, Domain, Issue
+from django.contrib.auth.models import User
+import datetime
+from django.template.loader import render_to_string
+from django.db.models import Sum, Count
+from itertools import chain
+from itertools import groupby
+from operator import attrgetter
+from django.core.mail import send_mail
+
+class Command(BaseCommand):
+    help = 'Monthly Email'
+
+    def handle(self, *args, **options):
+        today = datetime.date.today()
+        if today.day == 4:
+            first = today.replace(day=1)
+            lastMonth = first - datetime.timedelta(days=1)
+
+            subject = 'Bugheist ' + lastMonth.strftime("%B") + ' summary'
+            msg_plain = msg_html = render_to_string('email/bug_summary.txt', {
+                    'month': lastMonth.strftime("%B"),
+                    'leaderboard': User.objects.filter(points__created__month=lastMonth.strftime("%m")).annotate(total_score=Sum('points__score')).order_by('-total_score')[:5],
+                    'responsive': Domain.objects.filter(email_event__in=['open', 'delivered','click']).order_by('-modified'),
+                    'closed_issues': Domain.objects.filter(issue__status="closed").annotate(count=Count('issue')).order_by('-count')[:3],
+                    'open_issues': Domain.objects.exclude(issue__status="closed").annotate(count=Count('issue')).order_by('-count')[:3],
+                    'most_viewed': Issue.objects.all().order_by('-views')[:3],
+                    })
+
+            result_list = sorted(
+                chain(User.objects.all(), Domain.objects.all()),
+                key=attrgetter('email'))
+
+            unique_results = [rows.next() for (key, rows) in groupby(result_list, key=lambda obj: obj.email)]
+
+            for user in unique_results:
+                if user.email:
+                    if user.email == "sean@alphaonelabs.com":
+                            print user.email
+                            send_mail(
+                                subject,
+                                msg_plain,
+                                'Bugheist <support@bugheist.com>',
+                                [user.email],
+                                html_message=msg_html,
+                            )

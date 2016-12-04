@@ -319,6 +319,8 @@ class IssueView(DetailView):
     def get(self, request, *args, **kwargs):
         try:
             self.object = self.get_object()
+            self.object.views = (self.object.views or 0) + 1
+            self.object.save()
         except:
             messages.error(self.request, 'That issue was not found.')
             return redirect("/")

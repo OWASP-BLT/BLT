@@ -78,6 +78,7 @@ class Issue(models.Model):
     domain = models.ForeignKey(Domain, null=True, blank=True)
     url = models.URLField()
     description = models.TextField()
+    views = models.IntegerField(null=True, blank=True)
     status = models.CharField(max_length=10, default="open", null=True, blank=True)
     user_agent = models.CharField(max_length=255, default="", null=True, blank=True)
     ocr = models.TextField(default="", null=True, blank=True)
