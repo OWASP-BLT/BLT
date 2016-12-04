@@ -1,0 +1,40 @@
+{% load humanize %}
+Bugheist {{month}} Summary
+
+The leaderboard has been reset, go forth and find bugs!
+
+{{month}}'s Top 5 Bug Hunters
+{% for leader in leaderboard %}
+{{forloop.counter|ordinal}} Place - {{leader.username}} ({{leader.total_score}} points){% endfor %}
+
+
+[[[ Sponsor the Leaderboard ]]]
+http://bugheist.com/ (click sponsor on the leaderboard)
+
+Website Stats:
+--------------
+
+Most Responsive:
+{% for domain in responsive %}
+{{ domain.url }} - {{domain.modified|timesince}} ago{% endfor %}
+
+
+Most Closed:
+{% for domain in closed_issues %}
+{{ domain.url }} - {{domain.count}} closed bugs{% endfor %}
+
+
+Most Open:
+{% for domain in open_issues %}
+{{ domain.url }} - {{domain.count}} closed bugs{% endfor %} 
+
+Bug Stats:
+----------
+
+Most Viewed:
+{% for issue in most_viewed %}
+{{ issue.domain }} - {{issue.description|truncatewords:20}} (viewed {{issue.views}} times){% endfor %}
+
+Keep your website bug free
+[[[ Sponsor a Bug Hunt ]]]
+http://bugheist.com/hunt
