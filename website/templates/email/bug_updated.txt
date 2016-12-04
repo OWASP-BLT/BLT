@@ -1,11 +1,11 @@
-Dear {{name}},
-
-{{domain}} bug # {{id}} has been {{action}} by {{username}}
-
-You can see more info here:
-
-https://www.bugheist.com/issue/{{id}}
-
-Best,
-
-The Bugheist Team
+Dear {{name}},</br>
+</br>
+{{domain}} bug # {{id}} has been {{action}} by {{username}}</br>
+</br>
+You can see more info here:</br>
+</br>
+https://www.bugheist.com/issue/{{id}}</br>
+</br>
+Best,</br>
+</br>
+The Bugheist Team</br>

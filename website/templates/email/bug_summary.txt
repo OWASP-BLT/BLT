@@ -1,40 +1,40 @@
 {% load humanize %}
-Bugheist {{month}} Summary
-
-The leaderboard has been reset, go forth and find bugs!
-
-{{month}}'s Top 5 Bug Hunters
+Bugheist {{month}} Summary</br>
+</br>
+The leaderboard has been reset, go forth and find bugs!</br>
+</br>
+{{month}}'s Top 5 Bug Hunters</br>
 {% for leader in leaderboard %}
-{{forloop.counter|ordinal}} Place - {{leader.username}} ({{leader.total_score}} points){% endfor %}
-
-
-[[[ Sponsor the Leaderboard ]]]
-http://bugheist.com/ (click sponsor on the leaderboard)
-
-Website Stats:
---------------
-
-Most Responsive:
+{{forloop.counter|ordinal}} Place - {{leader.username}} ({{leader.total_score}} points)</br>{% endfor %}
+</br>
+</br>
+[[[ Sponsor the Leaderboard ]]]</br>
+http://bugheist.com/ (click sponsor on the leaderboard)</br>
+</br>
+Website Stats:</br>
+--------------</br>
+</br>
+Most Responsive:</br>
 {% for domain in responsive %}
-{{ domain.url }} - {{domain.modified|timesince}} ago{% endfor %}
-
-
-Most Closed:
-{% for domain in closed_issues %}
-{{ domain.url }} - {{domain.count}} closed bugs{% endfor %}
-
-
-Most Open:
+{{ domain.url }} - {{domain.modified|timesince}} ago</br>{% endfor %}
+</br>
+</br>
+Most Closed:</br>
+{% for domain in closed_issues %}</br>
+{{ domain.url }} - {{domain.count}} closed bugs</br>{% endfor %}
+</br>
+</br>
+Most Open:</br>
 {% for domain in open_issues %}
-{{ domain.url }} - {{domain.count}} closed bugs{% endfor %} 
-
-Bug Stats:
-----------
-
-Most Viewed:
-{% for issue in most_viewed %}
-{{ issue.domain }} - {{issue.description|truncatewords:20}} (viewed {{issue.views}} times){% endfor %}
-
-Keep your website bug free
-[[[ Sponsor a Bug Hunt ]]]
-http://bugheist.com/hunt
+{{ domain.url }} - {{domain.count}} closed bugs</br>{% endfor %} 
+</br>
+Bug Stats:</br>
+----------</br>
+</br>
+Most Viewed:</br>
+{% for issue in most_viewed %}</br>
+{{ issue.domain }} - {{issue.description|truncatewords:20}} (viewed {{issue.views}} times)</br>{% endfor %}
+</br>
+Keep your website bug free</br>
+[[[ Sponsor a Bug Hunt ]]]</br>
+http://bugheist.com/hunt</br>

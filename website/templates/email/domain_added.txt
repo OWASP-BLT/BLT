@@ -1,13 +1,13 @@
-Dear {{name}},
-
-Your site {{domain}} has been added to Bugheist and you have been added as the primary contact. Bugheist allows anyone to find bugs on the internet and get points for reporting them.
-
-We'd love to feature your website on our homepage to attract more testers.
-
-Feel free to signup to one of our plans:
-
-https://www.bugheist.com/start/
-
-Best,
-
-The Bugheist Team
+Dear {{name}},</br>
+</br>
+Your site {{domain}} has been added to Bugheist and you have been added as the primary contact. Bugheist allows anyone to find bugs on the internet and get points for reporting them.</br>
+</br>
+We'd love to feature your website on our homepage to attract more testers.</br>
+</br>
+Feel free to signup to one of our plans:</br>
+</br>
+https://www.bugheist.com/start/</br>
+</br>
+Best,</br>
+</br>
+The Bugheist Team</br>
