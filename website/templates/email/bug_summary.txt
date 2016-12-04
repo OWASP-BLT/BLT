@@ -20,21 +20,21 @@ Most Responsive:<br>
 <br>
 <br>
 Most Closed:<br>
-{% for domain in closed_issues %}<br>
+{% for domain in closed_issues %}
 {{ domain.url }} - {{domain.count}} closed bugs<br>{% endfor %}
 <br>
 <br>
 Most Open:<br>
 {% for domain in open_issues %}
-{{ domain.url }} - {{domain.count}} closed bugs<br>{% endfor %} 
+{{ domain.url }} - {{domain.count}} opened bugs<br>{% endfor %} 
 <br>
 Bug Stats:<br>
 ----------<br>
 <br>
 Most Viewed:<br>
-{% for issue in most_viewed %}<br>
-{{ issue.domain }} - {{issue.description|truncatewords:20}} (viewed {{issue.views}} times)<br>{% endfor %}
+{% for issue in most_viewed %}
+{{ issue.domain }} - {{issue.description|truncatewords:20}} (viewed {{issue.views:default:"0"}} times)<br>{% endfor %}
 <br>
 Keep your website bug free<br>
-[[[ Sponsor a Bug Hunt ]]]<br>
+[[[ Sponsor a Bug Hunt Today ]]]<br>
 http://bugheist.com/hunt<br>
