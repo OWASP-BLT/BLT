@@ -1,15 +1,15 @@
-Dear {{name}},</br>
-</br>
-A bug has been found on {{domain}} by {{username}}</br>
-</br>
-You can see more info here:</br>
-</br>
-https://www.bugheist.com/issue/{{id}}</br>
-</br>
-Feel free to signup to one of our plans:</br>
-</br>
-https://www.bugheist.com/start/</br>
-</br>
-Best,</br>
-</br>
-The Bugheist Team</br>
+Dear {{name}},<br>
+<br>
+A bug has been found on {{domain}} by {{username}}<br>
+<br>
+You can see more info here:<br>
+<br>
+https://www.bugheist.com/issue/{{id}}<br>
+<br>
+Feel free to signup to one of our plans:<br>
+<br>
+https://www.bugheist.com/start/<br>
+<br>
+Best,<br>
+<br>
+The Bugheist Team<br>
