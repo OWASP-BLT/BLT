@@ -14,7 +14,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         today = datetime.date.today()
-        if today.day == 4:
+        if today.day == 5:
             first = today.replace(day=1)
             lastMonth = first - datetime.timedelta(days=1)
 
@@ -36,7 +36,6 @@ class Command(BaseCommand):
 
             for user in unique_results:
                 if user.email:
-                    print user.email
                     if user.email == "sean@alphaonelabs.com":
                             print user.email
                             send_mail(
