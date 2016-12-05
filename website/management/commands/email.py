@@ -36,6 +36,7 @@ class Command(BaseCommand):
 
             for user in unique_results:
                 if user.email:
+                    print user.email
                     if user.email == "sean@alphaonelabs.com":
                             print user.email
                             send_mail(
