@@ -8,33 +8,31 @@ The leaderboard has been reset, go forth and find bugs!<br>
 {{forloop.counter|ordinal}} Place - {{leader.username}} ({{leader.total_score}} points)<br>{% endfor %}
 <br>
 <br>
-[[[ Sponsor the Leaderboard ]]]<br>
-http://bugheist.com/ (click "Sponsor a Prize" on the leaderboard)<br>
+<a href="http://bugheist.com/">[[[ Sponsor the Leaderboard ]]]</a><br>
+ (click "Sponsor a Prize" on the leaderboard)<br>
 <br>
-Website Stats:<br>
---------------<br>
+--- {{month}} Stats ---<br>
+
 <br>
-Most Responsive:<br>
+Most Responsive Domains:<br>
 {% for domain in responsive %}
 {{ domain.url }} - {{domain.modified|timesince}} ago<br>{% endfor %}
 <br>
 <br>
-Most Closed:<br>
+Most Closed Bugs:<br>
 {% for domain in closed_issues %}
 {{ domain.url }} - {{domain.count}} closed bugs<br>{% endfor %}
 <br>
 <br>
-Most Open:<br>
+Most Open Bugs:<br>
 {% for domain in open_issues %}
 {{ domain.url }} - {{domain.count}} opened bugs<br>{% endfor %} 
 <br>
-Bug Stats:<br>
-----------<br>
 <br>
-Most Viewed:<br>
+Most Viewed Bugs:<br>
 {% for issue in most_viewed %}
 {{ issue.domain }} - {{issue.description|truncatewords:20}} (viewed {{issue.views|default:"0"}} times)<br>{% endfor %}
 <br>
 Keep your website bug free<br>
-[[[ Sponsor a Bug Hunt Today ]]]<br>
+<a href="http://bugheist.com/hunt">[[[ Sponsor a Bug Hunt Today ]]]</a><br>
 http://bugheist.com/hunt<br>
