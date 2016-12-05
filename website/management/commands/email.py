@@ -36,12 +36,10 @@ class Command(BaseCommand):
 
             for user in unique_results:
                 if user.email:
-                    if user.email == "sean@alphaonelabs.com":
-                            print user.email
-                            send_mail(
-                                subject,
-                                msg_plain,
-                                'Bugheist <support@bugheist.com>',
-                                [user.email],
-                                html_message=msg_html,
-                            )
+                    send_mail(
+                        subject,
+                        msg_plain,
+                        'Bugheist <support@bugheist.com>',
+                        [user.email],
+                        html_message=msg_html,
+                    )
