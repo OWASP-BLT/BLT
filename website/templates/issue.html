@@ -45,7 +45,7 @@
                     <a class="fb-xfbml-parse-ignore" target="_blank" >Share</a>
                 </div>
             </div>
-            
+
             <hr>
         </div>
     </div>
@@ -142,14 +142,14 @@
                         <div class="row">
                         <div class="col-xs-3 text-left " >
                             {% if object.user_agent %}
-                            <div class="small"> 
+                            <div class="small">
 
                                 {% with 'img/browser-logos/'|add:browser_family|add:'/'|add:browser_family|add:'_64x64.png'|lower as image_static %}
 
                                 <img src="{% static image_static %}"> {{browser_version}}
                             {% endwith %}
                             </div>
-                        
+
                             <div class="small">{{os_family}} {{os_version}}</div>
                             {% endif %}
                         </div>
@@ -159,15 +159,24 @@
             <div class="col-xs-9 text-right">
                   {% if object.domain.github %}
                 {% if request.user.is_superuser or request.user == object.user %}
-                    <a href="{{object.domain.github}}/issues/new?title={{object.description|urlencode}}&body=![0]({{object.screenshot.url}})%20http://bugheist.com/issue/{{object.id}}" target="_new">
-                        <button type="button" class="btn btn-warning pull-right " style="margin-left:100px;">Add to Github</button>
-                    </a>
+                    <p>
+                        <a href="{{object.domain.github}}/issues/new?title={{object.description|urlencode}}&body=![0]({{object.screenshot.url}})%20http://bugheist.com/issue/{{object.id}}" target="_new">
+                            <button type="button" class="btn btn-warning" style="margin-left:100px;">Add to Github</button>
+                        </a>
+                    </p>
                 {% endif %}
             {% endif %}
             {% if request.user.is_superuser or request.user == object.user %}
-                <a href="/delete_issue/{{object.id}}" onclick="return confirm('Are you sure you want to delete this issue?')">
-                    <button type="button" class="btn btn-danger pull-right " >Delete</button>
-                </a>
+                <p>
+                    <a href="{% url 'issue_edit' issue.id %}">
+                        <button type="button" class="btn btn-default">Edit</button>
+                    </a>
+                </p>
+                <p>
+                    <a href="/delete_issue/{{object.id}}" onclick="return confirm('Are you sure you want to delete this issue?')">
+                        <button type="button" class="btn btn-danger">Delete</button>
+                    </a>
+                </p>
             {% endif %}
 
             </div>

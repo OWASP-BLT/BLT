@@ -2,7 +2,7 @@ from django.conf.urls import include, url, patterns
 from django.conf import settings
 from django.contrib import admin
 from django.views.generic import TemplateView
-from website.views import UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView, UpdateIssue, InboundParseWebhookView, LeaderboardView, IssueView, AllIssuesView, HuntCreate, DomainDetailView, StatsDetailView, InviteCreate
+from website.views import UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView, UpdateIssue, InboundParseWebhookView, LeaderboardView, IssueView, IssueEditView, AllIssuesView, HuntCreate, DomainDetailView, StatsDetailView, InviteCreate
 from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView
 from django.conf.urls.static import static
@@ -20,6 +20,7 @@ urlpatterns = patterns('',
     url(r'^$', website.views.index, name='index'),
     url(r'^' + settings.ADMIN_URL + '/', include(admin.site.urls)),
     url(r'^issue/(?P<slug>\w+)/$', IssueView.as_view(), name="issue_view"),
+    url(r'^issue/(?P<slug>\w+)/edit/$', IssueEditView.as_view(), name="issue_edit"),
     url(r'^all_activity/$', AllIssuesView.as_view(), name="all_activity"),
     url(r'^leaderboard/$', LeaderboardView.as_view(), name="leaderboard"),
     url(r'^issue/$', login_required(IssueCreate.as_view()), name="issue"),
@@ -30,7 +31,7 @@ urlpatterns = patterns('',
     url(r'^.well-known/acme-challenge/(?P<token>[^/]+)/$', website.views.find_key, name="find_key"),
     url(r'^accounts/profile/', website.views.profile),
     url(r'^delete_issue/(?P<id>\w+)/$', website.views.delete_issue),
-    url(r'^accounts/', include('allauth.urls')), 
+    url(r'^accounts/', include('allauth.urls')),
     url(r'^activity/', include('actstream.urls')),
     url(r'^start/$', TemplateView.as_view(template_name="hunt.html")),
     url(r'^hunt/$', login_required(HuntCreate.as_view()), name="hunt"),
