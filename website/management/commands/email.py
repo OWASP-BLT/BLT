@@ -14,7 +14,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         today = datetime.date.today()
-        if today.day == 5:
+        if today.day == 1:
             first = today.replace(day=1)
             lastMonth = first - datetime.timedelta(days=1)
 
