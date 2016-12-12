@@ -1,11 +1,10 @@
-from django.shortcuts import render
 from django.http import HttpResponse
-from django.views.generic import DetailView, TemplateView, ListView
+from django.views.generic import DetailView, TemplateView, ListView, UpdateView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.generic.edit import CreateView, FormView
 from django.contrib.auth import get_user_model
-from django.shortcuts import redirect, render_to_response, RequestContext
+from django.shortcuts import render, redirect, render_to_response, RequestContext, get_object_or_404
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.http import Http404
@@ -17,6 +16,7 @@ from django.http import JsonResponse
 from website.models import Issue, Points, Hunt, Domain
 from django.core.files import File
 from django.db.models import Sum, Count
+from django.core.urlresolvers import reverse
 from django.core.files.storage import default_storage
 from django.views.generic import View
 from django.core.files.base import ContentFile
@@ -36,6 +36,7 @@ import re
 import os
 import json
 from user_agents import parse
+from .forms import IssueEditForm
 
 
 registry.register(User)
@@ -83,13 +84,13 @@ class IssueCreate(CreateView):
             reopen = default_storage.open('uploads\/'+ self.request.POST.get('screenshot-hash') +'.png', 'rb')
             django_file = File(reopen)
             obj.screenshot.save(self.request.POST.get('screenshot-hash') +'.png', django_file, save=True)
-        obj.user_agent = self.request.META.get('HTTP_USER_AGENT')    
+        obj.user_agent = self.request.META.get('HTTP_USER_AGENT')
         obj.save()
         p = Points.objects.create(user=self.request.user,issue=obj,score=score)
         action.send(self.request.user, verb='found a bug on website', target=obj)
         messages.success(self.request, 'Bug added! +'+ str(score))
 
-    
+
         if created:
             from selenium import webdriver
             from pyvirtualdisplay import Display
@@ -156,8 +157,8 @@ class IssueCreate(CreateView):
                 'Bugheist <support@bugheist.com>',
                 [email_to],
                 html_message=msg_html,
-            )           
-        return HttpResponseRedirect("/") 
+            )
+        return HttpResponseRedirect("/")
 
     def get_context_data(self, **kwargs):
         context = super(IssueCreate, self).get_context_data(**kwargs)
@@ -178,7 +179,7 @@ class UploadCreate(View):
         result = default_storage.save("uploads\/" + self.kwargs['hash'] +'.png', ContentFile(data.read()))
         return JsonResponse({'status':result})
 
-       
+
 class InviteCreate(TemplateView):
     template_name = "invite.html"
 
@@ -187,7 +188,7 @@ class InviteCreate(TemplateView):
         exists = False
         domain = None
         if email:
-            domain = email.split("@")[-1] 
+            domain = email.split("@")[-1]
             try:
                 ret = urllib2.urlopen('http://' + domain + '/favicon.ico')
                 if ret.code == 200:
@@ -243,7 +244,7 @@ class DomainDetailView(TemplateView):
         context = super(DomainDetailView, self).get_context_data(*args, **kwargs)
         parsed_url = urlparse("http://"+self.kwargs['slug'])
         context['name'] = parsed_url.netloc.split(".")[-2:][0].title()
-        
+
         try:
             context['domain'] = Domain.objects.get(name=self.kwargs['slug'])
         except:
@@ -251,7 +252,7 @@ class DomainDetailView(TemplateView):
         context['issues'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug'])
         context['leaderboard'] = User.objects.filter(issue__url__contains=self.kwargs['slug']).annotate(total=Count('issue')).order_by('-total')
         return context
-        
+
 
 
 class StatsDetailView(TemplateView):
@@ -331,12 +332,45 @@ class IssueView(DetailView):
         if self.object.user_agent:
             user_agent = parse(self.object.user_agent)
             context['browser_family'] = user_agent.browser.family
-            context['browser_version'] = user_agent.browser.version_string   
+            context['browser_version'] = user_agent.browser.version_string
             context['os_family'] = user_agent.os.family
-            context['os_version'] = user_agent.os.version_string   
+            context['os_version'] = user_agent.os.version_string
         context['users_score'] = Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
         context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         return context
+
+
+class IssueEditView(UpdateView):
+    model = Issue
+    slug_field = "id"
+    template_name = "issue_edit.html"
+    form_class = IssueEditForm
+
+    def get_object(self):
+        if self.request.user.is_superuser:
+            issues = Issue.objects.all()
+        else:
+            issues = Issue.objects.filter(user=self.request.user)
+        return get_object_or_404(issues, pk=self.kwargs['slug'])
+
+    def get_success_url(self):
+        return reverse('issue_view', args=(self.object.id,))
+
+    def get_context_data(self, **kwargs):
+        context = super(IssueEditView, self).get_context_data(**kwargs)
+        if self.object.user_agent:
+            user_agent = parse(self.object.user_agent)
+            context['browser_family'] = user_agent.browser.family
+            context['browser_version'] = user_agent.browser.version_string
+            context['os_family'] = user_agent.os.family
+            context['os_version'] = user_agent.os.version_string
+        context['users_score'] = Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
+        context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain_name).count()
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Issue Updated')
+        return super(IssueEditView, self).form_valid(form)
 
 
 class EmailDetailView(TemplateView):
@@ -346,17 +380,17 @@ class EmailDetailView(TemplateView):
         context = super(EmailDetailView, self).get_context_data(*args, **kwargs)
         context['emails'] = get_email_from_domain(self.kwargs['slug'])
         return context
-        
- 
+
+
 def get_email_from_domain(domain_name):
         new_urls = deque(['http://'+domain_name])
         processed_urls = set()
         emails = set()
         emails_out = set()
         t_end = time.time() + 20
-         
+
         while len(new_urls) and time.time() < t_end:
-         
+
             url = new_urls.popleft()
             processed_urls.add(url)
             parts = urlsplit(url)
@@ -379,7 +413,7 @@ def get_email_from_domain(domain_name):
                     link = path + link
                 if not link in new_urls and not link in processed_urls and link.find(domain_name)>0:
                     new_urls.append(link)
-        
+
         for email in emails:
             if email.find(domain_name)>0:
                 emails_out.add(email)
@@ -439,4 +473,4 @@ class UpdateIssue(View):
             html_message=msg_html,
         )
         issue.save()
-        return HttpResponseRedirect(issue.get_absolute_url) 
+        return HttpResponseRedirect(issue.get_absolute_url)
