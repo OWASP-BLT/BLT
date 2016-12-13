@@ -17,6 +17,7 @@ from django.core.files.base import ContentFile
 import requests
 from PIL import Image
 
+
 class Domain(models.Model):
     name = models.CharField(max_length=255, unique=True)
     url = models.URLField()
@@ -31,7 +32,6 @@ class Domain(models.Model):
     facebook = models.URLField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
-
 
     def __unicode__(self):
         return self.name
@@ -73,6 +73,16 @@ def validate_image(fieldfile_obj):
         if filesize > megabyte_limit*1024*1024:
             raise ValidationError("Max file size is %sMB" % str(megabyte_limit))
 
+
+class IssueQuerySet(models.QuerySet):
+
+    def complete(self):
+        return self.filter(user__isnull=False)
+
+    def incomplete(self):
+        return self.filter(user__isnull=True)
+
+
 class Issue(models.Model):
     user = models.ForeignKey(User, null=True, blank=True)
     domain = models.ForeignKey(Domain, null=True, blank=True)
@@ -85,6 +95,8 @@ class Issue(models.Model):
     screenshot = models.ImageField(upload_to="screenshots", validators=[validate_image])
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
+
+    objects = IssueQuerySet.as_manager()
 
     def __unicode__(self):
         return self.description
