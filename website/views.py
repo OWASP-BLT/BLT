@@ -2,12 +2,12 @@ from allauth.account.signals import user_logged_in
 from django.dispatch import receiver
 from django.shortcuts import render
 from django.http import HttpResponse
-from django.views.generic import DetailView, TemplateView, ListView
+from django.views.generic import DetailView, TemplateView, ListView, UpdateView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.generic.edit import CreateView, FormView
 from django.contrib.auth import get_user_model
-from django.shortcuts import redirect, render_to_response, RequestContext
+from django.shortcuts import render, redirect, render_to_response, RequestContext, get_object_or_404
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.http import Http404
@@ -20,6 +20,7 @@ from website.models import Issue, Points, Hunt, Domain
 from django.core.files import File
 from django.core.urlresolvers import reverse
 from django.db.models import Sum, Count
+from django.core.urlresolvers import reverse
 from django.core.files.storage import default_storage
 from django.views.generic import View
 from django.core.files.base import ContentFile
@@ -39,6 +40,7 @@ import re
 import os
 import json
 from user_agents import parse
+from .forms import IssueEditForm
 
 
 registry.register(User)
@@ -66,6 +68,22 @@ def find_key(request, token):
 
 
 class IssueBaseCreate(object):
+
+
+    def form_valid(self, form):
+        score = 3
+        obj = form.save(commit=False)
+        obj.user = self.request.user
+        domain, created = Domain.objects.get_or_create(name=obj.domain_name.replace("www.", ""), url="http://"+obj.domain_name.replace("www.", ""))
+        obj.domain=domain
+        if self.request.POST.get('screenshot-hash'):
+            reopen = default_storage.open('uploads\/'+ self.request.POST.get('screenshot-hash') +'.png', 'rb')
+            django_file = File(reopen)
+            obj.screenshot.save(self.request.POST.get('screenshot-hash') +'.png', django_file, save=True)
+        obj.user_agent = self.request.META.get('HTTP_USER_AGENT')
+        obj.save()
+        p = Points.objects.create(user=self.request.user,issue=obj,score=score)
+        action.send(self.request.user, verb='found a bug on website', target=obj)
 
     def process_issue(self, user, obj, created, domain, score=3):
         p = Points.objects.create(user=user, issue=obj, score=score)
@@ -141,6 +159,9 @@ class IssueBaseCreate(object):
                 html_message=msg_html,
             )
 
+        return HttpResponseRedirect("/")
+
+
 
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
@@ -179,6 +200,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         # assign issue
         self.process_issue(self.request.user, obj, created, domain)
         return HttpResponseRedirect(redirect_url)
+
 
     def get_context_data(self, **kwargs):
         context = super(IssueCreate, self).get_context_data(**kwargs)
@@ -360,6 +382,39 @@ class IssueView(DetailView):
         return context
 
 
+class IssueEditView(UpdateView):
+    model = Issue
+    slug_field = "id"
+    template_name = "issue_edit.html"
+    form_class = IssueEditForm
+
+    def get_object(self):
+        if self.request.user.is_superuser:
+            issues = Issue.objects.all()
+        else:
+            issues = Issue.objects.filter(user=self.request.user)
+        return get_object_or_404(issues, pk=self.kwargs['slug'])
+
+    def get_success_url(self):
+        return reverse('issue_view', args=(self.object.id,))
+
+    def get_context_data(self, **kwargs):
+        context = super(IssueEditView, self).get_context_data(**kwargs)
+        if self.object.user_agent:
+            user_agent = parse(self.object.user_agent)
+            context['browser_family'] = user_agent.browser.family
+            context['browser_version'] = user_agent.browser.version_string
+            context['os_family'] = user_agent.os.family
+            context['os_version'] = user_agent.os.version_string
+        context['users_score'] = Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
+        context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain_name).count()
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Issue Updated')
+        return super(IssueEditView, self).form_valid(form)
+
+
 class EmailDetailView(TemplateView):
     template_name = "email.html"
 
@@ -461,7 +516,6 @@ class UpdateIssue(View):
         )
         issue.save()
         return HttpResponseRedirect(issue.get_absolute_url)
-
 
 @receiver(user_logged_in)
 def assign_issue_to_user(request, user, **kwargs):
