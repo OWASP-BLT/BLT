@@ -31,7 +31,7 @@ class Domain(models.Model):
     facebook = models.URLField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
-   
+
 
     def __unicode__(self):
         return self.name
@@ -74,7 +74,7 @@ def validate_image(fieldfile_obj):
             raise ValidationError("Max file size is %sMB" % str(megabyte_limit))
 
 class Issue(models.Model):
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, null=True, blank=True)
     domain = models.ForeignKey(Domain, null=True, blank=True)
     url = models.URLField()
     description = models.TextField()
@@ -131,7 +131,7 @@ class Issue(models.Model):
     @property
     def get_absolute_url(self):
         return "/issue/" + str(self.id)
-    
+
     class Meta:
         ordering = ['-created']
 
@@ -164,7 +164,7 @@ def post_to_twitter(sender, instance, *args, **kwargs):
 
     import logging
     logger = logging.getLogger('testlogger')
-    
+
 
     if not settings.DEBUG:
         try:
