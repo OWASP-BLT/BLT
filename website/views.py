@@ -1,3 +1,6 @@
+from allauth.account.signals import user_logged_in
+from django.dispatch import receiver
+from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.generic import DetailView, TemplateView, ListView, UpdateView
 from django.views.decorators.csrf import csrf_exempt
@@ -15,6 +18,7 @@ from actstream import registry
 from django.http import JsonResponse
 from website.models import Issue, Points, Hunt, Domain
 from django.core.files import File
+from django.core.urlresolvers import reverse
 from django.db.models import Sum, Count
 from django.core.urlresolvers import reverse
 from django.core.files.storage import default_storage
@@ -63,16 +67,8 @@ def find_key(request, token):
     raise Http404("Token or key does not exist")
 
 
-class IssueCreate(CreateView):
-    model = Issue
-    fields = ['url','description','screenshot','domain']
-    template_name = "index.html"
+class IssueBaseCreate(object):
 
-    def get_initial(self):
-        initial = super(IssueCreate, self).get_initial()
-        if self.request.POST.get('screenshot-hash'):
-            initial['screenshot'] = 'uploads\/'+ self.request.POST.get('screenshot-hash') +'.png'
-        return initial
 
     def form_valid(self, form):
         score = 3
@@ -88,6 +84,10 @@ class IssueCreate(CreateView):
         obj.save()
         p = Points.objects.create(user=self.request.user,issue=obj,score=score)
         action.send(self.request.user, verb='found a bug on website', target=obj)
+
+    def process_issue(self, user, obj, created, domain, score=3):
+        p = Points.objects.create(user=user, issue=obj, score=score)
+        action.send(user, verb='found a bug on website', target=obj)
         messages.success(self.request, 'Bug added! +'+ str(score))
 
 
@@ -158,7 +158,49 @@ class IssueCreate(CreateView):
                 [email_to],
                 html_message=msg_html,
             )
+
         return HttpResponseRedirect("/")
+
+
+
+class IssueCreate(IssueBaseCreate, CreateView):
+    model = Issue
+    fields = ['url','description','screenshot','domain']
+    template_name = "index.html"
+
+    def get_initial(self):
+        initial = super(IssueCreate, self).get_initial()
+        if self.request.POST.get('screenshot-hash'):
+            initial['screenshot'] = 'uploads\/'+ self.request.POST.get('screenshot-hash') +'.png'
+        return initial
+
+    def form_valid(self, form):
+        obj = form.save(commit=False)
+        if self.request.user.is_authenticated():
+            obj.user = self.request.user
+        domain, created = Domain.objects.get_or_create(name=obj.domain_name.replace("www.", ""), url="http://"+obj.domain_name.replace("www.", ""))
+        obj.domain=domain
+        if self.request.POST.get('screenshot-hash'):
+            reopen = default_storage.open('uploads\/'+ self.request.POST.get('screenshot-hash') +'.png', 'rb')
+            django_file = File(reopen)
+            obj.screenshot.save(self.request.POST.get('screenshot-hash') +'.png', django_file, save=True)
+        obj.user_agent = self.request.META.get('HTTP_USER_AGENT')
+        obj.save()
+
+        redirect_url = '/'
+        # redirect users to login
+        if not self.request.user.is_authenticated():
+            # we store the issue id on the user session to assign it as soon as he login/register
+            self.request.session['issue'] = obj.id
+            self.request.session['created'] = created
+            self.request.session['domain'] = domain.id
+            login_url = reverse('account_login')
+            return HttpResponseRedirect(u'{}?next={}'.format(login_url, redirect_url))
+
+        # assign issue
+        self.process_issue(self.request.user, obj, created, domain)
+        return HttpResponseRedirect(redirect_url)
+
 
     def get_context_data(self, **kwargs):
         context = super(IssueCreate, self).get_context_data(**kwargs)
@@ -474,3 +516,30 @@ class UpdateIssue(View):
         )
         issue.save()
         return HttpResponseRedirect(issue.get_absolute_url)
+
+@receiver(user_logged_in)
+def assign_issue_to_user(request, user, **kwargs):
+    # get params from session
+    issue_id = request.session.get('issue')
+    created = request.session.get('created')
+    domain_id = request.session.get('domain')
+    if issue_id and domain_id:
+        # clean session
+        try:
+            del request.session['issue']
+            del request.session['domain']
+            del request.session['created']
+        except Exception:
+            pass    # ignore errors while cleaning session
+        request.session.modified = True
+        # get objects using session parameters
+        issue = Issue.objects.get(id=issue_id)
+        domain = Domain.objects.get(id=domain_id)
+        # assing user to issue
+        issue.user = user
+        issue.save()
+        # process issue
+        assigner = IssueBaseCreate()
+        assigner.request = request
+        assigner.process_issue(user, issue, created, domain)
+
