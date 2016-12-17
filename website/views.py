@@ -92,19 +92,20 @@ class IssueBaseCreate(object):
 
 
         if created:
-            from selenium import webdriver
-            from pyvirtualdisplay import Display
+            # do we need webshots?  
+            #from selenium import webdriver
+            #from pyvirtualdisplay import Display
 
-            driver = webdriver.PhantomJS()
-            driver.set_window_size(1120, 550)
-            parsed_url = urlparse(obj.domain_name)
-            driver.get("http://"+parsed_url.path)
-            png_data = driver.get_screenshot_as_png()
-            default_storage.save('webshots\/'+parsed_url.path +'.png', ContentFile(png_data))
-            driver.quit()
-            reopen = default_storage.open('webshots\/'+ parsed_url.path +'.png', 'rb')
-            django_file = File(reopen)
-            domain.webshot.save(parsed_url.path +'.png', django_file, save=True)
+            #driver = webdriver.PhantomJS()
+            #driver.set_window_size(1120, 550)
+            #parsed_url = urlparse(obj.domain_name)
+            #driver.get("http://"+parsed_url.path)
+            #png_data = driver.get_screenshot_as_png()
+            #default_storage.save('webshots\/'+parsed_url.path +'.png', ContentFile(png_data))
+            #driver.quit()
+            #reopen = default_storage.open('webshots\/'+ parsed_url.path +'.png', 'rb')
+            #django_file = File(reopen)
+            #domain.webshot.save(parsed_url.path +'.png', django_file, save=True)
 
             # if self.request.user.is_authenticated():
             #     p = Points.objects.create(user=self.request.user,domain=domain,score=1)
@@ -187,6 +188,21 @@ class IssueCreate(IssueBaseCreate, CreateView):
         obj.user_agent = self.request.META.get('HTTP_USER_AGENT')
         obj.save()
 
+        if domain.github and os.environ.get("GITHUB_PASSWORD"):
+            from giturlparse import parse
+            from requests.auth import HTTPBasicAuth
+            import json
+            import requests
+            github_url= domain.github.replace("https","git").replace("http","git")+".git"
+            p = parse(github_url)
+
+            url = 'https://api.github.com/repos/%s/%s/issues' % (p.owner, p.repo)
+
+            auth = HTTPBasicAuth(os.environ.get("GITHUB_USERNAME"), os.environ.get("GITHUB_PASSWORD"))
+            issue = {'title': obj.description,
+                     'body': "![0](" + obj.screenshot.url + ")%20http://bugheist.com/issue/"+str(obj.id),
+                     'labels': ['bug','bugheist']}
+            r = requests.post(url, json.dumps(issue),auth=auth)
         redirect_url = '/'
         # redirect users to login
         if not self.request.user.is_authenticated():
