@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+    <form role="form" action="{% url 'invite_friend' %}" method="post">
+        {% csrf_token %}
+        <div class="row">
+        {% for error in form.non_field_errors %}
+            <div class="col-lg-6">
+                {{ error }}
+            </div>
+        {% endfor %}
+        </div>
+        <div class="row">
+            <div class="col-lg-6">
+                <h2 class="page-header">Invite 2 friends and get 1 point.</h2>
+                <label>Email:</label>
+                {{ form.recipient }}
+                {% for error in form.recipient.errors %}
+                    error
+                {% endfor %}
+                </br>
+                <button type="submit" class="btn btn-danger">Invite</button>
+            </div>
+        </div>
+    </form>
+{% endblock %}
