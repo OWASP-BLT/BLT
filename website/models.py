@@ -215,3 +215,15 @@ class Points(models.Model):
 #def user_logged_in_(request, user, **kwargs):
 #    if not settings.TESTING:
 #    	action.send(user, verb='logged in')
+
+
+class InviteFriend(models.Model):
+    sender = models.ForeignKey(User)
+    recipient = models.EmailField()
+    sent = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ('-sent',)
+        verbose_name = 'invitation'
+        verbose_name_plural = 'invitations'
+

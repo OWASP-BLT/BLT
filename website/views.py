@@ -2,7 +2,7 @@ from allauth.account.signals import user_logged_in
 from django.dispatch import receiver
 from django.shortcuts import render
 from django.http import HttpResponse
-from django.views.generic import DetailView, TemplateView, ListView, UpdateView
+from django.views.generic import DetailView, TemplateView, ListView, UpdateView, CreateView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.generic.edit import CreateView, FormView
@@ -16,9 +16,9 @@ from actstream import action
 from django.contrib.auth.models import User
 from actstream import registry
 from django.http import JsonResponse
-from website.models import Issue, Points, Hunt, Domain
+from website.models import Issue, Points, Hunt, Domain, InviteFriend
 from django.core.files import File
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, reverse_lazy
 from django.db.models import Sum, Count
 from django.core.urlresolvers import reverse
 from django.core.files.storage import default_storage
@@ -40,7 +40,7 @@ import re
 import os
 import json
 from user_agents import parse
-from .forms import IssueEditForm
+from .forms import IssueEditForm, FormInviteFriend
 
 
 registry.register(User)
@@ -558,4 +558,45 @@ def assign_issue_to_user(request, user, **kwargs):
         assigner = IssueBaseCreate()
         assigner.request = request
         assigner.process_issue(user, issue, created, domain)
+
+
+class CreateInviteFriend(CreateView):
+    template_name = 'invite_friend.html'
+    model = InviteFriend
+    form_class = FormInviteFriend
+    success_url = reverse_lazy('invite_friend')
+
+    def form_valid(self, form):
+        from django.conf import settings
+        from django.contrib.sites.shortcuts import get_current_site
+
+        instance = form.save(commit=False)
+        instance.sender = self.request.user
+        instance.save()
+
+        site = get_current_site(self.request)
+
+        mail_status = send_mail(
+            'Inivtation to {site} from {user}'.format(
+                site=site.name,
+                user=self.request.user.username
+            ),
+            'You have been invited by {user} to join {site} comunity.'.format(
+                user=self.request.user.username,
+                site=site.name
+            ),
+            settings.DEFAULT_FROM_EMAIL,
+            [instance.recipient],
+        )
+
+        if mail_status and InviteFriend.objects.filter(sender=self.request.user).count() == 2:
+            Points.objects.create(user=self.request.user, score=1)
+            InviteFriend.objects.filter(sender=self.request.user).delete()
+
+        messages.success(self.request, 'An email has been sent to your friend. Keep invite your friends and get points!')
+
+        return HttpResponseRedirect(self.success_url)
+
+
+
 
