@@ -2,7 +2,9 @@ from django.conf.urls import include, url, patterns
 from django.conf import settings
 from django.contrib import admin
 from django.views.generic import TemplateView
-from website.views import UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView, UpdateIssue, InboundParseWebhookView, LeaderboardView, IssueView, IssueEditView, AllIssuesView, HuntCreate, DomainDetailView, StatsDetailView, InviteCreate
+from website.views import (UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView, UpdateIssue,
+                           InboundParseWebhookView, LeaderboardView, IssueView, IssueEditView, AllIssuesView,
+                           HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend)
 from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView
 from django.conf.urls.static import static
@@ -37,6 +39,7 @@ urlpatterns = patterns('',
     url(r'^hunt/$', login_required(HuntCreate.as_view()), name="hunt"),
     url(r'^update/$', login_required(UpdateIssue.as_view()), name="update"),
     url(r'^invite/$', InviteCreate.as_view(template_name="invite.html")),
+    url(r'^invite-friend/$', CreateInviteFriend.as_view(), name='invite_friend'),
     url(r'^terms/$', TemplateView.as_view(template_name="terms.html")),
     url(r'^stats/$', StatsDetailView.as_view()),
     url(r'^favicon\.ico$', favicon_view),
