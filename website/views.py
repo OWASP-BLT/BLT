@@ -69,22 +69,6 @@ def find_key(request, token):
 
 class IssueBaseCreate(object):
 
-
-    def form_valid(self, form):
-        score = 3
-        obj = form.save(commit=False)
-        obj.user = self.request.user
-        domain, created = Domain.objects.get_or_create(name=obj.domain_name.replace("www.", ""), url="http://"+obj.domain_name.replace("www.", ""))
-        obj.domain=domain
-        if self.request.POST.get('screenshot-hash'):
-            reopen = default_storage.open('uploads\/'+ self.request.POST.get('screenshot-hash') +'.png', 'rb')
-            django_file = File(reopen)
-            obj.screenshot.save(self.request.POST.get('screenshot-hash') +'.png', django_file, save=True)
-        obj.user_agent = self.request.META.get('HTTP_USER_AGENT')
-        obj.save()
-        p = Points.objects.create(user=self.request.user,issue=obj,score=score)
-        action.send(self.request.user, verb='found a bug on website', target=obj)
-
     def process_issue(self, user, obj, created, domain, score=3):
         p = Points.objects.create(user=user, issue=obj, score=score)
         action.send(user, verb='found a bug on website', target=obj)
@@ -225,6 +209,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         context['leaderboard'] = User.objects.filter(points__created__month=datetime.now().month).annotate(total_score=Sum('points__score')).order_by('-total_score'),
         return context
 
+
 class UploadCreate(View):
     template_name = "index.html"
 
@@ -295,6 +280,7 @@ def delete_issue(request, id):
         messages.success(request, 'Issue deleted')
     return redirect('/')
 
+
 class DomainDetailView(TemplateView):
     template_name = "domain.html"
 
@@ -307,15 +293,13 @@ class DomainDetailView(TemplateView):
             context['domain'] = Domain.objects.get(name=self.kwargs['slug'])
         except:
             context['domain'] = self.kwargs['slug']
-        context['issues'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug'])
+        context['issues'] = Issue.objects.complete().filter(domain__name__contains=self.kwargs['slug'])
         context['leaderboard'] = User.objects.filter(issue__url__contains=self.kwargs['slug']).annotate(total=Count('issue')).order_by('-total')
         return context
 
 
-
 class StatsDetailView(TemplateView):
     template_name = "stats.html"
-
 
     def get_context_data(self, *args, **kwargs):
         context = super(StatsDetailView, self).get_context_data(*args, **kwargs)
@@ -325,11 +309,12 @@ class StatsDetailView(TemplateView):
         for item in  soup.findAll("span", { "class" : "e-f-ih" }):
             stats = item.attrs['title']
         context['extension_users'] = stats.replace(" users", "")
-        context['bug_count'] = Issue.objects.all().count()
+        context['bug_count'] = Issue.objects.complete().count()
         context['user_count'] = User.objects.all().count()
         context['hunt_count'] = Hunt.objects.all().count()
         context['domain_count'] = Domain.objects.all().count()
         return context
+
 
 class AllIssuesView(ListView):
     model = Issue
@@ -340,6 +325,7 @@ class AllIssuesView(ListView):
         context['activities'] = Action.objects.all()
         return context
 
+
 class LeaderboardView(ListView):
     model = User
     template_name = "leaderboard.html"
@@ -348,6 +334,7 @@ class LeaderboardView(ListView):
         context = super(LeaderboardView, self).get_context_data(*args, **kwargs)
         context['leaderboard'] = User.objects.annotate(total_score=Sum('points__score')).order_by('-total_score').filter(total_score__gt=0)
         return context
+
 
 class HuntCreate(CreateView):
     model = Hunt
@@ -394,7 +381,7 @@ class IssueView(DetailView):
             context['os_family'] = user_agent.os.family
             context['os_version'] = user_agent.os.version_string
         context['users_score'] = Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
-        context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain_name).count()
+        context['issue_count'] = Issue.objects.complete().filter(url__contains=self.object.domain_name).count()
         return context
 
 
@@ -406,9 +393,9 @@ class IssueEditView(UpdateView):
 
     def get_object(self):
         if self.request.user.is_superuser:
-            issues = Issue.objects.all()
+            issues = Issue.objects.complete()
         else:
-            issues = Issue.objects.filter(user=self.request.user)
+            issues = Issue.objects.complete().filter(user=self.request.user)
         return get_object_or_404(issues, pk=self.kwargs['slug'])
 
     def get_success_url(self):
@@ -423,7 +410,6 @@ class IssueEditView(UpdateView):
             context['os_family'] = user_agent.os.family
             context['os_version'] = user_agent.os.version_string
         context['users_score'] = Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
-        context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         return context
 
     def form_valid(self, form):
@@ -497,7 +483,7 @@ class InboundParseWebhookView(View):
 
 class UpdateIssue(View):
     def post(self, request, *args, **kwargs):
-        issue = Issue.objects.get(id=request.POST.get('id'))
+        issue = Issue.objects.complete().get(id=request.POST.get('id'))
         if request.POST.get('action') == "close":
             messages.success(self.request, 'Issue Closed')
             issue.status = "closed"
