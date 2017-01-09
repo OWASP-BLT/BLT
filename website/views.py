@@ -92,27 +92,11 @@ class IssueBaseCreate(object):
 
 
         if created:
-            # do we need webshots?  
-            #from selenium import webdriver
-            #from pyvirtualdisplay import Display
-
-            #driver = webdriver.PhantomJS()
-            #driver.set_window_size(1120, 550)
-            #parsed_url = urlparse(obj.domain_name)
-            #driver.get("http://"+parsed_url.path)
-            #png_data = driver.get_screenshot_as_png()
-            #default_storage.save('webshots\/'+parsed_url.path +'.png', ContentFile(png_data))
-            #driver.quit()
-            #reopen = default_storage.open('webshots\/'+ parsed_url.path +'.png', 'rb')
-            #django_file = File(reopen)
-            #domain.webshot.save(parsed_url.path +'.png', django_file, save=True)
-
-            # if self.request.user.is_authenticated():
-            #     p = Points.objects.create(user=self.request.user,domain=domain,score=1)
-            #     action.send(self.request.user, verb='added domain', target=domain)
-            #     messages.success(self.request, 'Domain added! + 1')
-
-            email_to = get_email_from_domain(parsed_url.path)
+            try:
+                email_to = get_email_from_domain(parsed_url.path)
+            except:
+                email_to = domain.email
+                
             if not email_to:
                 email_to = "support@"+parsed_url.path
             domain.email = email_to
@@ -200,7 +184,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             auth = HTTPBasicAuth(os.environ.get("GITHUB_USERNAME"), os.environ.get("GITHUB_PASSWORD"))
             issue = {'title': obj.description,
-                     'body': "![0](" + obj.screenshot.url + ")%20http://bugheist.com/issue/"+str(obj.id),
+                     'body': "![0](" + obj.screenshot.url + ") http://bugheist.com/issue/"+str(obj.id),
                      'labels': ['bug','bugheist']}
             r = requests.post(url, json.dumps(issue),auth=auth)
         redirect_url = '/'
