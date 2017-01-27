@@ -369,12 +369,12 @@ class IssueView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(IssueView, self).get_context_data(**kwargs)
-        if self.object.user_agent:
-            user_agent = parse(self.object.user_agent)
-            context['browser_family'] = user_agent.browser.family
-            context['browser_version'] = user_agent.browser.version_string
-            context['os_family'] = user_agent.os.family
-            context['os_version'] = user_agent.os.version_string
+        #if self.object.user_agent:
+        #    user_agent = parse(self.object.user_agent)
+        #    context['browser_family'] = user_agent.browser.family
+        #    context['browser_version'] = user_agent.browser.version_string
+        #    context['os_family'] = user_agent.os.family
+        #    context['os_version'] = user_agent.os.version_string
         context['users_score'] = Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
         context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         return context
