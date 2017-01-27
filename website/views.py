@@ -95,7 +95,7 @@ class IssueBaseCreate(object):
             try:
                 email_to = get_email_from_domain(domain)
             except:
-                email_to = "support@"+domain
+                email_to = "support@"+domain.name
                 
             domain.email = email_to
             domain.save()
