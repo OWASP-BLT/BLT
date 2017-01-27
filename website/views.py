@@ -93,12 +93,10 @@ class IssueBaseCreate(object):
 
         if created:
             try:
-                email_to = get_email_from_domain(parsed_url.path)
+                email_to = get_email_from_domain(domain)
             except:
-                email_to = domain.email
+                email_to = "support@"+domain
                 
-            if not email_to:
-                email_to = "support@"+parsed_url.path
             domain.email = email_to
             domain.save()
 
