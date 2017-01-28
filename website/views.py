@@ -74,7 +74,7 @@ class IssueBaseCreate(object):
         score = 3
         obj = form.save(commit=False)
         obj.user = self.request.user
-        domain, created = Domain.objects.get_or_create(name=obj.domain_name.replace("www.", ""), url="http://"+obj.domain_name.replace("www.", ""))
+        domain, created = Domain.objects.get_or_create(name=obj.domain_name.replace("www.", ""), defaults={'url':"http://"+obj.domain_name.replace("www.", "")})
         obj.domain=domain
         if self.request.POST.get('screenshot-hash'):
             reopen = default_storage.open('uploads\/'+ self.request.POST.get('screenshot-hash') +'.png', 'rb')
@@ -161,7 +161,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         obj = form.save(commit=False)
         if self.request.user.is_authenticated():
             obj.user = self.request.user
-        domain, created = Domain.objects.get_or_create(name=obj.domain_name.replace("www.", ""), url="http://"+obj.domain_name.replace("www.", ""))
+        domain, created = Domain.objects.get_or_create(name=obj.domain_name.replace("www.", ""), defaults={'url':"http://"+obj.domain_name.replace("www.", "")})
         obj.domain=domain
         if self.request.POST.get('screenshot-hash'):
             reopen = default_storage.open('uploads\/'+ self.request.POST.get('screenshot-hash') +'.png', 'rb')
