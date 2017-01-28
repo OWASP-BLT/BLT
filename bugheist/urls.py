@@ -4,7 +4,8 @@ from django.contrib import admin
 from django.views.generic import TemplateView
 from website.views import (UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView, UpdateIssue,
                            InboundParseWebhookView, LeaderboardView, IssueView, IssueEditView, AllIssuesView,
-                           HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend)
+                           HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend,
+                           ScoreboardView)
 from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView
 from django.conf.urls.static import static
@@ -25,6 +26,7 @@ urlpatterns = patterns('',
     url(r'^issue/(?P<slug>\w+)/edit/$', IssueEditView.as_view(), name="issue_edit"),
     url(r'^all_activity/$', AllIssuesView.as_view(), name="all_activity"),
     url(r'^leaderboard/$', LeaderboardView.as_view(), name="leaderboard"),
+    url(r'^scoreboard/$', ScoreboardView.as_view(), name="scoreboard"),
     url(r'^issue/$', IssueCreate.as_view(), name="issue"),
     url(r'^upload/(?P<time>[^/]+)/(?P<hash>[^/]+)/', UploadCreate.as_view(), name="upload"),
     url(r'^profile/(?P<slug>[^/]+)/$', UserProfileDetailView.as_view(), name="profile"),

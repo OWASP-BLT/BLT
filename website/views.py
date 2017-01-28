@@ -331,6 +331,15 @@ class LeaderboardView(ListView):
         context['leaderboard'] = User.objects.annotate(total_score=Sum('points__score')).order_by('-total_score').filter(total_score__gt=0)
         return context
 
+class ScoreboardView(ListView):
+    model = Domain
+    template_name = "scoreboard.html"
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(ScoreboardView, self).get_context_data(*args, **kwargs)
+        context['scoreboard'] = Domain.objects.all().order_by('-modified')
+        return context
+
 class HuntCreate(CreateView):
     model = Hunt
     fields = ['url','logo','prize','plan']

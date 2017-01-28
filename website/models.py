@@ -16,6 +16,7 @@ from unidecode import unidecode
 from django.core.files.base import ContentFile
 import requests
 from PIL import Image
+from django.db.models import Count
 
 class Domain(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -35,6 +36,20 @@ class Domain(models.Model):
 
     def __unicode__(self):
         return self.name
+
+    @property
+    def open_issues(self):
+        return Issue.objects.filter(domain=self).exclude(status="open")
+
+    @property
+    def closed_issues(self):
+        return Issue.objects.filter(domain=self).filter(status="closed")
+
+
+    @property
+    def top_tester(self):
+        return User.objects.filter(issue__domain=self).annotate(total=Count('issue')).order_by('-total').first()
+
 
     @property
     def get_name(self):
