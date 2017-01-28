@@ -39,7 +39,7 @@ class Domain(models.Model):
 
     @property
     def open_issues(self):
-        return Issue.objects.filter(domain=self).exclude(status="open")
+        return Issue.objects.filter(domain=self).exclude(status="closed")
 
     @property
     def closed_issues(self):

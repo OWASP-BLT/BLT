@@ -88,7 +88,6 @@
     text-align: left;
     }
     </style>
-
     <script src="{% static "js/jquery.tablesorter.js" %}"></script>
     <script>
     $(function(load){
@@ -117,16 +116,20 @@
                 <tbody>
                     {% for domain in scoreboard %}
                         <tr>
-                            <td height="80px"><a href="/domain/{{domain.domain_name}}"><img src="{{domain.get_logo}}" alt="{{domain.name}}" style="width:80px;"></a>
-                        </td>
-                        <td>{{domain.get_name}}</td>
-                        <td>{{domain.open_issues|length}}</td>
-                        <td>{{domain.closed_issues|length}}</td>
-                        <td>{{domain.email_event}}</td>
-                        <td>{{domain.modified|timesince}} ago</td>
-                        <td>{{domain.top_tester}}</td>
-                    </tr>
-                {% endfor %}
+                            <td height="80px">
+                                <a href="/domain/{{domain.domain_name}}">
+                                    <img src="{{domain.get_logo}}" alt="{{domain.name}}" style="width:80px;">
+                                </a>
+                            </td>
+                            <td>{{domain.get_name}}</td>
+                            <td>{{domain.open_issues|length}}</td>
+                            <td>{{domain.closed_issues|length}}</td>
+                            <td>{{domain.email_event}}</td>
+                            <td>{{domain.modified|timesince}} ago</td>
+                            <td><a href="/profile/{{domain.top_tester.username}}">{{domain.top_tester|default:""}}</a></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
             </table>
         </div>
     </div>
