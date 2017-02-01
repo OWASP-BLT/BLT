@@ -159,25 +159,7 @@
     <a href="/start">
         <button type="submit" class="btn btn-default btn-danger" style="background:#dd4252; height:43px; font-size:14px;">Sponsor a Bug Hunt</button>
     </a>
-    <div class="row">
-        <div class="col-lg-12">
-            <h1 class="page-header">Random Domains
-            </h1>
-        </div>
-    </div>
-    <div class="row">
-        <ul class="ds-btn">
-        {% for domain in domains %}
-            <li>
-                <a class="btn btn-lg" style="background-color:{{domain.color}}" href="/domain/{{domain}}">
-                    <img src="http://www.{{domain.domain_name}}/favicon.ico" height="25" width="25" style="vertical-align:top" onerror="this.onerror=null; this.parentNode.style.display ='none';">
-                    <span>{{domain.domain_name}}<br><small>{{domain.issue_set.all|length}} issues </small></span>
-                </a>
-            </li>
-           {% endfor %}
-        </ul>
-        
-    </div>
+
     <div class="row">
         <div class="col-lg-9">
             <h1 class="page-header">Activity</h1>
@@ -213,6 +195,9 @@
           </form>
                 </div>
                 <div class="panel-body">
+                <div style="border-left: 1px solid #ccc; border-top: 1px solid #ccc; border-right: 1px solid #888; border-bottom: 1px solid #888; background-color: #71ff00; padding: 4px;">The First Place Hunter for  {% now "F" %} will receive $25 from <a href="owasp.org">OWASP</a></div>
+                
+
                     <div class="list-group">
                         {% if leaderboard %}
                             {% for leader in leaderboard %}
@@ -228,6 +213,7 @@
                                 </div>
                             {% endfor %}
                         {% else %}
+                        </br>
                             Leaderboard reset for {% now "F" %}. Be first to find issues!
                         {% endif %}
                     </div>
@@ -239,6 +225,16 @@
         <a class="twitter-timeline" data-height="800" href="https://twitter.com/Bugheist">Tweets by Bugheist</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
         </div>
     </div>
+        <div class="row">
+        <div class="col-lg-12">
+            <h1 class="page-header">Get started by finding issues on <a class="btn btn-lg" style="background-color:{{domain.color}}" href="/domain/{{domain}}">
+                    <img src="http://www.{{domain.domain_name}}/favicon.ico" height="25" width="25" style="vertical-align:top" onerror="this.onerror=null; this.style.display ='none';">
+                    <span>{{domain.domain_name}}<br><small>{{domain.issue_set.all|length}} issues </small></span>
+                </a>
+            </h1>
+        </div>
+    </div>
+
     <script>
     var player_width = 560;
     var player_height = 315;

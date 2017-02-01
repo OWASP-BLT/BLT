@@ -41,7 +41,7 @@ import os
 import json
 from user_agents import parse
 from .forms import IssueEditForm, FormInviteFriend
-
+import random
 
 registry.register(User)
 registry.register(Issue)
@@ -50,7 +50,7 @@ registry.register(Domain)
 def index(request, template="index.html"):
     context = {
         'activities': Action.objects.all()[0:10],
-        'domains': Domain.objects.all().order_by('?')[0:16],
+        'domain': random.choice(Domain.objects.all()),
         'hunts': Hunt.objects.exclude(txn_id__isnull=True)[:4],
         'leaderboard':  User.objects.filter(points__created__month=datetime.now().month).annotate(total_score=Sum('points__score')).order_by('-total_score'),
     }
