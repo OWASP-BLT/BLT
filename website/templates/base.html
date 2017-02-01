@@ -28,14 +28,17 @@
     </head>
     <body>
         <div id="wrapper">
-            <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
+            <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0;">
                 <div class="navbar-header">
                     <a class="navbar-brand" href="/"><img src="{% static "img/logo-small-transparent.png" %}" style="margin-left:20px;"></a>
                 </div>
-                <ul class="nav navbar-top-links navbar-right">
-                    <a id="chrome_ext" href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new">
-                        <img src="{% static 'img/ChromeWebStore_Badge_v2_496x150.png' %}"  style="margin-right:200px; border:1px solid gray; border-radius:5px">
+                <div style="text-align:center; width:100%; margin-top:8px; display:block; position:absolute; ">
+                 <a id="chrome_ext" href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new">
+                        <img src="{% static 'img/chrome-button.png' %}" >
                     </a>
+                </div>
+                <ul class="nav navbar-top-links navbar-right">
+
                     {% if request.user.is_authenticated %}
                         <li class="dropdown">
                             <a class="dropdown-toggle" data-toggle="dropdown" href="#">
