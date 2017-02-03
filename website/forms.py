@@ -1,5 +1,5 @@
 from django import forms
-from .models import Issue, InviteFriend
+from .models import Issue, InviteFriend, UserProfile
 
 
 class IssueEditForm(forms.ModelForm):
@@ -17,3 +17,10 @@ class FormInviteFriend(forms.ModelForm):
         widgets = {
             'recipient': forms.TextInput(attrs={'class': 'form-control'})
         }
+
+
+class UserProfileForm(forms.ModelForm):
+
+    class Meta:
+        model = UserProfile
+        fields = ('user_avatar',)

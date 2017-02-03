@@ -40,7 +40,7 @@ import re
 import os
 import json
 from user_agents import parse
-from .forms import IssueEditForm, FormInviteFriend
+from .forms import IssueEditForm, FormInviteFriend, UserProfileForm
 import random
 
 registry.register(User)
@@ -249,6 +249,7 @@ def profile(request):
     except Exception:
         return redirect('/')
 
+
 class UserProfileDetailView(DetailView):
     model = get_user_model()
     slug_field = "username"
@@ -267,7 +268,14 @@ class UserProfileDetailView(DetailView):
         context['my_score'] = Points.objects.filter(user=self.object).aggregate(total_score=Sum('score')).values()[0]
         context['websites'] = Domain.objects.filter(issue__user=self.object).annotate(total=Count('issue')).order_by('-total')
         context['activities'] = user_stream(self.object, with_user_activity=True)
+        context['profile_form'] = UserProfileForm()
         return context
+
+    def post(self, request, *args, **kwargs):
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
+        if form.is_valid():
+            form.save()
+        return redirect(reverse('profile', kwargs={'slug': kwargs.get('slug')}))
 
 
 def delete_issue(request, id):
@@ -276,6 +284,7 @@ def delete_issue(request, id):
         issue.delete()
         messages.success(request, 'Issue deleted')
     return redirect('/')
+
 
 class DomainDetailView(TemplateView):
     template_name = "domain.html"
@@ -294,10 +303,8 @@ class DomainDetailView(TemplateView):
         return context
 
 
-
 class StatsDetailView(TemplateView):
     template_name = "stats.html"
-
 
     def get_context_data(self, *args, **kwargs):
         context = super(StatsDetailView, self).get_context_data(*args, **kwargs)
@@ -313,6 +320,7 @@ class StatsDetailView(TemplateView):
         context['domain_count'] = Domain.objects.all().count()
         return context
 
+
 class AllIssuesView(ListView):
     model = Issue
     template_name = "list_view.html"
@@ -321,6 +329,7 @@ class AllIssuesView(ListView):
         context = super(AllIssuesView, self).get_context_data(*args, **kwargs)
         context['activities'] = Action.objects.all()
         return context
+
 
 class LeaderboardView(ListView):
     model = User
@@ -331,6 +340,7 @@ class LeaderboardView(ListView):
         context['leaderboard'] = User.objects.annotate(total_score=Sum('points__score')).order_by('-total_score').filter(total_score__gt=0)
         return context
 
+
 class ScoreboardView(ListView):
     model = Domain
     template_name = "scoreboard.html"
@@ -339,6 +349,7 @@ class ScoreboardView(ListView):
         context = super(ScoreboardView, self).get_context_data(*args, **kwargs)
         context['scoreboard'] = Domain.objects.all().order_by('-modified')
         return context
+
 
 class HuntCreate(CreateView):
     model = Hunt

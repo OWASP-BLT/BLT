@@ -4,3 +4,4 @@ staticfiles
 .env
 db.sqlite3
 .idea
+/media

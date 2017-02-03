@@ -231,3 +231,9 @@ LOGGING = {
         }
     },
 }
+
+USERS_AVATAR_PATH = 'avatars'
+AVATAR_PATH = os.path.join(MEDIA_ROOT, USERS_AVATAR_PATH)
+
+if not os.path.exists(AVATAR_PATH):
+    os.makedirs(AVATAR_PATH)
