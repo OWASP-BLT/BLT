@@ -1,8 +1,12 @@
+import hashlib
+import urllib
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
 from allauth.account.signals import user_signed_up, user_logged_in
 from actstream import action
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from urlparse import urlparse
 from django.db.models import signals
@@ -17,6 +21,7 @@ from django.core.files.base import ContentFile
 import requests
 from PIL import Image
 from django.db.models import Count
+
 
 class Domain(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -82,11 +87,13 @@ class Domain(models.Model):
     def get_absolute_url(self):
         return "/domain/" + self.name
 
+
 def validate_image(fieldfile_obj):
         filesize = fieldfile_obj.file.size
         megabyte_limit = 3.0
         if filesize > megabyte_limit*1024*1024:
             raise ValidationError("Max file size is %sMB" % str(megabyte_limit))
+
 
 class Issue(models.Model):
     user = models.ForeignKey(User, null=True, blank=True)
@@ -153,6 +160,7 @@ class Issue(models.Model):
 
 TWITTER_MAXLENGTH = getattr(settings, 'TWITTER_MAXLENGTH', 140)
 
+
 def post_to_twitter(sender, instance, *args, **kwargs):
 
     if not kwargs.get('created'):
@@ -180,7 +188,6 @@ def post_to_twitter(sender, instance, *args, **kwargs):
     import logging
     logger = logging.getLogger('testlogger')
 
-
     if not settings.DEBUG:
         try:
             auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
@@ -197,6 +204,7 @@ def post_to_twitter(sender, instance, *args, **kwargs):
             return False
 
 signals.post_save.connect(post_to_twitter, sender=Issue)
+
 
 class Hunt(models.Model):
     user = models.ForeignKey(User)
@@ -216,6 +224,7 @@ class Hunt(models.Model):
 
     class Meta:
         ordering = ['-id']
+
 
 class Points(models.Model):
     user = models.ForeignKey(User)
@@ -242,3 +251,36 @@ class InviteFriend(models.Model):
         verbose_name = 'invitation'
         verbose_name_plural = 'invitations'
 
+
+def user_images_path(instance, filename):
+    from django.template.defaultfilters import slugify
+    filename, ext = os.path.splitext(filename)
+    return 'avatars/user_{0}/{1}{2}'.format(instance.user.id, slugify(filename), ext)
+
+
+class UserProfile(models.Model):
+
+    user = models.OneToOneField(User, related_name="userprofile")
+    user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
+
+    def avatar(self, size=36):
+        if self.user_avatar:
+            return self.user_avatar.url
+
+        for account in self.user.socialaccount_set.all():
+            if 'avatar_url' in account.extra_data:
+                return account.extra_data['avatar_url']
+            elif 'picture' in account.extra_data:
+                return account.extra_data['picture']
+
+    def __unicode__(self):
+        return self.user.email
+
+
+def create_profile(sender, **kwargs):
+    user = kwargs["instance"]
+    if kwargs["created"]:
+        profile = UserProfile(user=user)
+        profile.save()
+
+post_save.connect(create_profile, sender=User)
