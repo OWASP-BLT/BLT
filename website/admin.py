@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from website.models import Issue, Points, Hunt, Domain
+from website.models import Issue, Points, Hunt, Domain, UserProfile
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin
 from django.template.defaultfilters import truncatechars
@@ -38,7 +38,8 @@ admin.site.unregister(User)
 class UserAdmin(ImportExportModelAdmin):
 	resource_class = UserResource
 	list_display = ('id','username','email', 'first_name', 'last_name', 'is_active', 'date_joined', 'is_staff')
-    
+
+admin.site.register(UserProfile)
 admin.site.register(User, UserAdmin)
 
 admin.site.register(Domain, DomainAdmin)
