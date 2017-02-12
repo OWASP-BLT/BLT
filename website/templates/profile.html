@@ -9,11 +9,13 @@
             {% else %}
                 {% gravatar user.email 150 %}
             {% endif %}
-            <form method="post" action="." enctype="multipart/form-data">
-                {% csrf_token %}
-                {{ profile_form.user_avatar }}
-                <button type="submit" class="btn btn-primary btn-small" style="margin-top: 10px;">change photo</button>
-            </form>
+            {% if request.user == user %}
+                <form method="post" action="." enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ profile_form.user_avatar }}
+                    <button type="submit" class="btn btn-primary btn-small" style="margin-top: 10px;">change photo</button>
+                </form>
+            {% endif %}
             <h1> {{ my_score|default:0 }} points</h1>
             <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post">
                 <input type="hidden" name="cmd" value="_xclick">
