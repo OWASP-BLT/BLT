@@ -1,11 +1,11 @@
-# website
+# OWASP BLT
 
-www.bugheist.com Report issues and get points, companies are held accountable. Open Web Application Security
+Report issues and get points, companies are held accountable.
 
 The first time you may need to run:
 - `If postgresql is not installed`, `brew install postgresql` (mac), `sudo apt-get install postgresql` (Ubuntu) 
 
-- `cd bugheist`
+- `cd projectname`
 - `virtualenv venv`
 - `venv\Scripts\activate` (windows)
 - `source venv/bin/activate` (mac)
