@@ -38,8 +38,10 @@
                     {% if request.user.is_authenticated %}
                         <li class="dropdown">
                             <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                                {% if request.user.socialaccount_set.all.0.get_avatar_url %}
-                                    <img src="{{request.user.socialaccount_set.all.0.get_avatar_url}}" width="20" height="20">
+                                {% if request.user.userprofile.avatar %}
+                                    <img src="{{ request.user.userprofile.avatar }}" width="20" height="20">
+                                {% elif request.user.socialaccount_set.all.0.get_avatar_url %}		 +                                {% if request.user.userprofile.avatar %}
+ -                                    <img src="{{request.user.socialaccount_set.all.0.get_avatar_url}}" width="20" height="20">
                                 {% else %}
                                     {% gravatar request.user.email 20 %}
                                 {% endif %}
