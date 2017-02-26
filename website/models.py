@@ -199,7 +199,7 @@ def post_to_twitter(sender, instance, *args, **kwargs):
             api.update_status(**params)
 
         except Exception, ex:
-            print 'ERROR:', str(ex), params
+            print 'ERROR:', str(ex)
             logger.debug('rem %s'%str(ex))
             return False
 
