@@ -44,6 +44,7 @@ from .forms import IssueEditForm, FormInviteFriend, UserProfileForm
 import random
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 registry.register(User)
 registry.register(Issue)
@@ -326,11 +327,26 @@ class StatsDetailView(TemplateView):
 
 class AllIssuesView(ListView):
     model = Issue
+    paginate_by = 25
     template_name = "list_view.html"
 
     def get_context_data(self, *args, **kwargs):
         context = super(AllIssuesView, self).get_context_data(*args, **kwargs)
-        context['activities'] = Action.objects.all()
+        
+        activities = Action.objects.all()
+        paginator = Paginator(activities, self.paginate_by)
+        
+        page = self.request.GET.get('page')
+
+        try:
+            activities_paginated = paginator.page(page)
+        except PageNotAnInteger:
+            activities_paginated = paginator.page(1)
+        except EmptyPage:
+            activities_paginated = paginator.page(paginator.num_pages)
+
+        context['activities'] = activities_paginated
+
         return context
 
 
