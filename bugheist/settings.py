@@ -161,6 +161,7 @@ if 'DATABASE_URL' in os.environ:
     GS_SECRET_ACCESS_KEY = os.environ.get('GS_SECRET_ACCESS_KEY', 'blank')
     GS_BUCKET_NAME = 'bhfiles'
     DEFAULT_FILE_STORAGE = 'storages.backends.gs.GSBotoStorage'
+    GS_FILE_OVERWRITE = False
     GS_QUERYSTRING_AUTH = False
     MEDIA_URL="https://bhfiles.storage.googleapis.com/"
 
