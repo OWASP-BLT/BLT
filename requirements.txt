@@ -12,7 +12,7 @@ django-email-obfuscator==0.1.4
 django-gravatar2==1.4.0
 django-import-export==0.5.1
 django-screamshot==0.6.0
-django-storages==1.5.0
+django-storages==1.5.2
 django-timedeltafield==0.7.10
 EasyProcess==0.2.2
 giturlparse.py==0.0.5
