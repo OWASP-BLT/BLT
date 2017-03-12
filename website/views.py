@@ -52,7 +52,7 @@ registry.register(Domain)
 def index(request, template="index.html"):
     context = {
         'activities': Action.objects.all()[0:10],
-        'domain': random.choice(Domain.objects.all()),
+        'domains': random.sample(Domain.objects.all(), 3),
         'hunts': Hunt.objects.exclude(txn_id__isnull=True)[:4],
         'leaderboard':  User.objects.filter(points__created__month=datetime.now().month).annotate(total_score=Sum('points__score')).order_by('-total_score')[:10],
     }
