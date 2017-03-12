@@ -552,7 +552,7 @@ class UpdateIssue(View):
             subject,
             msg_plain,
             'Bugheist <support@bugheist.com>',
-            [email_to],
+            [email_to, issue.domain.email],
             html_message=msg_html,
         )
         issue.save()
