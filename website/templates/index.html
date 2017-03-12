@@ -112,33 +112,28 @@
 
          {% for domain in domains %}
             <div class="col-lg-3 col-md-6">
-                <div class="panel"  id="hunt_{{domain.id}}">
+                <div class="panel" id="hunt_{{domain.id}}" style="background-color:{{domain.get_color}}">
                     <div class="panel-heading">
                         <div class="row">
-                            <div class="col-xs-3" >
-                                <img src="{{MEDIA_URL}}{{domain.logo}}" width="75" height="75" id="hunt_image{{domain.id}}" style="background-color:white;">
+                            <div class="col-xs-3" style="width:75px; height:75px;">
+                                <img src="{{MEDIA_URL}}{{domain.logo}}" width="75" height="75" id="hunt_image{{domain.id}}" style="background-color:white;" onerror="this.onerror=null; this.style.display ='none';">
                             </div>
                             <div class="col-xs-9 text-right" style="color:white;">
                                 <div class="huge">{{domain.get_name}}</div>
-                                {% if domain.prize %}
-                                <div>Grand Prize ${{domain.prize}}</div>
-                                {% endif %}
+                                
+                                <div>{% if domain.prize %}Grand Prize ${{domain.prize}}{% endif %}&nbsp;</div>
+                                
                             </div>
                         </div>
                     </div>
                     <a href="{{domain.url}}" target="_new">
                         <div class="panel-footer">
-                            <span class="pull-left" id="hunt_link{{domain.id}}">View Website</span>
-                            <span class="pull-right"><i class="fa fa-arrow-circle-right" id="hunt_icon{{domain.id}}"></i></span>
+                            <span class="pull-left" id="hunt_link{{domain.id}}" style="color:{{domain.get_color}}">View Website</span>
+                            <span class="pull-right"><i class="fa fa-arrow-circle-right" id="hunt_icon{{domain.id}}" style="color:{{domain.get_color}}"></i></span>
                             <div class="clearfix"></div>
                         </div>
                     </a>
                 </div>
-                <script>
-                $('#hunt_{{domain.id}}').css('background-color', "{{domain.get_color}}");
-                $('#hunt_icon{{domain.id}}').css('color', "{{domain.get_color}}");
-                $('#hunt_link{{domain.id}}').css('color', "{{domain.get_color}}");
-                </script>
             </div>
 {% endfor %}
 
