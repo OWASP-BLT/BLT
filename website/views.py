@@ -42,6 +42,8 @@ import json
 from user_agents import parse
 from .forms import IssueEditForm, FormInviteFriend, UserProfileForm
 import random
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 
 registry.register(User)
 registry.register(Issue)
@@ -271,6 +273,7 @@ class UserProfileDetailView(DetailView):
         context['profile_form'] = UserProfileForm()
         return context
 
+    @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
         if form.is_valid():
