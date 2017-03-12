@@ -21,6 +21,7 @@ from django.core.files.base import ContentFile
 import requests
 from PIL import Image
 from django.db.models import Count
+from colorthief import ColorThief
 
 
 class Domain(models.Model):
@@ -69,6 +70,21 @@ class Domain(models.Model):
             image_content = ContentFile(requests.get("https://logo.clearbit.com/"+self.name).content)
             self.logo.save(self.name +".jpg", image_content)
             return self.logo.url
+
+    @property
+    def get_color(self):
+        if self.color:
+            return self.color
+        else:
+            if not self.logo:
+                self.get_logo()
+            try:
+                color_thief = ColorThief(self.logo)
+                self.color = '#%02x%02x%02x' % color_thief.get_color(quality=1)
+            except:
+                self.color = "#0000ff"
+            self.save()
+            return self.color
 
     @property
     def hostname_domain(self):
