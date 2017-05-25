@@ -15,9 +15,9 @@
     <div class="row">
         <div class="col-lg-12">
             <h1 class="page-header">Win points for reporting bugs on any website!
-            <a id="chrome_ext" style="float:right;" href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new">
+            <!-- <a id="chrome_ext" style="float:right;" href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new">
                         <img src="{% static 'img/chrome-button.png' %}" >
-                    </a></h1>
+                    </a> --></h1>
         </div>
     </div>
     <div class="row">
@@ -25,9 +25,9 @@
             <form role="form" action="/issue/" method="post" id="form1" enctype="multipart/form-data" >
                 {% csrf_token %}
                 <div class="form-group">
-                    <label>Find a bug on any website
+                    <label style="display:block">Find a bug on any website
                         {% if not user.is_authenticated %}
-                            <span style="color:#DD4252; margin-left:60px;">* login required</span>
+                            <span style="color:#DD4252; float:right">* login required</span>
                         {% endif %}
                     </label>
                     {% if request.GET.url %}
@@ -40,7 +40,7 @@
                     {% endif %}
                 </div>
                 <div class="form-group">
-                    <label>Describe the bug</label>
+                    <label  style="display:block">Describe the bug</label>
                     <textarea data-required="true" class="form-control required" rows="3" placeholder="I found a bug on a site."  id="description" name="description">{{form.description.value|default:""}}</textarea>
                     {% if form.description.errors %}
                         <label id="description-error" class="error" for="description">{{form.description.errors}}</label>
@@ -63,37 +63,41 @@
                 <div class="form-group">
                     <button type="submit" id="btn" class="btn btn-default btn-danger" style="background:#dd4252; height:43px; font-size:14px;">Enter Bug</button>
                     </form> 
-                    <label style="color:#dd4252; margin-left: 20px"> Win +3 points!</label>
+                    <label style="color:#dd4252; float:right"> Win +3 points!</label>
+                    <br>
                     {% if not user.is_authenticated %}
-                        <a href="/accounts/login">
-                            <button class="btn btn-default btn-caution" style="float:right;">
-                            <i class="fa fa-envelope fa-2x"></i>
-                            </button>
-                        </a>
-                        <a href="{% provider_login_url "facebook" method="js_sdk" %}">
-                            <button class="btn btn-default btn-caution" style="float:right;">
-                            <i class="fa fa-facebook fa-2x"></i>
-                            </button>
-                        </a>
-                        <a href="{% provider_login_url "google" method="js_sdk" %}">
-                            <button class="btn btn-default btn-caution" style="float:right;">
-                            <i class="fa fa-google fa-2x"></i>
-                            </button>
-                        </a>
-                        <a href="{% provider_login_url "github" method="js_sdk" %}">
-                            <button class="btn btn-default btn-caution" style="float:right;">
-                            <i class="fa fa-github fa-2x"></i>
-                            </button>
-                        </a>
-                        <a href="/accounts/login">
-                            <button class="btn btn-default btn-caution" style="color:#dd4252; float:right; height:43px; font-size:14px;">Login</button>
-                        </a>
+                        <ul class="login_options">
+                            <li><a href="/accounts/login" >
+                                <button class="btn btn-default btn-caution">
+                                <i class="fa fa-envelope fa-2x"></i>
+                                </button>
+                            </a></li>
+                            <li><a href="{% provider_login_url "facebook" method="js_sdk" %}">
+                                <button class="btn btn-default btn-caution" >
+                                <i class="fa fa-facebook fa-2x"></i>
+                                </button>
+                            </a></li>
+                            <li><a href="{% provider_login_url "google" method="js_sdk" %}">
+                                <button class="btn btn-default btn-caution" ">
+                                <i class="fa fa-google fa-2x"></i>
+                                </button>
+                            </a></li>
+                            <li><a href="{% provider_login_url "github" method="js_sdk" %}">
+                                <button class="btn btn-default btn-caution" ">
+                                <i class="fa fa-github fa-2x"></i>
+                                </button>
+                            </a></li>
+                            <li><a href="/accounts/login">
+                                <button class="btn btn-default btn-caution" style="height:43px; font-size:14px;display: inline-block;">Login</button>
+                            </a></li>
+                        </ul>
                     {% endif %}
+
                 </div>
-            
+            </form>
         </div>
         
-        <div class="col-lg-6">
+        <div class="col-lg-6 col-xs-12">
             <center>
             <span id="video_span">
                 <iframe width="560" height="315" id="video_iframe" src="https://www.youtube.com/embed/o-t6HDXjpP8?rel=0&amp;controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
@@ -102,16 +106,17 @@
         </div>
         
     </div>
+    <div class="col-lg-9">
     <div class="row">
         <div class="col-lg-12">
-            <h1 class="page-header">Featured Websites
+            <h1 class="page-sub-header">Featured Websites
             </h1>
         </div>
     </div>
     <div class="row">
 
          {% for domain in domains %}
-            <div class="col-lg-3 col-md-6">
+            <div class="col-lg-4 col-md-6">
                 <div class="panel" id="hunt_{{domain.id}}" style="background-color:{{domain.get_color}}">
                     <div class="panel-heading">
                         <div class="row">
@@ -136,8 +141,8 @@
                 </div>
             </div>
 {% endfor %}
-
-        <div class="col-lg-3 col-md-6">
+    
+        <div class="col-lg-4 col-md-6">
             <div class="panel"  style="background-color:#234082">
                 <div class="panel-heading">
                     <div class="row">
@@ -165,12 +170,12 @@
         <button type="submit" class="btn btn-default btn-danger" style="background:#dd4252; height:43px; font-size:14px;">Sponsor a Bug Hunt</button>
     </a>
     <div class="row">
-        <div class="col-lg-9">
-            <h1 class="page-header">Activity</h1>
+        <div class="col-lg-12">
+            <h1 class="page-sub-header">Activity</h1>
         </div>
     </div>
     <div class="row">
-        <div class="col-lg-9">
+        <div class="col-lg-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     Latest
@@ -185,9 +190,11 @@
                 </div>
             </div>
         </div>
+    </div>
+    </div>
         <div class="col-lg-3">
             <div class="panel panel-default">
-                <div class="panel-heading">
+                <div class="panel-heading page-sub-header">
                     {% now "F" %} Leaderboard
 
                 </div>
@@ -238,7 +245,7 @@
         <div class="col-lg-3">
             <a class="twitter-timeline" data-height="800" href="https://twitter.com/Bugheist">Tweets by Bugheist</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
         </div>
-    </div>
+    
 
     <script>
     var player_width = 560;

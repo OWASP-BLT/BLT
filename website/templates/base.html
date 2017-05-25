@@ -18,7 +18,9 @@
         <meta property="og:type"  content="website" />
         <link href="{% static "vendor/bootstrap/css/bootstrap.css" %}" rel="stylesheet">
         <link href="{% static "css/sb-admin-2.css" %}" rel="stylesheet">
+        <link href="{% static "css/style.css" %}" rel="stylesheet">
         <link href="{% static "vendor/font-awesome/css/font-awesome.min.css" %}" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400" rel="stylesheet">
         <script src="{% static "vendor/jquery/jquery.min.js" %}"></script>
         <script src="{% static "js/notify.js" %}"></script>
         <!--[if lt IE 9]>
@@ -31,6 +33,7 @@
             <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0;">
                 <div class="navbar-header" style="z-index:4;">
                     <a class="navbar-brand" href="/" ><img src="{% static "img/logo-small-transparent.png" %}" style="margin-left:20px;"></a>
+                    <span class="tagline">| Make the web a better place</span>
                 </div>
 
                 <ul class="nav navbar-top-links navbar-right">
@@ -62,35 +65,37 @@
                         </li>
                     {% else %}
                         <a href="/accounts/login/">
-                            <button class="btn btn-default" style="float:right; height:43px; font-size:14px;margin-top:3px; margin-right:15px; color:#dd4252">
+                            <button class="btn btn-default login-button">
                             Login
                             </button>
                         </a>
                     {% endif %}
+                        <li><a id="chrome_ext" style="float:right;" href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new" class="chrome-plugin">
+                        + Add to chrome
+                    </a></li>
                 </ul>
             </nav>
             <div id="page-wrapper" >
-                <div class="container-fluid" >
+                <div class="container" >
                     {% block content %}
                     {% endblock %}
                 </div>
             </div>
-            <div class="panel-footer"  >
-                <div class="col-lg-3 col-md-6 col-md-offset-3">
-                    <ul>
-                        <li><a href="/terms">Terms of Service</a></li>
-                        <li><a href="http://github.com/bugheist/website" target="_new">Source</a></li>
-                        <li><a href="/stats">Stats</a></li>
-                        <li><a href="/scoreboard">Company Scoreboard</a></li>
-                    </ul>
-                </div>
-                <div class="col-lg-3 col-md-6 ">
-                    <ul>
-                        <li><a href="http://twitter.com/bugheist" target="_new">Follow us on Twitter</a></li>
-                        <li><a href="http://facebook.com/bugheist" target="_new">Like us on Facebook</a></li>
-                        <li><a href="https://www.owasp.org/index.php/OWASP_Bug_Logging_Tool" target="_new">Powered by OWASP BLT</a></li>
-                        <li><a href="/about" target="_new">About</a></li>
-                    </ul>
+            <div class="container">
+                <div class="panel-footer"  >
+                    
+                        <ul>
+                            <li><a href="/terms">Terms of Service</a></li>
+                            <li><a href="http://github.com/bugheist/website" target="_new">Source</a></li>
+                            <li><a href="/stats">Stats</a></li>
+                            <li><a href="/scoreboard">Company Scoreboard</a></li>
+                        
+                            <li><a href="http://twitter.com/bugheist" target="_new">Follow us on Twitter</a></li>
+                            <li><a href="http://facebook.com/bugheist" target="_new">Like us on Facebook</a></li>
+                            <li><a href="https://www.owasp.org/index.php/OWASP_Bug_Logging_Tool" target="_new">Powered by OWASP BLT</a></li>
+                            <li><a href="/about" target="_new">About</a></li>
+                        </ul>
+                   
                 </div>
             </div>
             <script src="{% static "vendor/bootstrap/js/bootstrap.min.js" %}"></script>
