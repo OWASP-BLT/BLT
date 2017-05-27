@@ -8,6 +8,14 @@
 {% block og_image %}{{object.screenshot.url}}{% endblock %}
 {% block og_description %}{{object.description}}{% endblock %}
 {% block description %}{{object.description}}{% endblock %}
+{% block style %}
+    .alt-img{
+        padding-top: 25px;
+        width: 75px;
+        filter: blur(2px);
+        -webkit-filter:blur(2px);
+    }
+{% endblock %}
 {% block content %}
     <div id="fb-root"></div>
     <script>
@@ -56,7 +64,8 @@
                     <a href="/domain/{{object.domain_name}}">
                         <div class="row">
                             <div class="col-xs-3">
-                                <img src="{{object.domain.get_logo}}" height="75" onerror="this.onerror=null; this.style.display ='none';">
+                                <img src="{{object.domain.get_logo}}" height="75" onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
+                                <img src="{% static 'img/logo-small-transparent.png' %}" style="display:none;" class="alt-img">
                             </div>
                             <div class="col-xs-9 text-right">
                                 <div class="huge">{{object.domain_title}}</div>
