@@ -22,7 +22,7 @@
     </div>
     <div class="row">
         <div class="col-lg-6">
-            <form role="form" action="/issue/" method="post" id="form1" enctype="multipart/form-data" >
+            <form role="form" action="/issue/" method="post" id="form1" enctype="multipart/form-data" class="form">
                 {% csrf_token %}
                 <div class="form-group">
                     <label style="display:block">Find a bug on any website
@@ -61,7 +61,7 @@
                 </div>
                
                 <div class="form-group">
-                    <button type="submit" id="btn" class="btn btn-default btn-danger" style="background:#dd4252; height:43px; font-size:14px;">Enter Bug</button>
+                    <button type="submit" id="btn" class="btn btn-default btn-danger submit_button" style=" height:43px; font-size:14px;">Enter Bug</button>
                     </form> 
                     <label style="color:#dd4252; float:right"> Win +3 points!</label>
                     <br>
@@ -167,7 +167,7 @@
         
     </div>
     <a href="/start">
-        <button type="submit" class="btn btn-default btn-danger" style="background:#dd4252; height:43px; font-size:14px;">Sponsor a Bug Hunt</button>
+        <button type="submit" class="btn btn-default btn-danger submit_button" style=" height:43px; font-size:14px;">Sponsor a Bug Hunt</button>
     </a>
     <div class="row">
         <div class="col-lg-12">
@@ -186,7 +186,7 @@
                             {% include '_activity.html' %}
                         {% endfor %}
                     </div>
-                    <a href="/all_activity" class="btn btn-default btn-block">View All Activity</a>
+                    <a href="/all_activity" class="btn btn-default btn-block submit_button">View All Activity</a>
                 </div>
             </div>
         </div>
@@ -238,7 +238,7 @@
                             Leaderboard reset for {% now "F" %}. Be first to find issues!
                         {% endif %}
                     </div>
-                    <a href="/leaderboard" class="btn btn-default btn-block">View All</a>
+                    <a href="/leaderboard" class="btn btn-default btn-block submit_button">View All</a>
                 </div>
             </div>
         </div>
