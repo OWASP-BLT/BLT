@@ -36,6 +36,10 @@ body{
 	color: #dd4252;
 }
 
+a:hover{
+	color: #009688;
+}
+
 .login-button{
 	height:50px;
 	font-size:14px;
@@ -47,7 +51,7 @@ body{
 
 .login-button:hover{
 	border-width: 0;
-	color: #23527c;
+	color: #009688;
 }
 
 #form1{
@@ -62,29 +66,30 @@ body{
 	}
 }
 
-#form1 input,#form1 textarea,#form1 label{
-	
+.form input,.form textarea,.form label{
 	margin:5px auto;
-	
-
 }
 
-#form1 .form-group{
+.form label{
+	color: #777;
+}
+
+.form .form-group{
 	margin-top: 20px;
 }
 
-#form1 input,#form1 textarea{
+.form input,.form textarea{
 	background-color: #eee;
 	border-width: 0;
 	box-shadow: 0 0 0 #000;	
 }
 
-#form1 input:focus,
-#form1 textarea:focus{
+.form input:focus,
+.form textarea:focus{
 	box-shadow: inset 0 2px 0 #ccc;
 }
 
-#form1 input[type="file"]{
+.form input[type="file"]{
 	margin: 10px 0;
 	line-height: 22px;
 	font-size: 18px;
@@ -166,3 +171,27 @@ body{
 .panel-footer li a{
 	color: #dd4252;
 }
+
+.submit_button{
+	
+	background: #fff;
+	border-width: 0;
+	color: #dd4252;
+	padding: 10px;
+	display: inline-block;
+	border: 1px solid #dd4252;
+	border-radius: 6px;
+}
+
+.submit_button:hover{
+	background-color: #ddd;
+	color: #009688;
+	border-color: #009688;
+
+}
+
+.free-plan-text{
+	display: inline-block;
+	
+}
+
