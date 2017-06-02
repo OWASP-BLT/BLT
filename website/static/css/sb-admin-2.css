@@ -66,6 +66,12 @@ body {
   right: 0;
   left: auto;
 }
+.panel-footer ul li {
+  list-style: none;
+}
+.panel-footer ul li a {
+  text-decoration: none;
+}
 .sidebar .sidebar-nav.navbar-collapse {
   padding-left: 0;
   padding-right: 0;
