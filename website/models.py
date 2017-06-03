@@ -66,10 +66,17 @@ class Domain(models.Model):
     def get_logo(self):
         if self.logo:
             return self.logo.url
-        else:
-            image_content = ContentFile(requests.get("https://logo.clearbit.com/"+self.name).content)
-            self.logo.save(self.name +".jpg", image_content)
-            return self.logo.url
+        image_request = requests.get("https://logo.clearbit.com/"+self.name)
+        try:
+            if image_request.status_code == 200:
+                image_content = ContentFile(image_request.content)
+                self.logo.save(self.name +".jpg", image_content)
+                return self.logo.url
+            
+        except:
+            favicon_url = self.url + '/favicon.ico'
+            return favicon_url
+
 
     @property
     def get_color(self):

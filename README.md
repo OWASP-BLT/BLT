@@ -1,18 +1,48 @@
 # OWASP BLT
 
-Report issues and get points, companies are held accountable.
+**Report issues and get points, companies are held accountable.**
 
-The first time you may need to run:
-- `If postgresql is not installed`, `brew install postgresql` (mac), `sudo apt-get install postgresql` (Ubuntu) 
+Demo: [Bugheist](http://bugheist.com/)
 
-- `cd projectname`
-- `virtualenv venv`
-- `venv\Scripts\activate` (windows)
-- `source venv/bin/activate` (mac)
-- `pip install -r requirements.txt`
-- `python manage.py migrate`
-- `python manage.py createsuperuser` (then go to /admin) and add filler information for social auth accounts
-- `python manage.py runserver`
+### Dev Setup
+**Step 1:**
 
-Note:
-- `you may have to install libpq-dev`
+If PostgreSQL is not installed, run 
+
+`brew install postgresql` (Mac)
+
+`sudo apt-get install postgresql` (Ubuntu) 
+
+**Step 2:**
+
+`cd BLT`
+
+**Step 3:**
+
+If virtualenv is not installed, run `sudo apt-get install virtualenv` followed by
+
+`virtualenv venv` (Ubuntu)
+
+`venv\Scripts\activate` (Windows)
+
+`source venv/bin/activate` (Mac)
+
+**Step 4:**
+
+`pip install -r requirements.txt`
+
+**Step 5:**
+
+`python manage.py migrate`
+
+**Step 6:**
+
+`python manage.py createsuperuser`
+
+then go to http://127.0.0.1:8000/admin/socialaccount/socialapp/) and add filler information for social auth accounts.
+
+**Step 7:**
+
+Start the server using `python manage.py runserver` and visit http://localhost:8000
+
+**Note:** In case you encounter an error, run `sudo apt-get install libpq-dev`
