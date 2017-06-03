@@ -27,6 +27,10 @@
         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
         <![endif]-->
+        <style>
+            {% block style %}
+            {% endblock %}
+        </style>
     </head>
     <body>
         <div id="wrapper">
@@ -81,6 +85,7 @@
                     {% endblock %}
                 </div>
             </div>
+
             <div class="container">
                 <div class="panel-footer"  >
                     
@@ -96,6 +101,7 @@
                             <li><a href="/about" target="_new">About</a></li>
                         </ul>
                    
+
                 </div>
             </div>
             <script src="{% static "vendor/bootstrap/js/bootstrap.min.js" %}"></script>

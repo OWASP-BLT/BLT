@@ -7,7 +7,7 @@ diff-match-patch==20121119
 dj-database-url==0.4.0
 Django==1.9.2
 django-activity-stream==0.6.3
-django-allauth==0.27.0
+django-allauth==0.32.0
 django-cors-headers==1.1.0
 django-email-obfuscator==0.1.4
 django-gravatar2==1.4.0
@@ -26,7 +26,7 @@ pytesseract==0.1.6
 python-openid==2.2.5
 pytz==2016.6.1
 PyVirtualDisplay==0.2
-requests==2.11.1
+requests[security]==2.11.1
 requests-oauthlib==0.6.2
 rollbar==0.13.3
 selenium==2.53.6
