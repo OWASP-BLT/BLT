@@ -4,7 +4,7 @@
 
 Demo: [Bugheist](http://bugheist.com/)
 
-### Dev Setup
+## Dev Setup
 **Step 1:**
 
 If PostgreSQL is not installed, run 
@@ -46,3 +46,7 @@ then go to http://127.0.0.1:8000/admin/socialaccount/socialapp/) and add filler 
 Start the server using `python manage.py runserver` and visit http://localhost:8000
 
 **Note:** In case you encounter an error, run `sudo apt-get install libpq-dev`
+
+## Resources
+
+- Join the [OWASP Slack Channel](https://owasp.herokuapp.com/) and ask questions at **#project-blt**.
