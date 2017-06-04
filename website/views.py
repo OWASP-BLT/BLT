@@ -304,10 +304,16 @@ class DomainDetailView(TemplateView):
 
         try:
             context['domain'] = Domain.objects.get(name=self.kwargs['slug'])
+            context['issue_choice'] = self.kwargs['choice']
         except:
             context['domain'] = self.kwargs['slug']
+            context['issue_choice'] = "all"
         context['issues'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug'])
         context['leaderboard'] = User.objects.filter(issue__url__contains=self.kwargs['slug']).annotate(total=Count('issue')).order_by('-total')
+        context['total_issues'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).count()
+        context['total_open'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(status="open").count()
+        context['total_closed'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(status="closed").count()          
+
         return context
 
 
@@ -628,7 +634,5 @@ class CreateInviteFriend(CreateView):
         messages.success(self.request, 'An email has been sent to your friend. Keep invite your friends and get points!')
 
         return HttpResponseRedirect(self.success_url)
-
-
 
 

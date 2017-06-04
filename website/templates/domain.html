@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load issue_type %}
 {% load staticfiles %}
 {% load gravatar %}
 {% load email_obfuscator %}
@@ -67,37 +68,47 @@
         <div class="col-lg-9">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    Latest Issues
+                    <a href="all" style="padding: 0px 20px;" >ALL({{ total_issues }})</a>
+                    <a href="open" style="padding: 0px 20px;" >OPEN({{ total_open }})</a>
+                    <a href="closed" style="padding: 0px 20px;" >CLOSED({{ total_closed }})</a>
                 </div>
                 <div class="panel-body">
-                    <div class="list-group" >
+                    <div class="list-group" >                   
                         {% for activity in issues %}
-                            <div class="list-group-item" style="height:96px; overflow:hidden;">
-                                <div style=" overflow:hidden; float:left;width:800px; " >
-                                    <div style="float:left;margin-right:10px">
-                                        {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
-                                            <img src="{{activity.user.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
-                                        {% else %}
-                                            {% gravatar activity.user.email 50 %}
-                                        {% endif %}
+                            {% if issue_choice == "all" %}
+                                {% define issue_choice as condition %}                                
+                            {% else %}
+                                {% define activity.status as condition %}
+                            {% endif %}                     
+                                                                
+                            {% if condition == issue_choice %}
+                                <div class="list-group-item" style="height:96px; overflow:hidden;">
+                                    <div style=" overflow:hidden; float:left;width:800px; " >
+                                        <div style="float:left;margin-right:10px">
+                                            {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
+                                                <img src="{{activity.user.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
+                                            {% else %}
+                                                {% gravatar activity.user.email 50 %}
+                                            {% endif %}
+                                        </div>
+                                        {{ activity.user.username }} entered issue
+                                        <a href="{{ activity.get_absolute_url }}">
+                                            <img src="http://{{activity.hostname_domain}}/favicon.ico" height="16" onerror="this.onerror=null; this.style.display ='none';">
+                                            {{ activity.domain_title }} - {{ activity }}
+                                        </a>
                                     </div>
-                                    {{ activity.user.username }} entered issue
-                                    <a href="{{ activity.get_absolute_url }}">
-                                        <img src="http://{{activity.hostname_domain}}/favicon.ico" height="16" onerror="this.onerror=null; this.style.display ='none';">
-                                        {{ activity.domain_title }} - {{ activity }}
-                                    </a>
+                                    <div style="float:right;">
+                                        <span class=" text-muted small" style="float:right; height:77px; overflow:hidden;">
+                                            <em>{{ activity.created|timesince }} ago</em></br>
+                                            {% if activity.screenshot %}
+                                                <a href="{{ activity.get_absolute_url }}">
+                                                    <img src="{{ activity.screenshot.url }}" width="100" style="float:right;" >
+                                                </a>
+                                            {% endif %}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div style="float:right;">
-                                    <span class=" text-muted small" style="float:right; height:77px; overflow:hidden;">
-                                        <em>{{ activity.created|timesince }} ago</em></br>
-                                        {% if activity.screenshot %}
-                                            <a href="{{ activity.get_absolute_url }}">
-                                                <img src="{{ activity.screenshot.url }}" width="100" style="float:right;" >
-                                            </a>
-                                        {% endif %}
-                                    </span>
-                                </div>
-                            </div>
+                            {% endif %}    
                         {% endfor %}
                     </div>
                 </div>
