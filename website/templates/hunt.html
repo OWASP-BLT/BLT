@@ -3,7 +3,7 @@
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
-    <form role="form" id="form1" action="/hunt/" method="post" enctype="multipart/form-data" >
+    <form role="form" id="form2" action="/hunt/" method="post" enctype="multipart/form-data" class="form" >
         <div class="row">
             <div class="col-lg-6">
                 <h1 class="page-header">Start a bug hunt!</h1> 
@@ -35,7 +35,7 @@
                 </div>
 
                 <div class="form-group" style="margin-top:10px;">
-                    <label style="margin-bottom:35px;">Grand Prize:</label>
+                    <label style="margin-bottom:15px; color: #212121;">Grand Prize:</label><br>
                     (Maximum tip Amount, you are encouraged to tip the bug finders, this is the maximum amount they can expect)
                     <div style="display:inline;margin-left:25px;padding-top:20px;">
                         <input class="slider" style="width:100%"
@@ -55,7 +55,7 @@
 
             <div class="col-lg-12">
             Payments are handled through Paypal.  You will be charged from Coderbounty, Inc.  (our current parent company)
-                <h1 class="page-header">Subscription:</h1>
+                <h1 class="page-sub-header">Subscription:</h1>
             </div>
         </div>
         <div class="row">
@@ -149,7 +149,10 @@
         </div>
         <div class="row">
             <div class="col-lg-12">
-                <h2>Free Plan:</h2>Limited to 5 bugs per month:</br> <button type="submit"  onclick="javascript:document.getElementById('plan').value='Free'" class="btn btn-primary btn-lg " >Start</button>
+            	<div class="free-plan-text">
+                	<h2>Free Plan:</h2><p>Limited to 5 bugs per month:</p>
+                </div>
+                <button type="submit" class="submit_button" onclick="javascript:document.getElementById('plan').value='Free'" class="btn btn-primary btn-lg " >Start</button>
             </div>
         </div>
     </form>
