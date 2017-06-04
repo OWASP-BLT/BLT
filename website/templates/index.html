@@ -74,34 +74,7 @@
                     </form> 
 
                     <label style="color:#dd4252; float:right"> Win +3 points!</label>
-                    <br>
-                    {% if not user.is_authenticated %}
-                        <ul class="login_options">
-                            <li><a href="/accounts/login" >
-                                <button class="btn btn-default btn-caution">
-                                <i class="fa fa-envelope fa-2x"></i>
-                                </button>
-                            </a></li>
-                            <li><a href="{% provider_login_url "facebook" method="js_sdk" %}">
-                                <button class="btn btn-default btn-caution" >
-                                <i class="fa fa-facebook fa-2x"></i>
-                                </button>
-                            </a></li>
-                            <li><a href="{% provider_login_url "google" method="js_sdk" %}">
-                                <button class="btn btn-default btn-caution" ">
-                                <i class="fa fa-google fa-2x"></i>
-                                </button>
-                            </a></li>
-                            <li><a href="{% provider_login_url "github" method="js_sdk" %}">
-                                <button class="btn btn-default btn-caution" ">
-                                <i class="fa fa-github fa-2x"></i>
-                                </button>
-                            </a></li>
-                            <li><a href="/accounts/login">
-                                <button class="btn btn-default btn-caution" style="height:43px; font-size:14px;display: inline-block;">Login</button>
-                            </a></li>
-                        </ul>
-                    {% endif %}
+                    <br>                                      
 
                 </div>
             </form>
