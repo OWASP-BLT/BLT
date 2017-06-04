@@ -53,7 +53,7 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element_by_xpath('//*[@id="page-wrapper"]/div/form/button').click()
         self.selenium.find_element_by_name("url").send_keys('http://www.example.com/')
         self.selenium.find_element_by_id("description").send_keys('Description of bug')
-        Imagepath=os.path.abspath('.\\website\\static\img\logo.jpg')
+        Imagepath=os.path.abspath(os.path.join(os.getcwd(),'website/static/img/logo.jpg'))     
         self.selenium.find_element_by_name("screenshot").send_keys(Imagepath)
         self.selenium.find_element_by_xpath('//*[@id="page-wrapper"]/div/div[2]/div[1]/form/div[4]/button').click()
         body = self.selenium.find_element_by_tag_name('body')
