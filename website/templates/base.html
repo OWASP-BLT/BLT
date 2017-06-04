@@ -69,7 +69,28 @@
                             <button class="btn btn-default" style="float:right; height:43px; font-size:14px;margin-top:3px; margin-right:15px; color:#dd4252">
                             Login
                             </button>
+                        </a>                            
+                        <a href="/accounts/login">
+                            <button class="btn btn-default btn-caution" style="float:right; height:43px; font-size:14px;margin-top:3px; margin-right:15px; color:#dd4252">
+                            <i class="fa fa-envelope fa-2x"></i>
+                            </button>
                         </a>
+                        <a href="{% provider_login_url "facebook" method="js_sdk" %}">
+                            <button class="btn btn-default btn-caution" style="float:right; height:43px; font-size:14px;margin-top:3px; margin-right:15px; color:#dd4252">
+                            <i class="fa fa-facebook fa-2x"></i>
+                            </button>
+                        </a>
+                        <a href="{% provider_login_url "google" method="js_sdk" %}">
+                            <button class="btn btn-default btn-caution" style="float:right; height:43px; font-size:14px;margin-top:3px; margin-right:15px; color:#dd4252">
+                            <i class="fa fa-google fa-2x"></i>
+                            </button>
+                        </a>
+                        <a href="{% provider_login_url "github" method="js_sdk" %}">
+                            <button class="btn btn-default btn-caution" style="float:right; height:43px; font-size:14px;margin-top:3px; margin-right:15px; color:#dd4252">
+                            <i class="fa fa-github fa-2x"></i>
+                            </button>
+                        </a>                      
+
                     {% endif %}
                 </ul>
             </nav>
