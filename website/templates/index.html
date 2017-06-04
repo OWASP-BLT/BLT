@@ -40,13 +40,10 @@
                     {% endif %}
                 </div>
                 <div class="form-group">
-<<<<<<< HEAD
+
                     <label  style="display:block">Describe the bug</label>
                     <textarea data-required="true" class="form-control required" rows="3" placeholder="I found a bug on a site."  id="description" name="description">{{form.description.value|default:""}}</textarea>
-=======
-                    <label>Describe the bug</label>
-                    <textarea data-required="true" class="form-control required" rows="3" placeholder="I found a bug on a site."  id="description" name="description" style="resize:vertical">{{form.description.value|default:""}}</textarea>
->>>>>>> 1dad036fb3c28f4c0ef1990b486ca7a26f9279c8
+
                     {% if form.description.errors %}
                         <label id="description-error" class="error" for="description">{{form.description.errors}}</label>
                     {% endif %}
@@ -204,10 +201,10 @@
 
                 </div>
                 <div class="panel-body">
-                    <div style="border-left: 1px solid #ccc; border-top: 1px solid #ccc; border-right: 1px solid #888; border-bottom: 1px solid #888; background-color: #00ffcd; padding: 10px;">
+                    <div style="border-left: 1px solid #ccc; border-top: 1px solid #ccc; border-right: 1px solid #888; border-bottom: 1px solid #888; background-color: #ddd; padding: 10px;">
                         <div style="margin-bottom:5px;font-weight:bold;font-size:16px;">The 1st Place Hunter for  {% now "F" %} will receive</div>
                         
-                        <div style="border: 3px solid #dd4252; display:block;padding:7px;margin-right:5px;padding-top:10px;background:white;">
+                        <div style="border: 3px solid #009688; display:block;padding:7px;margin-right:5px;padding-top:10px;background:white;">
                             <span style="font-size:20px; font-weight:bold;margin-right:5px;">$?? 
                             </span> from
                             
@@ -216,7 +213,7 @@
                         <input type="hidden" name="business" value="coderbounty@gmail.com">
                         <input type="hidden" name="item_name" value="Sponsor a Prize for the {% now "F" %} Leaderboard on Bugheist">
                         <input type="hidden" name="currency_code" value="USD">
-                        <button type="submit" class="btn btn-danger btn-small pull-right" style="margin-top:-4px;" >
+                        <button type="submit" class="btn btn-danger btn-small pull-right" style="margin-top:-4px;width:100%;" >
                         Sponsor a Prize</button>
                     </form>
                             
