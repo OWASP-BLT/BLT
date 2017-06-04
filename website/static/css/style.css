@@ -205,5 +205,13 @@ a:hover{
 	}
 }
 
+.login_options .btn-default:hover{
+	color: #009866;
+
+}
+
+.login_options .btn-default{
+	color: #dd4252;
+}
 
 
