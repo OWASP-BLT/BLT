@@ -68,32 +68,7 @@
                 <div class="form-group">
                     <button type="submit" id="btn" class="btn btn-default btn-danger" style="background:#dd4252; height:43px; font-size:14px;">Report Bug</button>
                     </form> 
-                    <label style="color:#dd4252; margin-left: 20px"> Win +3 points!</label>
-                    {% if not user.is_authenticated %}
-                        <a href="/accounts/login">
-                            <button class="btn btn-default btn-caution" style="float:right;">
-                            <i class="fa fa-envelope fa-2x"></i>
-                            </button>
-                        </a>
-                        <a href="{% provider_login_url "facebook" method="js_sdk" %}">
-                            <button class="btn btn-default btn-caution" style="float:right;">
-                            <i class="fa fa-facebook fa-2x"></i>
-                            </button>
-                        </a>
-                        <a href="{% provider_login_url "google" method="js_sdk" %}">
-                            <button class="btn btn-default btn-caution" style="float:right;">
-                            <i class="fa fa-google fa-2x"></i>
-                            </button>
-                        </a>
-                        <a href="{% provider_login_url "github" method="js_sdk" %}">
-                            <button class="btn btn-default btn-caution" style="float:right;">
-                            <i class="fa fa-github fa-2x"></i>
-                            </button>
-                        </a>
-                        <a href="/accounts/login">
-                            <button class="btn btn-default btn-caution" style="color:#dd4252; float:right; height:43px; font-size:14px;">Login</button>
-                        </a>
-                    {% endif %}
+                    <label style="color:#dd4252; margin-left: 20px"> Win +3 points!</label>                
                 </div>
             
         </div>
