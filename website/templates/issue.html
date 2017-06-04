@@ -64,11 +64,11 @@
                     <a href="/domain/{{object.domain_name}}">
                         <div class="row">
                             <div class="col-xs-3">
-                                <img src="{{object.domain.get_logo}}" height="75" onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
+                                <img src="{{object.domain.get_logo}}" class="_overflow_img" height="75" onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
                                 <img src="{% static 'img/logo-small-transparent.png' %}" style="display:none;" class="alt-img">
                             </div>
                             <div class="col-xs-9 text-right">
-                                <div class="huge">{{object.domain_title}}</div>
+                                <div class="huge _overflow_text">{{object.domain_title}}</div>
                                 <div>{{issue_count}} issues</div>
                             </div>
                         </div>
@@ -90,13 +90,13 @@
                         <div class="row">
                             <div class="col-xs-3">
                                 {% if object.user.socialaccount_set.all.0.get_avatar_url %}
-                                    <img src="{{object.user.socialaccount_set.all.0.get_avatar_url}}" width="75" height="75">
+                                    <img class="_overflow_img" src="{{object.user.socialaccount_set.all.0.get_avatar_url}}" width="75" height="75">
                                 {% else %}
                                     {% gravatar object.user.email 75 %}
                                 {% endif %}
                             </div>
-                            <div class="col-xs-9 text-right " >
-                                <div class="huge">{{object.user.username}}</div>
+                            <div class="col-xs-9 text-right" >
+                                <div class="huge _overflow_text">{{object.user.username}}</div>
                                 <div>{{users_score}} points</div>
                             </div>
                         </div>
