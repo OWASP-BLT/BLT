@@ -168,7 +168,7 @@ a:hover{
 }
 
 
-.panel-footer li a{
+.panel-footer li a,.user-menu a{
 	color: #dd4252;
 }
 
@@ -194,4 +194,16 @@ a:hover{
 	display: inline-block;
 	
 }
+
+.user-menu{
+	float: right;
+}
+
+@media only screen and (max-width: 1200px){
+	.panel-footer li{
+		margin:10px;
+	}
+}
+
+
 
