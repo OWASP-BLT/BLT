@@ -11,7 +11,13 @@
     .ds-btn li a span{padding-left:15px;padding-right:5px;width:100%;display:inline-block; text-align:left;}
     .ds-btn li a span small{width:100%; display:inline-block; text-align:left;}
     .huge {overflow:auto;}
+    .message{display: none;position: fixed;top: 30px;}
+    .message p{padding: 10px;margin: 0 auto;text-align: center;width: 300px;}
+    .close{float:right;cursor:pointer;}
     </style>
+    <div class="message">
+        <p><div class="close">x</div>Please verify your email address</p>
+    </div>
     <div class="row">
         <div class="col-lg-12">
             <h1 class="page-header">Win points for reporting bugs on any website!
@@ -254,5 +260,7 @@
     $(document).ready(function(){responsiveVideo();});
     $(window).resize(function() {responsiveVideo();});
     $('#btn').on('click', function() { $("#form1").valid(); });
+
+    
     </script>
 {% endblock %}
