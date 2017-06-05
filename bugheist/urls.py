@@ -48,6 +48,7 @@ urlpatterns = patterns('',
     url(r'^stats/$', StatsDetailView.as_view()),
     url(r'^favicon\.ico$', favicon_view),
     url(r'^sendgrid_webhook/$', csrf_exempt(InboundParseWebhookView.as_view()), name='inbound_event_webhook_callback'),
+    url(r'^post/(?P<pk>\d+)/comment/$',website.views.add_comment_to_post, name='add_comment_to_post'),
 
 ) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
