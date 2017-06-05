@@ -214,4 +214,13 @@ a:hover{
 	color: #dd4252;
 }
 
+._overflow_text{
+	font-size: 20px;
+}
+
+._overflow_img{
+	max-width: 200px;
+	height: auto;
+}
+
 
