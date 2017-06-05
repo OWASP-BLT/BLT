@@ -137,6 +137,12 @@
                 {% endfor %}
             {% endif %}
             <script src="{% static 'js/ui.js' %}"></script>
+            <script>
+                var message = "{{not_verified}}"
+                if(message!=''){
+                  $.notify(message,{ position: 'top center', className: "" }); 
+                }
+            </script>
         </div>
     </body>
 </html>
