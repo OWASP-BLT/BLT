@@ -40,7 +40,7 @@ import re
 import os
 import json
 from user_agents import parse
-from .forms import IssueEditForm, FormInviteFriend, UserProfileForm
+from .forms import IssueEditForm, FormInviteFriend, UserProfileForm, CommentForm
 import random
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
