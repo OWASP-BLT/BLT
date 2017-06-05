@@ -182,7 +182,7 @@ if DEBUG:
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_VERIFICATION = "optional"
 
 # Honor the 'X-Forwarded-Proto' header for request.is_secure()
 
