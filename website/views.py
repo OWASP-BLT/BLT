@@ -45,6 +45,7 @@ import random
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from allauth.account.models import EmailAddress
 
 registry.register(User)
 registry.register(Issue)
@@ -55,11 +56,18 @@ def index(request, template="index.html"):
         domains = random.sample(Domain.objects.all(), 3)
     except:
         domains = None
+    try:
+        show_message = ''
+        if not EmailAddress.objects.get(email=request.user.email).verified:
+            show_message = 'Please verify your email address'
+    except:
+        show_message = ''
     context = {
         'activities': Action.objects.all()[0:10],
         'domains': domains,
         'hunts': Hunt.objects.exclude(txn_id__isnull=True)[:4],
         'leaderboard':  User.objects.filter(points__created__month=datetime.now().month).annotate(total_score=Sum('points__score')).order_by('-total_score')[:10],
+        'not_verified': show_message,
     }
     return render_to_response(template, context, context_instance=RequestContext(request))
 
