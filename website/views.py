@@ -644,7 +644,6 @@ class CreateInviteFriend(CreateView):
 
         return HttpResponseRedirect(self.success_url)
 
-
 @login_required(login_url="/accounts/login/")
 def add_comment_to_post(request, pk):
     post = get_object_or_404(Issue, pk=pk)
