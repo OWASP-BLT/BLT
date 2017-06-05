@@ -247,6 +247,11 @@ table.dataTable thead .sorting:after {
 .huge {
   font-size: 40px;
 }
+@media (max-width: 414px) {
+  .huge {
+    font-size: 25px;
+  }
+}
 .panel-green {
   border-color: #5cb85c;
 }
