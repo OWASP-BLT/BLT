@@ -2,28 +2,36 @@
 {% load gravatar %}
 {% block content %}
     <div class="row">
-        <div class="col-lg-6">
-            <h1 class="page-header">{{ user.username }}</h1>
+        <h1 class="page-header text-capitalize">{{ user.username }}</h1>
+        <div class="col-md-3">            
             {% if user.userprofile.avatar %}
-                <img src="{{ user.userprofile.avatar }}" width="150" height="150">
+                <img src="{{ user.userprofile.avatar }}" class="img-responsive img-thumbnail" width="150" height="150">
             {% else %}
-                {% gravatar user.email 150 %}
+                <img src="{% gravatar_url user.email 200 %}" class="img-responsive img-thumbnail" width="200" height="200">                
             {% endif %}
+        </div>
+        <div class="col-md-3">
             {% if request.user == user %}
-                <form method="post" action="." enctype="multipart/form-data">
-                    {% csrf_token %}
-                    {{ profile_form.user_avatar }}
-                    <button type="submit" class="btn btn-primary btn-small" style="margin-top: 10px;">change photo</button>
-                </form>
+                <button class="btn btn-primary btn-small edit-pic">Change Profile Picture</button>
+                <div class="update-pic" style="display: none">
+                    <form method="post" action="." enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ profile_form.user_avatar }}
+                        <br/>
+                        <button type="submit" class="btn btn-primary btn-small">Upload</button>
+                    </form>
+                </div>
             {% endif %}
-            <h1> {{ my_score|default:0 }} points</h1>
+        </div>
+        <div class="col-md-3 col-md-offset-3">
+            <h1> {{ my_score|default:0 }} Points</h1>
             <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post">
                 <input type="hidden" name="cmd" value="_xclick">
                 <input type="hidden" name="business" value="{{ project.paypal|default:"coderbounty@gmail.com" }}">
                 <input type="hidden" name="item_name" value="tip for {{ user.username }} on bugheist.com">
                 <input type="hidden" name="currency_code" value="USD">
                 <button type="submit" class="btn btn-danger btn-small">
-                    <i class="fa fa-money fa-lg" style="margin-right:5px;"></i> send a tip
+                    <i class="fa fa-money fa-lg" style="margin-right:5px;"></i> Send a tip
                 </button>
             </form>
         </div>
@@ -31,7 +39,7 @@
     <div class="row">
         <div class="col-lg-9">
             <div class="panel panel-default">
-                <div class="panel-heading">
+                <div class="panel-heading text-capitalize">
                     {{ user.username }}'s activity
                 </div>
                 <div class="panel-body">
@@ -45,28 +53,33 @@
         </div>
 
         <div class="col-lg-3">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    {{ user.username }}'s top bug findings
-                </div>
-                <div class="panel-body">
-                    <div class="list-group">
-                        {% for website in websites %}
-                            <div class="list-group-item">
-                                <a href="/domain/{{ website.name }}">
-                                    <img src="http://www.{{ website.name }}/favicon.ico" height="25"
-                                         onerror="this.onerror=null; this.style.display ='none';">
-                                </a>
-                                <a href="/domain/{{ website.name }}" style="margin-left:5px;">{{ website.name }}</a>
-                                <span class="pull-right text-muted small"><em> {{ website.total }} bug{{ website.total|pluralize }}</em>
-								</span>
-                            </div>
-                        {% endfor %}
-                    </div>
-
-                </div>
+          <div class="panel panel-default">
+            <div class="panel-heading text-capitalize">
+                {{ user.username }}'s top bug findings
             </div>
+            <div class="panel-body">
+              <div class="list-group">
+                {% for website in websites %}
+                  <div class="list-group-item">
+                    <a href="/domain/{{ website.name }}">
+                        <img src="http://www.{{ website.name }}/favicon.ico" height="25"
+                             onerror="this.onerror=null; this.style.display='none';">
+                    </a>
+                    <a href="/domain/{{ website.name }}" style="margin-left:5px;">
+                      {{ website.name }}
+                    </a>
+                    <span class="label label-default pull-right" style="margin-top:3px;">
+                      {{ website.total }} Bug {{ website.total|pluralize }}
+                    </span>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
         </div>
 
     </div>
+    <script>
+
+    </script>
 {% endblock %}
