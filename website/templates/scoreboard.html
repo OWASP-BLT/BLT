@@ -87,6 +87,14 @@
     #keywords tbody tr td.lalign {
     text-align: left;
     }
+    
+    .alt-img{
+        padding-top: 25px;
+        width: 75px;
+        filter: blur(2px);
+        -webkit-filter:blur(2px);
+    }
+
     </style>
     <script src="{% static "js/jquery.tablesorter.js" %}"></script>
     <script>
@@ -118,7 +126,8 @@
                         <tr>
                             <td height="80px">
                                 <a href="/domain/{{domain.domain_name}}">
-                                    <img src="{{domain.get_logo}}" alt="{{domain.name}}" style="width:80px;">
+                                    <img src="{{domain.get_logo}}" alt="{{domain.name}}" style="width:80px;" onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
+                                    <img src="{% static 'img/logo-small-transparent.png' %}" style="display:none;" class="alt-img">
                                 </a>
                             </td>
                             <td>{{domain.get_name}}</td>
