@@ -42,7 +42,7 @@
                 <div class="form-group">
 
                     <label  style="display:block">Describe the bug</label>
-                    <textarea data-required="true" class="form-control required" rows="3" placeholder="I found a bug on a site."  id="description" name="description">{{form.description.value|default:""}}</textarea>
+                    <textarea data-required="true" class="form-control required" rows="3" placeholder="I found a bug on a site."  id="description" name="description" style="resize:vertical" >{{form.description.value|default:""}}</textarea>
 
                     {% if form.description.errors %}
                         <label id="description-error" class="error" for="description">{{form.description.errors}}</label>
