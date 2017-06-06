@@ -2,123 +2,53 @@
 {% load gravatar %}
 {% load staticfiles %}
 {% load humanize %}
-{% block content %}
-    <style>
-    body {
-    font-family: sans-serif;
-    }
-    thead {
-    padding: 2px;
-    text-align: right;
-    }
-    td {
-    padding: 2px;
-    text-align: center;
-    }
-    tbody {
-    text-align: center;
-    }
-    h1 {
-    background-color: transparent;
-    padding-top: 0px;
-    padding-right: 0px;
-    padding-bottom: .5px;
-    padding-left: 0px;
-    border-style: outset;
-    border-color: #FFFFFF;
-    border-bottom: 1px solid #ccc; line-height: 1.8em;
-    border-right-style: none;
-    }
-    h2 {
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-    font-size: 25px;
-    border-collapse: collapse;
-    width: 100%;
-    text-align: center;
-    }
-    td, th {
-    border: 1px solid #ddd;
-    padding: 1px;
-    }
-    tr:nth-child(even){background-color: #ddd;}
-    tr:hover {background-color: #ddd;}
-    th {
-    padding-top: 1px;
-    padding-bottom: 1px;
-    text-align: left;
-    background-color: #73DC69;
-    color: black;
-    }
-    #keywords {
-    margin: 0 auto;
-    font-size: 1.0em;
-    margin-bottom: 2px;
-    }
-    #keywords thead {
-    cursor: pointer;
-    background: #DCDCDC;
-    }
-    #keywords thead tr th {
-    font-weight: bold;
-    padding: 1px 1px;
-    padding-left: 1px;
-    }
-    #keywords thead tr th span {
-    padding-right: 5px;
-    background-repeat: no-repeat;
-    background-position: 100% 100%;
-    }
-    #keywords thead tr th.headerSortUp, #keywords thead tr th.headerSortDown {
-    background: #acc8dd;
-    }
-    #keywords thead tr th.headerSortUp span {
-    background-image: url('up-arrow.png');
-    }
-    #keywords thead tr th.headerSortDown span {
-    background-image: url('down-arrow.png');
-    }
-    #keywords tbody tr {
-    color: #555;
-    }
-    #keywords tbody tr td {
-    text-align: center;
-    padding: 4px 3px;
-    }
-    #keywords tbody tr td.lalign {
-    text-align: left;
-    }
-    
+
+{% block style %}
     .alt-img{
         padding-top: 25px;
         width: 75px;
         filter: blur(2px);
         -webkit-filter:blur(2px);
+        display: none;
     }
+    .table td,
+    .table th {
+       text-align: center;
+       vertical-align: middle !important;
+    }
+    .table a {
+        text-decoration: none;
+    }
+    thead {
+        background: #73DC69;
+        color: white;
+    }
+{% endblock %}
 
-    </style>
+{% block content %}
     <script src="{% static "js/jquery.tablesorter.js" %}"></script>
     <script>
     $(function(load){
-    $('#keywords').tablesorter();
+        $('#keywords').tablesorter();
     });
     </script>
     <div class="row">
         <div class="col-lg-6">
-            <h1 class="page-header">Company Scoreboard</h1>
+            <h2 class="page-header">Company Scoreboard</h2>
         </div>
     </div>
     <div class="row">
-        <div class="col-lg-9">
-            <table id="keywords">
-                <thead id="keywords">
+        <div class="col-lg-10">
+            <table id="keywords" class="table table-bordered table-striped table-condensed">
+                <thead>
                     <tr>
-                        <th>Company </th>
-                        <th>Company Name </th>
-                        <th>Open Issues </th>
-                        <th>Closed Issues </th>
-                        <th>Email Event </th>
-                        <th>Time of Last Event </th>
-                        <th>Top Company Tester </th>
+                        <th>Company</th>
+                        <th>Company Name</th>
+                        <th>Open Issues</th>
+                        <th>Closed Issues</th>
+                        <th>Email Event</th>
+                        <th>Time of Last Event</th>
+                        <th>Top Company Tester</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -127,15 +57,19 @@
                             <td height="80px">
                                 <a href="/domain/{{domain.domain_name}}">
                                     <img src="{{domain.get_logo}}" alt="{{domain.name}}" style="width:80px;" onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
-                                    <img src="{% static 'img/logo-small-transparent.png' %}" style="display:none;" class="alt-img">
+                                    <img src="{% static 'img/logo-small-transparent.png' %}" class="alt-img">
                                 </a>
                             </td>
-                            <td>{{domain.get_name}}</td>
+                            <td class="text-capitalize">{{domain.get_name}}</td>
                             <td>{{domain.open_issues|length}}</td>
                             <td>{{domain.closed_issues|length}}</td>
-                            <td>{{domain.email_event}}</td>
+                            <td class="text-capitalize">{{domain.email_event}}</td>
                             <td>{{domain.modified|timesince}} ago</td>
-                            <td><a href="/profile/{{domain.top_tester.username}}">{{domain.top_tester|default:""}}</a></td>
+                            <td class="text-capitalize">
+                                <a href="/profile/{{domain.top_tester.username}}">
+                                    {{domain.top_tester|default:""}}
+                                </a>
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
