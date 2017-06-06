@@ -6,18 +6,10 @@
 {% providers_media_js %}
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
-    <style>
-    .ds-btn li{ list-style:none; float:left; padding:10px; }
-    .ds-btn li a span{padding-left:15px;padding-right:5px;width:100%;display:inline-block; text-align:left;}
-    .ds-btn li a span small{width:100%; display:inline-block; text-align:left;}
-    .huge {overflow:auto;}
-    </style>
+
     <div class="row">
         <div class="col-lg-12">
-            <h1 class="page-header">Win points for reporting bugs on any website!
-            <!-- <a id="chrome_ext" style="float:right;" href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new">
-                        <img src="{% static 'img/chrome-button.png' %}" >
-                    </a> --></h1>
+            <h1 class="page-header">Win points for reporting bugs on any website!</h1>
         </div>
     </div>
     <div class="row">
@@ -25,7 +17,7 @@
             <form role="form" action="/issue/" method="post" id="form1" enctype="multipart/form-data" class="form">
                 {% csrf_token %}
                 <div class="form-group">
-                    <label style="display:block">Find a bug on any website
+                    <label>Find a bug on any website
                         {% if not user.is_authenticated %}
                             <span style="color:#DD4252; float:right">* login required</span>
                         {% endif %}
@@ -40,8 +32,7 @@
                     {% endif %}
                 </div>
                 <div class="form-group">
-
-                    <label  style="display:block">Describe the bug</label>
+                    <label>Describe the bug</label>
                     <textarea data-required="true" class="form-control required" rows="3" placeholder="I found a bug on a site."  id="description" name="description" style="resize:vertical" >{{form.description.value|default:""}}</textarea>
 
                     {% if form.description.errors %}
@@ -50,16 +41,15 @@
                 </div>
                 
                 <div class="form-group">
-                    <!-- <label>Attach Screenshot</label> -->
                     {% if request.GET.hash %}</br>
                         <img src="{{ MEDIA_URL }}uploads/{{request.GET.hash}}.png" height="100" style=" border: 1px solid #d43f3a;">
                         <input type="hidden" class="required" name="screenshot-hash" value="{{request.GET.hash}}">
                     {% else %}
                         <span>
-                            <input  type="file" class="required" style="opacity: 0; width: 1px;height:1px;" id='${multipartFilePath}' name="screenshot" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"  /> 
+                            <input type="file" class="required" style="opacity: 0; width: 1px;height:1px;" id='${multipartFilePath}' name="screenshot" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"  /> 
                             <button class="btn btn-primary" name="test_files" type="button"   onclick="$(this).parent().find('input[type=file]').click();"> <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot </button>
                             &nbsp;
-                            <span  class="badge badge-important" ></span>
+                            <span class="badge badge-important"></span>
                         </span>
                     {% endif %}
                     {% if form.screenshot.errors %}
@@ -68,36 +58,28 @@
                 </div>
                
                 <div class="form-group">
-
                     <button type="submit" id="btn" class="btn btn-default btn-danger submit_button" style=" height:43px; font-size:14px;">Report Bug</button>
-
-                    </form> 
-
-                    <label style="color:#dd4252; float:right"> Win +3 points!</label>
-                    <br>                                      
-
+                    </form>
+                    <label style="color:#dd4252; float:right">Win +3 points!</label>
+                    <br>
                 </div>
             </form>
         </div>
         
         <div class="col-lg-6 col-xs-12">
-            <center>
             <span id="video_span">
                 <iframe width="560" height="315" id="video_iframe" src="https://www.youtube.com/embed/o-t6HDXjpP8?rel=0&amp;controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
             </span>
-            </center>
         </div>
         
     </div>
     <div class="col-lg-9">
     <div class="row">
         <div class="col-lg-12">
-            <h1 class="page-sub-header">Featured Websites
-            </h1>
+            <h1 class="page-sub-header">Featured Websites</h1>
         </div>
     </div>
     <div class="row">
-
          {% for domain in domains %}
             <div class="col-lg-6 col-md-6">
                 <div class="panel" id="hunt_{{domain.id}}" style="background-color:{{domain.get_color}}">
@@ -108,9 +90,7 @@
                             </div>
                             <div class="col-xs-9 text-right" style="color:white;">
                                 <div class="huge">{{domain.get_name}}</div>
-                                
-                                <div>{% if domain.prize %}Grand Prize ${{domain.prize}}{% endif %}&nbsp;</div>
-                                
+                                <div>{% if domain.prize %}Grand Prize ${{domain.prize}}{% endif %}</div>
                             </div>
                         </div>
                     </div>
@@ -176,41 +156,33 @@
             <div class="panel panel-default">
                 <div class="panel-heading page-sub-header">
                     {% now "F" %} Leaderboard
-
                 </div>
-                <div class="panel-body">
-                    <div style="border-left: 1px solid #ccc; border-top: 1px solid #ccc; border-right: 1px solid #888; border-bottom: 1px solid #888; background-color: #ddd; padding: 10px;">
-                        <div style="margin-bottom:5px;font-weight:bold;font-size:16px;">The 1st Place Hunter for  {% now "F" %} will receive</div>
-                        
-                        <div style="border: 3px solid #009688; display:block;padding:7px;margin-right:5px;padding-top:10px;background:white;margin-bottom: 20px;">
-                            <span style="font-size:20px; font-weight:bold;margin-right:5px;">$?? 
-                            </span> from
-                            
-                                 [ Your Website Here ]   <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr"  method="post" style="display:inline;margin-bottom:10px;">
-                        <input type="hidden" name="cmd" value="_xclick">
-                        <input type="hidden" name="business" value="coderbounty@gmail.com">
-                        <input type="hidden" name="item_name" value="Sponsor a Prize for the {% now "F" %} Leaderboard on Bugheist">
-                        <input type="hidden" name="currency_code" value="USD">
-                        <button type="submit" class="btn btn-danger btn-small pull-right" style="margin-top:-4px;width:100%;" >
-                        Sponsor a Prize</button>
-                    </form>
-                            
+                <div class="panel-body leaderboard-panel">
+                    <strong>The 1st Place Hunter for  {% now "F" %} will receive</strong>
+                        <div class="box">
+                            <strong>$?? from [ Your Website Here ]</strong>
+                            <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post" style="display:inline;margin-bottom:10px;">
+                                <input type="hidden" name="cmd" value="_xclick">
+                                <input type="hidden" name="business" value="coderbounty@gmail.com">
+                                <input type="hidden" name="item_name" value="Sponsor a Prize for the {% now "F" %} Leaderboard on Bugheist">
+                                <input type="hidden" name="currency_code" value="USD">
+                                <button type="submit" class="btn btn-danger btn-sm">Sponsor a Prize</button>
+                            </form>
                         </div>
                     </div>
 
                     <div class="list-group">
                         {% if leaderboard %}
                             {% for leader in leaderboard %}
-                                <div class="list-group-item">
-                                <span class="pull-right " style="font-size:18px;margin-top:13px;" >{{forloop.counter|ordinal}}</span>
+                                <div class="list-group-item">                                    
                                     {% if leader.socialaccount_set.all.0.get_avatar_url %}
                                         <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
                                     {% else %}
-                                        {% gravatar leader.email 50 %}
+                                        <img src="{% gravatar_url leader.email 50 %}">
                                     {% endif %}
-                                    <a href="/profile/{{leader.username}}" style="margin-left:5px;">{{leader.username}}</a>
-                                    <span class="pull-right text-muted small"><em> {{leader.total_score}} points</em>
-                                    </span>
+                                    <a href="/profile/{{leader.username}}" class="text-capitalize leaderboard-name">{{leader.username}}</a>
+                                    <span class="badge leaderboard-points">{{leader.total_score}} Points</span>
+                                    <span class="pull-right label label-success leaderboard-rank">{{forloop.counter|ordinal}}</span>
                                 </div>
                             {% endfor %}
                         {% else %}
@@ -223,9 +195,11 @@
             </div>
         </div>
         <div class="col-lg-3">
-            <a class="twitter-timeline" data-height="800" href="https://twitter.com/Bugheist">Tweets by Bugheist</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+            <a class="twitter-timeline" data-height="800" href="https://twitter.com/Bugheist">
+                Tweets by Bugheist
+            </a>
+            <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
         </div>
-    
 
     <script>
     var player_width = 560;
@@ -254,7 +228,6 @@
     $(document).ready(function(){responsiveVideo();});
     $(window).resize(function() {responsiveVideo();});
     $('#btn').on('click', function() { $("#form1").valid(); });
-
-    
     </script>
+
 {% endblock %}
