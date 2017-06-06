@@ -97,12 +97,12 @@
                                             {{ activity.domain_title }} - {{ activity }}
                                         </a>
                                     </div>
-                                    <div style="float:right;">
-                                        <span class=" text-muted small" style="float:right; height:77px; overflow:hidden;">
+                                    <div >
+                                        <span class=" text-muted small" style=" height:77px; overflow:hidden;">
                                             <em>{{ activity.created|timesince }} ago</em></br>
                                             {% if activity.screenshot %}
                                                 <a href="{{ activity.get_absolute_url }}">
-                                                    <img src="{{ activity.screenshot.url }}" width="100" style="float:right;" >
+                                                    <img src="{{ activity.screenshot.url }}" width="100" style="position:absolute;top:0;right:0;" >
                                                 </a>
                                             {% endif %}
                                         </span>
