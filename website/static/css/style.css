@@ -332,9 +332,8 @@ a:hover{
 	text-decoration: none !important;
 }
 .leaderboard-points {
-	margin-top: 15px;
-	margin-right: 50px;
+	float: none !important;
 }
 .leaderboard-rank {
-	margin-top: -33px;
+	margin-left: 15px;
 }

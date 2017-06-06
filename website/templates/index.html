@@ -123,7 +123,7 @@
                                     {% endif %}
                                     <a href="/profile/{{leader.username}}" class="text-capitalize leaderboard-name">{{leader.username}}</a>
                                     <span class="badge leaderboard-points">{{leader.total_score}} Points</span>
-                                    <span class="pull-right label label-success leaderboard-rank">{{forloop.counter|ordinal}}</span>
+                                    <span class="label label-success leaderboard-rank">{{forloop.counter|ordinal}}</span>
                                 </div>
                             {% endfor %}
                         {% else %}
