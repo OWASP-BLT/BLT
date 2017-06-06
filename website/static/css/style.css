@@ -276,9 +276,13 @@ a:hover{
 	font-size: 46px;
 	padding-left: 10px;
 }
-.issue-panel {
-	height:295px;
-}
 .issue-panel .panel-footer {
 	padding-top: 20px;
+}
+.issue-panels .panel {
+	max-height: 300px;
+}
+.issue-panels .panel .operations .btn {
+	margin-top: 5px;
+	margin-bottom: 5px;
 }
