@@ -227,4 +227,36 @@ a:hover{
 	height: auto;
 }
 
+.activity-strip {
+	height:120px;
+	overflow:hidden;
+}
 
+.activity-strip .activity-strip-section {
+	overflow:hidden;
+	float:left;
+	width:80%;
+	display:inline-flex;
+}
+
+.activity-strip-section > div {
+	margin-left: 20px;	
+	font-size: 20px;
+	font-weight: bold;
+}
+.activity-strip-section > div a {
+	text-decoration: none;
+}
+.activity-strip-section > div > .small {
+	font-size: initial;
+	font-weight: initial;
+}
+.activity-screenshot {
+	float:right;
+	display:block;
+	overflow:hidden;
+}
+.activity-screenshot img {
+	width: 100px;
+	height: 95%;
+}
