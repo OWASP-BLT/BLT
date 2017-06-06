@@ -9,70 +9,6 @@
     <script src="{% static "js/jquery.validate.js" %}"></script>
 
     <div class="row">
-        <div class="col-lg-12">
-            <h1 class="page-header">Win points for reporting bugs on any website!</h1>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-6">
-            <form role="form" action="/issue/" method="post" id="form1" enctype="multipart/form-data" class="form">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label>Find a bug on any website
-                        {% if not user.is_authenticated %}
-                            <span class="text-danger">*Login required!</span>
-                        {% endif %}
-                    </label>
-                    {% if request.GET.url %}
-                        <input class="form-control required"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
-                    {% else %}
-                        <input class="form-control required" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
-                    {% endif %}
-                    {% if form.url.errors %}
-                        <label id="description-error" class="error" for="description">{{form.url.errors}}</label>
-                    {% endif %}
-                </div>
-                <div class="form-group">
-                    <label>Describe the bug</label>
-                    <textarea data-required="true" class="form-control required" rows="3" placeholder="I found a bug on a site."  id="description" name="description">{{form.description.value|default:""}}</textarea>
-
-                    {% if form.description.errors %}
-                        <label id="description-error" class="error" for="description">{{form.description.errors}}</label>
-                    {% endif %}
-                </div>
-                
-                <div class="form-group">
-                    {% if request.GET.hash %}</br>
-                        <img src="{{ MEDIA_URL }}uploads/{{request.GET.hash}}.png" height="100">
-                        <input type="hidden" class="required" name="screenshot-hash" value="{{request.GET.hash}}">
-                    {% else %}
-                        <span>
-                            <input type="file" class="required" style="" id='${multipartFilePath}' name="screenshot" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"/> 
-                            <button class="btn btn-primary" name="test_files" type="button" onclick="$(this).parent().find('input[type=file]').click();"> <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot</button>
-                            <span class="badge badge-important"></span>
-                        </span>
-                    {% endif %}
-                    {% if form.screenshot.errors %}
-                        <label id="description-error" class="error" for="description">{{form.screenshot.errors}}</label>
-                    {% endif %}
-                </div>
-               
-                <div class="form-group">
-                    <button type="submit" id="btn" class="btn btn-default btn-danger submit_button">
-                        Report Bug [Win +3 points!]
-                    </button>
-                </div>
-            </form>
-        </div>
-        
-        <div class="col-lg-6 col-xs-12">
-            <span id="video_span">
-                <iframe width="560" height="315" id="video_iframe" src="https://www.youtube.com/embed/o-t6HDXjpP8?rel=0&amp;controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
-            </span>
-        </div>
-    </div>
-
-    <div class="row">
 
         <div class="col-lg-9">
             <div class="row">
@@ -80,7 +16,7 @@
                     <h1 class="page-sub-header">Featured Websites</h1>
                 </div>
             </div>
-            <div class="row">
+            <div class="row" data-intro="These are the lists of featured websites on BugHeist." data-step="5">
                  {% for domain in domains %}
                     <div class="col-lg-6 col-md-6">
                         <div class="panel" id="hunt_{{domain.id}}" style="background-color:{{domain.get_color}}">
@@ -132,7 +68,7 @@
                     </div>
                 </div>
             </div>
-            <div class="row">
+            <div class="row" data-intro="View latest activities here." data-step="6">
                 <div class="col-lg-12">
                     <h1 class="page-sub-header">Latest activity</h1>
                 </div>
