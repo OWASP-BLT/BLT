@@ -5,44 +5,6 @@
 {% load humanize %}
 {% providers_media_js %}
 
-{% block style %}
-.form-group span {
-    margin-left: 60px;
-}
-.form-group .btn-primary {
-    width: 100%;
-}
-textarea {
-    resize: vertical;
-}
-input[type='file'] {
-    opacity: 0;
-    width: 1px;
-    height:1px;
-}
-.submit_button {
-    width: 100%;
-}
-.panel-heading .col-xs-3 {
-    width:75px;
-    height:75px;
-}
-.panel-heading .col-xs-3 {
-    background-color:white;
-    width:75px;
-    height:75px;
-}
-.panel-heading .col-xs-9 {
-    color:white;
-}
-.owasp-panel {
-    background-color:#234082;
-}
-.owasp-panel .col-xs-9{
-    color:white;
-}
-{% endblock %}
-
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
 
