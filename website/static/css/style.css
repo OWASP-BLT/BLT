@@ -268,3 +268,17 @@ a:hover{
 	width: -moz-available;
 	width: -webkit-fill-available;
 }
+.panel-issue {
+	display: inline-flex;
+}
+.panel-issue-title {
+	color: white;
+	font-size: 46px;
+	padding-left: 10px;
+}
+.issue-panel {
+	height:295px;
+}
+.issue-panel .panel-footer {
+	padding-top: 20px;
+}
