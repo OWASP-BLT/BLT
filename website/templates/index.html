@@ -153,34 +153,32 @@
                         </div>
 
                         <div class="list-group">
-                            {% if leaderboard %}
-                                {% for leader in leaderboard %}
-                                    <div class="list-group-item">                                    
-                                        {% if leader.socialaccount_set.all.0.get_avatar_url %}
-                                            <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
-                                        {% else %}
-                                            <img src="{% gravatar_url leader.email 50 %}">
-                                        {% endif %}
-                                        <a href="/profile/{{leader.username}}" class="text-capitalize leaderboard-name">{{leader.username}}</a>
-                                        <span class="badge leaderboard-points">{{leader.total_score}} Points</span>
-                                        <span class="pull-right label label-success leaderboard-rank">{{forloop.counter|ordinal}}</span>
-                                    </div>
-                                {% endfor %}
-                            {% else %}
-                                </br>
-                                Leaderboard reset for {% now "F" %}. Be first to find issues!
-                            {% endif %}
-                        </div>
-                        <a href="/leaderboard" class="btn btn-default btn-block submit_button">View All</a>
+                        {% if leaderboard %}
+                            {% for leader in leaderboard %}
+                                <div class="list-group-item">                                    
+                                    {% if leader.socialaccount_set.all.0.get_avatar_url %}
+                                        <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
+                                    {% else %}
+                                        <img src="{% gravatar_url leader.email 50 %}">
+                                    {% endif %}
+                                    <a href="/profile/{{leader.username}}" class="text-capitalize leaderboard-name">{{leader.username}}</a>
+                                    <span class="badge leaderboard-points">{{leader.total_score}} Points</span>
+                                    <span class="label label-success leaderboard-rank">{{forloop.counter|ordinal}}</span>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                        </br> Leaderboard reset for {% now "F" %}. Be first to find issues!
+                        {% endif %}
                     </div>
+                    <a href="/leaderboard" class="btn btn-default btn-block submit_button">View All</a>
                 </div>
             </div>
+        </div>
 
-            <div class="row">
-                <div class="col-lg-3">
-                    <a class="twitter-timeline" data-height="800" href="https://twitter.com/Bugheist"></a>
-                    <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-                </div>
+        <div class="row">
+            <div class="col-lg-3">
+                <a class="twitter-timeline" data-height="800" href="https://twitter.com/Bugheist"></a>
+                <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
             </div>
         </div>
     </div>
