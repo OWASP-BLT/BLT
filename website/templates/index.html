@@ -4,143 +4,199 @@
 {% load socialaccount %}
 {% load humanize %}
 {% providers_media_js %}
+
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
 
-    <div class="row">     
-        <center>   
-        <span id="video_span">
-            <iframe width="560" height="315" id="video_iframe" src="https://www.youtube.com/embed/o-t6HDXjpP8?rel=0&amp;controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
-        </span>    
-        </center>    
-    </div>
-    <div class="col-lg-9">
     <div class="row">
         <div class="col-lg-12">
-            <h1 class="page-sub-header">Featured Websites</h1>
+            <h1 class="page-header">Win points for reporting bugs on any website!</h1>
         </div>
     </div>
     <div class="row">
-         {% for domain in domains %}
-            <div class="col-lg-6 col-md-6">
-                <div class="panel" id="hunt_{{domain.id}}" style="background-color:{{domain.get_color}}">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3" style="width:75px; height:75px;">
-                                <img src="{{MEDIA_URL}}{{domain.logo}}" width="75" height="75" id="hunt_image{{domain.id}}" style="background-color:white;" onerror="this.onerror=null; this.style.display ='none';">
-                            </div>
-                            <div class="col-xs-9 text-right" style="color:white;">
-                                <div class="huge">{{domain.get_name}}</div>
-                                <div>{% if domain.prize %}Grand Prize ${{domain.prize}}{% endif %}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <a href="{{domain.url}}" target="_new">
-                        <div class="panel-footer">
-                            <span class="pull-left" id="hunt_link{{domain.id}}" style="color:{{domain.get_color}}">View Website</span>
-                            <span class="pull-right"><i class="fa fa-arrow-circle-right" id="hunt_icon{{domain.id}}" style="color:{{domain.get_color}}"></i></span>
-                            <div class="clearfix"></div>
-                        </div>
-                    </a>
+        <div class="col-lg-6">
+            <form role="form" action="/issue/" method="post" id="form1" enctype="multipart/form-data" class="form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Find a bug on any website
+                        {% if not user.is_authenticated %}
+                            <span class="text-danger">*Login required!</span>
+                        {% endif %}
+                    </label>
+                    {% if request.GET.url %}
+                        <input class="form-control required"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
+                    {% else %}
+                        <input class="form-control required" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
+                    {% endif %}
+                    {% if form.url.errors %}
+                        <label id="description-error" class="error" for="description">{{form.url.errors}}</label>
+                    {% endif %}
                 </div>
-            </div>
-{% endfor %}
-    
-        <div class="col-lg-6 col-md-6">
-            <div class="panel"  style="background-color:#234082">
-                <div class="panel-heading">
-                    <div class="row">
-                        <div class="col-xs-3">
-                            <img src="https://www.owasp.org/images/thumb/2/2f/Owasp_logo_flat2_icon.jpg/100px-Owasp_logo_flat2_icon.jpg" width="75" height="75">
-                        </div>
-                        <div class="col-xs-9 text-right " style="color:white;">
-                            <div class="huge">OWASP</div>
-                            <div>Grand Prize $100</div>
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label>Describe the bug</label>
+                    <textarea data-required="true" class="form-control required" rows="3" placeholder="I found a bug on a site."  id="description" name="description">{{form.description.value|default:""}}</textarea>
+
+                    {% if form.description.errors %}
+                        <label id="description-error" class="error" for="description">{{form.description.errors}}</label>
+                    {% endif %}
                 </div>
-                <a href="https://www.owasp.org/index.php/Bug_Bounty_Projects" target="_new">
-                    <div class="panel-footer">
-                        <span class="pull-left" style="color:#234082">View Website</span>
-                        <span class="pull-right"><i class="fa fa-arrow-circle-right" style="color:#234082"></i></span>
-                        <div class="clearfix"></div>
-                    </div>
-                </a>
-            </div>
+                
+                <div class="form-group">
+                    {% if request.GET.hash %}</br>
+                        <img src="{{ MEDIA_URL }}uploads/{{request.GET.hash}}.png" height="100">
+                        <input type="hidden" class="required" name="screenshot-hash" value="{{request.GET.hash}}">
+                    {% else %}
+                        <span>
+                            <input type="file" class="required" style="" id='${multipartFilePath}' name="screenshot" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"/> 
+                            <button class="btn btn-primary" name="test_files" type="button" onclick="$(this).parent().find('input[type=file]').click();"> <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot</button>
+                            <span class="badge badge-important"></span>
+                        </span>
+                    {% endif %}
+                    {% if form.screenshot.errors %}
+                        <label id="description-error" class="error" for="description">{{form.screenshot.errors}}</label>
+                    {% endif %}
+                </div>
+               
+                <div class="form-group">
+                    <button type="submit" id="btn" class="btn btn-default btn-danger submit_button">
+                        Report Bug [Win +3 points!]
+                    </button>
+                </div>
+            </form>
         </div>
         
-    </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <h1 class="page-sub-header">Activity</h1>
+        <div class="col-lg-6 col-xs-12">
+            <span id="video_span">
+                <iframe width="560" height="315" id="video_iframe" src="https://www.youtube.com/embed/o-t6HDXjpP8?rel=0&amp;controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
+            </span>
         </div>
     </div>
+
     <div class="row">
-        <div class="col-lg-12">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    Latest
-                </div>
-                <div class="panel-body">
-                    <div class="list-group" >
-                        {% for activity in activities %}
-                            {% include '_activity.html' %}
-                        {% endfor %}
-                    </div>
-                    <a href="/all_activity" class="btn btn-default btn-block submit_button">View All Activity</a>
+
+        <div class="col-lg-9">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1 class="page-sub-header">Featured Websites</h1>
                 </div>
             </div>
-        </div>
-    </div>
-    </div>
-        <div class="col-lg-3">
-            <div class="panel panel-default">
-                <div class="panel-heading page-sub-header">
-                    {% now "F" %} Leaderboard
-                </div>
-                <div class="panel-body leaderboard-panel">
-                    <strong>The 1st Place Hunter for  {% now "F" %} will receive</strong>
-                        <div class="box">
-                            <strong>$?? from [ Your Website Here ]</strong>
-                            <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post" style="display:inline;margin-bottom:10px;">
-                                <input type="hidden" name="cmd" value="_xclick">
-                                <input type="hidden" name="business" value="coderbounty@gmail.com">
-                                <input type="hidden" name="item_name" value="Sponsor a Prize for the {% now "F" %} Leaderboard on Bugheist">
-                                <input type="hidden" name="currency_code" value="USD">
-                                <button type="submit" class="btn btn-danger btn-sm">Sponsor a Prize</button>
-                            </form>
+            <div class="row">
+                 {% for domain in domains %}
+                    <div class="col-lg-6 col-md-6">
+                        <div class="panel" id="hunt_{{domain.id}}" style="background-color:{{domain.get_color}}">
+                            <div class="panel-heading">
+                                <div class="row">
+                                    <div class="col-xs-3">
+                                        <img src="{{MEDIA_URL}}{{domain.logo}}" id="hunt_image{{domain.id}}"
+                                        onerror="this.onerror=null; this.style.display='none';">
+                                    </div>
+                                    <div class="col-xs-9 text-right">
+                                        <div class="huge">{{domain.get_name}}</div>
+                                        <div>{% if domain.prize %}Grand Prize ${{domain.prize}}{% endif %}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="{{domain.url}}" target="_new">
+                                <div class="panel-footer">
+                                    <span class="pull-left" id="hunt_link{{domain.id}}" style="color:{{domain.get_color}}">View Website</span>
+                                    <span class="pull-right"><i class="fa fa-arrow-circle-right" id="hunt_icon{{domain.id}}" style="color:{{domain.get_color}}"></i></span>
+                                    <div class="clearfix"></div>
+                                </div>
+                            </a>
                         </div>
                     </div>
+                {% endfor %}
 
-                    <div class="list-group">
-                        {% if leaderboard %}
-                            {% for leader in leaderboard %}
-                                <div class="list-group-item">                                    
-                                    {% if leader.socialaccount_set.all.0.get_avatar_url %}
-                                        <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
-                                    {% else %}
-                                        <img src="{% gravatar_url leader.email 50 %}">
-                                    {% endif %}
-                                    <a href="/profile/{{leader.username}}" class="text-capitalize leaderboard-name">{{leader.username}}</a>
-                                    <span class="badge leaderboard-points">{{leader.total_score}} Points</span>
-                                    <span class="pull-right label label-success leaderboard-rank">{{forloop.counter|ordinal}}</span>
+                <div class="col-lg-6 col-md-6">
+                    <div class="panel owasp-panel">
+                        <div class="panel-heading">
+                            <div class="row">
+                                <div class="col-xs-3">
+                                    <img src="https://www.owasp.org/images/thumb/2/2f/Owasp_logo_flat2_icon.jpg/100px-Owasp_logo_flat2_icon.jpg" width="75" height="75">
                                 </div>
-                            {% endfor %}
-                        {% else %}
-                            </br>
-                            Leaderboard reset for {% now "F" %}. Be first to find issues!
-                        {% endif %}
+                                <div class="col-xs-9 text-right">
+                                    <div class="huge">OWASP</div>
+                                    <div>Grand Prize $100</div>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="https://www.owasp.org/index.php/Bug_Bounty_Projects" target="_new">
+                            <div class="panel-footer">
+                                <span class="pull-left" style="color:#234082">View Website</span>
+                                <span class="pull-right">
+                                    <i class="fa fa-arrow-circle-right" style="color:#234082"></i>
+                                </span>
+                                <div class="clearfix"></div>
+                            </div>
+                        </a>
                     </div>
-                    <a href="/leaderboard" class="btn btn-default btn-block submit_button">View All</a>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1 class="page-sub-header">Latest activity</h1>
+                </div>
+                <div class="list-group" >
+                    {% for activity in activities %}
+                        {% include '_activity.html' %}
+                    {% endfor %}
+                </div>
+                <a href="/all_activity" class="btn btn-default btn-block submit_button">View All Activity</a>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="row">
+                <div class="panel panel-default">
+                    <div class="panel-heading page-sub-header">
+                        {% now "F" %} Leaderboard
+                    </div>
+                    <div class="panel-body leaderboard-panel">
+                        <strong>The 1st Place Hunter for  {% now "F" %} will receive</strong>
+                            <div class="box">
+                                <strong>$?? from [ Your Website Here ]</strong>
+                                <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post" style="display:inline;margin-bottom:10px;">
+                                    <input type="hidden" name="cmd" value="_xclick">
+                                    <input type="hidden" name="business" value="coderbounty@gmail.com">
+                                    <input type="hidden" name="item_name" value="Sponsor a Prize for the {% now "F" %} Leaderboard on Bugheist">
+                                    <input type="hidden" name="currency_code" value="USD">
+                                    <button type="submit" class="btn btn-danger btn-sm">Sponsor a Prize</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="list-group">
+                            {% if leaderboard %}
+                                {% for leader in leaderboard %}
+                                    <div class="list-group-item">                                    
+                                        {% if leader.socialaccount_set.all.0.get_avatar_url %}
+                                            <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
+                                        {% else %}
+                                            <img src="{% gravatar_url leader.email 50 %}">
+                                        {% endif %}
+                                        <a href="/profile/{{leader.username}}" class="text-capitalize leaderboard-name">{{leader.username}}</a>
+                                        <span class="badge leaderboard-points">{{leader.total_score}} Points</span>
+                                        <span class="pull-right label label-success leaderboard-rank">{{forloop.counter|ordinal}}</span>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                </br>
+                                Leaderboard reset for {% now "F" %}. Be first to find issues!
+                            {% endif %}
+                        </div>
+                        <a href="/leaderboard" class="btn btn-default btn-block submit_button">View All</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-3">
+                    <a class="twitter-timeline" data-height="800" href="https://twitter.com/Bugheist"></a>
+                    <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
                 </div>
             </div>
         </div>
-        <div class="col-lg-3">
-            <a class="twitter-timeline" data-height="800" href="https://twitter.com/Bugheist">
-                Tweets by Bugheist
-            </a>
-            <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-        </div>
+    </div>
 
     <script>
     var player_width = 560;
