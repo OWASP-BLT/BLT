@@ -2,7 +2,7 @@
 
 **Report issues and get points, companies are held accountable.**
 
-Demo: [Bugheist](http://bugheist.com/)
+Live Site: [Bugheist](http://bugheist.com/)
 
 ## Dev Setup
 **Step 1:**
@@ -50,3 +50,13 @@ Start the server using `python manage.py runserver` and visit http://localhost:8
 ## Resources
 
 - Join the [OWASP Slack Channel](https://owasp.herokuapp.com/) and ask questions at **#project-blt**.
+
+## Notes
+
+- If you find a bug or have an improvement, use BLT to report it!
+
+## Code Sprint 2017 Challenge
+
+-  OWASP Code Sprint 2017
+- Add your name / Github link here along with your proposal
+
