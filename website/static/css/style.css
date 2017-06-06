@@ -342,12 +342,6 @@ a:hover{
 .leaderboard-rank {
 	margin-top: -33px;
 }
-.form-group span {
-    margin-left: 60px;
-}
-.form-group .btn-primary {
-    width: 100%;
-}
 textarea {
     resize: vertical;
 }
