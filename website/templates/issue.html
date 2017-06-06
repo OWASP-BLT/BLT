@@ -43,20 +43,26 @@
     </script>
     <div class="row">
         <div class="col-lg-12">
-            <h2 class="page-header"> {{object.description}} <span class="pull-right"><i class="fa fa-eye" style="margin-right:10px;"></i> {{object.views}}</span></h2>
-            <a href="{{object.url}}" target="_new">{{object.url}}</a></br>
-            <div style="padding-top:10px;">
-                <a class="twitter-share-button"
+            <h3 class="page-header">
+                {{object.description}}
+                <span class="pull-right">
+                    <i class="fa fa-eye"></i> {{object.views}}
+                </span>
+            </h3>
+            <strong>Domain:</strong>
+            <a href="{{object.url}}" target="_new">{{object.url}}</a>
+            <div class="pull-right">
+                <a class="twitter-share-button btn btn-info btn-sm"
                     href="https://twitter.com/intent/tweet?text=Bug on @{{object.domain_title}} - {{object.description}}"
                 data-size="small">Tweet</a>
-                <div class="fb-share-button" data-href="https://www.bugheist.com/issue/{{object.id}} " data-layout="button_count" data-size="small" data-mobile-iframe="true">
-                    <a class="fb-xfbml-parse-ignore" target="_blank" >Share</a>
-                </div>
+                <span class="fb-share-button" data-href="https://www.bugheist.com/issue/{{object.id}} " data-layout="button_count" data-size="small" data-mobile-iframe="true">
+                    <a class="fb-xfbml-parse-ignore btn btn-primary btn-sm" target="_blank">Share</a>
+                </span>
             </div>
-
             <hr>
         </div>
     </div>
+
     <div class="row">
         <div class="col-lg-3 col-md-6">
             <div class="panel" style="background-color:white">
