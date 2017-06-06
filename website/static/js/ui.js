@@ -25,4 +25,8 @@ $(document).ready(function(){
 		$('.edit-pic').hide();
 	});
 
+	$("#startTour").click(function() {
+	    introJs().start();
+    });
+
 });

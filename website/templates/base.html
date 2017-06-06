@@ -21,8 +21,10 @@
         <link href="{% static "css/style.css" %}" rel="stylesheet">
         <link href="{% static "vendor/font-awesome/css/font-awesome.min.css" %}" rel="stylesheet" type="text/css">
         <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400" rel="stylesheet">
+        <link href="{% static "css/introjs.css" %}" rel="stylesheet" type="text/css">
         <script src="{% static "vendor/jquery/jquery.min.js" %}"></script>
         <script src="{% static "js/notify.js" %}"></script>
+        <script src="{% static "js/intro.js" %}"></script>
         <!--[if lt IE 9]>
         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
@@ -79,12 +81,15 @@
                         </a>                                    
 
                     {% endif %}
+                        <li style="float:left;"><a id="chrome_ext" href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new" class="chrome-plugin">
+                        + Add to chrome
+                        </a></li>
                         <li style="float:left;">
                             <a href="/start" class="sponsor-hunt">Sponsor a Bug Hunt</a>
                         </li>
-                        <li style="float:right;"><a id="chrome_ext" href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new" class="chrome-plugin">
-                        + Add to chrome
-                    </a></li>
+                        <li style="float:left;">
+                            <a href="#" id="startTour" class="start-tour">Tour</a>
+                        </li>
                 </ul>
                 <div class="col-md-12">
                   <div class="col-md-4">
@@ -96,16 +101,16 @@
                       {% csrf_token %}
                         <div class="form-group">
                         {% if request.GET.url %}
-                            <input class="form-control required"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
+                            <input class="form-control required" data-intro="Enter the websites complete url where you found the bug." data-step="1"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
                         {% else %}
-                            <input class="form-control required" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
+                            <input class="form-control required" data-intro="Enter the websites complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
                         {% endif %}
                         {% if form.url.errors %}
                             <label id="description-error" class="error" for="description">{{form.url.errors}}</label>
                         {% endif %}
                     </div>
                     <div class="form-group">
-                        <textarea data-required="true" class="form-control required" rows="3" placeholder="Describe bug issue"  id="description" name="description" style="resize:vertical; height: 34px;" >{{form.description.value|default:""}}</textarea>
+                        <textarea data-required="true" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="Describe bug issue"  id="description" name="description" style="resize:vertical; height: 34px;" >{{form.description.value|default:""}}</textarea>
 
                         {% if form.description.errors %}
                             <label id="description-error" class="error" for="description">{{form.description.errors}}</label>
@@ -119,7 +124,7 @@
                     {% else %}
                         <span>
                             <input  type="file" class="required" style="opacity: 0; width: 1px;height:1px;" id='${multipartFilePath}' name="screenshot" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"  /> 
-                            <button class="btn btn-primary" name="test_files" type="button"   onclick="$(this).parent().find('input[type=file]').click();"> <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot </button>
+                            <button class="btn btn-primary" data-intro="Upload a screenshot of the concerned page." data-step="3" name="test_files" type="button"   onclick="$(this).parent().find('input[type=file]').click();"> <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot </button>
                             &nbsp;
                             <span  class="badge badge-important" ></span>
                         </span>
@@ -127,8 +132,8 @@
                     {% if form.screenshot.errors %}
                         <label id="description-error" class="error" for="description">{{form.screenshot.errors}}</label>
                     {% endif %}
-                </div>
-                    <button type="submit" id="btn" class="btn btn-default">Report Bug</button>
+                    </div>
+                    <button type="submit" id="btn" class="btn btn-default" data-intro="Click here to report the bug to BugHeist." data-step="4">Report Bug</button>
                     <i class="fa fa-trophy" aria-hidden="true">+3</i>
                 </form>
                   </div>
