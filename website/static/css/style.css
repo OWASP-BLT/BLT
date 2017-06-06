@@ -231,14 +231,12 @@ a:hover{
 	height:120px;
 	overflow:hidden;
 }
-
 .activity-strip .activity-strip-section {
 	overflow:hidden;
 	float:left;
 	width:80%;
 	display:inline-flex;
 }
-
 .activity-strip-section > div {
 	margin-left: 20px;	
 	font-size: 20px;
@@ -259,4 +257,14 @@ a:hover{
 .activity-screenshot img {
 	width: 100px;
 	height: 95%;
+}
+.panel-image {
+	width: 100%;
+	height: 30%;
+	margin-bottom: -20px;
+}
+.panel-footer .btn {
+	width: 100%;
+	width: -moz-available;
+	width: -webkit-fill-available;
 }

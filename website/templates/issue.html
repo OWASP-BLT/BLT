@@ -64,30 +64,27 @@
     </div>
 
     <div class="row">
-        <div class="col-lg-3 col-md-6">
-            <div class="panel" style="background-color:white">
-                <div class="panel-heading">Issue on:
+        <div class="col-lg-3 col-md-3">
+            <div class="panel panel-info">                
+                <div class="panel-body">
                     <a href="/domain/{{object.domain_name}}">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <img src="{{object.domain.get_logo}}" class="_overflow_img" height="75" onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
-                                <img src="{% static 'img/logo-small-transparent.png' %}" style="display:none;" class="alt-img">
-                            </div>
-                            <div class="col-xs-9 text-right">
-                                <div class="huge _overflow_text">{{object.domain_title}}</div>
-                                <div>{{issue_count}} issues</div>
-                            </div>
-                        </div>
+                        <img src="{{object.domain.get_logo}}" class="panel-image" onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
+                        <img src="{% static 'img/logo-small-transparent.png' %}" class="panel-image" style="display:none;" class="alt-img">                        
                     </a>
                 </div>
-            </div>
-            <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
-                <input type="hidden" name="cmd" value="_s-xclick">
-                <input type="hidden" name="hosted_button_id" value="SC7E9NRCWHGTL">
-                <input type="hidden" name="hcustom" value="{{domian.name}}">
-                <button type="submit" class="btn btn-danger btn-small" >
-                <i class="fa fa-envelope fa-lg" style="margin-right:10px;"></i>Subscribe to {{object.domain_title}} bugs</button>
-            </form>
+                <div class="panel-footer">
+                    <strong>Issue on: {{object.domain_name}}</strong>
+                    <div>Title - <a href="/domain/{{object.domain_name}}">{{object.domain_title}}</a></div>
+                    <div># of issues - {{issue_count}}</div><br/>
+                    <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+                        <input type="hidden" name="cmd" value="_s-xclick">
+                        <input type="hidden" name="hosted_button_id" value="SC7E9NRCWHGTL">
+                        <input type="hidden" name="hcustom" value="{{domian.name}}">
+                        <button type="submit" class="btn btn-danger btn-xs">
+                        <i class="fa fa-envelope fa-lg"></i> Subscribe to {{object.domain_title}} bugs</button>
+                    </form>
+                </div>
+            </div>            
         </div>
         <div class="col-lg-3 col-md-6">
             <div class="panel"  style="background-color:white">
