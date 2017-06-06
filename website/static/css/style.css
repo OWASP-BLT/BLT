@@ -371,3 +371,56 @@ input[type='file'] {
 .owasp-panel .col-xs-9{
     color:white;
 }
+.mega-block {
+ background: #fff none repeat scroll 0 0;
+ box-shadow: 0 0 10px #f1f1f1;
+ padding: 30px;
+ text-align: center;
+}
+.mega-block ul {
+ line-height: 35px;
+ list-style: outside none none;
+ margin: 0;
+ min-height: 198px;
+ padding: 0;
+}
+.mega-block a.boxed-btn {
+ margin: 0;
+}
+.mega-block h1 {
+ font-size: 55px;
+ font-weight: 300;
+}
+.mega-block h1 span {
+ font-size: 25px;
+ padding-right: 3px;
+}
+.mega-block h3 {
+ font-size: 25px;
+ font-weight: 300;
+}
+.gradient-style {
+ background: #000000;
+ background: -webkit-linear-gradient(45deg, #000000 0%, #ffffff 100%);
+ background: linear-gradient(45deg, #000000 0%, #ffffff 100%);
+ filter: progid: DXImageTransform.Microsoft.gradient( startColorstr='#000000', endColorstr='#ffffff', GradientType=1);
+}
+.gradient-style {
+ color: #fff;
+ box-shadow: 0 0 10px #ccc
+}
+.block-icon {
+ font-size: 80px;
+ line-height: 80px;
+ margin-bottom: 20px;
+}
+.gradient-style a {
+ background-color: transparent;
+ border: 1px solid #fff;
+ color: #fff;
+}
+.mega-block h3 span {
+ display: block;
+ font-size: 14px;
+ line-height: 20px;
+}
