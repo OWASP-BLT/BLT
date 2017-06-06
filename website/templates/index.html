@@ -7,71 +7,12 @@
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
 
-    <div class="row">
-        <div class="col-lg-12">
-            <h1 class="page-header">Win points for reporting bugs on any website!</h1>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-6">
-            <form role="form" action="/issue/" method="post" id="form1" enctype="multipart/form-data" class="form">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label>Find a bug on any website
-                        {% if not user.is_authenticated %}
-                            <span style="color:#DD4252; float:right">* login required</span>
-                        {% endif %}
-                    </label>
-                    {% if request.GET.url %}
-                        <input class="form-control required"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
-                    {% else %}
-                        <input class="form-control required" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
-                    {% endif %}
-                    {% if form.url.errors %}
-                        <label id="description-error" class="error" for="description">{{form.url.errors}}</label>
-                    {% endif %}
-                </div>
-                <div class="form-group">
-                    <label>Describe the bug</label>
-                    <textarea data-required="true" class="form-control required" rows="3" placeholder="I found a bug on a site."  id="description" name="description" style="resize:vertical" >{{form.description.value|default:""}}</textarea>
-
-                    {% if form.description.errors %}
-                        <label id="description-error" class="error" for="description">{{form.description.errors}}</label>
-                    {% endif %}
-                </div>
-                
-                <div class="form-group">
-                    {% if request.GET.hash %}</br>
-                        <img src="{{ MEDIA_URL }}uploads/{{request.GET.hash}}.png" height="100" style=" border: 1px solid #d43f3a;">
-                        <input type="hidden" class="required" name="screenshot-hash" value="{{request.GET.hash}}">
-                    {% else %}
-                        <span>
-                            <input type="file" class="required" style="opacity: 0; width: 1px;height:1px;" id='${multipartFilePath}' name="screenshot" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"  /> 
-                            <button class="btn btn-primary" name="test_files" type="button"   onclick="$(this).parent().find('input[type=file]').click();"> <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot </button>
-                            &nbsp;
-                            <span class="badge badge-important"></span>
-                        </span>
-                    {% endif %}
-                    {% if form.screenshot.errors %}
-                        <label id="description-error" class="error" for="description">{{form.screenshot.errors}}</label>
-                    {% endif %}
-                </div>
-               
-                <div class="form-group">
-                    <button type="submit" id="btn" class="btn btn-default btn-danger submit_button" style=" height:43px; font-size:14px;">Report Bug</button>
-                    </form>
-                    <label style="color:#dd4252; float:right">Win +3 points!</label>
-                    <br>
-                </div>
-            </form>
-        </div>
-        
-        <div class="col-lg-6 col-xs-12">
-            <span id="video_span">
-                <iframe width="560" height="315" id="video_iframe" src="https://www.youtube.com/embed/o-t6HDXjpP8?rel=0&amp;controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
-            </span>
-        </div>
-        
+    <div class="row">     
+        <center>   
+        <span id="video_span">
+            <iframe width="560" height="315" id="video_iframe" src="https://www.youtube.com/embed/o-t6HDXjpP8?rel=0&amp;controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
+        </span>    
+        </center>    
     </div>
     <div class="col-lg-9">
     <div class="row">
