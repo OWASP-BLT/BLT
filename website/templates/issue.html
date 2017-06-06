@@ -86,34 +86,31 @@
                 </div>
             </div>            
         </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="panel"  style="background-color:white">
-                <div class="panel-heading">Found {{object.created}} by:
+        <div class="col-lg-3 col-md-3">
+            <div class="panel panel-info">
+                <div class="panel-body">
                     <a href="/profile/{{object.user.username}}">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                {% if object.user.socialaccount_set.all.0.get_avatar_url %}
-                                    <img class="_overflow_img" src="{{object.user.socialaccount_set.all.0.get_avatar_url}}" width="75" height="75">
-                                {% else %}
-                                    {% gravatar object.user.email 75 %}
-                                {% endif %}
-                            </div>
-                            <div class="col-xs-9 text-right" >
-                                <div class="huge _overflow_text">{{object.user.username}}</div>
-                                <div>{{users_score}} points</div>
-                            </div>
-                        </div>
+                        {% if object.user.socialaccount_set.all.0.get_avatar_url %}
+                            <img class="panel-image" src="{{object.user.socialaccount_set.all.0.get_avatar_url}}">
+                        {% else %}
+                            <img class="panel-image" src="{% gravatar_url object.user.email 100 %}">
+                        {% endif %}
                     </a>
                 </div>
-            </div>
-            <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr"  method="post">
-                <input type="hidden" name="cmd" value="_xclick">
-                <input type="hidden" name="business" value="coderbounty@gmail.com">
-                <input type="hidden" name="item_name" value="tip for {{object.user.username}} on bugheist.com bug # {{object.id}}">
-                <input type="hidden" name="currency_code" value="USD">
-                <button type="submit" class="btn btn-danger btn-small pull-right" >
-                <i class="fa fa-money fa-lg" style="margin-right:5px;"></i> send a tip</button>
-            </form>
+                <div class="panel-footer">
+                    <strong>Found {{object.created}} by: </strong>
+                    <span class="text-capitalize">{{object.user.username}}</span>
+                    <div>Points - {{users_score}} Points</div><br/>
+                    <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr"  method="post">
+                        <input type="hidden" name="cmd" value="_xclick">
+                        <input type="hidden" name="business" value="coderbounty@gmail.com">
+                        <input type="hidden" name="item_name" value="tip for {{object.user.username}} on bugheist.com bug # {{object.id}}">
+                        <input type="hidden" name="currency_code" value="USD">
+                        <button type="submit" class="btn btn-danger btn-xs">
+                        <i class="fa fa-money fa-lg"></i> Send a tip</button>
+                    </form>
+                </div>
+            </div>            
         </div>
         <div class="col-lg-3 col-md-6" >
             <div class="panel" style="background-color: {% if object.status == "closed" %}#bd2c00{% else %}#6cc644;{% endif %}">
