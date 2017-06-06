@@ -37,7 +37,6 @@
             <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0;">
                 <div class="navbar-header" style="z-index:4;">
                     <a class="navbar-brand" href="/" ><img src="{% static "img/logo-small-transparent.png" %}" style="margin-left:20px;"></a>
-                    <span class="tagline">| Make the web a better place</span>
                 </div>
 
                 <ul class="nav navbar-top-links navbar-right">
@@ -87,6 +86,54 @@
                         + Add to chrome
                     </a></li>
                 </ul>
+                <div class="col-md-12">
+                  <div class="col-md-4">
+                      <span class="tagline">Win prizes for reporting bugs</span><br>
+                      <span class="tagline">We want everyone to love your website</span>
+                  </div>
+                  <div class="col-md-8" style="padding-right: 0px;">
+                      <form class="navbar-form navbar-right" action="/issue/" method="post" enctype="multipart/form-data">
+                      {% csrf_token %}
+                        <div class="form-group">
+                        {% if request.GET.url %}
+                            <input class="form-control required"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
+                        {% else %}
+                            <input class="form-control required" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
+                        {% endif %}
+                        {% if form.url.errors %}
+                            <label id="description-error" class="error" for="description">{{form.url.errors}}</label>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <textarea data-required="true" class="form-control required" rows="3" placeholder="Describe bug issue"  id="description" name="description" style="resize:vertical; height: 34px;" >{{form.description.value|default:""}}</textarea>
+
+                        {% if form.description.errors %}
+                            <label id="description-error" class="error" for="description">{{form.description.errors}}</label>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                    <!-- <label>Attach Screenshot</label> -->
+                    {% if request.GET.hash %}</br>
+                        <img src="{{ MEDIA_URL }}uploads/{{request.GET.hash}}.png" height="100" style=" border: 1px solid #d43f3a;">
+                        <input type="hidden" class="required" name="screenshot-hash" value="{{request.GET.hash}}">
+                    {% else %}
+                        <span>
+                            <input  type="file" class="required" style="opacity: 0; width: 1px;height:1px;" id='${multipartFilePath}' name="screenshot" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"  /> 
+                            <button class="btn btn-primary" name="test_files" type="button"   onclick="$(this).parent().find('input[type=file]').click();"> <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot </button>
+                            &nbsp;
+                            <span  class="badge badge-important" ></span>
+                        </span>
+                    {% endif %}
+                    {% if form.screenshot.errors %}
+                        <label id="description-error" class="error" for="description">{{form.screenshot.errors}}</label>
+                    {% endif %}
+                </div>
+                    <button type="submit" id="btn" class="btn btn-default">Report Bug</button>
+                    <i class="fa fa-trophy" aria-hidden="true">+3</i>
+                </form>
+                  </div>
+                </div>
+            </div>
             </nav>
             <div id="page-wrapper" >
                 <div class="container" >
