@@ -286,3 +286,7 @@ a:hover{
 	margin-top: 5px;
 	margin-bottom: 5px;
 }
+.screenshot-img {
+	border: 1px solid #d43f3a;
+	width:90%;
+}
