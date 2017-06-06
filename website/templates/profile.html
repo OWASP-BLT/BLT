@@ -12,15 +12,20 @@
         </div>
         <div class="col-md-3">
             {% if request.user == user %}
-                <button class="btn btn-primary btn-small edit-pic">Change Profile Picture</button>
-                <div class="update-pic" style="display: none">
+                
+                
                     <form method="post" action="." enctype="multipart/form-data">
                         {% csrf_token %}
-                        {{ profile_form.user_avatar }}
-                        <br/>
+                        <span>
+                            <input  type="file" class="required" style="opacity: 0; width: 1px;height:1px;" id='${multipartFilePath}' name="user_avatar" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"  /> 
+                            <button class="btn btn-primary" name="test_files" type="button"   onclick="$(this).parent().find('input[type=file]').click();"> <i class="fa fa-upload" aria-hidden="true"></i> Upload Profile Pic </button>
+                            &nbsp;
+                            <span  class="badge badge-important" ></span>
+                        </span>                        
+                        <br/> <br>
                         <button type="submit" class="btn btn-primary btn-small">Upload</button>
                     </form>
-                </div>
+                
             {% endif %}
         </div>
         <div class="col-md-3 col-md-offset-3">
