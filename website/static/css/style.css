@@ -290,3 +290,51 @@ a:hover{
 	border: 1px solid #d43f3a;
 	width:90%;
 }
+/* INDEX PAGE */
+.ds-btn li{
+	list-style:none;
+	float:left;
+	padding:10px;
+}
+.ds-btn li a span{
+	padding-left:15px;
+	padding-right:5px;
+	width:100%;
+	display:inline-block;
+	text-align:left;
+}
+.ds-btn li a span small{
+	width:100%;
+	display:inline-block;
+	text-align:left;
+}
+.huge {
+	overflow:auto;
+}
+.leaderboard-panel {
+	border-left: 1px solid #ccc;
+	border-top: 1px solid #ccc;
+	border-right: 1px solid #888;
+	border-bottom: 1px solid #888;
+	background-color: #ddd;
+	padding: 10px;
+}
+.leaderboard-panel .box{
+	border: 3px solid #009688;	
+	padding:7px;
+	margin-right:5px;
+	padding-top:10px;
+	background:white;
+}
+.leaderboard-name,
+.leaderboard-name:hover
+.leaderboard-name:active {
+	text-decoration: none !important;
+}
+.leaderboard-points {
+	margin-top: 15px;
+	margin-right: 50px;
+}
+.leaderboard-rank {
+	margin-top: -33px;
+}
