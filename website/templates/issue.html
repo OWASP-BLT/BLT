@@ -156,10 +156,12 @@
         </a>
         <hr>
     </div>
+    {% if object.get_ocr %}
     <div class="col-lg-12">
         <h4>OCR Results:</h4><hr>
         <div class="alert alert-info">{{object.get_ocr}}</div><hr>
     </div>
+    {% endif %}
 </div>
 
 <form id="comments_form" method="post" action="{% url 'comments.views.AddComment' pk=issue.pk %}">
