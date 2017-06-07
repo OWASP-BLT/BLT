@@ -99,7 +99,7 @@
                       <span class="tagline">We want everyone to love your website</span>
                   </div>
                   <div class="col-md-8" style="padding-right: 0px;">
-                      <form class="navbar-form navbar-right" action="/issue/" method="post" enctype="multipart/form-data">
+                      <form class="navbar-form navbar-right form" action="/issue/" method="post" enctype="multipart/form-data">
                       {% csrf_token %}
                         <div class="form-group">
                         {% if request.GET.url %}
