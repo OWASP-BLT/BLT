@@ -20,7 +20,7 @@
 	}
 
 	.activity-strip{
-		overflow:auto;
+		height:auto;
 	}
 	.activity-screenshot{
 		display: none;
