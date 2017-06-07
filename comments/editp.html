@@ -1,0 +1,10 @@
+<form id="edit_comments_form" method="post" action="{% url 'comments.views.EditComment' pk=issue.pk %}">
+    {% csrf_token %}
+
+    <div class="form-group">
+            <textarea placeholder="Comment" class="form-control" name="new_comment"  ></textarea> <br>
+    </div>     
+        <button class="btn btn-small" type="submit" >Add Comment</button>
+<br><br>
+<h3>Comments:</h3>
+</form>
