@@ -17,3 +17,9 @@
 	height: 100px;
 }
 
+@media only screen and (max-width: 400px){
+	
+	.text-slider h2{
+		font-size: 22px;
+	}
+}
