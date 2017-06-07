@@ -43,6 +43,35 @@
         </div>
     </div>
 
+    
+    <div class="reported" >
+        <p class="text-danger" id="report_user" >
+
+        {% if object.marked_duplicate_admin == True %}
+            This bug marked as duplicate by Admin. <br>
+            The first user to report this duplicacy is <a href="/profile/{{ object.first_duplicate_report_user.username }}" > {{object.first_duplicate_report_user.username}}</a> 
+        {% elif object.marked_duplicate_count == 1 %}
+            This bug has been marked as duplicate by some users. <br>
+            The first one to report this duplicacy is {{ object.first_duplicate_report_user }}. <br>
+        {% endif %}            
+         </p>
+         {% if object.marked_duplicate_admin == False %}
+        <!-- Report Button -->         
+           <form id="comments_form" method="post" action="{% url 'website.views.MarkDuplicateIssue' pk=object.pk %}">
+                {% csrf_token %}
+
+                    <button class="btn btn-small btn-danger" type="submit" >
+                        {% if object.marked_duplicate_count == 1 %}
+                            Undo Reporting
+                        {% else %}
+                            Report this bug as duplicate
+                        {% endif %}
+                    </button>
+            </form>
+            {% endif %}
+    </div>
+                         
+
     <div class="row">
         <div class="col-lg-3 col-md-3">
             <div class="panel panel-info">                
