@@ -651,27 +651,24 @@ def MarkDuplicateIssue(request,pk):
 
     if request.method == "POST":
         if issue.marked_duplicate_admin==True:
-            issue.marked_duplicate_count+=1
-            issue.marked_duplicate_count%=2
-            issue.save()
             return HttpResponseRedirect(os.path.join('/issue',str(issue.pk)))        
             
-        if request.user.is_superuser==True:
-            issue.marked_duplicate_admin=True
 
         if issue.first_duplicate_report_user is None:
             issue.first_duplicate_report_user = request.user
-            # request.user_score+=4
-            score = Points.objects.filter(user=request.user).aggregate(total_score=Sum('score')).values()[0]
-            p = Points.objects.create(user=request.user, score=4)
-            p.save()
-            issue.marked_duplicate_count+=1
-        else:
-            issue.marked_duplicate_count+=1
 
-        issue.marked_duplicate_count%=2
+
+        if request.user.is_superuser==True:
+            issue.marked_duplicate_admin=True
+            p = Points.objects.create(user=issue.first_duplicate_report_user, score=4)
+            p.save()
+            issue.marked_duplicate_count=1
+        else:
+            issue.marked_duplicate_count=1
         issue.save()
     return HttpResponseRedirect(os.path.join('/issue',str(issue.pk)))        
+
+
     
 
         
