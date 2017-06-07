@@ -1,0 +1,19 @@
+.fa{
+	color: #fff;
+}
+
+.round-icon{
+	margin: 0 auto;
+    height: 120px;
+    width: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* border: 1px solid #000; */
+    background: #c5bfbf;
+    border-radius: 50%;
+}
+
+.no-shadow{
+	box-shadow: 0 0 0 #000;
+}
