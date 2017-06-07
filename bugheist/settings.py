@@ -54,6 +54,7 @@ INSTALLED_APPS = (
     'django_gravatar',
     'email_obfuscator',
     'import_export',
+    'comments',
 )
 
 MIDDLEWARE_CLASSES = (
