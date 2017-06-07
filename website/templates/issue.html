@@ -178,27 +178,24 @@
 {% for comment in all_comment %}
 <hr>
     <div class="comment">
-        <div class="date">{{ comment.created_date }}</div>
-        <strong><a href="{{ comment.author_url }}">{{ comment.author }}</a></strong>
-        <p>{{ comment.text|linebreaks }}</p>
-
-    {% if user.username == comment.author  %}   
-    <!-- Edit BUtton -->
-        <form  class="form-inline" style="display:inline-block;" id="edit_form" method="post" action="{% url 'comments.views.EditCommentPage' pk=comment.pk %}">
-            {% csrf_token %}
-            <button class="btn btn-small"  style="position:absolute;left:75%;" type="submit" >Edit</button>
-        </form>
-    <!--Edit button  -->
-
-    <!-- Delete Button -->
-        <form class="form-inline" style="display:inline-block;"  id="delete_form" method="post" action="{% url 'comments.views.DeleteComment' pk=comment.pk %}">
-            {% csrf_token %}
-            <button class="btn btn-small btn-danger" style="position:absolute;left:80%;"   type="submit" >Delete</button>
-        </form>
-    <!-- Delete Button -->
-    {% endif %}
-
-    </div>    
+        <div style="display: inline-flex;">
+            <div class="date">{{ comment.created_date }}</div>
+            {% if user.username == comment.author  %}
+                <form  class="form-inline" id="edit_form" method="post" action="{% url 'comments.views.EditCommentPage' pk=comment.pk %}">
+                    {% csrf_token %}
+                    <button class="btn btn-xs btn-primary" type="submit">Edit</button>
+                </form>
+                <form class="form-inline" id="delete_form" method="post" action="{% url 'comments.views.DeleteComment' pk=comment.pk %}">
+                    {% csrf_token %}
+                    <button class="btn btn-xs btn-danger" type="submit">Delete</button>
+                </form>
+            {% endif %}
+        </div>
+        <div>
+            <strong><a href="{{ comment.author_url }}">{{ comment.author }}</a></strong>
+            <p>{{ comment.text|linebreaks }}</p>
+        </div>
+    </div>
 {% empty %}
 {% endfor %}
 {% endif %}
