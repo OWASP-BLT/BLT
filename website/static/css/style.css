@@ -75,7 +75,7 @@ a:hover{
 }
 
 .form input,.form textarea,.form label{
-	margin:5px auto;
+/*	margin:5px auto;*/
 }
 
 .form label{
@@ -83,7 +83,8 @@ a:hover{
 }
 
 .form .form-group{
-	margin-top: 20px;
+	/*margin-top: 20px;*/
+	margin:0;
 }
 
 .form input,.form textarea{
@@ -98,7 +99,8 @@ a:hover{
 }
 
 .form input[type="file"]{
-	margin: 10px 0;
+	/*margin: 10px 0;*/
+	margin:0;
 	line-height: 22px;
 	font-size: 18px;
 	background-color: #fff;
