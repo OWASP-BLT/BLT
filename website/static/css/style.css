@@ -252,8 +252,10 @@ a:hover{
 	text-decoration: none;
 }
 .activity-strip-section > div > .small {
-	font-size: initial;
+	font-size: 14px;
 	font-weight: initial;
+	position: absolute;
+	top: 80px;
 }
 .activity-screenshot {
 	float:right;
