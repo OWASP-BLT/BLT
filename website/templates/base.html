@@ -19,12 +19,14 @@
         <link href="{% static "vendor/bootstrap/css/bootstrap.css" %}" rel="stylesheet">
         <link href="{% static "css/sb-admin-2.css" %}" rel="stylesheet">
         <link href="{% static "css/style.css" %}" rel="stylesheet">
+        <link href="{% static "css/lightbox.min.css" %}" rel="stylesheet">
         <link href="{% static "vendor/font-awesome/css/font-awesome.min.css" %}" rel="stylesheet" type="text/css">
         <link href="{% static "css/animate.css" %}" rel="stylesheet" type="text/css">
         <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400" rel="stylesheet">
         <link href="{% static "css/introjs.css" %}" rel="stylesheet" type="text/css">
         <link href="{% static "css/main.css" %}" rel="stylesheet" type="text/css">
         <link href="{% static "css/text-slider.css" %}" rel="stylesheet" type="text/css">
+        <link href="{% static "css/activity.css" %}" rel="stylesheet" type="text/css">
         <script src="{% static "vendor/jquery/jquery.min.js" %}"></script>
         <script src="{% static "js/notify.js" %}"></script>
         <script src="{% static "js/intro.js" %}"></script>
@@ -101,13 +103,13 @@
                       <span class="tagline">We want everyone to love your website</span>
                   </div>
                   <div class="col-md-8" style="padding-right: 0px;">
-                      <form class="navbar-form navbar-right" action="/issue/" method="post" enctype="multipart/form-data">
+                      <form class="navbar-form navbar-right form" action="/issue/" method="post" enctype="multipart/form-data">
                       {% csrf_token %}
                         <div class="form-group">
                         {% if request.GET.url %}
-                            <input class="form-control required" data-intro="Enter the websites complete url where you found the bug." data-step="1"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
+                            <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
                         {% else %}
-                            <input class="form-control required" data-intro="Enter the websites complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
+                            <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
                         {% endif %}
                         {% if form.url.errors %}
                             <label id="description-error" class="error" for="description">{{form.url.errors}}</label>

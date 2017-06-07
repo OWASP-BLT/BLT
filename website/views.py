@@ -212,7 +212,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
         # assign issue
         self.process_issue(self.request.user, obj, created, domain)
-        return HttpResponseRedirect(redirect_url)
+        return HttpResponseRedirect(self.request.META.get('HTTP_REFERER'))
 
 
     def get_context_data(self, **kwargs):
@@ -628,7 +628,7 @@ class CreateInviteFriend(CreateView):
                 site=site.name,
                 user=self.request.user.username
             ),
-            'You have been invited by {user} to join {site} comunity.'.format(
+            'You have been invited by {user} to join {site} community.'.format(
                 user=self.request.user.username,
                 site=site.name
             ),
@@ -640,7 +640,7 @@ class CreateInviteFriend(CreateView):
             Points.objects.create(user=self.request.user, score=1)
             InviteFriend.objects.filter(sender=self.request.user).delete()
 
-        messages.success(self.request, 'An email has been sent to your friend. Keep invite your friends and get points!')
+        messages.success(self.request, 'An email has been sent to your friend. Keep inviting your friends and get points!')
 
         return HttpResponseRedirect(self.success_url)
 

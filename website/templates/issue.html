@@ -14,33 +14,13 @@
         width: 75px;
         filter: blur(2px);
         -webkit-filter:blur(2px);
+        display:none;
     }
 {% endblock %}
 {% block content %}
     <div id="fb-root"></div>
-    <script>
-    window.twttr = (function(d, s, id) {
-    var js, fjs = d.getElementsByTagName(s)[0],
-    t = window.twttr || {};
-    if (d.getElementById(id)) return t;
-    js = d.createElement(s);
-    js.id = id;
-    js.src = "https://platform.twitter.com/widgets.js";
-    fjs.parentNode.insertBefore(js, fjs);
-    t._e = [];
-    t.ready = function(f) {
-    t._e.push(f);
-    };
-    return t;
-    }(document, "script", "twitter-wjs"));
-    (function(d, s, id) {
-    var js, fjs = d.getElementsByTagName(s)[0];
-    if (d.getElementById(id)) return;
-    js = d.createElement(s); js.id = id;
-    js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.7&appId=236647900066394";
-    fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));
-    </script>
+    <script type="text/javascript" src="{% static "js/issue.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/lightbox.min.js" %}"></script>
     <div class="row">
         <div class="col-lg-12">
             <h3 class="page-header">
@@ -69,7 +49,7 @@
                 <div class="panel-body">
                     <a href="/domain/{{object.domain_name}}">
                         <img src="{{object.domain.get_logo}}" class="panel-image" onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
-                        <img src="{% static 'img/logo-small-transparent.png' %}" class="panel-image" style="display:none;" class="alt-img">                        
+                        <img src="{% static 'img/logo-small-transparent.png' %}" class="panel-image alt-img">                        
                     </a>
                 </div>
                 <div class="panel-footer">
@@ -171,56 +151,54 @@
 <div class="row">
     <div class="col-lg-12">
         <h4>Screenshot:</h4><hr>
-        <img src="{{object.screenshot.url}}" class="img-responsive screenshot-img"><hr>
+        <a href="{{object.screenshot.url}}" data-lightbox="image">
+            <img src="{{object.screenshot.url}}" class="img-responsive screenshot-img">
+        </a>
+        <hr>
     </div>
+    {% if object.get_ocr %}
     <div class="col-lg-12">
         <h4>OCR Results:</h4><hr>
         <div class="alert alert-info">{{object.get_ocr}}</div><hr>
     </div>
+    {% endif %}
 </div>
 
 <form id="comments_form" method="post" action="{% url 'comments.views.AddComment' pk=issue.pk %}">
     {% csrf_token %}
-
     <div class="form-group">
-            <textarea placeholder="Comment" class="form-control" name="text_comment" ></textarea> <br>
-    </div>     
-        <button class="btn btn-small" type="submit" >Add Comment</button>
-<br><br>
+        <textarea placeholder="Comment" class="form-control" name="text_comment" ></textarea>
+    </div>
+    <button class="btn btn-small" type="submit">Add Comment</button>
 </form>
+
+{% if all_comment %}
 <h3>Comments:</h3>
 
-    
 {% for comment in all_comment %}
 <hr>
     <div class="comment">
-        <div class="date">{{ comment.created_date }}</div>
-        <strong><a href="{{ comment.author_url }}">{{ comment.author }}</a></strong>
-        <p>{{ comment.text|linebreaks }} </p>
-
-     {% if user.username == comment.author  %}   
-    <!-- Edit BUtton -->
-        <form  class="form-inline" style="display:inline-block;" id="edit_form" method="post" action="{% url 'comments.views.EditCommentPage' pk=comment.pk %}">
-            {% csrf_token %}
-            <button class="btn btn-small"  style="position:absolute;left:75%;" type="submit" >Edit</button>
-        </form>
-    <!--Edit button  -->
-
-    <!-- Delete Button -->
-        <form class="form-inline" style="display:inline-block;"  id="delete_form" method="post" action="{% url 'comments.views.DeleteComment' pk=comment.pk %}">
-            {% csrf_token %}
-            <button class="btn btn-small btn-danger" style="position:absolute;left:80%;"   type="submit" >Delete</button>
-        </form>
-    <!-- Delete Button -->
-
-    {% else %}
-    <br><br>
-
-    {% endif %}
-
-    </div>    
+        <div style="display: inline-flex;">
+            <div class="date">{{ comment.created_date }}</div>
+            {% if user.username == comment.author  %}
+                <form  class="form-inline" id="edit_form" method="post" action="{% url 'comments.views.EditCommentPage' pk=comment.pk %}">
+                    {% csrf_token %}
+                    <button class="btn btn-xs btn-primary" type="submit">Edit</button>
+                </form>
+                <form class="form-inline" id="delete_form" method="post" action="{% url 'comments.views.DeleteComment' pk=comment.pk %}">
+                    {% csrf_token %}
+                    <button class="btn btn-xs btn-danger" type="submit">Delete</button>
+                </form>
+            {% endif %}
+        </div>
+        <div>
+            <strong><a href="{{ comment.author_url }}">{{ comment.author }}</a></strong>
+            <p>{{ comment.text|linebreaks }}</p>
+        </div>
+    </div>
 {% empty %}
 {% endfor %}
+{% endif %}
 
 {% endblock %}
 
