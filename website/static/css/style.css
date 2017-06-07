@@ -30,6 +30,8 @@ body{
 	font-weight: 400;
 	font-size: 40px;
 	padding: 30px;
+	margin: 20px 0;
+	border-bottom-width: 1px;
 }
 
 .chrome-plugin{

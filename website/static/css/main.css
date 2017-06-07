@@ -13,7 +13,7 @@
     background: #eee;
     border-radius: 50%;
     font-size: 30px;
-    box-shadow: 0 1px 1px #444;
+    box-shadow: 0 1px 1px #dd4252;
 }
 
 
@@ -25,4 +25,6 @@
     color: #999;
 }
 
-
+.heading{
+    font-weight: 300;
+}
