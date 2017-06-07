@@ -103,9 +103,9 @@
                       {% csrf_token %}
                         <div class="form-group">
                         {% if request.GET.url %}
-                            <input class="form-control required" data-intro="Enter the websites complete url where you found the bug." data-step="1"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
+                            <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
                         {% else %}
-                            <input class="form-control required" data-intro="Enter the websites complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
+                            <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
                         {% endif %}
                         {% if form.url.errors %}
                             <label id="description-error" class="error" for="description">{{form.url.errors}}</label>
