@@ -1,0 +1,28 @@
+.activity-strip-section >img{
+		width: auto;
+		height: 100px;
+	}
+
+.activity-screenshot img{
+	height:auto;
+}
+
+
+
+@media only screen and (max-width: 450px){
+
+
+	.activity-strip .activity-strip-section{
+		width: 95%;
+		height: auto;
+		
+		
+	}
+
+	.activity-strip{
+		height:auto;
+	}
+	.activity-screenshot{
+		display: none;
+	}
+}
