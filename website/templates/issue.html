@@ -14,33 +14,12 @@
         width: 75px;
         filter: blur(2px);
         -webkit-filter:blur(2px);
+        display:none;
     }
 {% endblock %}
 {% block content %}
     <div id="fb-root"></div>
-    <script>
-    window.twttr = (function(d, s, id) {
-    var js, fjs = d.getElementsByTagName(s)[0],
-    t = window.twttr || {};
-    if (d.getElementById(id)) return t;
-    js = d.createElement(s);
-    js.id = id;
-    js.src = "https://platform.twitter.com/widgets.js";
-    fjs.parentNode.insertBefore(js, fjs);
-    t._e = [];
-    t.ready = function(f) {
-    t._e.push(f);
-    };
-    return t;
-    }(document, "script", "twitter-wjs"));
-    (function(d, s, id) {
-    var js, fjs = d.getElementsByTagName(s)[0];
-    if (d.getElementById(id)) return;
-    js = d.createElement(s); js.id = id;
-    js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.7&appId=236647900066394";
-    fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));
-    </script>
+    <script type="text/javascript" src="{% static "js/issue.js" %}"></script>
     <div class="row">
         <div class="col-lg-12">
             <h3 class="page-header">
@@ -69,7 +48,7 @@
                 <div class="panel-body">
                     <a href="/domain/{{object.domain_name}}">
                         <img src="{{object.domain.get_logo}}" class="panel-image" onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
-                        <img src="{% static 'img/logo-small-transparent.png' %}" class="panel-image" style="display:none;" class="alt-img">                        
+                        <img src="{% static 'img/logo-small-transparent.png' %}" class="panel-image alt-img">                        
                     </a>
                 </div>
                 <div class="panel-footer">
