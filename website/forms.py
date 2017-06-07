@@ -1,5 +1,5 @@
 from django import forms
-from .models import Issue, InviteFriend, UserProfile, Comment
+from .models import Issue, InviteFriend, UserProfile
 
 
 class IssueEditForm(forms.ModelForm):
@@ -26,8 +26,3 @@ class UserProfileForm(forms.ModelForm):
         fields = ('user_avatar',)
 
 
-class CommentForm(forms.ModelForm):
-
-    class Meta:
-        model = Comment
-        fields = ('text',)
