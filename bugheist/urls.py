@@ -18,6 +18,7 @@ favicon_view = RedirectView.as_view(url='/static/favicon.ico', permanent=True)
 admin.autodiscover()
 
 import website.views
+import comments.views
 
 urlpatterns = patterns('',
     url(r'^$', website.views.index, name='index'),
@@ -48,7 +49,10 @@ urlpatterns = patterns('',
     url(r'^stats/$', StatsDetailView.as_view()),
     url(r'^favicon\.ico$', favicon_view),
     url(r'^sendgrid_webhook/$', csrf_exempt(InboundParseWebhookView.as_view()), name='inbound_event_webhook_callback'),
-    url(r'^post/(?P<pk>\d+)/comment/$',website.views.add_comment_to_post, name='add_comment_to_post'),
+    url(r'^issue/(?P<pk>\d+)/commentadd/$',comments.views.AddComment, name='add_comment'),
+    url(r'^issue/(?P<pk>\d+)/commenteditpage/$',comments.views.EditCommentPage, name='edit_commentpage'),
+    url(r'^issue/(?P<pk>\d+)/commentedit/$',comments.views.EditComment, name='edit_comment'),
+    url(r'^issue/(?P<pk>\d+)/commentdel/$',comments.views.DeleteComment, name='delete_comment'),
 
 ) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
