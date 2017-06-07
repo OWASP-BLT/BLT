@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-python manage.py migrate
+yes "yes" | python manage.py migrate
