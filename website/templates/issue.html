@@ -20,6 +20,7 @@
 {% block content %}
     <div id="fb-root"></div>
     <script type="text/javascript" src="{% static "js/issue.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/lightbox.min.js" %}"></script>
     <div class="row">
         <div class="col-lg-12">
             <h3 class="page-header">
@@ -150,7 +151,10 @@
 <div class="row">
     <div class="col-lg-12">
         <h4>Screenshot:</h4><hr>
-        <img src="{{object.screenshot.url}}" class="img-responsive screenshot-img"><hr>
+        <a href="{{object.screenshot.url}}" data-lightbox="image">
+            <img src="{{object.screenshot.url}}" class="img-responsive screenshot-img">
+        </a>
+        <hr>
     </div>
     <div class="col-lg-12">
         <h4>OCR Results:</h4><hr>
