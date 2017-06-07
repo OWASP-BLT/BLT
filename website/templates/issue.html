@@ -49,26 +49,36 @@
 
         {% if object.marked_duplicate_admin == True %}
             This bug marked as duplicate by Admin. <br>
-            The first user to report this duplicacy is <a href="/profile/{{ object.first_duplicate_report_user.username }}" > {{object.first_duplicate_report_user.username}}</a> 
-        {% elif object.marked_duplicate_count == 1 %}
-            This bug has been marked as duplicate by some users. <br>
-            The first one to report this duplicacy is {{ object.first_duplicate_report_user }}. <br>
-        {% endif %}            
-         </p>
-         {% if object.marked_duplicate_admin == False %}
-        <!-- Report Button -->         
-           <form id="comments_form" method="post" action="{% url 'website.views.MarkDuplicateIssue' pk=object.pk %}">
-                {% csrf_token %}
+            The first user to report this duplicacy is <a href="/profile/{{ object.first_duplicate_report_user.username }}" > {{object.first_duplicate_report_user.username}}</a>
 
-                    <button class="btn btn-small btn-danger" type="submit" >
-                        {% if object.marked_duplicate_count == 1 %}
-                            Undo Reporting
-                        {% else %}
-                            Report this bug as duplicate
-                        {% endif %}
-                    </button>
-            </form>
-            {% endif %}
+        {% else %}
+            {% if object.marked_duplicate_count == 0   %}
+               <form id="comments_form" method="post" action="{% url 'website.views.MarkDuplicateIssue' pk=object.pk %}">
+                        {% csrf_token %}
+                        <button class="btn btn-small btn-danger" type="submit" >Report duplicate bug</button>
+                </form>
+            
+            {% elif object.marked_duplicate_count == 1 and user.is_superuser %}
+                This bug has been marked as duplicate by some users. <br>
+                The first one to report this duplicacy is <a href="/profile/{{ object.first_duplicate_report_user.username }}" > {{object.first_duplicate_report_user.username}}</a> <br>
+                <form id="comments_form" method="post" action="{% url 'website.views.MarkDuplicateIssue' pk=object.pk %}">
+                        {% csrf_token %}
+                        <button class="btn btn-small btn-danger" type="submit" >Report duplicate(Admin)</button>
+                </form>
+
+            {% else %}
+                This bug has been marked as duplicate by some users. <br>
+                The first one to report this duplicacy is <a href="/profile/{{ object.first_duplicate_report_user.username }}" > {{object.first_duplicate_report_user.username}}</a> <br>
+            {% endif %}            
+        {% endif %}
+
+
+            
+
+         </p>
+        
+
+            
     </div>
                          
 
