@@ -212,7 +212,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
         # assign issue
         self.process_issue(self.request.user, obj, created, domain)
-        return HttpResponseRedirect(redirect_url)
+        return HttpResponseRedirect(self.request.META.get('HTTP_REFERER'))
 
 
     def get_context_data(self, **kwargs):
