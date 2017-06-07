@@ -222,21 +222,3 @@ You want to keep your customers happy by giving them a consistent bug-free user 
                 </div>
             </div>
 {% endblock %}
-{% block after_js %}
-
-    <script src="{% static "js/bootstrap-slider.js" %}"></script>
-    <script>
-    $('.btn').on('click', function() { $("#form1").valid(); });
-    function numberWithCommas(x) {
-    var parts = x.toString().split(".");
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return parts.join(".");
-    }
-    $(".slider").slider({
-    tooltip: 'always',
-    formatter: function (value) {
-    return '$'+numberWithCommas(value);
-    }
-    });
-    </script>
-{% endblock %} 
