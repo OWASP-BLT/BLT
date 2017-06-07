@@ -2,6 +2,38 @@
 {% load gravatar %}
 {% load staticfiles %}
 {% load humanize %}
+
+{% block style %}
+.row .col-md-6:nth-child(1) .panel {
+    background-color:#F76B78;
+}
+.row .col-md-6:nth-child(2) .panel {
+    background-color:#DC4353;
+}
+.row .col-md-6:nth-child(3) .panel {
+    background-color:#C41E2E;
+}
+.row .col-md-6:nth-child(4) .panel {
+    background-color:#9B0C1A;
+}
+.row .col-md-6:nth-child(1) .panel button {
+    background-color:#F76B78;
+    border-color:#F76B78;
+}
+.row .col-md-6:nth-child(2) .panel button {
+    background-color:#DC4353;
+    border-color:#DC4353;
+}
+.row .col-md-6:nth-child(3) .panel button {
+    background-color:#C41E2E;
+    border-color:#C41E2E;
+}
+.row .col-md-6:nth-child(4) .panel button {
+    background-color:#9B0C1A;
+    border-color:#9B0C1A;
+}
+{% endblock %}
+
 {% block content %}
 
     <div class="row">
@@ -47,7 +79,7 @@
 
     <div class="row">
         <div class="col-lg-3 col-md-6">
-            <div class="panel" style="background-color:#F76B78">
+            <div class="panel">
                 <div class="panel-heading">
                     <div class="row">
                         <div class="col-xs-3">
@@ -63,12 +95,12 @@
                     <span class="pull-left" ><i class="fa fa-balance-scale"></i> $4 Bugheist / $5 tips</span>
                     <span class="pull-right"></span>
                     <div class="clearfix"></div></br><center>
-                    <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg " id="btn" style="background-color:#F76B78;border-color:#F76B78">Start</button></center>
+                    <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg" id="btn">Start</button></center>
                 </div>
             </div>
         </div>
         <div class="col-lg-3 col-md-6">
-            <div class="panel" style="background-color:#DC4353">
+            <div class="panel">
                 <div class="panel-heading">
                     <div class="row">
                         <div class="col-xs-3" >
@@ -84,12 +116,12 @@
                     <span class="pull-left"><i class="fa fa-balance-scale" style="width:20px;"></i> $49 Bugheist / $50 tips</span></br>
                     <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> Weekly Announcement</span>
                     <div class="clearfix"></div></br><center>
-                    <button type="submit" onclick="window.location.href='/hunt';"  onclick="changeValue(this)" class="btn btn-primary btn-lg " style="background-color:#DC4353;border-color:#DC4353">Start </button></center>
+                    <button type="submit" onclick="window.location.href='/hunt';"  onclick="changeValue(this)" class="btn btn-primary btn-lg ">Start </button></center>
                 </div>
             </div>
         </div>
         <div class="col-lg-3 col-md-6">
-            <div class="panel" style="background-color:#C41E2E ">
+            <div class="panel">
                 <div class="panel-heading">
                     <div class="row">
                         <div class="col-xs-3">
@@ -106,12 +138,12 @@
                     <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> Weekly Announcement</span>
                     <span class="pull-left" style="font-size:20pt;"><i class="fa fa-globe"  style="width:25px;"></i> Homepage Featured</span>
                     <div class="clearfix"></div></br><center>
-                    <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg " style="background-color:#C41E2E;border-color:#C41E2E">Start </button></center>
+                    <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg">Start </button></center>
                 </div>
             </div>
         </div>
         <div class="col-lg-3 col-md-6">
-            <div class="panel" style="background-color:#9B0C1A">
+            <div class="panel">
                 <div class="panel-heading">
                     <div class="row">
                         <div class="col-xs-3">
@@ -129,7 +161,7 @@
                     <span class="pull-left" style="font-size:20pt;"><i class="fa fa-globe"  style="width:25px;"></i> Homepage Featured</span>
                     <span class="pull-left" style="font-size:23pt;"><i class="fa fa-trophy"  style="width:25px;"></i> Monthly Hackathon</span>
                     <div class="clearfix"></div></br><center>
-                    <button type="submit"  onclick="window.location.href='/hunt';" class="btn btn-primary btn-lg " style="background-color:#9B0C1A;border-color:#9B0C1A">Start </button></center>
+                    <button type="submit"  onclick="window.location.href='/hunt';" class="btn btn-primary btn-lg">Start</button></center>
                 </div>
             </div>
         </div>
@@ -138,7 +170,7 @@
     <div class="row">
         <div class="col-lg-12">
             <h3>Want to kick the tires before you make a purchase? BugHeist shares up to 5 software bugs fee-free through a Trial Bug Hunt.</h3>
-            Test-drive BugHeist here <a href="/hunt" class="btn btn-primary submit_button">Start</button>
+            Test-drive BugHeist here <a href="/hunt" class="btn btn-primary submit_button">Start</a>
         </div>
     </div>
 {% endblock %}
