@@ -439,3 +439,13 @@ input[type='file'] {
 .issue_count{
 	color: #fff;
 }
+.issue_status{
+	display: block;
+	
+	color: #dd4252;
+}
+
+.activity-strip-section > div > .small{
+	position:relative;
+	top:0;
+}
