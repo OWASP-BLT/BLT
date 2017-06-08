@@ -2,15 +2,13 @@
 {% block content %}
     <div class="row">
         <div class="col-lg-6">
-            <h1 class="page-header">Latest Issues All</h1>
+            <h1 class="page-header">All Issues</h1>
         </div>
     </div>
     <div class="row">
-        <div class="col-lg-9">
+        <div class="col-lg-10">
             <div class="panel panel-default">
-                <div class="panel-heading">
-                    Latest
-                </div>
+                <div class="panel-heading">Latest</div>
                 <div class="panel-body">
                     <div class="list-group" >
                         {% for activity in activities %}
@@ -24,13 +22,10 @@
     {% if is_paginated %}
         {% if page_obj.has_previous %}
             <span><a href="?page={{ page_obj.previous_page_number }}">Previous</a></span>
-            
         {% endif %}
         <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.</span>
         {% if page_obj.has_next %}
             <span><a href="?page={{ page_obj.next_page_number }}">Next</a></span>
-            
         {% endif %}
-        
     {% endif %}
 {% endblock %}
