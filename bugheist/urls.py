@@ -53,6 +53,7 @@ urlpatterns = patterns('',
     url(r'^issue/(?P<pk>\d+)/commenteditpage/$',comments.views.EditCommentPage, name='edit_commentpage'),
     url(r'^issue/(?P<pk>\d+)/commentedit/$',comments.views.EditComment, name='edit_comment'),
     url(r'^issue/(?P<pk>\d+)/commentdel/$',comments.views.DeleteComment, name='delete_comment'),
+    url(r'^issue/(?P<pk>\d+)/markdup/$',website.views.MarkDuplicateIssue),  
 
 ) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
