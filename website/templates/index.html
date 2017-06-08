@@ -102,9 +102,9 @@
                         <div class="panel" id="hunt_{{domain.id}}" style="background-color:{{domain.get_color}}">
                             <div class="panel-heading">
                                 <div class="row">
-                                    <div class="col-xs-3">
+                                    <div class="col-xs-3  image_container">
                                         <img src="{{MEDIA_URL}}{{domain.logo}}" id="hunt_image{{domain.id}}"
-                                        onerror="this.onerror=null; this.style.display='none';">
+                                        onerror="this.onerror=null; this.style.display='none';" height="75" width="75">
                                     </div>
                                     <div class="col-xs-9 text-right">
                                         <div class="huge">{{domain.get_name}}</div>
@@ -127,7 +127,7 @@
                     <div class="panel owasp-panel">
                         <div class="panel-heading">
                             <div class="row">
-                                <div class="col-xs-3">
+                                <div class="col-xs-3 image_container">
                                     <img src="https://www.owasp.org/images/thumb/2/2f/Owasp_logo_flat2_icon.jpg/100px-Owasp_logo_flat2_icon.jpg" width="75" height="75">
                                 </div>
                                 <div class="col-xs-9 text-right">
