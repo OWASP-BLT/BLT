@@ -8,106 +8,127 @@
 {% block style %}
     .alt-img{
         padding-top: 25px;
-        width: 75px;
+        width: 100px;
         filter: blur(2px);
         -webkit-filter:blur(2px);
+        display: none;
+    }
+    .header {
+        display: inline-flex;
+    }
+    .header h3 {
+        padding-left: 20px;
+        margin-top: 30px;        
+    }
+    .panel-body .list-group-item {
+        display: inline-flex;
+        width: 100%;
+        height: 120px;
+    }
+    .header h3 a,
+    .panel-body .list-group-item a {
+        text-decoration: none;
+    }
+    .header small {
+        margin-top: 35px;
+        padding-left: 10px;
+    }
+    .badge {
+        margin-top: 15px;
+    }
+    .panel-heading a {
+        padding: 10px;
+        background: whitesmoke;
+        text-decoration: none;
+    }
+    .title-text {
+        font-size: 20px;
+        padding-left: 10px;
+        width: 75%;
+    }
+    .panel-body .list-group-item .text-muted {
+        position: absolute;
+        top: 90px;
+        left: 110px;
+    }
+    .screenshot-image {
+        position: absolute;        
+        right: 10px;
+        width: 100px;
+        height: 100px;
     }
 {% endblock %}
 {% block content %}
     <div class="row">
-        <div class="col-lg-3 col-md-3">
-            <a href="http://{{domain}}" target="/new">
-                <div class="panel" style="background-color:white">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <img src="{{domain.get_logo}}" height="75" onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
-                                <img src="{% static 'img/logo-small-transparent.png' %}" style="display:none;" class="alt-img">
-                            </div>
-                            
-                            <div class="col-xs-9 text-right">
-                                <div class="huge">{{name}}</div>
-                                <div>{{issues|length}} issue{{issues|length|pluralize}}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </a>
-                            <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
-<input type="hidden" name="cmd" value="_s-xclick">
-<input type="hidden" name="hosted_button_id" value="SC7E9NRCWHGTL">
-<input type="hidden" name="hcustom" value="{{domian.name}}">
-<button type="submit" class="btn btn-danger btn-small" >
- <i class="fa fa-envelope fa-lg" style="margin-right:10px;"></i>Subscribe to {{name}} bugs</button>
-</form>
+        <div class="col-lg-10 col-md-10 header">
+            <img src="{{domain.get_logo}}" height="100" onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
+            <img src="{% static 'img/logo-small-transparent.png' %}" class="alt-img">
+            <h3><a href="http://{{domain}}" target="/new">{{name}}</a></h3>
+            <small>({{issues|length}} issue{{issues|length|pluralize}})</small>
         </div>
-
-         <div class="col-lg-3 col-md-3">
-         {% if domain.email %}
-            
-                <div class="panel" style="background-color:white">
-                    <div class="panel-heading">
-                        <div class="row">
-                           
-                            
-                            <div class="col-xs-9 text-right">
-                                <div class="huge">{{ domain.email|obfuscate_mailto  }}</div>
-                                {% if domain.email_event %}
-                                <div>Last email {{domain.email_event|default:""}} {{domain.modified|timesince }} ago | Clicks {{domain.clicks|default:"0"}}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-           
-            {% endif %}
+        <div class="col-lg-2 col-md-2">
+            <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+                <input type="hidden" name="cmd" value="_s-xclick">
+                <input type="hidden" name="hosted_button_id" value="SC7E9NRCWHGTL">
+                <input type="hidden" name="hcustom" value="{{domian.name}}">
+                <button type="submit" class="btn btn-danger btn-sm pull-right">
+                <i class="fa fa-envelope fa-lg"></i>Subscribe to {{name}} bugs</button>
+            </form>
         </div>
     </div>
+
+    <div class="row">
+        <div class="col-lg-3 col-md-3">
+            {% if domain.email %}                        
+                {{ domain.email|obfuscate_mailto }}
+                {% if domain.email_event %}
+                    <div>Last email {{domain.email_event|default:""}} {{domain.modified|timesince }} ago | Clicks {{domain.clicks|default:"0"}}</div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>    
+
     <div class="row">
         <div class="col-lg-9">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <a href="all" style="padding: 0px 20px;" >ALL({{ total_issues }})</a>
-                    <a href="open" style="padding: 0px 20px;" >OPEN({{ total_open }})</a>
-                    <a href="closed" style="padding: 0px 20px;" >CLOSED({{ total_closed }})</a>
+                    <a href="all">ALL({{ total_issues }})</a>
+                    <a href="open">OPEN({{ total_open }})</a>
+                    <a href="closed">CLOSED({{ total_closed }})</a>
                 </div>
                 <div class="panel-body">
-                    <div class="list-group" >                   
+                    <div class="list-group">                   
                         {% for activity in issues %}
                             {% if issue_choice == "all" %}
                                 {% define issue_choice as condition %}                                
                             {% else %}
                                 {% define activity.status as condition %}
                             {% endif %}                     
-                                                                
+
                             {% if condition == issue_choice %}
-                                <div class="list-group-item" style="height:96px; overflow:hidden;">
-                                    <div style=" overflow:hidden; float:left;width:800px; " >
-                                        <div style="float:left;margin-right:10px">
-                                            {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
-                                                <img src="{{activity.user.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
-                                            {% else %}
-                                                {% gravatar activity.user.email 50 %}
-                                            {% endif %}
-                                        </div>
+                                <div class="list-group-item">
+                                    {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
+                                        <img src="{{activity.user.socialaccount_set.all.0.get_avatar_url}}" width="80" class="img-responsive img-rounded">
+                                    {% else %}
+                                        <img src="{% gravatar_url activity.user.email 50 %}" width="80" class="img-responsive img-rounded">
+                                    {% endif %}
+
+                                    <span class="title-text">
                                         {{ activity.user.username }} entered issue
                                         <a href="{{ activity.get_absolute_url }}">
                                             <img src="http://{{activity.hostname_domain}}/favicon.ico" height="16" onerror="this.onerror=null; this.style.display ='none';">
-                                            {{ activity.domain_title }} - {{ activity }}
+                                            {{ activity.domain_title }} - {{ activity|truncatechars:80 }}
                                         </a>
-                                    </div>
-                                    <div >
-                                        <span class=" text-muted small" style=" height:77px; overflow:hidden;">
-                                            <em>{{ activity.created|timesince }} ago</em></br>
-                                            {% if activity.screenshot %}
-                                                <a href="{{ activity.get_absolute_url }}">
-                                                    <img src="{{ activity.screenshot.url }}" width="100" style="position:absolute;top:0;right:0;" >
-                                                </a>
-                                            {% endif %}
-                                        </span>
-                                    </div>
-                                </div>
+                                    </span>
+                                    <span class="text-muted small">
+                                        <em>{{ activity.created|timesince }} ago</em>
+                                    </span>
+                                    {% if activity.screenshot %}
+                                        <a href="{{ activity.get_absolute_url }}">
+                                            <img src="{{ activity.screenshot.url }}" class="img-responsive screenshot-image">
+                                        </a>
+                                    {% endif %}
+                                </div>                                
                             {% endif %}    
                         {% endfor %}
                     </div>
@@ -115,43 +136,34 @@
             </div>
         </div>
         <div class="col-lg-3">
-<div class="panel panel-default">
-            <div class="panel-heading">
-                    Top Bug Hunters for {{name}}
-                </div>
-                <div class="panel-body">
-                    <div class="list-group">
-                        {% if leaderboard %}
-                            {% for leader in leaderboard %}
-                                <div class="list-group-item">
-                                    {% if leader.socialaccount_set.all.0.get_avatar_url %}
-                                        <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
-                                    {% else %}
-                                        {% gravatar leader.email 50 %}
-                                    {% endif %}
-                                    <a href="/profile/{{leader.username}}" style="margin-left:5px;">{{leader.username}}</a>
-                                    <span class="pull-right text-muted small"><em> {{leader.total}} bug{{leader.total|pluralize}}</em>
-                                    </span>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            Leaderboard reset for {% now "F" %}. Be first to find issues!
-                        {% endif %}
-                    </div>
-                    
-                </div>
-                </div>
+            <h4 class="text-center">Top Bug Hunters for {{name}}</h4>
+            <div class="list-group">
+                {% if leaderboard %}
+                    {% for leader in leaderboard %}
+                        <div class="list-group-item">
+                            {% if leader.socialaccount_set.all.0.get_avatar_url %}
+                                <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
+                            {% else %}
+                                <img src="{% gravatar_url leader.email 50 %}" width="50" height="50">
+                            {% endif %}
+                            <a href="/profile/{{leader.username}}">{{leader.username}}</a>
+                            <span class="badge">{{leader.total}} bug{{leader.total|pluralize}}</span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                Leaderboard reset for {% now "F" %}. Be first to find issues!
+                {% endif %}
+            </div>
+        </div>
 
-</div>
-        <a href="https://{{domain}}" target="_new">
         <div class="col-lg-3 col-md-3 ">
             {% if domain.webshot %}
                 <div class="col-lg-12">
-                    
-                    <img src="{{domain.webshot.url}}" style=" border: 1px solid #d43f3a; width:300px">
-                    
+                    <a href="https://{{domain}}" target="_new">
+                        <img src="{{domain.webshot.url}}">
+                    </a>
                 </div>
             {% endif %}
-        </div></a>
+        </div>
     </div>
 {% endblock %}
