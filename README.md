@@ -4,48 +4,55 @@
 
 Live Site: [Bugheist](http://bugheist.com/)
 
-## Dev Setup
-**Step 1:**
+## Setting Up Development Server (Vagrant)
 
-If PostgreSQL is not installed, run 
+1. Get [Vagrant](https://www.vagrantup.com/)
 
-`brew install postgresql` (Mac)
+2. Get [Virtualbox](https://www.virtualbox.org/)
 
-`sudo apt-get install postgresql` (Ubuntu) 
+3. Navigate to the directory with source code and type `vagrant up`. (It takes time during the first run, so go get a coffee!).
 
-**Step 2:**
+4. Now, type `vagrant ssh`.
 
-`cd BLT`
+5. Run `python BLT/manage.py migrate`.
 
-**Step 3:**
+6. Run `python BLT/manage.py createsuperuser`.
 
-If virtualenv is not installed, run `sudo apt-get install virtualenv` followed by
+7. Start the server using `python BLT/manage.py runserver 0.0.0.0:8000` and visit `http://localhost:8000`.
 
-`virtualenv venv` (Ubuntu)
+8. Then go to http://127.0.0.1:8000/admin/socialaccount/socialapp/) and add filler information for social auth accounts. Add a Domain with the name 'owasp.com'.
 
-`venv\Scripts\activate` (Windows)
+**Note:** In case you encounter an error with vagrant's vbguest module, run `vagrant plugin install vagrant-vbguest` from the host machine.
 
-`source venv/bin/activate` (Mac)
+## Setting Up Development Server (Virtual Environment)
 
-**Step 4:**
+1. If PostgreSQL is not installed, run:
 
-`pip install -r requirements.txt`
+    * `brew install postgresql` (Mac).
 
-**Step 5:**
+    * `sudo apt-get install postgresql` (Ubuntu).
 
-`python manage.py migrate`
+2. Type `cd BLT`.
 
-**Step 6:**
+3. If virtualenv is not installed, run `sudo apt-get install virtualenv` followed by:
 
-`python manage.py createsuperuser`
+    * `virtualenv venv` (Ubuntu).
 
-then go to http://127.0.0.1:8000/admin/socialaccount/socialapp/) and add filler information for social auth accounts.Add a Domain with the name 'owasp.com' .
+    * `venv\Scripts\activate` (Windows).
 
-**Step 7:**
+    * `source venv/bin/activate` (Mac).
 
-Start the server using `python manage.py runserver` and visit http://localhost:8000
+4. Run `pip install -r requirements.txt`.
 
-**Note:** In case you encounter an error, run `sudo apt-get install libpq-dev`
+5. Run `python manage.py migrate`.
+
+6. Run `python manage.py createsuperuser`.
+
+7. Then go to http://127.0.0.1:8000/admin/socialaccount/socialapp/) and add filler information for social auth accounts. Add a Domain with the name 'owasp.com'.
+
+8. Start the server using `python manage.py runserver` and visit `http://localhost:8000`.
+
+**Note:** In case you encounter an error, run `sudo apt-get install libpq-dev`.
 
 ## Resources
 
@@ -57,6 +64,6 @@ Start the server using `python manage.py runserver` and visit http://localhost:8
 
 ## Code Sprint 2017 Challenge
 
--  OWASP Code Sprint 2017
-- Add your name / Github link here along with your proposal
+- OWASP Code Sprint 2017.
+- Add your name / Github link here along with your proposal.
 
