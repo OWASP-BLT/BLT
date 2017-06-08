@@ -119,12 +119,14 @@
                     </div>
                 </div>
                 <div class="panel-footer">
+                    {% if  object.user.username == user.username or  user.is_superuser == True  %}
                     <form action="/update/" method="post">
                         {% csrf_token %}
                         <input type="hidden" name="id" value="{{issue.id}}">
                         <input type="hidden" name="action" value="{% if object.status == "closed" %}open{% else %}close{% endif %}">
                         <button type="submit" class="btn btn-lg btn-success">{% if object.status == "closed" %}Open{% else %}Close{% endif %} Issue</button>
                     </form>
+                    {% endif %}
                 </div>
             </div>
         </div>
