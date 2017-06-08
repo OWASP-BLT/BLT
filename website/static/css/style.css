@@ -435,3 +435,7 @@ input[type='file'] {
 .panel-heading .image_container{
 	background-color: transparent;
 }
+
+.issue_count{
+	color: #fff;
+}

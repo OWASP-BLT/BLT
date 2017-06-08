@@ -111,6 +111,7 @@
                                         <div>{% if domain.prize %}Grand Prize ${{domain.prize}}{% endif %}</div>
                                     </div>
                                 </div>
+                                <div class="row issue_count"><div class="col-xs-12 text-right">Issues <span>Open {{domain.open_issues.count}} </span><span> Closed {{domain.closed_issues.count}}</span></div></div>
                             </div>
                             <a href="{{domain.url}}" target="_new">
                                 <div class="panel-footer">
@@ -135,6 +136,7 @@
                                     <div>Grand Prize $100</div>
                                 </div>
                             </div>
+                            <div class="row issue_count"><div class="col-xs-12 text-right">Issues <span>Open {{ open_issue_owasp }} </span><span> Closed {{ closed_issue_owasp }}</span></div></div>
                         </div>
                         <a href="https://www.owasp.org/index.php/Bug_Bounty_Projects" target="_new">
                             <div class="panel-footer">
