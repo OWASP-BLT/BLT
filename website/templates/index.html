@@ -102,15 +102,16 @@
                         <div class="panel" id="hunt_{{domain.id}}" style="background-color:{{domain.get_color}}">
                             <div class="panel-heading">
                                 <div class="row">
-                                    <div class="col-xs-3">
+                                    <div class="col-xs-3  image_container">
                                         <img src="{{MEDIA_URL}}{{domain.logo}}" id="hunt_image{{domain.id}}"
-                                        onerror="this.onerror=null; this.style.display='none';">
+                                        onerror="this.onerror=null; this.style.display='none';" height="75" width="75">
                                     </div>
                                     <div class="col-xs-9 text-right">
                                         <div class="huge">{{domain.get_name}}</div>
                                         <div>{% if domain.prize %}Grand Prize ${{domain.prize}}{% endif %}</div>
                                     </div>
                                 </div>
+                                <div class="row issue_count"><div class="col-xs-12 text-right">Issues <span>Open {{domain.open_issues.count}} </span><span> Closed {{domain.closed_issues.count}}</span></div></div>
                             </div>
                             <a href="{{domain.url}}" target="_new">
                                 <div class="panel-footer">
@@ -127,7 +128,7 @@
                     <div class="panel owasp-panel">
                         <div class="panel-heading">
                             <div class="row">
-                                <div class="col-xs-3">
+                                <div class="col-xs-3 image_container">
                                     <img src="https://www.owasp.org/images/thumb/2/2f/Owasp_logo_flat2_icon.jpg/100px-Owasp_logo_flat2_icon.jpg" width="75" height="75">
                                 </div>
                                 <div class="col-xs-9 text-right">
@@ -135,6 +136,7 @@
                                     <div>Grand Prize $100</div>
                                 </div>
                             </div>
+                            <div class="row issue_count"><div class="col-xs-12 text-right">Issues <span>Open {{ open_issue_owasp }} </span><span> Closed {{ closed_issue_owasp }}</span></div></div>
                         </div>
                         <a href="https://www.owasp.org/index.php/Bug_Bounty_Projects" target="_new">
                             <div class="panel-footer">
