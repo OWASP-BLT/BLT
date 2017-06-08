@@ -449,3 +449,13 @@ input[type='file'] {
 	position:relative;
 	top:0;
 }
+
+
+.issue_count a{
+	color: #fff;
+	text-decoration: none;
+}
+
+.issue_count a:hover{
+	color: #dd4252;
+}
