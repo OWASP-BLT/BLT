@@ -4,9 +4,7 @@ $(document).ready(function(){
 			var i = 0;
 			$(lines[0]).fadeIn();
 			var changeText = setInterval(function(){
-				console.log(i);
-				console.log(lines);
-				console.log(lines[i].className);
+				
 				$(lines[i]).fadeOut();
 				if(i==(n-1)){
 					i=0;
