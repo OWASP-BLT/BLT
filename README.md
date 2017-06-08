@@ -39,7 +39,7 @@ If virtualenv is not installed, run `sudo apt-get install virtualenv` followed b
 
 `python manage.py createsuperuser`
 
-then go to http://127.0.0.1:8000/admin/socialaccount/socialapp/) and add filler information for social auth accounts.
+then go to http://127.0.0.1:8000/admin/socialaccount/socialapp/) and add filler information for social auth accounts.Add a Domain with the name 'owasp.com' .
 
 **Step 7:**
 
