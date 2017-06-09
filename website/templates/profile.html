@@ -12,18 +12,16 @@
         </div>
         <div class="col-md-3">
             {% if request.user == user %}
-                
-                
+
                     <form method="post" action="." enctype="multipart/form-data">
                         {% csrf_token %}
-                        <span>
-                            <input  type="file" class="required" style="opacity: 0; width: 1px;height:1px;" id='${multipartFilePath}' name="user_avatar" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"  /> 
-                            <button class="btn btn-primary" name="test_files" type="button"   onclick="$(this).parent().find('input[type=file]').click();"> <i class="fa fa-upload" aria-hidden="true"></i> Upload Profile Pic </button>
-                            &nbsp;
-                            <span  class="badge badge-important" ></span>
-                        </span>                        
-                        <br/> <br>
-                        <button type="submit" class="btn btn-primary btn-small">Upload</button>
+                        <div>
+                            <input type="file" class="required" style="opacity: 0; width: 1px;height:1px;" id='${multipartFilePath}' name="user_avatar" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"  /> 
+                            <button class="btn btn-primary" name="test_files" type="button"   onclick="$(this).parent().find('input[type=file]').click();">
+                            <i class="fa fa-upload" aria-hidden="true"></i> Upload Profile Pic</button>
+                            <span class="badge badge-important"></span>
+                        </div><br>
+                        <button type="submit" class="btn btn-primary">Upload</button>
                     </form>
                 
             {% endif %}
@@ -82,9 +80,5 @@
             </div>
           </div>
         </div>
-
     </div>
-    <script>
-
-    </script>
 {% endblock %}
