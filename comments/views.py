@@ -5,10 +5,6 @@ from .models import Comment
 from website.models import Issue,UserProfile
 from django.shortcuts import render, get_object_or_404
 import os
-# Create your views here.
-
-
-
 
 @login_required(login_url="/accounts/login/")
 def AddComment(request,pk):
@@ -18,16 +14,9 @@ def AddComment(request,pk):
         author_url = os.path.join('/profile/',request.user.username)
         issue = issue
         text=request.POST.get('text_comment')
-        comment =Comment(
-            author=author,
-            author_url=author_url,
-            issue=issue,
-            text=text,
-            ) 
+        comment =Comment(author=author, author_url=author_url, issue=issue, text=text)
         comment.save()
-    # return HttpResponse('')
-    return HttpResponseRedirect(os.path.join('/issue',str(pk)))    
-
+    return HttpResponseRedirect(os.path.join('/issue',str(pk)))
 
 @login_required(login_url="/accounts/login/")
 def DeleteComment(request,pk):
@@ -35,10 +24,7 @@ def DeleteComment(request,pk):
     if request.user.username!=comment.author:
         return HttpResponseRedirect(os.path.join('/issue',str(pk)))    
     comment.delete()
-    return HttpResponseRedirect(os.path.join('/issue',str(comment.issue.pk)))    
-
-             
-
+    return HttpResponseRedirect(os.path.join('/issue',str(comment.issue.pk)))
 
 @login_required(login_url="/accounts/login/")
 def EditComment(request,pk):
@@ -48,9 +34,7 @@ def EditComment(request,pk):
     if request.method == "POST":
         comment.text=request.POST.get('new_comment')
         comment.save()
-    return HttpResponseRedirect(os.path.join('/issue',str(comment.issue.pk)))    
-
-    
+    return HttpResponseRedirect(os.path.join('/issue',str(comment.issue.pk)))
 
 @login_required(login_url="/account/login/")
 def EditCommentPage(request,pk):
@@ -58,4 +42,4 @@ def EditCommentPage(request,pk):
     if request.user.username!=comment.author:
         return HttpResponse("Can't Edit this comment")
     if request.method=="POST":
-        return render(request,'editp.html',{'comment':comment})
+        return render(request,'edit_comment.html',{'comment':comment})
