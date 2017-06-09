@@ -20,7 +20,7 @@ Live Site: [Bugheist](http://bugheist.com/)
 
 7. Start the server using `python BLT/manage.py runserver 0.0.0.0:8000` and visit `http://localhost:8000`.
 
-8. Then go to http://127.0.0.1:8000/admin/socialaccount/socialapp/) and add filler information for social auth accounts. Add a Domain with the name 'owasp.com'.
+8. Then go to http://127.0.0.1:8000/admin/socialaccount/socialapp/) and add filler information for social auth accounts. Add a Domain (http://127.0.0.1:8000/admin/website/domain/)   with the name 'owasp.com'.
 
 **Note:** In case you encounter an error with vagrant's vbguest module, run `vagrant plugin install vagrant-vbguest` from the host machine.
 
