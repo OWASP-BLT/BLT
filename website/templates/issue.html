@@ -22,6 +22,12 @@
     .fb-xfbml-parse-ignore {
         margin-top: -12px;
     }
+    .comment .comment-actions {
+        display: inline-flex;
+    }
+    .comment .comment-actions .btn {
+        margin-left: 10px;
+    }
 {% endblock %}
 {% block content %}
     <div id="fb-root"></div>
@@ -172,10 +178,10 @@
     {% endif %}
 </div>
 
-<form id="comments_form" method="post" action="{% url 'comments.views.AddComment' pk=issue.pk %}">
+<form method="post" action="{% url 'comments.views.AddComment' pk=issue.pk %}">
     {% csrf_token %}
     <div class="form-group">
-        <textarea placeholder="Comment" class="form-control" name="text_comment" ></textarea>
+        <textarea placeholder="Comment" class="form-control" name="text_comment" required></textarea>
     </div>
     <button class="btn btn-small" type="submit">Add Comment</button>
 </form>
@@ -185,22 +191,16 @@
 
 {% for comment in all_comment %}
 <hr>
-    <div class="comment">
-        <div style="display: inline-flex;">
-            <div class="date">{{ comment.created_date }}</div>
-            {% if user.username == comment.author  %}
-                <form  class="form-inline" id="edit_form" method="post" action="{% url 'comments.views.EditCommentPage' pk=comment.pk %}">
-                    {% csrf_token %}
-                    <button class="btn btn-xs btn-primary" type="submit">Edit</button>
-                </form>
-                <form class="form-inline" id="delete_form" method="post" action="{% url 'comments.views.DeleteComment' pk=comment.pk %}">
-                    {% csrf_token %}
-                    <button class="btn btn-xs btn-danger" type="submit">Delete</button>
-                </form>
+    <div class="well comment">
+        <div class="comment-actions">
+            <strong><a href="{{ comment.author_url }}">{{ comment.author }} </a></strong>
+            &nbsp;commented on&nbsp;<div class="date"> {{ comment.created_date }}</div>
+            {% if user.username == comment.author  %}                
+                <a class="btn btn-xs btn-primary" href="{% url 'comments.views.EditCommentPage' pk=comment.pk %}">Edit</a>                    
+                <a class="btn btn-xs btn-danger" href="{% url 'comments.views.DeleteComment' pk=comment.pk %}">Delete</a>
             {% endif %}
         </div>
-        <div>
-            <strong><a href="{{ comment.author_url }}">{{ comment.author }}</a></strong>
+        <div>            
             <p>{{ comment.text|linebreaks }}</p>
         </div>
     </div>
@@ -209,4 +209,3 @@
 {% endif %}
 
 {% endblock %}
-
