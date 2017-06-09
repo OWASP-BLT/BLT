@@ -247,7 +247,7 @@ a:hover{
 }
 .activity-strip-section > div {
 	margin-left: 20px;	
-	font-size: 20px;
+	font-size: 16px;
 	font-weight: bold;
 }
 .activity-strip-section > div a {
@@ -431,31 +431,16 @@ input[type='file'] {
  font-size: 14px;
  line-height: 20px;
 }
-
 .panel-heading .image_container{
 	background-color: transparent;
 }
-
 .issue_count{
 	color: #fff;
 }
-.issue_status{
-	display: block;
-	
-	color: #dd4252;
-}
-
-.activity-strip-section > div > .small{
-	position:relative;
-	top:0;
-}
-
-
 .issue_count a{
 	color: #fff;
 	text-decoration: none;
 }
-
 .issue_count a:hover{
 	color: #dd4252;
 }

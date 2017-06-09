@@ -18,6 +18,7 @@ def AddComment(request,pk):
         comment.save()
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
+
 @login_required(login_url="/accounts/login/")
 def DeleteComment(request,pk):
     comment = get_object_or_404(Comment,pk=pk)
@@ -35,6 +36,7 @@ def EditComment(request,pk):
         comment.text=request.POST.get('new_comment')
         comment.save()
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
 
 @login_required(login_url="/account/login/")
 def EditCommentPage(request,pk):
