@@ -218,15 +218,9 @@
     <div class="comment">
         <div style="display: inline-flex;">
             <div class="date">{{ comment.created_date }}</div>
-            {% if user.username == comment.author  %}
-                <form class="form-inline" method="post" action="{% url 'comments.views.EditCommentPage' pk=comment.pk %}">
-                    {% csrf_token %}
-                    <button class="btn btn-xs btn-primary" type="submit">Edit</button>
-                </form>
-                <form class="form-inline" id="delete_form" method="post" action="{% url 'comments.views.DeleteComment' pk=comment.pk %}">
-                    {% csrf_token %}
-                    <button class="btn btn-xs btn-danger" type="submit">Delete</button>
-                </form>
+            {% if user.username == comment.author  %}                
+                <a class="btn btn-xs btn-primary" href="{% url 'comments.views.EditCommentPage' pk=comment.pk %}">Edit</a>                    
+                <a class="btn btn-xs btn-danger" href="{% url 'comments.views.DeleteComment' pk=comment.pk %}">Delete</a>
             {% endif %}
         </div>
         <div>
