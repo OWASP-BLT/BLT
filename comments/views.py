@@ -41,5 +41,4 @@ def EditCommentPage(request,pk):
     comment = get_object_or_404(Comment,pk=pk)
     if request.user.username!=comment.author:
         return HttpResponse("Can't Edit this comment")
-    if request.method=="POST":
-        return render(request,'edit_comment.html',{'comment':comment})
+    return render(request,'edit_comment.html',{'comment':comment})
