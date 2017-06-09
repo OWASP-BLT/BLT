@@ -48,7 +48,7 @@ Live Site: [Bugheist](http://bugheist.com/)
 
 6. Run `python manage.py createsuperuser`.
 
-7. Then go to http://127.0.0.1:8000/admin/socialaccount/socialapp/) and add filler information for social auth accounts. Add a Domain with the name 'owasp.com'.
+7. Then go to http://127.0.0.1:8000/admin/socialaccount/socialapp/) and add filler information for social auth accounts. Add a Domain (http://127.0.0.1:8000/admin/website/domain/) with the name 'owasp.com'.
 
 8. Start the server using `python manage.py runserver` and visit `http://localhost:8000`.
 
