@@ -57,6 +57,11 @@
         width: 100px;
         height: 100px;
     }
+    .comment_link {
+        position:absolute;
+        bottom:10px;
+        left:500px;
+    }
 {% endblock %}
 {% block content %}
     <div class="row">
@@ -123,6 +128,9 @@
                                     <span class="text-muted small">
                                         <em>{{ activity.created|timesince }} ago</em>
                                     </span>
+                                    <a  class="comment_link" href="{{ activity.get_absolute_url }}#comments_form">
+                                      {{ activity.comments.all|length  }} comments.  
+                                    </a>
                                     {% if activity.screenshot %}
                                         <a href="{{ activity.get_absolute_url }}">
                                             <img src="{{ activity.screenshot.url }}" class="img-responsive screenshot-image">
