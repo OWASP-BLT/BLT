@@ -167,7 +167,7 @@ class IssueBaseCreate(object):
 
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
-    fields = ['url','description','screenshot','domain']
+    fields = ['url','description','screenshot','domain', 'label']
     template_name = "index.html"
 
     def get_initial(self):
