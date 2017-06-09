@@ -53,7 +53,7 @@
 
 
     <div class="row">
-        <div class="col-lg-6">
+        <div class="col-lg-12">
             <form role="form" action="." method="post" id="form1" enctype="multipart/form-data" >
                 {% csrf_token %}
                 <div class="form-group">
@@ -79,14 +79,5 @@
                 </div>
             </form>
         </div>
-
-        <div class="col-lg-6">
-            <center>
-            <span id="video_span">
-                <iframe width="560" height="315" id="video_iframe" src="https://www.youtube.com/embed/o-t6HDXjpP8?rel=0&amp;controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
-            </span>
-            </center>
-        </div>
-
     </div>
 {% endblock %}
