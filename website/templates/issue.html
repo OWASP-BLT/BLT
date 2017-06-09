@@ -22,6 +22,12 @@
     .fb-xfbml-parse-ignore {
         margin-top: -12px;
     }
+    .comment .comment-actions {
+        display: inline-flex;
+    }
+    .comment .comment-actions .btn {
+        margin-left: 10px;
+    }
 {% endblock %}
 {% block content %}
     <div id="fb-root"></div>
@@ -185,16 +191,16 @@
 
 {% for comment in all_comment %}
 <hr>
-    <div class="comment">
-        <div style="display: inline-flex;">
-            <div class="date">{{ comment.created_date }}</div>
+    <div class="well comment">
+        <div class="comment-actions">
+            <strong><a href="{{ comment.author_url }}">{{ comment.author }} </a></strong>
+            &nbsp;commented on&nbsp;<div class="date"> {{ comment.created_date }}</div>
             {% if user.username == comment.author  %}                
                 <a class="btn btn-xs btn-primary" href="{% url 'comments.views.EditCommentPage' pk=comment.pk %}">Edit</a>                    
                 <a class="btn btn-xs btn-danger" href="{% url 'comments.views.DeleteComment' pk=comment.pk %}">Delete</a>
             {% endif %}
         </div>
-        <div>
-            <strong><a href="{{ comment.author_url }}">{{ comment.author }}</a></strong>
+        <div>            
             <p>{{ comment.text|linebreaks }}</p>
         </div>
     </div>
@@ -203,4 +209,3 @@
 {% endif %}
 
 {% endblock %}
-
