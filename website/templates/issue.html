@@ -202,10 +202,10 @@
     {% endif %}
 </div>
 
-<form id="comments_form" method="post" action="{% url 'comments.views.AddComment' pk=issue.pk %}">
+<form method="post" action="{% url 'comments.views.AddComment' pk=issue.pk %}">
     {% csrf_token %}
     <div class="form-group">
-        <textarea placeholder="Comment" class="form-control" name="text_comment" ></textarea>
+        <textarea placeholder="Comment" class="form-control" name="text_comment" required></textarea>
     </div>
     <button class="btn btn-small" type="submit">Add Comment</button>
 </form>
@@ -219,7 +219,7 @@
         <div style="display: inline-flex;">
             <div class="date">{{ comment.created_date }}</div>
             {% if user.username == comment.author  %}
-                <form  class="form-inline" id="edit_form" method="post" action="{% url 'comments.views.EditCommentPage' pk=comment.pk %}">
+                <form class="form-inline" method="post" action="{% url 'comments.views.EditCommentPage' pk=comment.pk %}">
                     {% csrf_token %}
                     <button class="btn btn-xs btn-primary" type="submit">Edit</button>
                 </form>
