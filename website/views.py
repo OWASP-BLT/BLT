@@ -674,4 +674,4 @@ def MarkDuplicateIssue(request,pk):
 
 
         issue.save()
-    return HttpResponseRedirect(os.path.join('/issue',str(issue.pk)))        
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))        

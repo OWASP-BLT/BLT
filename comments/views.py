@@ -16,25 +16,25 @@ def AddComment(request,pk):
         text=request.POST.get('text_comment')
         comment =Comment(author=author, author_url=author_url, issue=issue, text=text)
         comment.save()
-    return HttpResponseRedirect(os.path.join('/issue',str(pk)))
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 @login_required(login_url="/accounts/login/")
 def DeleteComment(request,pk):
     comment = get_object_or_404(Comment,pk=pk)
     if request.user.username!=comment.author:
-        return HttpResponseRedirect(os.path.join('/issue',str(pk)))    
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))    
     comment.delete()
-    return HttpResponseRedirect(os.path.join('/issue',str(comment.issue.pk)))
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 @login_required(login_url="/accounts/login/")
 def EditComment(request,pk):
     comment = get_object_or_404(Comment,pk=pk)
     if request.user.username!=comment.author:
-        return HttpResponseRedirect(os.path.join('/issue',str(pk)))    
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))    
     if request.method == "POST":
         comment.text=request.POST.get('new_comment')
         comment.save()
-    return HttpResponseRedirect(os.path.join('/issue',str(comment.issue.pk)))
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 @login_required(login_url="/account/login/")
 def EditCommentPage(request,pk):
