@@ -648,3 +648,30 @@ class CreateInviteFriend(CreateView):
 
         return HttpResponseRedirect(self.success_url)
 
+@login_required(login_url="/account/login/")
+def MarkDuplicateIssue(request,pk):
+    issue = get_object_or_404(Issue,pk=pk)
+
+    if request.method == "POST":
+        if issue.marked_duplicate_admin==True:
+            return HttpResponseRedirect(os.path.join('/issue',str(issue.pk)))        
+        
+        if issue.first_duplicate_report_user is None:
+            issue.first_duplicate_report_user = request.user
+            issue.marked_duplicate_count=1
+        else:
+            issue.marked_duplicate_count=1
+            
+        if request.user.is_superuser==True:
+            issue.marked_duplicate_admin=True
+            p1 = Points.objects.create(user=issue.first_duplicate_report_user, score=4)
+            p1.save()
+            messages.success(request, 'Duplicacy confirmed by Admin. Rewarded +'+ str(4)
+                +" to the original reporter "+str(issue.first_duplicate_report_user))
+
+            p2 = Points.objects.create(user=issue.user, score=-3)
+            p2.save()
+
+
+        issue.save()
+    return HttpResponseRedirect(os.path.join('/issue',str(issue.pk)))        

@@ -444,3 +444,7 @@ input[type='file'] {
 .issue_count a:hover{
 	color: #dd4252;
 }
+
+#report_user{
+	font-size: 20px;
+}
