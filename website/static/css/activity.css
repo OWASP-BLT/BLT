@@ -21,8 +21,10 @@
 
 	.activity-strip{
 		height:auto;
+		overflow: auto;
 	}
 	.activity-screenshot{
-		display: none;
+		position: absolute;
+		top:100px;
 	}
 }
