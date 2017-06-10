@@ -45,7 +45,7 @@
     "model": "website.domain",
     "pk": 99,
     "fields": {
-      "name": "owasp.com",
+      "name": "owasp.org",
       "url": "http://owasp.org",
       "logo": "",
       "webshot": "",
