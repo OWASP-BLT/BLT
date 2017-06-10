@@ -8,22 +8,20 @@
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
     
-         <section class="hero">
-            <div class="heading">
-                <h1 class="page-header">Find Bugs, Win Points and Prizes</h1>
-            </div>
-            <div class="text-slider">
-                <ul>
-                    <li class="text-slider-list"><h2 class="text-slider-line active-line animated fadeInUp">Fix issues on websites, apps or hardware (+3 points)</h2></li>
-                    <li class="text-slider-list"><h2 class="text-slider-line animated fadeInUp">Verify other bug reports(+2 points)</h2></li>
-                    <li class="text-slider-list"><h2 class="text-slider-line animated fadeInUp">Invite friends (when they signup , get +1 point)</h2></li>
-                    <li class="text-slider-list"><h2 class="text-slider-line animated fadeInUp">Find a bug on a new site or app (+4 points)</h2></li>
-                    <!-- <li class="text-slider-list"><h2 class="text-slider-line animated fadeInUp">Report duplicate bug (-4 points)</h2></li> -->
-                </ul>
-            </div>
-         </div>
-
-        </section>
+    <section class="hero">
+        <div class="heading">
+            <h1 class="page-header">Find Bugs, Win Points and Prizes</h1>
+        </div>
+        <div class="text-slider">
+            <ul>
+                <li class="text-slider-list"><h2 class="text-slider-line active-line animated fadeInUp">Fix issues on websites, apps or hardware (+3 points)</h2></li>
+                <li class="text-slider-list"><h2 class="text-slider-line animated fadeInUp">Verify other bug reports(+2 points)</h2></li>
+                <li class="text-slider-list"><h2 class="text-slider-line animated fadeInUp">Invite friends (when they signup , get +1 point)</h2></li>
+                <li class="text-slider-list"><h2 class="text-slider-line animated fadeInUp">Find a bug on a new site or app (+4 points)</h2></li>
+                <!-- <li class="text-slider-list"><h2 class="text-slider-line animated fadeInUp">Report duplicate bug (-4 points)</h2></li> -->
+            </ul>
+        </div>
+    </section>
 
     <div class="row icon-row">
         <div class="col-sm-4">
@@ -89,7 +87,6 @@
     </div>
 
     <div class="row">
-
         <div class="col-lg-9">
             <div class="row">
                 <div class="col-lg-12">
@@ -213,34 +210,4 @@
             </div>
         </div>
     </div>
-
-    <script>
-    var player_width = 560;
-    var player_height = 315;
-    var responsiveVideo = function() {
-    var player_window_buffer = 120;
-    var window_width = $(window).width();
-    var aspect_ratio = player_width/player_height;
-    var player_span = $('#video_span');
-    var player_iframe = $('#video_iframe');
-    if (window_width >= player_width) {
-    $(player_span).width(player_width)
-    $(player_span).height(player_height).css('line-height', player_height + 'px');
-    $(player_iframe).width(player_width);
-    $(player_iframe).height(player_height);
-    $('#chrome_ext').show();
-    } else {
-    $(player_span).width(window_width-player_window_buffer);
-    var new_wrapper_height = $(player_span).width()/aspect_ratio;
-    $(player_span).height(new_wrapper_height).css('line-height', new_wrapper_height + 'px');
-    $(player_iframe).width(window_width-player_window_buffer);
-    $(player_iframe).height(($(player_span).width()/aspect_ratio));
-    $('#chrome_ext').hide();
-    }
-    }
-    $(document).ready(function(){responsiveVideo();});
-    $(window).resize(function() {responsiveVideo();});
-    $('#btn').on('click', function() { $("#form1").valid(); });
-    </script>
-
 {% endblock %}
