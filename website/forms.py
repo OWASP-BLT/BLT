@@ -6,7 +6,7 @@ class IssueEditForm(forms.ModelForm):
 
     class Meta:
         model = Issue
-        fields = ['description', 'screenshot']
+        fields = ['description', 'screenshot', 'label']
 
 
 class FormInviteFriend(forms.ModelForm):

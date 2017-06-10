@@ -45,6 +45,7 @@
                 {% endif %}
                 {{ activity.verb }} <a href="/domain/{{ activity.target.domain_name }}">{{ activity.target.domain_title }}</a> {{ activity.timestamp|timesince }} ago | 
                 <a href="//{{ activity.target.domain_name }}">{{ activity.target.domain_name }}</a>
+                <span class="label label-info bug-type">{{activity.target.get_label_display}}</span>
             </div>
         </div>
     </div>
