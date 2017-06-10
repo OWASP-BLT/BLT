@@ -62,8 +62,8 @@ def index(request, template="index.html"):
             show_message = 'Please verify your email address'
     except:
         show_message = ''
-    open_issue_owasp = Domain.objects.get(name='owasp.com').open_issues.count()
-    closed_issue_owasp = Domain.objects.get(name='owasp.com').closed_issues.count()
+    open_issue_owasp = Domain.objects.get(name='owasp.org').open_issues.count()
+    closed_issue_owasp = Domain.objects.get(name='owasp.org').closed_issues.count()
     context = {
         'activities': Action.objects.all()[0:10],
         'domains': domains,
