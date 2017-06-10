@@ -12,6 +12,13 @@
 	top: 10px;
 }
 
+.more_info{
+	display: none;
+	cursor: pointer;
+}
+
+
+
 @media only screen and (max-width: 450px){
 	.activity-strip .activity-strip-section{
 		width: 95%;
@@ -34,6 +41,17 @@
 
 	.activity-strip-section > div{
 		overflow: auto;
+	}
+
+	.more_info{
+		display: block;
+		margin: 10px 0;
+		cursor: pointer;
+		color: #999;
+	}
+
+	.activity-strip-section > div > .small{
+		display: none;
 	}
 	
 }

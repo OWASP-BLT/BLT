@@ -8,7 +8,7 @@
             <img src="{% gravatar_url activity.actor.email 100 %}" width="100" class="img-responsive img-rounded">
         {% endif %}
         
-        <div>
+        <div class="info">
             {% if activity.action_object %}
                 {% if activity.action_object.get_absolute_url %}
                     <a href="{{ activity.action_object.get_absolute_url }}">{{ activity.action_object }}</a>
@@ -34,7 +34,7 @@
                     <span class="label label-danger text-capitalize">{{activity.target.status}}</span>
                 {% endif %}                    
             {% endif %}
-
+            <div class="more_info"><a>See More </a></div>
             <div class="small">
                 {% if activity.actor.get_absolute_url %}
                     <a href="{{ activity.actor.get_absolute_url }}" class="text-capitalize">
