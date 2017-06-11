@@ -1,29 +1,46 @@
 {% extends "base.html" %}
 {% load gravatar %}
+
+{% block style %}
+.img-thumbnail {
+    width: 200px;
+    height: 200px;
+}
+input[type="file"] {
+    opacity: 0;
+    width: 1px;
+    height:1px;
+}
+.fa-money {
+    margin-right: 5px;
+}
+.list-group .label-default {
+    margin-top:3px;
+}
+{% endblock %}
+
 {% block content %}
     <div class="row">
         <h1 class="page-header text-capitalize">{{ user.username }}</h1>
         <div class="col-md-3">            
             {% if user.userprofile.avatar %}
-                <img src="{{ user.userprofile.avatar }}" class="img-responsive img-thumbnail" width="150" height="150">
+                <img src="{{ user.userprofile.avatar }}" class="img-responsive img-thumbnail">
             {% else %}
-                <img src="{% gravatar_url user.email 200 %}" class="img-responsive img-thumbnail" width="200" height="200">                
+                <img src="{% gravatar_url user.email 200 %}" class="img-responsive img-thumbnail">
             {% endif %}
         </div>
         <div class="col-md-3">
             {% if request.user == user %}
-
                     <form method="post" action="." enctype="multipart/form-data">
                         {% csrf_token %}
                         <div>
-                            <input type="file" class="required" style="opacity: 0; width: 1px;height:1px;" id='${multipartFilePath}' name="user_avatar" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"  /> 
+                            <input type="file" class="required" id='${multipartFilePath}' name="user_avatar" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"  /> 
                             <button class="btn btn-primary" name="test_files" type="button"   onclick="$(this).parent().find('input[type=file]').click();">
                             <i class="fa fa-upload" aria-hidden="true"></i> Upload Profile Pic</button>
                             <span class="badge badge-important"></span>
                         </div><br>
                         <button type="submit" class="btn btn-primary">Upload</button>
                     </form>
-                
             {% endif %}
         </div>
         <div class="col-md-3 col-md-offset-3">
@@ -34,7 +51,7 @@
                 <input type="hidden" name="item_name" value="tip for {{ user.username }} on bugheist.com">
                 <input type="hidden" name="currency_code" value="USD">
                 <button type="submit" class="btn btn-danger btn-small">
-                    <i class="fa fa-money fa-lg" style="margin-right:5px;"></i> Send a tip
+                    <i class="fa fa-money fa-lg"></i> Send a tip
                 </button>
             </form>
         </div>
@@ -56,29 +73,27 @@
         </div>
 
         <div class="col-lg-3">
-          <div class="panel panel-default">
-            <div class="panel-heading text-capitalize">
-                {{ user.username }}'s top bug findings
+            <div class="panel panel-default">
+                <div class="panel-heading text-capitalize">
+                    {{ user.username }}'s top bug findings
+                </div>
+                <div class="panel-body">
+                    <div class="list-group">
+                        {% for website in websites %}
+                            <div class="list-group-item">
+                                <a href="/domain/{{ website.name }}">
+                                    <img src="http://www.{{ website.name }}/favicon.ico" height="25"
+                                         onerror="this.onerror=null; this.style.display='none';">
+                                </a>
+                                <a href="/domain/{{ website.name }}">{{ website.name }}</a>
+                                <span class="label label-default pull-right">
+                                  {{ website.total }} Bug{{ website.total|pluralize }}
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
-            <div class="panel-body">
-              <div class="list-group">
-                {% for website in websites %}
-                  <div class="list-group-item">
-                    <a href="/domain/{{ website.name }}">
-                        <img src="http://www.{{ website.name }}/favicon.ico" height="25"
-                             onerror="this.onerror=null; this.style.display='none';">
-                    </a>
-                    <a href="/domain/{{ website.name }}" style="margin-left:5px;">
-                      {{ website.name }}
-                    </a>
-                    <span class="label label-default pull-right" style="margin-top:3px;">
-                      {{ website.total }} Bug{{ website.total|pluralize }}
-                    </span>
-                  </div>
-                {% endfor %}
-              </div>
-            </div>
-          </div>
         </div>
     </div>
 {% endblock %}

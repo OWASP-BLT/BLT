@@ -8,38 +8,23 @@
 {% block og_image %}{{object.screenshot.url}}{% endblock %}
 {% block og_description %}{{object.description}}{% endblock %}
 {% block description %}{{object.description}}{% endblock %}
+
+{% block style %}
+.form-group {
+    margin-top: 20px;
+}
+{% endblock %}
+
 {% block content %}
 
-    <h1>Edit issue {{issue.pk}}</h1>
-
     <div id="fb-root"></div>
-    <script>
-    window.twttr = (function(d, s, id) {
-    var js, fjs = d.getElementsByTagName(s)[0],
-    t = window.twttr || {};
-    if (d.getElementById(id)) return t;
-    js = d.createElement(s);
-    js.id = id;
-    js.src = "https://platform.twitter.com/widgets.js";
-    fjs.parentNode.insertBefore(js, fjs);
-    t._e = [];
-    t.ready = function(f) {
-    t._e.push(f);
-    };
-    return t;
-    }(document, "script", "twitter-wjs"));
-    (function(d, s, id) {
-    var js, fjs = d.getElementsByTagName(s)[0];
-    if (d.getElementById(id)) return;
-    js = d.createElement(s); js.id = id;
-    js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.7&appId=236647900066394";
-    fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));
-    </script>
+    <script type="text/javascript" src="{% static "js/issue.js" %}"></script>
     <div class="row">
         <div class="col-lg-12">
-            <a href="{{object.url}}" target="_new">{{object.url}}</a></br>
-            <div style="padding-top:10px;">
+            <h3 class="page-header">Edit Issue #{{issue.pk}}</h3>
+            <strong>Domain:</strong>
+            <a href="{{object.url}}" target="_new">{{object.url}}</a>
+            <div class="pull-right">
                 <a class="twitter-share-button"
                     href="https://twitter.com/intent/tweet?text=Bug on @{{object.domain_title}} - {{object.description}}"
                 data-size="small">Tweet</a>
@@ -47,37 +32,38 @@
                     <a class="fb-xfbml-parse-ignore" target="_blank" >Share</a>
                 </div>
             </div>
-
+            <hr>
         </div>
     </div>
 
-
     <div class="row">
         <div class="col-lg-12">
-            <form role="form" action="." method="post" id="form1" enctype="multipart/form-data" >
+            <form role="form" action="." method="post" id="form1" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="form-group">
                     <label>Description of the bug</label>
                     <textarea data-required="true" class="form-control required" rows="3" placeholder="I found a bug on a site."  id="description" name="description">{{form.description.value|default:""}}</textarea>
                     {% if form.description.errors %}
-                    <label id="description-error" class="error" for="description">{{form.description.errors}}</label>
+                    <label id="description-error" class="error" for="description">
+                        {{form.description.errors}}
+                    </label>
                     {% endif %}
                 </div>
-                
-                {{form.label}}
+
+                <strong>Bug Type:</strong> {{form.label}}
 
                 <div class="form-group">
-                    <label>Attach Screenshot</label>
-                    <p>
-                        {{form.screenshot}}
-                    </p>
+                    <label>Screenshot</label>
+                    <img src="{{form.instance.screenshot.url}}" class="img-responsive img-thumbnail">
                     {% if form.screenshot.errors %}
-                    <label id="description-error" class="error" for="description">{{form.screenshot.errors}}</label>
+                    <label id="description-error" class="error" for="description">
+                        {{form.screenshot.errors}}
+                    </label>
                     {% endif %}
                 </div>
 
                 <div class="form-group">
-                    <button type="submit" id="btn" class="btn btn-default btn-primary">Edit</button>
+                    <button type="submit" class="btn btn-default btn-primary">Update</button>
                 </div>
             </form>
         </div>
