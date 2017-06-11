@@ -1,0 +1,13 @@
+language: python
+
+python:
+  - "2.7"
+
+env:
+  -DJANGO=1.9.2 MIGRATE='./manage.py migrate' DB=sqlite
+
+install:
+  - pip install -r requirements.txt
+
+script:
+  - python manage.py test
