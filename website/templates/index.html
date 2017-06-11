@@ -89,7 +89,6 @@
     </div>
 
     <div class="row">
-
         <div class="col-lg-9">
             <div class="row">
                 <div class="col-lg-12">
@@ -150,17 +149,6 @@
                     </div>
                 </div>
             </div>
-            <div class="row" data-intro="View latest activities here." data-step="6">
-                <div class="col-lg-12">
-                    <h1 class="page-sub-header">Latest activity</h1>
-                </div>
-                <div class="list-group" >
-                    {% for activity in activities %}
-                        {% include '_activity.html' %}
-                    {% endfor %}
-                </div>
-                <a href="/all_activity" class="btn btn-default btn-block submit_button">View All Activity</a>
-            </div>
         </div>
 
         <div class="col-lg-3">
@@ -205,13 +193,18 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="row">
-            <div class="col-lg-3">
-                <a class="twitter-timeline" data-height="800" href="https://twitter.com/Bugheist"></a>
-                <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-            </div>
+    <div class="row" data-intro="View latest activities here." data-step="6">
+        <div class="col-lg-12">
+            <h1 class="page-sub-header">Latest activity</h1>
         </div>
+        <div class="list-group" >
+            {% for activity in activities %}
+                {% include '_activity.html' %}
+            {% endfor %}
+        </div>
+        <a href="/all_activity" class="btn btn-default btn-block submit_button">View All Activity</a>
     </div>
 
     <script>
