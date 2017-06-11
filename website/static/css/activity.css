@@ -16,6 +16,9 @@
 	display: none;
 	cursor: pointer;
 }
+.text-trunc{
+	display: none;
+}
 
 
 
@@ -53,7 +56,13 @@
 	.activity-strip-section > div > .small{
 		display: none;
 	}
-	
+	.text-trunc{
+		display: block;
+		margin-top: 10px;
+	}
+	.text-trunc:first-letter{
+		text-transform: uppercase;
+	}
 }
 
 @media only screen and (min-width: 400px){
@@ -62,3 +71,4 @@
 		right: 0
 	}
 }
+

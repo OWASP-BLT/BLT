@@ -34,7 +34,7 @@
                     <span class="label label-danger text-capitalize">{{activity.target.status}}</span>
                 {% endif %}                    
             {% endif %}
-            <div class="more_info"><a>See More </a></div>
+            <div class="text-trunc"></div>
             <div class="small">
                 {% if activity.actor.get_absolute_url %}
                     <a href="{{ activity.actor.get_absolute_url }}" class="text-capitalize">
@@ -47,6 +47,7 @@
                 <a href="//{{ activity.target.domain_name }}">{{ activity.target.domain_name }}</a>
                 <span class="label label-info bug-type">{{activity.target.get_label_display}}</span>
             </div>
+            <div class="more_info"><a>See More </a></div>
         </div>
     </div>
 
