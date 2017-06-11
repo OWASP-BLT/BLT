@@ -1,17 +1,31 @@
 $(document).ready(function(){
 	
 	$('.more_info').click(function(){
+		if($(this)[0]==$('.open')[0]){
+			close_panel()
+			return;
+		}
+		console.log($(this))
+		console.log($('.open'))
+
+		close_panel()
 		
-		$('.open').parent().animate({'height':'200px'})
-		$('.open').parent().parent().animate({'height': '200px'})
-		$('.open').parent().parent().parent().animate({'height': '200px'})
-		$('.open').hide()
-		$('.open').removeClass('.open')
 		
+		$(this).html("<a>See less</a>")
 		$(this).parent().animate({'height':'400px'})
 		$(this).parent().parent().animate({'height': '400px'})
 		$(this).parent().parent().parent().animate({'height': '400px'})
 		$(this).siblings('.small').show()
-		$(this).siblings('.small').addClass('open')
+		$(this).addClass('open')
 	})
+
+	function close_panel(){
+		$('.open').html('<a>See more</a>')
+		$('.open').parent().animate({'height':'200px'})
+		$('.open').parent().parent().animate({'height': '200px'})
+		$('.open').parent().parent().parent().animate({'height': '200px'})
+		$('.open').siblings('.small').hide()
+		$('.open').removeClass('open')
+		
+	}
 })
