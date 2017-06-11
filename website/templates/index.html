@@ -89,7 +89,6 @@
     </div>
 
     <div class="row">
-
         <div class="col-lg-9">
             <div class="row">
                 <div class="col-lg-12">
@@ -136,7 +135,7 @@
                                     <div>Grand Prize $100</div>
                                 </div>
                             </div>
-                            <div class="row issue_count"><div class="col-xs-12 text-right">Issues <span><a href="/domain/owasp.com/open">Open {{ open_issue_owasp }} </a></span><span><a href="/domain/owasp.com/closed"> Closed {{ closed_issue_owasp }}</a></span></div></div>
+                            <div class="row issue_count"><div class="col-xs-12 text-right">Issues <span><a href="/domain/owasp.org/open">Open {{ open_issue_owasp }} </a></span><span><a href="/domain/owasp.org/closed"> Closed {{ closed_issue_owasp }}</a></span></div></div>
                         </div>
                         <a href="https://www.owasp.org/index.php/Bug_Bounty_Projects" target="_new">
                             <div class="panel-footer">
@@ -149,17 +148,6 @@
                         </a>
                     </div>
                 </div>
-            </div>
-            <div class="row" data-intro="View latest activities here." data-step="6">
-                <div class="col-lg-12">
-                    <h1 class="page-sub-header">Latest activity</h1>
-                </div>
-                <div class="list-group" >
-                    {% for activity in activities %}
-                        {% include '_activity.html' %}
-                    {% endfor %}
-                </div>
-                <a href="/all_activity" class="btn btn-default btn-block submit_button">View All Activity</a>
             </div>
         </div>
 
@@ -205,13 +193,18 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="row">
-            <div class="col-lg-3">
-                <a class="twitter-timeline" data-height="800" href="https://twitter.com/Bugheist"></a>
-                <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-            </div>
+    <div class="row" data-intro="View latest activities here." data-step="6">
+        <div class="col-lg-12">
+            <h1 class="page-sub-header">Latest activity</h1>
         </div>
+        <div class="list-group" >
+            {% for activity in activities %}
+                {% include '_activity.html' %}
+            {% endfor %}
+        </div>
+        <a href="/all_activity" class="btn btn-default btn-block submit_button">View All Activity</a>
     </div>
 
     <script>

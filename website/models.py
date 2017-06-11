@@ -120,10 +120,20 @@ def validate_image(fieldfile_obj):
 
 
 class Issue(models.Model):
+    labels = (
+        (0, 'General'),
+        (1, 'Number Error'),
+        (2, 'Functional'),
+        (3, 'Performance'),
+        (4, 'Security'),
+        (5, 'Typo'),
+        (6, 'Design')        
+    )
     user = models.ForeignKey(User, null=True, blank=True)
     domain = models.ForeignKey(Domain, null=True, blank=True)
     url = models.URLField()
     description = models.TextField()
+    label = models.PositiveSmallIntegerField(choices=labels, default=0)
     views = models.IntegerField(null=True, blank=True)
     status = models.CharField(max_length=10, default="open", null=True, blank=True)
     user_agent = models.CharField(max_length=255, default="", null=True, blank=True)

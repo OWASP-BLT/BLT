@@ -258,6 +258,7 @@ a:hover{
 	font-weight: initial;
 	position: absolute;
 	top: 80px;
+	width: 85%;
 }
 .activity-screenshot {
 	float:right;
@@ -444,7 +445,10 @@ input[type='file'] {
 .issue_count a:hover{
 	color: #dd4252;
 }
-
 #report_user{
 	font-size: 20px;
+}
+bug-type {
+	position: absolute;
+	right: 20px;
 }

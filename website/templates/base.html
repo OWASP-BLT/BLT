@@ -122,6 +122,15 @@
                             <label id="description-error" class="error" for="description">{{form.description.errors}}</label>
                         {% endif %}
                     </div>
+                    <select name="label" class="form-control">
+                        <option value="0" selected="selected">Bug Type</option>
+                        <option value="1">Number error</option>
+                        <option value="2">Functional</option>
+                        <option value="3">Performance</option>
+                        <option value="4">Security</option>
+                        <option value="5">Typo</option>
+                        <option value="6">Design</option>
+                    </select>
                     <div class="form-group">
                     <!-- <label>Attach Screenshot</label> -->
                     {% if request.GET.hash %}</br>
