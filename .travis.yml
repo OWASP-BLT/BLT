@@ -15,4 +15,4 @@ before_script:
   - sleep 3
 
 script:
-  - python manage.py test
+  - python manage.py test --settings=bugheist.settings
