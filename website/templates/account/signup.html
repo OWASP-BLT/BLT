@@ -2,8 +2,6 @@
 
 {% load i18n %}
 
-{% block head_title %}{% trans "Signup" %}{% endblock %}
-
 {% block style %}
 .inner-addon { 
 	position: relative; 
@@ -64,7 +62,7 @@
 			{% if redirect_field_value %}
 			 	<input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
 			{% endif %}
-			<button type="submit" class="btn btn-success">{% trans "Sign Up" %} &raquo;</button>
+			<button type="submit" name="signup_button" class="btn btn-success">{% trans "Sign Up" %} &raquo;</button>
 		</form>
 		<p>{% blocktrans %}Already have an account? <a href="{{ login_url }}">Login</a>.{% endblocktrans %}</p>
 	</div>

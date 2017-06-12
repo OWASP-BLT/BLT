@@ -42,178 +42,180 @@
     </head>
     <body>
         <div id="wrapper">
-            <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0;">
-                <div class="navbar-header" style="z-index:4;">
-                    <a class="navbar-brand" href="/" ><img src="{% static "img/logo-small-transparent.png" %}" style="margin-left:20px;"></a>
+            <nav class="navbar navbar-default navbar-static-top" role="navigation">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="/">
+                        <img src="{% static "img/logo-small-transparent.png" %}">
+                    </a>
                 </div>
 
                 <ul class="nav navbar-top-links navbar-right">
-
                     {% if request.user.is_authenticated %}
                         <li class="dropdown user-menu">
                             <a class="dropdown-toggle" data-toggle="dropdown" href="#">
                                 {% if request.user.userprofile.avatar %}
-                                    <img src="{{ request.user.userprofile.avatar }}" width="20" height="20">
+                                    <img src="{{ request.user.userprofile.avatar }}">
                                 {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
-                                     <img src="{{request.user.socialaccount_set.all.0.get_avatar_url}}" width="20" height="20">
+                                    <img src="{{request.user.socialaccount_set.all.0.get_avatar_url}}">
                                 {% else %}
                                     {% gravatar request.user.email 20 %}
                                 {% endif %}
-                                {{request.user.username}} ({{ request.user|score|default:"0" }} pts) <i class="fa fa-caret-down"></i>
+                                {{request.user.username}} ({{ request.user|score|default:"0" }} Pts) <i class="fa fa-caret-down"></i>
                             </a>
                             <ul class="dropdown-menu dropdown-user">
                                 <li>
-                                    <a href="/accounts/profile/"><i class="fa fa-user fa-fw"></i> User Profile</a>
+                                    <a href="/accounts/profile/">
+                                        <i class="fa fa-user fa-fw"></i> User Profile
+                                    </a>
                                 </li>
                                 <li>
-                                    <a href="/accounts/password/change/"><i class="fa fa-gear fa-fw"></i> Settings</a>
+                                    <a href="/accounts/password/change/">
+                                        <i class="fa fa-gear fa-fw"></i> Settings
+                                    </a>
                                 </li>
                                 <li class="divider"></li>
                                 <li>
-                                    <a href="/accounts/logout/"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
+                                    <a href="/accounts/logout/">
+                                        <i class="fa fa-sign-out fa-fw"></i> Logout
+                                    </a>
                                 </li>
                             </ul>
                         </li>
                     {% else %}
                         <a href="/accounts/signup">
-                            <button class="btn btn-default login-button">
-                            Signup
-                            </button>
+                            <button class="btn btn-default login-button">Signup</button>
                         </a> 
                         <a data-toggle="modal" href="#login">
-                            <button class="btn btn-default login-button">
-                            Login
-                            </button>
-                        </a>                                    
-
+                            <button class="btn btn-default login-button">Login</button>
+                        </a>
                     {% endif %}
-                        <li style="float:left;"><a id="chrome_ext" href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new" class="chrome-plugin">
-                        + Add to chrome
-                        </a></li>
-                        <li style="float:left;">
-                            <a href="/start" class="sponsor-hunt">Sponsor a Bug Hunt</a>
-                        </li>
-                        <li style="float:left;">
-                            <a href="#" id="startTour" class="start-tour">Tour</a>
-                        </li>
+                    <li style="float:left;"><a id="chrome_ext" href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new" class="chrome-plugin">
+                    + Add to chrome
+                    </a></li>
+                    <li style="float:left;">
+                        <a href="/social" class="social-feeds">Social Feeds</a>
+                    </li>
+                    <li style="float:left;">
+                        <a href="/start" class="sponsor-hunt">Sponsor a Bug Hunt</a>
+                    </li>
+                    <li style="float:left;">
+                        <a href="#" id="startTour" class="start-tour">Tour</a>
+                    </li>
                 </ul>
                 <div class="col-md-12">
-                  <div class="col-md-4">
-                      <span class="tagline">Win prizes for reporting bugs</span><br>
-                      <span class="tagline">We want everyone to love your website</span>
-                  </div>
-                  <div class="col-md-8" style="padding-right: 0px;">
-                      <form class="navbar-form navbar-right form" action="/issue/" method="post" enctype="multipart/form-data">
-                      {% csrf_token %}
-                        <div class="form-group">
-                        {% if request.GET.url %}
-                            <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
-                        {% else %}
-                            <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
-                        {% endif %}
-                        {% if form.url.errors %}
-                            <label id="description-error" class="error" for="description">{{form.url.errors}}</label>
-                        {% endif %}
+                    <div class="col-md-4">
+                        <span class="tagline">Win prizes for reporting bugs</span><br>
+                        <span class="tagline">We want everyone to love your website</span>
                     </div>
-                    <div class="form-group">
-                        <textarea data-required="true" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="Describe bug issue"  id="description" name="description" style="resize:vertical; height: 34px;" >{{form.description.value|default:""}}</textarea>
-
-                        {% if form.description.errors %}
-                            <label id="description-error" class="error" for="description">{{form.description.errors}}</label>
-                        {% endif %}
+                    <div class="col-md-8">
+                        <form class="navbar-form navbar-right form" action="/issue/" method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                {% if request.GET.url %}
+                                    <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
+                                {% else %}
+                                    <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
+                                {% endif %}
+                                {% if form.url.errors %}
+                                    <label id="description-error" class="error" for="description">{{form.url.errors}}</label>
+                                {% endif %}
+                            </div>
+                            <div class="form-group">
+                                <textarea data-required="true" id="description" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="Describe bug issue">{{form.description.value|default:""}}</textarea>
+                                {% if form.description.errors %}
+                                    <label id="description-error" class="error" for="description">
+                                        {{form.description.errors}}
+                                    </label>
+                                {% endif %}
+                            </div>
+                            <select name="label" class="form-control">
+                                <option value="0" selected="selected">Bug Type</option>
+                                <option value="1">Number error</option>
+                                <option value="2">Functional</option>
+                                <option value="3">Performance</option>
+                                <option value="4">Security</option>
+                                <option value="5">Typo</option>
+                                <option value="6">Design</option>
+                            </select>
+                            <div class="form-group">
+                            {% if request.GET.hash %}</br>
+                                <img src="{{ MEDIA_URL }}uploads/{{request.GET.hash}}.png" class="img-responsive img-thumbnail screenshot-hash">
+                                <input type="hidden" class="required" name="screenshot-hash" value="{{request.GET.hash}}">
+                            {% else %}
+                                <span>
+                                    <input type="file" class="required" id='${multipartFilePath}' name="screenshot" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"/> 
+                                    <button class="btn btn-primary" data-intro="Upload a screenshot of the concerned page." data-step="3" name="test_files" type="button"   onclick="$(this).parent().find('input[type=file]').click();">
+                                        <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot
+                                    </button>
+                                    &nbsp;
+                                    <span class="badge badge-important"></span>
+                                </span>
+                            {% endif %}
+                            {% if form.screenshot.errors %}
+                                <label id="description-error" class="error" for="description">
+                                    {{form.screenshot.errors}}
+                                </label>
+                            {% endif %}
+                            </div>
+                            <button type="submit" name="reportbug_button" id="btn" class="btn btn-default" data-intro="Click here to report the bug to BugHeist." data-step="4">Report Bug</button>
+                            <i class="fa fa-trophy" aria-hidden="true">+3</i>
+                        </form>
                     </div>
-                    <select name="label" class="form-control">
-                        <option value="0" selected="selected">Bug Type</option>
-                        <option value="1">Number error</option>
-                        <option value="2">Functional</option>
-                        <option value="3">Performance</option>
-                        <option value="4">Security</option>
-                        <option value="5">Typo</option>
-                        <option value="6">Design</option>
-                    </select>
-                    <div class="form-group">
-                    <!-- <label>Attach Screenshot</label> -->
-                    {% if request.GET.hash %}</br>
-                        <img src="{{ MEDIA_URL }}uploads/{{request.GET.hash}}.png" height="100" style=" border: 1px solid #d43f3a;">
-                        <input type="hidden" class="required" name="screenshot-hash" value="{{request.GET.hash}}">
-                    {% else %}
-                        <span>
-                            <input  type="file" class="required" style="opacity: 0; width: 1px;height:1px;" id='${multipartFilePath}' name="screenshot" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"  /> 
-                            <button class="btn btn-primary" data-intro="Upload a screenshot of the concerned page." data-step="3" name="test_files" type="button"   onclick="$(this).parent().find('input[type=file]').click();"> <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot </button>
-                            &nbsp;
-                            <span  class="badge badge-important" ></span>
-                        </span>
-                    {% endif %}
-                    {% if form.screenshot.errors %}
-                        <label id="description-error" class="error" for="description">{{form.screenshot.errors}}</label>
-                    {% endif %}
-                    </div>
-                    <button type="submit" id="btn" class="btn btn-default" data-intro="Click here to report the bug to BugHeist." data-step="4">Report Bug</button>
-                    <i class="fa fa-trophy" aria-hidden="true">+3</i>
-                </form>
-                  </div>
-                </div>
-            </div>
+                </div>            
             </nav>
-            <div id="page-wrapper" >
-                <div class="container" >
+            <div id="page-wrapper">
+                <div class="container">
                     {% block content %}
                     {% endblock %}
                 </div>
             </div>
 
             <div id="login" class="modal" role="dialog">
-              <div class="modal-dialog" style="margin-top: 200px;">
-                <div class="modal-content">
-                    <div class="modal-body">
-                        <center>
-                        <a href="/" ><img src="{% static "img/logo-small-transparent.png" %}" style="padding-top: 15px;"></a><hr>
-                        <p>
-                        <a href="/accounts/login">
-                            <button class="btn btn-default btn-caution" style="height:86px; width: 86px;font-size:28px;margin-top:3px; margin-right:10px; color:#dd4252">
-                            <i class="fa fa-envelope fa-2x"></i>
-                            </button>
-                        </a>
-                        <a href="{% provider_login_url "facebook" method="js_sdk" %}">
-                            <button class="btn btn-default btn-caution" style="height:86px; width: 86px;font-size:28px;margin-top:3px; margin-right:10px; color:#dd4252">
-                            <i class="fa fa-facebook fa-2x"></i>
-                            </button>
-                        </a>
-                        <a href="{% provider_login_url "google" method="js_sdk" %}">
-                            <button class="btn btn-default btn-caution" style="height:86px; width: 86px;font-size:28px;margin-top:3px; margin-right:10px; color:#dd4252">
-                            <i class="fa fa-google fa-2x"></i>
-                            </button>
-                        </a>
-                        <a href="{% provider_login_url "github" method="js_sdk" %}">
-                            <button class="btn btn-default btn-caution" style="height:86px; width: 86px;font-size:28px;margin-top:3px; margin-right:10px; color:#dd4252">
-                            <i class="fa fa-github fa-2x"></i>
-                            </button>
-                        </a>    
-                        </p>
-                        <p style="font-size: 13px;">Sign in using any of the services listed above and start winning prizes for reporting bugs.</p>
-                        </center>
-                  </div>
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-body text-center">
+                            <a href="/">
+                                <img src="{% static "img/logo-small-transparent.png" %}">
+                            </a>
+                            <hr>
+                            <a href="/accounts/login">
+                                <button class="btn btn-default btn-caution">
+                                    <i class="fa fa-envelope fa-2x"></i>
+                                </button>
+                            </a>
+                            <a href="{% provider_login_url "facebook" method="js_sdk" %}">
+                                <button class="btn btn-default btn-caution">
+                                    <i class="fa fa-facebook fa-2x"></i>
+                                </button>
+                            </a>
+                            <a href="{% provider_login_url "google" method="js_sdk" %}">
+                                <button class="btn btn-default btn-caution">
+                                    <i class="fa fa-google fa-2x"></i>
+                                </button>
+                            </a>
+                            <a href="{% provider_login_url "github" method="js_sdk" %}">
+                                <button class="btn btn-default btn-caution">
+                                    <i class="fa fa-github fa-2x"></i>
+                                </button>
+                            </a>
+                            <p>Sign in using any of the services listed above and start winning prizes for reporting bugs.</p>
+                        </div>
+                    </div>
                 </div>
-
-              </div>
             </div>
 
             <div class="container">
-                <div class="panel-footer"  >
-                    
-                        <ul>
-                            <li><a href="/terms">Terms of Service</a></li>
-                            <li><a href="http://github.com/bugheist/website" target="_new">Source</a></li>
-                            <li><a href="/stats">Stats</a></li>
-                            <li><a href="/scoreboard">Company Scoreboard</a></li>
-                        
-                            <li><a href="http://twitter.com/bugheist" target="_new">Follow us on Twitter</a></li>
-                            <li><a href="http://facebook.com/bugheist" target="_new">Like us on Facebook</a></li>
-                            <li><a href="https://www.owasp.org/index.php/OWASP_Bug_Logging_Tool" target="_new">Powered by OWASP BLT</a></li>
-                            <li><a href="/about" target="_new">About</a></li>
-                        </ul>
-                   
-
+                <div class="panel-footer">
+                    <ul>
+                        <li><a href="/terms">Terms of Service</a></li>
+                        <li><a href="http://github.com/bugheist/website" target="_new">Source</a></li>
+                        <li><a href="/stats">Stats</a></li>
+                        <li><a href="/scoreboard">Company Scoreboard</a></li>
+                        <li><a href="http://twitter.com/bugheist" target="_new">Follow us on Twitter</a></li>
+                        <li><a href="http://facebook.com/bugheist" target="_new">Like us on Facebook</a></li>
+                        <li><a href="https://www.owasp.org/index.php/OWASP_Bug_Logging_Tool" target="_new">Powered by OWASP BLT</a></li>
+                        <li><a href="/about" target="_new">About</a></li>
+                    </ul>
                 </div>
             </div>
             <script src="{% static "vendor/bootstrap/js/bootstrap.min.js" %}"></script>
