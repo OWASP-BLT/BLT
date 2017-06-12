@@ -1,4 +1,4 @@
-# OWASP BLT
+# [OWASP BLT](https://www.bugheist.com) [![Build Status](https://travis-ci.org/OWASP/BLT.svg?branch=master)](https://travis-ci.org/OWASP/BLT)
 
 **Report issues and get points, companies are held accountable.**
 
