@@ -56,9 +56,9 @@
                                 {% if request.user.userprofile.avatar %}
                                     <img src="{{ request.user.userprofile.avatar }}">
                                 {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
-                                     <img src="{{request.user.socialaccount_set.all.0.get_avatar_url}}">
+                                    <img src="{{request.user.socialaccount_set.all.0.get_avatar_url}}">
                                 {% else %}
-                                    <img src="{% gravatar request.user.email 20 %}">
+                                    {% gravatar request.user.email 20 %}
                                 {% endif %}
                                 {{request.user.username}} ({{ request.user|score|default:"0" }} Pts) <i class="fa fa-caret-down"></i>
                             </a>
