@@ -118,7 +118,7 @@
                                 {% endif %}
                             </div>
                             <div class="form-group">
-                                <textarea data-required="true" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="Describe bug issue" name="description" >{{form.description.value|default:""}}</textarea>
+                                <textarea data-required="true" id="description" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="Describe bug issue">{{form.description.value|default:""}}</textarea>
                                 {% if form.description.errors %}
                                     <label id="description-error" class="error" for="description">
                                         {{form.description.errors}}
@@ -154,7 +154,7 @@
                                 </label>
                             {% endif %}
                             </div>
-                            <button type="submit" id="btn" class="btn btn-default" data-intro="Click here to report the bug to BugHeist." data-step="4">Report Bug</button>
+                            <button type="submit" name="reportbug_button" id="btn" class="btn btn-default" data-intro="Click here to report the bug to BugHeist." data-step="4">Report Bug</button>
                             <i class="fa fa-trophy" aria-hidden="true">+3</i>
                         </form>
                     </div>

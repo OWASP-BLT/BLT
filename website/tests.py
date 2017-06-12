@@ -29,9 +29,10 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element_by_name("email").send_keys('bugbugbug@bugbug.com')
         self.selenium.find_element_by_name("password1").send_keys('secret123')
         self.selenium.find_element_by_name("password2").send_keys('secret123')
-        self.selenium.find_element_by_xpath('//*[@id="signup_form"]/button').click()
+        self.selenium.find_element_by_name("signup_button").click()
+        time.sleep(8)
         body = self.selenium.find_element_by_tag_name('body')
-        self.assertIn(u'bugbugbug (0 pts)', body.text)
+        self.assertIn(u'bugbugbug (0 Pts)', body.text)
 
 
     @override_settings(DEBUG=True)
@@ -39,11 +40,12 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.get('%s%s' % (self.live_server_url, '/accounts/login/'))
         self.selenium.find_element_by_name("login").send_keys('bugbug')
         self.selenium.find_element_by_name("password").send_keys('secret')
-        self.selenium.find_element_by_xpath('//*[@id="page-wrapper"]/div/form/button').click()
+        self.selenium.find_element_by_name("login_button").click()
+        time.sleep(8)
         body = self.selenium.find_element_by_tag_name('body')
-        self.assertIn(u'bugbug (0 pts)', body.text)
+        self.assertIn(u'bugbug (0 Pts)', body.text)
 
-
+    """
     @override_settings(DEBUG=True)
     def test_post_bug(self):
         self.selenium.set_page_load_timeout(70)
@@ -59,3 +61,5 @@ class MySeleniumTests(LiveServerTestCase):
         feild.send_keys(Keys.ENTER)
         body = self.selenium.find_element_by_tag_name('body')
         self.assertIn(u'Report Bug', body.text)
+    """
+    
