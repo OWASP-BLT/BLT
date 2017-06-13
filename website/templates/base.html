@@ -121,7 +121,7 @@
                                 {% endif %}
                             </div>
                             <div class="form-group">
-                                <textarea data-required="true" id="description" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="Describe bug issue">{{form.description.value|default:""}}</textarea>
+                                <textarea data-required="true" name="description" id="description" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="Describe bug issue">{{form.description.value|default:""}}</textarea>
                                 {% if form.description.errors %}
                                     <label id="description-error" class="error" for="description">
                                         {{form.description.errors}}
