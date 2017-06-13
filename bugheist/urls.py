@@ -53,6 +53,7 @@ urlpatterns = patterns('',
     url(r'^issue/comment/(?P<pk>\d+)/edit/$',comments.views.EditCommentPage, name='edit_comment'),
     url(r'^issue/comment/(?P<pk>\d+)/update/$',comments.views.EditComment, name='update_comment'),
     url(r'^issue/comment/(?P<pk>\d+)/delete/$',comments.views.DeleteComment, name='delete_comment'),
+    url(r'^issue/(?P<pk>\d+)/markdup/$',website.views.MarkDuplicateIssue)
     url(r'^social/$', TemplateView.as_view(template_name="social.html")),
 
 ) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

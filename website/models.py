@@ -141,7 +141,10 @@ class Issue(models.Model):
     screenshot = models.ImageField(upload_to="screenshots", validators=[validate_image])
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
-
+    marked_duplicate_count = models.IntegerField(default=0)
+    marked_duplicate_admin = models.BooleanField(default=False)
+    first_duplicate_report_user = models.ForeignKey(User,null=True,blank=True,related_name="first_report_user")
+    
     def __unicode__(self):
         return self.description
 
