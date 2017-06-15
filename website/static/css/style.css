@@ -453,3 +453,8 @@ input[type='file'] {
 	position: absolute;
 	right: 20px;
 }
+.comment_link {
+ 	position:absolute;
+ 	bottom:10px;
+ 	left:500px;
+}
