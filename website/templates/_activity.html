@@ -1,6 +1,7 @@
 {% load gravatar %}
 <div class="list-group-item activity-strip">
     <div class="activity-strip-section">
+    <a class="comment_link" href="{{activity.target.get_absolute_url }}#comments_form">{{ activity.target.comments.all|length }} comments</a>
 
         {% if activity.actor.socialaccount_set.all.0.get_avatar_url %}
             <img src="{{activity.actor.socialaccount_set.all.0.get_avatar_url}}" width="100" class="img-responsive img-rounded">
