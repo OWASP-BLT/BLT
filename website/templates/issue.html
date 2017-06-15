@@ -178,7 +178,7 @@
     {% endif %}
 </div>
 
-<form method="post" action="{% url 'comments.views.AddComment' pk=issue.pk %}">
+<form method="post" action="{% url 'comments.views.AddComment' pk=issue.pk %}" id="comments_form">
     {% csrf_token %}
     <div class="form-group">
         <textarea placeholder="Comment" class="form-control" name="text_comment" required></textarea>
