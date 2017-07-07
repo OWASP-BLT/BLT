@@ -293,9 +293,19 @@ def user_images_path(instance, filename):
 
 
 class UserProfile(models.Model):
+    title = (
+        (0, 'Unrated'),
+        (1, 'Bronze'),
+        (2, 'Silver'),
+        (3, 'Gold'),
+        (4, 'Platinum'),
+    )
+        
 
     user = models.OneToOneField(User, related_name="userprofile")
     user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
+    title = models.IntegerField(choices=title,default=0)
+
 
     def avatar(self, size=36):
         if self.user_avatar:

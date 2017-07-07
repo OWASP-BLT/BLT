@@ -128,7 +128,7 @@
                                     </label>
                                 {% endif %}
                             </div>
-                            <select name="label" class="form-control">
+                            <select data-intro="Categorize the bug." data-step="3" name="label" class="form-control">
                                 <option value="0" selected="selected">Bug Type</option>
                                 <option value="1">Number error</option>
                                 <option value="2">Functional</option>
@@ -144,7 +144,7 @@
                             {% else %}
                                 <span>
                                     <input type="file" class="required" id='${multipartFilePath}' name="screenshot" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"/> 
-                                    <button class="btn btn-primary" data-intro="Upload a screenshot of the concerned page." data-step="3" name="test_files" type="button"   onclick="$(this).parent().find('input[type=file]').click();">
+                                    <button class="btn btn-primary" data-intro="Upload a screenshot of the concerned page." data-step="4" name="test_files" type="button"   onclick="$(this).parent().find('input[type=file]').click();">
                                         <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot
                                     </button>
                                     &nbsp;
@@ -157,7 +157,7 @@
                                 </label>
                             {% endif %}
                             </div>
-                            <button type="submit" name="reportbug_button" id="btn" class="btn btn-default" data-intro="Click here to report the bug to BugHeist." data-step="4">Report Bug</button>
+                            <button type="submit" name="reportbug_button" id="btn" class="btn btn-default" data-intro="Click here to report the bug to BugHeist." data-step="5">Report Bug</button>
                             <i class="fa fa-trophy" aria-hidden="true">+3</i>
                         </form>
                     </div>
