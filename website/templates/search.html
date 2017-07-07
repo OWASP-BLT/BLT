@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load gravatar %}
+{% load staticfiles %}
+{% load humanize %}
+
+{% block content %}
+    <div class="row">
+        <hr>
+        <div class="col-md-6 col-md-offset-3">            
+            <h3 class="text-center">Search for Bugs & Issues</h3><hr>
+            <form method="GET" action=".">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="query" value="{{query}}" placeholder="Search for issues...">
+                    <span class="input-group-btn">
+                        <button class="btn btn-default" type="submit">Search</button>
+                    </span>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% if query %}
+        {% if issues %}
+            {% for issue in issues %}
+                <div class="list-group-item activity-strip">
+                    <div class="activity-strip-section">
+                        <a class="comment_link" href="{{issue.get_absolute_url }}#comments">
+                            {{ issue.comments.all|length }} comments
+                        </a>
+
+                        {% if issue.user.socialaccount_set.all.0.get_avatar_url %}
+                            <img src="{{issue.user.socialaccount_set.all.0.get_avatar_url}}" width="100" class="img-responsive img-rounded">
+                        {% else %}
+                            <img src="{% gravatar_url issue.user.email 100 %}" width="100" class="img-responsive img-rounded">
+                        {% endif %}
+            
+                        <div class="info">
+                            <a href="/domain/{{ issue.domain_name }}">
+                                <img src="http://www.{{issue.domain_name}}/favicon.ico" height="25" onerror="this.onerror=null; this.style.display='none';">
+                            </a>
+                            <a href="{{ issue.get_absolute_url }}">{{ issue.description|truncatechars:100 }}</a>
+                            {% if issue.status == "open" %}
+                                <span class="label label-success text-capitalize">{{issue.status}}</span>
+                            {% else %}
+                                <span class="label label-danger text-capitalize">{{issue.status}}</span>
+                            {% endif %}
+                            <div class="small">
+                                <a href="{{ issue.user.get_absolute_url }}" class="text-capitalize">
+                                    {{ issue.user }}
+                                </a>
+                                found a bug on <a href="/domain/{{ issue.domain_name }}">{{ issue.domain_title }}</a> {{ issue.timestamp|timesince }} ago | 
+                                <a href="//{{ issue.domain_name }}">{{ issue.domain_name }}</a>
+                                <span class="label label-info bug-type">{{issue.get_label_display}}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="activity-screenshot">
+                        {% if issue.screenshot %}
+                            <a href="{{ issue.get_absolute_url }}">
+                                <img src="{{ issue.screenshot.url }}">
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-danger" role="alert">Nothing Found!</div>
+        {% endif %}
+    {% endif %}
+{% endblock %}
