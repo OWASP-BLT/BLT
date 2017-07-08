@@ -301,6 +301,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, related_name="userprofile")
     user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
     title = models.IntegerField(choices=title,default=0)
+    winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
 
     def avatar(self, size=36):
