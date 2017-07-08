@@ -125,7 +125,7 @@ class Issue(models.Model):
         (3, 'Performance'),
         (4, 'Security'),
         (5, 'Typo'),
-        (6, 'Design')        
+        (6, 'Design')
     )
     user = models.ForeignKey(User, null=True, blank=True)
     domain = models.ForeignKey(Domain, null=True, blank=True)
@@ -137,6 +137,8 @@ class Issue(models.Model):
     user_agent = models.CharField(max_length=255, default="", null=True, blank=True)
     ocr = models.TextField(default="", null=True, blank=True)
     screenshot = models.ImageField(upload_to="screenshots", validators=[validate_image])
+    closed_by = models.ForeignKey(User, null=True, blank=True, related_name="closed_by")
+    closed_date = models.DateTimeField(default=None, null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
