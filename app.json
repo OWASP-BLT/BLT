@@ -1,8 +1,8 @@
 {
-  "name": "OWASP Bugheist",
+  "name": "OWASP BLT",
   "description": "A crowdsourced bug finding and fixing game.",
   "image": "heroku/python",
-  "repository": "https://github.com/Bugheist/website",
+  "repository": "https://github.com/OWASP/BLT",
   "keywords": ["python", "django" ],
   "addons": [ "heroku-postgresql" ]
 }
