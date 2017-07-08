@@ -179,6 +179,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
             obj.user = self.request.user
         domain, created = Domain.objects.get_or_create(name=obj.domain_name.replace("www.", ""), defaults={'url':"http://"+obj.domain_name.replace("www.", "")})
         obj.domain=domain
+        if created:
+            p = Points.objects.create(user=self.request.user,domain=domain,score=1)
+            messages.success(self.request, 'Domain added! + 1')
+
         if self.request.POST.get('screenshot-hash'):
             reopen = default_storage.open('uploads\/'+ self.request.POST.get('screenshot-hash') +'.png', 'rb')
             django_file = File(reopen)
