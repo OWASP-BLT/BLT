@@ -23,6 +23,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='issue',
             name='closed_date',
-            field=models.DateTimeField(default=None),
+            field=models.DateTimeField(default=None, blank=True, null=True),
         ),
     ]
