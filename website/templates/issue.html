@@ -182,13 +182,6 @@
     {% endif %}
 </div>
 
-<form method="post" action="{% url 'comments.views.AddComment' pk=issue.pk %}" id="comments">
-    {% csrf_token %}
-    <div class="form-group">
-        <textarea placeholder="Comment" class="form-control" name="text_comment" required></textarea>
-    </div>
-    <button class="btn btn-small" type="submit">Add Comment</button>
-</form>
 
 {% if all_comment %}
 <h3>Comments:</h3>
@@ -211,5 +204,12 @@
 {% empty %}
 {% endfor %}
 {% endif %}
+<form method="post" action="{% url 'comments.views.AddComment' pk=issue.pk %}" id="comments">
+    {% csrf_token %}
+    <div class="form-group">
+        <textarea placeholder="Comment" class="form-control" name="text_comment" required></textarea>
+    </div>
+    <button class="btn btn-small" type="submit">Add Comment</button>
+</form>
 
 {% endblock %}
