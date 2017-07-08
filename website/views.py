@@ -16,7 +16,7 @@ from actstream import action
 from django.contrib.auth.models import User
 from actstream import registry
 from django.http import JsonResponse
-from website.models import Issue, Points, Hunt, Domain, InviteFriend
+from website.models import Issue, Points, Hunt, Domain, InviteFriend, UserProfile
 from django.core.files import File
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db.models import Sum, Count
@@ -188,6 +188,19 @@ class IssueCreate(IssueBaseCreate, CreateView):
             obj.screenshot.save(self.request.POST.get('screenshot-hash') +'.png', django_file, save=True)
         obj.user_agent = self.request.META.get('HTTP_USER_AGENT')
         obj.save()
+        
+        total_issues = Issue.objects.filter(user=self.request.user).count()
+        user_prof = UserProfile.objects.get(user=self.request.user)
+        if total_issues <=10:
+            user_prof.title = 1
+        elif total_issues <=50:
+            user_prof.title = 2
+        elif total_issues <= 200:
+            user_prof.title = 3
+        else:
+            user_prof.title = 4
+
+        user_prof.save()
 
         if domain.github and os.environ.get("GITHUB_PASSWORD"):
             from giturlparse import parse
@@ -288,6 +301,8 @@ class UserProfileDetailView(DetailView):
         context['websites'] = Domain.objects.filter(issue__user=self.object).annotate(total=Count('issue')).order_by('-total')
         context['activities'] = user_stream(self.object, with_user_activity=True)
         context['profile_form'] = UserProfileForm()
+        for i in range(1,7):
+            context['bug_type_'+str(i)] = Issue.objects.filter(user=self.object,label=str(i))
         return context
 
     @method_decorator(login_required)
