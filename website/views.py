@@ -581,6 +581,9 @@ class UpdateIssue(View):
         if request.POST.get('action') == "close":
             messages.success(self.request, 'Issue Closed')
             issue.status = "closed"
+            issue.closed_by = request.user
+            issue.closed_date = datetime.now()
+
             msg_plain = msg_html = render_to_string('email/bug_updated.txt', {
                 'domain': issue.domain.name,
                 'name':issue.user.username,

@@ -19,7 +19,7 @@ class DomainResource(resources.ModelResource):
         model = Domain
 
 class IssueAdmin(admin.ModelAdmin):
-    list_display = ('user','url','domain','description','screenshot','created','modified')
+    list_display = ('id','user','url','domain','description','closed_by','closed_date','screenshot','created','modified')
 
 class HuntAdmin(admin.ModelAdmin):
     list_display = ('user','url','prize','logo','plan','created','modified')
