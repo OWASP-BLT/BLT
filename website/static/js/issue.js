@@ -25,3 +25,10 @@ window.twttr = (function(d, s, id) {
     fjs.parentNode.insertBefore(js, fjs);
 
 }(document, 'script', 'facebook-jssdk'));
+
+$(function() {
+    new Clipboard('.btn');
+    $('.copy-btn').on('click', function(){
+        $.notify('Copied!', "success");
+    });
+});
