@@ -218,7 +218,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                      'body': "![0](" + obj.screenshot.url + ") http://bugheist.com/issue/"+str(obj.id),
                      'labels': ['bug','bugheist']}
             r = requests.post(url, json.dumps(issue),auth=auth)
-            obj.github_url = r.url
+            response = r.json()
+            obj.github_url = response.url
             obj.save()
 
 
