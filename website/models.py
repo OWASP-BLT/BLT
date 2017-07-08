@@ -40,7 +40,6 @@ class Domain(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
-
     def __unicode__(self):
         return self.name
 
@@ -77,7 +76,6 @@ class Domain(models.Model):
         except:
             favicon_url = self.url + '/favicon.ico'
             return favicon_url
-
 
     @property
     def get_color(self):
@@ -183,7 +181,6 @@ class Issue(models.Model):
             except:
                 return "OCR not installed"
 
-
     @property
     def get_absolute_url(self):
         return "/issue/" + str(self.id)
@@ -191,15 +188,12 @@ class Issue(models.Model):
     class Meta:
         ordering = ['-created']
 
-
 TWITTER_MAXLENGTH = getattr(settings, 'TWITTER_MAXLENGTH', 140)
-
 
 def post_to_twitter(sender, instance, *args, **kwargs):
 
     if not kwargs.get('created'):
         return False
-
     try:
         consumer_key = os.environ['TWITTER_CONSUMER_KEY']
         consumer_secret = os.environ['TWITTER_CONSUMER_SECRET']
@@ -328,4 +322,3 @@ def create_profile(sender, **kwargs):
         profile.save()
 
 post_save.connect(create_profile, sender=User)
-

@@ -19,7 +19,7 @@ from django.http import JsonResponse
 from website.models import Issue, Points, Hunt, Domain, InviteFriend, UserProfile
 from django.core.files import File
 from django.core.urlresolvers import reverse, reverse_lazy
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Q
 from django.core.urlresolvers import reverse
 from django.core.files.storage import default_storage
 from django.views.generic import View
@@ -88,7 +88,6 @@ def find_key(request, token):
 
 class IssueBaseCreate(object):
 
-
     def form_valid(self, form):
         score = 3
         obj = form.save(commit=False)
@@ -108,7 +107,6 @@ class IssueBaseCreate(object):
         p = Points.objects.create(user=user, issue=obj, score=score)
         action.send(user, verb='found a bug on website', target=obj)
         messages.success(self.request, 'Bug added! +'+ str(score))
-
 
         if created:
             try:
@@ -162,7 +160,6 @@ class IssueBaseCreate(object):
             )
 
         return HttpResponseRedirect("/")
-
 
 
 class IssueCreate(IssueBaseCreate, CreateView):
@@ -406,6 +403,31 @@ class ScoreboardView(ListView):
         context['scoreboard'] = Domain.objects.all().order_by('-modified')
         return context
 
+def search(request, template="search.html"):
+    query = request.GET.get('query')
+    stype = request.GET.get('type')
+    if query is None:
+        return render_to_response(template, context_instance=RequestContext(request))
+
+    if stype == "issue":
+        context = {
+            'query' : query,
+            'type' : stype,
+            'issues' :  Issue.objects.filter(Q(description__icontains=query))
+        }
+    elif stype == "domain":
+        context = {
+            'query' : query,
+            'type' : stype,
+            'domains' :  Domain.objects.filter(Q(url__icontains=query))
+        }
+    elif stype == "user":
+        context = {
+            'query' : query,
+            'type' : stype,
+            'users' :  User.objects.filter(Q(username__icontains=query))
+        }
+    return render_to_response(template, context, context_instance=RequestContext(request))
 
 class HuntCreate(CreateView):
     model = Hunt
@@ -497,7 +519,6 @@ class EmailDetailView(TemplateView):
         context = super(EmailDetailView, self).get_context_data(*args, **kwargs)
         context['emails'] = get_email_from_domain(self.kwargs['slug'])
         return context
-
 
 def get_email_from_domain(domain_name):
         new_urls = deque(['http://'+domain_name])
@@ -625,7 +646,6 @@ def assign_issue_to_user(request, user, **kwargs):
         assigner.request = request
         assigner.process_issue(user, issue, created, domain)
 
-
 class CreateInviteFriend(CreateView):
     template_name = 'invite_friend.html'
     model = InviteFriend
@@ -662,4 +682,3 @@ class CreateInviteFriend(CreateView):
         messages.success(self.request, 'An email has been sent to your friend. Keep inviting your friends and get points!')
 
         return HttpResponseRedirect(self.success_url)
-
