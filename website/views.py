@@ -390,12 +390,28 @@ class ScoreboardView(ListView):
 
 def search(request, template="search.html"):
     query = request.GET.get('query')
+    stype = request.GET.get('type')
     if query is None:
         return render_to_response(template, context_instance=RequestContext(request))
-    context = {
-        'query' : query,
-        'issues' :  Issue.objects.filter(Q(description__icontains=query))
-    }
+
+    if stype == "issue":
+        context = {
+            'query' : query,
+            'type' : stype,
+            'issues' :  Issue.objects.filter(Q(description__icontains=query))
+        }
+    elif stype == "domain":
+        context = {
+            'query' : query,
+            'type' : stype,
+            'domains' :  Domain.objects.filter(Q(url__icontains=query))
+        }
+    elif stype == "user":
+        context = {
+            'query' : query,
+            'type' : stype,
+            'users' :  User.objects.filter(Q(username__icontains=query))
+        }
     return render_to_response(template, context, context_instance=RequestContext(request))
 
 class HuntCreate(CreateView):
