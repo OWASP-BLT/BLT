@@ -30,13 +30,17 @@
     }
 {% endblock %}
 {% block content %}
-    <div id="fb-root"></div>
-    <script type="text/javascript" src="{% static "js/issue.js" %}"></script>
+    <div id="fb-root"></div>    
+    <script type="text/javascript" src="{% static "js/clipboard.min.js" %}"></script>
     <script type="text/javascript" src="{% static "js/lightbox.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/issue.js" %}"></script>
     <div class="row">
         <div class="col-lg-12">
             <h3 class="page-header">
                 {{object.description}}
+                <button class="btn copy-btn" data-clipboard-text="{{object.description}}">
+                    <i class="glyphicon glyphicon-copy"></i>
+                </button>
                 <span class="pull-right">
                     <i class="fa fa-eye"></i> {{object.views}}
                 </span>
