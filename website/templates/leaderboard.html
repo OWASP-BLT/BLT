@@ -48,6 +48,10 @@
                             {% endif %}
                             <a href="/profile/{{leader.username}}">{{leader.username}}</a>
                             <span class="pull-right badge">{{leader.total_score}} Points</span>
+                            {% if leader.userprofile.winnings %}
+                            <span class="pull-right badge">${{leader.userprofile.winnings|default:""|floatformat}}</span>
+                            {% endif %}
+                            
                             <span ><kbd class="{{ leader.userprofile.get_title_display }}" >{{ leader.userprofile.get_title_display }}</kbd></span>
                         </div>
                     {% endfor %}
