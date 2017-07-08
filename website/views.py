@@ -179,7 +179,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             obj.user = self.request.user
         domain, created = Domain.objects.get_or_create(name=obj.domain_name.replace("www.", ""), defaults={'url':"http://"+obj.domain_name.replace("www.", "")})
         obj.domain=domain
-        if created:
+        if created and self.request.user.is_authenticated():
             p = Points.objects.create(user=self.request.user,domain=domain,score=1)
             messages.success(self.request, 'Domain added! + 1')
 
@@ -189,19 +189,20 @@ class IssueCreate(IssueBaseCreate, CreateView):
             obj.screenshot.save(self.request.POST.get('screenshot-hash') +'.png', django_file, save=True)
         obj.user_agent = self.request.META.get('HTTP_USER_AGENT')
         obj.save()
-        
-        total_issues = Issue.objects.filter(user=self.request.user).count()
-        user_prof = UserProfile.objects.get(user=self.request.user)
-        if total_issues <=10:
-            user_prof.title = 1
-        elif total_issues <=50:
-            user_prof.title = 2
-        elif total_issues <= 200:
-            user_prof.title = 3
-        else:
-            user_prof.title = 4
 
-        user_prof.save()
+        if self.request.user.is_authenticated():       
+            total_issues = Issue.objects.filter(user=self.request.user).count()
+            user_prof = UserProfile.objects.get(user=self.request.user)
+            if total_issues <=10:
+                user_prof.title = 1
+            elif total_issues <=50:
+                user_prof.title = 2
+            elif total_issues <= 200:
+                user_prof.title = 3
+            else:
+                user_prof.title = 4
+
+            user_prof.save()
 
         if domain.github and os.environ.get("GITHUB_PASSWORD"):
             from giturlparse import parse
@@ -219,7 +220,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                      'labels': ['bug','bugheist']}
             r = requests.post(url, json.dumps(issue),auth=auth)
             response = r.json()
-            obj.github_url = response.url
+            obj.github_url = response['url']
             obj.save()
 
 
