@@ -39,7 +39,9 @@
                 <div class="list-group">
                     {% for leader in leaderboard %}
                         <div class="list-group-item">
-                            {% if leader.socialaccount_set.all.0.get_avatar_url %}
+                            {% if leader.userprofile.avatar %}
+                                <img src="{{ leader.userprofile.avatar }}" class="img-responsive img-thumbnail">
+                            {% elif leader.socialaccount_set.all.0.get_avatar_url %}
                                 <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}">
                             {% else %}
                                 <img src="{% gravatar_url leader.email 50 %}">
@@ -53,4 +55,3 @@
             </div>
         </div>
 {% endblock %}
-                                                        
