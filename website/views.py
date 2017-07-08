@@ -218,6 +218,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
                      'body': "![0](" + obj.screenshot.url + ") http://bugheist.com/issue/"+str(obj.id),
                      'labels': ['bug','bugheist']}
             r = requests.post(url, json.dumps(issue),auth=auth)
+            obj.github_url = r.url
+            obj.save()
+
+
         redirect_url = '/'
         # redirect users to login
         if not self.request.user.is_authenticated():
