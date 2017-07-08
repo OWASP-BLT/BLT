@@ -154,7 +154,7 @@
                     <br/>
                     {% if object.domain.github %}
                         {% if object.github_url %}
-                            <a href="{{ object.githhb_url}}" target="_new" class="btn btn-warning">View on Github</a>
+                            <a href="{{ object.github_url}}" target="_new" class="btn btn-warning">View on Github</a>
                         {% else %}
                             {% if request.user.is_superuser or request.user == object.user %}
                             <a href="{{object.domain.github}}/issues/new?title={{object.description|urlencode}}&body=![0]({{object.screenshot.url}})%20http://bugheist.com/issue/{{object.id}}" target="_new" class="btn btn-warning">Add to Github</a>
