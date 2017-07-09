@@ -16,10 +16,10 @@ from actstream import action
 from django.contrib.auth.models import User
 from actstream import registry
 from django.http import JsonResponse
-from website.models import Issue, Points, Hunt, Domain, InviteFriend
+from website.models import Issue, Points, Hunt, Domain, InviteFriend, UserProfile
 from django.core.files import File
 from django.core.urlresolvers import reverse, reverse_lazy
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Q
 from django.core.urlresolvers import reverse
 from django.core.files.storage import default_storage
 from django.views.generic import View
@@ -88,7 +88,6 @@ def find_key(request, token):
 
 class IssueBaseCreate(object):
 
-
     def form_valid(self, form):
         score = 3
         obj = form.save(commit=False)
@@ -108,7 +107,6 @@ class IssueBaseCreate(object):
         p = Points.objects.create(user=user, issue=obj, score=score)
         action.send(user, verb='found a bug on website', target=obj)
         messages.success(self.request, 'Bug added! +'+ str(score))
-
 
         if created:
             try:
@@ -164,7 +162,6 @@ class IssueBaseCreate(object):
         return HttpResponseRedirect("/")
 
 
-
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
     fields = ['url','description','screenshot','domain', 'label']
@@ -182,12 +179,30 @@ class IssueCreate(IssueBaseCreate, CreateView):
             obj.user = self.request.user
         domain, created = Domain.objects.get_or_create(name=obj.domain_name.replace("www.", ""), defaults={'url':"http://"+obj.domain_name.replace("www.", "")})
         obj.domain=domain
+        if created and self.request.user.is_authenticated():
+            p = Points.objects.create(user=self.request.user,domain=domain,score=1)
+            messages.success(self.request, 'Domain added! + 1')
+
         if self.request.POST.get('screenshot-hash'):
             reopen = default_storage.open('uploads\/'+ self.request.POST.get('screenshot-hash') +'.png', 'rb')
             django_file = File(reopen)
             obj.screenshot.save(self.request.POST.get('screenshot-hash') +'.png', django_file, save=True)
         obj.user_agent = self.request.META.get('HTTP_USER_AGENT')
         obj.save()
+
+        if self.request.user.is_authenticated():       
+            total_issues = Issue.objects.filter(user=self.request.user).count()
+            user_prof = UserProfile.objects.get(user=self.request.user)
+            if total_issues <=10:
+                user_prof.title = 1
+            elif total_issues <=50:
+                user_prof.title = 2
+            elif total_issues <= 200:
+                user_prof.title = 3
+            else:
+                user_prof.title = 4
+
+            user_prof.save()
 
         if domain.github and os.environ.get("GITHUB_PASSWORD"):
             from giturlparse import parse
@@ -204,6 +219,11 @@ class IssueCreate(IssueBaseCreate, CreateView):
                      'body': "![0](" + obj.screenshot.url + ") http://bugheist.com/issue/"+str(obj.id),
                      'labels': ['bug','bugheist']}
             r = requests.post(url, json.dumps(issue),auth=auth)
+            response = r.json()
+            obj.github_url = response['html_url']
+            obj.save()
+
+
         redirect_url = '/'
         # redirect users to login
         if not self.request.user.is_authenticated():
@@ -288,6 +308,8 @@ class UserProfileDetailView(DetailView):
         context['websites'] = Domain.objects.filter(issue__user=self.object).annotate(total=Count('issue')).order_by('-total')
         context['activities'] = user_stream(self.object, with_user_activity=True)
         context['profile_form'] = UserProfileForm()
+        for i in range(1,7):
+            context['bug_type_'+str(i)] = Issue.objects.filter(user=self.object,label=str(i))
         return context
 
     @method_decorator(login_required)
@@ -391,6 +413,31 @@ class ScoreboardView(ListView):
         context['scoreboard'] = Domain.objects.all().order_by('-modified')
         return context
 
+def search(request, template="search.html"):
+    query = request.GET.get('query')
+    stype = request.GET.get('type')
+    if query is None:
+        return render_to_response(template, context_instance=RequestContext(request))
+
+    if stype == "issue":
+        context = {
+            'query' : query,
+            'type' : stype,
+            'issues' :  Issue.objects.filter(Q(description__icontains=query))
+        }
+    elif stype == "domain":
+        context = {
+            'query' : query,
+            'type' : stype,
+            'domains' :  Domain.objects.filter(Q(url__icontains=query))
+        }
+    elif stype == "user":
+        context = {
+            'query' : query,
+            'type' : stype,
+            'users' :  User.objects.filter(Q(username__icontains=query))
+        }
+    return render_to_response(template, context, context_instance=RequestContext(request))
 
 class HuntCreate(CreateView):
     model = Hunt
@@ -483,7 +530,6 @@ class EmailDetailView(TemplateView):
         context['emails'] = get_email_from_domain(self.kwargs['slug'])
         return context
 
-
 def get_email_from_domain(domain_name):
         new_urls = deque(['http://'+domain_name])
         processed_urls = set()
@@ -545,6 +591,9 @@ class UpdateIssue(View):
         if request.POST.get('action') == "close":
             messages.success(self.request, 'Issue Closed')
             issue.status = "closed"
+            issue.closed_by = request.user
+            issue.closed_date = datetime.now()
+
             msg_plain = msg_html = render_to_string('email/bug_updated.txt', {
                 'domain': issue.domain.name,
                 'name':issue.user.username,
@@ -610,7 +659,6 @@ def assign_issue_to_user(request, user, **kwargs):
         assigner.request = request
         assigner.process_issue(user, issue, created, domain)
 
-
 class CreateInviteFriend(CreateView):
     template_name = 'invite_friend.html'
     model = InviteFriend
@@ -647,4 +695,3 @@ class CreateInviteFriend(CreateView):
         messages.success(self.request, 'An email has been sent to your friend. Keep inviting your friends and get points!')
 
         return HttpResponseRedirect(self.success_url)
-

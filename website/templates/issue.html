@@ -30,13 +30,17 @@
     }
 {% endblock %}
 {% block content %}
-    <div id="fb-root"></div>
-    <script type="text/javascript" src="{% static "js/issue.js" %}"></script>
+    <div id="fb-root"></div>    
+    <script type="text/javascript" src="{% static "js/clipboard.min.js" %}"></script>
     <script type="text/javascript" src="{% static "js/lightbox.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/issue.js" %}"></script>
     <div class="row">
         <div class="col-lg-12">
             <h3 class="page-header">
                 {{object.description}}
+                <button class="btn copy-btn" data-clipboard-text="{{object.description}}">
+                    <i class="glyphicon glyphicon-copy"></i>
+                </button>
                 <span class="pull-right">
                     <i class="fa fa-eye"></i> {{object.views}}
                 </span>
@@ -67,6 +71,8 @@
                     </a>
                 </div>
                 <div class="panel-footer">
+                <span class="label label-info bug-type pull-right">{{object.get_label_display}}</span>
+
                     <strong>Issue on: {{object.domain_name}}</strong>
                     <div>Title - <a href="/domain/{{object.domain_name}}">{{object.domain_title}}</a></div>
                     <div># of issues - {{issue_count}}</div><br/>
@@ -107,8 +113,10 @@
             </div>            
         </div>
         <div class="col-lg-3 col-md-3">
+
             <div class="panel issue-panel" style="background-color:{% if object.status == "closed" %}#bd2c00{% else %}#6cc644;{% endif %};">
                 <div class="panel-heading panel-issue">
+
                     <svg width="75px" height="75px" viewBox="0 0 14 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                         <g id="Octicons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                             <g id="issue-opened" fill="#ffffff">
@@ -149,8 +157,12 @@
                     </div>
                     <br/>
                     {% if object.domain.github %}
-                        {% if request.user.is_superuser or request.user == object.user %}
-                        <a href="{{object.domain.github}}/issues/new?title={{object.description|urlencode}}&body=![0]({{object.screenshot.url}})%20http://bugheist.com/issue/{{object.id}}" target="_new" class="btn btn-warning">Add to Github</a>
+                        {% if object.github_url %}
+                            <a href="{{ object.github_url}}" target="_new" class="btn btn-warning">View on Github</a>
+                        {% else %}
+                            {% if request.user.is_superuser or request.user == object.user %}
+                            <a href="{{object.domain.github}}/issues/new?title={{object.description|urlencode}}&body=![0]({{object.screenshot.url}})%20http://bugheist.com/issue/{{object.id}}" target="_new" class="btn btn-warning">Add to Github</a>
+                            {% endif %}
                         {% endif %}
                     {% endif %}
                     {% if request.user.is_superuser or request.user == object.user %}
@@ -178,17 +190,10 @@
     {% endif %}
 </div>
 
-<form method="post" action="{% url 'comments.views.AddComment' pk=issue.pk %}" id="comments_form">
-    {% csrf_token %}
-    <div class="form-group">
-        <textarea placeholder="Comment" class="form-control" name="text_comment" required></textarea>
-    </div>
-    <button class="btn btn-small" type="submit">Add Comment</button>
-</form>
 
-{% if all_comment %}
+
 <h3>Comments:</h3>
-
+<div id="target_div">
 {% for comment in all_comment %}
 <hr>
     <div class="well comment">
@@ -206,6 +211,37 @@
     </div>
 {% empty %}
 {% endfor %}
-{% endif %}
+</div>
+<form id="comments">
+    {% csrf_token %}
+    <div class="form-group">
+        <input type="hidden" name="issue_pk" id="issue_pk" value="{{ issue.pk }}" >  
+        <textarea placeholder="Comment" class="form-control" id="text_comment" name="text_comment" required></textarea>
+    
+    </div>
+    <button id="comment_submit" class="btn btn-small" type="submit">Add Comment</button>
+</form>
+
+
+<script type="text/javascript">
+    $(document).on('submit','#comments',function(e){
+        e.preventDefault();
+
+        $.ajax({
+            type: 'POST',
+            url: '/issue/comment/add/',
+            data:{
+                text_comment: $('#text_comment').val(),
+                issue_pk: $('#issue_pk').val(),
+                csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+            },
+            success: function(data){
+                 $('#target_div').html(data);
+            }
+
+        });
+    });
+</script>
+
 
 {% endblock %}

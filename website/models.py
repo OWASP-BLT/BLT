@@ -40,7 +40,6 @@ class Domain(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
-
     def __unicode__(self):
         return self.name
 
@@ -77,7 +76,6 @@ class Domain(models.Model):
         except:
             favicon_url = self.url + '/favicon.ico'
             return favicon_url
-
 
     @property
     def get_color(self):
@@ -127,7 +125,7 @@ class Issue(models.Model):
         (3, 'Performance'),
         (4, 'Security'),
         (5, 'Typo'),
-        (6, 'Design')        
+        (6, 'Design')
     )
     user = models.ForeignKey(User, null=True, blank=True)
     domain = models.ForeignKey(Domain, null=True, blank=True)
@@ -139,6 +137,9 @@ class Issue(models.Model):
     user_agent = models.CharField(max_length=255, default="", null=True, blank=True)
     ocr = models.TextField(default="", null=True, blank=True)
     screenshot = models.ImageField(upload_to="screenshots", validators=[validate_image])
+    closed_by = models.ForeignKey(User, null=True, blank=True, related_name="closed_by")
+    closed_date = models.DateTimeField(default=None, null=True, blank=True)
+    github_url = models.URLField(default="")
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
@@ -183,7 +184,6 @@ class Issue(models.Model):
             except:
                 return "OCR not installed"
 
-
     @property
     def get_absolute_url(self):
         return "/issue/" + str(self.id)
@@ -191,15 +191,12 @@ class Issue(models.Model):
     class Meta:
         ordering = ['-created']
 
-
 TWITTER_MAXLENGTH = getattr(settings, 'TWITTER_MAXLENGTH', 140)
-
 
 def post_to_twitter(sender, instance, *args, **kwargs):
 
     if not kwargs.get('created'):
         return False
-
     try:
         consumer_key = os.environ['TWITTER_CONSUMER_KEY']
         consumer_secret = os.environ['TWITTER_CONSUMER_SECRET']
@@ -293,9 +290,20 @@ def user_images_path(instance, filename):
 
 
 class UserProfile(models.Model):
+    title = (
+        (0, 'Unrated'),
+        (1, 'Bronze'),
+        (2, 'Silver'),
+        (3, 'Gold'),
+        (4, 'Platinum'),
+    )
+        
 
     user = models.OneToOneField(User, related_name="userprofile")
     user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
+    title = models.IntegerField(choices=title,default=0)
+    winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
 
     def avatar(self, size=36):
         if self.user_avatar:
@@ -318,4 +326,3 @@ def create_profile(sender, **kwargs):
         profile.save()
 
 post_save.connect(create_profile, sender=User)
-

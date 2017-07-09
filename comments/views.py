@@ -6,9 +6,10 @@ from website.models import Issue,UserProfile
 from django.shortcuts import render, get_object_or_404
 import os
 
-@login_required(login_url="/accounts/login/")
-def AddComment(request,pk):
-    issue = get_object_or_404(Issue,pk=pk)
+@login_required(login_url='/accounts/login/')
+def add_comment(request):
+    pass
+    issue = Issue.objects.get(pk=request.POST.get('issue_pk'))
     if request.method == "POST":
         author = request.user.username
         author_url = os.path.join('/profile/',request.user.username)
@@ -16,7 +17,10 @@ def AddComment(request,pk):
         text=request.POST.get('text_comment')
         comment =Comment(author=author, author_url=author_url, issue=issue, text=text)
         comment.save()
-    return HttpResponseRedirect(os.path.join('/issue',str(pk)))
+        all_comment = Comment.objects.filter(issue=issue)
+    return render(request,'comments.html',{'all_comment':all_comment,
+                                            'user':request.user},)   
+
 
 @login_required(login_url="/accounts/login/")
 def DeleteComment(request,pk):
