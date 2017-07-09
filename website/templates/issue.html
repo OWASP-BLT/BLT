@@ -187,9 +187,9 @@
 </div>
 
 
-{% if all_comment %}
-<h3>Comments:</h3>
 
+<h3>Comments:</h3>
+<div id="target_div">
 {% for comment in all_comment %}
 <hr>
     <div class="well comment">
@@ -207,13 +207,37 @@
     </div>
 {% empty %}
 {% endfor %}
-{% endif %}
-<form method="post" action="{% url 'comments.views.AddComment' pk=issue.pk %}" id="comments">
+</div>
+<form id="comments">
     {% csrf_token %}
     <div class="form-group">
-        <textarea placeholder="Comment" class="form-control" name="text_comment" required></textarea>
+        <input type="hidden" name="issue_pk" id="issue_pk" value="{{ issue.pk }}" >  
+        <textarea placeholder="Comment" class="form-control" id="text_comment" name="text_comment" required></textarea>
+    
     </div>
-    <button class="btn btn-small" type="submit">Add Comment</button>
+    <button id="comment_submit" class="btn btn-small" type="submit">Add Comment</button>
 </form>
+
+
+<script type="text/javascript">
+    $(document).on('submit','#comments',function(e){
+        e.preventDefault();
+
+        $.ajax({
+            type: 'POST',
+            url: '/issue/comment/add/',
+            data:{
+                text_comment: $('#text_comment').val(),
+                issue_pk: $('#issue_pk').val(),
+                csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+            },
+            success: function(data){
+                 $('#target_div').html(data);
+            }
+
+        });
+    });
+</script>
+
 
 {% endblock %}
