@@ -71,6 +71,8 @@
                     </a>
                 </div>
                 <div class="panel-footer">
+                <span class="label label-info bug-type pull-right">{{object.get_label_display}}</span>
+
                     <strong>Issue on: {{object.domain_name}}</strong>
                     <div>Title - <a href="/domain/{{object.domain_name}}">{{object.domain_title}}</a></div>
                     <div># of issues - {{issue_count}}</div><br/>
@@ -111,8 +113,10 @@
             </div>            
         </div>
         <div class="col-lg-3 col-md-3">
+
             <div class="panel issue-panel" style="background-color:{% if object.status == "closed" %}#bd2c00{% else %}#6cc644;{% endif %};">
                 <div class="panel-heading panel-issue">
+
                     <svg width="75px" height="75px" viewBox="0 0 14 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                         <g id="Octicons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                             <g id="issue-opened" fill="#ffffff">
