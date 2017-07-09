@@ -458,3 +458,65 @@ input[type='file'] {
  	bottom:10px;
  	left:500px;
  }
+
+
+
+ #myFooter {
+ 	width: 100%;
+    background-color: #3c3d41;
+    color: white;
+    padding-top: 30px;
+}
+
+#myFooter .row {
+    margin-bottom: 10px;
+}
+
+#myFooter .footer-blt {
+    background-color: #333333;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    text-align: center;
+}
+
+#myFooter .footer-blt p {
+    margin: 10px;
+    color: #ccc
+}
+
+#myFooter ul {
+    list-style-type: none;
+    padding-left: 0;
+    line-height: 1.7;
+}
+
+#myFooter a {
+    color: #d2d1d1;
+    text-decoration: none;
+}
+
+#myFooter a:hover,
+#myFooter a:focus {
+    text-decoration: none;
+    color: white;
+}
+
+#myFooter .social-networks {
+    padding-top: 30px;
+    padding-bottom: 16px;
+}
+
+#myFooter .social-networks a {
+    font-size: 32px;
+    color: #f9f9f9;
+    padding: 10px;
+    transition: 0.2s;
+}
+
+#myFooter .facebook:hover {
+    color: #0077e2;
+}
+#myFooter .twitter:hover {
+    color: #00aced;
+}
+
