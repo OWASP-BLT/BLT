@@ -119,6 +119,12 @@
                                             <img src="http://{{activity.hostname_domain}}/favicon.ico" height="16" onerror="this.onerror=null; this.style.display ='none';">
                                             {{ activity.domain_title }} - {{ activity|truncatechars:80 }}
                                         </a>
+                                                        {% if activity.status == "open" %}
+                    <span class="label label-success text-capitalize">{{activity.status}}</span>
+                {% else %}
+                    <span class="label label-danger text-capitalize">{{activity.status}}</span>
+                {% endif %}<span class="label label-info bug-type">{{activity.get_label_display}}</span>
+
                                     </span>
                                     <span class="text-muted small">
                                         <em>{{ activity.created|timesince }} ago</em>
@@ -133,7 +139,7 @@
                                             <img src="{{ activity.screenshot.url }}" class="img-responsive screenshot-image">
                                         </a>
                                     {% endif %}
-                                </div>                                
+                                </div>     
                             {% endif %}    
                         {% endfor %}
                     </div>
