@@ -41,133 +41,117 @@
         </style>
     </head>
     <body>
-        <div id="wrapper">
-            <nav class="navbar navbar-default navbar-static-top" role="navigation">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
                 <div class="navbar-header">
-                    <a class="navbar-brand" href="/">
-                        <img src="{% static "img/logo-small-transparent.png" %}">
-                    </a>
+                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                  </button>
+                  <a class="navbar-brand" href="/">
+                      <img src="{% static "img/logo-small-transparent.png" %}">
+                  </a>
                 </div>
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new">Add to chrome</a></li>
+                        <li><a href="/social">Social</a></li>
+                        <li><a href="/report">Report Bug</a></li>
+                        <li><a href="/start" class="sponsor-hunt">Bug Hunt</a></li>
+                        <li><a href="#" id="startTour" class="start-tour">Tour</a></li>
 
-                <ul class="nav navbar-top-links navbar-right">
-                    {% if request.user.is_authenticated %}
-                        <li class="dropdown user-menu">
-                            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                                {% if request.user.userprofile.avatar %}
-                                    <img src="{{ request.user.userprofile.avatar }}">
-                                {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
-                                    <img src="{{request.user.socialaccount_set.all.0.get_avatar_url}}">
-                                {% else %}
-                                    {% gravatar request.user.email 20 %}
-                                {% endif %}
-                                {{request.user.username}} ({{ request.user|score|default:"0" }} Pts) <i class="fa fa-caret-down"></i>
-                            </a>
-                            <ul class="dropdown-menu dropdown-user">
-                                <li>
-                                    <a href="/accounts/profile/">
-                                        <i class="fa fa-user fa-fw"></i> User Profile
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="/accounts/password/change/">
-                                        <i class="fa fa-gear fa-fw"></i> Settings
-                                    </a>
-                                </li>
-                                <li class="divider"></li>
-                                <li>
-                                    <a href="/accounts/logout/">
-                                        <i class="fa fa-sign-out fa-fw"></i> Logout
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% else %}
-                        <a href="/accounts/signup">
-                            <button class="btn btn-default login-button">Signup</button>
-                        </a> 
-                        <a data-toggle="modal" href="#login">
-                            <button class="btn btn-default login-button">Login</button>
-                        </a>
-                    {% endif %}
-                    <li style="float:left;"><a id="chrome_ext" href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new" class="chrome-plugin">
-                    + Add to chrome
-                    </a></li>
-                    <li style="float:left;">
-                        <a href="/social" class="social-feeds">Social Feeds</a>
-                    </li>
-                    <li style="float:left;">
-                        <a href="/start" class="sponsor-hunt">Sponsor a Bug Hunt</a>
-                    </li>
-                    <li style="float:left;">
-                        <a href="#" id="startTour" class="start-tour">Tour</a>
-                    </li>
-                    <li style="float:left;">
-                        <a href="/search" class="sponsor-hunt">Search</a>
-                    </li>
-                </ul>
-                <div class="col-md-12">
-                    <div class="col-md-4">
-                        <span class="tagline">Win prizes for reporting bugs</span><br>
-                        <span class="tagline">We want everyone to love your website</span>
-                    </div>
-                    <div class="col-md-8">
-                        <form class="navbar-form navbar-right form" action="/issue/" method="post" enctype="multipart/form-data">
-                            {% csrf_token %}
-                            <div class="form-group">
-                                {% if request.GET.url %}
-                                    <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
-                                {% else %}
-                                    <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
-                                {% endif %}
-                                {% if form.url.errors %}
-                                    <label id="description-error" class="error" for="description">{{form.url.errors}}</label>
-                                {% endif %}
-                            </div>
-                            <div class="form-group">
-                                <textarea data-required="true" name="description" id="description" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="Describe bug issue">{{form.description.value|default:""}}</textarea>
-                                {% if form.description.errors %}
-                                    <label id="description-error" class="error" for="description">
-                                        {{form.description.errors}}
-                                    </label>
-                                {% endif %}
-                            </div>
-                            <select data-intro="Categorize the bug." data-step="3" name="label" class="form-control">
-                                <option value="0" selected="selected">Bug Type</option>
-                                <option value="1">Number error</option>
-                                <option value="2">Functional</option>
-                                <option value="3">Performance</option>
-                                <option value="4">Security</option>
-                                <option value="5">Typo</option>
-                                <option value="6">Design</option>
-                            </select>
-                            <div class="form-group">
-                            {% if request.GET.hash %}</br>
-                                <img src="{{ MEDIA_URL }}uploads/{{request.GET.hash}}.png" class="img-responsive img-thumbnail screenshot-hash">
-                                <input type="hidden" class="required" name="screenshot-hash" value="{{request.GET.hash}}">
-                            {% else %}
-                                <span>
-                                    <input type="file" class="required" id='${multipartFilePath}' name="screenshot" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"/> 
-                                    <button class="btn btn-primary" data-intro="Upload a screenshot of the concerned page." data-step="4" name="test_files" type="button"   onclick="$(this).parent().find('input[type=file]').click();">
-                                        <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot
-                                    </button>
-                                    &nbsp;
-                                    <span class="badge badge-important"></span>
-                                </span>
-                            {% endif %}
-                            {% if form.screenshot.errors %}
-                                <label id="description-error" class="error" for="description">
-                                    {{form.screenshot.errors}}
-                                </label>
-                            {% endif %}
-                            </div>
-                            <button type="submit" name="reportbug_button" id="btn" class="btn btn-default" data-intro="Click here to report the bug to BugHeist." data-step="5">Report Bug</button>
-                            <i class="fa fa-trophy" aria-hidden="true">+3</i>
-                        </form>
-                    </div>
-                </div>            
-            </nav>
+                        {% if request.user.is_authenticated %}
+                            <li class="dropdown user-menu">
+                                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                                    {% if request.user.userprofile.avatar %}
+                                        <img src="{{ request.user.userprofile.avatar }}">
+                                    {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
+                                        <img src="{{request.user.socialaccount_set.all.0.get_avatar_url}}">
+                                    {% else %}
+                                        {% gravatar request.user.email 20 %}
+                                    {% endif %}
+                                    {{request.user.username}} ({{ request.user|score|default:"0" }} Pts) <i class="fa fa-caret-down"></i>
+                                </a>
+                                <ul class="dropdown-menu dropdown-user">
+                                    <li>
+                                        <a href="/accounts/profile/">
+                                            <i class="fa fa-user fa-fw"></i> User Profile
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="/accounts/password/change/">
+                                            <i class="fa fa-gear fa-fw"></i> Change Password
+                                        </a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                        <a href="/accounts/logout/">
+                                            <i class="fa fa-sign-out fa-fw"></i> Logout
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        {% else %}
+                            <li><a href="/accounts/signup">Signup</a></li>
+                            <li><a href="#login" data-toggle="modal">Login</a></li>
+                        {% endif %}
+                    </ul>
+                    <form class="navbar-form navbar-right" action="/search" method="get">
+                        <div class="form-group">
+                            <input type="text" name="query" class="form-control" placeholder="Search">
+                        </div>
+                        <button type="submit" class="btn btn-default">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+        <div id="wrapper">            
             <div id="page-wrapper">
                 <div class="container">
+                    <div class="row">
+                        <div class="col-md-6 col-md-offset-3">
+                            {% if form.errors %}
+                                <div class="alert alert-danger">
+                                    {{form.errors}}
+                                </div>
+                            {% endif %}                            
+                        </div>
+                        <div class="col-md-12">
+                            <form class="navbar-form navbar-right form" action="/issue/" method="post" enctype="multipart/form-data">                            
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
+                                </div>
+                                <div class="form-group">
+                                    <textarea data-required="true" name="description" id="description" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="Describe bug issue">{{form.description.value|default:""}}</textarea>
+                                </div>
+                                <select data-intro="Categorize the bug." data-step="3" name="label" class="form-control">
+                                    <option value="0" selected="selected">Bug Type</option>
+                                    <option value="1">Number error</option>
+                                    <option value="2">Functional</option>
+                                    <option value="3">Performance</option>
+                                    <option value="4">Security</option>
+                                    <option value="5">Typo</option>
+                                    <option value="6">Design</option>
+                                </select>
+                                <div class="form-group">
+                                    <span>
+                                        <input type="file" class="required" id='${multipartFilePath}' name="screenshot"/> 
+                                        <button class="btn btn-primary" data-intro="Upload a screenshot of the concerned page." data-step="4" name="test_files" type="button">
+                                            <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot
+                                        </button>
+                                        <span class="badge badge-important"></span>
+                                    </span>                            
+                                </div>
+                                <button type="submit" class="btn btn-default" data-intro="Click here to report the bug to BugHeist." data-step="5">Report Bug <i class="fa fa-trophy" aria-hidden="true">+3</i></button>
+                            </form>
+                        </div>
+                    </div>
+
                     {% block content %}
                     {% endblock %}
                 </div>
@@ -261,6 +245,17 @@
               })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
               ga('create', 'UA-66634107-1', 'auto');
               ga('send', 'pageview');
+            </script>
+            <script type="text/javascript">
+                $(function() {
+                    $('button[name="test_files"]').on('click', function() {
+                        $(this).parent().find('input[type=file]').click();
+                    });
+                    $('input[name="screenshot"]').on('change', function() {
+                        var file = $(this).val().replace('C:\\fakepath\\', '');
+                        $(this).parent().find('span').html(file);
+                    });
+                });
             </script>
         </div>
     </body>

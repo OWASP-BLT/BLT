@@ -28,15 +28,11 @@
 .navbar-static-top .navbar-header {
     z-index:4;
 }
-.navbar-static-top .navbar-brand img {
-    margin-left:20px;
-}
 .navbar-top-links img {
     width: 20px;
     height: 20px;
 }
-.navbar-static-top textarea {
-    resize:vertical;
+.form-group textarea {
     height: 34px;
 }
 .screenshot-hash {
