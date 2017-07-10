@@ -41,80 +41,75 @@
         </style>
     </head>
     <body>
-        <div id="wrapper">
-            <nav class="navbar navbar-default navbar-static-top" role="navigation">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
                 <div class="navbar-header">
-                    <a class="navbar-brand" href="/">
-                        <img src="{% static "img/logo-small-transparent.png" %}">
-                    </a>
+                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                  </button>
+                  <a class="navbar-brand" href="/">
+                      <img src="{% static "img/logo-small-transparent.png" %}">
+                  </a>
                 </div>
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new">Add to chrome</a></li>
+                        <li><a href="/social">Social</a></li>
+                        <li><a href="/report">Report Bug</a></li>
+                        <li><a href="/start" class="sponsor-hunt">Bug Hunt</a></li>
+                        <li><a href="#" id="startTour" class="start-tour">Tour</a></li>
 
-                <ul class="nav navbar-top-links navbar-right">
-                    {% if request.user.is_authenticated %}
-                        <li class="dropdown user-menu">
-                            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                                {% if request.user.userprofile.avatar %}
-                                    <img src="{{ request.user.userprofile.avatar }}">
-                                {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
-                                    <img src="{{request.user.socialaccount_set.all.0.get_avatar_url}}">
-                                {% else %}
-                                    {% gravatar request.user.email 20 %}
-                                {% endif %}
-                                {{request.user.username}} ({{ request.user|score|default:"0" }} Pts) <i class="fa fa-caret-down"></i>
-                            </a>
-                            <ul class="dropdown-menu dropdown-user">
-                                <li>
-                                    <a href="/accounts/profile/">
-                                        <i class="fa fa-user fa-fw"></i> User Profile
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="/accounts/password/change/">
-                                        <i class="fa fa-gear fa-fw"></i> Settings
-                                    </a>
-                                </li>
-                                <li class="divider"></li>
-                                <li>
-                                    <a href="/accounts/logout/">
-                                        <i class="fa fa-sign-out fa-fw"></i> Logout
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% else %}
-                        <a href="/accounts/signup">
-                            <button class="btn btn-default login-button">Signup</button>
-                        </a> 
-                        <a data-toggle="modal" href="#login">
-                            <button class="btn btn-default login-button">Login</button>
-                        </a>
-                    {% endif %}
-                    <li style="float:left;"><a id="chrome_ext" href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new" class="chrome-plugin">
-                    + Add to chrome
-                    </a></li>
-                    <li style="float:left;">
-                        <a href="/social" class="social-feeds">Social Feeds</a>
-                    </li>
-                    <li style="float:left;">
-                        <a href="/report" class="report-bug">Report Bug</a>
-                    </li>
-                    <li style="float:left;">
-                        <a href="/start" class="sponsor-hunt">Sponsor a Bug Hunt</a>
-                    </li>
-                    <li style="float:left;">
-                        <a href="#" id="startTour" class="start-tour">Tour</a>
-                    </li>
-                    <li style="float:left;">
-                        <a href="/search" class="sponsor-hunt">Search</a>
-                    </li>
-                </ul>
-                <div class="col-md-12">
-                    <div class="col-md-4">
-                        <span class="tagline">Win prizes for reporting bugs</span><br>
-                        <span class="tagline">We want everyone to love your website</span>
-                    </div>
-                </div>            
-            </nav>
+                        {% if request.user.is_authenticated %}
+                            <li class="dropdown user-menu">
+                                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                                    {% if request.user.userprofile.avatar %}
+                                        <img src="{{ request.user.userprofile.avatar }}">
+                                    {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
+                                        <img src="{{request.user.socialaccount_set.all.0.get_avatar_url}}">
+                                    {% else %}
+                                        {% gravatar request.user.email 20 %}
+                                    {% endif %}
+                                    {{request.user.username}} ({{ request.user|score|default:"0" }} Pts) <i class="fa fa-caret-down"></i>
+                                </a>
+                                <ul class="dropdown-menu dropdown-user">
+                                    <li>
+                                        <a href="/accounts/profile/">
+                                            <i class="fa fa-user fa-fw"></i> User Profile
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="/accounts/password/change/">
+                                            <i class="fa fa-gear fa-fw"></i> Change Password
+                                        </a>
+                                    </li>
+                                    <li class="divider"></li>
+                                    <li>
+                                        <a href="/accounts/logout/">
+                                            <i class="fa fa-sign-out fa-fw"></i> Logout
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        {% else %}
+                            <li><a href="/accounts/signup">Signup</a></li>
+                            <li><a href="#login" data-toggle="modal">Login</a></li>
+                        {% endif %}
+                    </ul>
+                    <form class="navbar-form navbar-right" action="/search" method="get">
+                        <div class="form-group">
+                            <input type="text" name="query" class="form-control" placeholder="Search">
+                        </div>
+                        <button type="submit" class="btn btn-default">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+        <div id="wrapper">
             <div id="page-wrapper">
                 <div class="container">
                     {% block content %}
