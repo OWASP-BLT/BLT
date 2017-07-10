@@ -7,7 +7,8 @@
             &nbsp;commented on&nbsp;<div class="date"> {{ comment.created_date }}</div>
             {% if user.username == comment.author  %}                
                 <a class="btn btn-xs btn-primary" href="{% url 'comments.views.EditCommentPage' pk=comment.pk %}">Edit</a>                    
-                <a class="btn btn-xs btn-danger" href="{% url 'comments.views.DeleteComment' pk=comment.pk %}">Delete</a>
+                <a class="btn btn-xs btn-danger del_comment" name="{{ comment.pk }}">Delete</a>
+            
             {% endif %}
         </div>
         <div>            

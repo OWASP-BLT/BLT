@@ -22,13 +22,19 @@ def add_comment(request):
                                             'user':request.user},)   
 
 
-@login_required(login_url="/accounts/login/")
-def DeleteComment(request,pk):
-    comment = get_object_or_404(Comment,pk=pk)
-    if request.user.username!=comment.author:
-        return HttpResponseRedirect(os.path.join('/issue',str(pk)))    
-    comment.delete()
-    return HttpResponseRedirect(os.path.join('/issue',str(comment.issue.pk)))
+@login_required(login_url='/accounts/login')
+def delete_comment(request):
+    if request.method=="POST":
+        issue = Issue.objects.get(pk=request.POST['issue_pk'])
+        all_comment = Comment.objects.filter(issue=issue)
+        comment = Comment.objects.get(pk=int(request.POST['comment_pk']))
+        if request.user.username!=comment.author:
+            return HttpResponse("Cannot delete this comment")
+        comment.delete()
+    return render(request,'comments.html',{'all_comment':all_comment,
+                                            'user':request.user},) 
+
+
 
 @login_required(login_url="/accounts/login/")
 def EditComment(request,pk):
