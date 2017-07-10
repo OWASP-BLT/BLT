@@ -419,7 +419,7 @@ def search(request, template="search.html"):
     if query is None:
         return render_to_response(template, context_instance=RequestContext(request))
 
-    if stype == "issue":
+    if stype == "issue" or stype is None:
         context = {
             'query' : query,
             'type' : stype,
