@@ -50,12 +50,12 @@ urlpatterns = patterns('',
     url(r'^favicon\.ico$', favicon_view),
     url(r'^sendgrid_webhook/$', csrf_exempt(InboundParseWebhookView.as_view()), name='inbound_event_webhook_callback'),
     url(r'^issue/comment/add/$',comments.views.add_comment, name='add_comment'),
-    # url(r'^issue/comment/(?P<pk>\d+)/$',comments.views.AddComment, name='add_comment'),
+    url(r'^issue/comment/delete/$',comments.views.delete_comment, name='delete_comment'),
     url(r'^issue/comment/(?P<pk>\d+)/edit/$',comments.views.EditCommentPage, name='edit_comment'),
     url(r'^issue/comment/(?P<pk>\d+)/update/$',comments.views.EditComment, name='update_comment'),
-    url(r'^issue/comment/(?P<pk>\d+)/delete/$',comments.views.DeleteComment, name='delete_comment'),
     url(r'^social/$', TemplateView.as_view(template_name="social.html")),
     url(r'^search/$', website.views.search),
+    
     
 
 ) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
