@@ -202,7 +202,8 @@
             &nbsp;commented on&nbsp;<div class="date"> {{ comment.created_date }}</div>
             {% if user.username == comment.author  %}                
                 <a class="btn btn-xs btn-primary" href="{% url 'comments.views.EditCommentPage' pk=comment.pk %}">Edit</a>                    
-                <a class="btn btn-xs btn-danger" href="{% url 'comments.views.DeleteComment' pk=comment.pk %}">Delete</a>
+                <a class="btn btn-xs btn-danger del_comment" name="{{ comment.pk }}">Delete</a>
+            
             {% endif %}
         </div>
         <div>            
@@ -242,6 +243,28 @@
 
         });
     });
+
+    $('body').on('click', '.del_comment', function (e){
+
+    e.preventDefault();
+    $.ajax({
+        type: 'POST',
+        url: "/issue/comment/delete/",
+        data:{
+            comment_pk:$(this).attr('name'),
+            issue_pk: $('#issue_pk').val(),
+            csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+
+        },
+        success: function(data) {
+            $('#target_div').html(data);
+        },
+        error: function(result) {
+          // alert($('#issue_pk').val());
+        }
+    });
+});
+
 </script>
 
 
