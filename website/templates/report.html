@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load gravatar %}
+{% load socialaccount %}
+{% load humanize %}
+{% providers_media_js %}
+
+{% block content %}
+    <script src="{% static "js/jquery.validate.js" %}"></script>
+    <script src="{% static 'js/activity.js' %}"></script>    
+    <form action="/issue/" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-lg-6">
+                <h1 class="page-header">Report a bug</h1> 
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="form-group">
+                    {% if request.GET.url %}
+                        <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
+                    {% else %}
+                        <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
+                    {% endif %}
+                    {% if form.url.errors %}
+                        <label id="description-error" class="error" for="description">{{form.url.errors}}</label>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <textarea data-required="true" name="description" id="description" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="Describe bug issue">{{form.description.value|default:""}}</textarea>
+                    {% if form.description.errors %}
+                        <label id="description-error" class="error" for="description">
+                            {{form.description.errors}}
+                        </label>
+                    {% endif %}
+                </div>
+                <select data-intro="Categorize the bug." data-step="3" name="label" class="form-control">
+                    <option value="0" selected="selected">Bug Type</option>
+                    <option value="1">Number error</option>
+                    <option value="2">Functional</option>
+                    <option value="3">Performance</option>
+                    <option value="4">Security</option>
+                    <option value="5">Typo</option>
+                    <option value="6">Design</option>
+                </select>
+                <div class="form-group">
+                {% if request.GET.hash %}</br>
+                    <img src="{{ MEDIA_URL }}uploads/{{request.GET.hash}}.png" class="img-responsive img-thumbnail screenshot-hash">
+                    <input type="hidden" class="required" name="screenshot-hash" value="{{request.GET.hash}}">
+                {% else %}
+                    <br>
+                    <span>
+                        <input type="file" class="required" id='${multipartFilePath}' name="screenshot" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"/> 
+                        <button class="btn btn-primary" data-intro="Upload a screenshot of the concerned page." data-step="4" name="test_files" type="button"   onclick="$(this).parent().find('input[type=file]').click();">
+                            <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot
+                        </button>
+                        &nbsp;
+                        <span class="badge badge-important"></span>
+                    </span>
+                {% endif %}
+                {% if form.screenshot.errors %}
+                    <label id="description-error" class="error" for="description">
+                        {{form.screenshot.errors}}
+                    </label>
+                {% endif %}
+                </div>
+                <button type="submit" name="reportbug_button" id="btn" class="btn btn-default" data-intro="Click here to report the bug to BugHeist." data-step="5">Report Bug</button>
+                <i class="fa fa-trophy" aria-hidden="true">+3</i>       
+            </div>
+        </div> 
+    </form>
+{% endblock %}

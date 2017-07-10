@@ -45,21 +45,23 @@ class MySeleniumTests(LiveServerTestCase):
         body = self.selenium.find_element_by_tag_name('body')
         self.assertIn(u'bugbug (0 Pts)', body.text)
 
-    """
+
     @override_settings(DEBUG=True)
     def test_post_bug(self):
         self.selenium.set_page_load_timeout(70)
         self.selenium.get('%s%s' % (self.live_server_url, '/accounts/login/'))
         self.selenium.find_element_by_name("login").send_keys('bugbug')
         self.selenium.find_element_by_name("password").send_keys('secret')
-        self.selenium.find_element_by_xpath('//*[@id="page-wrapper"]/div/form/button').click()
+        self.selenium.find_element_by_name("login_button").click()
+        time.sleep(8)
+        self.selenium.get('%s%s' % (self.live_server_url, '/report/'))
         self.selenium.find_element_by_name("url").send_keys('http://www.example.com/')
         self.selenium.find_element_by_id("description").send_keys('Description of bug')
-        feild = self.selenium.find_element_by_id("description")
         Imagepath=os.path.abspath(os.path.join(os.getcwd(),'website/static/img/logo.jpg'))     
         self.selenium.find_element_by_name("screenshot").send_keys(Imagepath)
-        feild.send_keys(Keys.ENTER)
+        self.selenium.find_element_by_name("reportbug_button").click()
+        time.sleep(3)
+        self.selenium.get('%s%s' % (self.live_server_url, '/'))
         body = self.selenium.find_element_by_tag_name('body')
-        self.assertIn(u'Report Bug', body.text)
-    """
+        self.assertIn(u'Description of bug', body.text)
     

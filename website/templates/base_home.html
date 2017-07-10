@@ -96,9 +96,6 @@
                         <a href="/social" class="social-feeds">Social Feeds</a>
                     </li>
                     <li style="float:left;">
-                        <a href="/report" class="report-bug">Report Bug</a>
-                    </li>
-                    <li style="float:left;">
                         <a href="/start" class="sponsor-hunt">Sponsor a Bug Hunt</a>
                     </li>
                     <li style="float:left;">
@@ -112,6 +109,60 @@
                     <div class="col-md-4">
                         <span class="tagline">Win prizes for reporting bugs</span><br>
                         <span class="tagline">We want everyone to love your website</span>
+                    </div>
+                    <div class="col-md-8">
+                        <form class="navbar-form navbar-right form" action="/issue/" method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                {% if request.GET.url %}
+                                    <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
+                                {% else %}
+                                    <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
+                                {% endif %}
+                                {% if form.url.errors %}
+                                    <label id="description-error" class="error" for="description">{{form.url.errors}}</label>
+                                {% endif %}
+                            </div>
+                            <div class="form-group">
+                                <textarea data-required="true" name="description" id="description" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="Describe bug issue">{{form.description.value|default:""}}</textarea>
+                                {% if form.description.errors %}
+                                    <label id="description-error" class="error" for="description">
+                                        {{form.description.errors}}
+                                    </label>
+                                {% endif %}
+                            </div>
+                            <select data-intro="Categorize the bug." data-step="3" name="label" class="form-control">
+                                <option value="0" selected="selected">Bug Type</option>
+                                <option value="1">Number error</option>
+                                <option value="2">Functional</option>
+                                <option value="3">Performance</option>
+                                <option value="4">Security</option>
+                                <option value="5">Typo</option>
+                                <option value="6">Design</option>
+                            </select>
+                            <div class="form-group">
+                            {% if request.GET.hash %}</br>
+                                <img src="{{ MEDIA_URL }}uploads/{{request.GET.hash}}.png" class="img-responsive img-thumbnail screenshot-hash">
+                                <input type="hidden" class="required" name="screenshot-hash" value="{{request.GET.hash}}">
+                            {% else %}
+                                <span>
+                                    <input type="file" class="required" id='${multipartFilePath}' name="screenshot" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"/> 
+                                    <button class="btn btn-primary" data-intro="Upload a screenshot of the concerned page." data-step="4" name="test_files" type="button"   onclick="$(this).parent().find('input[type=file]').click();">
+                                        <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot
+                                    </button>
+                                    &nbsp;
+                                    <span class="badge badge-important"></span>
+                                </span>
+                            {% endif %}
+                            {% if form.screenshot.errors %}
+                                <label id="description-error" class="error" for="description">
+                                    {{form.screenshot.errors}}
+                                </label>
+                            {% endif %}
+                            </div>
+                            <button type="submit" name="reportbug_button" id="btn" class="btn btn-default" data-intro="Click here to report the bug to BugHeist." data-step="5">Report Bug</button>
+                            <i class="fa fa-trophy" aria-hidden="true">+3</i>
+                        </form>
                     </div>
                 </div>            
             </nav>
@@ -157,8 +208,7 @@
             </div>
 
             <div class="container">
-                
-                <!--<div class="panel-footer">
+                <div class="panel-footer">
                     <ul>
                         <li><a href="/terms">Terms of Service</a></li>
                         <li><a href="http://github.com/bugheist/website" target="_new">Source</a></li>
@@ -169,43 +219,7 @@
                         <li><a href="https://www.owasp.org/index.php/OWASP_Bug_Logging_Tool" target="_new">Powered by OWASP BLT</a></li>
                         <li><a href="/about" target="_new">About</a></li>
                     </ul>
-                </div>-->
-                <br>
-                <br>
-                <footer id="myFooter">
-                    <div class="container">
-                        <div class="row">
-                            <div class="col-sm-3">
-                                <center><a href="#"> <img src ="{% static "img/logo.png" %}"></a></center>
-                            </div>
-                            <div class="col-sm-3">
-                                <ul>
-                                    <li><a href="/about" target="_new">About</a></li>
-                                    <li><a href="/stats">Stats</a></li>
-                                    <li><a href="http://github.com/bugheist/website" target="_new">Source</a></li>
-                                </ul>
-                            </div>
-                            <div class="col-sm-3">
-                                <ul>
-                                    <li><a href="/scoreboard" target="_new">Company Scoreboard</a></li>
-                                    <li><a href="/terms">Terms of Service</a></li>
-                                    <!-- a space for another option<li><a href="#">Reviews</a></li>-->
-                                </ul>
-                            </div>
-                            <div class="col-sm-3">
-                                <div class="social-networks">
-                                    <a href="http://twitter.com/bugheist" target="_new"><i class="fa fa-twitter"></i></a>
-                                    <a href="http://facebook.com/bugheist" target="_new"><i class="fa fa-facebook"></i></a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="footer-blt">
-                        <a href="https://www.owasp.org/index.php/OWASP_Bug_Logging_Tool" target="_new"><p>Powered by OWASP Bug Logging Tool</p>
-                        </a>
-                    </div>
-                </footer>
-                
+                </div>
             </div>
             <script src="{% static "vendor/bootstrap/js/bootstrap.min.js" %}"></script>
             {% block after_js %}
@@ -223,13 +237,13 @@
                 }
             </script>
             <script>
-            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-             -              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-             -              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-             -              })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-             -
-             -              ga('create', 'UA-66634107-1', 'auto');
-             -              ga('send', 'pageview');
+              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+              })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+              ga('create', 'UA-66634107-1', 'auto');
+              ga('send', 'pageview');
             </script>
         </div>
     </body>
