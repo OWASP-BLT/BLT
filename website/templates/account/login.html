@@ -62,7 +62,7 @@
           <input class="form-control" type="text" id="id_login" name="login" placeholder="Username">
           <span class="help-block">{{ form.login.errors }}</span>
         </div>
-        <div class="form-group inner-addon left-addon {% if form.password1.errors %}has-error{% endif %}">
+        <div class="form-group inner-addon left-addon {% if form.password.errors %}has-error{% endif %}">
           <i class="glyphicon glyphicon-lock"></i>
           <input class="form-control login-field" type="password" id="id_password" name="password" placeholder="Password">
           <span class="help-block">{{ form.password.errors }}</span>
