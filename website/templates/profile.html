@@ -1,15 +1,11 @@
 {% extends "base.html" %}
 {% load gravatar %}
+{% load staticfiles %}
 
 {% block style %}
 .img-thumbnail {
     width: 200px;
     height: 200px;
-}
-input[type="file"] {
-    opacity: 0;
-    width: 1px;
-    height:1px;
 }
 .fa-money {
     margin-right: 5px;
@@ -34,7 +30,20 @@ input[type="file"] {
   background-color: #C9AE5D;
   color: #333;
 }
-
+.upload-btn,
+.upload-btn:hover {
+    margin-top: -40px;
+    opacity: 0.6;
+    width: 200px;
+    border: none;
+    height: 30px;
+    background: whitesmoke;
+    display: none;
+}
+.upload {
+    display: none;
+    width: 200px;
+}
 {% endblock %}
 
 {% block content %}
@@ -43,36 +52,48 @@ input[type="file"] {
         <div class="col-md-3">            
             {% if user.userprofile.avatar %}
                 <img src="{{ user.userprofile.avatar }}" class="img-responsive img-thumbnail">
-                
             {% else %}
                 <img src="{% gravatar_url user.email 200 %}" class="img-responsive img-thumbnail">
             {% endif %}
-            <h4> <kbd class="{{ user.userprofile.get_title_display }}" >{{ user.userprofile.get_title_display }}</kbd> Total bugs:<strong>{{ activities | length }} </strong> </h4>
-        <div class="block-icon">
-            
-                    <kbd class="fa fa-exclamation-triangle" style="font-size:20px;color:#ff4444;">{{ bug_type_1 | length }}</kbd> 
-                    <kbd class="fa fa-trophy" style="font-size:20px;color:#FF8800;">{{ bug_type_2 | length }}</kbd>
-                    <kbd class="fa fa-flash" style="font-size:20px;color:#00C851;">{{ bug_type_3 | length }}</kbd>
-                    <kbd class="fa fa-lock" style="font-size:20px;color:#0099CC;">{{ bug_type_4 | length}}</kbd>
-                    <kbd class="fa fa-eraser" style="font-size:20px;color:white;">{{ bug_type_5 | length}}</kbd>
-                    <kbd class="fa fa-code" style="font-size:20px;color:#ef6c00;">{{ bug_type_6 | length}}</kbd>
-        </div>
-        </div>
-        <div class="col-md-3">
-
             {% if request.user == user %}
-                    <form method="post" action="." enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <div>
-                            <input type="file" class="required" id='${multipartFilePath}' name="user_avatar" onchange="$(this).parent().find('span').html($(this).val().replace('C:\\fakepath\\', ''))"  /> 
-                            <button class="btn btn-primary" name="test_files" type="button"   onclick="$(this).parent().find('input[type=file]').click();">
-                            <i class="fa fa-upload" aria-hidden="true"></i> Upload Profile Pic</button>
-                            <span class="badge badge-important"></span>
-                        </div><br>
-                        <button type="submit" class="btn btn-primary">Upload</button>
-                    </form>
+                <button class="upload-btn">Edit Profile Pic</button>            
+                <form method="post" action="." enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="file" id='${multipartFilePath}' name="user_avatar" />
+                    <button type="submit" class="btn btn-primary upload">
+                        <span class="badge badge-avatar"></span> Upload
+                    </button>
+                </form>
             {% endif %}
+
+            <h4>
+                <kbd class="{{ user.userprofile.get_title_display }}">
+                {{ user.userprofile.get_title_display }}
+                </kbd>
+                <p>Total bugs:<strong>{{ activities | length }}</strong></p>
+            </h4>
+            <div class="block-icon">
+                <kbd class="fa fa-exclamation-triangle" style="font-size:20px;color:#ff4444;">
+                {{ bug_type_1 | length }}
+                </kbd>
+                <kbd class="fa fa-trophy" style="font-size:20px;color:#FF8800;">
+                {{ bug_type_2 | length }}
+                </kbd>
+                <kbd class="fa fa-flash" style="font-size:20px;color:#00C851;">
+                {{ bug_type_3 | length }}
+                </kbd>
+                <kbd class="fa fa-lock" style="font-size:20px;color:#0099CC;">
+                {{ bug_type_4 | length}}
+                </kbd>
+                <kbd class="fa fa-eraser" style="font-size:20px;color:white;">
+                {{ bug_type_5 | length}}
+                </kbd>
+                <kbd class="fa fa-code" style="font-size:20px;color:#ef6c00;">
+                {{ bug_type_6 | length}}
+                </kbd>
+            </div>
         </div>
+        <div class="col-md-3"></div>
         <div class="col-md-3 col-md-offset-3">
             <h1> {{ my_score|default:0 }} Points</h1>
             <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post">
@@ -112,8 +133,7 @@ input[type="file"] {
                         {% for website in websites %}
                             <div class="list-group-item">
                                 <a href="/domain/{{ website.name }}">
-                                    <img src="http://www.{{ website.name }}/favicon.ico" height="25"
-                                         onerror="this.onerror=null; this.style.display='none';">
+                                    <img src="http://www.{{ website.name }}/favicon.ico" height="25" onerror="this.onerror=null; this.style.display='none';">
                                 </a>
                                 <a href="/domain/{{ website.name }}">{{ website.name }}</a>
                                 <span class="label label-default pull-right">
@@ -126,4 +146,23 @@ input[type="file"] {
             </div>
         </div>
     </div>
+
+    <script type="text/javascript">
+        $(function() {
+            $('.img-thumbnail, .upload-btn').on('mouseenter', function() {
+                $('.upload-btn').show();
+            });
+            $('.img-thumbnail, .upload-btn').on('mouseleave', function() {
+                $('.upload-btn').hide();
+            });
+            $('.upload-btn').on('click', function() {
+                $('input[name="user_avatar"]').click();
+            });
+            $('input[name="user_avatar"]').on('change', function() {
+                var file = $(this).val().replace('C:\\fakepath\\', '');
+                $('.badge-avatar').html(file);
+                $('.upload').show();
+            });
+        });
+    </script>
 {% endblock %}
