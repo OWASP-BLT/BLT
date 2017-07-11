@@ -114,13 +114,6 @@
             <div id="page-wrapper">
                 <div class="container">
                     <div class="row">
-                        <div class="col-md-6 col-md-offset-3">
-                            {% if form.errors %}
-                                <div class="alert alert-danger">
-                                    {{form.errors}}
-                                </div>
-                            {% endif %}                            
-                        </div>
                         <div class="col-md-12">
                             <form class="navbar-form navbar-right form" action="/issue/" method="post" enctype="multipart/form-data">                            
                                 {% csrf_token %}

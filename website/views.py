@@ -165,7 +165,7 @@ class IssueBaseCreate(object):
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
     fields = ['url','description','screenshot','domain', 'label']
-    template_name = "index.html"
+    template_name = "report.html"
 
     def get_initial(self):
         initial = super(IssueCreate, self).get_initial()
@@ -223,8 +223,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             obj.github_url = response['html_url']
             obj.save()
 
-
-        redirect_url = '/'
+        redirect_url = '/report'
         # redirect users to login
         if not self.request.user.is_authenticated():
             # we store the issue id on the user session to assign it as soon as he login/register
@@ -237,7 +236,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
         # assign issue
         self.process_issue(self.request.user, obj, created, domain)
         return HttpResponseRedirect(self.request.META.get('HTTP_REFERER'))
-
 
     def get_context_data(self, **kwargs):
         context = super(IssueCreate, self).get_context_data(**kwargs)
