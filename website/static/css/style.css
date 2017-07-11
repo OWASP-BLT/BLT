@@ -43,6 +43,13 @@ body{
 	color: #dd4252;
 }
 
+.change-language{
+	height: 25px; 
+	margin-bottom: -10px; 
+	border-radius: 5px; 
+	background-color: darkgrey;
+}
+
 a:hover{
 	color: #009688;
 }

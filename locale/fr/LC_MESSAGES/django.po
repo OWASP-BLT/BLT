@@ -1,0 +1,233 @@
+# French Translations.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Sourav Badami <souravbadami@gmail.com>, 2017.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-07-11 16:18+0530\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: bugheist/settings.py:145
+msgid "English"
+msgstr "Anglais"
+
+#: bugheist/settings.py:146
+msgid "French"
+msgstr "français"
+
+#: website/templates/_subscriptions.html:51
+#: website/templates/_subscriptions.html:72
+#: website/templates/_subscriptions.html:93
+msgid "Featured on Homepage"
+msgstr "En vedette sur la page d'accueil"
+
+#: website/templates/_subscriptions.html:54
+#: website/templates/_subscriptions.html:75
+#: website/templates/_subscriptions.html:97
+msgid "Start"
+msgstr "Début"
+
+#: website/templates/_subscriptions.html:73
+#: website/templates/_subscriptions.html:94
+msgid "Featured in Newsletter"
+msgstr "Présenté dans la Newsletter"
+
+#: website/templates/_subscriptions.html:95
+msgid "Announced to Users"
+msgstr "Annoncé aux utilisateurs"
+
+#: website/templates/account/login.html:76
+msgid "Sign In"
+msgstr "se connecter"
+
+#: website/templates/account/login.html:77
+msgid "Forgot Password?"
+msgstr "Mot de passe oublié?"
+
+#: website/templates/account/logout.html:6
+msgid "Sign Out"
+msgstr "Déconnexion"
+
+#: website/templates/account/logout.html:7
+msgid "Are you sure?"
+msgstr "Êtes-vous sûr?"
+
+#: website/templates/account/logout.html:13
+msgid "Yes"
+msgstr "Oui"
+
+#: website/templates/account/logout.html:14
+msgid "Cancel"
+msgstr "Annuler"
+
+#: website/templates/account/password_change.html:22
+#: website/templates/account/password_change.html:41
+#: website/templates/account/password_reset_from_key.html:26
+#: website/templates/account/password_reset_from_key.html:52
+msgid "Change Password"
+msgstr "Changer le mot de passe"
+
+#: website/templates/account/password_reset.html:27
+msgid "Password Reset"
+msgstr "réinitialiser le mot de passe"
+
+#: website/templates/account/password_reset.html:29
+msgid "Forgotten your password? Enter your e-mail address below, and we'll send you an e-mail allowing you to reset it."
+msgstr "Mot de passe oublié? Entrez votre adresse e-mail ci-dessous, et nous vous enverrons un courrier électronique vous permettant de le réinitialiser."
+
+#: website/templates/account/password_reset.html:38
+msgid "Reset My Password"
+msgstr "Réinitialiser mon mot de passe"
+
+#: website/templates/account/password_reset_from_key.html:24
+msgid "Bad Token"
+msgstr "Mauvais jeton"
+
+#: website/templates/account/password_reset_from_key.html:55
+msgid "Your password is now changed!"
+msgstr "Votre mot de passe est maintenant modifié!"
+
+#: website/templates/account/signup.html:22
+#: website/templates/account/signup.html:65
+msgid "Sign Up"
+msgstr "S'inscrire"
+
+#: website/templates/account/signup.html:67
+#, python-format
+msgid "Already have an account? <a href=\"%(login_url)s\">Login</a>."
+msgstr "Vous avez déjà un compte? <a href=\"%(login_url)s\">S'identifier</a>."
+
+#: website/templates/index.html:13
+msgid "Find Bugs, Win Points and Prizes"
+msgstr "Trouver des insectes, gagner des points et des prix"
+
+#: website/templates/index.html:17
+msgid "Fix issues on websites, apps or hardware (+3 points)"
+msgstr "Corrigez les problèmes sur les sites Web, les applications ou le matériel (+3 points)"
+
+#: website/templates/index.html:18
+msgid "Verify other bug reports(+2 points)"
+msgstr "Vérifiez d'autres rapports de bogue (+2 points)"
+
+#: website/templates/index.html:19
+msgid "Invite friends (when they signup , get +1 point)"
+msgstr "Invitez des amis (lorsqu'ils s'inscrivent, obtenez +1 point)"
+
+#: website/templates/index.html:20
+msgid "Find a bug on a new site or app (+4 points)"
+msgstr "Trouver un bug sur un nouveau site ou une application (+4 points)"
+
+#: website/templates/index.html:33
+msgid "Number Error"
+msgstr "Erreur de numéro"
+
+#: website/templates/index.html:34
+msgid "For pages where you see a number 404, 500."
+msgstr "Pour les pages où vous voyez un numéro 404, 500."
+
+#: website/templates/index.html:48
+msgid "Functional"
+msgstr "Fonctionnel"
+
+#: website/templates/index.html:49
+msgid "Something doesn't work."
+msgstr "Quelque chose ne marche pas."
+
+#: website/templates/index.html:63
+msgid "Performance"
+msgstr "Performance"
+
+#: website/templates/index.html:64
+msgid "Anything over 5 seconds."
+msgstr "Tout au long de 5 secondes."
+
+#: website/templates/index.html:82
+msgid "Security"
+msgstr "Sécurité"
+
+#: website/templates/index.html:83
+msgid "Data leaks, exploits or anything smelly."
+msgstr "Des fuites de données, des exploits ou quelque chose de malodorant."
+
+#: website/templates/index.html:97
+msgid "Typo"
+msgstr "faute de frappe"
+
+#: website/templates/index.html:98
+msgid "Miss-spellings, miss-grammar and more."
+msgstr "Miss-spellings, miss-grammar et plus encore."
+
+#: website/templates/index.html:112
+msgid "Design"
+msgstr "Conception"
+
+#: website/templates/index.html:113
+msgid "Layout, responsiveness and improvements"
+msgstr "Disposition, réactivité et améliorations"
+
+#: website/templates/index.html:131
+msgid "Featured Websites"
+msgstr "Sites Web en vedette"
+
+#: website/templates/index.html:194
+msgid "Leaderboard"
+msgstr "Tableau de classement"
+
+msgid "Upload Screenshot"
+msgstr "Capture d'écran"
+
+msgid "Report Bug"
+msgstr "Rapportez"
+
+msgid "Describe bug issue"
+msgstr "Décrire le problème des bugs"
+
+msgid "Social"
+msgstr "Social"
+
+msgid "Bug Hunt"
+msgstr "Chasse insectes"
+
+msgid "Tour"
+msgstr "Tour"
+
+msgid "User Profile"
+msgstr "Profil de l'utilisateur"
+
+msgid "Logout"
+msgstr "Connectez - Out"
+
+msgid "Signup"
+msgstr "S'inscrire"
+
+msgid "Login"
+msgstr "S'identifier"
+
+msgid "About"
+msgstr "Sur"
+
+msgid "Stats"
+msgstr "Stats"
+
+msgid "Company Scoreboard"
+msgstr "Tableau de bord de la société"
+
+msgid "Terms of Service"
+msgstr "Conditions d'utilisation"
+
+msgid "Search"
+msgstr "Chercher"
+
+msgid "Add to chrome"
+msgstr "Ajouter à Chrome"

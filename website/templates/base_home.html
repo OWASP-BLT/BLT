@@ -3,6 +3,7 @@
 {% load socialaccount %}
 {% load user_score %}
 {% providers_media_js %}
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -56,11 +57,11 @@
                 </div>
                 <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                     <ul class="nav navbar-nav navbar-right">
-                        <li><a href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new">Add to chrome</a></li>
-                        <li><a href="/social">Social</a></li>
-                        <li><a href="/report">Report Bug</a></li>
-                        <li><a href="/start" class="sponsor-hunt">Bug Hunt</a></li>
-                        <li><a href="#" id="startTour" class="start-tour">Tour</a></li>
+                        <li><a href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new">{% trans "Add to chrome" %}</a></li>
+                        <li><a href="/social">{% trans "Social" %}</a></li>
+                        <li><a href="/report">{% trans "Report Bug" %}</a></li>
+                        <li><a href="/start" class="sponsor-hunt">{% trans "Bug Hunt" %}</a></li>
+                        <li><a href="#" id="startTour" class="start-tour">{% trans "Tour" %}</a></li>
 
                         {% if request.user.is_authenticated %}
                             <li class="dropdown user-menu">
@@ -77,30 +78,30 @@
                                 <ul class="dropdown-menu dropdown-user">
                                     <li>
                                         <a href="/accounts/profile/">
-                                            <i class="fa fa-user fa-fw"></i> User Profile
+                                            <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
                                         </a>
                                     </li>
                                     <li>
                                         <a href="/accounts/password/change/">
-                                            <i class="fa fa-gear fa-fw"></i> Change Password
+                                            <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
                                         </a>
                                     </li>
                                     <li class="divider"></li>
                                     <li>
                                         <a href="/accounts/logout/">
-                                            <i class="fa fa-sign-out fa-fw"></i> Logout
+                                            <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
                                         </a>
                                     </li>
                                 </ul>
                             </li>
                         {% else %}
-                            <li><a href="/accounts/signup">Signup</a></li>
-                            <li><a href="#login" data-toggle="modal">Login</a></li>
+                            <li><a href="/accounts/signup">{% trans "Signup" %}</a></li>
+                            <li><a href="#login" data-toggle="modal">{% trans "Login" %}</a></li>
                         {% endif %}
                     </ul>
                     <form class="navbar-form navbar-right" action="/search" method="get">
                         <div class="form-group">
-                            <input type="text" name="query" class="form-control" placeholder="Search">
+                            <input type="text" name="query" class="form-control" placeholder="{% trans "Search" %}">
                         </div>
                         <button type="submit" class="btn btn-default">
                             <i class="fa fa-search"></i>
@@ -113,13 +114,6 @@
             <div id="page-wrapper">
                 <div class="container">
                     <div class="row">
-                        <div class="col-md-6 col-md-offset-3">
-                            {% if form.errors %}
-                                <div class="alert alert-danger">
-                                    {{form.errors}}
-                                </div>
-                            {% endif %}                            
-                        </div>
                         <div class="col-md-12">
                             <form class="navbar-form navbar-right form" action="/issue/" method="post" enctype="multipart/form-data">                            
                                 {% csrf_token %}
@@ -127,7 +121,7 @@
                                     <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
                                 </div>
                                 <div class="form-group">
-                                    <textarea data-required="true" name="description" id="description" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="Describe bug issue">{{form.description.value|default:""}}</textarea>
+                                    <textarea data-required="true" name="description" id="description" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="{% trans "Describe bug issue" %}">{{form.description.value|default:""}}</textarea>
                                 </div>
                                 <select data-intro="Categorize the bug." data-step="3" name="label" class="form-control">
                                     <option value="0" selected="selected">Bug Type</option>
@@ -142,12 +136,12 @@
                                     <span>
                                         <input type="file" class="required" id='${multipartFilePath}' name="screenshot"/> 
                                         <button class="btn btn-primary" data-intro="Upload a screenshot of the concerned page." data-step="4" name="test_files" type="button">
-                                            <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot
+                                            <i class="fa fa-upload" aria-hidden="true"></i> {% trans "Upload Screenshot" %}
                                         </button>
                                         <span class="badge badge-important"></span>
                                     </span>                            
                                 </div>
-                                <button type="submit" class="btn btn-default" data-intro="Click here to report the bug to BugHeist." data-step="5">Report Bug <i class="fa fa-trophy" aria-hidden="true">+3</i></button>
+                                <button type="submit" class="btn btn-default" data-intro="Click here to report the bug to BugHeist." data-step="5">{% trans "Report Bug" %} <i class="fa fa-trophy" aria-hidden="true">+3</i></button>
                             </form>
                         </div>
                     </div>
@@ -199,14 +193,27 @@
                         </div>
                         <div class="col-sm-3">
                             <ul>
-                                <li><a href="/about" target="_new">About</a></li>
-                                <li><a href="/stats">Stats</a></li>
+                                <li><a href="/about" target="_new">{% trans "About" %}</a></li>
+                                <li><a href="/stats">{% trans "Stats" %}</a></li>
                             </ul>
                         </div>
                         <div class="col-sm-3">
                             <ul>
-                                <li><a href="/scoreboard" target="_new">Company Scoreboard</a></li>
-                                <li><a href="/terms">Terms of Service</a></li>
+                                <form action="{% url 'set_language' %}" method="post">
+                                    {% csrf_token %}
+                                    <input name="next" type="hidden" value="{{ redirect_to }}" />
+                                    <select name="language" class="change-language" onchange='if(this.value != 0) { this.form.submit(); }'>
+                                        {% get_current_language as LANGUAGE_CODE %}
+                                        {% get_available_languages as LANGUAGES %}
+                                        {% for lang in LANGUAGES %}
+                                            <option value="{{ lang.0 }}" {% if lang.0 == LANGUAGE_CODE %} selected="selected"{% endif %}>
+                                                {{ lang.1 }} ({{ lang.0 }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
+                                <li><a href="/scoreboard" target="_new">{% trans "Company Scoreboard" %}</a></li>
+                                <li><a href="/terms">{% trans "Terms of Service" %}</a></li>
                             </ul>
                         </div>
                         <div class="col-sm-3">

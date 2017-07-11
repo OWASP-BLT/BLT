@@ -1,6 +1,6 @@
 {% load staticfiles %}
 {% load gravatar %}
-
+{% load i18n %}
 <style>
 .subrow .col-md-6:nth-child(1) .panel {
     background-color:#F76B78;
@@ -68,10 +68,10 @@
                 </div>
             </div>
             <div class="panel-footer">
-                <span class="pull-left" ><i class="fa fa-balance-scale fa-1x"></i> Featured on Homepage</span>
+                <span class="pull-left" ><i class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span>
                 <span class="pull-right"></span>
                 <div class="clearfix"></div></br><center>
-                <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg" id="btn">Start</button></center>
+                <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg" id="btn">{% trans "Start" %}</button></center>
             </div>
         </div>
     </div>
@@ -89,10 +89,10 @@
                 </div>
             </div>
             <div class="panel-footer">
-                <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i> Featured on Homepage</span></br>
-                <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> Featured in Newsletter </span>
+                <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span></br>
+                <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %} </span>
                 <div class="clearfix"></div></br><center>
-                <button type="submit" onclick="window.location.href='/hunt';"  onclick="changeValue(this)" class="btn btn-primary btn-lg ">Start </button></center>
+                <button type="submit" onclick="window.location.href='/hunt';"  onclick="changeValue(this)" class="btn btn-primary btn-lg ">{% trans "Start" %} </button></center>
             </div>
         </div>
     </div>
@@ -110,11 +110,11 @@
                 </div>
             </div>
             <div class="panel-footer">
-                <span class="pull-left" ><i class="fa fa-balance-scale fa-1x"></i> Featured on Homepage</span></br>
-                <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> Featured in Newsletter </span>
-                <span class="pull-left announce"><i class="fa fa-globe"></i> Announced to Users</span>
+                <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span></br>
+                <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %} </span>
+                <span class="pull-left announce"><i class="fa fa-globe"></i> {% trans "Announced to Users" %}</span>
                 <div class="clearfix"></div></br><center>
-                <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg">Start </button></center>
+                <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg">{% trans "Start" %} </button></center>
             </div>
         </div>
     </div>
