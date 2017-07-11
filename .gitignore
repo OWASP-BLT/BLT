@@ -6,3 +6,4 @@ db.sqlite3
 .idea
 /media
 .vagrant
+*.mo
