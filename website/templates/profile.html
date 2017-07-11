@@ -44,6 +44,34 @@
     display: none;
     width: 200px;
 }
+
+.profile-bugs {
+    font-size:20px;
+}
+
+.profile-bugs.excl {
+    color:#ff4444;
+}
+
+.profile-bugs.trophy {
+    color:#FF8800;
+}
+
+.profile-bugs.flash {
+    color:#00C851;
+}
+
+.profile-bugs.lock {
+    color:#0099CC;
+}
+
+.profile-bugs.eras {
+    color:white;
+}
+
+.profile-bugs.cod {
+    color:#ef6c00;
+}
 {% endblock %}
 
 {% block content %}
@@ -73,22 +101,22 @@
                 <p>Total bugs:<strong>{{ activities | length }}</strong></p>
             </h4>
             <div class="block-icon">
-                <kbd class="fa fa-exclamation-triangle" style="font-size:20px;color:#ff4444;">
+                <kbd class="fa fa-exclamation-triangle profile-bugs excl">
                 {{ bug_type_1 | length }}
                 </kbd>
-                <kbd class="fa fa-trophy" style="font-size:20px;color:#FF8800;">
+                <kbd class="fa fa-trophy profile-bugs trophy">
                 {{ bug_type_2 | length }}
                 </kbd>
-                <kbd class="fa fa-flash" style="font-size:20px;color:#00C851;">
+                <kbd class="fa fa-flash profile-bugs flash">
                 {{ bug_type_3 | length }}
                 </kbd>
-                <kbd class="fa fa-lock" style="font-size:20px;color:#0099CC;">
+                <kbd class="fa fa-lock profile-bugs lock">
                 {{ bug_type_4 | length}}
                 </kbd>
-                <kbd class="fa fa-eraser" style="font-size:20px;color:white;">
+                <kbd class="fa fa-eraser profile-bugs eras">
                 {{ bug_type_5 | length}}
                 </kbd>
-                <kbd class="fa fa-code" style="font-size:20px;color:#ef6c00;">
+                <kbd class="fa fa-code profile-bugs cod">
                 {{ bug_type_6 | length}}
                 </kbd>
             </div>
