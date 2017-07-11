@@ -1,6 +1,6 @@
 {% load staticfiles %}
 {% load gravatar %}
-
+{% load i18n %}
 <style>
 .subrow .col-md-6:nth-child(1) .panel {
     background-color:#F76B78;
@@ -48,10 +48,10 @@
                 </div>
             </div>
             <div class="panel-footer">
-                <span class="pull-left" ><i class="fa fa-balance-scale"></i> Featured on Homepage</span>
+                <span class="pull-left" ><i class="fa fa-balance-scale"></i> {% trans "Featured on Homepage" %}</span>
                 <span class="pull-right"></span>
                 <div class="clearfix"></div></br><center>
-                <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg" id="btn">Start</button></center>
+                <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg" id="btn">{% trans "Start" %}</button></center>
             </div>
         </div>
     </div>
@@ -69,10 +69,10 @@
                 </div>
             </div>
             <div class="panel-footer">
-                <span class="pull-left"><i class="fa fa-balance-scale" style="width:20px;"></i> Featured on Homepage</span></br>
-                <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> Featured in Newsletter </span>
+                <span class="pull-left"><i class="fa fa-balance-scale" style="width:20px;"></i> {% trans "Featured on Homepage" %}</span></br>
+                <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> {% trans "Featured in Newsletter" %} </span>
                 <div class="clearfix"></div></br><center>
-                <button type="submit" onclick="window.location.href='/hunt';"  onclick="changeValue(this)" class="btn btn-primary btn-lg ">Start </button></center>
+                <button type="submit" onclick="window.location.href='/hunt';"  onclick="changeValue(this)" class="btn btn-primary btn-lg ">{% trans "Start" %} </button></center>
             </div>
         </div>
     </div>
@@ -90,11 +90,11 @@
                 </div>
             </div>
             <div class="panel-footer">
-                <span class="pull-left" ><i class="fa fa-balance-scale" style="width:20px;"></i> Featured on Homepage</span></br>
-                <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> Featured in Newsletter </span>
-                <span class="pull-left" style="font-size:20pt;"><i class="fa fa-globe"  style="width:25px;"></i> Announced to Users</span>
+                <span class="pull-left" ><i class="fa fa-balance-scale" style="width:20px;"></i> {% trans "Featured on Homepage" %}</span></br>
+                <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> {% trans "Featured in Newsletter" %} </span>
+                <span class="pull-left" style="font-size:20pt;"><i class="fa fa-globe"  style="width:25px;"></i> {% trans "Announced to Users" %}</span>
                 <div class="clearfix"></div></br><center>
-                <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg">Start </button></center>
+                <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg">{% trans "Start" %} </button></center>
             </div>
         </div>
     </div>

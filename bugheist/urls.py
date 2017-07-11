@@ -56,6 +56,7 @@ urlpatterns = patterns('',
     url(r'^social/$', TemplateView.as_view(template_name="social.html")),
     url(r'^search/$', website.views.search),
     url(r'^report/$', TemplateView.as_view(template_name="report.html")),
+    url(r'^i18n/', include('django.conf.urls.i18n')),
     
     
 
