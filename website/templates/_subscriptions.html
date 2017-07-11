@@ -30,6 +30,26 @@
     background-color:#9B0C1A;
     border-color:#9B0C1A;
 }
+
+.image-subs {
+    margin-left:10px;
+}
+
+.plan-style {
+    font-size:24pt
+}
+
+.plan-color {
+    color:white;
+}
+
+.newsletter {
+    font-size:18pt;
+}
+
+.announce {
+    font-size:20pt;
+}
 </style>
 
 
@@ -38,17 +58,17 @@
         <div class="panel">
             <div class="panel-heading">
                 <div class="row">
-                    <div class="pull-left">
-                        <img src="{% static 'img/flea.svg' %}" width="100" height="100" style="margin-left:10px;">
+                    <div class="pull-left image-subs">
+                        <img src="{% static 'img/flea.svg' %}" width="100" height="100">
                     </div>
-                    <div class="col-xs-6 text-right pull-right" style="color:white;">
+                    <div class="col-xs-6 text-right pull-right plan-color">
                         <div class="huge">Flea</div>
-                        <span style="font-size:24pt">$9</span> / month
+                        <span class="plan-style">$9</span> / month
                     </div>
                 </div>
             </div>
             <div class="panel-footer">
-                <span class="pull-left" ><i class="fa fa-balance-scale"></i> {% trans "Featured on Homepage" %}</span>
+                <span class="pull-left" ><i class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span>
                 <span class="pull-right"></span>
                 <div class="clearfix"></div></br><center>
                 <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg" id="btn">{% trans "Start" %}</button></center>
@@ -59,18 +79,18 @@
         <div class="panel">
             <div class="panel-heading">
                 <div class="row">
-                    <div class="pull-left">
-                        <img src="{% static 'img/ant.svg' %}" width="100" height="100" style="margin-left:10px;">
+                    <div class="pull-left image-subs">
+                        <img src="{% static 'img/ant.svg' %}" width="100" height="100">
                     </div>
-                    <div class="col-xs-6 text-right pull-right"  style="color:white;">
+                    <div class="col-xs-6 text-right pull-right plan-color">
                         <div class="huge">Ant</div>
-                        <span style="font-size:24pt">$99</span> / month
+                        <span class="plan-style">$99</span> / month
                     </div>
                 </div>
             </div>
             <div class="panel-footer">
-                <span class="pull-left"><i class="fa fa-balance-scale" style="width:20px;"></i> {% trans "Featured on Homepage" %}</span></br>
-                <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> {% trans "Featured in Newsletter" %} </span>
+                <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span></br>
+                <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %} </span>
                 <div class="clearfix"></div></br><center>
                 <button type="submit" onclick="window.location.href='/hunt';"  onclick="changeValue(this)" class="btn btn-primary btn-lg ">{% trans "Start" %} </button></center>
             </div>
@@ -80,19 +100,19 @@
         <div class="panel">
             <div class="panel-heading">
                 <div class="row">
-                    <div class="pull-left">
-                        <img src="{% static 'img/wasp.svg' %}" width="100" height="100" style="margin-left:10px;">
+                    <div class="pull-left image-subs">
+                        <img src="{% static 'img/wasp.svg' %}" width="100" height="100">
                     </div>
-                    <div class="col-xs-6 text-right pull-right"  style="color:white;">
+                    <div class="col-xs-6 text-right pull-right plan-color">
                         <div class="huge">Wasp</div>
-                        <span style="font-size:24pt">$499</span> / month
+                        <span class="plan-style">$499</span> / month
                     </div>
                 </div>
             </div>
             <div class="panel-footer">
-                <span class="pull-left" ><i class="fa fa-balance-scale" style="width:20px;"></i> {% trans "Featured on Homepage" %}</span></br>
-                <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> {% trans "Featured in Newsletter" %} </span>
-                <span class="pull-left" style="font-size:20pt;"><i class="fa fa-globe"  style="width:25px;"></i> {% trans "Announced to Users" %}</span>
+                <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span></br>
+                <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %} </span>
+                <span class="pull-left announce"><i class="fa fa-globe"></i> {% trans "Announced to Users" %}</span>
                 <div class="clearfix"></div></br><center>
                 <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg">{% trans "Start" %} </button></center>
             </div>
