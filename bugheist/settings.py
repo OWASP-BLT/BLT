@@ -13,6 +13,7 @@ import os
 import dj_database_url
 from django.http import Http404
 import sys
+from django.utils.translation import ugettext_lazy as _
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -59,6 +60,7 @@ INSTALLED_APPS = (
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -68,7 +70,6 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.security.SecurityMiddleware',
     'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
 )
-
 
 ROOT_URLCONF = 'bugheist.urls'
 
@@ -85,6 +86,7 @@ TEMPLATES = [
                 'django.core.context_processors.media',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.core.context_processors.i18n',
             ],
         },
     },
@@ -134,6 +136,15 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
+
+LOCALE_PATHS = (
+    os.path.join(BASE_DIR, 'locale'),
+)
+
+LANGUAGES = (
+    ('en', _('English')),
+    ('fr', _('French')),
+)
 
 MEDIA_ROOT = "media"
 MEDIA_URL = '/media/'
