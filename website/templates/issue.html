@@ -247,22 +247,25 @@
     $('body').on('click', '.del_comment', function (e){
 
     e.preventDefault();
-    $.ajax({
-        type: 'POST',
-        url: "/issue/comment/delete/",
-        data:{
-            comment_pk:$(this).attr('name'),
-            issue_pk: $('#issue_pk').val(),
-            csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+    if(confirm("Delete this comment?")==true){
+        
+        $.ajax({
+            type: 'POST',
+            url: "/issue/comment/delete/",
+            data:{
+                comment_pk:$(this).attr('name'),
+                issue_pk: $('#issue_pk').val(),
+                csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
 
-        },
-        success: function(data) {
-            $('#target_div').html(data);
-        },
-        error: function(result) {
-          // alert($('#issue_pk').val());
-        }
-    });
+            },
+            success: function(data) {
+                $('#target_div').html(data);
+            },
+            error: function(result) {
+              // alert($('#issue_pk').val());
+            }
+        });
+    }
 });
 
 </script>
