@@ -192,21 +192,22 @@ a:hover{
 	border: 1px solid #dd4252;
 	border-radius: 6px;
 }
-
 .submit_button:hover{
 	background-color: #ddd;
 	color: #009688;
 	border-color: #009688;
 
 }
-
 .free-plan-text{
 	display: inline-block;
 	
 }
-
 .user-menu{
 	float: right;
+}
+.user-menu img{
+	height: 25px;
+	width: 25px;
 }
 
 @media only screen and (max-width: 1200px){
