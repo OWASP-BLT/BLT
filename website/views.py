@@ -306,6 +306,8 @@ class UserProfileDetailView(DetailView):
         context['websites'] = Domain.objects.filter(issue__user=self.object).annotate(total=Count('issue')).order_by('-total')
         context['activities'] = user_stream(self.object, with_user_activity=True)
         context['profile_form'] = UserProfileForm()
+        context['total_open'] = Issue.objects.filter(user=self.object,status="open").count()
+        context['total_closed'] = Issue.objects.filter(user=self.object,status="closed").count()
         for i in range(1,7):
             context['bug_type_'+str(i)] = Issue.objects.filter(user=self.object,label=str(i))
         return context
@@ -344,7 +346,7 @@ class DomainDetailView(TemplateView):
         context['leaderboard'] = User.objects.filter(issue__url__contains=self.kwargs['slug']).annotate(total=Count('issue')).order_by('-total')
         context['total_issues'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).count()
         context['total_open'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(status="open").count()
-        context['total_closed'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(status="closed").count()          
+        context['total_closed'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(status="closed").count()
 
         return context
 

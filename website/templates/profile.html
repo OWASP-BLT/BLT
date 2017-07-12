@@ -87,6 +87,20 @@
 .fa-code {
     color:#ef6c00;
 }
+.status {
+    margin-top: 30px;
+}
+.points {
+    padding: 10px;
+}
+.open {
+    padding: 10px;
+    background: #00C851;
+}
+.closed {
+    padding: 10px;
+    background: #ff4444;
+}
 {% endblock %}
 
 {% block content %}
@@ -139,16 +153,26 @@
         </div>
         <div class="col-md-6"></div>
         <div class="col-md-3">
-            <h1> {{ my_score|default:0 }} Points</h1>
-            <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post">
-                <input type="hidden" name="cmd" value="_xclick">
-                <input type="hidden" name="business" value="{{ project.paypal|default:"coderbounty@gmail.com" }}">
-                <input type="hidden" name="item_name" value="tip for {{ user.username }} on bugheist.com">
-                <input type="hidden" name="currency_code" value="USD">
-                <button type="submit" class="btn btn-danger btn-small">
-                    <i class="fa fa-money fa-lg"></i> Send a tip
-                </button>
-            </form>
+            <div class="status">
+                <kbd class="points"> {{ my_score|default:0 }} Points</kbd>
+            </div>
+            <div class="status">
+                <kbd class="open">Open Issues: {{total_open}}</kbd>
+            </div>
+            <div class="status">
+                <kbd class="closed">Closed Issues: {{total_closed}}</kbd>
+            </div>
+            <div class="status">
+                <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post">
+                    <input type="hidden" name="cmd" value="_xclick">
+                    <input type="hidden" name="business" value="{{ project.paypal|default:"coderbounty@gmail.com" }}">
+                    <input type="hidden" name="item_name" value="tip for {{ user.username }} on bugheist.com">
+                    <input type="hidden" name="currency_code" value="USD">
+                    <button type="submit" class="btn btn-danger btn-small">
+                        <i class="fa fa-money fa-lg"></i> Send a tip
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
     <div class="row">
