@@ -18,7 +18,6 @@
                 <li class="text-slider-list"><h2 class="text-slider-line animated fadeInUp">{% trans "Verify other bug reports(+2 points)" %}</h2></li>
                 <li class="text-slider-list"><h2 class="text-slider-line animated fadeInUp">{% trans "Invite friends (when they signup , get +1 point)" %}</h2></li>
                 <li class="text-slider-list"><h2 class="text-slider-line animated fadeInUp">{% trans "Find a bug on a new site or app (+4 points)" %}</h2></li>
-                <!-- <li class="text-slider-list"><h2 class="text-slider-line animated fadeInUp">Report duplicate bug (-4 points)</h2></li> -->
             </ul>
         </div>
         <br>
@@ -33,13 +32,7 @@
                       <div class="card-block">
                         <h4 class="card-title">{% trans "Number Error" %}</h4>
                         <p class="card-text">{% trans "For pages where you see a number 404, 500." %}</p>
-                      </div><!--
-                      <ul class="list-group list-group-flush">
-                        <li class="list-group-item"><a>Example(s)</a></li>
-                        <li class="list-group-item"><a>Report this</a></li>
-                      
-                      </ul>
-                      -->
+                      </div>
                     </div>
                 </div>
                 
@@ -49,13 +42,7 @@
                       <div class="card-block">
                         <h4 class="card-title">{% trans "Functional" %}</h4>
                         <p class="card-text">{% trans "Something doesn't work." %}</p>
-                      </div><!--
-                      <ul class="list-group list-group-flush">
-                        <li class="list-group-item"><a>Example(s)</a></li>
-                        <li class="list-group-item"><a>Report this</a></li>
-                      
-                      </ul>
-                      -->
+                      </div>
                     </div>
                 </div>
                 <div class="col-sm-4">    
@@ -64,15 +51,9 @@
                       <div class="card-block">
                         <h4 class="card-title">{% trans "Performance" %}</h4>
                         <p class="card-text">{% trans "Anything over 5 seconds." %}</p>
-                      </div><!--
-                      <ul class="list-group list-group-flush">
-                        <li class="list-group-item"><a>Example(s)</a></li>
-                        <li class="list-group-item"><a>Report this</a></li>
-                      
-                      </ul>
-                      -->
+                      </div>
                     </div>
-                </div>        
+                </div>
             </div>
             <br>
             <br>
@@ -83,13 +64,7 @@
                       <div class="card-block">
                         <h4 class="card-title">{% trans "Security" %}</h4>
                         <p class="card-text">{% trans "Data leaks, exploits or anything smelly." %}</p>
-                      </div><!--
-                      <ul class="list-group list-group-flush">
-                        <li class="list-group-item"><a>Example(s)</a></li>
-                        <li class="list-group-item"><a>Report this</a></li>
-                      
-                      </ul>
-                      -->
+                      </div>
                     </div>
                 </div>
                 <div class="col-sm-4">    
@@ -98,13 +73,7 @@
                       <div class="card-block">
                         <h4 class="card-title">{% trans "Typo" %}</h4>
                         <p class="card-text">{% trans "Miss-spellings, miss-grammar and more." %}</p>
-                      </div><!--
-                      <ul class="list-group list-group-flush">
-                        <li class="list-group-item"><a>Example(s)</a></li>
-                        <li class="list-group-item"><a>Report this</a></li>
-                      
-                      </ul>
-                      -->
+                      </div>
                     </div>
                 </div>
                 <div class="col-sm-4">    
@@ -113,13 +82,7 @@
                       <div class="card-block">
                         <h4 class="card-title">{% trans "Design" %}</h4>
                         <p class="card-text">{% trans "Layout, responsiveness and improvements" %}</p>
-                      </div><!--
-                      <ul class="list-group list-group-flush">
-                        <li class="list-group-item"><a>Example(s)</a></li>
-                        <li class="list-group-item"><a>Report this</a></li>
-                      
-                      </ul>
-                      -->
+                      </div>
                     </div>
                 </div>        
             </div>  
@@ -244,13 +207,10 @@
         </div>
         <a href="/all_activity" class="btn btn-default btn-block submit_button">View All Activity</a>
     </div>
-<div class="row">
-            <div class="col-lg-12">
-                
-                <h1 class="page-sub-header">Subscriptions:</h1>
-            </div>
+    <div class="row">
+        <div class="col-lg-12">    
+            <h1 class="page-sub-header">Subscriptions:</h1>
         </div>
-  {% include '_subscriptions.html' %}
-
-
+    </div>
+    {% include '_subscriptions.html' %}
 {% endblock %}
