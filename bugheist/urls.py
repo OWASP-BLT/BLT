@@ -5,7 +5,7 @@ from django.views.generic import TemplateView
 from website.views import (UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView, UpdateIssue,
                            InboundParseWebhookView, LeaderboardView, IssueView, IssueEditView, AllIssuesView,
                            HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend,
-                           ScoreboardView)
+                           ScoreboardView, domain_check)
 from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView
 from django.conf.urls.static import static
@@ -57,5 +57,6 @@ urlpatterns = [
     url(r'^search/$', website.views.search),
     url(r'^report/$', TemplateView.as_view(template_name="report.html")),
     url(r'^i18n/', include('django.conf.urls.i18n')),
+    url(r'^domain_check/$', domain_check),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -46,6 +46,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from allauth.account.models import EmailAddress
+from django.views.decorators.csrf import csrf_exempt
 
 registry.register(User)
 registry.register(Issue)
@@ -84,6 +85,36 @@ def find_key(request, token):
             n = k.replace("ACME_TOKEN_", "")
             return HttpResponse(os.environ.get("ACME_KEY_%s" % n))
     raise Http404("Token or key does not exist")
+
+@csrf_exempt
+def domain_check(request):
+    if request.method =="POST":
+        domain_url = request.POST.get('dom_url')
+
+        #the steps below parse the url to get its domain name in the way we store it in db
+        str1 = "www."
+        if "www." in domain_url:
+            k = domain_url.index(str1)
+            k=k+4
+            t=k
+            while (domain_url[k]!="/"):
+                k=k+1
+        elif "http://" in domain_url:
+            k=7
+            t=k
+            while (domain_url[k]!="/"):
+                k=k+1
+        elif "https://" in domain_url:
+            k=8
+            t=k
+            while (domain_url[k]!="/"):
+                k=k+1
+        url_parsed = domain_url[t:k]        
+        if Domain.objects.filter(name=url_parsed).exists():
+            a =  url_parsed
+            return HttpResponse(a)   
+        else:
+            return HttpResponse('There are no bugs on this domain')
 
 
 class IssueBaseCreate(object):

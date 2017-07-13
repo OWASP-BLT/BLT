@@ -23,8 +23,11 @@
                     {% else %}
                         <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
                     {% endif %}
-                    <span class="help-block">{{ form.url.errors }}</span>
+                    
                 </div>
+                <span id="tt" style="border: 1px solid black; padding: 5px;">Click Here for Duplicates</span>
+                <br>
+                <span class="help-block">{{ form.description.errors }}</span>
                 <div class="form-group{% if form.description.errors %} has-error{% endif %}">
                     <textarea data-required="true" name="description" id="description" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="Describe bug issue">{{form.description.value|default:""}}</textarea>
                     <span class="help-block">{{ form.description.errors }}</span>
@@ -71,4 +74,37 @@
             });
         });
     </script>
+
+    <script type="text/javascript">
+        $("#tt").click(function(){
+                // alert('Clicked');
+            var sp = this;
+            var abc = $("input[name=url").val();
+            console.log(abc);
+            console.log(5+6);
+            $.ajax({
+                type : "POST",
+                data : { dom_url: $("input[name=url").val() },
+                url : "/domain_check/",
+                success: function(response){
+                    console.log(response);
+                    if (response=="There are no bugs on this domain") {
+                        sp.replaceWith("Sweet! We haven't got any bug from this domain till now"); 
+                    }
+                    var url = "www.bugheist.com/domain/" + response;
+                    console.log(url);
+                    sp.replaceWith("Bugs already exist on this domain, ensure you are submitting a duplicate by going here: " + url);
+                 //       $("#ll").attr("href", url);
+                 //       $("#ll").attr("target", "blank");
+                 //       $("#ll").text(url);
+                    },
+                error: function(response){
+                    console.log(response);
+                    $(this).replaceWith('<div>There an error</div>')
+                    // $( this ).replaceWith('<div></div>');
+                    },
+                });
+        });
+    </script>
+
 {% endblock %}
