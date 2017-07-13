@@ -5,6 +5,13 @@
 {% load humanize %}
 {% providers_media_js %}
 
+{% block style %}
+    #tt {
+        border: 1px solid black;
+        padding: 5px;
+    }
+{% endblock %}
+
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <script src="{% static 'js/activity.js' %}"></script>    
@@ -22,10 +29,9 @@
                         <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
                     {% else %}
                         <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
-                    {% endif %}
-                    
+                    {% endif %}     
                 </div>
-                <span id="tt" style="border: 1px solid black; padding: 5px;">Click Here for Duplicates</span>
+                <span id="tt">Click Here for Duplicates</span>
                 <br>
                 <span class="help-block">{{ form.description.errors }}</span>
                 <div class="form-group{% if form.description.errors %} has-error{% endif %}">
@@ -93,7 +99,7 @@
                     }
                     var url = "www.bugheist.com/domain/" + response;
                     console.log(url);
-                    sp.replaceWith("Bugs already exist on this domain, ensure you are submitting a duplicate by going here: " + url);
+                    sp.replaceWith("Bugs already exist on this domain, ensure you are not submitting a duplicate bug by going here: " + url);
                  //       $("#ll").attr("href", url);
                  //       $("#ll").attr("target", "blank");
                  //       $("#ll").text(url);
