@@ -144,6 +144,7 @@ LOCALE_PATHS = (
 LANGUAGES = (
     ('en', _('English')),
     ('fr', _('French')),
+    ('zh-cn', _('Chinese')),
 )
 
 MEDIA_ROOT = "media"
