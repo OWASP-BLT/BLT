@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.generic.edit import CreateView, FormView
 from django.contrib.auth import get_user_model
-from django.shortcuts import render, redirect, render_to_response, RequestContext, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.http import Http404
@@ -73,7 +73,7 @@ def index(request, template="index.html"):
         'open_issue_owasp': open_issue_owasp,
         'closed_issue_owasp': closed_issue_owasp,
     }
-    return render_to_response(template, context, context_instance=RequestContext(request))
+    return render(request, template, context)
 
 
 def find_key(request, token):
@@ -277,7 +277,7 @@ class InviteCreate(TemplateView):
             'domain': domain,
             'email': email,
         }
-        return render_to_response("invite.html", context, context_instance=RequestContext(request))
+        return render(request, "invite.html", context)
 
 
 def profile(request):
@@ -417,7 +417,7 @@ def search(request, template="search.html"):
     query = request.GET.get('query')
     stype = request.GET.get('type')
     if query is None:
-        return render_to_response(template, context_instance=RequestContext(request))
+        return render(request, template)
 
     if stype == "issue" or stype is None:
         context = {
@@ -437,7 +437,7 @@ def search(request, template="search.html"):
             'type' : stype,
             'users' :  User.objects.filter(Q(username__icontains=query))
         }
-    return render_to_response(template, context, context_instance=RequestContext(request))
+    return render(request, template, context)
 
 class HuntCreate(CreateView):
     model = Hunt
