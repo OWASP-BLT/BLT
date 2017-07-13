@@ -15,7 +15,6 @@ from django.http import Http404
 import sys
 from django.utils.translation import ugettext_lazy as _
 
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -99,7 +98,6 @@ AUTHENTICATION_BACKENDS = (
 
 WSGI_APPLICATION = 'bugheist.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
 
@@ -156,7 +154,7 @@ DATABASES['default'].update(db_from_env)
 EMAIL_HOST = 'localhost'
 EMAIL_PORT = 1025
 # python -m smtpd -n -c DebuggingServer localhost:1025
-#if DEBUG:
+# if DEBUG:
 #    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
@@ -176,10 +174,10 @@ if 'DATABASE_URL' in os.environ:
     DEFAULT_FILE_STORAGE = 'storages.backends.gs.GSBotoStorage'
     GS_FILE_OVERWRITE = False
     GS_QUERYSTRING_AUTH = False
-    MEDIA_URL="https://bhfiles.storage.googleapis.com/"
+    MEDIA_URL = "https://bhfiles.storage.googleapis.com/"
 
     ROLLBAR = {
-        'access_token': os.environ.get('ROLLBAR_ACCESS_TOKEN', 'blank'), 
+        'access_token': os.environ.get('ROLLBAR_ACCESS_TOKEN', 'blank'),
         'environment': 'development' if DEBUG else 'production',
         'root': BASE_DIR,
         'exception_level_filters': [
@@ -187,6 +185,7 @@ if 'DATABASE_URL' in os.environ:
         ]
     }
     import rollbar
+
     rollbar.init(**ROLLBAR)
 
 # local dev needs to set SMTP backend or fail at startup
@@ -228,16 +227,16 @@ LOGIN_REDIRECT_URL = "/"
 LOGGING = {
     'version': 1,
     'handlers': {
-        'console':{
-            'level':'DEBUG',
-            'class':'logging.StreamHandler',
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
         },
     },
     'loggers': {
         'django.request': {
-            'handlers':['console'],
+            'handlers': ['console'],
             'propagate': True,
-            'level':'DEBUG',
+            'level': 'DEBUG',
         },
         'testlogger': {
             'handlers': ['console'],

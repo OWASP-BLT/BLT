@@ -1,4 +1,4 @@
-window.twttr = (function(d, s, id) {
+window.twttr = (function (d, s, id) {
 
     var js, fjs = d.getElementsByTagName(s)[0], t = window.twttr || {};
     if (d.getElementById(id)) return t;
@@ -8,27 +8,28 @@ window.twttr = (function(d, s, id) {
     fjs.parentNode.insertBefore(js, fjs);
     t._e = [];
 
-    t.ready = function(f) {
+    t.ready = function (f) {
         t._e.push(f);
     };
 
     return t;
 
-} (document, "script", "twitter-wjs"));
+}(document, "script", "twitter-wjs"));
 
-(function(d, s, id) {
+(function (d, s, id) {
 
     var js, fjs = d.getElementsByTagName(s)[0];
     if (d.getElementById(id)) return;
-    js = d.createElement(s); js.id = id;
+    js = d.createElement(s);
+    js.id = id;
     js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.7&appId=236647900066394";
     fjs.parentNode.insertBefore(js, fjs);
 
 }(document, 'script', 'facebook-jssdk'));
 
-$(function() {
+$(function () {
     new Clipboard('.btn');
-    $('.copy-btn').on('click', function(){
+    $('.copy-btn').on('click', function () {
         $.notify('Copied!', "success");
     });
 });
