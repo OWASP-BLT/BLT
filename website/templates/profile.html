@@ -185,11 +185,15 @@
                     {{ user.username }}'s activity
                 </div>
                 <div class="panel-body">
-                    <div class="list-group">
-                        {% for activity in activities %}
-                            {% include '_activity.html' %}
-                        {% endfor %}
-                    </div>
+                    {% if activities %}
+                        <div class="list-group">
+                            {% for activity in activities %}
+                                {% include '_activity.html' %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-danger text-center">No Activity</div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -200,6 +204,7 @@
                     {{ user.username }}'s top bug findings
                 </div>
                 <div class="panel-body">
+                {% if websites %}
                     <div class="list-group">
                         {% for website in websites %}
                             <div class="list-group-item">
@@ -213,6 +218,9 @@
                             </div>
                         {% endfor %}
                     </div>
+                {% else %}
+                    <div class="text-center">Nothing Found</div>
+                {% endif %}
                 </div>
             </div>
         </div>
