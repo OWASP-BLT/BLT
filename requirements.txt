@@ -5,8 +5,8 @@ bs4==0.0.1
 colorthief==0.2.1
 diff-match-patch==20121119
 dj-database-url==0.4.0
-Django==1.9.2
-django-activity-stream==0.6.3
+Django==1.10.*
+django-activity-stream>=0.6.3
 django-allauth==0.32.0
 django-cors-headers==1.1.0
 django-email-obfuscator==0.1.4
