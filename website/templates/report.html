@@ -10,6 +10,14 @@
         border: 1px solid black;
         padding: 5px;
     }
+    #tt a {
+    text-decoration:none;
+    color: black;
+    }
+
+    #tt a:hover {
+    text-decoration: underline
+    } 
 {% endblock %}
 
 {% block content %}
@@ -31,7 +39,7 @@
                         <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
                     {% endif %}     
                 </div>
-                <span id="tt">Click Here for Duplicates</span>
+                <span id="tt"><a>Click Here for Duplicates</a></span>
                 <br>
                 <span class="help-block">{{ form.description.errors }}</span>
                 <div class="form-group{% if form.description.errors %} has-error{% endif %}">
