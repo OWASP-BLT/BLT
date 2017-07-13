@@ -4,7 +4,10 @@ from django.shortcuts import HttpResponseRedirect, HttpResponse
 from .models import Comment
 from website.models import Issue,UserProfile
 from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.models import User
+
 import os
+import json
 
 @login_required(login_url='/accounts/login/')
 def add_comment(request):
@@ -33,6 +36,27 @@ def delete_comment(request):
         comment.delete()
     return render(request,'comments.html',{'all_comment':all_comment,
                                             'user':request.user},) 
+
+@login_required(login_url='/accounts/login')
+def autocomplete(request):
+    q_string = request.GET.get('search','')
+    if len(q_string)==0:
+        return HttpResponse(request.GET['callback'] + '(' + json.dumps([]) + ');',
+                 content_type='application/json')
+    q_list = q_string.split(' ')
+    print q_list 
+    q_s = q_list[len(q_list)-1]
+    if len(q_s)==0 or  q_s[0]!="@":
+        return HttpResponse(request.GET['callback'] + '(' + json.dumps([]) + ');',
+                 content_type='application/json')
+
+    q_s = q_s[1:]
+    search_qs = User.objects.filter(username__startswith=q_s)
+    results = []
+    for r in search_qs:
+        results.append(r.username)
+    resp = request.GET['callback'] + '(' + json.dumps(results) + ');'
+    return HttpResponse(resp, content_type='application/json')
 
 
 

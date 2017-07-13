@@ -486,7 +486,6 @@ class IssueView(DetailView):
         context['users_score'] = Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
         context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context['all_comment'] = self.object.comments.all
-        context['all_users'] = User.objects.all()
         return context
 
 

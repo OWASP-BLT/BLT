@@ -51,11 +51,13 @@ urlpatterns = [
     url(r'^sendgrid_webhook/$', csrf_exempt(InboundParseWebhookView.as_view()), name='inbound_event_webhook_callback'),
     url(r'^issue/comment/add/$',comments.views.add_comment, name='add_comment'),
     url(r'^issue/comment/delete/$',comments.views.delete_comment, name='delete_comment'),
+    url(r'^comment/autocomplete/$',comments.views.autocomplete, name='autocomplete'),
     url(r'^issue/comment/(?P<pk>\d+)/edit/$',comments.views.EditCommentPage, name='edit_comment'),
     url(r'^issue/comment/(?P<pk>\d+)/update/$',comments.views.EditComment, name='update_comment'),
     url(r'^social/$', TemplateView.as_view(template_name="social.html")),
     url(r'^search/$', website.views.search),
     url(r'^report/$', TemplateView.as_view(template_name="report.html")),
     url(r'^i18n/', include('django.conf.urls.i18n')),
+    
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
