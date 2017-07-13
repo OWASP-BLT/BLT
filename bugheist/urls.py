@@ -1,4 +1,4 @@
-from django.conf.urls import include, url, patterns
+from django.conf.urls import include, url
 from django.conf import settings
 from django.contrib import admin
 from django.views.generic import TemplateView
@@ -20,7 +20,7 @@ admin.autodiscover()
 import website.views
 import comments.views
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^$', website.views.index, name='index'),
     url(r'^' + settings.ADMIN_URL + '/', include(admin.site.urls)),
     url(r'^issue/(?P<slug>\w+)/$', IssueView.as_view(), name="issue_view"),
@@ -58,4 +58,4 @@ urlpatterns = patterns('',
     url(r'^report/$', TemplateView.as_view(template_name="report.html")),
     url(r'^i18n/', include('django.conf.urls.i18n')),
 
-) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
