@@ -9,7 +9,6 @@ import website.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('website', '0024_userprofile'),
     ]
@@ -24,7 +23,8 @@ class Migration(migrations.Migration):
                 ('text', models.TextField()),
                 ('created_date', models.DateTimeField(default=django.utils.timezone.now)),
                 ('approved_comment', models.BooleanField(default=False)),
-                ('post', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='comments', to='website.Issue')),
+                ('post', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='comments',
+                                           to='website.Issue')),
             ],
         ),
         migrations.AlterField(

@@ -7,7 +7,6 @@ import website.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('website', '0013_auto_20161113_1352'),
     ]

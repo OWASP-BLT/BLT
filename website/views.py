@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.generic.edit import CreateView, FormView
 from django.contrib.auth import get_user_model
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404, render_to_response, RequestContext
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.http import Http404
@@ -52,6 +52,7 @@ registry.register(User)
 registry.register(Issue)
 registry.register(Domain)
 
+
 def index(request, template="index.html"):
     try:
         domains = random.sample(Domain.objects.all(), 3)
@@ -69,18 +70,19 @@ def index(request, template="index.html"):
         'activities': Action.objects.all()[0:10],
         'domains': domains,
         'hunts': Hunt.objects.exclude(txn_id__isnull=True)[:4],
-        'leaderboard':  User.objects.filter(points__created__month=datetime.now().month).annotate(total_score=Sum('points__score')).order_by('-total_score')[:10],
+        'leaderboard': User.objects.filter(points__created__month=datetime.now().month).annotate(
+            total_score=Sum('points__score')).order_by('-total_score')[:10],
         'not_verified': show_message,
         'open_issue_owasp': open_issue_owasp,
         'closed_issue_owasp': closed_issue_owasp,
     }
-    return render(request, template, context)
+    return render_to_response(template, context, context_instance=RequestContext(request))
 
 
 def find_key(request, token):
     if token == os.environ.get("ACME_TOKEN"):
         return HttpResponse(os.environ.get("ACME_KEY"))
-    for k, v in os.environ.items():  #  os.environ.iteritems() in Python 2
+    for k, v in os.environ.items():  # os.environ.iteritems() in Python 2
         if v == token and k.startswith("ACME_TOKEN_"):
             n = k.replace("ACME_TOKEN_", "")
             return HttpResponse(os.environ.get("ACME_KEY_%s" % n))
@@ -118,40 +120,40 @@ def domain_check(request):
 
 
 class IssueBaseCreate(object):
-
     def form_valid(self, form):
         score = 3
         obj = form.save(commit=False)
         obj.user = self.request.user
-        domain, created = Domain.objects.get_or_create(name=obj.domain_name.replace("www.", ""), defaults={'url':"http://"+obj.domain_name.replace("www.", "")})
-        obj.domain=domain
+        domain, created = Domain.objects.get_or_create(name=obj.domain_name.replace("www.", ""), defaults={
+            'url': "http://" + obj.domain_name.replace("www.", "")})
+        obj.domain = domain
         if self.request.POST.get('screenshot-hash'):
-            reopen = default_storage.open('uploads\/'+ self.request.POST.get('screenshot-hash') +'.png', 'rb')
+            reopen = default_storage.open('uploads\/' + self.request.POST.get('screenshot-hash') + '.png', 'rb')
             django_file = File(reopen)
-            obj.screenshot.save(self.request.POST.get('screenshot-hash') +'.png', django_file, save=True)
+            obj.screenshot.save(self.request.POST.get('screenshot-hash') + '.png', django_file, save=True)
         obj.user_agent = self.request.META.get('HTTP_USER_AGENT')
         obj.save()
-        p = Points.objects.create(user=self.request.user,issue=obj,score=score)
+        p = Points.objects.create(user=self.request.user, issue=obj, score=score)
         action.send(self.request.user, verb='found a bug on website', target=obj)
 
     def process_issue(self, user, obj, created, domain, score=3):
         p = Points.objects.create(user=user, issue=obj, score=score)
         action.send(user, verb='found a bug on website', target=obj)
-        messages.success(self.request, 'Bug added! +'+ str(score))
+        messages.success(self.request, 'Bug added! +' + str(score))
 
         if created:
             try:
                 email_to = get_email_from_domain(domain)
             except:
-                email_to = "support@"+domain.name
-                
+                email_to = "support@" + domain.name
+
             domain.email = email_to
             domain.save()
 
             name = email_to.split("@")[0]
 
-            msg_plain = render_to_string('email/domain_added.txt', {'domain': domain.name,'name':name})
-            msg_html = render_to_string('email/domain_added.txt', {'domain': domain.name,'name':name})
+            msg_plain = render_to_string('email/domain_added.txt', {'domain': domain.name, 'name': name})
+            msg_html = render_to_string('email/domain_added.txt', {'domain': domain.name, 'name': name})
 
             send_mail(
                 domain.name + ' added to Bugheist',
@@ -165,23 +167,23 @@ class IssueBaseCreate(object):
             try:
                 name = email_to.split("@")[0]
             except:
-                email_to = "support@"+domain.name
+                email_to = "support@" + domain.name
                 name = "support"
                 domain.email = email_to
                 domain.save()
 
             msg_plain = render_to_string('email/bug_added.txt', {
                 'domain': domain.name,
-                'name':name,
-                'username':self.request.user,
-                'id':obj.id,
-                })
+                'name': name,
+                'username': self.request.user,
+                'id': obj.id,
+            })
             msg_html = render_to_string('email/bug_added.txt', {
                 'domain': domain.name,
-                'name':name,
-                'username':self.request.user,
-                'id':obj.id,
-                })
+                'name': name,
+                'username': self.request.user,
+                'id': obj.id,
+            })
             send_mail(
                 'Bug found on ' + domain.name,
                 msg_plain,
@@ -195,38 +197,39 @@ class IssueBaseCreate(object):
 
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
-    fields = ['url','description','screenshot','domain', 'label']
+    fields = ['url', 'description', 'screenshot', 'domain', 'label']
     template_name = "report.html"
 
     def get_initial(self):
         initial = super(IssueCreate, self).get_initial()
         if self.request.POST.get('screenshot-hash'):
-            initial['screenshot'] = 'uploads\/'+ self.request.POST.get('screenshot-hash') +'.png'
+            initial['screenshot'] = 'uploads\/' + self.request.POST.get('screenshot-hash') + '.png'
         return initial
 
     def form_valid(self, form):
         obj = form.save(commit=False)
         if self.request.user.is_authenticated():
             obj.user = self.request.user
-        domain, created = Domain.objects.get_or_create(name=obj.domain_name.replace("www.", ""), defaults={'url':"http://"+obj.domain_name.replace("www.", "")})
-        obj.domain=domain
+        domain, created = Domain.objects.get_or_create(name=obj.domain_name.replace("www.", ""), defaults={
+            'url': "http://" + obj.domain_name.replace("www.", "")})
+        obj.domain = domain
         if created and self.request.user.is_authenticated():
-            p = Points.objects.create(user=self.request.user,domain=domain,score=1)
+            p = Points.objects.create(user=self.request.user, domain=domain, score=1)
             messages.success(self.request, 'Domain added! + 1')
 
         if self.request.POST.get('screenshot-hash'):
-            reopen = default_storage.open('uploads\/'+ self.request.POST.get('screenshot-hash') +'.png', 'rb')
+            reopen = default_storage.open('uploads\/' + self.request.POST.get('screenshot-hash') + '.png', 'rb')
             django_file = File(reopen)
-            obj.screenshot.save(self.request.POST.get('screenshot-hash') +'.png', django_file, save=True)
+            obj.screenshot.save(self.request.POST.get('screenshot-hash') + '.png', django_file, save=True)
         obj.user_agent = self.request.META.get('HTTP_USER_AGENT')
         obj.save()
 
-        if self.request.user.is_authenticated():       
+        if self.request.user.is_authenticated():
             total_issues = Issue.objects.filter(user=self.request.user).count()
             user_prof = UserProfile.objects.get(user=self.request.user)
-            if total_issues <=10:
+            if total_issues <= 10:
                 user_prof.title = 1
-            elif total_issues <=50:
+            elif total_issues <= 50:
                 user_prof.title = 2
             elif total_issues <= 200:
                 user_prof.title = 3
@@ -240,16 +243,16 @@ class IssueCreate(IssueBaseCreate, CreateView):
             from requests.auth import HTTPBasicAuth
             import json
             import requests
-            github_url= domain.github.replace("https","git").replace("http","git")+".git"
+            github_url = domain.github.replace("https", "git").replace("http", "git") + ".git"
             p = parse(github_url)
 
             url = 'https://api.github.com/repos/%s/%s/issues' % (p.owner, p.repo)
 
             auth = HTTPBasicAuth(os.environ.get("GITHUB_USERNAME"), os.environ.get("GITHUB_PASSWORD"))
             issue = {'title': obj.description,
-                     'body': "![0](" + obj.screenshot.url + ") http://bugheist.com/issue/"+str(obj.id),
-                     'labels': ['bug','bugheist']}
-            r = requests.post(url, json.dumps(issue),auth=auth)
+                     'body': "![0](" + obj.screenshot.url + ") http://bugheist.com/issue/" + str(obj.id),
+                     'labels': ['bug', 'bugheist']}
+            r = requests.post(url, json.dumps(issue), auth=auth)
             response = r.json()
             obj.github_url = response['html_url']
             obj.save()
@@ -272,8 +275,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
         context = super(IssueCreate, self).get_context_data(**kwargs)
         context['activities'] = Action.objects.all()[0:10]
         context['hunts'] = Hunt.objects.exclude(plan="Free")[:4]
-        context['leaderboard'] = User.objects.filter(points__created__month=datetime.now().month).annotate(total_score=Sum('points__score')).order_by('-total_score')[:10],
+        context['leaderboard'] = User.objects.filter(points__created__month=datetime.now().month).annotate(
+            total_score=Sum('points__score')).order_by('-total_score')[:10],
         return context
+
 
 class UploadCreate(View):
     template_name = "index.html"
@@ -284,8 +289,8 @@ class UploadCreate(View):
 
     def post(self, request, *args, **kwargs):
         data = request.FILES.get('image')
-        result = default_storage.save("uploads\/" + self.kwargs['hash'] +'.png', ContentFile(data.read()))
-        return JsonResponse({'status':result})
+        result = default_storage.save("uploads\/" + self.kwargs['hash'] + '.png', ContentFile(data.read()))
+        return JsonResponse({'status': result})
 
 
 class InviteCreate(TemplateView):
@@ -308,7 +313,7 @@ class InviteCreate(TemplateView):
             'domain': domain,
             'email': email,
         }
-        return render(request, "invite.html", context)
+        return render_to_response("invite.html", context, context_instance=RequestContext(request))
 
 
 def profile(request):
@@ -334,13 +339,14 @@ class UserProfileDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
         context['my_score'] = Points.objects.filter(user=self.object).aggregate(total_score=Sum('score')).values()[0]
-        context['websites'] = Domain.objects.filter(issue__user=self.object).annotate(total=Count('issue')).order_by('-total')
+        context['websites'] = Domain.objects.filter(issue__user=self.object).annotate(total=Count('issue')).order_by(
+            '-total')
         context['activities'] = user_stream(self.object, with_user_activity=True)
         context['profile_form'] = UserProfileForm()
-        context['total_open'] = Issue.objects.filter(user=self.object,status="open").count()
-        context['total_closed'] = Issue.objects.filter(user=self.object,status="closed").count()
-        for i in range(1,7):
-            context['bug_type_'+str(i)] = Issue.objects.filter(user=self.object,label=str(i))
+        context['total_open'] = Issue.objects.filter(user=self.object, status="open").count()
+        context['total_closed'] = Issue.objects.filter(user=self.object, status="closed").count()
+        for i in range(1, 7):
+            context['bug_type_' + str(i)] = Issue.objects.filter(user=self.object, label=str(i))
         return context
 
     @method_decorator(login_required)
@@ -364,7 +370,7 @@ class DomainDetailView(TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(DomainDetailView, self).get_context_data(*args, **kwargs)
-        parsed_url = urlparse("http://"+self.kwargs['slug'])
+        parsed_url = urlparse("http://" + self.kwargs['slug'])
         context['name'] = parsed_url.netloc.split(".")[-2:][0].title()
 
         try:
@@ -374,10 +380,13 @@ class DomainDetailView(TemplateView):
             context['domain'] = self.kwargs['slug']
             context['issue_choice'] = "all"
         context['issues'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug'])
-        context['leaderboard'] = User.objects.filter(issue__url__contains=self.kwargs['slug']).annotate(total=Count('issue')).order_by('-total')
+        context['leaderboard'] = User.objects.filter(issue__url__contains=self.kwargs['slug']).annotate(
+            total=Count('issue')).order_by('-total')
         context['total_issues'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).count()
-        context['total_open'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(status="open").count()
-        context['total_closed'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(status="closed").count()
+        context['total_open'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(
+            status="open").count()
+        context['total_closed'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(
+            status="closed").count()
 
         return context
 
@@ -387,10 +396,11 @@ class StatsDetailView(TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(StatsDetailView, self).get_context_data(*args, **kwargs)
-        response = requests.get("https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en")
+        response = requests.get(
+            "https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en")
         soup = BeautifulSoup(response.text)
 
-        for item in  soup.findAll("span", { "class" : "e-f-ih" }):
+        for item in soup.findAll("span", {"class": "e-f-ih"}):
             stats = item.attrs['title']
         context['extension_users'] = stats.replace(" users", "")
         context['bug_count'] = Issue.objects.all().count()
@@ -407,10 +417,10 @@ class AllIssuesView(ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(AllIssuesView, self).get_context_data(*args, **kwargs)
-        
+
         activities = Action.objects.all()
         paginator = Paginator(activities, self.paginate_by)
-        
+
         page = self.request.GET.get('page')
 
         try:
@@ -431,7 +441,8 @@ class LeaderboardView(ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(LeaderboardView, self).get_context_data(*args, **kwargs)
-        context['leaderboard'] = User.objects.annotate(total_score=Sum('points__score')).order_by('-total_score').filter(total_score__gt=0)
+        context['leaderboard'] = User.objects.annotate(total_score=Sum('points__score')).order_by(
+            '-total_score').filter(total_score__gt=0)
         return context
 
 
@@ -444,35 +455,37 @@ class ScoreboardView(ListView):
         context['scoreboard'] = Domain.objects.all().order_by('-modified')
         return context
 
+
 def search(request, template="search.html"):
     query = request.GET.get('query')
     stype = request.GET.get('type')
     if query is None:
-        return render(request, template)
+        return render_to_response(template, context_instance=RequestContext(request))
 
     if stype == "issue" or stype is None:
         context = {
-            'query' : query,
-            'type' : stype,
-            'issues' :  Issue.objects.filter(Q(description__icontains=query))
+            'query': query,
+            'type': stype,
+            'issues': Issue.objects.filter(Q(description__icontains=query))
         }
     elif stype == "domain":
         context = {
-            'query' : query,
-            'type' : stype,
-            'domains' :  Domain.objects.filter(Q(url__icontains=query))
+            'query': query,
+            'type': stype,
+            'domains': Domain.objects.filter(Q(url__icontains=query))
         }
     elif stype == "user":
         context = {
-            'query' : query,
-            'type' : stype,
-            'users' :  User.objects.filter(Q(username__icontains=query))
+            'query': query,
+            'type': stype,
+            'users': User.objects.filter(Q(username__icontains=query))
         }
-    return render(request, template, context)
+    return render_to_response(template, context, context_instance=RequestContext(request))
+
 
 class HuntCreate(CreateView):
     model = Hunt
-    fields = ['url','logo','prize','plan']
+    fields = ['url', 'logo', 'prize', 'plan']
     template_name = "hunt.html"
 
     def form_valid(self, form):
@@ -483,11 +496,11 @@ class HuntCreate(CreateView):
 
     def get_success_url(self):
         if self.request.POST.get('plan') == "Ant":
-           return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TSZ84RQZ8RKKC"
+            return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TSZ84RQZ8RKKC"
         if self.request.POST.get('plan') == "Wasp":
-           return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E3EELQQ6JLXKY"
+            return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E3EELQQ6JLXKY"
         if self.request.POST.get('plan') == "Scorpion":
-           return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=9R3LPM3ZN8KCC"
+            return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=9R3LPM3ZN8KCC"
         return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HH7MNY6KJGZFW"
 
 
@@ -514,7 +527,8 @@ class IssueView(DetailView):
             context['browser_version'] = user_agent.browser.version_string
             context['os_family'] = user_agent.os.family
             context['os_version'] = user_agent.os.version_string
-        context['users_score'] = Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
+        context['users_score'] = \
+            Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
         context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context['all_comment'] = self.object.comments.all
         context['all_users'] = User.objects.all()
@@ -545,7 +559,8 @@ class IssueEditView(UpdateView):
             context['browser_version'] = user_agent.browser.version_string
             context['os_family'] = user_agent.os.family
             context['os_version'] = user_agent.os.version_string
-        context['users_score'] = Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
+        context['users_score'] = \
+            Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
         context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         return context
 
@@ -562,45 +577,47 @@ class EmailDetailView(TemplateView):
         context['emails'] = get_email_from_domain(self.kwargs['slug'])
         return context
 
+
 def get_email_from_domain(domain_name):
-        new_urls = deque(['http://'+domain_name])
-        processed_urls = set()
-        emails = set()
-        emails_out = set()
-        t_end = time.time() + 20
+    new_urls = deque(['http://' + domain_name])
+    processed_urls = set()
+    emails = set()
+    emails_out = set()
+    t_end = time.time() + 20
 
-        while len(new_urls) and time.time() < t_end:
+    while len(new_urls) and time.time() < t_end:
 
-            url = new_urls.popleft()
-            processed_urls.add(url)
-            parts = urlsplit(url)
-            base_url = "{0.scheme}://{0.netloc}".format(parts)
-            path = url[:url.rfind('/')+1] if '/' in parts.path else url
-            try:
-                response = requests.get(url)
-            except:
-                continue
-            new_emails = set(re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", response.text, re.I))
-            if new_emails:
-                emails.update(new_emails)
-                break
-            soup = BeautifulSoup(response.text)
-            for anchor in soup.find_all("a"):
-                link = anchor.attrs["href"] if "href" in anchor.attrs else ''
-                if link.startswith('/'):
-                    link = base_url + link
-                elif not link.startswith('http'):
-                    link = path + link
-                if not link in new_urls and not link in processed_urls and link.find(domain_name)>0:
-                    new_urls.append(link)
-
-        for email in emails:
-            if email.find(domain_name)>0:
-                emails_out.add(email)
+        url = new_urls.popleft()
+        processed_urls.add(url)
+        parts = urlsplit(url)
+        base_url = "{0.scheme}://{0.netloc}".format(parts)
+        path = url[:url.rfind('/') + 1] if '/' in parts.path else url
         try:
-            return list(emails_out)[0]
+            response = requests.get(url)
         except:
-            return False
+            continue
+        new_emails = set(re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", response.text, re.I))
+        if new_emails:
+            emails.update(new_emails)
+            break
+        soup = BeautifulSoup(response.text)
+        for anchor in soup.find_all("a"):
+            link = anchor.attrs["href"] if "href" in anchor.attrs else ''
+            if link.startswith('/'):
+                link = base_url + link
+            elif not link.startswith('http'):
+                link = path + link
+            if not link in new_urls and not link in processed_urls and link.find(domain_name) > 0:
+                new_urls.append(link)
+
+    for email in emails:
+        if email.find(domain_name) > 0:
+            emails_out.add(email)
+    try:
+        return list(emails_out)[0]
+    except:
+        return False
+
 
 class InboundParseWebhookView(View):
     def post(self, request, *args, **kwargs):
@@ -617,6 +634,7 @@ class InboundParseWebhookView(View):
 
         return JsonResponse({'detail': 'Inbound Sendgrid Webhook recieved'})
 
+
 class UpdateIssue(View):
     def post(self, request, *args, **kwargs):
         issue = Issue.objects.get(id=request.POST.get('id'))
@@ -628,11 +646,11 @@ class UpdateIssue(View):
 
             msg_plain = msg_html = render_to_string('email/bug_updated.txt', {
                 'domain': issue.domain.name,
-                'name':issue.user.username,
-                'id':issue.id,
-                'username':request.user.username,
-                'action':"closed",
-                })
+                'name': issue.user.username,
+                'id': issue.id,
+                'username': request.user.username,
+                'action': "closed",
+            })
             subject = issue.domain.name + ' bug # ' + str(issue.id) + ' closed by ' + request.user.username
             email_to = issue.user.email
 
@@ -641,11 +659,11 @@ class UpdateIssue(View):
             issue.status = "open"
             msg_plain = msg_html = render_to_string('email/bug_updated.txt', {
                 'domain': issue.domain.name,
-                'name':issue.domain.email.split("@")[0],
-                'id':issue.id,
-                'username':request.user.username,
-                'action':"opened",
-                })
+                'name': issue.domain.email.split("@")[0],
+                'id': issue.id,
+                'username': request.user.username,
+                'action': "opened",
+            })
             subject = issue.domain.name + ' bug # ' + str(issue.id) + ' opened by ' + request.user.username
             email_to = issue.user.email
         send_mail(
@@ -665,6 +683,7 @@ class UpdateIssue(View):
         issue.save()
         return HttpResponseRedirect(issue.get_absolute_url)
 
+
 @receiver(user_logged_in)
 def assign_issue_to_user(request, user, **kwargs):
     # get params from session
@@ -678,7 +697,7 @@ def assign_issue_to_user(request, user, **kwargs):
             del request.session['domain']
             del request.session['created']
         except Exception:
-            pass    # ignore errors while cleaning session
+            pass  # ignore errors while cleaning session
         request.session.modified = True
         # get objects using session parameters
         issue = Issue.objects.get(id=issue_id)
@@ -690,6 +709,7 @@ def assign_issue_to_user(request, user, **kwargs):
         assigner = IssueBaseCreate()
         assigner.request = request
         assigner.process_issue(user, issue, created, domain)
+
 
 class CreateInviteFriend(CreateView):
     template_name = 'invite_friend.html'
@@ -724,6 +744,7 @@ class CreateInviteFriend(CreateView):
             Points.objects.create(user=self.request.user, score=1)
             InviteFriend.objects.filter(sender=self.request.user).delete()
 
-        messages.success(self.request, 'An email has been sent to your friend. Keep inviting your friends and get points!')
+        messages.success(self.request,
+                         'An email has been sent to your friend. Keep inviting your friends and get points!')
 
         return HttpResponseRedirect(self.success_url)
