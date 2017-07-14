@@ -12,7 +12,7 @@
             {% endif %}
         </div>
         <div>            
-            <p>{{ comment.text|linebreaks }}</p>
+            <p>{{ comment.text | safe }}</p>
         </div>
     </div>
 {% empty %}
