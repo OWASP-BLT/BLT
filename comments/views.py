@@ -44,7 +44,6 @@ def autocomplete(request):
         return HttpResponse(request.GET['callback'] + '(' + json.dumps([]) + ');',
                  content_type='application/json')
     q_list = q_string.split(' ')
-    print q_list 
     q_s = q_list[len(q_list)-1]
     if len(q_s)==0 or  q_s[0]!="@":
         return HttpResponse(request.GET['callback'] + '(' + json.dumps([]) + ');',
