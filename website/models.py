@@ -51,11 +51,9 @@ class Domain(models.Model):
     def closed_issues(self):
         return Issue.objects.filter(domain=self).filter(status="closed")
 
-
     @property
     def top_tester(self):
         return User.objects.filter(issue__domain=self).annotate(total=Count('issue')).order_by('-total').first()
-
 
     @property
     def get_name(self):
@@ -66,13 +64,13 @@ class Domain(models.Model):
     def get_logo(self):
         if self.logo:
             return self.logo.url
-        image_request = requests.get("https://logo.clearbit.com/"+self.name)
+        image_request = requests.get("https://logo.clearbit.com/" + self.name)
         try:
             if image_request.status_code == 200:
                 image_content = ContentFile(image_request.content)
-                self.logo.save(self.name +".jpg", image_content)
+                self.logo.save(self.name + ".jpg", image_content)
                 return self.logo.url
-            
+
         except:
             favicon_url = self.url + '/favicon.ico'
             return favicon_url
@@ -102,7 +100,7 @@ class Domain(models.Model):
         parsed_url = urlparse(self.url)
         domain = parsed_url.hostname
         temp = domain.rsplit('.')
-        if(len(temp) == 3):
+        if (len(temp) == 3):
             domain = temp[1] + '.' + temp[2]
         return domain
 
@@ -111,10 +109,10 @@ class Domain(models.Model):
 
 
 def validate_image(fieldfile_obj):
-        filesize = fieldfile_obj.file.size
-        megabyte_limit = 3.0
-        if filesize > megabyte_limit*1024*1024:
-            raise ValidationError("Max file size is %sMB" % str(megabyte_limit))
+    filesize = fieldfile_obj.file.size
+    megabyte_limit = 3.0
+    if filesize > megabyte_limit * 1024 * 1024:
+        raise ValidationError("Max file size is %sMB" % str(megabyte_limit))
 
 
 class Issue(models.Model):
@@ -161,15 +159,16 @@ class Issue(models.Model):
         parsed_url = urlparse(self.url)
         domain = parsed_url.hostname
         temp = domain.rsplit('.')
-        if(len(temp) == 3):
+        if (len(temp) == 3):
             domain = temp[1] + '.' + temp[2]
         return domain
 
     def get_twitter_message(self):
-        issue_link = " bugheist.com/issue/"+str(self.id)
+        issue_link = " bugheist.com/issue/" + str(self.id)
         prefix = "Bug found on @"
         spacer = " | "
-        msg =  prefix + self.domain_title + spacer + self.description[:140-(len(prefix)+len(self.domain_title)+len(spacer)+len(issue_link))] + issue_link
+        msg = prefix + self.domain_title + spacer + self.description[:140 - (
+        len(prefix) + len(self.domain_title) + len(spacer) + len(issue_link))] + issue_link
         return msg
 
     def get_ocr(self):
@@ -191,10 +190,11 @@ class Issue(models.Model):
     class Meta:
         ordering = ['-created']
 
+
 TWITTER_MAXLENGTH = getattr(settings, 'TWITTER_MAXLENGTH', 140)
 
-def post_to_twitter(sender, instance, *args, **kwargs):
 
+def post_to_twitter(sender, instance, *args, **kwargs):
     if not kwargs.get('created'):
         return False
     try:
@@ -231,8 +231,9 @@ def post_to_twitter(sender, instance, *args, **kwargs):
 
         except Exception, ex:
             print 'ERROR:', str(ex)
-            logger.debug('rem %s'%str(ex))
+            logger.debug('rem %s' % str(ex))
             return False
+
 
 signals.post_save.connect(post_to_twitter, sender=Issue)
 
@@ -266,8 +267,8 @@ class Points(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
 
-#@receiver(user_logged_in, dispatch_uid="some.unique.string.id.for.allauth.user_logged_in")
-#def user_logged_in_(request, user, **kwargs):
+# @receiver(user_logged_in, dispatch_uid="some.unique.string.id.for.allauth.user_logged_in")
+# def user_logged_in_(request, user, **kwargs):
 #    if not settings.TESTING:
 #    	action.send(user, verb='logged in')
 
@@ -297,13 +298,11 @@ class UserProfile(models.Model):
         (3, 'Gold'),
         (4, 'Platinum'),
     )
-        
 
     user = models.OneToOneField(User, related_name="userprofile")
     user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
-    title = models.IntegerField(choices=title,default=0)
+    title = models.IntegerField(choices=title, default=0)
     winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-
 
     def avatar(self, size=36):
         if self.user_avatar:
@@ -324,5 +323,6 @@ def create_profile(sender, **kwargs):
     if kwargs["created"]:
         profile = UserProfile(user=user)
         profile.save()
+
 
 post_save.connect(create_profile, sender=User)

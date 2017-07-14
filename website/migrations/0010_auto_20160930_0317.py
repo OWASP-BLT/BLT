@@ -7,7 +7,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('website', '0009_issue_domain'),
     ]
@@ -21,11 +20,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='points',
             name='domain',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='website.Domain'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
+                                    to='website.Domain'),
         ),
         migrations.AlterField(
             model_name='points',
             name='issue',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='website.Issue'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
+                                    to='website.Issue'),
         ),
     ]

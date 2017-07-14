@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('website', '0027_issue_label'),
     ]
@@ -15,6 +14,8 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='issue',
             name='label',
-            field=models.PositiveSmallIntegerField(choices=[(0, b'General'), (1, b'Number Error'), (2, b'Functional'), (3, b'Performance'), (4, b'Security'), (5, b'Typo'), (6, b'Design')], default=0),
+            field=models.PositiveSmallIntegerField(
+                choices=[(0, b'General'), (1, b'Number Error'), (2, b'Functional'), (3, b'Performance'),
+                         (4, b'Security'), (5, b'Typo'), (6, b'Design')], default=0),
         ),
     ]
