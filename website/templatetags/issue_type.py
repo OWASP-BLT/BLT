@@ -5,4 +5,4 @@ register = template.Library()
 
 @register.simple_tag
 def define(the_string):
-  return the_string
+    return the_string

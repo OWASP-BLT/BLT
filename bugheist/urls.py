@@ -1,4 +1,4 @@
-from django.conf.urls import include, url
+from django.conf.urls import include, url, patterns
 from django.conf import settings
 from django.contrib import admin
 from django.views.generic import TemplateView
@@ -13,14 +13,12 @@ from django.views.decorators.csrf import csrf_exempt
 
 favicon_view = RedirectView.as_view(url='/static/favicon.ico', permanent=True)
 
-
-
 admin.autodiscover()
 
 import website.views
 import comments.views
 
-urlpatterns = [
+urlpatterns = patterns('',
     url(r'^$', website.views.index, name='index'),
     url(r'^' + settings.ADMIN_URL + '/', include(admin.site.urls)),
     url(r'^issue/(?P<slug>\w+)/$', IssueView.as_view(), name="issue_view"),
@@ -58,6 +56,4 @@ urlpatterns = [
     url(r'^search/$', website.views.search),
     url(r'^report/$', TemplateView.as_view(template_name="report.html")),
     url(r'^i18n/', include('django.conf.urls.i18n')),
-    
-
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+   ) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

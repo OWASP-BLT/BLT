@@ -9,6 +9,7 @@ from itertools import groupby
 from operator import attrgetter
 from django.core.mail import send_mail
 
+
 class Command(BaseCommand):
     help = 'Monthly Email'
 
@@ -20,13 +21,17 @@ class Command(BaseCommand):
 
             subject = 'Bugheist ' + lastMonth.strftime("%B") + ' summary'
             msg_plain = msg_html = render_to_string('email/bug_summary.txt', {
-                    'month': lastMonth.strftime("%B"),
-                    'leaderboard': User.objects.filter(points__created__month=lastMonth.strftime("%m")).annotate(total_score=Sum('points__score')).order_by('-total_score')[:5],
-                    'responsive': Domain.objects.filter(email_event__in=['open', 'delivered','click']).order_by('-modified')[:3],
-                    'closed_issues': Domain.objects.filter(issue__status="closed").annotate(count=Count('issue')).order_by('-count')[:3],
-                    'open_issues': Domain.objects.exclude(issue__status="closed").annotate(count=Count('issue')).order_by('-count')[:3],
-                    'most_viewed': Issue.objects.filter(views__gte=0).order_by('-views')[:3],
-                    })
+                'month': lastMonth.strftime("%B"),
+                'leaderboard': User.objects.filter(points__created__month=lastMonth.strftime("%m")).annotate(
+                    total_score=Sum('points__score')).order_by('-total_score')[:5],
+                'responsive': Domain.objects.filter(email_event__in=['open', 'delivered', 'click']).order_by(
+                    '-modified')[:3],
+                'closed_issues': Domain.objects.filter(issue__status="closed").annotate(count=Count('issue')).order_by(
+                    '-count')[:3],
+                'open_issues': Domain.objects.exclude(issue__status="closed").annotate(count=Count('issue')).order_by(
+                    '-count')[:3],
+                'most_viewed': Issue.objects.filter(views__gte=0).order_by('-views')[:3],
+            })
 
             result_list = sorted(
                 chain(User.objects.all(), Domain.objects.all()),
