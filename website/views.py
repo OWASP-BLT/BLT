@@ -346,7 +346,6 @@ class DomainDetailView(TemplateView):
             context['domain'] = Domain.objects.get(name=self.kwargs['slug'])
             context['issue_choice'] = self.kwargs['choice']
         except:
-            context['domain'] = self.kwargs['slug']
             context['issue_choice'] = "all"
         context['issues'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug'])
         context['leaderboard'] = User.objects.filter(issue__url__contains=self.kwargs['slug']).annotate(
