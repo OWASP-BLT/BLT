@@ -5,7 +5,7 @@ from django.views.generic import TemplateView
 from website.views import (UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView, UpdateIssue,
                            InboundParseWebhookView, LeaderboardView, IssueView, IssueEditView, AllIssuesView,
                            HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend,
-                           ScoreboardView)
+                           ScoreboardView, domain_check)
 from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView
 from django.conf.urls.static import static
