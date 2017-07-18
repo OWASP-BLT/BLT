@@ -23,75 +23,40 @@
         </div>
     </div>
     {% if query %}
-        {% if issues %}
-            {% for issue in issues %}
-                <div class="list-group-item activity-strip">
-                    <div class="activity-strip-section">
-                        <a class="comment_link" href="{{issue.get_absolute_url }}#comments">
-                            {{ issue.comments.all|length }} comments
-                        </a>
-
-                        {% if issue.user.socialaccount_set.all.0.get_avatar_url %}
-                            <img src="{{issue.user.socialaccount_set.all.0.get_avatar_url}}" width="100" class="img-responsive img-rounded">
-                        {% else %}
-                            <img src="{% gravatar_url issue.user.email 100 %}" width="100" class="img-responsive img-rounded">
-                        {% endif %}
-            
-                        <div class="info">
-                            <a href="/domain/{{ issue.domain_name }}">
-                                <img src="http://www.{{issue.domain_name}}/favicon.ico" height="25" onerror="this.onerror=null; this.style.display='none';">
+        <div class="row">
+            <div class="col-md-8 col-md-offset-2">
+                {% if issues %}
+                    {% for activity in issues %}
+                        {% include '_activity.html' %}
+                    {% endfor %}
+                {% elif domains %}
+                    <div class="list-group">
+                        {% for domain in domains %}
+                        <div class="list-group-item">
+                            <a href="{{ domain.get_absolute_url }}">
+                                <img src="{{domain.get_logo}}" height="100" onerror="this.onerror=null; this.style.display ='none';">
+                                <strong>{{ domain.name }}</strong>
                             </a>
-                            <a href="{{ issue.get_absolute_url }}">{{ issue.description|truncatechars:100 }}</a>
-                            {% if issue.status == "open" %}
-                                <span class="label label-success text-capitalize">{{issue.status}}</span>
-                            {% else %}
-                                <span class="label label-danger text-capitalize">{{issue.status}}</span>
-                            {% endif %}
-                            <div class="small">
-                                <a href="{{ issue.user.get_absolute_url }}" class="text-capitalize">
-                                    {{ issue.user }}
-                                </a>
-                                found a bug on <a href="/domain/{{ issue.domain_name }}">{{ issue.domain_title }}</a> {{ issue.timestamp|timesince }} ago | 
-                                <a href="//{{ issue.domain_name }}">{{ issue.domain_name }}</a>
-                                <span class="label label-info bug-type">{{issue.get_label_display}}</span>
-                            </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    <div class="activity-screenshot">
-                        {% if issue.screenshot %}
-                            <a href="{{ issue.get_absolute_url }}">
-                                <img src="{{ issue.screenshot.url }}">
-                            </a>
-                        {% endif %}
+                {% elif users %}
+                    <div class="list-group">
+                        {% for user in users %}
+                        <div class="list-group-item">
+                            {% if user.socialaccount_set.all.0.get_avatar_url %}
+                                <img src="{{user.socialaccount_set.all.0.get_avatar_url}}">
+                            {% else %}
+                                <img src="{% gravatar_url user.email 50 %}">
+                            {% endif %}
+                            <a href="/profile/{{user.username}}">{{user.username}}</a>
+                        </div>
+                        {% endfor %}
                     </div>
-                </div>
-            {% endfor %}
-        {% elif domains %}
-            <div class="list-group">
-                {% for domain in domains %}
-                <div class="list-group-item">
-                    <a href="{{ domain.get_absolute_url }}">
-                        <img src="{{domain.get_logo}}" height="100" onerror="this.onerror=null; this.style.display ='none';">
-                        <strong>{{ domain.name }}</strong>
-                    </a>
-                </div>
-                {% endfor %}
+                {% else %}
+                    <div class="alert alert-danger" role="alert">Nothing Found!</div>
+                {% endif %}
             </div>
-        {% elif users %}
-            <div class="list-group">
-                {% for user in users %}
-                <div class="list-group-item">
-                    {% if user.socialaccount_set.all.0.get_avatar_url %}
-                        <img src="{{user.socialaccount_set.all.0.get_avatar_url}}">
-                    {% else %}
-                        <img src="{% gravatar_url user.email 50 %}">
-                    {% endif %}
-                    <a href="/profile/{{user.username}}">{{user.username}}</a>
-                </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="alert alert-danger" role="alert">Nothing Found!</div>
-        {% endif %}
+        </div>
     {% endif %}
 {% endblock %}
