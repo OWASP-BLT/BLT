@@ -7,14 +7,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.generic.edit import CreateView, FormView
 from django.contrib.auth import get_user_model
-from django.shortcuts import render, redirect, get_object_or_404, render_to_response, RequestContext
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.http import Http404
-from actstream.models import Action, user_stream, actor_stream
-from actstream import action
 from django.contrib.auth.models import User
-from actstream import registry
 from django.http import JsonResponse
 from website.models import Issue, Points, Hunt, Domain, InviteFriend, UserProfile
 from django.core.files import File
@@ -48,11 +45,6 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from allauth.account.models import EmailAddress
 from django.views.decorators.csrf import csrf_exempt
 
-registry.register(User)
-registry.register(Issue)
-registry.register(Domain)
-
-
 def index(request, template="index.html"):
     try:
         domains = random.sample(Domain.objects.all(), 3)
@@ -67,7 +59,7 @@ def index(request, template="index.html"):
     open_issue_owasp = Domain.objects.get(name='owasp.org').open_issues.count()
     closed_issue_owasp = Domain.objects.get(name='owasp.org').closed_issues.count()
     context = {
-        'activities': Action.objects.all()[0:10],
+        'activities': Issue.objects.all()[0:10],
         'domains': domains,
         'hunts': Hunt.objects.exclude(txn_id__isnull=True)[:4],
         'leaderboard': User.objects.filter(points__created__month=datetime.now().month).annotate(
@@ -76,7 +68,7 @@ def index(request, template="index.html"):
         'open_issue_owasp': open_issue_owasp,
         'closed_issue_owasp': closed_issue_owasp,
     }
-    return render_to_response(template, context, context_instance=RequestContext(request))
+    return render(request, template, context)
 
 
 def find_key(request, token):
@@ -133,12 +125,10 @@ class IssueBaseCreate(object):
             obj.screenshot.save(self.request.POST.get('screenshot-hash') + '.png', django_file, save=True)
         obj.user_agent = self.request.META.get('HTTP_USER_AGENT')
         obj.save()
-        p = Points.objects.create(user=self.request.user, issue=obj, score=score)
-        action.send(self.request.user, verb='found a bug on website', target=obj)
+        p = Points.objects.create(user=self.request.user, issue=obj, score=score)        
 
     def process_issue(self, user, obj, created, domain, score=3):
         p = Points.objects.create(user=user, issue=obj, score=score)
-        action.send(user, verb='found a bug on website', target=obj)
         messages.success(self.request, 'Bug added! +' + str(score))
 
         if created:
@@ -273,7 +263,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(IssueCreate, self).get_context_data(**kwargs)
-        context['activities'] = Action.objects.all()[0:10]
+        context['activities'] = Issue.objects.all()[0:10]
         context['hunts'] = Hunt.objects.exclude(plan="Free")[:4]
         context['leaderboard'] = User.objects.filter(points__created__month=datetime.now().month).annotate(
             total_score=Sum('points__score')).order_by('-total_score')[:10],
@@ -313,7 +303,7 @@ class InviteCreate(TemplateView):
             'domain': domain,
             'email': email,
         }
-        return render_to_response("invite.html", context, context_instance=RequestContext(request))
+        return render(request, "invite.html", context)
 
 
 def profile(request):
@@ -341,7 +331,7 @@ class UserProfileDetailView(DetailView):
         context['my_score'] = Points.objects.filter(user=self.object).aggregate(total_score=Sum('score')).values()[0]
         context['websites'] = Domain.objects.filter(issue__user=self.object).annotate(total=Count('issue')).order_by(
             '-total')
-        context['activities'] = user_stream(self.object, with_user_activity=True)
+        context['activities'] = Issue.objects.filter(user=self.object)
         context['profile_form'] = UserProfileForm()
         context['total_open'] = Issue.objects.filter(user=self.object, status="open").count()
         context['total_closed'] = Issue.objects.filter(user=self.object, status="closed").count()
@@ -417,7 +407,7 @@ class AllIssuesView(ListView):
     def get_context_data(self, *args, **kwargs):
         context = super(AllIssuesView, self).get_context_data(*args, **kwargs)
 
-        activities = Action.objects.all()
+        activities = Issue.objects.all()
         paginator = Paginator(activities, self.paginate_by)
 
         page = self.request.GET.get('page')
@@ -459,7 +449,7 @@ def search(request, template="search.html"):
     query = request.GET.get('query')
     stype = request.GET.get('type')
     if query is None:
-        return render_to_response(template, context_instance=RequestContext(request))
+        return render(request, template)
 
     if stype == "issue" or stype is None:
         context = {
@@ -479,7 +469,7 @@ def search(request, template="search.html"):
             'type': stype,
             'users': User.objects.filter(Q(username__icontains=query))
         }
-    return render_to_response(template, context, context_instance=RequestContext(request))
+    return render(request, template, context)
 
 
 class HuntCreate(CreateView):
