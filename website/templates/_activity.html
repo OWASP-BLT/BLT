@@ -1,10 +1,6 @@
 {% load gravatar %}
 <div class="list-group-item activity-strip">
     <div class="activity-strip-section">
-        <a class="comment_link" href="{{activity.get_absolute_url }}#comments">
-            {{ activity.comments.all|length }} comments
-        </a>
-
         {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
             <img src="{{activity.user.socialaccount_set.all.0.get_avatar_url}}" width="100" class="img-responsive img-rounded">
         {% else %}
@@ -21,14 +17,16 @@
             {% else %}
                 <span class="label label-danger text-capitalize">{{activity.status}}</span>
             {% endif %}
+            <span class="label label-info bug-type">{{activity.get_label_display}}</span>
             <div class="small">
                 <a href="{{ activity.user.get_absolute_url }}" class="text-capitalize">
                     {{ activity.user }}
                 </a>
-                found a bug on <a href="/domain/{{ activity.domain_name }}">{{ activity.domain_title }}</a> {{ activity.timestamp|timesince }} ago | 
-                <a href="//{{ activity.domain_name }}">{{ activity.domain_name }}</a>
-                <span class="label label-info bug-type">{{activity.get_label_display}}</span>
+                found a bug onfound a bug onfound a bug onfound a bug on <a href="/domain/{{ activity.domain_name }}">{{ activity.domain_title }}</a> {{ activity.created|timesince }} ago
             </div>
+            <a class="comment_link" href="{{activity.get_absolute_url }}#comments">
+                {{ activity.comments.all|length }} comments
+            </a>
         </div>
     </div>
     <div class="activity-screenshot">
