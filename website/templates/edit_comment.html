@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<form method="post" action="{% url 'comments.views.EditComment' pk=comment.pk %}">
+<form method="post" action="{% url 'update_comment' pk=comment.pk %}">
     {% csrf_token %}
     <div class="form-group">
         <textarea placeholder="Comment" class="form-control" name="new_comment" required></textarea>
