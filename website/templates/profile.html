@@ -104,6 +104,7 @@
 {% endblock %}
 
 {% block content %}
+    <script type="text/javascript" src="{% static 'js/Chart.bundle.min.js' %}"></script>
     <div class="row">
         <h1 class="page-header text-capitalize">{{ user.username }}</h1>
         <div class="col-md-3">            
@@ -151,7 +152,9 @@
                 </kbd>
             </div>
         </div>
-        <div class="col-md-6"></div>
+        <div class="col-md-6">
+            <canvas id="myChart" width="400" height="400"></canvas>
+        </div>
         <div class="col-md-3">
             <div class="status">
                 <kbd class="points"> {{ my_score|default:0 }} Points</kbd>
@@ -182,11 +185,15 @@
                     {{ user.username }}'s activity
                 </div>
                 <div class="panel-body">
-                    <div class="list-group">
-                        {% for activity in activities %}
-                            {% include '_activity.html' %}
-                        {% endfor %}
-                    </div>
+                    {% if activities %}
+                        <div class="list-group">
+                            {% for activity in activities %}
+                                {% include '_activity.html' %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-danger text-center">No Activity</div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -197,6 +204,7 @@
                     {{ user.username }}'s top bug findings
                 </div>
                 <div class="panel-body">
+                {% if websites %}
                     <div class="list-group">
                         {% for website in websites %}
                             <div class="list-group-item">
@@ -210,6 +218,9 @@
                             </div>
                         {% endfor %}
                     </div>
+                {% else %}
+                    <div class="text-center">Nothing Found</div>
+                {% endif %}
                 </div>
             </div>
         </div>
@@ -231,6 +242,72 @@
                 $('.badge-avatar').html(file);
                 $('.upload').show();
             });
+        });
+
+        var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
+        var months = [], data = [];
+        var all_data = new Array(12).fill(0);
+        var current_month = {{current_month}};
+
+        {% for i in graph %}
+            all_data['{{i.month}}' - 1] = {{i.c}};
+        {% endfor %}
+
+        if (current_month - 6 < 0)
+        {
+            months = all_months.slice(current_month - 6);
+            months = months.concat(all_months.slice(0, current_month));
+            data = all_data.slice(current_month - 6);
+            data = data.concat(all_data.slice(0, current_month));
+        }
+        else
+        {
+            months = all_months.slice(current_month - 6, current_month);
+            data = all_data.slice(current_month - 6, current_month);
+        }
+
+        var ctx = document.getElementById("myChart").getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: 'Monthly Activity',
+                    data: data,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(153, 102, 255, 0.6)',
+                        'rgba(255, 159, 64, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(255,99,132,1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero:true,
+                            fixedStepSize: 1
+                        }
+                    }],
+                    xAxes: [{
+                        time: {
+                            unit: 'month'
+                        }
+                    }]
+                }
+            }
         });
     </script>
 {% endblock %}

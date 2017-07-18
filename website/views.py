@@ -21,6 +21,7 @@ from django.core.urlresolvers import reverse
 from django.core.files.storage import default_storage
 from django.views.generic import View
 from django.core.files.base import ContentFile
+from django.db.models.functions import ExtractMonth
 from urlparse import urlparse
 import urllib2
 from selenium.webdriver import PhantomJS
@@ -333,10 +334,13 @@ class UserProfileDetailView(DetailView):
             '-total')
         context['activities'] = Issue.objects.filter(user=self.object)
         context['profile_form'] = UserProfileForm()
-        context['total_open'] = Issue.objects.filter(user=self.object, status="open").count()
-        context['total_closed'] = Issue.objects.filter(user=self.object, status="closed").count()
-        for i in range(1, 7):
-            context['bug_type_' + str(i)] = Issue.objects.filter(user=self.object, label=str(i))
+        context['total_open'] = Issue.objects.filter(user=self.object,status="open").count()
+        context['total_closed'] = Issue.objects.filter(user=self.object,status="closed").count()
+        context['current_month'] = datetime.now().month
+        context['graph'] = Issue.objects.filter(user=self.object).filter(created__month__gte=(datetime.now().month-6), created__month__lt=datetime.now().month) \
+                        .annotate(month=ExtractMonth('created')).values('month').annotate(c=Count('id')).order_by()
+        for i in range(1,7):
+            context['bug_type_'+str(i)] = Issue.objects.filter(user=self.object,label=str(i))
         return context
 
     @method_decorator(login_required)
