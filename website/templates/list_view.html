@@ -6,11 +6,10 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-lg-10">
+        <div class="col-md-8 col-md-offset-2">
             <div class="panel panel-default">
-                <div class="panel-heading">Latest</div>
                 <div class="panel-body">
-                    <div class="list-group" >
+                    <div class="list-group">
                         {% for activity in activities %}
                             {% include '_activity.html' %}
                         {% endfor %}
