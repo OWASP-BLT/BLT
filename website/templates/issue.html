@@ -15,10 +15,7 @@
         filter: blur(2px);
         -webkit-filter:blur(2px);
         display:none;
-    }
-    .fa-facebook {
-        color: white;
-    }
+    }    
     .fb-xfbml-parse-ignore {
         margin-top: -12px;
     }
@@ -27,6 +24,18 @@
     }
     .comment .comment-actions .btn {
         margin-left: 10px;
+    }
+    .fa-white {
+        color: white;
+    }
+    .page-header {
+        padding: 10px;
+        font-size: 30px;
+    }
+    .copy-btn {
+        padding: 5px;
+        color: green;
+        background: whitesmoke;
     }
 {% endblock %}
 {% block content %}
@@ -38,7 +47,6 @@
     <script src="{% static "js/jquery.caret.js" %}"></script>
     <link href="{% static "css/jquery.atwho.css" %}" rel="stylesheet">
 
-    
     <div class="row">
         <div class="col-lg-12">
             <h3 class="page-header">
@@ -58,18 +66,17 @@
                 data-size="small">Tweet</a>
                 <span class="fb-share-button" data-href="https://www.bugheist.com/issue/{{object.id}} " data-layout="button_count" data-size="small" data-mobile-iframe="true">
                     <a class="fb-xfbml-parse-ignore btn btn-primary btn-xs" target="_blank">
-                        <i class="fa fa-facebook"></i> Share
+                        <i class="fa fa-facebook fa-white"></i> Share
                     </a>
                 </span>
             </div>
             <hr>
         </div>
     </div>
-    
 
     <div class="row">
         <div class="col-lg-3 col-md-3">
-            <div class="panel panel-info">                
+            <div class="panel panel-info">
                 <div class="panel-body">
                     <a href="/domain/{{object.domain_name}}">
                         <img src="{{object.domain.get_logo}}" class="panel-image" onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
@@ -78,7 +85,6 @@
                 </div>
                 <div class="panel-footer">
                 <span class="label label-info bug-type pull-right">{{object.get_label_display}}</span>
-
                     <strong>Issue on: {{object.domain_name}}</strong>
                     <div>Title - <a href="/domain/{{object.domain_name}}">{{object.domain_title}}</a></div>
                     <div># of issues - {{issue_count}}</div><br/>
@@ -119,10 +125,8 @@
             </div>            
         </div>
         <div class="col-lg-3 col-md-3">
-
             <div class="panel issue-panel" style="background-color:{% if object.status == "closed" %}#bd2c00{% else %}#6cc644;{% endif %};">
                 <div class="panel-heading panel-issue">
-
                     <svg width="75px" height="75px" viewBox="0 0 14 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                         <g id="Octicons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                             <g id="issue-opened" fill="#ffffff">
@@ -180,61 +184,57 @@
         </div>
     </div>
 
-<div class="row">
-    <div class="col-lg-12">
-        <h4>Screenshot:</h4><hr>
-        <a href="{{object.screenshot.url}}" data-lightbox="image">
-            <img src="{{object.screenshot.url}}" class="img-responsive screenshot-img">
-        </a>
-        <hr>
-    </div>
-    {% if object.get_ocr %}
-    <div class="col-lg-12">
-        <h4>OCR Results:</h4><hr>
-        <div class="alert alert-info">{{object.get_ocr}}</div><hr>
-    </div>
-    {% endif %}
-</div>
-
-
-
-<h3>Comments:</h3>
-<div id="target_div">
-{% for comment in all_comment %}
-<hr>
-    <div class="well comment">
-        <div class="comment-actions">
-            <strong><a href="{{ comment.author_url }}">{{ comment.author }} </a></strong>
-            &nbsp;commented on&nbsp;<div class="date"> {{ comment.created_date }}</div>
-            {% if user.username == comment.author  %}                
-                <a class="btn btn-xs btn-primary" href="{% url 'edit_comment' pk=comment.pk %}">Edit</a>                    
-                <a class="btn btn-xs btn-danger del_comment" name="{{ comment.pk }}">Delete</a>
-            
-            {% endif %}
+    <div class="row">
+        <div class="col-md-6">
+            <h4>Screenshot:</h4><hr>
+            <a href="{{object.screenshot.url}}" data-lightbox="image">
+                <img src="{{object.screenshot.url}}" class="img-thumbnail">
+            </a>
+            <hr>
         </div>
-        <div>            
-            <p>{{ comment.text | safe }}</p>
+        {% if object.get_ocr %}
+        <div class="col-lg-12">
+            <h4>OCR Results:</h4> {{object.get_ocr}}<hr>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h3>Comments:</h3>
+            <div id="target_div">
+                {% for comment in all_comment %}
+                    <hr>
+                    <div class="well comment">
+                        <div class="comment-actions">
+                            <strong><a href="{{ comment.author_url }}">{{ comment.author }} </a></strong>
+                            &nbsp;commented on&nbsp;<div class="date"> {{ comment.created_date }}</div>
+                            {% if user.username == comment.author  %}                
+                                <a class="btn btn-xs btn-primary" href="{% url 'comments.views.EditCommentPage' pk=comment.pk %}">Edit</a>                    
+                                <a class="btn btn-xs btn-danger del_comment" name="{{ comment.pk }}">Delete</a>
+                            
+                            {% endif %}
+                        </div>
+                        <div><p>{{ comment.text | safe }}</p></div>
+                    </div>
+                {% empty %}
+                {% endfor %}
+            </div>
+
+            <form id="comments">
+                {% csrf_token %}
+                <div class="form-group">
+                    <input type="hidden" name="issue_pk" id="issue_pk" value="{{ issue.pk }}" >  
+                    <textarea placeholder="Comment" class="form-control" id="text_comment" name="text_comment" required onkeyup="ajax_complete()" onclick="ajax_complete()"></textarea>
+                </div>
+                <button id="comment_submit" class="btn btn-small" type="submit">Add Comment</button>
+            </form>
         </div>
     </div>
-{% empty %}
-{% endfor %}
-</div>
-
-<form id="comments">
-    {% csrf_token %}
-    <div class="form-group">
-        <input type="hidden" name="issue_pk" id="issue_pk" value="{{ issue.pk }}" >  
-        <textarea placeholder="Comment" class="form-control" id="text_comment" name="text_comment" required onkeyup="ajax_complete()" onclick="ajax_complete()"></textarea>
-    
-    </div>
-    <button id="comment_submit" class="btn btn-small" type="submit">Add Comment</button>
-</form>
-
 
 <script type="text/javascript">
     $(document).on('submit','#comments',function(e){
         e.preventDefault();
-
         $.ajax({
             type: 'POST',
             url: '/issue/comment/add/',
@@ -247,37 +247,30 @@
                  $('#target_div').html(data);
                  $('#text_comment').val('');
             }
-
         });
     });
 
     $('body').on('click', '.del_comment', function (e){
+        e.preventDefault();
+        if(confirm("Delete this comment?")==true){
+            $.ajax({
+                type: 'POST',
+                url: "/issue/comment/delete/",
+                data:{
+                    comment_pk:$(this).attr('name'),
+                    issue_pk: $('#issue_pk').val(),
+                    csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+                },
+                success: function(data) {
+                    $('#target_div').html(data);
+                },
+            });
+        }
+    });
 
-    e.preventDefault();
-    if(confirm("Delete this comment?")==true){
-        
-        $.ajax({
-            type: 'POST',
-            url: "/issue/comment/delete/",
-            data:{
-                comment_pk:$(this).attr('name'),
-                issue_pk: $('#issue_pk').val(),
-                csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
-
-            },
-            success: function(data) {
-                $('#target_div').html(data);
-            },
-
-        });
-    }
-});
-
-function ajax_complete(){
-            var search = $('#text_comment').val()
-        var data = {
-            search: search
-        };
+    function ajax_complete() {
+        var search = $('#text_comment').val();
+        var data = { search: search };
         $.ajax({
             type: 'GET',
             url: '/comment/autocomplete/',
@@ -287,16 +280,14 @@ function ajax_complete(){
             jsonpCallback: 'ajax_render',
 
         });
-}
+    }
 
-function ajax_render(data){
-    $('#text_comment').atwho({
-        at: "@",
-        data:data
-    })
-}
-
-
+    function ajax_render(data) {
+        $('#text_comment').atwho({
+            at: "@",
+            data:data
+        });
+    }
 </script>
 
 {% endblock %}
