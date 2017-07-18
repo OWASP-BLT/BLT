@@ -69,4 +69,5 @@ urlpatterns = [
     url(r'^search/$', website.views.search),
     url(r'^report/$', TemplateView.as_view(template_name="report.html")),
     url(r'^i18n/', include('django.conf.urls.i18n')),
+    url(r'^domain_check/$', domain_check),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
