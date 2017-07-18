@@ -1,63 +1,40 @@
 {% load gravatar %}
 <div class="list-group-item activity-strip">
     <div class="activity-strip-section">
-        <a class="comment_link" href="{{activity.target.get_absolute_url }}#comments">
-            {{ activity.target.comments.all|length }} comments
+        <a class="comment_link" href="{{activity.get_absolute_url }}#comments">
+            {{ activity.comments.all|length }} comments
         </a>
 
-        {% if activity.actor.socialaccount_set.all.0.get_avatar_url %}
-            <img src="{{activity.actor.socialaccount_set.all.0.get_avatar_url}}" width="100" class="img-responsive img-rounded">
+        {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
+            <img src="{{activity.user.socialaccount_set.all.0.get_avatar_url}}" width="100" class="img-responsive img-rounded">
         {% else %}
-            <img src="{% gravatar_url activity.actor.email 100 %}" width="100" class="img-responsive img-rounded">
+            <img src="{% gravatar_url activity.user.email 100 %}" width="100" class="img-responsive img-rounded">
         {% endif %}
-        
+
         <div class="info">
-            {% if activity.action_object %}
-                {% if activity.action_object.get_absolute_url %}
-                    <a href="{{ activity.action_object.get_absolute_url }}">{{ activity.action_object }}</a>
-                {% else %}
-                    <a href="{{ activity.action_object_url }}">{{ activity.action_object }}</a>
-                {% endif %}
+            <a href="/domain/{{ activity.domain_name }}">
+                <img src="http://www.{{activity.domain_name}}/favicon.ico" height="25" onerror="this.onerror=null; this.style.display='none';">
+            </a>
+            <a href="{{ activity.get_absolute_url }}">{{ activity.description|truncatechars:100 }}</a>
+            {% if activity.status == "open" %}
+                <span class="label label-success text-capitalize">{{activity.status}}</span>
+            {% else %}
+                <span class="label label-danger text-capitalize">{{activity.status}}</span>
             {% endif %}
-
-            {% if activity.action_object and activity.target %}to{% endif %}
-
-            {% if activity.target %}
-                {% if activity.target.get_absolute_url %}
-                    <a href="/domain/{{ activity.target.domain_name }}">
-                        <img src="http://www.{{activity.target.domain_name}}/favicon.ico" height="25" onerror="this.onerror=null; this.style.display='none';">
-                    </a>
-                    <a href="{{ activity.target.get_absolute_url }}">{{ activity.target|truncatechars:100 }}</a>
-                {% else %}
-                    <a href="{{ activity.target_url }}"> - {{ activity.target }}</a>
-                {% endif %}
-                {% if activity.target.status == "open" %}
-                    <span class="label label-success text-capitalize">{{activity.target.status}}</span>
-                {% else %}
-                    <span class="label label-danger text-capitalize">{{activity.target.status}}</span>
-                {% endif %}                    
-            {% endif %}
-            <div class="text-trunc"></div>
             <div class="small">
-                {% if activity.actor.get_absolute_url %}
-                    <a href="{{ activity.actor.get_absolute_url }}" class="text-capitalize">
-                        {{ activity.actor }}
-                    </a>
-                {% else %}
-                    <a href="{{ activity.actor_url }}">{{ activity.actor }}</a>
-                {% endif %}
-                {{ activity.verb }} <a href="/domain/{{ activity.target.domain_name }}">{{ activity.target.domain_title }}</a> {{ activity.timestamp|timesince }} ago | 
-                <a href="//{{ activity.target.domain_name }}">{{ activity.target.domain_name }}</a>
-                <span class="label label-info bug-type">{{activity.target.get_label_display}}</span>
+                <a href="{{ activity.user.get_absolute_url }}" class="text-capitalize">
+                    {{ activity.user }}
+                </a>
+                found a bug on <a href="/domain/{{ activity.domain_name }}">{{ activity.domain_title }}</a> {{ activity.timestamp|timesince }} ago | 
+                <a href="//{{ activity.domain_name }}">{{ activity.domain_name }}</a>
+                <span class="label label-info bug-type">{{activity.get_label_display}}</span>
             </div>
-            <div class="more_info"><a>See More</a></div>
         </div>
     </div>
-
     <div class="activity-screenshot">
-        {% if activity.target.screenshot %}
-            <a href="{{ activity.target.get_absolute_url }}">
-                <img src="{{ activity.target.screenshot.url }}">
+        {% if activity.screenshot %}
+            <a href="{{ activity.get_absolute_url }}">
+                <img src="{{ activity.screenshot.url }}">
             </a>
         {% endif %}
     </div>
