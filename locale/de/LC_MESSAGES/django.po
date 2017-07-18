@@ -1,0 +1,261 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-07-14 23:29+0530\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: bugheist/settings.py:143
+msgid "English"
+msgstr "Englisch"
+
+#: bugheist/settings.py:144
+msgid "French"
+msgstr "Französisch"
+
+#: bugheist/settings.py:145
+msgid "Chinese"
+msgstr "Chinesisch"
+
+#: bugheist/settings.py:146
+msgid "German"
+msgstr "Deutsche"
+
+#: website/templates/_subscriptions.html:71
+#: website/templates/_subscriptions.html:92
+#: website/templates/_subscriptions.html:113
+msgid "Featured on Homepage"
+msgstr "Auf der Homepage"
+
+#: website/templates/_subscriptions.html:74
+#: website/templates/_subscriptions.html:95
+#: website/templates/_subscriptions.html:117
+msgid "Start"
+msgstr "Anfang"
+
+#: website/templates/_subscriptions.html:93
+#: website/templates/_subscriptions.html:114
+msgid "Featured in Newsletter"
+msgstr "Ausgezeichnet im Newsletter"
+
+#: website/templates/_subscriptions.html:115
+msgid "Announced to Users"
+msgstr "Angekündigt für Benutzer"
+
+#: website/templates/account/login.html:76
+msgid "Sign In"
+msgstr "Anmelden"
+
+#: website/templates/account/login.html:77
+msgid "Forgot Password?"
+msgstr "Passwort vergessen?"
+
+#: website/templates/account/logout.html:6
+msgid "Sign Out"
+msgstr "Ausloggen"
+
+#: website/templates/account/logout.html:7
+msgid "Are you sure?"
+msgstr "Bist du sicher?"
+
+#: website/templates/account/logout.html:13
+msgid "Yes"
+msgstr "Ja"
+
+#: website/templates/account/logout.html:14
+msgid "Cancel"
+msgstr "Stornieren"
+
+#: website/templates/account/password_change.html:22
+#: website/templates/account/password_change.html:41
+#: website/templates/account/password_reset_from_key.html:26
+#: website/templates/account/password_reset_from_key.html:50
+#: website/templates/base.html:83 website/templates/base_home.html.py:86
+msgid "Change Password"
+msgstr "Passwort ändern"
+
+#: website/templates/account/password_reset.html:27
+msgid "Password Reset"
+msgstr "Passwort zurücksetzen"
+
+#: website/templates/account/password_reset.html:29
+msgid ""
+"Forgotten your password? Enter your e-mail address below, and we'll send you "
+"an e-mail allowing you to reset it."
+msgstr "Passwort vergessen? Geben Sie unten Ihre E-Mail-Adresse ein und wir schicken Ihnen eine E-Mail, mit der Sie sie zurücksetzen können."
+
+#: website/templates/account/password_reset.html:38
+msgid "Reset My Password"
+msgstr "Setze mein Passwort zurück"
+
+#: website/templates/account/password_reset_from_key.html:24
+msgid "Bad Token"
+msgstr "Schlechtes Token"
+
+#: website/templates/account/password_reset_from_key.html:53
+msgid "Your password is now changed!"
+msgstr "Ihr Passwort ist jetzt geändert!"
+
+#: website/templates/account/signup.html:22
+#: website/templates/account/signup.html:65
+msgid "Sign Up"
+msgstr "Anmelden"
+
+#: website/templates/account/signup.html:67
+#, python-format
+msgid "Already have an account? <a href=\"%(login_url)s\">Login</a>."
+msgstr "Hast du schon ein Konto? <a href=\"%(login_url)s\">Anmeldung</a>."
+
+#: website/templates/base.html:58 website/templates/base_home.html.py:60
+msgid "Add to chrome"
+msgstr "Zu Chrome hinzufügen"
+
+#: website/templates/base.html:59 website/templates/base_home.html.py:61
+msgid "Social"
+msgstr "Soziale"
+
+#: website/templates/base.html:60 website/templates/base_home.html.py:62
+#: website/templates/base_home.html:144
+msgid "Report Bug"
+msgstr "Fehler melden"
+
+#: website/templates/base.html:61 website/templates/base_home.html.py:63
+msgid "Bug Hunt"
+msgstr "Bug Hunt"
+
+#: website/templates/base.html:78 website/templates/base_home.html.py:81
+msgid "User Profile"
+msgstr "Benutzerprofil"
+
+#: website/templates/base.html:89 website/templates/base_home.html.py:92
+msgid "Logout"
+msgstr "Ausloggen"
+
+#: website/templates/base.html:95 website/templates/base_home.html.py:98
+msgid "Signup"
+msgstr "Anmelden"
+
+#: website/templates/base.html:96 website/templates/base_home.html.py:99
+msgid "Login"
+msgstr "Anmeldung"
+
+#: website/templates/base.html:101 website/templates/base_home.html.py:104
+msgid "Search"
+msgstr "Suche"
+
+#: website/templates/base.html:160 website/templates/base_home.html.py:196
+msgid "About"
+msgstr "Über"
+
+#: website/templates/base.html:161 website/templates/base_home.html.py:197
+msgid "Stats"
+msgstr "Stats"
+
+#: website/templates/base.html:179 website/templates/base_home.html.py:215
+msgid "Company Scoreboard"
+msgstr "Firmenanzeiger"
+
+#: website/templates/base.html:180 website/templates/base_home.html.py:216
+msgid "Terms of Service"
+msgstr "Nutzungsbedingungen"
+
+#: website/templates/base_home.html:64
+msgid "Tour"
+msgstr "Tour"
+
+#: website/templates/base_home.html:124
+msgid "Describe bug issue"
+msgstr "Beschreibe Bug Problem"
+
+#: website/templates/base_home.html:139
+msgid "Upload Screenshot"
+msgstr "Screenshot hochladen"
+
+#: website/templates/index.html:13
+msgid "Find Bugs, Win Points and Prizes"
+msgstr "Finden Sie Bugs, Win Points und Preise"
+
+#: website/templates/index.html:17
+msgid "Fix issues on websites, apps or hardware (+3 points)"
+msgstr "Beheben von Problemen auf Websites, Apps oder Hardware (+3 Punkte)"
+
+#: website/templates/index.html:18
+msgid "Verify other bug reports(+2 points)"
+msgstr "Überprüfen Sie andere Fehlerberichte (+2 Punkte)"
+
+#: website/templates/index.html:19
+msgid "Invite friends (when they signup , get +1 point)"
+msgstr "Freunde einladen (wenn sie sich anmelden, bekommen +1 Punkte)"
+
+#: website/templates/index.html:20
+msgid "Find a bug on a new site or app (+4 points)"
+msgstr "Finden Sie einen Fehler auf einer neuen Website oder App (+4 Punkte)"
+
+#: website/templates/index.html:33
+msgid "Number Error"
+msgstr "Nummer Fehler"
+
+#: website/templates/index.html:34
+msgid "For pages where you see a number 404, 500."
+msgstr "Für Seiten, wo Sie eine Nummer 404, 500 sehen."
+
+#: website/templates/index.html:43
+msgid "Functional"
+msgstr "Funktionell"
+
+#: website/templates/index.html:44
+msgid "Something doesn't work."
+msgstr "Etwas funktioniert nicht."
+
+#: website/templates/index.html:52
+msgid "Performance"
+msgstr "Performance"
+
+#: website/templates/index.html:53
+msgid "Anything over 5 seconds."
+msgstr "Alles über 5 Sekunden."
+
+#: website/templates/index.html:65
+msgid "Security"
+msgstr "Sicherheit"
+
+#: website/templates/index.html:66
+msgid "Data leaks, exploits or anything smelly."
+msgstr "Datenlecks, Exploits oder irgendetwas stinkend."
+
+#: website/templates/index.html:74
+msgid "Typo"
+msgstr "Typo"
+
+#: website/templates/index.html:75
+msgid "Miss-spellings, miss-grammar and more."
+msgstr "Miss-Zauber, Miss-Grammatik und mehr."
+
+#: website/templates/index.html:83
+msgid "Design"
+msgstr "Entwurf"
+
+#: website/templates/index.html:84
+msgid "Layout, responsiveness and improvements"
+msgstr "Layout, Reaktionsfähigkeit und Verbesserungen"
+
+#: website/templates/index.html:96
+msgid "Featured Websites"
+msgstr "Ausgewählte Webseiten"
+
+#: website/templates/index.html:159
+msgid "Leaderboard"
+msgstr "Bestenliste"
