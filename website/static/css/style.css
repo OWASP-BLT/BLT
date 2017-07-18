@@ -257,16 +257,25 @@ a:hover{
 	font-weight: initial;
 	position: absolute;
 	top: 80px;
-	width: 85%;
+	width: 100%;
 }
 .activity-screenshot {
-	float:right;
+	position: relative;
+	height: 100%;
 	display:block;
 	overflow:hidden;
 }
 .activity-screenshot img {
-	width: 100px;
-	height: 95%;
+	max-height: 100%;
+    max-width: 100%;
+    width: 70%;
+    height: auto;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 40px;
+    right: 0;
+    margin: auto;
 }
 .panel-image {
 	width: auto;
@@ -449,9 +458,11 @@ input[type='file'] {
 	right: 20px;
 }
 .comment_link {
- 	position:absolute;
- 	bottom:10px;
- 	left:500px;
+ 	font-size: small;
+	font-weight: initial;
+	color: grey;
+	position: relative;
+	top: 15px;
  }
 /* Footer */
  #myFooter {
