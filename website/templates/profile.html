@@ -212,7 +212,7 @@ kbd.closed {
                                 <a href="/domain/{{ website.name }}">
                                     <img src="http://www.{{ website.name }}/favicon.ico" height="25" onerror="this.onerror=null; this.style.display='none';">
                                 </a>
-                                <a href="/domain/{{ website.name }}">{{ website.name }}</a>
+                                <a href="/domain/{{ website.name }}">{{ website.name|truncatechars:15 }}</a>
                                 <span class="label label-default pull-right">
                                   {{ website.total }} Bug{{ website.total|pluralize }}
                                 </span>
