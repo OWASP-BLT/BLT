@@ -343,14 +343,20 @@ a:hover{
 }
 .leaderboard-name,
 .leaderboard-name:hover
-.leaderboard-name:active {
+.leaderboard-name:active,
+.leaderboard-rank {
 	text-decoration: none !important;
-}
-.leaderboard-points {
-	float: none !important;
+	position: relative;
+	top: -10px;
+	left: 10px;
 }
 .leaderboard-rank {
-	margin-left: 15px;
+	padding: 0px 5px;
+}
+.leaderboard-points {
+	position: absolute;
+	top:40px;
+	left: 75px;
 }
 textarea {
     resize: vertical;

@@ -181,9 +181,9 @@
                                     {% else %}
                                         <img src="{% gravatar_url leader.email 50 %}">
                                     {% endif %}
-                                    <a href="/profile/{{leader.username}}" class="text-capitalize leaderboard-name">{{leader.username}}</a>
-                                    <span class="badge leaderboard-points">{{leader.total_score}} Points</span>
+                                    <a href="/profile/{{leader.username}}" class="text-capitalize leaderboard-name">{{leader.username|truncatechars:20}}</a>
                                     <span class="label label-success leaderboard-rank">{{forloop.counter|ordinal}}</span>
+                                    <div class="badge leaderboard-points">{{leader.total_score}} Points</div>                                    
                                 </div>
                             {% endfor %}
                         {% else %}
