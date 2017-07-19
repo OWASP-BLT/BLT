@@ -91,11 +91,8 @@
 
     <script type="text/javascript">
         $("#tt").click(function(){
-                // alert('Clicked');
             var sp = this;
             var abc = $("input[name=url").val();
-            console.log(abc);
-            console.log(5+6);
             $.ajax({
                 type : "POST",
                 data : { dom_url: $("input[name=url").val() },
