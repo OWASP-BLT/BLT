@@ -408,16 +408,20 @@ class StatsDetailView(TemplateView):
 
 
 class AllIssuesView(ListView):
-    model = Issue
-    paginate_by = 25
+    paginate_by = 20
     template_name = "list_view.html"
 
+    def get_queryset(self):
+        username = self.request.GET.get('user')
+        if username is None:
+            self.activities = Issue.objects.all()
+        else:
+            self.activities = Issue.objects.filter(user__username=username)
+        return self.activities
+
     def get_context_data(self, *args, **kwargs):
-        context = super(AllIssuesView, self).get_context_data(*args, **kwargs)
-
-        activities = Issue.objects.all()
-        paginator = Paginator(activities, self.paginate_by)
-
+        context = super(AllIssuesView, self).get_context_data(*args, **kwargs)        
+        paginator = Paginator(self.activities, self.paginate_by)
         page = self.request.GET.get('page')
 
         try:
@@ -428,7 +432,7 @@ class AllIssuesView(ListView):
             activities_paginated = paginator.page(paginator.num_pages)
 
         context['activities'] = activities_paginated
-
+        context['user'] = self.request.GET.get('user')
         return context
 
 
@@ -463,19 +467,19 @@ def search(request, template="search.html"):
         context = {
             'query': query,
             'type': stype,
-            'issues': Issue.objects.filter(Q(description__icontains=query))
+            'issues': Issue.objects.filter(Q(description__icontains=query))[0:20]
         }
     elif stype == "domain":
         context = {
             'query': query,
             'type': stype,
-            'domains': Domain.objects.filter(Q(url__icontains=query))
+            'domains': Domain.objects.filter(Q(url__icontains=query))[0:20]
         }
     elif stype == "user":
         context = {
             'query': query,
             'type': stype,
-            'users': User.objects.filter(Q(username__icontains=query))
+            'users': User.objects.filter(Q(username__icontains=query))[0:20]
         }
     return render(request, template, context)
 
