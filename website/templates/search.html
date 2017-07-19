@@ -15,6 +15,7 @@
                             <option value="issue" selected="selected">Issue</option>
                             <option value="domain">Domain</option>
                             <option value="user">User</option>
+                            <option value="label">Label</option>
                         </select>
                         <button class="btn btn-default" type="submit">Search</button>
                     </span>
@@ -40,6 +41,10 @@
                         </div>
                         {% endfor %}
                     </div>
+                {% elif labels %}
+                   {% for activity in issues %}
+                        {% include '_activity.html' %}
+                    {% endfor %}    
                 {% elif users %}
                     <div class="list-group">
                         {% for user in users %}

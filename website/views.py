@@ -481,6 +481,26 @@ def search(request, template="search.html"):
             'type': stype,
             'users': User.objects.filter(Q(username__icontains=query))[0:20]
         }
+
+    elif stype == "label":
+        stype1 = query.lower()
+        if stype1=="number error" or stype1=="numbererror":
+            query=1
+        elif stype1=="functional":
+            query=2
+        elif stype1=="performance":
+            query=3
+        elif stype1=="security":
+            query=4
+        elif stype1=="typo":
+            query=5
+        elif stype1=="design":
+            query=6
+        context = {
+            'query': query,
+            'type': stype,
+            'issues': Issue.objects.filter(Q(label__icontains=query))[0:20]
+        }
     return render(request, template, context)
 
 
