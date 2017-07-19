@@ -336,12 +336,12 @@ class UserProfileDetailView(DetailView):
         context['my_score'] = Points.objects.filter(user=self.object).aggregate(total_score=Sum('score')).values()[0]
         context['websites'] = Domain.objects.filter(issue__user=self.object).annotate(total=Count('issue')).order_by(
             '-total')
-        context['activities'] = Issue.objects.filter(user=self.object)
+        context['activities'] = Issue.objects.filter(user=self.object)[0:10]
         context['profile_form'] = UserProfileForm()
         context['total_open'] = Issue.objects.filter(user=self.object,status="open").count()
         context['total_closed'] = Issue.objects.filter(user=self.object,status="closed").count()
         context['current_month'] = datetime.now().month
-        context['graph'] = Issue.objects.filter(user=self.object).filter(created__month__gte=(datetime.now().month-6), created__month__lt=datetime.now().month) \
+        context['graph'] = Issue.objects.filter(user=self.object).filter(created__month__gte=(datetime.now().month-6), created__month__lte=datetime.now().month) \
                         .annotate(month=ExtractMonth('created')).values('month').annotate(c=Count('id')).order_by()
         for i in range(1,7):
             context['bug_type_'+str(i)] = Issue.objects.filter(user=self.object,label=str(i))
