@@ -44,9 +44,7 @@ body{
 }
 
 .change-language{
-	height: 25px; 
-	margin-bottom: -10px; 
-	border-radius: 5px; 
+	margin-top: 10px;
 	background-color: darkgrey;
 }
 
@@ -458,7 +456,7 @@ input[type='file'] {
 	font-weight: initial;
 	color: grey;
 	position: relative;
-	top: 15px;
+	top: 35px;
  }
 /* Footer */
  #myFooter {
