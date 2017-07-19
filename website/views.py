@@ -92,18 +92,22 @@ def domain_check(request):
             k = domain_url.index(str1)
             k=k+4
             t=k
-            while (domain_url[k]!="/"):
-                k=k+1
+            for k in range(len(domain_url)):
+                if (domain_url[k]!="/"):
+                    k=k+1   
         elif "http://" in domain_url:
             k=7
             t=k
-            while (domain_url[k]!="/"):
-                k=k+1
+            for k in range(len(domain_url)):
+                if (domain_url[k]!="/"):
+                   k=k+1
         elif "https://" in domain_url:
             k=8
             t=k
-            while (domain_url[k]!="/"):
-                k=k+1
+            for k in range(len(domain_url)):
+                if (domain_url[k]!="/"):
+                    k=k+1
+        
         url_parsed = domain_url[t:k]        
         if Domain.objects.filter(name=url_parsed).exists():
             a =  url_parsed
