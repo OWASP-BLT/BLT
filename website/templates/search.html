@@ -45,7 +45,7 @@
                         {% for user in users %}
                         <div class="list-group-item">
                             {% if user.socialaccount_set.all.0.get_avatar_url %}
-                                <img src="{{user.socialaccount_set.all.0.get_avatar_url}}">
+                                <img src="{{user.socialaccount_set.all.0.get_avatar_url}}" height="50px">
                             {% else %}
                                 <img src="{% gravatar_url user.email 50 %}">
                             {% endif %}

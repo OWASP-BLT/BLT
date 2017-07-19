@@ -93,11 +93,11 @@
 .points {
     padding: 10px;
 }
-.open {
+kbd.open {
     padding: 10px;
     background: #00C851;
 }
-.closed {
+kbd.closed {
     padding: 10px;
     background: #ff4444;
 }
@@ -191,6 +191,7 @@
                                 {% include '_activity.html' %}
                             {% endfor %}
                         </div>
+                        <a href="/all_activity?user={{ user.username }}" class="btn btn-default btn-block">View All Activity by {{ user.username }}</a>
                     {% else %}
                         <div class="alert alert-danger text-center">No Activity</div>
                     {% endif %}

@@ -198,7 +198,9 @@
                             </ul>
                         </div>
                         <div class="col-sm-3">
-                            <ul>
+                            <ul>                                
+                                <li><a href="/scoreboard" target="_new">{% trans "Company Scoreboard" %}</a></li>
+                                <li><a href="/terms">{% trans "Terms of Service" %}</a></li>
                                 <form action="{% url 'set_language' %}" method="post">
                                     {% csrf_token %}
                                     <input name="next" type="hidden" value="{{ redirect_to }}" />
@@ -212,8 +214,6 @@
                                         {% endfor %}
                                     </select>
                                 </form>
-                                <li><a href="/scoreboard" target="_new">{% trans "Company Scoreboard" %}</a></li>
-                                <li><a href="/terms">{% trans "Terms of Service" %}</a></li>
                             </ul>
                         </div>
                         <div class="col-sm-3">

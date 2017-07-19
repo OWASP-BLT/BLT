@@ -2,7 +2,7 @@
 {% block content %}
     <div class="row">
         <div class="col-lg-6">
-            <h1 class="page-header">All Issues</h1>
+            <h1 class="page-header">All Issues{% if user %} by {{user}}{% endif %}</h1>
         </div>
     </div>
     <div class="row">
@@ -19,12 +19,14 @@
         </div>
     </div>
     {% if is_paginated %}
-        {% if page_obj.has_previous %}
-            <span><a href="?page={{ page_obj.previous_page_number }}">Previous</a></span>
-        {% endif %}
-        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.</span>
-        {% if page_obj.has_next %}
-            <span><a href="?page={{ page_obj.next_page_number }}">Next</a></span>
-        {% endif %}
+        <div class="row text-center">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if user %}&user={{user}}{% endif %}" class="btn btn-default">Prev</a>
+            {% endif %}
+            <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if user %}&user={{user}}{% endif %}"  class="btn btn-default">Next</a>
+            {% endif %}
+        </div>
     {% endif %}
 {% endblock %}
