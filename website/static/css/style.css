@@ -44,9 +44,7 @@ body{
 }
 
 .change-language{
-	height: 25px; 
-	margin-bottom: -10px; 
-	border-radius: 5px; 
+	margin-top: 10px;
 	background-color: darkgrey;
 }
 
