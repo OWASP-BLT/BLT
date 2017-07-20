@@ -275,13 +275,6 @@ a:hover{
     right: 0;
     margin: auto;
 }
-.panel-image {
-	width: auto;
-    height: 75px;
-    margin: 0 auto;
-    display: block;
-	margin-bottom: -20px;
-}
 .panel-footer .btn {
 	width: 100%;
 	width: -moz-available;
