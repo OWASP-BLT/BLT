@@ -96,7 +96,6 @@ def domain_check(request):
                     k=k+1       
                 elif (domain_url[k]=="/"):
                     break
-            pass
         
         elif "http://" in domain_url:
             k=7
@@ -106,7 +105,6 @@ def domain_check(request):
                     k=k+1       
                 elif (domain_url[k]=="/"):
                     break
-            pass
             
         elif "https://" in domain_url:
             k=8

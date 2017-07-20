@@ -97,7 +97,7 @@
                         var link = "www.bugheist.com/domain/" + uri;
                         if (response == "There are no bugs on this domain")
                             $('.message').text("Sweet! We haven't got any bug from this domain till now");
-                        else
+                        else if (response !="Nothing passed")
                             $('.message').text("Bugs already exist on this domain, ensure you are not submitting a duplicate bug by going here: " + link);
                     },
                     error: function(response){
