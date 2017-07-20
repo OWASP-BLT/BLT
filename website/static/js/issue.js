@@ -30,6 +30,6 @@ window.twttr = (function (d, s, id) {
 $(function () {
     new Clipboard('.btn');
     $('.copy-btn').on('click', function () {
-        $.notify('Copied!', "success");
+        $.notify('Copied!', {style: "custom", className: "success"});
     });
 });
