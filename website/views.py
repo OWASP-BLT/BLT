@@ -85,36 +85,48 @@ def find_key(request, token):
 def domain_check(request):
     if request.method =="POST":
         domain_url = request.POST.get('dom_url')
-
         #the steps below parse the url to get its domain name in the way we store it in db
         str1 = "www."
         if "www." in domain_url:
             k = domain_url.index(str1)
             k=k+4
             t=k
-            for k in range(len(domain_url)):
+            while k<len(domain_url):
                 if (domain_url[k]!="/"):
-                    k=k+1   
+                    k=k+1       
+                elif (domain_url[k]=="/"):
+                    break
+            pass
+        
         elif "http://" in domain_url:
             k=7
             t=k
-            for k in range(len(domain_url)):
+            while k<len(domain_url):
                 if (domain_url[k]!="/"):
-                   k=k+1
+                    k=k+1       
+                elif (domain_url[k]=="/"):
+                    break
+            pass
+            
         elif "https://" in domain_url:
             k=8
             t=k
-            for k in range(len(domain_url)):
+            while k<len(domain_url):
                 if (domain_url[k]!="/"):
-                    k=k+1
-        
+                    k=k+1       
+                elif (domain_url[k]=="/"):
+                    break
+                    
+        else:
+            return HttpResponse('Nothing passed')
+
         url_parsed = domain_url[t:k]        
+        
         if Domain.objects.filter(name=url_parsed).exists():
             a =  url_parsed
             return HttpResponse(a)   
         else:
             return HttpResponse('There are no bugs on this domain')
-
 
 class IssueBaseCreate(object):
     def form_valid(self, form):
