@@ -10,34 +10,19 @@
 {% block description %}{{object.description}}{% endblock %}
 
 {% block style %}
-.form-group {
-    margin-top: 20px;
-}
+.form-group {margin-top: 10px;}
 {% endblock %}
 
-{% block content %}
-    <div id="fb-root"></div>
-    <script type="text/javascript" src="{% static "js/issue.js" %}"></script>
-    <div class="row">
-        <div class="col-lg-12">
-            <h3 class="page-header">Edit Issue #{{issue.pk}}</h3>
-            <strong>Domain:</strong>
-            <a href="{{object.url}}" target="_new">{{object.url}}</a>
-            <div class="pull-right">
-                <a class="twitter-share-button"
-                    href="https://twitter.com/intent/tweet?text=Bug on @{{object.domain_title}} - {{object.description}}"
-                data-size="small">Tweet</a>
-                <div class="fb-share-button" data-href="https://www.bugheist.com/issue/{{object.id}} " data-layout="button_count" data-size="small" data-mobile-iframe="true">
-                    <a class="fb-xfbml-parse-ignore" target="_blank" >Share</a>
-                </div>
-            </div>
-            <hr>
-        </div>
+{% block content %}    
+    <div class="row text-center">
+        <h2>Editing Issue #{{issue.pk}}</h2>
     </div>
 
     <div class="row">
-        <div class="col-lg-12">
-            <form role="form" action="." method="post" id="form1" enctype="multipart/form-data">
+        <div class="col-md-6 col-md-offset-3">
+            <strong>Domain:</strong>
+            <a href="{{object.url}}" target="_new">{{object.url}}</a>
+            <form role="form" action="." method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="form-group">
                     <label>Description of the bug</label>
@@ -48,11 +33,10 @@
                     </label>
                     {% endif %}
                 </div>
-
-                <strong>Bug Type:</strong> {{form.label}}
-
+                <strong>Bug Type:</strong>
+                <div class="form-group">{{form.label}}</div>
                 <div class="form-group">
-                    <label>Screenshot</label>
+                    <label>Screenshot</label><br>
                     <img src="{{form.instance.screenshot.url}}" class="img-responsive img-thumbnail">
                     {% if form.screenshot.errors %}
                     <label id="description-error" class="error" for="description">
@@ -60,9 +44,8 @@
                     </label>
                     {% endif %}
                 </div>
-
                 <div class="form-group">
-                    <button type="submit" class="btn btn-default btn-primary">Update</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
                 </div>
             </form>
         </div>
