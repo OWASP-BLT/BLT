@@ -9,7 +9,7 @@
             <h3 class="text-center">Search for Bugs & Issues</h3><hr>
             <form method="GET" action=".">
                 <div class="input-group">
-                    <input type="text" class="form-control" name="query" value="{{query}}" placeholder="Search for issues...">
+                    <input type="text" class="form-control" name="query" value="{% if type != 'label' %}{{query}}{% endif %}" placeholder="Search for issues...">
                     <span class="input-group-btn">
                         <select class="form-control" name="type" style="width:150%">
                             <option value="issue" selected="selected">Issue</option>
@@ -39,7 +39,7 @@
                             </a>
                         </div>
                         {% endfor %}
-                    </div>
+                    </div>                
                 {% elif users %}
                     <div class="list-group">
                         {% for user in users %}
