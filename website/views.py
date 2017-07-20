@@ -491,6 +491,12 @@ def search(request, template="search.html"):
             'type': stype,
             'users': User.objects.filter(Q(username__icontains=query))[0:20]
         }
+    elif stype == "label":        
+        context = {
+            'query': query,
+            'type': stype,
+            'issues': Issue.objects.filter(Q(label__icontains=query))[0:20]
+        }
     return render(request, template, context)
 
 
