@@ -230,20 +230,10 @@
                 </div>
             </footer>
             <script src="{% static "vendor/bootstrap/js/bootstrap.min.js" %}"></script>
+            <script src="{% static 'js/ui.js' %}"></script>
             {% block after_js %}
             {% endblock %}
-            {% if messages %}
-                {% for message in messages %}
-                    <script> $.notify("{{ message }}",{ position: 'top center', className: "{{message.level_tag }}" }); </script>
-                {% endfor %}
-            {% endif %}
-            <script src="{% static 'js/ui.js' %}"></script>
-            <script>
-                var message = "{{not_verified}}"
-                if(message!=''){
-                  $.notify(message,{ position: 'top center', className: "" }); 
-                }
-            </script>
+
             <script>
               (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
               (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -261,6 +251,15 @@
                         var file = $(this).val().replace('C:\\fakepath\\', '');
                         $(this).parent().find('span').html(file);
                     });
+
+                    var message = "{{not_verified}}";
+                    if(message != '')
+                        $.notify(message, {style: "custom", className: "danger"});
+                    {% if messages %}
+                        {% for message in messages %}
+                            $.notify("{{ message }}", {style: "custom", className: "{{message.level_tag }}"});
+                        {% endfor %}
+                    {% endif %}
                 });
             </script>
         </div>
