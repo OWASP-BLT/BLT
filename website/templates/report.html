@@ -94,7 +94,7 @@
                     data : { dom_url: uri },
                     url : "/domain_check/",
                     success: function(response){
-                        var link = "www.bugheist.com/domain/" + uri;
+                        var link = "www.bugheist.com/domain/" + response;
                         if (response == "There are no bugs on this domain")
                             $('.message').text("Sweet! We haven't got any bug from this domain till now");
                         else if (response !="Nothing passed")
