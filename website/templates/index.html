@@ -23,10 +23,10 @@
         <br>
     </section>
 
-    <div class="container">
+        <div class="container">
             <center>
             <div class="row">
-                <div class="col-sm-4">    
+                <div class="col-sm-3 cborder">    
                     <div class="card cardbox">
                       <center><i class="fa fa-exclamation-triangle fa-3x"></i></center>  
                       <div class="card-block">
@@ -34,31 +34,39 @@
                         <p class="card-text">{% trans "For pages where you see a number 404, 500." %}</p>
                       </div>
                     </div>
+                    <ul class="list-group list-group-flush">
+                      <li class="list-group-item"><a href="/search/?query=Number+error&type=label">Examples</a></li>
+                    </ul>   
                 </div>
-                
-                <div class="col-sm-4">    
+                <div class="col-sm-3 cborder">    
                     <div class="card cardbox">
                       <center><i class="fa fa-trophy fa-3x"></i></center>
                       <div class="card-block">
                         <h4 class="card-title">{% trans "Functional" %}</h4>
-                        <p class="card-text">{% trans "Something doesn't work." %}</p>
+                        <p class="card-text">{% trans "Something doesn't work as intended" %}</p>
                       </div>
                     </div>
+                    <ul class="list-group list-group-flush">
+                      <li class="list-group-item"><a href="/search/?query=Functional&type=label">Examples</a></li>
+                    </ul>   
                 </div>
-                <div class="col-sm-4">    
+                <div class="col-sm-3 cborder">    
                     <div class="card cardbox">
                       <center><i class="fa fa-flash fa-3x"></i></center>
                       <div class="card-block">
                         <h4 class="card-title">{% trans "Performance" %}</h4>
-                        <p class="card-text">{% trans "Anything over 5 seconds." %}</p>
+                        <p class="card-text">{% trans "Any process that takes over 5 seconds." %}</p>
                       </div>
                     </div>
+                    <ul class="list-group list-group-flush">
+                      <li class="list-group-item"><a href="/search/?query=Performance&type=label">Examples</a></li>
+                    </ul>   
                 </div>
             </div>
             <br>
             <br>
             <div class="row">
-                <div class="col-sm-4">    
+                <div class="col-sm-3 cborder">    
                     <div class="card cardbox">
                       <center><i class="fa fa-lock fa-3x"></i></center> 
                       <div class="card-block">
@@ -66,8 +74,11 @@
                         <p class="card-text">{% trans "Data leaks, exploits or anything smelly." %}</p>
                       </div>
                     </div>
+                    <ul class="list-group list-group-flush">
+                      <li class="list-group-item"><a href="/search/?query=Security&type=label">Examples</a></li>
+                    </ul>   
                 </div>
-                <div class="col-sm-4">    
+                <div class="col-sm-3 cborder">    
                     <div class="card cardbox">
                       <center> <i class="fa fa-eraser fa-3x"></i></center>
                       <div class="card-block">
@@ -75,8 +86,11 @@
                         <p class="card-text">{% trans "Miss-spellings, miss-grammar and more." %}</p>
                       </div>
                     </div>
+                    <ul class="list-group list-group-flush">
+                      <li class="list-group-item"><a href="/search/?query=Typo&type=label">Examples</a></li>
+                    </ul>   
                 </div>
-                <div class="col-sm-4">    
+                <div class="col-sm-3 cborder">    
                     <div class="card cardbox">
                       <center><i class="fa fa-code fa-3x"></i></center>
                       <div class="card-block">
@@ -84,11 +98,13 @@
                         <p class="card-text">{% trans "Layout, responsiveness and improvements" %}</p>
                       </div>
                     </div>
+                    <ul class="list-group list-group-flush">
+                      <li class="list-group-item"><a href="/search/?query=Design&type=label">Examples</a></li>
+                    </ul>   
                 </div>        
             </div>  
             </center>
-    </div>
-    
+        </div>  
     <div class="row">
         <div class="col-lg-9">
             <div class="row">
