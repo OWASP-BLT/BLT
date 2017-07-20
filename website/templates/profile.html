@@ -101,6 +101,10 @@ kbd.closed {
     padding: 10px;
     background: #ff4444;
 }
+.scroll {
+    max-height: 1100px;
+    overflow-y: scroll;
+}
 {% endblock %}
 
 {% block content %}
@@ -204,9 +208,9 @@ kbd.closed {
                 <div class="panel-heading text-capitalize">
                     {{ user.username }}'s top bug findings
                 </div>
-                <div class="panel-body">
+                <div class="panel-body" style="padding: 0px">
                 {% if websites %}
-                    <div class="list-group">
+                    <div class="list-group scroll">
                         {% for website in websites %}
                             <div class="list-group-item">
                                 <a href="/domain/{{ website.name }}">
