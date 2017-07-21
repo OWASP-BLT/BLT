@@ -12,7 +12,6 @@ import json
 
 @login_required(login_url='/accounts/login/')
 def add_comment(request):
-    pass
     issue = Issue.objects.get(pk=request.POST.get('issue_pk'))
     if request.method == "POST":
         author = request.user.username
