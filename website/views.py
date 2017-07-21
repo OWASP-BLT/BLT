@@ -379,22 +379,15 @@ class DomainDetailView(TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super(DomainDetailView, self).get_context_data(*args, **kwargs)
         parsed_url = urlparse("http://" + self.kwargs['slug'])
-        context['name'] = parsed_url.netloc.split(".")[-2:][0].title()
 
-        try:
-            context['domain'] = Domain.objects.get(name=self.kwargs['slug'])
-            context['issue_choice'] = self.kwargs['choice']
-        except:
-            context['issue_choice'] = "all"
-        context['issues'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug'])
+        context['name'] = parsed_url.netloc.split(".")[-2:][0].title()
+        context['domain'] = Domain.objects.get(name=self.kwargs['slug'])
+        context['opened'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(
+            status="open")
+        context['closed'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(
+            status="closed")
         context['leaderboard'] = User.objects.filter(issue__url__contains=self.kwargs['slug']).annotate(
             total=Count('issue')).order_by('-total')
-        context['total_issues'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).count()
-        context['total_open'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(
-            status="open").count()
-        context['total_closed'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(
-            status="closed").count()
-
         return context
 
 
