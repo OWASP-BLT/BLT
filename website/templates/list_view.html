@@ -6,7 +6,7 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-md-8 col-md-offset-2">
+        <div class="col-md-10 col-md-offset-1">
             <div class="panel panel-default">
                 <div class="panel-body">
                     <div class="list-group">
@@ -17,16 +17,18 @@
                 </div>
             </div>
         </div>
-    </div>
-    {% if is_paginated %}
-        <div class="row text-center">
-            {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}{% if user %}&user={{user}}{% endif %}" class="btn btn-default">Prev</a>
-            {% endif %}
-            <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-            {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}{% if user %}&user={{user}}{% endif %}"  class="btn btn-default">Next</a>
-            {% endif %}
+        {% if is_paginated %}
+        <div class="col-md-12">
+            <div class="text-center">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}{% if user %}&user={{user}}{% endif %}" class="btn btn-default">Prev</a>
+                {% endif %}
+                <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if user %}&user={{user}}{% endif %}"  class="btn btn-default">Next</a>
+                {% endif %}
+            </div>
         </div>
-    {% endif %}
+        {% endif %}
+    </div>
 {% endblock %}
