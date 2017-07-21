@@ -79,7 +79,7 @@ class Domain(models.Model):
         if self.color:
             return self.color
         else:
-            if not self.logo:
+            if self.logo:
                 self.get_logo()
             try:
                 color_thief = ColorThief(self.logo)
