@@ -463,6 +463,7 @@ input[type='file'] {
     background-color: #3c3d41;
     color: white;
     padding-top: 30px;
+    clear: both;
 }
 #myFooter .row {
     margin-bottom: 10px;
@@ -509,7 +510,6 @@ input[type='file'] {
 #myFooter .fa-github:hover {
     color: black;
 }
-
 .cardbox {
 	width: 20rem;
 }

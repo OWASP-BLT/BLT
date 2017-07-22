@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.views.generic import TemplateView
 from website.views import (UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView, UpdateIssue,
-                           InboundParseWebhookView, LeaderboardView, IssueView, IssueEditView, AllIssuesView,
+                           InboundParseWebhookView, LeaderboardView, IssueView, AllIssuesView,
                            HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend,
                            ScoreboardView, domain_check)
 from django.contrib.auth.decorators import login_required
@@ -22,22 +22,15 @@ admin.autodiscover()
 urlpatterns = [
     url(r'^$', website.views.index, name='index'),
     url(r'^' + settings.ADMIN_URL + '/', include(admin.site.urls)),
-    url(r'^issue/(?P<slug>\w+)/$', IssueView.as_view(), name="issue_view"),
-    url(r'^issue/(?P<slug>\w+)/edit/$',
-        IssueEditView.as_view(), name="issue_edit"),
+    url(r'^issue/edit/$', website.views.IssueEdit),
+    url(r'^issue/(?P<slug>\w+)/$', IssueView.as_view(), name="issue_view"),    
     url(r'^all_activity/$', AllIssuesView.as_view(), name="all_activity"),
     url(r'^leaderboard/$', LeaderboardView.as_view(), name="leaderboard"),
     url(r'^scoreboard/$', ScoreboardView.as_view(), name="scoreboard"),
     url(r'^issue/$', IssueCreate.as_view(), name="issue"),
-    url(r'^upload/(?P<time>[^/]+)/(?P<hash>[^/]+)/',
-        UploadCreate.as_view(), name="upload"),
-    url(r'^profile/(?P<slug>[^/]+)/$',
-        UserProfileDetailView.as_view(), name="profile"),
-    url(r'^domain/(?P<slug>[^/]+)/$',
-        DomainDetailView.as_view(), name="domain"),
-    url(r'^domain/(?P<slug>[^/]+)/(?P<choice>\ball\b|\bopen\b|\bclosed\b)$',
-        DomainDetailView.as_view(),
-        name="domain"),
+    url(r'^upload/(?P<time>[^/]+)/(?P<hash>[^/]+)/', UploadCreate.as_view(), name="upload"),
+    url(r'^profile/(?P<slug>[^/]+)/$', UserProfileDetailView.as_view(), name="profile"),
+    url(r'^domain/(?P<slug>[^/]+)/$', DomainDetailView.as_view(), name="domain"),    
     url(r'^email/(?P<slug>[^/]+)/$', EmailDetailView.as_view(), name="email"),
     url(r'^.well-known/acme-challenge/(?P<token>[^/]+)/$',
         website.views.find_key, name="find_key"),

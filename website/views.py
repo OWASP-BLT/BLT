@@ -38,13 +38,12 @@ import re
 import os
 import json
 from user_agents import parse
-from .forms import IssueEditForm, FormInviteFriend, UserProfileForm
+from .forms import FormInviteFriend, UserProfileForm
 import random
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from allauth.account.models import EmailAddress
-from django.views.decorators.csrf import csrf_exempt
 
 def index(request, template="index.html"):
     try:
@@ -85,36 +84,46 @@ def find_key(request, token):
 def domain_check(request):
     if request.method =="POST":
         domain_url = request.POST.get('dom_url')
-
         #the steps below parse the url to get its domain name in the way we store it in db
         str1 = "www."
         if "www." in domain_url:
             k = domain_url.index(str1)
             k=k+4
             t=k
-            for k in range(len(domain_url)):
+            while k<len(domain_url):
                 if (domain_url[k]!="/"):
-                    k=k+1   
+                    k=k+1       
+                elif (domain_url[k]=="/"):
+                    break
+        
         elif "http://" in domain_url:
             k=7
             t=k
-            for k in range(len(domain_url)):
+            while k<len(domain_url):
                 if (domain_url[k]!="/"):
-                   k=k+1
+                    k=k+1       
+                elif (domain_url[k]=="/"):
+                    break
+            
         elif "https://" in domain_url:
             k=8
             t=k
-            for k in range(len(domain_url)):
+            while k<len(domain_url):
                 if (domain_url[k]!="/"):
-                    k=k+1
-        
+                    k=k+1       
+                elif (domain_url[k]=="/"):
+                    break
+                    
+        else:
+            return HttpResponse('Nothing passed')
+
         url_parsed = domain_url[t:k]        
+        
         if Domain.objects.filter(name=url_parsed).exists():
             a =  url_parsed
             return HttpResponse(a)   
         else:
             return HttpResponse('There are no bugs on this domain')
-
 
 class IssueBaseCreate(object):
     def form_valid(self, form):
@@ -369,22 +378,15 @@ class DomainDetailView(TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super(DomainDetailView, self).get_context_data(*args, **kwargs)
         parsed_url = urlparse("http://" + self.kwargs['slug'])
-        context['name'] = parsed_url.netloc.split(".")[-2:][0].title()
 
-        try:
-            context['domain'] = Domain.objects.get(name=self.kwargs['slug'])
-            context['issue_choice'] = self.kwargs['choice']
-        except:
-            context['issue_choice'] = "all"
-        context['issues'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug'])
+        context['name'] = parsed_url.netloc.split(".")[-2:][0].title()
+        context['domain'] = Domain.objects.get(name=self.kwargs['slug'])
+        context['opened'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(
+            status="open")
+        context['closed'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(
+            status="closed")
         context['leaderboard'] = User.objects.filter(issue__url__contains=self.kwargs['slug']).annotate(
             total=Count('issue')).order_by('-total')
-        context['total_issues'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).count()
-        context['total_open'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(
-            status="open").count()
-        context['total_closed'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(
-            status="closed").count()
-
         return context
 
 
@@ -481,6 +483,12 @@ def search(request, template="search.html"):
             'type': stype,
             'users': User.objects.filter(Q(username__icontains=query))[0:20]
         }
+    elif stype == "label":        
+        context = {
+            'query': query,
+            'type': stype,
+            'issues': Issue.objects.filter(Q(label__icontains=query))[0:20]
+        }
     return render(request, template, context)
 
 
@@ -536,38 +544,16 @@ class IssueView(DetailView):
         return context
 
 
-class IssueEditView(UpdateView):
-    model = Issue
-    slug_field = "id"
-    template_name = "issue_edit.html"
-    form_class = IssueEditForm
-
-    def get_object(self):
-        if self.request.user.is_superuser:
-            issues = Issue.objects.all()
+def IssueEdit(request):
+    if request.method == "POST":
+        issue = Issue.objects.get(pk=request.POST.get('issue_pk'))
+        if request.user == issue.user or request.user.is_superuser:
+            issue.description = request.POST.get('description')
+            issue.label = request.POST.get('label')
+            issue.save()
+            return HttpResponse("Updated")
         else:
-            issues = Issue.objects.filter(user=self.request.user)
-        return get_object_or_404(issues, pk=self.kwargs['slug'])
-
-    def get_success_url(self):
-        return reverse('issue_view', args=(self.object.id,))
-
-    def get_context_data(self, **kwargs):
-        context = super(IssueEditView, self).get_context_data(**kwargs)
-        if self.object.user_agent:
-            user_agent = parse(self.object.user_agent)
-            context['browser_family'] = user_agent.browser.family
-            context['browser_version'] = user_agent.browser.version_string
-            context['os_family'] = user_agent.os.family
-            context['os_version'] = user_agent.os.version_string
-        context['users_score'] = \
-            Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
-        context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain_name).count()
-        return context
-
-    def form_valid(self, form):
-        messages.success(self.request, 'Issue Updated')
-        return super(IssueEditView, self).form_valid(form)
+            return HttpResponse("Unauthorised")
 
 
 class EmailDetailView(TemplateView):

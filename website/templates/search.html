@@ -9,9 +9,9 @@
             <h3 class="text-center">Search for Bugs & Issues</h3><hr>
             <form method="GET" action=".">
                 <div class="input-group">
-                    <input type="text" class="form-control" name="query" value="{{query}}" placeholder="Search for issues...">
+                    <input type="text" class="form-control" name="query" value="{% if type != 'label' %}{{query}}{% endif %}" placeholder="Search for issues...">
                     <span class="input-group-btn">
-                        <select class="form-control" name="type">
+                        <select class="form-control" name="type" style="width:150%">
                             <option value="issue" selected="selected">Issue</option>
                             <option value="domain">Domain</option>
                             <option value="user">User</option>
@@ -20,16 +20,23 @@
                     </span>
                 </div>
             </form>
+            {% if type %}
+            <script type="text/javascript">
+                $('select').val("{{type}}");
+            </script>
+            {% endif %}
         </div>
     </div>
     {% if query %}
-        <div class="row">
-            <div class="col-md-8 col-md-offset-2">
-                {% if issues %}
+        <div class="row">            
+            {% if issues %}
+                <div class="col-md-10 col-md-offset-1">
                     {% for activity in issues %}
                         {% include '_activity.html' %}
                     {% endfor %}
-                {% elif domains %}
+                </div>
+            {% elif domains %}
+                <div class="col-md-8 col-md-offset-2">
                     <div class="list-group">
                         {% for domain in domains %}
                         <div class="list-group-item">
@@ -40,7 +47,9 @@
                         </div>
                         {% endfor %}
                     </div>
-                {% elif users %}
+                </div>
+            {% elif users %}
+                <div class="col-md-8 col-md-offset-2">
                     <div class="list-group">
                         {% for user in users %}
                         <div class="list-group-item">
@@ -53,10 +62,12 @@
                         </div>
                         {% endfor %}
                     </div>
-                {% else %}
-                    <div class="alert alert-danger" role="alert">Nothing Found!</div>
-                {% endif %}
-            </div>
+                </div>
+            {% else %}
+                <div class="col-md-8 col-md-offset-2">
+                    <div class="alert alert-danger text-center" role="alert">Nothing Found!</div>
+                </div>
+            {% endif %}
         </div>
     {% endif %}
 {% endblock %}
