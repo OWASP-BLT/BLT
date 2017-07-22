@@ -513,3 +513,10 @@ input[type='file'] {
 .cardbox {
 	width: 20rem;
 }
+.cborder {
+    border-style: solid;
+    border-width: 1px;
+    padding-top: 15px;
+    border-radius: 5px;
+    margin-top: 25px;
+}
