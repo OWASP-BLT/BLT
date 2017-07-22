@@ -12,7 +12,6 @@ import json
 
 @login_required(login_url='/accounts/login/')
 def add_comment(request):
-    pass
     issue = Issue.objects.get(pk=request.POST.get('issue_pk'))
     if request.method == "POST":
         author = request.user.username
@@ -50,6 +49,18 @@ def delete_comment(request):
                                              'user': request.user},)
 
 
+@login_required(login_url="/accounts/login/")
+def edit_comment(request, pk):
+    if request.method == "GET":
+        issue = Issue.objects.get(pk=request.GET['issue_pk'])
+        comment = Comment.objects.get(pk=request.GET['comment_pk'])
+        comment.text = request.GET.get('text_comment')
+        comment.save()
+        all_comment = Comment.objects.filter(issue=issue)
+    return render(request, 'comments.html', {'all_comment': all_comment,
+                                             'user': request.user},)
+
+
 @login_required(login_url='/accounts/login')
 def autocomplete(request):
     q_string = request.GET.get('search', '')
@@ -70,22 +81,3 @@ def autocomplete(request):
     resp = request.GET['callback'] + '(' + json.dumps(results) + ');'
     print resp
     return HttpResponse(resp, content_type='application/json')
-
-
-@login_required(login_url="/accounts/login/")
-def EditComment(request, pk):
-    comment = get_object_or_404(Comment, pk=pk)
-    if request.user.username != comment.author:
-        return HttpResponseRedirect(os.path.join('/issue', str(pk)))
-    if request.method == "POST":
-        comment.text = request.POST.get('new_comment')
-        comment.save()
-    return HttpResponseRedirect(os.path.join('/issue', str(comment.issue.pk)))
-
-
-@login_required(login_url="/account/login/")
-def EditCommentPage(request, pk):
-    comment = get_object_or_404(Comment, pk=pk)
-    if request.user.username != comment.author:
-        return HttpResponse("Can't Edit this comment")
-    return render(request, 'edit_comment.html', {'comment': comment})

@@ -6,28 +6,28 @@
 {% providers_media_js %}
 
 {% block style %}
-    #tt {
-        border: 1px solid black;
-        padding: 5px;
+    .duplicates {
+        position: absolute;
+        left: 600px;
+        top: 0px;
+        width: 160px;
     }
-    #tt a {
-    text-decoration:none;
-    color: black;
+    .message {
+        position: absolute;
+        left: 600px;
+        top: 30px;
+        width: 100%;
     }
-
-    #tt a:hover {
-    text-decoration: underline
-    } 
 {% endblock %}
 
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
-    <script src="{% static 'js/activity.js' %}"></script>    
+    <script src="{% static 'js/activity.js' %}"></script>
     <form action="/issue/" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="row">
             <div class="col-lg-6">
-                <h1 class="page-header">Report a bug</h1> 
+                <h1 class="page-header">Report a bug</h1>
             </div>
         </div>
         <div class="row">
@@ -37,11 +37,11 @@
                         <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
                     {% else %}
                         <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
-                    {% endif %}     
+                    {% endif %}
+                    <a class="btn btn-default duplicates">Check for Duplicates</a>
+                    <span class="message"></span>
+                    <span class="help-block">{{ form.url.errors }}</span>
                 </div>
-                <span id="tt"><a>Click Here for Duplicates</a></span>
-                <br>
-                <span class="help-block">{{ form.description.errors }}</span>
                 <div class="form-group{% if form.description.errors %} has-error{% endif %}">
                     <textarea data-required="true" name="description" id="description" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="Describe bug issue">{{form.description.value|default:""}}</textarea>
                     <span class="help-block">{{ form.description.errors }}</span>
@@ -85,33 +85,26 @@
             $('input[name="screenshot"]').on('change', function() {
                 var file = $(this).val().replace('C:\\fakepath\\', '');
                 $(this).parent().find('span').html(file);
+            });        
+    
+            $(".duplicates").click(function(){
+                var uri = $("input[name='url']").val();
+                $.ajax({
+                    type : "POST",
+                    data : { dom_url: uri },
+                    url : "/domain_check/",
+                    success: function(response){
+                        var link = "www.bugheist.com/domain/" + uri;
+                        if (response == "There are no bugs on this domain")
+                            $('.message').text("Sweet! We haven't got any bug from this domain till now");
+                        else
+                            $('.message').text("Bugs already exist on this domain, ensure you are not submitting a duplicate bug by going here: " + link);
+                    },
+                    error: function(response){
+                        $('.message').text('Something went wrong!');
+                    },
+                });
             });
         });
     </script>
-
-    <script type="text/javascript">
-        $("#tt").click(function(){
-            var sp = this;
-            var abc = $("input[name=url").val();
-            $.ajax({
-                type : "POST",
-                data : { dom_url: $("input[name=url").val() },
-                url : "/domain_check/",
-                success: function(response){
-                    console.log(response);
-                    if (response=="There are no bugs on this domain") {
-                        sp.replaceWith("Sweet! We haven't got any bug from this domain till now"); 
-                    }
-                    var url = "www.bugheist.com/domain/" + response;
-                    console.log(url);
-                    sp.replaceWith("Bugs already exist on this domain, ensure you are not submitting a duplicate bug by going here: " + url);
-                    },
-                error: function(response){
-                    console.log(response);
-                    $(this).replaceWith('<div>There an error</div>')
-                    },
-                });
-        });
-    </script>
-
 {% endblock %}
