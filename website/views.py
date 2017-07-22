@@ -573,7 +573,6 @@ def get_email_from_domain(domain_name):
     t_end = time.time() + 20
 
     while len(new_urls) and time.time() < t_end:
-
         url = new_urls.popleft()
         processed_urls.add(url)
         parts = urlsplit(url)
@@ -622,11 +621,10 @@ class InboundParseWebhookView(View):
         return JsonResponse({'detail': 'Inbound Sendgrid Webhook recieved'})
 
 
-class UpdateIssue(View):
-    def post(self, request, *args, **kwargs):
-        issue = Issue.objects.get(id=request.POST.get('id'))
-        if request.POST.get('action') == "close":
-            messages.success(self.request, 'Issue Closed')
+def UpdateIssue(request):
+    if request.method == "POST" and request.user.is_superuser or request.user == issue.user:
+        issue = Issue.objects.get(id=request.POST.get('issue_pk'))
+        if request.POST.get('action') == "close":            
             issue.status = "closed"
             issue.closed_by = request.user
             issue.closed_date = datetime.now()
@@ -638,11 +636,9 @@ class UpdateIssue(View):
                 'username': request.user.username,
                 'action': "closed",
             })
-            subject = issue.domain.name + ' bug # ' + str(issue.id) + ' closed by ' + request.user.username
-            email_to = issue.user.email
+            subject = issue.domain.name + ' bug # ' + str(issue.id) + ' closed by ' + request.user.username            
 
         elif request.POST.get('action') == "open":
-            messages.success(self.request, 'Issue Opened')
             issue.status = "open"
             msg_plain = msg_html = render_to_string('email/bug_updated.txt', {
                 'domain': issue.domain.name,
@@ -651,24 +647,14 @@ class UpdateIssue(View):
                 'username': request.user.username,
                 'action': "opened",
             })
-            subject = issue.domain.name + ' bug # ' + str(issue.id) + ' opened by ' + request.user.username
-            email_to = issue.user.email
-        send_mail(
-            subject,
-            msg_plain,
-            'Bugheist <support@bugheist.com>',
-            [email_to],
-            html_message=msg_html,
-        )
-        send_mail(
-            subject,
-            msg_plain,
-            'Bugheist <support@bugheist.com>',
-            [issue.domain.email],
-            html_message=msg_html,
-        )
+            subject = issue.domain.name + ' bug # ' + str(issue.id) + ' opened by ' + request.user.username            
+
+        mailer = 'Bugheist <support@bugheist.com>'
+        email_to = issue.user.email
+        send_mail(subject, msg_plain, mailer, [email_to], html_message=msg_html)
+        send_mail(subject, msg_plain, mailer, [issue.domain.email], html_message=msg_html)
         issue.save()
-        return HttpResponseRedirect(issue.get_absolute_url)
+        return HttpResponse("Updated")
 
 
 @receiver(user_logged_in)
