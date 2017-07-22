@@ -52,6 +52,9 @@
     .bug-info {
         margin-top: 20px;
     }
+    input[name="description"] {
+        width: 700px !important;
+    }
 {% endblock %}
 {% block content %}
     <script type="text/javascript" src="{% static "js/clipboard.min.js" %}"></script>
@@ -195,7 +198,9 @@
                                 <div class="bug-info">
                                     <strong>Status:</strong>
                                     <span class="label label-{% if object.status == 'open' %}success{% else %}danger{% endif %} text-capitalize status">{{object.status}}</span>
+                                    {% if request.user.is_authenticated %}
                                     <a class="btn btn-default btn-xs edit-issue-status">Click to Close</a>
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="col-xs-6 operations">
@@ -321,13 +326,13 @@
             },
             success: function(data){                
                 if (action == "open") {
-                    $('.status').text('Open');
+                    $('.status').text('open');
                     $('.status').removeClass('label-danger');
                     $('.status').addClass('label-success');
                     $(this).text('Click to Close');
                 }
                 else{
-                    $('.status').text('Closed');
+                    $('.status').text('closed');
                     $('.status').removeClass('label-success');
                     $('.status').addClass('label-danger');
                     $(this).text('Click to Open');
