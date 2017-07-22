@@ -244,24 +244,9 @@
         <div class="col-md-6">
             <h3>Comments:</h3>
             <div id="target_div">
-                {% for comment in all_comment %}
-                    <hr>
-                    <div class="well comment">
-                        <div class="comment-actions">
-                            <strong><a href="{{ comment.author_url }}">{{ comment.author }} </a></strong>
-                            &nbsp;commented on&nbsp;<div class="date"> {{ comment.created_date }}</div>
-                            {% if user.username == comment.author  %}                
-                                <a class="btn btn-xs btn-primary" href="{% url 'edit_comment' pk=comment.pk %}">Edit</a>                    
-                                <a class="btn btn-xs btn-danger del_comment" name="{{ comment.pk }}">Delete</a>
-                            
-                            {% endif %}
-                        </div>
-                        <div><p>{{ comment.text | safe }}</p></div>
-                    </div>
-                {% empty %}
-                {% endfor %}
+                {% include 'comments.html' %}
             </div>
-
+            {% if user.is_authenticated %}
             <form id="comments">
                 {% csrf_token %}
                 <div class="form-group">
@@ -270,6 +255,7 @@
                 </div>
                 <button id="comment_submit" class="btn btn-small" type="submit">Add Comment</button>
             </form>
+            {% endif %}
         </div>
     </div>
 
@@ -345,60 +331,6 @@
         });
     });
 
-    $(document).on('submit','#comments',function(e){
-        e.preventDefault();
-        $.ajax({
-            type: 'POST',
-            url: '/issue/comment/add/',
-            data:{
-                text_comment: $('#text_comment').val(),
-                issue_pk: $('#issue_pk').val(),
-                csrfmiddlewaretoken: $('#comments input[name=csrfmiddlewaretoken]').val(),
-            },
-            success: function(data){
-                 $('#target_div').html(data);
-                 $('#text_comment').val('');
-            }
-        });
-    });
-
-    $('body').on('click', '.del_comment', function (e){
-        e.preventDefault();
-        if(confirm("Delete this comment?")==true){
-            $.ajax({
-                type: 'POST',
-                url: "/issue/comment/delete/",
-                data:{
-                    comment_pk:$(this).attr('name'),
-                    issue_pk: $('#issue_pk').val(),
-                    csrfmiddlewaretoken: $('#comments input[name=csrfmiddlewaretoken]').val(),
-                },
-                success: function(data) {
-                    $('#target_div').html(data);
-                },
-            });
-        }
-    });
-
-    function ajax_complete() {
-        var search = $('#text_comment').val();
-        var data = { search: search };
-        $.ajax({
-            type: 'GET',
-            url: '/comment/autocomplete/',
-            data: data,
-            dataType: 'jsonp',
-            jsonp: 'callback',
-            jsonpCallback: 'ajax_render',
-        });
-    }
-
-    function ajax_render(data) {
-        $('#text_comment').atwho({
-            at: "@",
-            data:data
-        });
-    }
 </script>
 
 {% endblock %}
