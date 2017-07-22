@@ -622,7 +622,7 @@ class InboundParseWebhookView(View):
 
 
 def UpdateIssue(request):
-    if request.method == "POST" and request.user.is_superuser or request.user == issue.user:
+    if request.method == "POST":
         issue = Issue.objects.get(id=request.POST.get('issue_pk'))
         if request.POST.get('action') == "close":            
             issue.status = "closed"
