@@ -75,8 +75,8 @@
                 </span>
                 <div class="form form-inline" style="display: none;">
                     {% csrf_token %}
-                    <input type="text" name="description" class="form-control" value="">
-                    <select name="label" class="form-control">                        
+                    <input type="text" name="description" class="form-control" value="" required>
+                    <select name="label" class="form-control" required>
                         <option value="1">Number error</option>
                         <option value="2">Functional</option>
                         <option value="3">Performance</option>
@@ -194,7 +194,8 @@
                                 </div>
                                 <div class="bug-info">
                                     <strong>Status:</strong>
-                                    <span class="label label-{% if object.status == 'open' %}success{% else %}danger{% endif %} text-capitalize">{{object.status}}</span>
+                                    <span class="label label-{% if object.status == 'open' %}success{% else %}danger{% endif %} text-capitalize status">{{object.status}}</span>
+                                    <a class="btn btn-default btn-xs edit-issue-status">Click to Close</a>
                                 </div>
                             </div>
                             <div class="col-xs-6 operations">
@@ -264,7 +265,7 @@
         $('.form').show();
     });
 
-    $(document).on('click','.cancel-edit',function(e){        
+    $(document).on('click','.cancel-edit',function(e){
         $('.form').hide();
         $('.editables').show();
     });
@@ -295,5 +296,36 @@
         });
     });
 
+    $(document).on('click','.edit-issue-status',function(e){
+        var s = $('.status').text();
+        var action = s == "open" ? "close" : "open";        
+        $.ajax({
+            type: 'POST',
+            url: '/issue/update/',
+            beforeSend: function(xhr){xhr.setRequestHeader('X-CSRFToken', "{{csrf_token}}");},
+            data:{
+                issue_pk: $('#issue_pk').val(),
+                action: action
+            },
+            success: function(data){                
+                if (action == "open") {
+                    $('.status').text('Open');
+                    $('.status').removeClass('label-danger');
+                    $('.status').addClass('label-success');
+                    $(this).text('Click to Close');
+                }
+                else{
+                    $('.status').text('Closed');
+                    $('.status').removeClass('label-success');
+                    $('.status').addClass('label-danger');
+                    $(this).text('Click to Open');
+                }
+                $.notify("Issue updated!", {style: "custom", className: "success"});
+            },
+            error: function() {
+                $.notify("Some error occurred!", {style: "custom", className: "danger"});
+            }
+        });
+    });
 </script>
 {% endblock %}

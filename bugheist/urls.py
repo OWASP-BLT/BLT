@@ -1,14 +1,13 @@
 import website.views
 import comments.views
-
 from django.conf.urls import include, url
 from django.conf import settings
 from django.contrib import admin
 from django.views.generic import TemplateView
-from website.views import (UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView, UpdateIssue,
+from website.views import (UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView,
                            InboundParseWebhookView, LeaderboardView, IssueView, AllIssuesView,
                            HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend,
-                           ScoreboardView, domain_check)
+                           ScoreboardView)
 from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView
 from django.conf.urls.static import static
@@ -23,6 +22,7 @@ urlpatterns = [
     url(r'^$', website.views.index, name='index'),
     url(r'^' + settings.ADMIN_URL + '/', include(admin.site.urls)),
     url(r'^issue/edit/$', website.views.IssueEdit),
+    url(r'^issue/update/$', website.views.UpdateIssue),
     url(r'^issue/(?P<slug>\w+)/$', IssueView.as_view(), name="issue_view"),    
     url(r'^all_activity/$', AllIssuesView.as_view(), name="all_activity"),
     url(r'^leaderboard/$', LeaderboardView.as_view(), name="leaderboard"),
@@ -38,8 +38,7 @@ urlpatterns = [
     url(r'^delete_issue/(?P<id>\w+)/$', website.views.delete_issue),
     url(r'^accounts/', include('allauth.urls')),
     url(r'^start/$', TemplateView.as_view(template_name="hunt.html")),
-    url(r'^hunt/$', login_required(HuntCreate.as_view()), name="hunt"),
-    url(r'^update/$', login_required(UpdateIssue.as_view()), name="update"),
+    url(r'^hunt/$', login_required(HuntCreate.as_view()), name="hunt"),    
     url(r'^invite/$', InviteCreate.as_view(template_name="invite.html")),
     url(r'^invite-friend/$', login_required(CreateInviteFriend.as_view()),
         name='invite_friend'),
@@ -60,5 +59,5 @@ urlpatterns = [
     url(r'^search/$', website.views.search),
     url(r'^report/$', TemplateView.as_view(template_name="report.html")),
     url(r'^i18n/', include('django.conf.urls.i18n')),
-    url(r'^domain_check/$', domain_check),
+    url(r'^domain_check/$', website.views.domain_check),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
