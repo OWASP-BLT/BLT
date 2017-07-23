@@ -77,6 +77,8 @@ $(function () {
         var old_message = $('#text_div_'+comment_id).text();
         $('#text_comment_'+comment_id).val(old_message);
         $('#text_div_'+comment_id).text('');
+        $(this).hide();
+        $(this).next('.del_comment').hide();
     });
 
     $(document).on('submit','.edit_form',function(f){
@@ -120,3 +122,7 @@ $(function () {
             data:data
         });
     }
+
+    $(document).on('click','.cancel-comment-edit',function(e){
+        $('.edit_form').hide();
+    });
