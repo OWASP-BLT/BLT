@@ -133,7 +133,7 @@ kbd.closed {
             <kbd class="{{ user.userprofile.get_title_display }} text-uppercase title">
                 {{ user.userprofile.get_title_display }}
             </kbd>
-            <h4>Total bugs reported: <strong>{{ activities | length }}</strong></h4>
+            <h4>Total bugs reported: <strong>{{ total_bugs }}</strong></h4>
             <div class="icon-block">
                 <kbd class="fa general">
                 General {{ bug_type_0 | length }}
