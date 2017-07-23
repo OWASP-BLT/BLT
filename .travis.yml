@@ -1,3 +1,6 @@
+addons:
+  firefox: latest-unsigned
+  
 language: python
 
 python:
@@ -18,5 +21,3 @@ script:
   - python manage.py collectstatic --noinput
   - python manage.py test --settings=bugheist.settings
 
-addons:
-  - firefox: latest-unsigned
