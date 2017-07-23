@@ -6,9 +6,8 @@
             <strong><a href="{{ comment.author_url }}">{{ comment.author }} </a></strong>
             &nbsp;commented on&nbsp;<div class="date"> {{ comment.created_date }}</div>
             {% if user.username == comment.author  %}                
-                <a class="btn btn-xs btn-primary edit_comment" name="{{ comment.pk }}">Edit</a>                    
-                <a class="btn btn-xs btn-danger del_comment" name="{{ comment.pk }}">Delete</a>
-            
+                <a class="btn btn-xs btn-primary edit_comment" name="{{ comment.pk }}">Edit</a>
+                <a class="btn btn-xs btn-danger del_comment"   name="{{ comment.pk }}">Delete</a>
             {% endif %}
         </div>
         <form id="edit_form_{{ comment.pk }}"  class="edit_form" style="display: none;" name="{{ comment.pk }}" >
@@ -17,10 +16,10 @@
                     <textarea class="form-control" id="text_comment_{{ comment.pk }}" name="text_comment_{{ comment.pk }}"  ></textarea>
                 </div>
             <button id="button_update_{{ comment.pk }}" class="btn btn-small" type="submit">Update</button>
+            <button class="btn btn-default cancel-edit">Cancel</button>
         </form>
         <div id="text_div_{{ comment.pk }}" ><p>{{ comment.text | safe }}</p></div>
     </div>
 {% empty %}
 {% endfor %}
 </div>
-
