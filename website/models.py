@@ -59,7 +59,6 @@ class Domain(models.Model):
         parsed_url = urlparse(self.url)
         return parsed_url.netloc.split(".")[-2:][0].title()
 
-    @property
     def get_logo(self):
         if self.logo:
             return self.logo.url
