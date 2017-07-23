@@ -59,7 +59,6 @@ class Domain(models.Model):
         parsed_url = urlparse(self.url)
         return parsed_url.netloc.split(".")[-2:][0].title()
 
-    @property
     def get_logo(self):
         if self.logo:
             return self.logo.url
@@ -136,7 +135,7 @@ class Issue(models.Model):
     screenshot = models.ImageField(upload_to="screenshots", validators=[validate_image])
     closed_by = models.ForeignKey(User, null=True, blank=True, related_name="closed_by")
     closed_date = models.DateTimeField(default=None, null=True, blank=True)
-    github_url = models.URLField(default="")
+    github_url = models.URLField(default="", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 

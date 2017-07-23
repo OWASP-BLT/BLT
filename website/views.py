@@ -352,7 +352,8 @@ class UserProfileDetailView(DetailView):
         context['current_month'] = datetime.now().month
         context['graph'] = Issue.objects.filter(user=self.object).filter(created__month__gte=(datetime.now().month-6), created__month__lte=datetime.now().month) \
                         .annotate(month=ExtractMonth('created')).values('month').annotate(c=Count('id')).order_by()
-        for i in range(1,7):
+        context['total_bugs'] = Issue.objects.filter(user=self.object).count()
+        for i in range(0,7):
             context['bug_type_'+str(i)] = Issue.objects.filter(user=self.object,label=str(i))
         return context
 

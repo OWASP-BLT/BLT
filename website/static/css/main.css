@@ -1,6 +1,11 @@
 #page-wrapper {
     height: 100%;
 }
+@media screen and (max-width: 720px) {
+  #page-wrapper {
+      height: auto;
+  }
+}
 .fa {
     color: #555;
 }
@@ -18,7 +23,7 @@
 }
 .no-shadow {
     box-shadow: 0 0 0 #000;
-}
+} 
 .tag {
     color: #999;
 }
