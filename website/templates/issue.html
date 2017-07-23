@@ -199,7 +199,7 @@
                                     <strong>Status:</strong>
                                     <span class="label label-{% if object.status == 'open' %}success{% else %}danger{% endif %} text-capitalize status">{{object.status}}</span>
                                     {% if request.user.is_authenticated %}
-                                    <a class="btn btn-default btn-xs edit-issue-status">Click to Close</a>
+                                    <a class="btn btn-default btn-xs edit-issue-status" id="issue_stat">Click to {% if object.status == "open" %}Close{% else %}Open{% endif %}</a>
                                     {% endif %}
                                 </div>
                             </div>
@@ -324,18 +324,18 @@
                 issue_pk: $('#issue_pk').val(),
                 action: action
             },
-            success: function(data){                
+            success: function(data){   
                 if (action == "open") {
                     $('.status').text('open');
                     $('.status').removeClass('label-danger');
                     $('.status').addClass('label-success');
-                    $(this).text('Click to Close');
+                    $('#issue_stat').text('Click to Close');
                 }
                 else{
                     $('.status').text('closed');
                     $('.status').removeClass('label-success');
                     $('.status').addClass('label-danger');
-                    $(this).text('Click to Open');
+                    $('#issue_stat').text('Click to Open');
                 }
                 $.notify("Issue updated!", {style: "custom", className: "success"});
             },
