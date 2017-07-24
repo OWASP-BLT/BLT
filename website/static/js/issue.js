@@ -1,3 +1,10 @@
+function renderer(data) {
+    $('#text_comment').atwho({
+        at: "@",
+        data:data
+    });
+}
+
 window.twttr = (function (d, s, id) {
 
     var js, fjs = d.getElementsByTagName(s)[0], t = window.twttr || {};
@@ -28,11 +35,12 @@ window.twttr = (function (d, s, id) {
 }(document, 'script', 'facebook-jssdk'));
 
 $(function () {
+    var comment_id, old_message;
+
     new Clipboard('.btn');
     $('.copy-btn').on('click', function () {
         $.notify('Copied!', {style: "custom", className: "success"});
     });
-});
 
     $(document).on('submit','#comments',function(e){
         e.preventDefault();
@@ -69,42 +77,39 @@ $(function () {
         }
     });
 
-
     $('body').on('click', '.edit_comment', function (e){
-        e.preventDefault();
-        $('#edit_form_'+$(this).attr('name')).attr('style','');
-        var comment_id = $(this).attr('name');
-        var old_message = $('#text_div_'+comment_id).text();
-        $('#text_comment_'+comment_id).val(old_message);
-        $('#text_div_'+comment_id).text('');
+        e.preventDefault();        
+        comment_id = $(this).attr('name');
+        old_message = $(this).parent().next().next().text();
+        $(this).parent().next().show();
+        $(this).parent().next().find('textarea').val(old_message);
         $(this).hide();
         $(this).next('.del_comment').hide();
+        $(this).parent().next().next().hide();
     });
 
-    $(document).on('submit','.edit_form',function(f){
-        f.preventDefault();
-        var comment_id = $(this).attr('name');
-        var issue_pk = $('#text_div_'+comment_id).text();
-        var old_message = $('#text_div_'+comment_id).text();
-
+    $(document).on('click', '.edit_form button[type="submit"]',function(e){
+        e.preventDefault();
+        var issue_id = $('#issue_pk').val();
+        var comment = $(this).prev().find('textarea').val();
+        if (comment == '') return;
         $.ajax({
             type: 'GET',
-            url: '/issue/'+ $('#issue_pk').val()+ '/comment/edit/',
+            url: '/issue/'+issue_id+'/comment/edit/',
             data:{
                 comment_pk: comment_id,
-                text_comment: $('#text_comment_'+comment_id).val() ,
-                issue_pk: $('#issue_pk').val(),
+                text_comment: comment,
+                issue_pk: issue_id,
             },
             success: function(data){
-                 $('#target_div').html(data);
+                $('#target_div').html(data);
             }
-
         });
     });
 
-
-    function ajax_complete() {
-        var search = $('#text_comment').val();
+    $('body').on('input, keyup', 'textarea',function(){
+        var search = $(this).val();
+        console.log(search);
         var data = { search: search };
         $.ajax({
             type: 'GET',
@@ -112,17 +117,15 @@ $(function () {
             data: data,
             dataType: 'jsonp',
             jsonp: 'callback',
-            jsonpCallback: 'ajax_render',
+            jsonpCallback: 'renderer',
         });
-    }
-
-    function ajax_render(data) {
-        $('#text_comment').atwho({
-            at: "@",
-            data:data
-        });
-    }
+    });    
 
     $(document).on('click','.cancel-comment-edit',function(e){
+        e.preventDefault();
         $('.edit_form').hide();
+        $(this).parent().parent().find('.edit_comment').show();
+        $(this).parent().parent().find('.del_comment').show();
+        $(this).parent().parent().find('.text-comment').show();
     });
+});
