@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+{% load staticfiles %}
 
 {% block content %}
+    <script type="text/javascript" src="{% static 'js/Chart.bundle.min.js' %}"></script>
     <div class="row">
         <div class="col-lg-12">
             <h1 class="page-header">Stats</h1>
@@ -78,4 +80,78 @@
             </div>
         </div>
     </div>
+    <div class="row">
+        <div class="col-lg-6">
+            <canvas id="myChart" width="100" height="100"></canvas>
+            <br>
+        </div>    
+    </div>      
+    <script type="text/javascript">
+        var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
+        var months = [], data = [];
+        var all_data = new Array(12).fill(0);
+
+        {% for i in graph %}
+            all_data[{{i.month}}] = {{i.c}};
+        {% endfor %}
+        console.log(all_data);
+        months = all_months;
+        data = all_data;
+        var ctx = document.getElementById("myChart").getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: 'Monthly Activity',
+                    data: data,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(153, 102, 255, 0.6)',
+                        'rgba(255, 159, 64, 0.6)',
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(153, 102, 255, 0.6)',
+                        'rgba(255, 159, 64, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(255,99,132,1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(255,99,132,1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero:true,
+                            fixedStepSize: 1
+                        }
+                    }],
+                    xAxes: [{
+                        time: {
+                            unit: 'month'
+                        }
+                    }]
+                }
+            }
+        });
+    </script>
+
 {% endblock %}
