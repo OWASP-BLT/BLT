@@ -251,7 +251,7 @@
                 {% csrf_token %}
                 <div class="form-group">
                     <input type="hidden" name="issue_pk" id="issue_pk" value="{{ issue.pk }}" >  
-                    <textarea placeholder="Comment" class="form-control" id="text_comment" name="text_comment" rows="3" required onkeyup="ajax_complete()" onclick="ajax_complete()"></textarea>
+                    <textarea placeholder="Comment" class="form-control" id="text_comment" name="text_comment" rows="3" required></textarea>
                 </div>
                 <button id="comment_submit" class="btn btn-small" type="submit">Add Comment</button>
             </form>

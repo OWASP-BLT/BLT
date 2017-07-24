@@ -103,5 +103,4 @@ def autocomplete(request):
     for r in search_qs:
         results.append(r.username)
     resp = request.GET['callback'] + '(' + json.dumps(results) + ');'
-    print resp
     return HttpResponse(resp, content_type='application/json')
