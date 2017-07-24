@@ -46,8 +46,8 @@
                     <textarea data-required="true" name="description" id="description" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="Describe bug issue">{{form.description.value|default:""}}</textarea>
                     <span class="help-block">{{ form.description.errors }}</span>
                 </div>
-                <select data-intro="Categorize the bug." data-step="3" name="label" class="form-control">
-                    <option value="0" selected="selected">Bug Type</option>
+                <select required data-intro="Categorize the bug." data-step="3" name="label" class="form-control">
+                    <option value="0" selected="selected">General</option>
                     <option value="1">Number error</option>
                     <option value="2">Functional</option>
                     <option value="3">Performance</option>
