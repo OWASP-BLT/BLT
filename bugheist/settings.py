@@ -68,7 +68,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
+ 
 )
 
 TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
@@ -96,7 +96,7 @@ if DEBUG and not TESTING:
 
     INSTALLED_APPS += ('debug_toolbar',)
 
-    MIDDLEWARE_CLASSES += ('rollbar.contrib.django.middleware.RollbarNotifierMiddleware',)
+    MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
 
 ROOT_URLCONF = 'bugheist.urls'
 
