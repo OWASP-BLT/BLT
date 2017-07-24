@@ -407,6 +407,7 @@ class StatsDetailView(TemplateView):
         context['user_count'] = User.objects.all().count()
         context['hunt_count'] = Hunt.objects.all().count()
         context['domain_count'] = Domain.objects.all().count()
+        context['graph']= Issue.objects.annotate(month=ExtractMonth('created')).annotate(c=Count('id')).order_by()  
         return context
 
 
