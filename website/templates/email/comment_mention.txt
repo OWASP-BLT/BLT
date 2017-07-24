@@ -1,0 +1,10 @@
+Hey, {{name}},<br>
+
+{{ commentor }} has mentioned you in the following issue
+https://www.bugheist.com/issue/{{ issue_pk }} 
+<br>
+{{comment}}
+
+Best,<br>
+<br>
+The Bugheist Team<br>

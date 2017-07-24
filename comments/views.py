@@ -5,6 +5,8 @@ from .models import Comment
 from website.models import Issue, UserProfile
 from django.contrib.auth.models import User
 from django.shortcuts import render, get_object_or_404
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
 
 import os
 import json
@@ -12,21 +14,43 @@ import json
 
 @login_required(login_url='/accounts/login/')
 def add_comment(request):
-    issue = Issue.objects.get(pk=request.POST.get('issue_pk'))
+    pk = request.POST.get('issue_pk')
+    issue = Issue.objects.get(pk=pk)
     if request.method == "POST":
         author = request.user.username
         author_url = os.path.join('/profile/', request.user.username)
         issue = issue
         text = request.POST.get('text_comment')
-
+        user_list = []
         temp_text = text.split()
         new_text = ''
+        new_msg = ''
         for item in temp_text:
+            msg = item
             if item[0] == "@":
                 if User.objects.filter(username=item[1:]).exists():
+                    user = User.objects.get(username=item[1:])
+                    user_list.append(user)
+                    msg = user.username
                     item = "<a href='/profile/{0}'>@{1}</a>".format(
                         item[1:], item[1:])
+
             new_text = new_text + " " + item
+            new_msg  = new_msg + " " + msg
+
+        for obj in user_list:
+            msg_plain = render_to_string(
+                'email/comment_mention.txt',
+                {'name': obj.username, 'commentor': request.user, 'issue_pk': pk, 'comment': new_msg})
+            msg_html = render_to_string(
+                'email/comment_mention.txt',
+                {'name': obj.username, 'commentor': request.user, 'issue_pk': pk, 'comment': new_msg})
+
+            send_mail('You have been mentioned in a comment',
+                      msg_plain,
+                      'Bugheist <support@bugheist.com>',
+                      [obj.email],
+                      html_message=msg_html)
 
         comment = Comment(author=author, author_url=author_url,
                           issue=issue, text=new_text)
