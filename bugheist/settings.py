@@ -71,7 +71,9 @@ MIDDLEWARE_CLASSES = (
     'debug_toolbar.middleware.DebugToolbarMiddleware',
 )
 
-if DEBUG:
+TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
+
+if DEBUG and not TESTING:
     DEBUG_TOOLBAR_PANELS = [
         'debug_toolbar.panels.versions.VersionsPanel',
         'debug_toolbar.panels.timer.TimerPanel',
