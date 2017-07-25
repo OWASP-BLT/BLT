@@ -113,7 +113,10 @@
             <div id="page-wrapper">
                 <div class="container">
                     <div class="row">
-                        <div class="col-md-12">
+                        <div class="visible-sm visible-xs">
+                            <center><button class="btn btn-default mbug">Report bug</button></center>    
+                        </div>
+                        <div class="col-md-12 hidden-sm hidden-xs mnav">
                             <form class="navbar-form navbar-right form" action="/issue/" method="post" enctype="multipart/form-data">                            
                                 {% csrf_token %}
                                 <div class="form-group">
@@ -243,6 +246,12 @@
               ga('send', 'pageview');
             </script>
             <script type="text/javascript">
+                $(".mbug").click(function(){
+                    $(this).addClass("hidden-xs");
+                    $(this).addClass("hidden-sm");
+                    $(".mnav").removeClass("hidden-xs");
+                    $(".mnav").removeClass("hidden-sm");
+                });
                 $(function() {
                     $('button[name="test_files"]').on('click', function() {
                         $(this).parent().find('input[type=file]').click();
