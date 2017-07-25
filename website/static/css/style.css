@@ -84,9 +84,11 @@ a:hover{
 .form{
 	margin:0;
 }
+@media only screen and (max-width: 400px){
 .form-group{
 	margin-top: 10px;
 	margin-bottom: 10px;
+	}
 }
 .form input,.form textarea{
 	background-color: #eee;
