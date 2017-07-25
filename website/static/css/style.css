@@ -81,10 +81,13 @@ a:hover{
 	color: #777;
 }
 
-.form .form-group{
+.form{
 	margin:0;
 }
-
+.form-group{
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
 .form input,.form textarea{
 	background-color: #eee;
 	border-width: 0;
