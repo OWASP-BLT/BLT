@@ -50,7 +50,7 @@
         margin-bottom: 5px;
     }
     .bug-info {
-        margin-top: 20px;
+        margin-top: 10px;
     }
     input[name="description"] {
         width: 700px !important;
@@ -201,6 +201,10 @@
                                     {% if request.user.is_authenticated %}
                                     <a class="btn btn-default btn-xs edit-issue-status" id="issue_stat">Click to {% if object.status == "open" %}Close{% else %}Open{% endif %}</a>
                                     {% endif %}
+                                </div>
+                                <div class="bug-info">
+                                    <strong>Created on:</strong>
+                                    <span class="label label-info">{{object.created}}</span>
                                 </div>
                             </div>
                             <div class="col-xs-6 operations">
