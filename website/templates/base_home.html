@@ -58,7 +58,6 @@
                     <ul class="nav navbar-nav navbar-right">
                         <li><a href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new">{% trans "Add to chrome" %}</a></li>
                         <li><a href="/social">{% trans "Social" %}</a></li>
-                        <li><a href="/report">{% trans "Report Bug" %}</a></li>
                         <li><a href="/start" class="sponsor-hunt">{% trans "Bug Hunt" %}</a></li>
                         <li><a href="#" id="startTour" class="start-tour">{% trans "Tour" %}</a></li>
 
@@ -106,48 +105,58 @@
                             <i class="fa fa-search"></i>
                         </button>
                     </form>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><p class="navbar-text">Found a bug ?</p></li>
+                        <li class="dropdown">
+                          <a href="#" class="dropdown-toggle" data-toggle="dropdown"><b>Report here</b> <span class="caret"></span></a>
+                            <ul id="issue-dp" class="dropdown-menu">
+                                <li>
+                                     <div class="row">
+                                            <div class="col-md-12">
+                                                <form class="form" action="/issue/" method="post" enctype="multipart/form-data">
+                                                    {% csrf_token %}
+                                                    <div class="form-group">
+                                                        <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <textarea data-required="true" name="description" id="description" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="{% trans "Describe bug issue" %}">{{form.description.value|default:""}}</textarea>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <select required data-intro="Categorize the bug." data-step="3" name="label" class="form-control">
+                                                            <option value="0" selected="selected">General</option>
+                                                            <option value="1">Number error</option>
+                                                            <option value="2">Functional</option>
+                                                            <option value="3">Performance</option>
+                                                            <option value="4">Security</option>
+                                                            <option value="5">Typo</option>
+                                                            <option value="6">Design</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <span>
+                                                            <input type="file" class="required" id='${multipartFilePath}' name="screenshot"/>
+                                                            <button style="width: 100%" class="btn btn-primary" data-intro="Upload a screenshot of the concerned page." data-step="4" name="test_files" type="button">
+                                                                <i class="fa fa-upload" aria-hidden="true"></i> {% trans "Upload Screenshot" %}
+                                                            </button>
+                                                            <center><span style="margin-top: 10px;" class="badge badge-important"></span></center>
+                                                        </span>
+                                                    </div>
+                                                    <div class="bottom text-center">
+                                                        <button type="submit" class="btn btn-default" data-intro="Click here to report the bug to BugHeist." data-step="5">{% trans "Report Bug" %} <i class="fa fa-trophy" aria-hidden="true">+3</i></button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                     </div>
+                                </li>
+                            </ul>
+                        </li>
+                      </ul>
                 </div>
             </div>
         </nav>
         <div id="wrapper">            
             <div id="page-wrapper">
                 <div class="container">
-                    <div class="row">
-                        <div class="visible-sm visible-xs">
-                            <center><button class="btn btn-default mbug">Report bug</button></center>    
-                        </div>
-                        <div class="col-md-12 hidden-sm hidden-xs mnav">
-                            <form class="navbar-form navbar-right form" action="/issue/" method="post" enctype="multipart/form-data">                            
-                                {% csrf_token %}
-                                <div class="form-group">
-                                    <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
-                                </div>
-                                <div class="form-group">
-                                    <textarea data-required="true" name="description" id="description" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="{% trans "Describe bug issue" %}">{{form.description.value|default:""}}</textarea>
-                                </div>
-                                <select required data-intro="Categorize the bug." data-step="3" name="label" class="form-control">
-                                    <option value="0" selected="selected">General</option>
-                                    <option value="1">Number error</option>
-                                    <option value="2">Functional</option>
-                                    <option value="3">Performance</option>
-                                    <option value="4">Security</option>
-                                    <option value="5">Typo</option>
-                                    <option value="6">Design</option>
-                                </select>
-                                <div class="form-group">
-                                    <span>
-                                        <input type="file" class="required" id='${multipartFilePath}' name="screenshot"/> 
-                                        <button class="btn btn-primary" data-intro="Upload a screenshot of the concerned page." data-step="4" name="test_files" type="button">
-                                            <i class="fa fa-upload" aria-hidden="true"></i> {% trans "Upload Screenshot" %}
-                                        </button>
-                                        <span class="badge badge-important"></span>
-                                    </span>                            
-                                </div>
-                                <button type="submit" class="btn btn-default" data-intro="Click here to report the bug to BugHeist." data-step="5">{% trans "Report Bug" %} <i class="fa fa-trophy" aria-hidden="true">+3</i></button>
-                            </form>
-                        </div>
-                    </div>
-
                     {% block content %}
                     {% endblock %}
                 </div>
