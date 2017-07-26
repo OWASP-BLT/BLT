@@ -130,14 +130,14 @@ AUTHENTICATION_BACKENDS = (
     'allauth.account.auth_backends.AuthenticationBackend',
 )
 
-SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+# SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'cache_table',
-    }
-}
+# CACHES = {
+#    'default': {
+#        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+#        'LOCATION': 'cache_table',
+#    }
+# }
 
 CONN_MAX_AGE = None
 
