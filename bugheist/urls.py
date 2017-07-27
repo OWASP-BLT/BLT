@@ -58,6 +58,8 @@ urlpatterns = [
                       comments.views.autocomplete, name='autocomplete'),
                   url(r'^issue/(?P<pk>\d+)/comment/edit/$',
                       comments.views.edit_comment, name='edit_comment'),
+                  url(r'^issue/(?P<pk>\d+)/comment/reply/$',
+                      comments.views.reply_comment, name='reply_comment'),
                   url(r'^social/$', TemplateView.as_view(template_name="social.html")),
                   url(r'^search/$', website.views.search),
                   url(r'^report/$', TemplateView.as_view(template_name="report.html")),
