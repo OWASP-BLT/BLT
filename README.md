@@ -4,6 +4,28 @@
 
 Live Site: [Bugheist](http://bugheist.com/)
 
+# Usage
+
+## Bugheist Bug Reporting Plugin
+
+A floating bug reporting button for your website which redirects back to Bugheist and help's users to report bug for that specific page. Just embed this script within body tag of your page to enable this plugin.
+
+  ```
+    <script type="text/javascript">
+		var button = document.createElement("Button");
+		button.style = "bottom:15px;left:15px;position:fixed;z-index: 12;border-radius:100%;background: url('https://www.bugheist.com/static/img/logo.0cc160e97934.png') no-repeat center; height: 50px; width: 50px; outline: none;background-size: 50px 50px;"
+		document.body.appendChild(button);
+		var url = window.location.href;
+		var bugheist = 'https://www.bugheist.com/report/?url=' + url;
+		button.onclick = function() {
+			var redirectWindow = window.open(bugheist, '_blank');
+            redirectWindow.location;
+		}
+	</script>
+  ```
+
+# Development
+
 ## Setting Up Development Server
 
 Please follow the development server setup procedure [here](https://github.com/OWASP/BLT/wiki/Setting-up-the-development-server). Currently, development server can be installed using virtualenv or vagrant.
