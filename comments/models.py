@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 # Create your models here.
 
 class Comment(models.Model):
+    parent = models.ForeignKey('self',null=True)
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name='comments')
     author = models.CharField(max_length=200)
     author_url = models.CharField(max_length=200)
@@ -16,3 +17,7 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.text
+
+    def children(self):
+    	return Comment.objects.filter(parent=self)
+

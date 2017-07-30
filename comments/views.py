@@ -66,11 +66,16 @@ def delete_comment(request):
         issue = Issue.objects.get(pk=request.POST['issue_pk'])
         all_comment = Comment.objects.filter(issue=issue)
         comment = Comment.objects.get(pk=int(request.POST['comment_pk']))
+        try:
+            show = comment.parent.pk
+        except:
+            show = -1
         if request.user.username != comment.author:
             return HttpResponse("Cannot delete this comment")
         comment.delete()
     return render(request, 'comments.html', {'all_comment': all_comment,
-                                             'user': request.user},)
+                                             'user': request.user,
+                                             'show': show,},)
 
 
 @login_required(login_url="/accounts/login/")
@@ -83,6 +88,27 @@ def edit_comment(request, pk):
         all_comment = Comment.objects.filter(issue=issue)
     return render(request, 'comments.html', {'all_comment': all_comment,
                                              'user': request.user},)
+
+
+@login_required(login_url="/accounts/login/")
+def reply_comment(request, pk):
+    if request.method == "GET":
+        parent_id = request.GET.get('parent_id')
+        show = int(parent_id)
+        parent_obj = Comment.objects.get(id=parent_id)
+        author = request.user.username
+        author_url = os.path.join('/profile/', request.user.username)
+        issue = Issue.objects.get(pk=request.GET['issue_pk'])
+        reply_text = request.GET.get('text_comment')
+        comment = Comment(author=author, author_url=author_url,
+                          issue=issue, text=reply_text,parent=parent_obj)
+        comment.save()
+        all_comment = Comment.objects.filter(issue=issue)
+    return render(request, 'comments.html', {'all_comment': all_comment,
+                                             'user': request.user,
+                                             'show': show},)
+
+
 
 
 @login_required(login_url='/accounts/login')
