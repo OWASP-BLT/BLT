@@ -7,16 +7,10 @@
 
 {% block style %}
     .duplicates {
-        position: absolute;
-        left: 600px;
-        top: 0px;
-        width: 160px;
+        border-radius: 0px;
     }
     .message {
-        position: absolute;
-        left: 600px;
-        top: 30px;
-        width: 100%;
+        
     }
 {% endblock %}
 
@@ -25,27 +19,37 @@
     <script src="{% static 'js/activity.js' %}"></script>
     <form action="/issue/" method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="row">
-            <div class="col-lg-6">
-                <h1 class="page-header">Report a bug</h1>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-6">
-                <div class="form-group{% if form.url.errors %} has-error{% endif %}">
+            <div class="row main">
+                <div class="panel-heading">
+                   <div class="panel-title text-center">
+                        <h1 class="title">Report a bug</h1>
+                        <hr />
+                    </div>
+                </div> 
+                <div class="main-issue-form main-center">
+                    <form class="form-horizontal" method="post" action="#">
+                        <div class="form-group{% if form.url.errors %} has-error{% endif %}">
+                        <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-external-link" aria-hidden="true"></i></span>
                     {% if request.GET.url %}
                         <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
                     {% else %}
                         <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
                     {% endif %}
-                    <a class="btn btn-default duplicates">Check for Duplicates</a>
+                        <a class="btn btn-info form-control duplicates">Check for Duplicates</a>
+                    </div>
                     <span class="message"></span>
                     <span class="help-block">{{ form.url.errors }}</span>
                 </div>
                 <div class="form-group{% if form.description.errors %} has-error{% endif %}">
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span>
                     <textarea data-required="true" name="description" id="description" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="Describe bug issue">{{form.description.value|default:""}}</textarea>
                     <span class="help-block">{{ form.description.errors }}</span>
+                    </div>
                 </div>
+                <div class="input-group">
+                        <span class="input-group-addon"><i class="fa fa-list" aria-hidden="true"></i></span>
                 <select required data-intro="Categorize the bug." data-step="3" name="label" class="form-control">
                     <option value="0" selected="selected">General</option>
                     <option value="1">Number error</option>
@@ -55,6 +59,7 @@
                     <option value="5">Typo</option>
                     <option value="6">Design</option>
                 </select>
+                </div>
                 <div class="form-group{% if form.screenshot.errors %} has-error{% endif %}">
                 {% if request.GET.hash %}</br>
                     <img src="{{ MEDIA_URL }}uploads/{{request.GET.hash}}.png" class="img-responsive img-thumbnail screenshot-hash">
@@ -63,19 +68,21 @@
                     <br>
                     <span>
                         <input type="file" class="required" id='${multipartFilePath}' name="screenshot"/> 
-                        <button class="btn btn-primary" data-intro="Upload a screenshot of the concerned page." data-step="4" name="test_files" type="button">
+                        <button class="btn btn-primary btn-block" data-intro="Upload a screenshot of the concerned page." data-step="4" name="test_files" type="button">
                             <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot
                         </button>
-                        <span class="badge badge-important"></span>
+                        <br>
+                        <center><span class="badge badge-important"></span></center>
                     </span>
                 {% endif %}
                 <span class="help-block{% if form.screenshot.errors %} has-error{% endif %}">{{ form.screenshot.errors }}</span>
                 </div>
-                <button type="submit" name="reportbug_button" id="btn" class="btn btn-default" data-intro="Click here to report the bug to BugHeist." data-step="5">
+                <button type="submit" name="reportbug_button" id="btn" class="btn btn-default btn-block" data-intro="Click here to report the bug to BugHeist." data-step="5">
                 Report Bug <i class="fa fa-trophy" aria-hidden="true">+3</i>
                 </button>
+                    </form>
+                </div>
             </div>
-        </div> 
     </form>
     <script type="text/javascript">
         $(function() {
