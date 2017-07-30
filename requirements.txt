@@ -38,3 +38,4 @@ user-agents==1.0.1
 virtualenv==15.0.1
 whitenoise==2.0.6
 django-debug-toolbar==1.8
+django-pylibmc
