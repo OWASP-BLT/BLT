@@ -107,6 +107,38 @@ $(function () {
         });
     });
 
+
+    $('body').on('click', '.reply_comment', function (e){
+        e.preventDefault();        
+        comment_id = $(this).attr('name');
+        $(this).hide();
+        $(this).next('.edit_comment').hide();
+        $(this).next().next('.del_comment').hide();
+        $(this).parent().parent().next().show();
+    });
+
+    $(document).on('click', '.reply_form button[type="submit"]',function(e){
+        e.preventDefault();
+        var parent_id = $(this).val();
+        var issue_id = $('#issue_pk').val();
+        var comment = $(this).prev().find('textarea').val();
+        if (comment == '') return;
+        $.ajax({
+            type: 'GET',
+            url: '/issue/'+issue_id+'/comment/reply/',
+            data:{
+                comment_pk: comment_id,
+                text_comment: comment,
+                issue_pk: issue_id,
+                parent_id: parent_id,
+            },
+            success: function(data){
+                $('#target_div').html(data);
+            }
+
+        });
+    });
+
     $('body').on('input, keyup', 'textarea',function(){
         var search = $(this).val();
         console.log(search);
@@ -121,11 +153,18 @@ $(function () {
         });
     });    
 
-    $(document).on('click','.cancel-comment-edit',function(e){
+
+$(document).on('click','.cancel-comment-edit',function(e){
         e.preventDefault();
         $('.edit_form').hide();
         $(this).parent().parent().find('.edit_comment').show();
         $(this).parent().parent().find('.del_comment').show();
         $(this).parent().parent().find('.text-comment').show();
     });
+});
+
+$(document).on('click', '.cancel-comment-reply', function (e){
+    e.preventDefault();        
+    comment_id = $(this).attr('name');
+    $(this).parent().parent().hide();
 });
