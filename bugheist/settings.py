@@ -296,3 +296,34 @@ AVATAR_PATH = os.path.join(MEDIA_ROOT, USERS_AVATAR_PATH)
 
 if not os.path.exists(AVATAR_PATH):
     os.makedirs(AVATAR_PATH)
+
+if DEBUG == False:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'
+        }
+    }
+else:
+    os.environ['MEMCACHE_SERVERS'] = os.environ.get('MEMCACHIER_SERVERS', '').replace(',', ';')
+    os.environ['MEMCACHE_USERNAME'] = os.environ.get('MEMCACHIER_USERNAME', '')
+    os.environ['MEMCACHE_PASSWORD'] = os.environ.get('MEMCACHIER_PASSWORD', '')
+
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_pylibmc.memcached.PyLibMCCache',
+            'BINARY': True,
+            'TIMEOUT': None,
+            'OPTIONS': {
+                'tcp_nodelay': True,
+                'tcp_keepalive': True,
+                'connect_timeout': 2000,
+                'send_timeout': 750 * 1000,
+                'receive_timeout': 750 * 1000,
+                '_poll_timeout': 2000,
+                'ketama': True,
+                'remove_failed': 1,
+                'retry_timeout': 2,
+                'dead_timeout': 30,
+            }
+        }
+    }
