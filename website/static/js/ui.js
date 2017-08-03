@@ -49,7 +49,6 @@ $(document).ready(function () {
         html: true,
         content: function() {
             var user = $(this).text();
-            var email = $(this).data('email');
             var tag = $(this).data('tag');
             var img = $(this).parent().parent().parent().find('img:first').attr('src');
             return '<div class="row">'
@@ -57,7 +56,6 @@ $(document).ready(function () {
                   +'<div class="col-md-9">'
                   +'<strong>'+user+'</strong>'
                   +'<span class="label label-default">'+tag+'</span>'
-                  +'<p>'+email+'</p>'
                   +'</div>'
                   +'</div>';
         }
