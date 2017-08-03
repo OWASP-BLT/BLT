@@ -455,10 +455,23 @@ class LeaderboardView(ListView):
 class ScoreboardView(ListView):
     model = Domain
     template_name = "scoreboard.html"
+    paginate_by = 5
 
     def get_context_data(self, *args, **kwargs):
         context = super(ScoreboardView, self).get_context_data(*args, **kwargs)
-        context['scoreboard'] = Domain.objects.all().order_by('-modified')
+        companies = Domain.objects.all().order_by('-modified')  
+        paginator = Paginator(companies, self.paginate_by)
+        page = self.request.GET.get('page')
+        
+        try:
+            scoreboard_paginated = paginator.page(page)
+        except PageNotAnInteger:
+            scoreboard_paginated = paginator.page(1)
+        except EmptyPage:
+            scoreboard_paginated = paginator.page(paginator.num_pages)
+
+        context['scoreboard'] = scoreboard_paginated
+        context['user'] = self.request.GET.get('user')  
         return context
 
 
