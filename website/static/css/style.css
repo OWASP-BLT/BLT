@@ -324,6 +324,13 @@ a:hover{
 .huge {
 	overflow:auto;
 }
+.huge a{
+	text-decoration: none;
+	color: white;
+}
+.huge a:hover{
+	color: #dd4252;
+}
 .leaderboard-panel {
 	border-left: 1px solid #ccc;
 	border-top: 1px solid #ccc;
