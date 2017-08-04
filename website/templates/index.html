@@ -132,7 +132,7 @@
                                         onerror="this.onerror=null; this.style.display='none';" height="75" width="75">
                                     </div>
                                     <div class="col-xs-9 text-right">
-                                        <div class="huge">{{domain.get_name}}</div>
+                                        <div class="huge"><span><a href="/domain/{{domain.name}}/">{{domain.get_name}}</a></span></div>
                                         <div>{% if domain.prize %}Grand Prize ${{domain.prize}}{% endif %}</div>
                                     </div>
                                 </div>
