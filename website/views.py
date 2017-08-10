@@ -388,6 +388,9 @@ class DomainDetailView(TemplateView):
             status="closed")
         context['leaderboard'] = User.objects.filter(issue__url__contains=self.kwargs['slug']).annotate(
             total=Count('issue')).order_by('-total')
+        context['current_month'] = datetime.now().month
+        context['domain_graph'] = Issue.objects.filter(domain=context['domain']).filter(created__month__gte=(datetime.now().month-6), created__month__lte=datetime.now().month) \
+                        .annotate(month=ExtractMonth('created')).values('month').annotate(c=Count('id')).order_by()
         return context
 
 
