@@ -43,6 +43,10 @@
     .nav-tabs {
         text-align:center;
     }
+    .charts {
+        margin-top: 50px;
+        margin-bottom: 100px;
+    }
 {% endblock %}
 {% block content %}
     <script type="text/javascript" src="{% static 'js/Chart.bundle.min.js' %}"></script>
@@ -75,9 +79,15 @@
         </div>
     </div>
 
-    <div class="col-md-6">
-        <canvas id="domain_chart" width="400" height="400"></canvas>
+    <div class="row charts">
+        <div class="col-md-6">
+            <canvas id="barChart" width="400" height="400"></canvas>
+        </div>
+        <div class="col-md-6">
+            <canvas id="pieChart" width="400" height="400"></canvas>
+        </div>
     </div>
+
     <div class="row">
         <div class="col-lg-9">
             <ul class="nav nav-tabs" role="tablist">
@@ -137,15 +147,21 @@
             {% endif %}
         </div>
     </div>
-<script type="text/javascript">
-            var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
+
+    <script type="text/javascript">
+        var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
         var months = [], data = [];
         var all_data = new Array(12).fill(0);
+        var pie = new Array(7).fill(0);
         var current_month = {{current_month}};
 
         {% for i in domain_graph %}
             all_data['{{i.month}}' - 1] = {{i.c}};
         {% endfor %}
+
+        {% for i in pie_chart %}
+            pie[{{i.label}}] = {{i.c}};
+        {% endfor %} 
 
         if (current_month - 6 < 0)
         {
@@ -160,7 +176,7 @@
             data = all_data.slice(current_month - 6, current_month);
         }
 
-        var ctx = document.getElementById("domain_chart").getContext('2d');
+        var ctx = document.getElementById("barChart").getContext('2d');
         var domain_chart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -203,5 +219,35 @@
                 }
             }
         });
-</script>
+
+        var ctx = document.getElementById("pieChart").getContext('2d');
+        var myDoughnutChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['General','Number Error','Functional','Performance','Security','Typo','Design'],
+                datasets: [{
+                    data: pie,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(153, 102, 255, 0.6)',
+                        'rgba(255, 159, 64, 0.6)',
+                        'rgba(255, 99, 132, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(255,99,132,1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(255,99,132,1)'
+                    ],
+                    borderWidth: 1
+                }]
+            }
+        });
+    </script>
 {% endblock %}
