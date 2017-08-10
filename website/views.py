@@ -343,8 +343,7 @@ class UserProfileDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
         context['my_score'] = Points.objects.filter(user=self.object).aggregate(total_score=Sum('score')).values()[0]
-        context['websites'] = Domain.objects.filter(issue__user=self.object).annotate(total=Count('issue')).order_by(
-            '-total')
+        context['websites'] = Domain.objects.filter(issue__user=self.object).annotate(total=Count('issue')).order_by('-total')
         context['activities'] = Issue.objects.filter(user=self.object)[0:10]
         context['profile_form'] = UserProfileForm()
         context['total_open'] = Issue.objects.filter(user=self.object,status="open").count()
@@ -410,8 +409,9 @@ class StatsDetailView(TemplateView):
         context['user_count'] = User.objects.all().count()
         context['hunt_count'] = Hunt.objects.all().count()
         context['domain_count'] = Domain.objects.all().count()
-        context['user_graph']= User.objects.annotate(month=ExtractMonth('date_joined')).values('month').annotate(c=Count('id')).order_by()
-        context['graph']= Issue.objects.annotate(month=ExtractMonth('created')).values('month').annotate(c=Count('id')).order_by()
+        context['user_graph'] = User.objects.annotate(month=ExtractMonth('date_joined')).values('month').annotate(c=Count('id')).order_by()
+        context['graph'] = Issue.objects.annotate(month=ExtractMonth('created')).values('month').annotate(c=Count('id')).order_by()
+        context['pie_chart'] = Issue.objects.values('label').annotate(c=Count('label')).order_by()
         return context
 
 
