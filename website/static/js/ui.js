@@ -53,9 +53,9 @@ $(document).ready(function () {
             var img = $(this).parent().parent().parent().find('img:first').attr('src');
             return '<div class="row">'
                   +'<div class="col-md-3"><img src="'+img+'" height="50"></div>'
-                  +'<div class="col-md-9">'
+                  +'<div class="col-md-7 col-md-offset-2">'
                   +'<strong>'+user+'</strong>'
-                  +'<span class="label label-default">'+tag+'</span>'
+                  +'<p><div class="label label-default">'+tag+'</div></p>'
                   +'</div>'
                   +'</div>';
         }
