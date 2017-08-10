@@ -391,6 +391,7 @@ class DomainDetailView(TemplateView):
         context['current_month'] = datetime.now().month
         context['domain_graph'] = Issue.objects.filter(domain=context['domain']).filter(created__month__gte=(datetime.now().month-6), created__month__lte=datetime.now().month) \
                         .annotate(month=ExtractMonth('created')).values('month').annotate(c=Count('id')).order_by()
+        context['pie_chart'] = Issue.objects.filter(domain=context['domain']).values('label').annotate(c=Count('label')).order_by()
         return context
 
 
