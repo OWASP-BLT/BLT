@@ -373,19 +373,44 @@ def delete_issue(request, id):
     return redirect('/')
 
 
-class DomainDetailView(TemplateView):
+class DomainDetailView(ListView):
     template_name = "domain.html"
-
+    model = Issue
+  
     def get_context_data(self, *args, **kwargs):
         context = super(DomainDetailView, self).get_context_data(*args, **kwargs)
         parsed_url = urlparse("http://" + self.kwargs['slug'])
 
+        open_issue = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(
+            status="open")
+        close_issue = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(
+            status="closed")
+
         context['name'] = parsed_url.netloc.split(".")[-2:][0].title()
         context['domain'] = Domain.objects.get(name=self.kwargs['slug'])
-        context['opened'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(
-            status="open")
-        context['closed'] = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(
-            status="closed")
+
+        paginator = Paginator(open_issue, 10)
+        page = self.request.GET.get('page')
+        try:
+            openissue_paginated = paginator.page(page)
+        except PageNotAnInteger:
+            openissue_paginated = paginator.page(1)
+        except EmptyPage:
+            openissue_paginated = paginator.page(paginator.num_pages)
+
+        paginator = Paginator(close_issue, 10)
+        page = self.request.GET.get('page')
+        try:
+            closeissue_paginated = paginator.page(page)
+        except PageNotAnInteger:
+            closeissue_paginated = paginator.page(1)
+        except EmptyPage:
+            closeissue_paginated = paginator.page(paginator.num_pages)
+
+        context['opened_net'] = open_issue
+        context['opened'] = openissue_paginated
+        context['closed_net'] = close_issue
+        context['closed'] = closeissue_paginated
         context['leaderboard'] = User.objects.filter(issue__url__contains=self.kwargs['slug']).annotate(
             total=Count('issue')).order_by('-total')
         context['current_month'] = datetime.now().month

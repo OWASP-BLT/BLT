@@ -82,10 +82,10 @@
         <div class="col-lg-9">
             <ul class="nav nav-tabs" role="tablist">
                 <li role="presentation" class="active">
-                    <a href="#open" aria-controls="home" role="tab" data-toggle="tab">Open [{{opened.count}}]</a>
+                    <a href="#open" aria-controls="home" role="tab" data-toggle="tab">Open [{{opened_net.count}}]</a>
                 </li>
                 <li role="presentation">
-                    <a href="#closed" aria-controls="profile" role="tab" data-toggle="tab">Closed [{{closed.count}}]</a>
+                    <a href="#closed" aria-controls="profile" role="tab" data-toggle="tab">Closed [{{closed_net.count}}]</a>
                 </li>
             </ul>
 
@@ -96,6 +96,18 @@
                             {% include '_activity.html' %}
                         {% endfor %}
                     </div>
+                    <div class="col-lg-9">
+                        <div class="text-center">
+                            {% if opened.has_previous %}
+                                <a href="?page={{ opened.previous_page_number }}{% if user %}&user={{user}}{% endif %}" class="btn btn-default">Prev</a>
+                            {% endif %}
+                            <span>Page {{ opened.number }} of {{ opened.paginator.num_pages }}</span>
+                            {% if opened.has_next %}
+                                <a href="?page={{ opened.next_page_number }}{% if user %}&user={{user}}{% endif %}"  class="btn btn-default">Next</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <br><br>  
                 </div>
                 <div role="tabpanel" class="tab-pane" id="closed">
                     <div class="list-group">
@@ -103,6 +115,18 @@
                             {% include '_activity.html' %}
                         {% endfor %}
                     </div>
+                    <div class="col-lg-9">
+                        <div class="text-center">
+                            {% if closed.has_previous %}
+                                <a href="?page={{ closed.previous_page_number }}{% if user %}&user={{user}}{% endif %}" class="btn btn-default">Prev</a>
+                            {% endif %}
+                            <span>Page {{ closed.number }} of {{ closed.paginator.num_pages }}</span>
+                            {% if closed.has_next %}
+                                <a href="?page={{ closed.next_page_number }}{% if user %}&user={{user}}{% endif %}"  class="btn btn-default">Next</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <br><br>  
                 </div>
             </div>
         </div>
