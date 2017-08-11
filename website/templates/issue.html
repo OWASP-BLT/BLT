@@ -56,7 +56,7 @@
         margin-top: 10px;
     }
     input[name="description"] {
-        width: 700px !important;
+        width: 600px !important;
     }
 {% endblock %}
 {% block content %}
@@ -81,8 +81,10 @@
                 </span>
                 <div class="form form-inline" style="display: none;">
                     {% csrf_token %}
-                    <input type="text" name="description" class="form-control" value="" required>
+                    <input type="text" name="domain" placeholder="Domain" class="form-control" value="" required>
+                    <input type="text" name="description" placeholder="Bug Description" class="form-control" value="" required>
                     <select name="label" class="form-control" required>
+                        <option value="0">General</option>
                         <option value="1">Number error</option>
                         <option value="2">Functional</option>
                         <option value="3">Performance</option>
@@ -95,7 +97,7 @@
                 </div>
             </h3>
             <strong>Domain:</strong>
-            <a href="{{object.url}}" target="_new">{{object.url}}</a>
+            <a href="{{object.url}}" target="_new" class="issue-domain">{{object.url}}</a>
             <div class="pull-right">
                 <a class="twitter-share-button btn btn-info"
                     href="https://twitter.com/intent/tweet?text=Bug on @{{object.domain_title}} - {{object.description}}"
@@ -196,7 +198,7 @@
                             <div class="col-xs-6">                            
                                 <div class="bug-info">
                                     <strong>Bug Type:</strong>
-                                    <span class="label label-info">{{object.get_label_display}}</span>
+                                    <span class="label label-info bug-label">{{object.get_label_display}}</span>
                                 </div>
                                 <div class="bug-info">
                                     <strong>Status:</strong>
@@ -206,7 +208,7 @@
                                     {% endif %}
                                 </div>
                                 <div class="bug-info">
-                                    <strong>Created on:</strong>
+                                    <strong>Added on:</strong>
                                     <span class="label label-info">{{object.created}}</span>
                                 </div>
                             </div>
@@ -270,6 +272,7 @@
     var label = {{object.label}};
     $(document).on('click','.edit-issue',function(e){
         $('.form input[name=description]').val($('.issue-desc').text());
+        $('.form input[name=domain]').val($('.issue-domain').text());
         $('.form select').val(label);
         $('.editables').hide();
         $('.form').show();
@@ -287,18 +290,22 @@
             url: '/issue/edit/',
             data:{                
                 issue_pk: $('#issue_pk').val(),
+                domain: $('.form input[name=domain]').val(),
                 description: $('.form input[name=description]').val(),
                 label: $('.form select').val(),
                 csrfmiddlewaretoken: $('.form input[name=csrfmiddlewaretoken]').val(),
             },
             success: function(data){
                 $('.issue-desc').text($('.form input[name=description]').val());
+                $('.issue-domain').text($('.form input[name=domain]').val());
                 label = $('.form select').val();
                 var l = $(".form select option[value='"+label+"']").text();
-                $('.bug-info .label-info').text(l);
+                $('.bug-label').text(l);
                 $('.form').hide();
                 $('.editables').show();
                 $.notify("Issue updated!", {style: "custom", className: "success"});
+                if (data === "Domain Created")
+                    $.notify("Domain Added!", {style: "custom", className: "success"});
             },
             error: function() {
                 $.notify("Some error occurred!", {style: "custom", className: "danger"});
