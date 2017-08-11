@@ -567,11 +567,19 @@ class IssueView(DetailView):
 def IssueEdit(request):
     if request.method == "POST":
         issue = Issue.objects.get(pk=request.POST.get('issue_pk'))
+        uri = request.POST.get('domain')
+        link = uri.replace("www.", "")
         if request.user == issue.user or request.user.is_superuser:
+            domain, created = Domain.objects.get_or_create(name=link, defaults={'url': "http://" + link})
+            issue.domain = domain
+            issue.url = uri
             issue.description = request.POST.get('description')
             issue.label = request.POST.get('label')
             issue.save()
-            return HttpResponse("Updated")
+            if created:
+                return HttpResponse("Domain Created")
+            else:
+                return HttpResponse("Updated")
         else:
             return HttpResponse("Unauthorised")
 
