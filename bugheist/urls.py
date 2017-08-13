@@ -24,6 +24,7 @@ urlpatterns = [
                   url(r'^issue/edit/$', website.views.IssueEdit),
                   url(r'^issue/update/$', website.views.UpdateIssue),
                   url(r'^issue/(?P<slug>\w+)/$', IssueView.as_view(), name="issue_view"),
+                  url(r'^follow_user/(?P<user>[^/]+)/', website.views.follow_user,name="follow_user"),
                   url(r'^all_activity/$', AllIssuesView.as_view(), name="all_activity"),
                   url(r'^leaderboard/$', LeaderboardView.as_view(), name="leaderboard"),
                   url(r'^scoreboard/$', ScoreboardView.as_view(), name="scoreboard"),
