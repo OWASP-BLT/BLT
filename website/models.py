@@ -22,7 +22,7 @@ from PIL import Image
 from django.db.models import Count
 from colorthief import ColorThief
 from django.utils import timezone
-
+from annoying.fields import AutoOneToOneField
 
 class Domain(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -296,8 +296,8 @@ class UserProfile(models.Model):
         (3, 'Gold'),
         (4, 'Platinum'),
     )
-
-    user = models.OneToOneField(User, related_name="userprofile")
+    follows = models.ManyToManyField('self', related_name='follower', symmetrical=False,blank=True)
+    user = AutoOneToOneField('auth.user',related_name="userprofile")
     user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
     title = models.IntegerField(choices=title, default=0)
     winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

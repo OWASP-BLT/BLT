@@ -125,7 +125,7 @@ kbd.closed {
                 <form method="post" action="." enctype="multipart/form-data">
                     {% csrf_token %}
                     <input type="file" id='${multipartFilePath}' name="user_avatar" />
-                    <button type="submit" class="btn btn-primary upload">
+                    <button type="submit" id="follow" class="btn btn-primary upload">
                         <span class="badge badge-avatar"></span> Upload
                     </button>
                 </form>
@@ -133,7 +133,11 @@ kbd.closed {
             <kbd class="{{ user.userprofile.get_title_display }} text-uppercase title">
                 {{ user.userprofile.get_title_display }}
             </kbd>
+            <div id="target_div" >
+            {% include 'followers.html' %}
+            </div>
             <h4>Total bugs reported: <strong>{{ total_bugs }}</strong></h4>
+
             <div class="icon-block">
                 <kbd class="fa general">
                 General {{ bug_type_0 | length }}
@@ -320,5 +324,21 @@ kbd.closed {
                 }
             }
         });
+
+    $('body').on('click', '.follow_unfollow', function (e){
+        e.preventDefault();
+        var usr = $(this).attr('name');
+            $.ajax({
+                type: 'GET',
+                url: '/follow_user/'+usr+'/',
+                data:{
+                    user: usr,
+                },
+                success: function(data) {
+                    $('#target_div').html(data);
+                },
+            });
+    });
+
     </script>
 {% endblock %}
