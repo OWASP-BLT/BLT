@@ -354,6 +354,10 @@ class UserProfileDetailView(DetailView):
         context['total_bugs'] = Issue.objects.filter(user=self.object).count()
         for i in range(0,7):
             context['bug_type_'+str(i)] = Issue.objects.filter(user=self.object,label=str(i))
+        curr_user = self.object
+        context['follows'] = curr_user.userprofile.follows.all().count()
+        context['followed_by'] = curr_user.userprofile.follower.all().count()
+        context['follwers_list'] = [str(prof.user.email) for prof in  curr_user.userprofile.follower.all()]
         return context
 
     @method_decorator(login_required)
@@ -774,3 +778,26 @@ class CreateInviteFriend(CreateView):
                          'An email has been sent to your friend. Keep inviting your friends and get points!')
 
         return HttpResponseRedirect(self.success_url)
+
+
+def follow_user(request,user):
+    if request.method=="GET":
+        userx = User.objects.get(username=user)
+        context={}
+        flag = 0
+        list_userfrof = request.user.userprofile.follows.all()
+        for prof in list_userfrof:
+            if str(prof)==(userx.email):
+                request.user.userprofile.follows.remove(userx.userprofile)            
+                flag = 1
+        if flag!=1:
+            request.user.userprofile.follows.add(userx.userprofile)
+
+        context['follows'] = userx.userprofile.follows.all().count()
+        context['followed_by'] = userx.userprofile.follower.all().count()
+        context['follwers_list'] = [str(prof.user.email) for prof in  userx.userprofile.follower.all()]
+        context['user'] = userx
+
+    return render(request,'followers.html',context)
+
+
