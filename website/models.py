@@ -138,7 +138,6 @@ class Issue(models.Model):
     github_url = models.URLField(default="", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
-
     def __unicode__(self):
         return self.description
 
@@ -301,6 +300,7 @@ class UserProfile(models.Model):
     user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
     title = models.IntegerField(choices=title, default=0)
     winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    issue_upvoted = models.ForeignKey(Issue, null=True, blank=True,related_name="upvoted")
 
     def avatar(self, size=36):
         if self.user_avatar:

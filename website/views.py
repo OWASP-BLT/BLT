@@ -590,6 +590,7 @@ class IssueView(DetailView):
         context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context['all_comment'] = self.object.comments.all
         context['all_users'] = User.objects.all()
+        context['likes'] = UserProfile.objects.filter(issue_upvoted=self.object).count() 
         return context
 
 
@@ -800,4 +801,19 @@ def follow_user(request,user):
 
     return render(request,'followers.html',context)
 
+@login_required
+def like_issue(request,issue_pk):
+    context={}
+    issue_pk=int(issue_pk)
+    issue = Issue.objects.get(pk=issue_pk)
+    userprof = UserProfile.objects.get(user=request.user)
+    if userprof in UserProfile.objects.filter(issue_upvoted=issue):
+        userprof.issue_upvoted = None
+    else:
+        userprof.issue_upvoted = issue
+    userprof.save()
+    total_votes = UserProfile.objects.filter(issue_upvoted=issue).count() 
+    context['object'] = issue
+    context['likes'] = total_votes
+    return render(request,'likers.html',context)
 
