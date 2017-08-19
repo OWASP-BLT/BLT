@@ -78,6 +78,9 @@
                     <span class="pull-right">
                         <i class="fa fa-eye"></i> {{object.views}}
                     </span>
+                    <span class="like_btn">
+                        {% include 'likers.html' %}
+                    </span>
                 </span>
                 <div class="form form-inline" style="display: none;">
                     {% csrf_token %}
@@ -344,6 +347,22 @@
             }
         });
     });
+
+    $('body').on('click', '.like_unlike', function (e){
+        e.preventDefault();
+        var issue_pk = $(this).attr('name');
+            $.ajax({
+                type: 'GET',
+                url: '/like_issue/'+issue_pk+'/',
+                data:{
+
+                },
+                success: function(data) {
+                    $('.like_btn').html(data);
+                },
+            });
+    });
+
 
 </script>
 
