@@ -1,4 +1,5 @@
-<a class="like_unlike btn btn-default" name="{{ object.pk }}" >
+<a {% if request.user.is_authenticated %} class="like_unlike btn btn-default" {% else %}
+class="btn btn-default" {% endif %} name="{{ object.pk }}" >
     <i class="fa fa-thumbs-up">
      </i>
 {{ likes }}
