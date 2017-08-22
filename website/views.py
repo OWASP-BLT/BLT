@@ -801,7 +801,7 @@ def follow_user(request,user):
 
     return render(request,'followers.html',context)
 
-@login_required
+@login_required(login_url='/accounts/login')
 def like_issue(request,issue_pk):
     context={}
     issue_pk=int(issue_pk)
