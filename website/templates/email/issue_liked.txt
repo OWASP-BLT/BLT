@@ -1,0 +1,7 @@
+Hey {{ liked_user }}, <br>
+{{ liker_user }} upvoted your issue 
+https://www.bugheist.com/issue/{{ issue_pk }} 
+
+Best,
+
+The Bugheist Team
