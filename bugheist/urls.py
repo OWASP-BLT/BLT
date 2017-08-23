@@ -10,8 +10,7 @@ from django.views.generic.base import RedirectView
 import comments.views
 import website.views
 from website.views import (UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView,
-                           InboundParseWebhookView, LeaderboardView, IssueView, AllIssuesView,
-                           HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend,
+                           InboundParseWebhookView, LeaderboardView, IssueView, AllIssuesView, SpecificIssuesView,                            HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend,
                            ScoreboardView)
 
 favicon_view = RedirectView.as_view(url='/static/favicon.ico', permanent=True)
@@ -27,6 +26,7 @@ urlpatterns = [
                   url(r'^issue/(?P<slug>\w+)/$', IssueView.as_view(), name="issue_view"),
                   url(r'^follow_user/(?P<user>[^/]+)/', website.views.follow_user,name="follow_user"),
                   url(r'^all_activity/$', AllIssuesView.as_view(), name="all_activity"),
+                  url(r'^label_activity/$', SpecificIssuesView.as_view(), name="all_activity"),
                   url(r'^leaderboard/$', LeaderboardView.as_view(), name="leaderboard"),
                   url(r'^scoreboard/$', ScoreboardView.as_view(), name="scoreboard"),
                   url(r'^issue/$', IssueCreate.as_view(), name="issue"),
