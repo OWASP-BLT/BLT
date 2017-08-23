@@ -811,6 +811,22 @@ def like_issue(request,issue_pk):
         userprof.issue_upvoted = None
     else:
         userprof.issue_upvoted = issue
+        liked_user = issue.user
+        liker_user = request.user
+        issue_pk = issue.pk
+        msg_plain = render_to_string(
+            'email/issue_liked.txt',
+            {'liker_user': liker_user.username,'liked_user':liked_user.username,'issue_pk':issue_pk})
+        msg_html = render_to_string(
+            'email/issue_liked.txt',
+            {'liker_user': liker_user.username,'liked_user':liked_user.username,'issue_pk':issue_pk})
+
+        send_mail('Your issue got an upvote!!',
+                  msg_plain,
+                  'Bugheist <support@bugheist.com>',
+                  [liked_user.email],
+                  html_message=msg_html)
+
     userprof.save()
     total_votes = UserProfile.objects.filter(issue_upvoted=issue).count() 
     context['object'] = issue
