@@ -18,20 +18,17 @@ window.twttr = (function (d, s, id) {
     t.ready = function (f) {
         t._e.push(f);
     };
-
     return t;
 
 }(document, "script", "twitter-wjs"));
 
 (function (d, s, id) {
-
     var js, fjs = d.getElementsByTagName(s)[0];
     if (d.getElementById(id)) return;
     js = d.createElement(s);
     js.id = id;
     js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.7&appId=236647900066394";
     fjs.parentNode.insertBefore(js, fjs);
-
 }(document, 'script', 'facebook-jssdk'));
 
 $(function () {
@@ -61,7 +58,7 @@ $(function () {
 
     $('body').on('click', '.del_comment', function (e){
         e.preventDefault();
-        if(confirm("Delete this comment?")==true){
+        if(confirm("Delete this comment?") == true){
             $.ajax({
                 type: 'POST',
                 url: "/issue/comment/delete/",
@@ -135,13 +132,11 @@ $(function () {
             success: function(data){
                 $('#target_div').html(data);
             }
-
         });
     });
 
     $('body').on('input, keyup', 'textarea',function(){
         var search = $(this).val();
-        console.log(search);
         var data = { search: search };
         $.ajax({
             type: 'GET',
@@ -154,17 +149,20 @@ $(function () {
     });    
 
 
-$(document).on('click','.cancel-comment-edit',function(e){
+    $(document).on('click','.cancel-comment-edit',function(e){
         e.preventDefault();
         $('.edit_form').hide();
         $(this).parent().parent().find('.edit_comment').show();
         $(this).parent().parent().find('.del_comment').show();
         $(this).parent().parent().find('.text-comment').show();
     });
-});
 
-$(document).on('click', '.cancel-comment-reply', function (e){
-    e.preventDefault();        
-    comment_id = $(this).attr('name');
-    $(this).parent().parent().hide();
+    $(document).on('click', '.cancel-comment-reply', function (e){
+        e.preventDefault();
+        comment_id = $(this).attr('name');
+        $(this).parent().parent().hide();
+        $(this).parent().parent().prev().find('.edit_comment').show();
+        $(this).parent().parent().prev().find('.del_comment').show();
+        $(this).parent().parent().prev().find('.reply_comment').show();
+    });
 });
