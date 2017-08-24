@@ -171,7 +171,14 @@ a {
             </div>
         </div>
         <div class="col-md-6">
-            <canvas id="myChart" width="400" height="400"></canvas>
+        {% if activities %}
+            <canvas id="myChart" width="400" height="350"></canvas>
+        {% else %}
+            <div class="alert alert-info" role="alert">
+                <span class="fa fa-info-circle"></span>
+                <strong>No Bug Reported!</strong>
+            </div>
+        {% endif %}
         </div>
         <div class="col-md-3">
             <div class="icon-block">
@@ -196,7 +203,7 @@ a {
                         </div>
                         <a href="/all_activity?user={{ user.username }}" class="btn btn-default btn-block">View All Activity by {{ user.username }}</a>
                     {% else %}
-                        <div class="alert alert-danger text-center">No Activity</div>
+                        <div class="text-center">No Activity Yet!</div>
                     {% endif %}
                 </div>
             </div>
@@ -317,16 +324,16 @@ a {
     $('body').on('click', '.follow_unfollow', function (e){
         e.preventDefault();
         var usr = $(this).attr('name');
-            $.ajax({
-                type: 'GET',
-                url: '/follow_user/'+usr+'/',
-                data:{
-                    user: usr,
-                },
-                success: function(data) {
-                    $('#target_div').html(data);
-                },
-            });
+        $.ajax({
+            type: 'GET',
+            url: '/follow_user/'+usr+'/',
+            data:{
+                user: usr,
+            },
+            success: function(data) {
+                $('#target_div').html(data);
+            },
+        });
     });
     </script>
 {% endblock %}
