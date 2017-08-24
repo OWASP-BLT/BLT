@@ -92,36 +92,36 @@ def domain_check(request):
             t=k
             while k<len(domain_url):
                 if (domain_url[k]!="/"):
-                    k=k+1       
+                    k=k+1
                 elif (domain_url[k]=="/"):
                     break
-        
+
         elif "http://" in domain_url:
             k=7
             t=k
             while k<len(domain_url):
                 if (domain_url[k]!="/"):
-                    k=k+1       
+                    k=k+1
                 elif (domain_url[k]=="/"):
                     break
-            
+
         elif "https://" in domain_url:
             k=8
             t=k
             while k<len(domain_url):
                 if (domain_url[k]!="/"):
-                    k=k+1       
+                    k=k+1
                 elif (domain_url[k]=="/"):
                     break
-                    
+
         else:
             return HttpResponse('Nothing passed')
 
-        url_parsed = domain_url[t:k]        
-        
+        url_parsed = domain_url[t:k]
+
         if Domain.objects.filter(name=url_parsed).exists():
             a =  url_parsed
-            return HttpResponse(a)   
+            return HttpResponse(a)
         else:
             return HttpResponse('There are no bugs on this domain')
 
@@ -139,7 +139,7 @@ class IssueBaseCreate(object):
             obj.screenshot.save(self.request.POST.get('screenshot-hash') + '.png', django_file, save=True)
         obj.user_agent = self.request.META.get('HTTP_USER_AGENT')
         obj.save()
-        p = Points.objects.create(user=self.request.user, issue=obj, score=score)        
+        p = Points.objects.create(user=self.request.user, issue=obj, score=score)
 
     def process_issue(self, user, obj, created, domain, score=3):
         p = Points.objects.create(user=user, issue=obj, score=score)
@@ -379,7 +379,7 @@ def delete_issue(request, id):
 class DomainDetailView(ListView):
     template_name = "domain.html"
     model = Issue
-  
+
     def get_context_data(self, *args, **kwargs):
         context = super(DomainDetailView, self).get_context_data(*args, **kwargs)
         parsed_url = urlparse("http://" + self.kwargs['slug'])
@@ -458,7 +458,7 @@ class AllIssuesView(ListView):
         return self.activities
 
     def get_context_data(self, *args, **kwargs):
-        context = super(AllIssuesView, self).get_context_data(*args, **kwargs)        
+        context = super(AllIssuesView, self).get_context_data(*args, **kwargs)
         paginator = Paginator(self.activities, self.paginate_by)
         page = self.request.GET.get('page')
 
@@ -471,6 +471,50 @@ class AllIssuesView(ListView):
 
         context['activities'] = activities_paginated
         context['user'] = self.request.GET.get('user')
+        return context
+
+class SpecificIssuesView(ListView):
+    paginate_by = 20
+    template_name = "list_view.html"
+
+    def get_queryset(self):
+        username = self.request.GET.get('user')
+        label = self.request.GET.get('label')
+        if label == "General":
+            query=0;
+        elif label == "Number":
+            query=1;
+        elif label == "Functional":
+            query=2;
+        elif label == "Performance":
+            query=3;
+        elif label == "Security":
+            query=4;
+        elif label == "Typo":
+            query=5;
+        elif label == "Design":
+            query=6;
+        if username is None:
+            self.activities = Issue.objects.all()
+        else:
+            self.activities = Issue.objects.filter(user__username=username,label=query)
+        return self.activities
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(SpecificIssuesView, self).get_context_data(*args, **kwargs)
+        paginator = Paginator(self.activities, self.paginate_by)
+        page = self.request.GET.get('page')
+
+        try:
+            activities_paginated = paginator.page(page)
+        except PageNotAnInteger:
+            activities_paginated = paginator.page(1)
+        except EmptyPage:
+            activities_paginated = paginator.page(paginator.num_pages)
+
+        context['activities'] = activities_paginated
+        context['user'] = self.request.GET.get('user')
+        context['label'] = self.request.GET.get('label')
         return context
 
 
@@ -492,10 +536,10 @@ class ScoreboardView(ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(ScoreboardView, self).get_context_data(*args, **kwargs)
-        companies = Domain.objects.all().order_by('-modified')  
+        companies = Domain.objects.all().order_by('-modified')
         paginator = Paginator(companies, self.paginate_by)
         page = self.request.GET.get('page')
-        
+
         try:
             scoreboard_paginated = paginator.page(page)
         except PageNotAnInteger:
@@ -504,7 +548,7 @@ class ScoreboardView(ListView):
             scoreboard_paginated = paginator.page(paginator.num_pages)
 
         context['scoreboard'] = scoreboard_paginated
-        context['user'] = self.request.GET.get('user')  
+        context['user'] = self.request.GET.get('user')
         return context
 
 
@@ -532,7 +576,7 @@ def search(request, template="search.html"):
             'type': stype,
             'users': User.objects.filter(Q(username__icontains=query))[0:20]
         }
-    elif stype == "label":        
+    elif stype == "label":
         context = {
             'query': query,
             'type': stype,
@@ -590,7 +634,7 @@ class IssueView(DetailView):
         context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context['all_comment'] = self.object.comments.all
         context['all_users'] = User.objects.all()
-        context['likes'] = UserProfile.objects.filter(issue_upvoted=self.object).count() 
+        context['likes'] = UserProfile.objects.filter(issue_upvoted=self.object).count()
         return context
 
 
@@ -682,7 +726,7 @@ class InboundParseWebhookView(View):
 def UpdateIssue(request):
     issue = Issue.objects.get(id=request.POST.get('issue_pk'))
     if request.method == "POST" and request.user.is_superuser or (issue is not None and request.user == issue.user):
-        if request.POST.get('action') == "close":            
+        if request.POST.get('action') == "close":
             issue.status = "closed"
             issue.closed_by = request.user
             issue.closed_date = datetime.now()
@@ -694,7 +738,7 @@ def UpdateIssue(request):
                 'username': request.user.username,
                 'action': "closed",
             })
-            subject = issue.domain.name + ' bug # ' + str(issue.id) + ' closed by ' + request.user.username            
+            subject = issue.domain.name + ' bug # ' + str(issue.id) + ' closed by ' + request.user.username
 
         elif request.POST.get('action') == "open":
             issue.status = "open"
@@ -705,7 +749,7 @@ def UpdateIssue(request):
                 'username': request.user.username,
                 'action': "opened",
             })
-            subject = issue.domain.name + ' bug # ' + str(issue.id) + ' opened by ' + request.user.username            
+            subject = issue.domain.name + ' bug # ' + str(issue.id) + ' opened by ' + request.user.username
 
         mailer = 'Bugheist <support@bugheist.com>'
         email_to = issue.user.email
@@ -789,7 +833,7 @@ def follow_user(request,user):
         list_userfrof = request.user.userprofile.follows.all()
         for prof in list_userfrof:
             if str(prof)==(userx.email):
-                request.user.userprofile.follows.remove(userx.userprofile)            
+                request.user.userprofile.follows.remove(userx.userprofile)
                 flag = 1
         if flag!=1:
             request.user.userprofile.follows.add(userx.userprofile)
@@ -828,8 +872,7 @@ def like_issue(request,issue_pk):
                   html_message=msg_html)
 
     userprof.save()
-    total_votes = UserProfile.objects.filter(issue_upvoted=issue).count() 
+    total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
     context['object'] = issue
     context['likes'] = total_votes
     return render(request,'likers.html',context)
-
