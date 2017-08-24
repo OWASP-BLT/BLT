@@ -95,23 +95,22 @@ a {
 .fa-code {
     color:#ef6c00;
 }
-.status {
-    margin-top: 30px;
+.fa-star{
+    color:#FF8800;
 }
-.points {
-    padding: 10px;
+.fa-bug {
+    color:#00C851;
 }
-kbd.open {
-    padding: 10px;
-    background: #00C851;
-}
-kbd.closed {
-    padding: 10px;
-    background: #ff4444;
+.fa-code-fork {
+    color: #ff4444;
 }
 .scroll {
     max-height: 1100px;
     overflow-y: auto;
+}
+#target_div .btn {
+    width: 200px;
+    margin-top: 10px;
 }
 {% endblock %}
 
@@ -138,8 +137,8 @@ kbd.closed {
             <kbd class="{{ user.userprofile.get_title_display }} text-uppercase title">
                 {{ user.userprofile.get_title_display }}
             </kbd>
-            <div id="target_div" >
-            {% include 'followers.html' %}
+            <div id="target_div">
+                {% include 'followers.html' %}
             </div>
             <h4>Total bugs reported: <strong>{{ total_bugs }}</strong></h4>
 
@@ -175,26 +174,11 @@ kbd.closed {
             <canvas id="myChart" width="400" height="400"></canvas>
         </div>
         <div class="col-md-3">
-            <div class="status">
-                <kbd class="points"> {{ my_score|default:0 }} Points</kbd>
-            </div>
-            <div class="status">
-                <kbd class="open">Open Issues: {{total_open}}</kbd>
-            </div>
-            <div class="status">
-                <kbd class="closed">Closed Issues: {{total_closed}}</kbd>
-            </div>
-            <div class="status">
-                <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post">
-                    <input type="hidden" name="cmd" value="_xclick">
-                    <input type="hidden" name="business" value="{{ project.paypal|default:"coderbounty@gmail.com" }}">
-                    <input type="hidden" name="item_name" value="tip for {{ user.username }} on bugheist.com">
-                    <input type="hidden" name="currency_code" value="USD">
-                    <button type="submit" class="btn btn-danger btn-small">
-                        <i class="fa fa-money fa-lg"></i> Send a tip
-                    </button>
-                </form>
-            </div>
+            <div class="icon-block">
+                <kbd class="fa fa-star"> Points: {{ my_score|default:0 }}</kbd>
+                <kbd class="fa fa-bug"> Open Issues: {{total_open}}</kbd>
+                <kbd class="fa fa-code-fork"> Closed Issues: {{total_closed}}</kbd>
+            </div>            
         </div>
     </div>
     <div class="row">
@@ -344,6 +328,5 @@ kbd.closed {
                 },
             });
     });
-
     </script>
 {% endblock %}
