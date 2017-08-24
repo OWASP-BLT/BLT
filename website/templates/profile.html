@@ -3,6 +3,11 @@
 {% load staticfiles %}
 
 {% block style %}
+a {
+  color: inherit;
+  text-decoration: inherit; 
+}
+
 .img-thumbnail {
     width: 200px;
     height: 200px;
@@ -114,14 +119,14 @@ kbd.closed {
     <script type="text/javascript" src="{% static 'js/Chart.bundle.min.js' %}"></script>
     <div class="row">
         <h1 class="page-header text-capitalize">{{ user.username }}</h1>
-        <div class="col-md-3">            
+        <div class="col-md-3">
             {% if user.userprofile.avatar %}
                 <img src="{{ user.userprofile.avatar }}" class="img-responsive img-thumbnail">
             {% else %}
                 <img src="{% gravatar_url user.email 200 %}" class="img-responsive img-thumbnail">
             {% endif %}
             {% if request.user == user %}
-                <button class="upload-btn">Edit Profile Pic</button>            
+                <button class="upload-btn">Edit Profile Pic</button>
                 <form method="post" action="." enctype="multipart/form-data">
                     {% csrf_token %}
                     <input type="file" id='${multipartFilePath}' name="user_avatar" />
@@ -140,29 +145,29 @@ kbd.closed {
 
             <div class="icon-block">
                 <kbd class="fa general">
-                General {{ bug_type_0 | length }}
+                <a href="/label_activity?user={{ user.username }}&label=General">General {{ bug_type_0 | length }}</a>
                 </kbd>
                 <kbd class="fa fa-exclamation-triangle">
-                Number {{ bug_type_1 | length }}
+                <a href="/label_activity?user={{ user.username }}&label=Number">Number {{ bug_type_1 | length }}</a>
                 </kbd>
                 <kbd class="fa fa-trophy">
-                Functional {{ bug_type_2 | length }}
+                <a href="/label_activity?user={{ user.username }}&label=Functional">Functional {{ bug_type_2 | length }}</a>
                 </kbd>
             </div>
             <div class="icon-block">
                 <kbd class="fa fa-flash">
-                Performance {{ bug_type_3 | length }}
-                </kbd>            
+                <a href="/label_activity?user={{ user.username }}&label=Performance">Performance {{ bug_type_3 | length }}</a>
+                </kbd>
                 <kbd class="fa fa-lock">
-                Security {{ bug_type_4 | length}}
+                <a href="/label_activity?user={{ user.username }}&label=Security">Security {{ bug_type_4 | length}}</a>
                 </kbd>
             </div>
             <div class="icon-block">
                 <kbd class="fa fa-eraser">
-                Typo {{ bug_type_5 | length}}
+                <a href="/label_activity?user={{ user.username }}&label=Typo">Typo {{ bug_type_5 | length}}</a>
                 </kbd>
                 <kbd class="fa fa-code">
-                Design {{ bug_type_6 | length}}
+                <a href="/label_activity?user={{ user.username }}&label=Design">Design {{ bug_type_6 | length}}</a>
                 </kbd>
             </div>
         </div>
