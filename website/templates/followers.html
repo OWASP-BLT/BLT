@@ -6,6 +6,18 @@
     {% endif %}
 {% endif %}
 
-<h4>Follows: <strong>{{ follows }}</strong></h4>
+<div class="status">
+    <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post">
+        <input type="hidden" name="cmd" value="_xclick">
+        <input type="hidden" name="business" value="{{ project.paypal|default:"coderbounty@gmail.com" }}">
+        <input type="hidden" name="item_name" value="tip for {{ user.username }} on bugheist.com">
+        <input type="hidden" name="currency_code" value="USD">
+        <button type="submit" class="btn btn-danger">
+            <i class="fa fa-money fa-lg"></i> Send a tip
+        </button>
+    </form>
+</div>
+
+<h4>Following: <strong>{{ follows }}</strong></h4>
 <h4>Followed by: <strong>{{ followed_by }}</strong></h4>
             
