@@ -480,6 +480,7 @@ class SpecificIssuesView(ListView):
     def get_queryset(self):
         username = self.request.GET.get('user')
         label = self.request.GET.get('label')
+        query = 0;
         if label == "General":
             query=0;
         elif label == "Number":
@@ -494,6 +495,7 @@ class SpecificIssuesView(ListView):
             query=5;
         elif label == "Design":
             query=6;
+
         if username is None:
             self.activities = Issue.objects.all()
         else:
