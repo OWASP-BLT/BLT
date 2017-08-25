@@ -82,7 +82,7 @@
                         {% include 'likers.html' %}
                     </span>
                 </span>
-                <div class="form form-inline" style="display: none;">
+                <div class="form form-inline" style="display:none">
                     {% csrf_token %}
                     <input type="text" name="domain" placeholder="Domain" class="form-control" value="" required>
                     <input type="text" name="description" placeholder="Bug Description" class="form-control" value="" required>
@@ -255,9 +255,13 @@
     <div class="row">
         <div class="col-md-6">
             <h3>Comments:</h3>
-            <div id="target_div">
-                {% include 'comments.html' %}
-            </div>
+            {% if all_comment %}
+                <div id="target_div">
+                    {% include 'comments.html' %}
+                </div>
+            {% else %}
+                <p>No comment added yet. Be the first to comment!</p>
+            {% endif %}
             {% if user.is_authenticated %}
             <form id="comments">
                 {% csrf_token %}
@@ -351,19 +355,15 @@
     $('body').on('click', '.like_unlike', function (e){
         e.preventDefault();
         var issue_pk = $(this).attr('name');
-            $.ajax({
-                type: 'GET',
-                url: '/like_issue/'+issue_pk+'/',
-                data:{
-
-                },
-                success: function(data) {
-                    $('.like_btn').html(data);
-                },
-            });
+        $.ajax({
+            type: 'GET',
+            url: '/like_issue/'+issue_pk+'/',
+            data:{},
+            success: function(data) {
+                $('.like_btn').html(data);
+            },
+        });
     });
 
-
 </script>
-
 {% endblock %}
