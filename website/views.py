@@ -559,7 +559,18 @@ def search(request, template="search.html"):
     stype = request.GET.get('type')
     if query is None:
         return render(request, template)
-
+    if query[:6]=="issue:":
+        stype="issue"
+        query=query[6:]
+    elif query[:7]=="domain:":
+        stype="domain"
+        query=query[7:]
+    elif query[:5]=="user:":
+        stype="user"
+        query=query[5:]
+    elif query[:6]=="label:":
+        stype="label"
+        query=query[6:]
     if stype == "issue" or stype is None:
         context = {
             'query': query,
