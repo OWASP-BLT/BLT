@@ -19,5 +19,5 @@
 </div>
 
 <h4>Following: <strong>{{ follows }}</strong></h4>
-<h4>Followed by: <strong>{{ followed_by }}</strong></h4>
+<h4>Followed by: <strong><a href="{% url 'follower_list' username=user %}">{{ followed_by }}</a></strong></h4>
             
