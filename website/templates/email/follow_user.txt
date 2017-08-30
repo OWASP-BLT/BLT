@@ -1,0 +1,6 @@
+Hey {{followed.username}},<br>
+<br>
+You just got a new follower https://www.bugheist.com/profile/{{follower.username}}
+Best,<br>
+<br>
+The Bugheist Team<br>
