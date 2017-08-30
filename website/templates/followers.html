@@ -18,6 +18,6 @@
     </form>
 </div>
 
-<h4>Following: <strong>{{ follows }}</strong></h4>
+<h4>Following: <strong><a href="{% url 'following_list' username=user %}"> {{ follows }} </a></strong></h4>
 <h4>Followed by: <strong>{{ followed_by }}</strong></h4>
             
