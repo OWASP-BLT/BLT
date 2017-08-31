@@ -26,6 +26,7 @@ urlpatterns = [
                   url(r'^like_issue/(?P<username>\w+)/$', website.views.follower_list,name="follower_list"),
                   url(r'^issue/(?P<slug>\w+)/$', IssueView.as_view(), name="issue_view"),
                   url(r'^follow_user/(?P<user>[^/]+)/', website.views.follow_user,name="follow_user"),
+                  url(r'^following_list/(?P<username>[^/]+)/', website.views.following_list,name="following_list"),
                   url(r'^all_activity/$', AllIssuesView.as_view(), name="all_activity"),
                   url(r'^label_activity/$', SpecificIssuesView.as_view(), name="all_activity"),
                   url(r'^leaderboard/$', LeaderboardView.as_view(), name="leaderboard"),
