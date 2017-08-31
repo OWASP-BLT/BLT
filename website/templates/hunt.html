@@ -103,16 +103,16 @@ input[type='file'] {
                 <h1 class="page-sub-header">Subscription:</h1>
             </div>
         </div>
-        {% include '_subscriptions.html' %}
-        <div class="row">
-            <div class="col-lg-12">
-            	<div class="free-plan-text">
-                	<h2>Free Plan:</h2><p>Limited to 5 bugs per month:</p>
-                </div>
-                <button type="submit" class="submit_button" onclick="javascript:document.getElementById('plan').value='Free'" class="btn btn-primary btn-lg">Start</button>
-            </div>
-        </div>
     </form>
+    {% include '_subscriptions.html' %}
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="free-plan-text">
+                <h2>Free Plan:</h2><p>Limited to 5 bugs per month:</p>
+            </div>
+            <button type="submit" class="submit_button" onclick="javascript:document.getElementById('plan').value='Free'" class="btn btn-primary btn-lg">Start</button><br><br>
+        </div>
+    </div>
 {% endblock %}
 
 {% block after_js %}
