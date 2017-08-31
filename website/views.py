@@ -902,8 +902,19 @@ def like_issue(request,issue_pk):
     context['likes'] = total_votes
     return render(request,'likers.html',context)
 
-
-def following_list(request,username):
+  
+  def follower_list(request,username):
+    user = User.objects.get(username=username)
+    context={}
+    lis = []
+    prof_list = user.userprofile.follower.all()
+    for userprofile in prof_list:
+        user = User.objects.get(username=str(userprofile.user))
+        lis.append(user)
+    context['followers'] = lis
+    return render(request,'follower_list.html',context)
+  
+  def following_list(request,username):
     user = User.objects.get(username=username)
     context={}
     lis = []
@@ -913,3 +924,8 @@ def following_list(request,username):
         lis.append(user)
     context['following'] = lis
     return render(request,'following_list.html',context)
+  
+  
+  
+  
+  
