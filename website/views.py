@@ -557,6 +557,7 @@ class ScoreboardView(ListView):
 def search(request, template="search.html"):
     query = request.GET.get('query')
     stype = request.GET.get('type')
+    context = None
     if query is None:
         return render(request, template)
     if query[:6]=="issue:":
