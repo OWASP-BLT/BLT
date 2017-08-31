@@ -23,6 +23,7 @@ urlpatterns = [
                   url(r'^like_issue/(?P<issue_pk>\d+)/$', website.views.like_issue,name="like_issue"),
                   url(r'^issue/edit/$', website.views.IssueEdit),
                   url(r'^issue/update/$', website.views.UpdateIssue),
+                  url(r'^like_issue/(?P<username>\w+)/$', website.views.follower_list,name="follower_list"),
                   url(r'^issue/(?P<slug>\w+)/$', IssueView.as_view(), name="issue_view"),
                   url(r'^follow_user/(?P<user>[^/]+)/', website.views.follow_user,name="follow_user"),
                   url(r'^all_activity/$', AllIssuesView.as_view(), name="all_activity"),
