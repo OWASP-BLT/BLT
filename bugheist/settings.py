@@ -66,8 +66,6 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
-
 )
 
 TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
