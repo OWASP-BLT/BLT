@@ -239,7 +239,11 @@ a:hover{
 
 .activity-strip {
 	height:120px;
+	margin-bottom: 5px;
 	overflow:hidden;
+}
+.activity-strip:hover{
+   background-color:#DDDDDD;
 }
 .activity-strip .activity-strip-section {
 	overflow:hidden;
