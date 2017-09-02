@@ -102,6 +102,11 @@
             <strong>Domain:</strong>
             <a href="{{object.url}}" target="_new" class="issue-domain">{{object.url}}</a>
             <div class="pull-right">
+                {% if request.user.is_authenticated %}
+                    <a class="bookmark btn btn-success" name="{{ object.pk }}" >
+                        <i class="fa fa-bookmark-o"></i> Bookmark
+                    </a>
+                {% endif %}
                 <a class="twitter-share-button btn btn-info"
                     href="https://twitter.com/intent/tweet?text=Bug on @{{object.domain_title}} - {{object.description}}"
                 data-size="small">Tweet</a>
@@ -362,6 +367,23 @@
             success: function(data) {
                 $('.like_btn').html(data);
             },
+        });
+    });
+
+    $('body').on('click', '.bookmark', function (e){
+        e.preventDefault();
+        var issue_pk = $(this).attr('name');
+        $.ajax({
+            type: 'GET',
+            url: '/save_issue/'+issue_pk+'/',
+            data:{},
+            success: function(data) {
+                $('.bookmark i').toggleClass('fa-bookmark-o').toggleClass('fa-bookmark');
+                $.notify("Bookmark Updated!", {style: "custom", className: "success"});
+            },
+            error: function() {
+                $.notify("Some error occurred!", {style: "custom", className: "danger"});
+            }
         });
     });
 
