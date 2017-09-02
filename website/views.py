@@ -916,6 +916,19 @@ def like_issue(request,issue_pk):
     context['likes'] = total_votes
     return render(request,'likers.html',context)
 
+@login_required(login_url='/accounts/login')
+def save_issue(request, issue_pk):
+    context={}
+    issue_pk=int(issue_pk)
+    issue = Issue.objects.get(pk=issue_pk)
+    userprof = UserProfile.objects.get(user=request.user)
+    if userprof in UserProfile.objects.filter(issue_saved=issue):
+        userprof.issue_saved = None
+    else:
+        userprof.issue_saved = issue
+    userprof.save()
+    return HttpResponse("Saved")
+
 def follower_list(request,username):
     user = User.objects.get(username=username)
     context={}
