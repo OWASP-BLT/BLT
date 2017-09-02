@@ -785,6 +785,9 @@ def UpdateIssue(request):
         issue.save()
         return HttpResponse("Updated")
 
+    elif request.method == "POST":
+        return HttpResponse("invalid")
+
 
 @receiver(user_logged_in)
 def assign_issue_to_user(request, user, **kwargs):

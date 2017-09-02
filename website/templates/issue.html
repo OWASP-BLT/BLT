@@ -331,20 +331,25 @@
                 issue_pk: $('#issue_pk').val(),
                 action: action
             },
-            success: function(data){   
-                if (action == "open") {
-                    $('.status').text('open');
-                    $('.status').removeClass('label-danger');
-                    $('.status').addClass('label-success');
-                    $('#issue_stat').text('Click to Close');
+            success: function(data){  
+                if (data=="Updated"){
+                    if (action == "open") {
+                        $('.status').text('open');
+                        $('.status').removeClass('label-danger');
+                        $('.status').addClass('label-success');
+                        $('#issue_stat').text('Click to Close');
+                    }
+                    else{
+                        $('.status').text('closed');
+                        $('.status').removeClass('label-success');
+                        $('.status').addClass('label-danger');
+                        $('#issue_stat').text('Click to Open');
+                    }
+                    $.notify("Issue updated!", {style: "custom", className: "success"});
                 }
-                else{
-                    $('.status').text('closed');
-                    $('.status').removeClass('label-success');
-                    $('.status').addClass('label-danger');
-                    $('#issue_stat').text('Click to Open');
+                else {
+                    $.notify("Only the user who has submitted the bug and superuser can close/open an issue"), {style: "custom", className: "danger"}
                 }
-                $.notify("Issue updated!", {style: "custom", className: "success"});
             },
             error: function() {
                 $.notify("Some error occurred!", {style: "custom", className: "danger"});
