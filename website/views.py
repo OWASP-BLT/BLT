@@ -84,46 +84,59 @@ def find_key(request, token):
 def domain_check(request):
     if request.method =="POST":
         domain_url = request.POST.get('dom_url')
-        #the steps below parse the url to get its domain name in the way we store it in db
-        str1 = "www."
-        if "www." in domain_url:
-            k = domain_url.index(str1)
-            k=k+4
-            t=k
-            while k<len(domain_url):
-                if (domain_url[k]!="/"):
-                    k=k+1
-                elif (domain_url[k]=="/"):
-                    break
+        if "http://" not in domain_url:
+            if "https://" not in domain_url:
+                domain_url = 'http://' + domain_url
 
-        elif "http://" in domain_url:
-            k=7
-            t=k
-            while k<len(domain_url):
-                if (domain_url[k]!="/"):
-                    k=k+1
-                elif (domain_url[k]=="/"):
-                    break
+        if Issue.objects.filter(url=domain_url).exists():
+            isu = Issue.objects.filter(url=domain_url)
+            if isu.count()>1:
+                str1 = "www."
+                if "www." in domain_url:
+                    k = domain_url.index(str1)
+                    k=k+4
+                    t=k
+                    while k<len(domain_url):
+                        if (domain_url[k]!="/"):
+                            k=k+1
+                        elif (domain_url[k]=="/"):
+                            break
 
-        elif "https://" in domain_url:
-            k=8
-            t=k
-            while k<len(domain_url):
-                if (domain_url[k]!="/"):
-                    k=k+1
-                elif (domain_url[k]=="/"):
-                    break
+                elif "http://" in domain_url:
+                    k=7
+                    t=k
+                    while k<len(domain_url):
+                        if (domain_url[k]!="/"):
+                            k=k+1
+                        elif (domain_url[k]=="/"):
+                            break
+
+                elif "https://" in domain_url:
+                    k=8
+                    t=k
+                    while k<len(domain_url):
+                        if (domain_url[k]!="/"):
+                            k=k+1
+                        elif (domain_url[k]=="/"):
+                            break
+                else:
+                    return HttpResponse('Nothing passed')
+                
+                url_parsed = domain_url[t:k]
+                data = {'number': 2, 'domain': url_parsed}
+                return HttpResponse(json.dumps(data))
+
+            else:
+                try:
+                    a =  Issue.objects.get(url=domain_url)
+                except:
+                    a = None
+                data = {'number': 1, 'id' : a.id ,'description' : a.description, 'date' :a.created.day, 'month' :a.created.month,'year':a.created.year,}
+                return HttpResponse(json.dumps(data))
 
         else:
-            return HttpResponse('Nothing passed')
-
-        url_parsed = domain_url[t:k]
-
-        if Domain.objects.filter(name=url_parsed).exists():
-            a =  url_parsed
-            return HttpResponse(a)
-        else:
-            return HttpResponse('There are no bugs on this domain')
+            data = {'number': 3,}
+            return HttpResponse(json.dumps(data))
 
 class IssueBaseCreate(object):
     def form_valid(self, form):
