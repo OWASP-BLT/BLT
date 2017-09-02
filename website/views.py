@@ -393,7 +393,7 @@ class DomainDetailView(ListView):
         context['domain'] = Domain.objects.get(name=self.kwargs['slug'])
 
         paginator = Paginator(open_issue, 10)
-        page = self.request.GET.get('page')
+        page = self.request.GET.get('open')
         try:
             openissue_paginated = paginator.page(page)
         except PageNotAnInteger:
@@ -402,7 +402,7 @@ class DomainDetailView(ListView):
             openissue_paginated = paginator.page(paginator.num_pages)
 
         paginator = Paginator(close_issue, 10)
-        page = self.request.GET.get('page')
+        page = self.request.GET.get('close')
         try:
             closeissue_paginated = paginator.page(page)
         except PageNotAnInteger:

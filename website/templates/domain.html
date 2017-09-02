@@ -109,11 +109,11 @@
                     <div class="col-lg-9">
                         <div class="text-center">
                             {% if opened.has_previous %}
-                                <a href="?page={{ opened.previous_page_number }}{% if user %}&user={{user}}{% endif %}" class="btn btn-default">Prev</a>
+                                <a href="?open={{ opened.previous_page_number }}" class="btn btn-default">Prev</a>
                             {% endif %}
                             <span>Page {{ opened.number }} of {{ opened.paginator.num_pages }}</span>
                             {% if opened.has_next %}
-                                <a href="?page={{ opened.next_page_number }}{% if user %}&user={{user}}{% endif %}"  class="btn btn-default">Next</a>
+                                <a href="?open={{ opened.next_page_number }}"  class="btn btn-default">Next</a>
                             {% endif %}
                         </div>
                     </div>
@@ -128,11 +128,11 @@
                     <div class="col-lg-9">
                         <div class="text-center">
                             {% if closed.has_previous %}
-                                <a href="?page={{ closed.previous_page_number }}{% if user %}&user={{user}}{% endif %}" class="btn btn-default">Prev</a>
+                                <a href="?close={{ closed.previous_page_number }}" class="btn btn-default">Prev</a>
                             {% endif %}
                             <span>Page {{ closed.number }} of {{ closed.paginator.num_pages }}</span>
                             {% if closed.has_next %}
-                                <a href="?page={{ closed.next_page_number }}{% if user %}&user={{user}}{% endif %}"  class="btn btn-default">Next</a>
+                                <a href="?close={{ closed.next_page_number }}"  class="btn btn-default">Next</a>
                             {% endif %}
                         </div>
                     </div>
