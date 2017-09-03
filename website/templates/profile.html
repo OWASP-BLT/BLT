@@ -96,7 +96,7 @@ a {
     color:#ef6c00;
 }
 .fa-star{
-    color:#FF8800;
+    color:#0099CC;
 }
 .fa-bug {
     color:#00C851;
@@ -140,7 +140,6 @@ a {
             <div id="target_div">
                 {% include 'followers.html' %}
             </div>
-            <h4>Total bugs reported: <strong>{{ total_bugs }}</strong></h4>
 
             <div class="icon-block">
                 <kbd class="fa general">
@@ -171,7 +170,7 @@ a {
             </div>
         </div>
         <div class="col-md-6">
-            <ul class="nav nav-tabs" role="tablist">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
                 <li role="presentation" class="active">
                     <a href="#home" aria-controls="home" role="tab" data-toggle="tab">Stats</a>
                 </li>
@@ -209,9 +208,10 @@ a {
         </div>
         <div class="col-md-3">
             <div class="icon-block">
-                <kbd class="fa fa-star"> Points: {{ my_score|default:0 }}</kbd>
-                <kbd class="fa fa-bug"> Open Issues: {{total_open}}</kbd>
-                <kbd class="fa fa-code-fork"> Closed Issues: {{total_closed}}</kbd>
+                <kbd class="fa fa-trophy"> Bugs Reported {{ total_bugs }}</kbd>
+                <kbd class="fa fa-star"> Points {{ my_score|default:0 }}</kbd>
+                <kbd class="fa fa-bug"> Open Issues {{total_open}}</kbd>
+                <kbd class="fa fa-code-fork"> Closed Issues {{total_closed}}</kbd>
             </div>            
         </div>
     </div>
