@@ -356,6 +356,11 @@ a {
             url: '/follow/'+usr+'/',
             data:{},
             success: function(data) {
+                var txt = $('.follow_unfollow').text();
+                if(txt == "Follow")
+                    $('.follow_unfollow').text("Unfollow");
+                else
+                    $('.follow_unfollow').text("Follow");
                 $.notify("Done!", {style: "custom", className: "success"});
             },
             error: function() {

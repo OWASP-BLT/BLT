@@ -354,6 +354,7 @@ class UserProfileDetailView(DetailView):
         return super(UserProfileDetailView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
+        user = self.object
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
         context['my_score'] = Points.objects.filter(user=self.object).aggregate(total_score=Sum('score')).values()[0]
         context['websites'] = Domain.objects.filter(issue__user=self.object).annotate(total=Count('issue')).order_by('-total')
@@ -367,11 +368,21 @@ class UserProfileDetailView(DetailView):
         context['total_bugs'] = Issue.objects.filter(user=self.object).count()
         for i in range(0,7):
             context['bug_type_'+str(i)] = Issue.objects.filter(user=self.object,label=str(i))
-        curr_user = self.object
-        context['following'] = curr_user.userprofile.follows.all()
-        context['followers'] = curr_user.userprofile.follower.all()
-        context['followers_list'] = [str(prof.user.email) for prof in  curr_user.userprofile.follower.all()]
-        context['bookmarks'] = curr_user.userprofile.issue_saved.all()
+        
+        arr = []
+        allFollowers = user.userprofile.follower.all()
+        for userprofile in allFollowers:
+            arr.append(User.objects.get(username=str(userprofile.user)))
+        context['followers'] = arr
+
+        arr = []
+        allFollowing = user.userprofile.follows.all()
+        for userprofile in allFollowing:
+            arr.append(User.objects.get(username=str(userprofile.user)))
+        context['following'] = arr
+
+        context['followers_list'] = [str(prof.user.email) for prof in user.userprofile.follower.all()]
+        context['bookmarks'] = user.userprofile.issue_saved.all()
         return context
 
     @method_decorator(login_required)
