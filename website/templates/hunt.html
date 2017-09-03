@@ -31,7 +31,7 @@
     border-color:#9B0C1A;
 }
 .text-danger {
-    margin-left:200px;
+    margin-left:0px;
 }
 input[type='file'] {
     height:auto;
@@ -50,30 +50,36 @@ input[type='file'] {
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
     <form role="form" action="/hunt/" method="post" enctype="multipart/form-data" class="hunt-form">
-        <div class="row">
-            <div class="col-lg-6">
-                <h1 class="page-header">Start a bug hunt!</h1> 
-                All paid plans are currently featured on the homepage under the sponsored bug hunt area.
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-6">
+        {% csrf_token %}
+        <div class="row main">
+            <div class="panel-heading">
+                <div class="panel-title text-center">
+                    <h1 class="title">Start a bug hunt!</h1>
+                    All paid plans are currently featured on the homepage under the sponsored bug hunt area.
+                    <hr />
+                </div>
+            </div> 
+            <div class="main-issue-form main-center">
                 {% csrf_token %}
                 <input type="hidden" name="plan" value="Flea" id="plan">
                 <div class="form-group">
-                    <label>URL:
-                        {% if not user.is_authenticated %}
-                            <span class="text-danger">*Login required</span>
-                        {% endif %}
-                    </label>
-                    <input class="form-control required url" placeholder="Website URL.  e.g.  http://example.com" name="url" value="{{form.url.value|default:""}}">
+                    <div class="input-group">
+                        <span class="input-group-addon">
+                            <i class="fa fa-link" aria-hidden="true"></i>
+                        </span>
+                        <input class="form-control required url" placeholder="http://example.com" name="url" value="{{form.url.value|default:""}}">
+                    </div>
                     {% if form.url.errors %}
                         <label id="url-error" class="error" for="url">{{form.url.errors}}</label>
                     {% endif %}
                 </div>
                 <div class="form-group">
-                    <label>Logo (square)</label>
-                    <input type="file" name="logo" class="required">
+                    <div class="input-group">
+                        <span class="input-group-addon">
+                            <i class="fa fa-file-picture-o" aria-hidden="true"></i>
+                        </span>
+                        <input type="file" name="logo" class="required form-control">
+                    </div>
                     {% if form.logo.errors %}
                     <label id="url-error" class="error" for="url">{{form.logo.errors}}</label>
                     {% endif %}
@@ -95,15 +101,14 @@ input[type='file'] {
                     </div>
                     {{form.prize.errors}}
                 </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-12">
                 Payments are handled through Paypal. You will be charged from Coderbounty, Inc. (Our current parent company)
-                <h1 class="page-sub-header">Subscription:</h1>
+                {% if not user.is_authenticated %}
+                    <br><span class="text-danger">*Login required</span>
+                {% endif %}
             </div>
         </div>
     </form>
+    <h1 class="page-sub-header">Subscription:</h1>
     {% include '_subscriptions.html' %}
     <div class="row">
         <div class="col-lg-12">
