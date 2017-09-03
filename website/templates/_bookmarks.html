@@ -1,7 +1,11 @@
 <div class="list-group">
     {% for i in bookmarks %}
     <div class="list-group-item">
-        <a href="{{ i.get_absolute_url }}">{{ i.description|truncatechars:20 }}</a>
+        <a href="{{ i.get_absolute_url }}" class="list-group-item-heading">
+        <strong>{{ i.description|truncatechars:50 }}</strong>
+        </a>
+        <span class="badge text-capitalize">{{i.status}}</span>
+        <p class="list-group-item-text">{{ i.user }}</p>
     </div>
     {% endfor %}
 </div>
