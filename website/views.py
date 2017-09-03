@@ -495,6 +495,8 @@ class SpecificIssuesView(ListView):
         username = self.request.GET.get('user')
         label = self.request.GET.get('label')
         query = 0;
+        statu = 'none';
+
         if label == "General":
             query=0;
         elif label == "Number":
@@ -509,9 +511,15 @@ class SpecificIssuesView(ListView):
             query=5;
         elif label == "Design":
             query=6;
+        elif label == "open":
+            statu='open';
+        elif label == "closed":
+            statu='closed';
 
         if username is None:
             self.activities = Issue.objects.all()
+        elif statu!='none':
+            self.activities = Issue.objects.filter(user__username=username,status=statu)
         else:
             self.activities = Issue.objects.filter(user__username=username,label=query)
         return self.activities
