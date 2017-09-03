@@ -34,12 +34,7 @@
     .page-header {
         padding: 10px;
         font-size: 30px;
-    }
-    .copy-btn {
-        padding: 5px;
-        color: green;
-        background: whitesmoke;
-    }
+    }    
     textarea {
         height: auto !important;
     }
@@ -58,6 +53,11 @@
     input[name="description"] {
         width: 600px !important;
     }
+    .like_btn,
+    .bookmark,
+    .copy-btn {
+        vertical-align: top;
+    }
 {% endblock %}
 {% block content %}
     <script type="text/javascript" src="{% static "js/clipboard.min.js" %}"></script>
@@ -71,18 +71,10 @@
         <div class="col-lg-12">
             <h3 class="page-header">
                 <span class="editables">
-                    <span class="issue-desc">{{object.description}}</span>
-                    <button class="btn copy-btn" data-clipboard-text="{{object.description}}">
-                        <i class="glyphicon glyphicon-copy"></i>
-                    </button>
+                    <span class="issue-desc">{{object.description}}</span>                    
                     <span class="pull-right">
                         <i class="fa fa-eye"></i> {{object.views}}
-                    </span>
-                    {% if request.user.is_authenticated %}
-                        <span class="like_btn">
-                            {% include 'likers.html' %}
-                        </span>
-                    {% endif %}
+                    </span>                    
                 </span>
                 <div class="form form-inline" style="display:none">
                     {% csrf_token %}
@@ -104,8 +96,14 @@
             <strong>Domain:</strong>
             <a href="{{object.url}}" target="_new" class="issue-domain">{{object.url}}</a>
             <div class="pull-right">
-                {% if request.user.is_authenticated %}
-                    <a class="bookmark btn btn-success" name="{{ object.pk }}" >
+                <button class="btn btn-primary btn-xs copy-btn" data-clipboard-text="{{object.description}}">
+                    <i class="glyphicon glyphicon-copy"></i> Copy Title
+                </button>
+                {% if request.user.is_authenticated %}                    
+                    <span class="like_btn">
+                        {% include 'likers.html' %}
+                    </span>                    
+                    <a class="bookmark btn btn-success btn-xs" name="{{ object.pk }}" >
                         <i class="fa fa-bookmark-o"></i> Bookmark
                     </a>
                 {% endif %}
