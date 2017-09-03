@@ -368,9 +368,9 @@ class UserProfileDetailView(DetailView):
         for i in range(0,7):
             context['bug_type_'+str(i)] = Issue.objects.filter(user=self.object,label=str(i))
         curr_user = self.object
-        context['follows'] = curr_user.userprofile.follows.all().count()
-        context['followed_by'] = curr_user.userprofile.follower.all().count()
-        context['follwers_list'] = [str(prof.user.email) for prof in  curr_user.userprofile.follower.all()]
+        context['following'] = curr_user.userprofile.follows.all()
+        context['followers'] = curr_user.userprofile.follower.all()
+        context['followers_list'] = [str(prof.user.email) for prof in  curr_user.userprofile.follower.all()]
         context['bookmarks'] = curr_user.userprofile.issue_saved.all()
         return context
 
@@ -852,21 +852,19 @@ class CreateInviteFriend(CreateView):
 
         messages.success(self.request,
                          'An email has been sent to your friend. Keep inviting your friends and get points!')
-
         return HttpResponseRedirect(self.success_url)
 
-
 def follow_user(request,user):
-    if request.method=="GET":
+    if request.method == "GET":
         userx = User.objects.get(username=user)
         context={}
         flag = 0
         list_userfrof = request.user.userprofile.follows.all()
         for prof in list_userfrof:
-            if str(prof)==(userx.email):
+            if str(prof) == (userx.email):
                 request.user.userprofile.follows.remove(userx.userprofile)
                 flag = 1
-        if flag!=1:
+        if flag != 1:
             request.user.userprofile.follows.add(userx.userprofile)
             msg_plain = render_to_string(
                 'email/follow_user.txt',
@@ -880,13 +878,7 @@ def follow_user(request,user):
                       'Bugheist <support@bugheist.com>',
                       [userx.email],
                       html_message=msg_html)
-
-        context['follows'] = userx.userprofile.follows.all().count()
-        context['followed_by'] = userx.userprofile.follower.all().count()
-        context['follwers_list'] = [str(prof.user.email) for prof in  userx.userprofile.follower.all()]
-        context['user'] = userx
-
-    return render(request,'followers.html',context)
+        return HttpResponse("Success")
 
 @login_required(login_url='/accounts/login')
 def like_issue(request,issue_pk):
@@ -929,25 +921,3 @@ def save_issue(request, issue_pk):
     userprof.issue_saved.add(issue)
     context['bookmarks'] = userprof.issue_saved.all()    
     return render(request,'_bookmarks.html',context)
-
-def follower_list(request,username):
-    user = User.objects.get(username=username)
-    context={}
-    lis = []
-    prof_list = user.userprofile.follower.all()
-    for userprofile in prof_list:
-        user = User.objects.get(username=str(userprofile.user))
-        lis.append(user)
-    context['followers'] = lis
-    return render(request,'follower_list.html',context)
-
-def following_list(request,username):
-    user = User.objects.get(username=username)
-    context={}
-    lis = []
-    prof_list = user.userprofile.follower.all()
-    for userprofile in prof_list:
-        user = User.objects.get(username=str(userprofile.user))
-        lis.append(user)
-    context['following'] = lis
-    return render(request,'following_list.html',context)
