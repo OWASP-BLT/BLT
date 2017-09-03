@@ -106,7 +106,6 @@
                             {% include '_activity.html' %}
                         {% endfor %}
                     </div>
-                    <div class="col-lg-9">
                         <div class="text-center">
                             {% if opened.has_previous %}
                                 <a href="?open={{ opened.previous_page_number }}" class="btn btn-default">Prev</a>
@@ -116,7 +115,6 @@
                                 <a href="?open={{ opened.next_page_number }}"  class="btn btn-default">Next</a>
                             {% endif %}
                         </div>
-                    </div>
                     <br><br>  
                 </div>
                 <div role="tabpanel" class="tab-pane" id="closed">
@@ -125,7 +123,6 @@
                             {% include '_activity.html' %}
                         {% endfor %}
                     </div>
-                    <div class="col-lg-9">
                         <div class="text-center">
                             {% if closed.has_previous %}
                                 <a href="?close={{ closed.previous_page_number }}" class="btn btn-default">Prev</a>
@@ -135,7 +132,6 @@
                                 <a href="?close={{ closed.next_page_number }}"  class="btn btn-default">Next</a>
                             {% endif %}
                         </div>
-                    </div>
                     <br><br>  
                 </div>
             </div>
@@ -254,22 +250,22 @@
                 datasets: [{
                     data: pie,
                     backgroundColor: [
+                        'rgba(225, 17, 20, 0.6)',
+                        'rgba(99, 179, 56, 0.6)',
                         'rgba(255, 99, 132, 0.6)',
-                        'rgba(54, 162, 235, 0.6)',
-                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(241, 217, 7, 0.6)',
                         'rgba(75, 192, 192, 0.6)',
-                        'rgba(153, 102, 255, 0.6)',
-                        'rgba(255, 159, 64, 0.6)',
-                        'rgba(255, 99, 132, 0.6)'
+                        'rgba(230, 80, 21, 0.6)',
+                        'rgba(153, 102, 255, 0.6)'
                     ],
                     borderColor: [
+                        'rgba(225,17,20,1)',
+                        'rgba(99, 179, 56, 1)',
                         'rgba(255,99,132,1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)',
+                        'rgba(241, 217, 7, 1)',
                         'rgba(75, 192, 192, 1)',
-                        'rgba(153, 102, 255, 1)',
-                        'rgba(255, 159, 64, 1)',
-                        'rgba(255,99,132,1)'
+                        'rgba(230, 80, 21, 1)',
+                        'rgba(153, 102, 255, 1)'
                     ],
                     borderWidth: 1
                 }]

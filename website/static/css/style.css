@@ -478,6 +478,7 @@ input[type='file'] {
  	width: 100%;
     background-color: #3c3d41;
     color: white;
+    margin-top: 30px;
     padding-top: 30px;
     clear: both;
 }
