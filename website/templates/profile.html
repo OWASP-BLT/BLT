@@ -171,14 +171,41 @@ a {
             </div>
         </div>
         <div class="col-md-6">
-        {% if activities %}
-            <canvas id="myChart" width="400" height="350"></canvas>
-        {% else %}
-            <div class="alert alert-info" role="alert">
-                <span class="fa fa-info-circle"></span>
-                <strong>No Bug Reported!</strong>
-            </div>
-        {% endif %}
+            <ul class="nav nav-tabs" role="tablist">
+                <li role="presentation" class="active">
+                    <a href="#home" aria-controls="home" role="tab" data-toggle="tab">Stats</a>
+                </li>
+                <li role="presentation">
+                    <a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Followers</a>
+                </li>
+                <li role="presentation">
+                    <a href="#messages" aria-controls="messages" role="tab" data-toggle="tab">Following</a>
+                </li>
+                <li role="presentation">
+                    <a href="#settings" aria-controls="settings" role="tab" data-toggle="tab">Bookmarks</a>
+                </li>
+            </ul>  
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="home">
+                    {% if activities %}
+                        <canvas id="myChart" width="400" height="350"></canvas>
+                    {% else %}
+                        <div class="alert alert-info" role="alert">
+                            <span class="fa fa-info-circle"></span>
+                            <strong>No Bug Reported!</strong>
+                        </div>
+                    {% endif %}
+                </div>
+                <div role="tabpanel" class="tab-pane" id="profile">
+                    {% include 'follower_list.html' %}
+                </div>
+                <div role="tabpanel" class="tab-pane" id="messages">
+                    {% include 'following_list.html' %}
+                </div>
+                <div role="tabpanel" class="tab-pane" id="settings">
+                    {% include '_bookmarks.html' %}
+                </div>
+            </div>        
         </div>
         <div class="col-md-3">
             <div class="icon-block">

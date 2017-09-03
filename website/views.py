@@ -371,6 +371,7 @@ class UserProfileDetailView(DetailView):
         context['follows'] = curr_user.userprofile.follows.all().count()
         context['followed_by'] = curr_user.userprofile.follower.all().count()
         context['follwers_list'] = [str(prof.user.email) for prof in  curr_user.userprofile.follower.all()]
+        context['bookmarks'] = curr_user.userprofile.issue_saved.all()
         return context
 
     @method_decorator(login_required)
@@ -925,12 +926,9 @@ def save_issue(request, issue_pk):
     issue_pk=int(issue_pk)
     issue = Issue.objects.get(pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
-    if userprof in UserProfile.objects.filter(issue_saved=issue):
-        userprof.issue_saved = None
-    else:
-        userprof.issue_saved = issue
-    userprof.save()
-    return HttpResponse("Saved")
+    userprof.issue_saved.add(issue)
+    context['bookmarks'] = userprof.issue_saved.all()    
+    return render(request,'_bookmarks.html',context)
 
 def follower_list(request,username):
     user = User.objects.get(username=username)
