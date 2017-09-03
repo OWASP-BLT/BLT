@@ -353,13 +353,14 @@ a {
         var usr = $(this).attr('name');
         $.ajax({
             type: 'GET',
-            url: '/follow_user/'+usr+'/',
-            data:{
-                user: usr,
-            },
+            url: '/follow/'+usr+'/',
+            data:{},
             success: function(data) {
-                $('#target_div').html(data);
+                $.notify("Done!", {style: "custom", className: "success"});
             },
+            error: function() {
+                $.notify("Some error occurred!", {style: "custom", className: "danger"});
+            }
         });
     });
     </script>
