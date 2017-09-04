@@ -538,3 +538,7 @@ input[type='file'] {
     border-radius: 5px;
     margin-top: 25px;
 }
+
+i.fa-5x {
+	color: #333333;
+}
