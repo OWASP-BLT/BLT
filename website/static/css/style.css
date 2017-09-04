@@ -342,12 +342,13 @@ a:hover{
 	border-bottom: 1px solid #888;
 	background-color: #ddd;
 	padding: 10px;
+	margin-top: -7px;
 }
 .leaderboard-panel .box{
 	border: 3px solid #009688;	
 	padding:7px;
 	margin-right:5px;
-	padding-top:10px;
+	padding-top:0px;
 	background:white;
 }
 .leaderboard-name,
