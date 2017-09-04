@@ -114,8 +114,8 @@
                 </div>  
             </center>
         </div>  
-    <div class="row">
-        <div class="col-lg-9">
+    <div class="row" style="margin-left: 10px;">
+        <div class="col-lg-12">
             <div class="row">
                 <div class="col-lg-12">
                     <h1 class="page-sub-header">{% trans "Featured Websites" %}</h1>
@@ -176,13 +176,25 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="col-lg-3">
+    <div class="row" data-intro="View latest activities here." data-step="3">
+        <div class="col-md-8">
+            <h1 class="page-sub-header">Latest activity</h1>        
+            <div class="list-group">
+                {% for activity in activities %}
+                    {% include '_activity.html' %}
+                {% endfor %}
+            </div>
+            <a href="/all_activity" class="btn btn-default btn-block">View All Activity</a>
+        </div>
+        <div class="col-md-4">
             <div class="row">
                 <div class="panel panel-default">
                     <div class="panel-heading page-sub-header">
                         {% now "F" %} {% trans "Leaderboard" %}
                     </div>
+                    <br>
                     <div class="panel-body leaderboard-panel">
                         <strong>The 1st Place Hunter for  {% now "F" %} will receive</strong>
                             <div class="box">
@@ -218,18 +230,6 @@
                     <a href="/leaderboard" class="btn btn-default btn-block submit_button">View All</a>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div class="row" data-intro="View latest activities here." data-step="3">
-        <div class="col-md-8">
-            <h1 class="page-sub-header">Latest activity</h1>        
-            <div class="list-group">
-                {% for activity in activities %}
-                    {% include '_activity.html' %}
-                {% endfor %}
-            </div>
-            <a href="/all_activity" class="btn btn-default btn-block">View All Activity</a>
         </div>
     </div>
     <div class="row">
