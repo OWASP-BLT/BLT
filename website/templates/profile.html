@@ -7,7 +7,6 @@ a {
   color: inherit;
   text-decoration: inherit; 
 }
-
 .img-thumbnail {
     width: 200px;
     height: 200px;
@@ -110,6 +109,10 @@ a {
 }
 #target_div .btn {
     width: 200px;
+    margin-top: 10px;
+}
+.list-group-item .badge {
+    margin-right: 30px;
     margin-top: 10px;
 }
 {% endblock %}
@@ -362,6 +365,24 @@ a {
                 else
                     $('.follow_unfollow').text("Follow");
                 $.notify("Done!", {style: "custom", className: "success"});
+            },
+            error: function() {
+                $.notify("Some error occurred!", {style: "custom", className: "danger"});
+            }
+        });
+    });
+
+    $('body').on('click', '.list-group-item button', function (e){
+        e.preventDefault();
+        var issue_pk = $(this).attr('name');
+        var el = $(this);
+        $.ajax({
+            type: 'GET',
+            url: '/unsave_issue/'+issue_pk+'/',
+            data:{},
+            success: function(data) {
+                el.parent().remove();
+                $.notify("Bookmark Removed!", {style: "custom", className: "success"});
             },
             error: function() {
                 $.notify("Some error occurred!", {style: "custom", className: "danger"});

@@ -101,7 +101,7 @@
                 </button>
                 {% if request.user.is_authenticated %}                    
                     <span class="like_btn">
-                        {% include 'likers.html' %}
+                        {% include '_likes.html' %}
                     </span>                    
                     <a class="bookmark btn btn-success btn-xs" name="{{ object.pk }}" >
                         <i class="fa fa-bookmark-o"></i> Bookmark

@@ -875,8 +875,7 @@ class CreateInviteFriend(CreateView):
 
 def follow_user(request,user):
     if request.method == "GET":
-        userx = User.objects.get(username=user)
-        context={}
+        userx = User.objects.get(username=user)        
         flag = 0
         list_userfrof = request.user.userprofile.follows.all()
         for prof in list_userfrof:
@@ -929,14 +928,20 @@ def like_issue(request,issue_pk):
     total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
     context['object'] = issue
     context['likes'] = total_votes
-    return render(request,'likers.html',context)
+    return render(request, '_likes.html', context)
 
 @login_required(login_url='/accounts/login')
 def save_issue(request, issue_pk):
-    context={}
     issue_pk=int(issue_pk)
     issue = Issue.objects.get(pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
     userprof.issue_saved.add(issue)
-    context['bookmarks'] = userprof.issue_saved.all()    
-    return render(request,'_bookmarks.html',context)
+    return HttpResponse('OK')
+
+@login_required(login_url='/accounts/login')
+def unsave_issue(request, issue_pk):
+    issue_pk=int(issue_pk)
+    issue = Issue.objects.get(pk=issue_pk)
+    userprof = UserProfile.objects.get(user=request.user)
+    userprof.issue_saved.remove(issue)
+    return HttpResponse('OK')
