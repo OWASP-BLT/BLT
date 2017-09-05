@@ -143,7 +143,6 @@ a {
             <div id="target_div">
                 {% include 'followers.html' %}
             </div>
-
             <div class="icon-block">
                 <kbd class="fa general">
                 <a href="/label_activity?user={{ user.username }}&label=General">General {{ bug_type_0 | length }}</a>
@@ -151,22 +150,24 @@ a {
                 <kbd class="fa fa-exclamation-triangle">
                 <a href="/label_activity?user={{ user.username }}&label=Number">Number {{ bug_type_1 | length }}</a>
                 </kbd>
+            </div>
+            <div class="icon-block">
                 <kbd class="fa fa-trophy">
                 <a href="/label_activity?user={{ user.username }}&label=Functional">Functional {{ bug_type_2 | length }}</a>
                 </kbd>
-            </div>
-            <div class="icon-block">
                 <kbd class="fa fa-flash">
                 <a href="/label_activity?user={{ user.username }}&label=Performance">Performance {{ bug_type_3 | length }}</a>
                 </kbd>
+            </div>
+            <div class="icon-block">    
                 <kbd class="fa fa-lock">
                 <a href="/label_activity?user={{ user.username }}&label=Security">Security {{ bug_type_4 | length}}</a>
                 </kbd>
-            </div>
-            <div class="icon-block">
                 <kbd class="fa fa-eraser">
                 <a href="/label_activity?user={{ user.username }}&label=Typo">Typo {{ bug_type_5 | length}}</a>
                 </kbd>
+            </div>
+            <div class="icon-block">    
                 <kbd class="fa fa-code">
                 <a href="/label_activity?user={{ user.username }}&label=Design">Design {{ bug_type_6 | length}}</a>
                 </kbd>
@@ -178,13 +179,13 @@ a {
                     <a href="#home" aria-controls="home" role="tab" data-toggle="tab">Stats</a>
                 </li>
                 <li role="presentation">
-                    <a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Followers</a>
+                    <a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Followers [{{followers|length}}]</a>
                 </li>
                 <li role="presentation">
-                    <a href="#messages" aria-controls="messages" role="tab" data-toggle="tab">Following</a>
+                    <a href="#messages" aria-controls="messages" role="tab" data-toggle="tab">Following [{{following|length}}]</a>
                 </li>
                 <li role="presentation">
-                    <a href="#settings" aria-controls="settings" role="tab" data-toggle="tab">Bookmarks</a>
+                    <a href="#settings" aria-controls="settings" role="tab" data-toggle="tab">Bookmarks [{{bookmarks|length}}]</a>
                 </li>
             </ul>  
             <div class="tab-content">
