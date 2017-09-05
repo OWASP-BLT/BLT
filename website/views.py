@@ -194,12 +194,16 @@ class IssueBaseCreate(object):
                 'name': name,
                 'username': self.request.user,
                 'id': obj.id,
+                'description': obj.description,
+                'label': obj.get_label_display,
             })
             msg_html = render_to_string('email/bug_added.txt', {
                 'domain': domain.name,
                 'name': name,
                 'username': self.request.user,
                 'id': obj.id,
+                'description': obj.description,
+                'label': obj.get_label_display,
             })
             send_mail(
                 'Bug found on ' + domain.name,
