@@ -415,7 +415,11 @@ class DomainDetailView(ListView):
             status="closed")
 
         context['name'] = parsed_url.netloc.split(".")[-2:][0].title()
-        context['domain'] = Domain.objects.get(name=self.kwargs['slug'])
+        
+        try:
+            context['domain'] = Domain.objects.get(name=self.kwargs['slug'])
+        except Domain.DoesNoTExist:
+            raise Http404("domain not found")
 
         paginator = Paginator(open_issue, 10)
         page = self.request.GET.get('open')
@@ -771,7 +775,11 @@ class InboundParseWebhookView(View):
 
 
 def UpdateIssue(request):
-    issue = Issue.objects.get(id=request.POST.get('issue_pk'))
+    try:
+        issue = Issue.objects.get(id=request.POST.get('issue_pk'))
+    except Issue.DoesNoTExist:
+        raise Http404("issue not found")
+    
     if request.method == "POST" and request.user.is_superuser or (issue is not None and request.user == issue.user):
         if request.POST.get('action') == "close":
             issue.status = "closed"
