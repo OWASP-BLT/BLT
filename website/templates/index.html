@@ -178,7 +178,54 @@
         </div>
     </div>
 
-    <div class="row" data-intro="View latest activities here." data-step="3">
+    <div class="row" style="margin-left: 10px;">
+        <div class="col-lg-3 col-md-3">
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-xs-9 text-right">
+                            <h4><i class="fa fa-bug"></i> {{bug_count}} Bugs</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-3">
+            <div class="panel panel-green">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-xs-9 text-right">
+                            <h4><i class="fa fa-user"></i> {{user_count}} Users</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-3">
+            <div class="panel panel-yellow">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-xs-9 text-right">
+                            <h4><i class="fa fa-bullseye"></i> {{hunt_count}} Hunts</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-3">
+            <div class="panel panel-red">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-xs-9 text-right">
+                            <h4><i class="fa fa-support"></i> {{domain_count}} Domains</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" data-intro="View latest activities here." data-step="3" style="margin-left: 10px;">
         <div class="col-md-8">
             <h1 class="page-sub-header">Latest activity</h1>        
             <div class="list-group">
@@ -212,7 +259,7 @@
                         <div class="list-group">
                         {% if leaderboard %}
                             {% for leader in leaderboard %}
-                                <div class="list-group-item">                                    
+                                <div class="list-group-item activity-strip" style="height: 80px; border: 1px solid #DDDDDD">                                    
                                     {% if leader.socialaccount_set.all.0.get_avatar_url %}
                                         <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
                                     {% else %}

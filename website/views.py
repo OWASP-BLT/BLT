@@ -58,6 +58,10 @@ def index(request, template="index.html"):
         show_message = ''
     open_issue_owasp = Domain.objects.get(name='owasp.org').open_issues.count()
     closed_issue_owasp = Domain.objects.get(name='owasp.org').closed_issues.count()
+    bug_count = Issue.objects.all().count()
+    user_count = User.objects.all().count()
+    hunt_count = Hunt.objects.all().count()
+    domain_count = Domain.objects.all().count()
     context = {
         'activities': Issue.objects.all()[0:10],
         'domains': domains,
@@ -67,6 +71,10 @@ def index(request, template="index.html"):
         'not_verified': show_message,
         'open_issue_owasp': open_issue_owasp,
         'closed_issue_owasp': closed_issue_owasp,
+        'bug_count': bug_count,
+        'user_count': user_count,
+        'hunt_count': hunt_count,
+        'domain_count': domain_count
     }
     return render(request, template, context)
 
