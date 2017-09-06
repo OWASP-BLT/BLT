@@ -41,11 +41,16 @@ $(function () {
 
     $(document).on('submit','#comments',function(e){
         e.preventDefault();
+        if ($('#text_comment').val().trim().length==0){
+            $('.alert-danger').removeClass("hidden");
+            return;
+        }
+        $('.alert-danger').addClass("hidden");
         $.ajax({
             type: 'POST',
             url: '/issue/comment/add/',
             data:{
-                text_comment: $('#text_comment').val(),
+                text_comment: $('#text_comment').val().trim(),
                 issue_pk: $('#issue_pk').val(),
                 csrfmiddlewaretoken: $('#comments input[name=csrfmiddlewaretoken]').val(),
             },
