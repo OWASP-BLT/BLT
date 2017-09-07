@@ -925,9 +925,9 @@ def like_issue(request,issue_pk):
     issue = Issue.objects.get(pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
     if userprof in UserProfile.objects.filter(issue_upvoted=issue):
-        userprof.issue_upvoted = None
+        userprof.issue_upvoted.remove(issue)
     else:
-        userprof.issue_upvoted = issue
+        userprof.issue_upvoted.add(issue)
         liked_user = issue.user
         liker_user = request.user
         issue_pk = issue.pk
