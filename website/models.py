@@ -300,7 +300,7 @@ class UserProfile(models.Model):
     user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
     title = models.IntegerField(choices=title, default=0)
     winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    issue_upvoted = models.ForeignKey(Issue, null=True, blank=True, related_name="upvoted")
+    issue_upvoted = models.ManyToManyField(Issue, null=True, blank=True, related_name="upvoted")
     issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
 
     def avatar(self, size=36):
