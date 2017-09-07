@@ -274,6 +274,9 @@
                     <input type="hidden" name="issue_pk" id="issue_pk" value="{{ issue.pk }}" >  
                     <textarea placeholder="Comment" class="form-control" id="text_comment" name="text_comment" rows="3" required></textarea>
                 </div>
+                <div class="alert alert-danger hidden" role="alert" >
+                  <strong >Oh snap!</strong> Cannot comment just newlines and spaces. Please add text.
+                </div>                
                 <button id="comment_submit" class="btn btn-small" type="submit">Add Comment</button>
             </form>
             {% endif %}
