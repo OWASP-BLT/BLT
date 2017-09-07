@@ -698,6 +698,7 @@ class IssueView(DetailView):
         context['all_comment'] = self.object.comments.all
         context['all_users'] = User.objects.all()
         context['likes'] = UserProfile.objects.filter(issue_upvoted=self.object).count()
+        context['likers'] = UserProfile.objects.filter(issue_upvoted=self.object)
         return context
 
 
