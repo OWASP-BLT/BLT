@@ -583,7 +583,7 @@ class LeaderboardView(ListView):
 class ScoreboardView(ListView):
     model = Domain
     template_name = "scoreboard.html"
-    paginate_by = 5
+    paginate_by = 20
 
     def get_context_data(self, *args, **kwargs):
         context = super(ScoreboardView, self).get_context_data(*args, **kwargs)
