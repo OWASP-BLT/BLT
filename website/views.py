@@ -66,7 +66,7 @@ def index(request, template="index.html"):
         'activities': Issue.objects.all()[0:10],
         'domains': domains,
         'hunts': Hunt.objects.exclude(txn_id__isnull=True)[:4],
-        'leaderboard': User.objects.filter(points__created__month=datetime.now().month).filter(points__created__year=datetime.now().year).annotate(
+        'leaderboard': User.objects.filter(points__created__month=datetime.now().month, points__created__year=datetime.now().year).annotate(
             total_score=Sum('points__score')).order_by('-total_score')[:10],
         'not_verified': show_message,
         'open_issue_owasp': open_issue_owasp,
@@ -304,7 +304,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         context = super(IssueCreate, self).get_context_data(**kwargs)
         context['activities'] = Issue.objects.all()[0:10]
         context['hunts'] = Hunt.objects.exclude(plan="Free")[:4]
-        context['leaderboard'] = User.objects.filter(points__created__month=datetime.now().month).filter(points__created__year=datetime.now().year).annotate(
+        context['leaderboard'] = User.objects.filter(points__created__month=datetime.now().month, points__created__year=datetime.now().year).annotate(
             total_score=Sum('points__score')).order_by('-total_score')[:10],
         return context
 
