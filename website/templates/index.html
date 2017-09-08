@@ -122,7 +122,7 @@
                 </div>
             </div>
             <div class="row" data-intro="These are the lists of featured websites on BugHeist." data-step="2">
-            {# commment $}
+            {# commment #}
                  {% for hunt in hunts %}
                     <div class="col-lg-6 col-md-6">
                         <div class="panel" id="hunt_{{domain.id}}" style="background-color:{{domain.get_color}}">
@@ -158,6 +158,18 @@
                                 <div class="col-xs-3 image_container">
                                     <img src="https://www.owasp.org/images/thumb/2/2f/Owasp_logo_flat2_icon.jpg/100px-Owasp_logo_flat2_icon.jpg" width="75" height="75">
                                 </div>
+                                <div>
+                                On OWASP.org - testing and reporting all of the salesforce integrations with webforms, and webform data on the website.
+
+Get a complete list of all of the forms in use which we can pull from the chapter (leaders) handbook, and the current site.
+
+test each one and file bug reports for them. In particular, each form should be able to do the following:
+
+Receive the post data accurately
+Return to the user's browser the confirmation that it was received on the screen when submitted along with an issue number.
+Issue a receipt to the user via email with complete data submitted by the form. If there is credit card info or personal info, it should be only partial but enough to verify that it was included in the submission.
+There should be a timeline or some kind of data that the user receives in the email to expect a resolution of their issue, and the forms should be logged in a place where the user can access the log data through their account, as well as tracked on the resolution and progress of the issue's progress.
+</div>
                                 <div class="col-xs-9 text-right">
                                     <div class="huge">OWASP</div>
                                     <div>Grand Prize $100</div>
