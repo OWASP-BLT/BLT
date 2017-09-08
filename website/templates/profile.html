@@ -73,8 +73,8 @@ a {
     display: none;
     width: 200px;
 }
-.general{
-    color:white;
+.fa-cogs {
+    color: white;
 }
 .fa-exclamation-triangle {
     color: #ff4444;
@@ -115,6 +115,10 @@ a {
     margin-right: 30px;
     margin-top: 10px;
 }
+.icon-block kbd a {
+    color: inherit;
+    text-decoration: none;
+}
 {% endblock %}
 
 {% block content %}
@@ -144,7 +148,7 @@ a {
                 {% include 'followers.html' %}
             </div>
             <div class="icon-block">
-                <kbd class="fa general">
+                <kbd class="fa fa-cogs">
                 <a href="/label_activity?user={{ user.username }}&label=General">General {{ bug_type_0 | length }}</a>
                 </kbd>
                 <kbd class="fa fa-exclamation-triangle">
@@ -214,8 +218,12 @@ a {
             <div class="icon-block">
                 <kbd class="fa fa-trophy"> Bugs Reported {{ total_bugs }}</kbd>
                 <kbd class="fa fa-star"> Points {{ my_score|default:0 }}</kbd>
-                <a href="/label_activity?user={{ user.username }}&label=open"><kbd class="fa fa-bug"> Open Issues {{total_open}}</kbd></a>
-                <a href="/label_activity?user={{ user.username }}&label=closed"><kbd class="fa fa-code-fork"> Closed Issues {{total_closed}}</kbd></a>
+                <a href="/label_activity?user={{ user.username }}&label=open">
+                    <kbd class="fa fa-bug"> Open Issues {{total_open}}</kbd>
+                </a>
+                <a href="/label_activity?user={{ user.username }}&label=closed">
+                    <kbd class="fa fa-code-fork"> Closed Issues {{total_closed}}</kbd>
+                </a>
             </div>            
         </div>
     </div>
@@ -286,6 +294,7 @@ a {
             });
         });
 
+    {% if activities %}
         var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
         var months = [], data = [];
         var all_data = new Array(12).fill(0);
@@ -351,6 +360,7 @@ a {
                 }
             }
         });
+    {% endif %}
 
     $('body').on('click', '.follow_unfollow', function (e){
         e.preventDefault();
