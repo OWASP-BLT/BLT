@@ -118,11 +118,11 @@
         <div class="col-lg-12">
             <div class="row">
                 <div class="col-lg-12">
-                    <h1 class="page-sub-header">{% trans "Featured Websites" %}</h1>
+                    <h1 class="page-sub-header">{% trans "Featured Bug Hunts" %}</h1>
                 </div>
             </div>
             <div class="row" data-intro="These are the lists of featured websites on BugHeist." data-step="2">
-                 {% for domain in domains %}
+                 {% for hunt in hunts %}
                     <div class="col-lg-6 col-md-6">
                         <div class="panel" id="hunt_{{domain.id}}" style="background-color:{{domain.get_color}}">
                             <div class="panel-heading">
@@ -149,31 +149,7 @@
                     </div>
                 {% endfor %}
 
-                <div class="col-lg-6 col-md-6">
-                    <div class="panel owasp-panel">
-                        <div class="panel-heading">
-                            <div class="row">
-                                <div class="col-xs-3 image_container">
-                                    <img src="https://www.owasp.org/images/thumb/2/2f/Owasp_logo_flat2_icon.jpg/100px-Owasp_logo_flat2_icon.jpg" width="75" height="75">
-                                </div>
-                                <div class="col-xs-9 text-right">
-                                    <div class="huge">OWASP</div>
-                                    <div>Grand Prize $100</div>
-                                </div>
-                            </div>
-                            <div class="row issue_count"><div class="col-xs-12 text-right">Issues <span><a href="/domain/owasp.org/#open">Open {{ open_issue_owasp }} </a></span><span><a href="/domain/owasp.org/#closed"> Closed {{ closed_issue_owasp }}</a></span></div></div>
-                        </div>
-                        <a href="https://www.owasp.org/index.php/Bug_Bounty_Projects" target="_new">
-                            <div class="panel-footer">
-                                <span class="pull-left" style="color:#234082">View Website</span>
-                                <span class="pull-right">
-                                    <i class="fa fa-arrow-circle-right" style="color:#234082"></i>
-                                </span>
-                                <div class="clearfix"></div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
+                
             </div>
         </div>
     </div>
