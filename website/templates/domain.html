@@ -90,6 +90,15 @@
 
     <div class="row">
         <div class="col-lg-9">
+            <div class="pull-left text-center">
+                {% if opened.has_previous %}
+                    <a href="?open={{ opened.previous_page_number }}" class="btn btn-default">Prev</a>
+                {% endif %}
+                <span>Page {{ opened.number }} of {{ opened.paginator.num_pages }}</span>
+                {% if opened.has_next %}
+                    <a href="?open={{ opened.next_page_number }}"  class="btn btn-default">Next</a>
+                {% endif %}
+            </div>
             <ul class="nav nav-tabs" role="tablist">
                 <li role="presentation" class="active">
                     <a href="#open" aria-controls="home" role="tab" data-toggle="tab">Open [{{opened_net.count}}]</a>
