@@ -5,6 +5,20 @@
             <h1 class="page-header">All {% if label %}{{label}}{% endif %} issues{% if user %} by {{user}}{% endif %}</h1>
         </div>
     </div>
+    {% if is_paginated %}
+    <div class="col-md-12">
+        <div class="text-center">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if user %}&user={{user}}{% endif %}{% if label %}&label={{label}}{% endif %}" class="btn btn-default">Prev</a>
+            {% endif %}
+            <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if user %}&user={{user}}{% endif %}{% if label %}&label={{label}}{% endif %}"  class="btn btn-default">Next</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
     <div class="row">
         <div class="col-md-10 col-md-offset-1">
             <div class="panel panel-default">
