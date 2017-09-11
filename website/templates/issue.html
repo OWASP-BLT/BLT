@@ -301,6 +301,11 @@
 
     $(document).on('click','.save-issue',function(e){
         e.preventDefault();
+        if ( $('.form input[name=description]').val().trim().length==0 ||
+            $('.form input[name=domain]').val().trim().length==0){
+            return;
+        }
+        
         $.ajax({
             type: 'POST',
             url: '/issue/edit/',
