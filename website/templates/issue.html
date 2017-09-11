@@ -301,10 +301,20 @@
 
     $(document).on('click','.save-issue',function(e){
         e.preventDefault();
+
         if ( $('.form input[name=description]').val().trim().length==0 ||
             $('.form input[name=domain]').val().trim().length==0){
             return;
         }
+        var dom_regex = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi;
+        dom_regex = new RegExp(dom_regex);
+        var domain_url= $('.form input[name=domain]').val();
+        if (domain_url.match(dom_regex)==null){
+            alert('Enter a valid url');
+            return;
+        }
+
+
         
         $.ajax({
             type: 'POST',
