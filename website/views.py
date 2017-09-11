@@ -710,10 +710,13 @@ def IssueEdit(request):
         if request.user == issue.user or request.user.is_superuser:
             domain, created = Domain.objects.get_or_create(name=link, defaults={'url': "http://" + link})
             issue.domain = domain
+            if uri[:4]!="http" and uri[:5]!="https":
+                uri = "https://"+uri 
             issue.url = uri
             issue.description = request.POST.get('description')
             issue.label = request.POST.get('label')
             issue.save()
+            print issue.url
             if created:
                 return HttpResponse("Domain Created")
             else:
