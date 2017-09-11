@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from django.shortcuts import render, get_object_or_404
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
+from django.utils.html import escape
 
 import os
 import json
@@ -21,6 +22,7 @@ def add_comment(request):
         author_url = os.path.join('/profile/', request.user.username)
         issue = issue
         text = request.POST.get('text_comment')
+        text = escape(text)
         user_list = []
         temp_text = text.split()
         new_text = ''
@@ -84,6 +86,7 @@ def edit_comment(request, pk):
         issue = Issue.objects.get(pk=request.GET['issue_pk'])
         comment = Comment.objects.get(pk=request.GET['comment_pk'])
         comment.text = request.GET.get('text_comment')
+        comment.text = escape(comment.text)
         comment.save()
         all_comment = Comment.objects.filter(issue=issue)
     return render(request, 'comments.html', {'all_comment': all_comment,
@@ -100,6 +103,7 @@ def reply_comment(request, pk):
         author_url = os.path.join('/profile/', request.user.username)
         issue = Issue.objects.get(pk=request.GET['issue_pk'])
         reply_text = request.GET.get('text_comment')
+        reply_text = escape(reply_text)
         comment = Comment(author=author, author_url=author_url,
                           issue=issue, text=reply_text,parent=parent_obj)
         comment.save()
