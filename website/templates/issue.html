@@ -319,6 +319,7 @@
             success: function(data){
                 $('.issue-desc').text($('.form input[name=description]').val());
                 $('.issue-domain').text($('.form input[name=domain]').val());
+                $('.issue-domain').attr("href",($('.form input[name=domain]').val()));
                 label = $('.form select').val();
                 var l = $(".form select option[value='"+label+"']").text();
                 $('.bug-label').text(l);
