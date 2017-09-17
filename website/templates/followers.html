@@ -1,6 +1,6 @@
 {% if request.user != user and request.user.is_authenticated %}
     {% if request.user.email in followers_list %}
-        <a class="follow_unfollow btn btn-default" name="{{ user }}" >Unfollow</a>
+        <a class="follow_unfollow btn btn-default" name="{{ user }}">Unfollow</a>
     {% else %}
         <a class="follow_unfollow btn btn-default" name="{{ user }}">Follow</a>
     {% endif %}

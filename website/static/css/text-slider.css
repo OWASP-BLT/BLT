@@ -1,25 +1,24 @@
-.text-slider-list{
-	list-style: none;
+.text-slider-list {
+    list-style: none;
 }
 
-.text-slider-line{
-	display:none;
-	color: #6f6c6c;
+.text-slider-line {
+    display: none;
+    color: #6f6c6c;
 }
 
 /*.text-slider-list:first-of-type .text-slider-line{
 	display: block;
 }*/
 
-
-.text-slider{
-	text-align: center;
-	height: 100px;
+.text-slider {
+    text-align: center;
+    height: 100px;
 }
 
-@media only screen and (max-width: 400px){
-	
-	.text-slider h2{
-		font-size: 22px;
-	}
+@media only screen and (max-width: 400px) {
+
+    .text-slider h2 {
+        font-size: 22px;
+    }
 }

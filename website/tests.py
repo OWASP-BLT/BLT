@@ -1,8 +1,7 @@
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from django.test import LiveServerTestCase
 import os
 import time
+
+from django.test import LiveServerTestCase
 
 os.environ['DJANGO_LIVE_TEST_SERVER_ADDRESS'] = 'localhost:8082'
 

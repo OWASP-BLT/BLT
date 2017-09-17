@@ -4,7 +4,7 @@ $(document).ready(function () {
     document.body.appendChild(button);
     var url = window.location.href;
     var bugheist = 'https://www.bugheist.com/report/?url=' + url;
-    button.onclick = function() {
+    button.onclick = function () {
         var redirectWindow = window.open(bugheist, '_blank');
         redirectWindow.location;
     }

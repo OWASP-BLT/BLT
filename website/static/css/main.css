@@ -1,11 +1,13 @@
 #page-wrapper {
     height: 100%;
 }
+
 @media screen and (max-width: 720px) {
-  #page-wrapper {
-      height: auto;
-  }
+    #page-wrapper {
+        height: auto;
+    }
 }
+
 .round-icon {
     margin: 0 auto;
     height: 50px;
@@ -18,161 +20,195 @@
     font-size: 30px;
     box-shadow: 0 1px 1px #dd4252;
 }
+
 .no-shadow {
     box-shadow: 0 0 0 #000;
 }
+
 .tag {
     color: #999;
 }
+
 .heading {
     font-weight: 300;
 }
-.navbar
-{
-   -webkit-backface-visibility: hidden;
+
+.navbar {
+    -webkit-backface-visibility: hidden;
 }
+
 .navbar-static-top {
     margin-bottom: 0px;
 }
+
 .navbar-static-top .navbar-header {
-    z-index:4;
+    z-index: 4;
 }
+
 .navbar-top-links img {
     width: 20px;
     height: 20px;
 }
+
 .form-group textarea {
     height: 34px;
 }
+
 .screenshot-hash {
     border: 1px solid #d43f3a;
     height: 100px;
 }
+
 .navbar-static-top input[type='file'] {
     opacity: 0;
     width: 1px;
-    height:1px;
+    height: 1px;
 }
+
 #login .modal-dialog {
     margin-top: 200px;
 }
+
 #login .modal-body img {
     padding-top: 15px;
 }
+
 #login .btn-caution {
-    height:86px;
+    height: 86px;
     width: 86px;
-    font-size:28px;
-    margin-top:3px;
-    margin-right:10px;
-    color:#dd4252;
+    font-size: 28px;
+    margin-top: 3px;
+    margin-right: 10px;
+    color: #dd4252;
 }
+
 #login p {
     font-size: 13px;
     padding-top: 20px;
 }
+
 .panel-green {
-  border-color: #5cb85c;
+    border-color: #5cb85c;
 }
+
 .panel-green > .panel-heading {
-  border-color: #5cb85c;
-  color: white;
-  background-color: #5cb85c;
+    border-color: #5cb85c;
+    color: white;
+    background-color: #5cb85c;
 }
+
 .panel-red {
-  border-color: #DB4553;
+    border-color: #DB4553;
 }
+
 .panel-red > .panel-heading {
-  border-color: #DB4553;
-  color: white;
-  background-color: #DB4553;
+    border-color: #DB4553;
+    color: white;
+    background-color: #DB4553;
 }
+
 .panel-purple {
-  border-color: #9c27b0;
+    border-color: #9c27b0;
 }
+
 .panel-purple > .panel-heading {
-  border-color: #9c27b0;
-  color: white;
-  background-color: #9c27b0;
+    border-color: #9c27b0;
+    color: white;
+    background-color: #9c27b0;
 }
+
 .panel-yellow {
-  border-color: #f0ad4e;
+    border-color: #f0ad4e;
 }
+
 .panel-yellow > .panel-heading {
-  border-color: #f0ad4e;
-  color: white;
-  background-color: #f0ad4e;
+    border-color: #f0ad4e;
+    color: white;
+    background-color: #f0ad4e;
 }
+
 .panel-heading .row .fa-5x {
     margin-top: 5px;
     margin-left: -10px;
 }
-#issue-dp{
+
+#issue-dp {
     min-width: 250px;
     padding: 14px 14px 0;
-    overflow:hidden;
-    background-color:rgb(255,255,255);
+    overflow: hidden;
+    background-color: rgb(255, 255, 255);
 }
-#issue-dp .help-block{
-    font-size:12px
+
+#issue-dp .help-block {
+    font-size: 12px
 }
-#issue-dp .bottom{
-    background-color:rgb(255,255,255);
-    border-top:1px solid #ddd;
-    clear:both;
-    padding:14px;
+
+#issue-dp .bottom {
+    background-color: rgb(255, 255, 255);
+    border-top: 1px solid #ddd;
+    clear: both;
+    padding: 14px;
 }
-#issue-dp .social-buttons{
-    margin:12px 0
+
+#issue-dp .social-buttons {
+    margin: 12px 0
 }
-#issue-dp .social-buttons a{
+
+#issue-dp .social-buttons a {
     width: 49%;
 }
+
 #issue-dp .form-group {
     margin-bottom: 10px;
 }
-.btn-fb{
+
+.btn-fb {
     color: #fff;
-    background-color:#3b5998;
+    background-color: #3b5998;
 }
-.btn-fb:hover{
+
+.btn-fb:hover {
     color: #fff;
-    background-color:#496ebc
+    background-color: #496ebc
 }
-.btn-tw{
+
+.btn-tw {
     color: #fff;
-    background-color:#55acee;
+    background-color: #55acee;
 }
-.btn-tw:hover{
+
+.btn-tw:hover {
     color: #fff;
-    background-color:#59b5fa;
+    background-color: #59b5fa;
 }
-@media(max-width:768px){
-    #issue-dp{
+
+@media (max-width: 768px) {
+    #issue-dp {
         background-color: inherit;
         color: #fff;
     }
-    #issue-dp .bottom{
+
+    #issue-dp .bottom {
         background-color: inherit;
-        border-top:0 none;
+        border-top: 0 none;
     }
 }
 
-.main{
-  margin-top: 00px;
+.main {
+    margin-top: 00px;
 }
 
-hr{
-  width: 10%;
-  color: #fff;
+hr {
+    width: 10%;
+    color: #fff;
 }
 
-.form-group{
-  margin-bottom: 15px;
+.form-group {
+    margin-bottom: 15px;
 }
 
-label{
-  margin-bottom: 15px;
+label {
+    margin-bottom: 15px;
 }
 
 input,
@@ -181,8 +217,8 @@ input::-webkit-input-placeholder {
     padding-top: 3px;
 }
 
-.main-issue-form{
-  background-color: #fff;
+.main-issue-form {
+    background-color: #fff;
     /* shadows and rounded borders */
     -moz-border-radius: 2px;
     -webkit-border-radius: 2px;
@@ -193,10 +229,10 @@ input::-webkit-input-placeholder {
 
 }
 
-.main-center{
-  margin-top: 0px;
-  margin: 0 auto;
-  max-width: 500px;
+.main-center {
+    margin-top: 0px;
+    margin: 0 auto;
+    max-width: 500px;
     padding: 40px 40px;
 
 }

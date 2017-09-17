@@ -6,9 +6,9 @@
 {% providers_media_js %}
 
 {% block style %}
-.duplicates {
+    .duplicates {
     border-radius: 0px;
-}
+    }
 {% endblock %}
 
 {% block content %}
@@ -19,99 +19,114 @@
         {% csrf_token %}
         <div class="row main">
             <div class="panel-heading">
-               <div class="panel-title text-center">
+                <div class="panel-title text-center">
                     <h1 class="title">Report a bug</h1>
-                    <hr />
+                    <hr/>
                 </div>
-            </div> 
+            </div>
             <div class="main-issue-form main-center">
                 <form class="form-horizontal" method="post" action="#">
                     <div class="form-group{% if form.url.errors %} has-error{% endif %}">
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-external-link"
+                                                               aria-hidden="true"></i></span>
+                            {% if request.GET.url %}
+                                <input class="form-control required"
+                                       data-intro="Enter the website's complete url where you found the bug."
+                                       data-step="1" placeholder="www.testsite.com/bug-found" name="url"
+                                       value="{{ request.GET.url }}">
+                            {% else %}
+                                <input class="form-control required"
+                                       data-intro="Enter the website's complete url where you found the bug."
+                                       data-step="1" placeholder="www.testsite.com/bug-found" name="url"
+                                       value="{{ form.url.value|default:"" }}">
+                            {% endif %}
+                            <a class="btn btn-info form-control duplicates">Check for Duplicates</a>
+                        </div>
+                        <span class="message"></span>
+                        <span class="help-block">{{ form.url.errors }}</span>
+                    </div>
+                    <div class="form-group{% if form.description.errors %} has-error{% endif %}">
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-pencil-square-o"
+                                                               aria-hidden="true"></i></span>
+                            <textarea data-required="true" name="description" id="description"
+                                      data-intro="Describe the nature of bug." data-step="2"
+                                      class="form-control required" rows="3"
+                                      placeholder="Describe bug issue">{{ form.description.value|default:"" }}</textarea>
+                        </div>
+                        <span class="help-block">{{ form.description.errors }}</span>
+                    </div>
                     <div class="input-group">
-                    <span class="input-group-addon"><i class="fa fa-external-link" aria-hidden="true"></i></span>
-                {% if request.GET.url %}
-                    <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
-                {% else %}
-                    <input class="form-control required" data-intro="Enter the website's complete url where you found the bug." data-step="1" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
-                {% endif %}
-                    <a class="btn btn-info form-control duplicates">Check for Duplicates</a>
-                </div>
-                <span class="message"></span>
-                <span class="help-block">{{ form.url.errors }}</span>
-            </div>
-            <div class="form-group{% if form.description.errors %} has-error{% endif %}">
-                <div class="input-group">
-                    <span class="input-group-addon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span>
-                <textarea data-required="true" name="description" id="description" data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3" placeholder="Describe bug issue">{{form.description.value|default:""}}</textarea>
-                </div>
-                <span class="help-block">{{ form.description.errors }}</span>
-            </div>
-            <div class="input-group">
                 <span class="input-group-addon">
                     <i class="fa fa-list" aria-hidden="true"></i>
                 </span>
-                <select required data-intro="Categorize the bug." data-step="3" name="label" class="form-control">
-                    <option value="0" selected="selected">General</option>
-                    <option value="1">Number error</option>
-                    <option value="2">Functional</option>
-                    <option value="3">Performance</option>
-                    <option value="4">Security</option>
-                    <option value="5">Typo</option>
-                    <option value="6">Design</option>
-                </select>
-            </div>
-            <div class="form-group{% if form.screenshot.errors %} has-error{% endif %}">
-            {% if request.GET.hash %}</br>
-                <img src="{{ MEDIA_URL }}uploads/{{request.GET.hash}}.png" class="img-responsive img-thumbnail screenshot-hash">
-                <input type="hidden" class="required" name="screenshot-hash" value="{{request.GET.hash}}">
-            {% else %}
-                <br>
-                <span>
+                        <select required data-intro="Categorize the bug." data-step="3" name="label"
+                                class="form-control">
+                            <option value="0" selected="selected">General</option>
+                            <option value="1">Number error</option>
+                            <option value="2">Functional</option>
+                            <option value="3">Performance</option>
+                            <option value="4">Security</option>
+                            <option value="5">Typo</option>
+                            <option value="6">Design</option>
+                        </select>
+                    </div>
+                    <div class="form-group{% if form.screenshot.errors %} has-error{% endif %}">
+                        {% if request.GET.hash %}</br>
+                            <img src="{{ MEDIA_URL }}uploads/{{ request.GET.hash }}.png"
+                                 class="img-responsive img-thumbnail screenshot-hash">
+                            <input type="hidden" class="required" name="screenshot-hash" value="{{ request.GET.hash }}">
+                        {% else %}
+                            <br>
+                            <span>
                     <input type="file" class="required" id='${multipartFilePath}' name="screenshot"/> 
-                    <button class="btn btn-primary btn-block" data-intro="Upload a screenshot of the concerned page." data-step="4" name="test_files" type="button">
+                    <button class="btn btn-primary btn-block" data-intro="Upload a screenshot of the concerned page."
+                            data-step="4" name="test_files" type="button">
                         <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot
                     </button>
                     <span class="help-block{% if form.screenshot.errors %} has-error{% endif %}">{{ form.screenshot.errors }}</span>
                     <span class="badge badge-important"></span>
                 </span>
-            {% endif %}
+                        {% endif %}
+                    </div>
+                    <button type="submit" name="reportbug_button" id="btn" class="btn btn-default btn-block"
+                            data-intro="Click here to report the bug to BugHeist." data-step="5">
+                        Report Bug <i class="fa fa-trophy" aria-hidden="true">+3</i>
+                    </button>
             </div>
-            <button type="submit" name="reportbug_button" id="btn" class="btn btn-default btn-block" data-intro="Click here to report the bug to BugHeist." data-step="5">
-            Report Bug <i class="fa fa-trophy" aria-hidden="true">+3</i>
-            </button>
-        </div>
     </form>
     <script type="text/javascript">
-        $(function() {
-            $('button[name="test_files"]').on('click', function() {
+        $(function () {
+            $('button[name="test_files"]').on('click', function () {
                 $(this).parent().find('input[type=file]').click();
             });
-            $('input[name="screenshot"]').on('change', function() {
+            $('input[name="screenshot"]').on('change', function () {
                 var file = $(this).val().replace('C:\\fakepath\\', '');
                 $(this).parent().find('.badge').html(file);
-            });        
-            $(".duplicates").click(function(){
+            });
+            $(".duplicates").click(function () {
                 var uri = $("input[name='url']").val();
                 $.ajax({
-                    type : "POST",
-                    data : { dom_url: uri },
-                    url : "/domain_check/",
+                    type: "POST",
+                    data: {dom_url: uri},
+                    url: "/domain_check/",
                     dataType: 'json',
-                    success: function(response){
+                    success: function (response) {
                         var trint = response;
-                        if (trint.number ==3) {
+                        if (trint.number == 3) {
                             $('.message').html("<br>Sweet! We haven't got any bug from this domain till now");
                         }
-                        else if (trint.number==2) {
+                        else if (trint.number == 2) {
                             var link = "www.bugheist.com/domain/" + trint.domain;
                             $('.message').html("<br>Multiple bugs already exist on this domain, ensure you are not submitting a duplicate bug by going here:<br> " + link);
                         }
-                        else if (trint.number==1) {
+                        else if (trint.number == 1) {
                             var link = "www.bugheist.com/issue/" + trint.id;
-                            $('.message').html("<br><div class='row'>A bug with same URL already exists <br>Description: " + trint.description + "<br>Created on: " + trint.date+"/"+trint.month+"/"+trint.year+ "<br>Ensure you are not submitting a duplicate bug by checking here</div>: " + link);
+                            $('.message').html("<br><div class='row'>A bug with same URL already exists <br>Description: " + trint.description + "<br>Created on: " + trint.date + "/" + trint.month + "/" + trint.year + "<br>Ensure you are not submitting a duplicate bug by checking here</div>: " + link);
                         }
                     },
-                    error: function(response){
+                    error: function (response) {
                         $('.message').text('Something went wrong!');
                     },
                 });
