@@ -29,11 +29,11 @@ $(document).ready(function () {
         html: "<div><span data-notify-text/></div>",
         classes: {
             base: {
-              "border-radius": "5px",
-              "background-color": "grey",
-              "color": "white",
-              "padding": "10px 40px",
-              "font-size": "20px"
+                "border-radius": "5px",
+                "background-color": "grey",
+                "color": "white",
+                "padding": "10px 40px",
+                "font-size": "20px"
             },
             success: {
                 "color": "#4efe00"
@@ -45,19 +45,19 @@ $(document).ready(function () {
     });
 
     $('[data-toggle="popover"]').popover({
-        trigger:"hover",
+        trigger: "hover",
         html: true,
-        content: function() {
+        content: function () {
             var user = $(this).text();
             var tag = $(this).data('tag');
             var img = $(this).parent().parent().parent().find('img:first').attr('src');
             return '<div class="row">'
-                  +'<div class="col-md-3"><img src="'+img+'" height="50"></div>'
-                  +'<div class="col-md-7 col-md-offset-2">'
-                  +'<strong>'+user+'</strong>'
-                  +'<p><div class="label label-default">'+tag+'</div></p>'
-                  +'</div>'
-                  +'</div>';
+                + '<div class="col-md-3"><img src="' + img + '" height="50"></div>'
+                + '<div class="col-md-7 col-md-offset-2">'
+                + '<strong>' + user + '</strong>'
+                + '<p><div class="label label-default">' + tag + '</div></p>'
+                + '</div>'
+                + '</div>';
         }
     });
 });

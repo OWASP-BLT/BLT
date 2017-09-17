@@ -1,6 +1,7 @@
 from django import template
-from website.models import Points
 from django.db.models import Sum
+
+from website.models import Points
 
 register = template.Library()
 

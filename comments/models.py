@@ -1,14 +1,16 @@
 from __future__ import unicode_literals
-from website.models import Issue
+
+from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import User
+
+from website.models import Issue
 
 
 # Create your models here.
 
 class Comment(models.Model):
-    parent = models.ForeignKey('self',null=True)
+    parent = models.ForeignKey('self', null=True)
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name='comments')
     author = models.CharField(max_length=200)
     author_url = models.CharField(max_length=200)
@@ -19,5 +21,4 @@ class Comment(models.Model):
         return self.text
 
     def children(self):
-    	return Comment.objects.filter(parent=self)
-
+        return Comment.objects.filter(parent=self)
