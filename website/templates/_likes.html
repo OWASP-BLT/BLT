@@ -8,17 +8,17 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-body">
-             <h3>Liked by:</h3>
-             {% for usr in likers %}
-                <div class="list-group-item">
-                    {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
-                        <img src="{{usr.user.socialaccount_set.all.0.get_avatar_url}}" height="50px">
-                    {% else %}
-                        <img src="{% gravatar_url usr.user.email 50 %}">
-                    {% endif %}
-                    <a href="/profile/{{usr.user.username}}">{{usr.user.username}}</a>
-                </div>
-              {% endfor %}
+                <h3>Liked by:</h3>
+                {% for usr in likers %}
+                    <div class="list-group-item">
+                        {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
+                            <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}" height="50px">
+                        {% else %}
+                            <img src="{% gravatar_url usr.user.email 50 %}">
+                        {% endif %}
+                        <a href="/profile/{{ usr.user.username }}">{{ usr.user.username }}</a>
+                    </div>
+                {% endfor %}
             </div>
         </div>
     </div>

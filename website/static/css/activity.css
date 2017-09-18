@@ -1,72 +1,72 @@
-.activity-strip-section > img{
+.activity-strip-section > img {
     width: auto;
     height: 100px;
 }
 
-.activity-screenshot img{
+.activity-screenshot img {
     height: auto;
 }
 
-.activity-strip-section > div > .small{
+.activity-strip-section > div > .small {
     position: relative;
     top: 10px;
 }
 
-.more_info{
+.more_info {
     display: none;
     cursor: pointer;
 }
 
-.text-trunc{
+.text-trunc {
     display: none;
 }
 
-@media only screen and (max-width: 450px){
-    .activity-strip .activity-strip-section{
+@media only screen and (max-width: 450px) {
+    .activity-strip .activity-strip-section {
         width: 95%;
-        height: auto;	
+        height: auto;
     }
 
-    .activity-strip{
+    .activity-strip {
         height: 160px;
     }
 
-    .activity-screenshot{
+    .activity-screenshot {
         position: absolute;
         top: 100px;
     }
 
-    .bug-type{
+    .bug-type {
         right: 0;
     }
 
-    .activity-strip-section > div{
-	    overflow: auto;
+    .activity-strip-section > div {
+        overflow: auto;
     }
 
-    .more_info{
+    .more_info {
         display: block;
         margin: 10px 0;
         cursor: pointer;
         color: #999;
     }
-    
-    .activity-strip-section > div > .small{
+
+    .activity-strip-section > div > .small {
         display: none;
     }
-	
-	.text-trunc{
+
+    .text-trunc {
         display: block;
         margin-top: 10px;
     }
-	
-	.text-trunc:first-letter{
+
+    .text-trunc:first-letter {
         text-transform: uppercase;
     }
 }
 
-@media only screen and (min-width: 400px){
-    .bug-type{
+@media only screen and (min-width: 400px) {
+    .bug-type {
         position: relative;
         right: 0
     }

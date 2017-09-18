@@ -1,49 +1,49 @@
-from allauth.account.signals import user_logged_in
-from django.dispatch import receiver
-from django.shortcuts import render
-from django.http import HttpResponse
-from django.views.generic import DetailView, TemplateView, ListView, UpdateView, CreateView
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from django.views.generic.edit import CreateView, FormView
-from django.contrib.auth import get_user_model
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponseRedirect
-from django.contrib import messages
-from django.http import Http404
-from django.contrib.auth.models import User
-from django.http import JsonResponse
-from website.models import Issue, Points, Hunt, Domain, InviteFriend, UserProfile
-from django.core.files import File
-from django.core.urlresolvers import reverse, reverse_lazy
-from django.db.models import Sum, Count, Q
-from django.core.urlresolvers import reverse
-from django.core.files.storage import default_storage
-from django.views.generic import View
-from django.core.files.base import ContentFile
-from django.db.models.functions import ExtractMonth
-from urlparse import urlparse
-import urllib2
-from selenium.webdriver import PhantomJS
+import json
+import os
+import random
+import re
 import time
-from bs4 import BeautifulSoup
+import urllib2
+from collections import deque
+from datetime import datetime
+from urlparse import urlparse
+from urlparse import urlsplit
+
 import requests
 import requests.exceptions
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from urlparse import urlsplit
-from datetime import datetime
-from collections import deque
-import re
-import os
-import json
-from user_agents import parse
-from .forms import FormInviteFriend, UserProfileForm
-import random
-from django.contrib.auth.decorators import login_required
-from django.utils.decorators import method_decorator
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from allauth.account.models import EmailAddress
+from allauth.account.signals import user_logged_in
+from bs4 import BeautifulSoup
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.core.files import File
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.core.mail import send_mail
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse_lazy
+from django.db.models import Sum, Count, Q
+from django.db.models.functions import ExtractMonth
+from django.dispatch import receiver
+from django.http import Http404
+from django.http import HttpResponse
+from django.http import HttpResponseRedirect
+from django.http import JsonResponse
+from django.shortcuts import render, redirect
+from django.template.loader import render_to_string
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import DetailView, TemplateView, ListView
+from django.views.generic import View
+from django.views.generic.edit import CreateView
+from user_agents import parse
+
+from website.models import Issue, Points, Hunt, Domain, InviteFriend, UserProfile
+from .forms import FormInviteFriend, UserProfileForm
+
 
 def index(request, template="index.html"):
     try:
@@ -66,7 +66,8 @@ def index(request, template="index.html"):
         'activities': Issue.objects.all()[0:10],
         'domains': domains,
         'hunts': Hunt.objects.exclude(txn_id__isnull=True)[:4],
-        'leaderboard': User.objects.filter(points__created__month=datetime.now().month, points__created__year=datetime.now().year).annotate(
+        'leaderboard': User.objects.filter(points__created__month=datetime.now().month,
+                                           points__created__year=datetime.now().year).annotate(
             total_score=Sum('points__score')).order_by('-total_score')[:10],
         'not_verified': show_message,
         'open_issue_owasp': open_issue_owasp,
@@ -88,9 +89,10 @@ def find_key(request, token):
             return HttpResponse(os.environ.get("ACME_KEY_%s" % n))
     raise Http404("Token or key does not exist")
 
+
 @csrf_exempt
 def domain_check(request):
-    if request.method =="POST":
+    if request.method == "POST":
         domain_url = request.POST.get('dom_url')
         if "http://" not in domain_url:
             if "https://" not in domain_url:
@@ -98,53 +100,55 @@ def domain_check(request):
 
         if Issue.objects.filter(url=domain_url).exists():
             isu = Issue.objects.filter(url=domain_url)
-            if isu.count()>1:
+            if isu.count() > 1:
                 str1 = "www."
                 if "www." in domain_url:
                     k = domain_url.index(str1)
-                    k=k+4
-                    t=k
-                    while k<len(domain_url):
-                        if (domain_url[k]!="/"):
-                            k=k+1
-                        elif (domain_url[k]=="/"):
+                    k = k + 4
+                    t = k
+                    while k < len(domain_url):
+                        if (domain_url[k] != "/"):
+                            k = k + 1
+                        elif (domain_url[k] == "/"):
                             break
 
                 elif "http://" in domain_url:
-                    k=7
-                    t=k
-                    while k<len(domain_url):
-                        if (domain_url[k]!="/"):
-                            k=k+1
-                        elif (domain_url[k]=="/"):
+                    k = 7
+                    t = k
+                    while k < len(domain_url):
+                        if (domain_url[k] != "/"):
+                            k = k + 1
+                        elif (domain_url[k] == "/"):
                             break
 
                 elif "https://" in domain_url:
-                    k=8
-                    t=k
-                    while k<len(domain_url):
-                        if (domain_url[k]!="/"):
-                            k=k+1
-                        elif (domain_url[k]=="/"):
+                    k = 8
+                    t = k
+                    while k < len(domain_url):
+                        if (domain_url[k] != "/"):
+                            k = k + 1
+                        elif (domain_url[k] == "/"):
                             break
                 else:
                     return HttpResponse('Nothing passed')
-                
+
                 url_parsed = domain_url[t:k]
                 data = {'number': 2, 'domain': url_parsed}
                 return HttpResponse(json.dumps(data))
 
             else:
                 try:
-                    a =  Issue.objects.get(url=domain_url)
+                    a = Issue.objects.get(url=domain_url)
                 except:
                     a = None
-                data = {'number': 1, 'id' : a.id ,'description' : a.description, 'date' :a.created.day, 'month' :a.created.month,'year':a.created.year,}
+                data = {'number': 1, 'id': a.id, 'description': a.description, 'date': a.created.day,
+                        'month': a.created.month, 'year': a.created.year, }
                 return HttpResponse(json.dumps(data))
 
         else:
-            data = {'number': 3,}
+            data = {'number': 3, }
             return HttpResponse(json.dumps(data))
+
 
 class IssueBaseCreate(object):
     def form_valid(self, form):
@@ -304,7 +308,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
         context = super(IssueCreate, self).get_context_data(**kwargs)
         context['activities'] = Issue.objects.all()[0:10]
         context['hunts'] = Hunt.objects.exclude(plan="Free")[:4]
-        context['leaderboard'] = User.objects.filter(points__created__month=datetime.now().month, points__created__year=datetime.now().year).annotate(
+        context['leaderboard'] = User.objects.filter(points__created__month=datetime.now().month,
+                                                     points__created__year=datetime.now().year).annotate(
             total_score=Sum('points__score')).order_by('-total_score')[:10],
         return context
 
@@ -369,18 +374,20 @@ class UserProfileDetailView(DetailView):
         user = self.object
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
         context['my_score'] = Points.objects.filter(user=self.object).aggregate(total_score=Sum('score')).values()[0]
-        context['websites'] = Domain.objects.filter(issue__user=self.object).annotate(total=Count('issue')).order_by('-total')
+        context['websites'] = Domain.objects.filter(issue__user=self.object).annotate(total=Count('issue')).order_by(
+            '-total')
         context['activities'] = Issue.objects.filter(user=self.object)[0:10]
         context['profile_form'] = UserProfileForm()
-        context['total_open'] = Issue.objects.filter(user=self.object,status="open").count()
-        context['total_closed'] = Issue.objects.filter(user=self.object,status="closed").count()
+        context['total_open'] = Issue.objects.filter(user=self.object, status="open").count()
+        context['total_closed'] = Issue.objects.filter(user=self.object, status="closed").count()
         context['current_month'] = datetime.now().month
-        context['graph'] = Issue.objects.filter(user=self.object).filter(created__month__gte=(datetime.now().month-6), created__month__lte=datetime.now().month) \
-                        .annotate(month=ExtractMonth('created')).values('month').annotate(c=Count('id')).order_by()
+        context['graph'] = Issue.objects.filter(user=self.object).filter(created__month__gte=(datetime.now().month - 6),
+                                                                         created__month__lte=datetime.now().month) \
+            .annotate(month=ExtractMonth('created')).values('month').annotate(c=Count('id')).order_by()
         context['total_bugs'] = Issue.objects.filter(user=self.object).count()
-        for i in range(0,7):
-            context['bug_type_'+str(i)] = Issue.objects.filter(user=self.object,label=str(i))
-        
+        for i in range(0, 7):
+            context['bug_type_' + str(i)] = Issue.objects.filter(user=self.object, label=str(i))
+
         arr = []
         allFollowers = user.userprofile.follower.all()
         for userprofile in allFollowers:
@@ -427,7 +434,7 @@ class DomainDetailView(ListView):
             status="closed")
 
         context['name'] = parsed_url.netloc.split(".")[-2:][0].title()
-        
+
         try:
             context['domain'] = Domain.objects.get(name=self.kwargs['slug'])
         except Domain.DoesNoTExist:
@@ -458,9 +465,11 @@ class DomainDetailView(ListView):
         context['leaderboard'] = User.objects.filter(issue__url__contains=self.kwargs['slug']).annotate(
             total=Count('issue')).order_by('-total')
         context['current_month'] = datetime.now().month
-        context['domain_graph'] = Issue.objects.filter(domain=context['domain']).filter(created__month__gte=(datetime.now().month-6), created__month__lte=datetime.now().month) \
-                        .annotate(month=ExtractMonth('created')).values('month').annotate(c=Count('id')).order_by()
-        context['pie_chart'] = Issue.objects.filter(domain=context['domain']).values('label').annotate(c=Count('label')).order_by()
+        context['domain_graph'] = Issue.objects.filter(domain=context['domain']).filter(
+            created__month__gte=(datetime.now().month - 6), created__month__lte=datetime.now().month) \
+            .annotate(month=ExtractMonth('created')).values('month').annotate(c=Count('id')).order_by()
+        context['pie_chart'] = Issue.objects.filter(domain=context['domain']).values('label').annotate(
+            c=Count('label')).order_by()
         return context
 
 
@@ -480,8 +489,10 @@ class StatsDetailView(TemplateView):
         context['user_count'] = User.objects.all().count()
         context['hunt_count'] = Hunt.objects.all().count()
         context['domain_count'] = Domain.objects.all().count()
-        context['user_graph'] = User.objects.annotate(month=ExtractMonth('date_joined')).values('month').annotate(c=Count('id')).order_by()
-        context['graph'] = Issue.objects.annotate(month=ExtractMonth('created')).values('month').annotate(c=Count('id')).order_by()
+        context['user_graph'] = User.objects.annotate(month=ExtractMonth('date_joined')).values('month').annotate(
+            c=Count('id')).order_by()
+        context['graph'] = Issue.objects.annotate(month=ExtractMonth('created')).values('month').annotate(
+            c=Count('id')).order_by()
         context['pie_chart'] = Issue.objects.values('label').annotate(c=Count('label')).order_by()
         return context
 
@@ -514,6 +525,7 @@ class AllIssuesView(ListView):
         context['user'] = self.request.GET.get('user')
         return context
 
+
 class SpecificIssuesView(ListView):
     paginate_by = 20
     template_name = "list_view.html"
@@ -525,30 +537,30 @@ class SpecificIssuesView(ListView):
         statu = 'none';
 
         if label == "General":
-            query=0;
+            query = 0;
         elif label == "Number":
-            query=1;
+            query = 1;
         elif label == "Functional":
-            query=2;
+            query = 2;
         elif label == "Performance":
-            query=3;
+            query = 3;
         elif label == "Security":
-            query=4;
+            query = 4;
         elif label == "Typo":
-            query=5;
+            query = 5;
         elif label == "Design":
-            query=6;
+            query = 6;
         elif label == "open":
-            statu='open';
+            statu = 'open';
         elif label == "closed":
-            statu='closed';
+            statu = 'closed';
 
         if username is None:
             self.activities = Issue.objects.all()
-        elif statu!='none':
-            self.activities = Issue.objects.filter(user__username=username,status=statu)
+        elif statu != 'none':
+            self.activities = Issue.objects.filter(user__username=username, status=statu)
         else:
-            self.activities = Issue.objects.filter(user__username=username,label=query)
+            self.activities = Issue.objects.filter(user__username=username, label=query)
         return self.activities
 
     def get_context_data(self, *args, **kwargs):
@@ -609,18 +621,18 @@ def search(request, template="search.html"):
     context = None
     if query is None:
         return render(request, template)
-    if query[:6]=="issue:":
-        stype="issue"
-        query=query[6:]
-    elif query[:7]=="domain:":
-        stype="domain"
-        query=query[7:]
-    elif query[:5]=="user:":
-        stype="user"
-        query=query[5:]
-    elif query[:6]=="label:":
-        stype="label"
-        query=query[6:]
+    if query[:6] == "issue:":
+        stype = "issue"
+        query = query[6:]
+    elif query[:7] == "domain:":
+        stype = "domain"
+        query = query[7:]
+    elif query[:5] == "user:":
+        stype = "user"
+        query = query[5:]
+    elif query[:6] == "label:":
+        stype = "label"
+        query = query[6:]
     if stype == "issue" or stype is None:
         context = {
             'query': query,
@@ -710,8 +722,8 @@ def IssueEdit(request):
         if request.user == issue.user or request.user.is_superuser:
             domain, created = Domain.objects.get_or_create(name=link, defaults={'url': "http://" + link})
             issue.domain = domain
-            if uri[:4]!="http" and uri[:5]!="https":
-                uri = "https://"+uri 
+            if uri[:4] != "http" and uri[:5] != "https":
+                uri = "https://" + uri
             issue.url = uri
             issue.description = request.POST.get('description')
             issue.label = request.POST.get('label')
@@ -795,7 +807,7 @@ def UpdateIssue(request):
         issue = Issue.objects.get(id=request.POST.get('issue_pk'))
     except Issue.DoesNoTExist:
         raise Http404("issue not found")
-    
+
     if request.method == "POST" and request.user.is_superuser or (issue is not None and request.user == issue.user):
         if request.POST.get('action') == "close":
             issue.status = "closed"
@@ -897,9 +909,10 @@ class CreateInviteFriend(CreateView):
                          'An email has been sent to your friend. Keep inviting your friends and get points!')
         return HttpResponseRedirect(self.success_url)
 
-def follow_user(request,user):
+
+def follow_user(request, user):
     if request.method == "GET":
-        userx = User.objects.get(username=user)        
+        userx = User.objects.get(username=user)
         flag = 0
         list_userfrof = request.user.userprofile.follows.all()
         for prof in list_userfrof:
@@ -910,10 +923,10 @@ def follow_user(request,user):
             request.user.userprofile.follows.add(userx.userprofile)
             msg_plain = render_to_string(
                 'email/follow_user.txt',
-                {'follower': request.user,'followed':userx})
+                {'follower': request.user, 'followed': userx})
             msg_html = render_to_string(
                 'email/follow_user.txt',
-                {'follower': request.user,'followed':userx})
+                {'follower': request.user, 'followed': userx})
 
             send_mail('You got a new follower!!',
                       msg_plain,
@@ -922,10 +935,11 @@ def follow_user(request,user):
                       html_message=msg_html)
         return HttpResponse("Success")
 
+
 @login_required(login_url='/accounts/login')
-def like_issue(request,issue_pk):
-    context={}
-    issue_pk=int(issue_pk)
+def like_issue(request, issue_pk):
+    context = {}
+    issue_pk = int(issue_pk)
     issue = Issue.objects.get(pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
     if userprof in UserProfile.objects.filter(issue_upvoted=issue):
@@ -937,10 +951,10 @@ def like_issue(request,issue_pk):
         issue_pk = issue.pk
         msg_plain = render_to_string(
             'email/issue_liked.txt',
-            {'liker_user': liker_user.username,'liked_user':liked_user.username,'issue_pk':issue_pk})
+            {'liker_user': liker_user.username, 'liked_user': liked_user.username, 'issue_pk': issue_pk})
         msg_html = render_to_string(
             'email/issue_liked.txt',
-            {'liker_user': liker_user.username,'liked_user':liked_user.username,'issue_pk':issue_pk})
+            {'liker_user': liker_user.username, 'liked_user': liked_user.username, 'issue_pk': issue_pk})
 
         send_mail('Your issue got an upvote!!',
                   msg_plain,
@@ -954,17 +968,19 @@ def like_issue(request,issue_pk):
     context['likes'] = total_votes
     return render(request, '_likes.html', context)
 
+
 @login_required(login_url='/accounts/login')
 def save_issue(request, issue_pk):
-    issue_pk=int(issue_pk)
+    issue_pk = int(issue_pk)
     issue = Issue.objects.get(pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
     userprof.issue_saved.add(issue)
     return HttpResponse('OK')
 
+
 @login_required(login_url='/accounts/login')
 def unsave_issue(request, issue_pk):
-    issue_pk=int(issue_pk)
+    issue_pk = int(issue_pk)
     issue = Issue.objects.get(pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
     userprof.issue_saved.remove(issue)

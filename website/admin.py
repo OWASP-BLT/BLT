@@ -1,12 +1,10 @@
 from django.contrib import admin
-
-from website.models import Issue, Points, Hunt, Domain, UserProfile
 from django.contrib.auth.models import User
-from django.contrib.auth.admin import UserAdmin
 from django.template.defaultfilters import truncatechars
-
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
+
+from website.models import Issue, Points, Hunt, Domain, UserProfile
 
 
 class UserResource(resources.ModelResource):
@@ -21,7 +19,7 @@ class DomainResource(resources.ModelResource):
 
 class IssueAdmin(admin.ModelAdmin):
     list_display = (
-    'id', 'user', 'url', 'domain', 'description', 'closed_by', 'closed_date', 'screenshot', 'created', 'modified')
+        'id', 'user', 'url', 'domain', 'description', 'closed_by', 'closed_date', 'screenshot', 'created', 'modified')
 
 
 class HuntAdmin(admin.ModelAdmin):
@@ -31,7 +29,7 @@ class HuntAdmin(admin.ModelAdmin):
 class DomainAdmin(ImportExportModelAdmin):
     resource_class = DomainResource
     list_display = (
-    'name', 'url', 'logo', 'clicks', 'color', 'email', 'email_event', 'twitter', 'facebook', 'created', 'modified')
+        'name', 'url', 'logo', 'clicks', 'color', 'email', 'email_event', 'twitter', 'facebook', 'created', 'modified')
 
 
 class PointsAdmin(admin.ModelAdmin):

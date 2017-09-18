@@ -2,49 +2,61 @@
 {% load gravatar %}
 {% load i18n %}
 <style>
-.subrow .col-md-6:nth-child(1) .panel {
-    background-color:#F76B78;
-}
-.subrow .col-md-6:nth-child(2) .panel {
-    background-color:#DC4353;
-}
-.subrow .col-md-6:nth-child(3) .panel {
-    background-color:#C41E2E;
-}
-.subrow .col-md-6:nth-child(4) .panel {
-    background-color:#9B0C1A;
-}
-.subrow .col-md-6:nth-child(1) .panel button {
-    background-color:#F76B78;
-    border-color:#F76B78;
-}
-.subrow .col-md-6:nth-child(2) .panel button {
-    background-color:#DC4353;
-    border-color:#DC4353;
-}
-.subrow .col-md-6:nth-child(3) .panel button {
-    background-color:#C41E2E;
-    border-color:#C41E2E;
-}
-.subrow .col-md-6:nth-child(4) .panel button {
-    background-color:#9B0C1A;
-    border-color:#9B0C1A;
-}
-.image-subs {
-    margin-left:10px;
-}
-.plan-style {
-    font-size:24pt
-}
-.plan-color {
-    color:white;
-}
-.newsletter {
-    font-size:18pt;
-}
-.announce {
-    font-size:20pt;
-}
+    .subrow .col-md-6:nth-child(1) .panel {
+        background-color: #F76B78;
+    }
+
+    .subrow .col-md-6:nth-child(2) .panel {
+        background-color: #DC4353;
+    }
+
+    .subrow .col-md-6:nth-child(3) .panel {
+        background-color: #C41E2E;
+    }
+
+    .subrow .col-md-6:nth-child(4) .panel {
+        background-color: #9B0C1A;
+    }
+
+    .subrow .col-md-6:nth-child(1) .panel button {
+        background-color: #F76B78;
+        border-color: #F76B78;
+    }
+
+    .subrow .col-md-6:nth-child(2) .panel button {
+        background-color: #DC4353;
+        border-color: #DC4353;
+    }
+
+    .subrow .col-md-6:nth-child(3) .panel button {
+        background-color: #C41E2E;
+        border-color: #C41E2E;
+    }
+
+    .subrow .col-md-6:nth-child(4) .panel button {
+        background-color: #9B0C1A;
+        border-color: #9B0C1A;
+    }
+
+    .image-subs {
+        margin-left: 10px;
+    }
+
+    .plan-style {
+        font-size: 24pt
+    }
+
+    .plan-color {
+        color: white;
+    }
+
+    .newsletter {
+        font-size: 18pt;
+    }
+
+    .announce {
+        font-size: 20pt;
+    }
 </style>
 
 <div class="subrow">
@@ -62,10 +74,15 @@
                 </div>
             </div>
             <div class="panel-footer">
-                <span class="pull-left" ><i class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span>
+                <span class="pull-left"><i
+                        class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span>
                 <span class="pull-right"></span>
-                <div class="clearfix"></div></br><center>
-                <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg" id="btn">{% trans "Start" %}</button></center>
+                <div class="clearfix"></div>
+                </br>
+                <center>
+                    <button type="submit" onclick="window.location.href='/hunt';" class="btn btn-primary btn-lg"
+                            id="btn">{% trans "Start" %}</button>
+                </center>
             </div>
         </div>
     </div>
@@ -83,10 +100,15 @@
                 </div>
             </div>
             <div class="panel-footer">
-                <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span></br>
+                <span class="pull-left"><i
+                        class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span></br>
                 <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %} </span>
-                <div class="clearfix"></div></br><center>
-                <button type="submit" onclick="window.location.href='/hunt';"  onclick="changeValue(this)" class="btn btn-primary btn-lg ">{% trans "Start" %} </button></center>
+                <div class="clearfix"></div>
+                </br>
+                <center>
+                    <button type="submit" onclick="window.location.href='/hunt';" onclick="changeValue(this)"
+                            class="btn btn-primary btn-lg ">{% trans "Start" %} </button>
+                </center>
             </div>
         </div>
     </div>
@@ -104,12 +126,17 @@
                 </div>
             </div>
             <div class="panel-footer">
-                <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span></br>
+                <span class="pull-left"><i
+                        class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span></br>
                 <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %} </span>
                 <span class="pull-left announce"><i class="fa fa-globe"></i> {% trans "Announced to Users" %}</span>
-                <div class="clearfix"></div></br><center>
-                <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg">{% trans "Start" %} </button></center>
+                <div class="clearfix"></div>
+                </br>
+                <center>
+                    <button type="submit" onclick="window.location.href='/hunt';"
+                            class="btn btn-primary btn-lg">{% trans "Start" %} </button>
+                </center>
             </div>
         </div>
-    </div>   
+    </div>
 </div>
