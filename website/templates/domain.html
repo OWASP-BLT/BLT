@@ -7,45 +7,45 @@
 {% providers_media_js %}
 {% block style %}
     .alt-img{
-        padding-top: 25px;
-        width: 100px;
-        filter: blur(2px);
-        -webkit-filter:blur(2px);
-        display: none;
+    padding-top: 25px;
+    width: 100px;
+    filter: blur(2px);
+    -webkit-filter:blur(2px);
+    display: none;
     }
     .header {
-        display: inline-flex;
+    display: inline-flex;
     }
     .header h3 {
-        padding-left: 20px;
-        margin-top: 30px;        
+    padding-left: 20px;
+    margin-top: 30px;
     }
     .panel-body .list-group-item {
-        display: inline-flex;
-        width: 100%;
-        height: 120px;
+    display: inline-flex;
+    width: 100%;
+    height: 120px;
     }
     .header h3 a,
     .panel-body .list-group-item a {
-        text-decoration: none;
+    text-decoration: none;
     }
     .badge {
-        margin-top: 15px;
+    margin-top: 15px;
     }
     button.btn-lg {
-        margin-top: 25px;
+    margin-top: 25px;
     }
     .nav-tabs > li {
-        float:none;
-        display:inline-block;        
-        zoom:1;
+    float:none;
+    display:inline-block;
+    zoom:1;
     }
     .nav-tabs {
-        text-align:center;
+    text-align:center;
     }
     .charts {
-        margin-top: 50px;
-        margin-bottom: 100px;
+    margin-top: 50px;
+    margin-bottom: 100px;
     }
 {% endblock %}
 {% block content %}
@@ -53,15 +53,17 @@
     <div class="jumbotron">
         <div class="row">
             <div class="col-lg-10 col-md-10 header">
-                <img src="{{domain.get_logo}}" height="100" onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
+                <img src="{{ domain.get_logo }}" height="100"
+                     onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
                 <img src="{% static 'img/logo-small-transparent.png' %}" class="alt-img">
                 <h3>
-                    <a href="http://{{domain}}" target="/new">{{name}}</a><br/>
+                    <a href="http://{{ domain }}" target="/new">{{ name }}</a><br/>
                     {% if domain.email %}
                         <small>
                             [{{ domain.email|obfuscate_mailto }}]
                             {% if domain.email_event %}
-                                Last email {{domain.email_event|default:""}} {{domain.modified|timesince }} ago | Clicks {{domain.clicks|default:"0"}}
+                                Last email {{ domain.email_event|default:"" }} {{ domain.modified|timesince }} ago |
+                                Clicks {{ domain.clicks|default:"0" }}
                             {% endif %}
                         </small>
                     {% endif %}
@@ -71,9 +73,10 @@
                 <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
                     <input type="hidden" name="cmd" value="_s-xclick">
                     <input type="hidden" name="hosted_button_id" value="SC7E9NRCWHGTL">
-                    <input type="hidden" name="hcustom" value="{{domian.name}}">
+                    <input type="hidden" name="hcustom" value="{{ domian.name }}">
                     <button type="submit" class="btn btn-danger btn-lg pull-right">
-                    <i class="fa fa-envelope fa-lg"></i> Subscribe to {{name}} bugs</button>
+                        <i class="fa fa-envelope fa-lg"></i> Subscribe to {{ name }} bugs
+                    </button>
                 </form>
             </div>
         </div>
@@ -96,15 +99,16 @@
                 {% endif %}
                 <span>Page {{ opened.number }} of {{ opened.paginator.num_pages }}</span>
                 {% if opened.has_next %}
-                    <a href="?open={{ opened.next_page_number }}"  class="btn btn-default">Next</a>
+                    <a href="?open={{ opened.next_page_number }}" class="btn btn-default">Next</a>
                 {% endif %}
             </div>
             <ul class="nav nav-tabs" role="tablist">
                 <li role="presentation" class="active">
-                    <a href="#open" aria-controls="home" role="tab" data-toggle="tab">Open [{{opened_net.count}}]</a>
+                    <a href="#open" aria-controls="home" role="tab" data-toggle="tab">Open [{{ opened_net.count }}]</a>
                 </li>
                 <li role="presentation">
-                    <a href="#closed" aria-controls="profile" role="tab" data-toggle="tab">Closed [{{closed_net.count}}]</a>
+                    <a href="#closed" aria-controls="profile" role="tab" data-toggle="tab">Closed
+                        [{{ closed_net.count }}]</a>
                 </li>
             </ul>
 
@@ -115,16 +119,16 @@
                             {% include '_activity.html' %}
                         {% endfor %}
                     </div>
-                        <div class="text-center">
-                            {% if opened.has_previous %}
-                                <a href="?open={{ opened.previous_page_number }}" class="btn btn-default">Prev</a>
-                            {% endif %}
-                            <span>Page {{ opened.number }} of {{ opened.paginator.num_pages }}</span>
-                            {% if opened.has_next %}
-                                <a href="?open={{ opened.next_page_number }}"  class="btn btn-default">Next</a>
-                            {% endif %}
-                        </div>
-                    <br><br>  
+                    <div class="text-center">
+                        {% if opened.has_previous %}
+                            <a href="?open={{ opened.previous_page_number }}" class="btn btn-default">Prev</a>
+                        {% endif %}
+                        <span>Page {{ opened.number }} of {{ opened.paginator.num_pages }}</span>
+                        {% if opened.has_next %}
+                            <a href="?open={{ opened.next_page_number }}" class="btn btn-default">Next</a>
+                        {% endif %}
+                    </div>
+                    <br><br>
                 </div>
                 <div role="tabpanel" class="tab-pane" id="closed">
                     <div class="list-group">
@@ -132,36 +136,36 @@
                             {% include '_activity.html' %}
                         {% endfor %}
                     </div>
-                        <div class="text-center">
-                            {% if closed.has_previous %}
-                                <a href="?close={{ closed.previous_page_number }}" class="btn btn-default">Prev</a>
-                            {% endif %}
-                            <span>Page {{ closed.number }} of {{ closed.paginator.num_pages }}</span>
-                            {% if closed.has_next %}
-                                <a href="?close={{ closed.next_page_number }}"  class="btn btn-default">Next</a>
-                            {% endif %}
-                        </div>
-                    <br><br>  
+                    <div class="text-center">
+                        {% if closed.has_previous %}
+                            <a href="?close={{ closed.previous_page_number }}" class="btn btn-default">Prev</a>
+                        {% endif %}
+                        <span>Page {{ closed.number }} of {{ closed.paginator.num_pages }}</span>
+                        {% if closed.has_next %}
+                            <a href="?close={{ closed.next_page_number }}" class="btn btn-default">Next</a>
+                        {% endif %}
+                    </div>
+                    <br><br>
                 </div>
             </div>
         </div>
         <div class="col-lg-3">
-            <h4 class="text-center">Top Bug Hunters for {{name}}</h4>
+            <h4 class="text-center">Top Bug Hunters for {{ name }}</h4>
             <div class="list-group">
                 {% if leaderboard %}
                     {% for leader in leaderboard %}
                         <div class="list-group-item">
                             {% if leader.socialaccount_set.all.0.get_avatar_url %}
-                                <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
+                                <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" width="50" height="50">
                             {% else %}
                                 <img src="{% gravatar_url leader.email 50 %}" width="50" height="50">
                             {% endif %}
-                            <a href="/profile/{{leader.username}}">{{leader.username}}</a>
-                            <span class="badge">{{leader.total}} bug{{leader.total|pluralize}}</span>
+                            <a href="/profile/{{ leader.username }}">{{ leader.username }}</a>
+                            <span class="badge">{{ leader.total }} bug{{ leader.total|pluralize }}</span>
                         </div>
                     {% endfor %}
                 {% else %}
-                Leaderboard reset for {% now "F" %}. Be first to find issues!
+                    Leaderboard reset for {% now "F" %}. Be first to find issues!
                 {% endif %}
             </div>
         </div>
@@ -169,8 +173,8 @@
         <div class="col-lg-3 col-md-3 ">
             {% if domain.webshot %}
                 <div class="col-lg-12">
-                    <a href="https://{{domain}}" target="_new">
-                        <img src="{{domain.webshot.url}}">
+                    <a href="https://{{ domain }}" target="_new">
+                        <img src="{{ domain.webshot.url }}">
                     </a>
                 </div>
             {% endif %}
@@ -190,17 +194,15 @@
 
         {% for i in pie_chart %}
             pie[{{i.label}}] = {{i.c}};
-        {% endfor %} 
+        {% endfor %}
 
-        if (current_month - 6 < 0)
-        {
+        if (current_month - 6 < 0) {
             months = all_months.slice(current_month - 6);
             months = months.concat(all_months.slice(0, current_month));
             data = all_data.slice(current_month - 6);
             data = data.concat(all_data.slice(0, current_month));
         }
-        else
-        {
+        else {
             months = all_months.slice(current_month - 6, current_month);
             data = all_data.slice(current_month - 6, current_month);
         }
@@ -238,7 +240,7 @@
                 scales: {
                     yAxes: [{
                         ticks: {
-                            beginAtZero:true,
+                            beginAtZero: true,
                             fixedStepSize: 1
                         }
                     }],
@@ -255,7 +257,7 @@
         var myDoughnutChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['General','Number Error','Functional','Performance','Security','Typo','Design'],
+                labels: ['General', 'Number Error', 'Functional', 'Performance', 'Security', 'Typo', 'Design'],
                 datasets: [{
                     data: pie,
                     backgroundColor: [

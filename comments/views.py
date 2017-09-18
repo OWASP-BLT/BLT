@@ -1,16 +1,16 @@
-from django.shortcuts import render
+import json
+import os
+
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import HttpResponseRedirect, HttpResponse
-from .models import Comment
-from website.models import Issue, UserProfile
 from django.contrib.auth.models import User
-from django.shortcuts import render, get_object_or_404
 from django.core.mail import send_mail
+from django.shortcuts import HttpResponse
+from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.utils.html import escape
 
-import os
-import json
+from website.models import Issue
+from .models import Comment
 
 
 @login_required(login_url='/accounts/login/')
@@ -38,7 +38,7 @@ def add_comment(request):
                         item[1:], item[1:])
 
             new_text = new_text + " " + item
-            new_msg  = new_msg + " " + msg
+            new_msg = new_msg + " " + msg
 
         for obj in user_list:
             msg_plain = render_to_string(
@@ -59,7 +59,7 @@ def add_comment(request):
         comment.save()
         all_comment = Comment.objects.filter(issue=issue)
     return render(request, 'comments.html', {'all_comment': all_comment,
-                                             'user': request.user},)
+                                             'user': request.user}, )
 
 
 @login_required(login_url='/accounts/login')
@@ -77,7 +77,7 @@ def delete_comment(request):
         comment.delete()
     return render(request, 'comments.html', {'all_comment': all_comment,
                                              'user': request.user,
-                                             'show': show,},)
+                                             'show': show, }, )
 
 
 @login_required(login_url="/accounts/login/")
@@ -90,7 +90,7 @@ def edit_comment(request, pk):
         comment.save()
         all_comment = Comment.objects.filter(issue=issue)
     return render(request, 'comments.html', {'all_comment': all_comment,
-                                             'user': request.user},)
+                                             'user': request.user}, )
 
 
 @login_required(login_url="/accounts/login/")
@@ -105,14 +105,12 @@ def reply_comment(request, pk):
         reply_text = request.GET.get('text_comment')
         reply_text = escape(reply_text)
         comment = Comment(author=author, author_url=author_url,
-                          issue=issue, text=reply_text,parent=parent_obj)
+                          issue=issue, text=reply_text, parent=parent_obj)
         comment.save()
         all_comment = Comment.objects.filter(issue=issue)
     return render(request, 'comments.html', {'all_comment': all_comment,
                                              'user': request.user,
-                                             'show': show},)
-
-
+                                             'show': show}, )
 
 
 @login_required(login_url='/accounts/login')

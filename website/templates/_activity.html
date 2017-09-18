@@ -2,29 +2,34 @@
 <div class="list-group-item activity-strip">
     <div class="activity-strip-section">
         {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
-            <img src="{{activity.user.socialaccount_set.all.0.get_avatar_url}}" width="100" class="img-responsive img-rounded">
+            <img src="{{ activity.user.socialaccount_set.all.0.get_avatar_url }}" width="100"
+                 class="img-responsive img-rounded">
         {% else %}
             <img src="{% gravatar_url activity.user.email 100 %}" width="100" class="img-responsive img-rounded">
         {% endif %}
 
         <div class="info">
             <a href="/domain/{{ activity.domain_name }}">
-                <img src="http://www.{{activity.domain_name}}/favicon.ico" height="25" onerror="this.onerror=null; this.style.display='none';">
+                <img src="http://www.{{ activity.domain_name }}/favicon.ico" height="25"
+                     onerror="this.onerror=null; this.style.display='none';">
             </a>
             <a href="{{ activity.get_absolute_url }}">{{ activity.description|truncatechars:30 }}</a>
             {% if activity.status == "open" %}
-                <span class="label label-success text-capitalize">{{activity.status}}</span>
+                <span class="label label-success text-capitalize">{{ activity.status }}</span>
             {% else %}
-                <span class="label label-danger text-capitalize">{{activity.status}}</span>
+                <span class="label label-danger text-capitalize">{{ activity.status }}</span>
             {% endif %}
-            <span class="label label-info bug-type">{{activity.get_label_display}}</span>
+            <span class="label label-info bug-type">{{ activity.get_label_display }}</span>
             <div class="small">
-                <a href="{{ activity.user.get_absolute_url }}" data-toggle="popover" data-tag="{{activity.user.userprofile.get_title_display}}">
+                <a href="{{ activity.user.get_absolute_url }}" data-toggle="popover"
+                   data-tag="{{ activity.user.userprofile.get_title_display }}">
                     {{ activity.user }}
                 </a>
-                found a bug on <a href="/domain/{{ activity.domain_name }}">{{ activity.domain_title }}</a> {{ activity.created|timesince }} ago
+                found a bug on <a
+                    href="/domain/{{ activity.domain_name }}">{{ activity.domain_title }}</a> {{ activity.created|timesince }}
+                ago
             </div>
-            <a class="comment_link" href="{{activity.get_absolute_url }}#comments">
+            <a class="comment_link" href="{{ activity.get_absolute_url }}#comments">
                 {{ activity.comments.all|length }} comments
             </a>
         </div>

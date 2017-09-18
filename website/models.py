@@ -1,28 +1,22 @@
-import hashlib
-import urllib
-
-from django.db import models
-from django.contrib.auth.models import User
-from django.conf import settings
-from allauth.account.signals import user_signed_up, user_logged_in
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from urlparse import urlparse
-from django.db.models import signals
 import os
-import urllib2
-import tweepy
-import tempfile
-from django.core.files.storage import default_storage
-from django.core.exceptions import ValidationError
-from unidecode import unidecode
-from django.core.files.base import ContentFile
+from urlparse import urlparse
+
 import requests
+import tweepy
 from PIL import Image
-from django.db.models import Count
-from colorthief import ColorThief
-from django.utils import timezone
 from annoying.fields import AutoOneToOneField
+from colorthief import ColorThief
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.db import models
+from django.db.models import Count
+from django.db.models import signals
+from django.db.models.signals import post_save
+from unidecode import unidecode
+
 
 class Domain(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -138,6 +132,7 @@ class Issue(models.Model):
     github_url = models.URLField(default="", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
+
     def __unicode__(self):
         return self.description
 
@@ -165,7 +160,7 @@ class Issue(models.Model):
         prefix = "Bug found on @"
         spacer = " | "
         msg = prefix + self.domain_title + spacer + self.description[:140 - (
-        len(prefix) + len(self.domain_title) + len(spacer) + len(issue_link))] + issue_link
+            len(prefix) + len(self.domain_title) + len(spacer) + len(issue_link))] + issue_link
         return msg
 
     def get_ocr(self):
@@ -296,7 +291,7 @@ class UserProfile(models.Model):
         (4, 'Platinum'),
     )
     follows = models.ManyToManyField('self', related_name='follower', symmetrical=False, blank=True)
-    user = AutoOneToOneField('auth.user',related_name="userprofile")
+    user = AutoOneToOneField('auth.user', related_name="userprofile")
     user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
     title = models.IntegerField(choices=title, default=0)
     winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

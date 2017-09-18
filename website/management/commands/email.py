@@ -1,13 +1,6 @@
-from django.core.management.base import BaseCommand, CommandError
-from website.models import Points, Domain, Issue
-from django.contrib.auth.models import User
 import datetime
-from django.template.loader import render_to_string
-from django.db.models import Sum, Count
-from itertools import chain
-from itertools import groupby
-from operator import attrgetter
-from django.core.mail import send_mail
+
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
@@ -17,7 +10,7 @@ class Command(BaseCommand):
         today = datetime.date.today()
         # upload users to mailchimp
         # send from mailchimp
-        
+
         # if today.day == 1:
         #     first = today.replace(day=1)
         #     lastMonth = first - datetime.timedelta(days=1)
