@@ -27,6 +27,10 @@
 .heading {
     font-weight: 300;
 }
+.navbar
+{
+   -webkit-backface-visibility: hidden;
+}
 .navbar-static-top {
     margin-bottom: 0px;
 }
