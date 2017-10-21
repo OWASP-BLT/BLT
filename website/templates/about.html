@@ -2,241 +2,66 @@
 {% load gravatar %}
 {% load staticfiles %}
 {% load humanize %}
-{% block content %}
-    <style>
-    body {
-    font-family: sans-serif;
-    }
-    thead {
-    padding: 2px;
-    text-align: right;
-    }
-    td {
-    padding: 2px;
-    text-align: center;
-    }
-    tbody {
-    text-align: center;
-    }
-    
-    h1 {
-    background-color: transparent;
-    padding-top: 0px;
-    padding-right: 0px;
-    padding-bottom: .5px;
-    padding-left: 0px;
-    border-style: outset;
-    border-color: #FFFFFF;
-    border-bottom: 1px solid #ccc; line-height: 1.8em;
-    border-right-style: none;
-    }
-    h2 {
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-    font-size: 25px;
-    border-collapse: collapse;
-    width: 100%;
-    text-align: left;
-    }
-    
-    li {
-    font-size: 15px;
-    }
-    
-    h3 {
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-    font-size: 25px;
-    border-collapse: collapse;
-    width: 100%;
-    text-align: left;
-    }
-    
-    h4 {
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-    font-size: 22px;
-    border-collapse: collapse;
-    width: 100%;
-    text-align: left;
-    }
-    
-    #testers {
-    font-size: 22px;
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-    }
 
-    page-header {
-    font-size: 20px;
-    font-color: green;
-    }
-    
-    </style>
+
+
+{% block content %}
 
     <div class="row">
         <div class="col-lg-6">
-            <h1 class="page-header">About BugHeist</h1>
-        <p>
-        <p1>Software code allows us to buy a gift for Mom or Dad on amazon.com in 7 seconds, watch our favorite “House of Cards” episode on Netflix or read Yelp reviews about a new restaurant.  
-        <p>
-        When we can’t access the information we’re looking for on the internet within seconds, <i>we are not happy.</i><p>
+            <h1>About BugHeist</h1>
+            <p>Software code allows us to buy a gift for Mom or Dad on amazon.com in 7 seconds, watch our favorite
+                “House of Cards” episode on Netflix or read Yelp reviews about a new restaurant.</p>
 
-        <p>This is where you come into the picture.</p>
+            <p>When we can’t access the information we’re looking for on the internet within seconds, <i>we are not
+                happy.</i>
+            <p>
 
-        <p>BugHeist wants you to identify the software (and hardware) bugs that delay downloads, freeze screens, create payloads that deliver malware to websites and generate other issues.</p>
+            <p>This is where you come into the picture.</p>
 
-        </p>
-        <h2><strong>What’s in it for you?</strong></h2>
-        <p> 
-        <ul>
-        <li>Points.</li>
-        <li>Money if you join a BugHeist Sponsored Bug Hunt.</li>
-        <li>Jackpot money listed on the Leaderboard.</li>
-        <li>Money if someone tips you for finding a bug through the tip button.</li>
-        <li>Experience to add to your résumé or portfolio.</li> 
+            <p>BugHeist wants you to identify the software (and hardware) bugs that delay downloads, freeze screens,
+                create payloads that deliver malware to websites and generate other issues.</p>
+
+            <h2><strong>What’s in it for you?</strong></h2>
+            <ul>
+                <li>Points.</li>
+                <li>Money if you join a BugHeist Sponsored Bug Hunt.</li>
+                <li>Jackpot money listed on the Leaderboard.</li>
+                <li>Money if someone tips you for finding a bug through the tip button.</li>
+                <li>Experience to add to your résumé or portfolio.</li>
             </ul>
-</p>
-<h3><strong>How it Works</strong></h3>
-<p>
 
-<div id="testers"><strong>Testers</strong></div>
-    <ol>
+            <h3><strong>How it Works</strong></h3>
 
-    <li>Create a User Account to log into BugHeist.</li>
+            <h4><strong>Testers</strong></h4>
+            <ol>
+                <li>Create a User Account to log into BugHeist.</li>
+                <li>Describe the software or hardware bug you found.</li>
+                <li>Attach a screenshot of the bug.</li>
+                <li>Submit the information.</li>
+                <li>Win money through company-sponsored Bug Hunts, tips or the Grand Prize/Jackpot.We may also have
+                    "heists" where each bug is worth a specific amount based on what the company sets.
+                </li>
+                <li>If you participate in BugHeist’s sponsored Bug Hunts, you could win prize money known as tips.</li>
+            </ol>
 
-    <li>Describe the software or hardware bug you found.</li>
+            <h4><strong>Organizations</strong></h4>
 
-    <li>Attach a screenshot of the bug.</li>
+            We want everyone to love your website.
+            <p>You want to keep your customers happy by giving them a consistent bug-free user experience. BugHeist
+                offers monthly Bug Hunts through 4 different subscription plans to help you achieve this.</p>
 
-    <li>Submit the information.</li>
-    
-    <li>Win money through company-sponsored Bug Hunts, tips or the Grand Prize/Jackpot. 
-    We may also have "heists" where each bug is worth a specific amount based on what the company sets.</li>  
-
-    <li>If you participate in BugHeist’s sponsored Bug Hunts, you could win prize money known as tips. (confirm/update)</li></ol></p>
-
-<h4><strong>Organizations</strong></h4>
-
-We want everyone to love your website.
-<p>
-You want to keep your customers happy by giving them a consistent bug-free user experience. BugHeist offers monthly Bug Hunts through 4 different subscription plans to help you achieve this.
-</p>
-<h1 class="page-header">Subscriptions:</h1>
-            </div>
+            <h1>Subscriptions:</h1>
         </div>
-        <div class="row">
-            <div class="col-lg-3 col-md-6">
-                <div class="panel" style="background-color:#F76B78">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <img src="{% static 'img/flea.svg' %}" width="100" height="100">
-                            </div>
-                            <div class="col-xs-9 text-right" style="color:white;">
-                                <div class="huge">Flea</div>
-                                <span style="font-size:24pt">$9</span> / month
-                            </div>
-                        </div>
-                    </div>
-                    <div class="panel-footer">
-                        <span class="pull-left" ><i class="fa fa-balance-scale"></i> $4 Bugheist / $5 tips</span>
-                        <span class="pull-right"></span>
-                        <div class="clearfix"></div></br><center>
-                        <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg " id="btn" style="background-color:#F76B78;border-color:#F76B78">Start</button></center>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="panel"  style="background-color:#DC4353">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3" >
-                                <img src="{% static 'img/ant.svg' %}" width="100" height="100">
-                            </div>
-                            <div class="col-xs-9 text-right " style="color:white;">
-                                <div class="huge">Ant</div>
-                                <span style="font-size:24pt">$99</span> / month
-                            </div>
-                        </div>
-                    </div>
-                    <div class="panel-footer">
-                        <span class="pull-left" ><i class="fa fa-balance-scale" style="width:20px;"></i> $49 Bugheist / $50 tips</span></br>
-                        <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> Weekly Announcement</span>
-                        <div class="clearfix"></div></br><center>
-                        <button type="submit" onclick="window.location.href='/hunt';"  onclick="changeValue(this)" class="btn btn-primary btn-lg " style="background-color:#DC4353;border-color:#DC4353">Start </button></center>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="panel" style="background-color:#C41E2E ">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <img src="{% static 'img/wasp.svg' %}" width="100" height="100">
-                            </div>
-                            <div class="col-xs-9 text-right" style="color:white;">
-                                <div class="huge">Wasp</div>
-                                <span style="font-size:24pt">$499</span> / month
-                            </div>
-                        </div>
-                    </div>
-                    <div class="panel-footer">
-                        <span class="pull-left" ><i class="fa fa-balance-scale" style="width:20px;"></i> $99 Bugheist / $400 tips</span></br>
-                        <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> Weekly Announcement</span>
-                        <span class="pull-left" style="font-size:20pt;"><i class="fa fa-globe"  style="width:25px;"></i> Homepage Featured</span>
-                        <div class="clearfix"></div></br><center>
-                        <button type="submit" onclick="window.location.href='/hunt';"  class="btn btn-primary btn-lg " style="background-color:#C41E2E;border-color:#C41E2E">Start </button></center>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="panel" style="background-color:#9B0C1A">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <img src="{% static 'img/scorpion.svg' %}" width="100" height="100">
-                            </div>
-                            <div class="col-xs-9 text-right" style="color:white;">
-                                <div class="huge">Scorpion</div>
-                                <span style="font-size:24pt">$1,499</span> / month
-                            </div>
-                        </div>
-                    </div>
-                    <div class="panel-footer">
-                        <span class="pull-left" ><i class="fa fa-balance-scale" style="width:20px;"></i> $199 Bugheist / $1,300 tips</span></br>
-                        <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> Weekly Announcement</span>
-                        <span class="pull-left" style="font-size:20pt;"><i class="fa fa-globe"  style="width:25px;"></i> Homepage Featured</span>
-                        <span class="pull-left" style="font-size:23pt;"><i class="fa fa-trophy"  style="width:25px;"></i> Monthly Hackathon</span>
-                        <div class="clearfix"></div></br><center>
-                        <button type="submit"  onclick="window.location.href='/hunt';" class="btn btn-primary btn-lg " style="background-color:#9B0C1A;border-color:#9B0C1A">Start </button></center>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-12">
-                <h2>Want to kick the tires before you make a purchase? BugHeist shares up to 5 software bugs fee-free through a Trial Bug Hunt. 
-                
-                Test-drive BugHeist here <button type="submit"  onclick="window.location.href='/hunt';" class="btn btn-primary btn-lg " >Start</button>
-            </div>
-        </div>
-    </form>
+    </div>
 
-                </div>
-            </div>
+    {% include '_subscriptions.html' %}
+
+    <div class="row">
+        <div class="col-lg-12">
+            <h3>Want to kick the tires before you make a purchase? BugHeist shares up to 5 software bugs fee-free
+                through a Trial Bug Hunt.</h3>
+            Test-drive BugHeist here <a href="/hunt" class="btn btn-primary submit_button">Start</a>
+        </div>
+    </div>
 {% endblock %}
-{% block after_js %}
-
-    <script src="{% static "js/bootstrap-slider.js" %}"></script>
-    <script>
-    $('.btn').on('click', function() { $("#form1").valid(); });
-    function numberWithCommas(x) {
-    var parts = x.toString().split(".");
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return parts.join(".");
-    }
-    $(".slider").slider({
-    tooltip: 'always',
-    formatter: function (value) {
-    return '$'+numberWithCommas(value);
-    }
-    });
-    </script>
-{% endblock %} 

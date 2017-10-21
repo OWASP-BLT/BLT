@@ -1,50 +1,43 @@
 {% load gravatar %}
-<div class="list-group-item" style="height:96px; overflow:hidden;">
-    <div style=" overflow:hidden; float:left; width:100%; height: 62px; clear:both; display:inline; padding-right:110px;" >
-        <div style="float:left;margin-right:10px">
-            {% if activity.actor.socialaccount_set.all.0.get_avatar_url %}
-                <img src="{{activity.actor.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
-            {% else %}
-                {% gravatar activity.actor.email 50 %}
-            {% endif %}
-        </div>
-        {% if activity.verb == "logged in" %}
-            <i class="fa fa-sign-in fa-fw"></i>
-            {% elif activity.verb == "found a bug on website" %}
-            <i class="fa fa-bug fa-fw"></i>
-        {% endif %}
-        
-        {% if activity.action_object %}
-            {% if activity.action_object.get_absolute_url %}
-                <a href="{{ activity.action_object.get_absolute_url }}">{{ activity.action_object }}</a>
-            {% else %}
-                <a href="{{ activity.action_object_url }}">{{ activity.action_object }}</a>
-            {% endif %}
-        {% endif %}
-        {% if activity.action_object and activity.target %}to{% endif %}
-        {% if activity.target %}
-            {% if activity.target.get_absolute_url %}
-                <a href="/domain/{{ activity.target.domain_name }}">
-                    <img src="http://www.{{activity.target.domain_name}}/favicon.ico" height="25" onerror="this.onerror=null; this.style.display ='none';">
-                </a>
-                <a href="{{ activity.target.get_absolute_url }}" style="margin-left:10px;">{{ activity.target }}</a>
-            {% else %}
-                <a href="{{ activity.target_url }}"> - {{ activity.target }}</a>
-            {% endif %}
-        {% endif %}
-    </div>
-    <div style="clear:both; width:50%; display:inline-block; margin-top:2px; ">
-        {% if activity.actor.get_absolute_url %}
-            <a href="{{ activity.actor.get_absolute_url }}">{{ activity.actor }}</a>
+<div class="list-group-item activity-strip">
+    <div class="activity-strip-section">
+        {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
+            <img src="{{ activity.user.socialaccount_set.all.0.get_avatar_url }}" width="100"
+                 class="img-responsive img-rounded">
         {% else %}
-            <a href="{{ activity.actor_url }}">{{ activity.actor }}</a>
+            <img src="{% gravatar_url activity.user.email 100 %}" width="100" class="img-responsive img-rounded">
         {% endif %}
-        {{ activity.verb }} <a href="/domain/{{ activity.target.domain_name }}">{{ activity.target.domain_title }}</a> {{ activity.timestamp|timesince }} ago
+
+        <div class="info">
+            <a href="/domain/{{ activity.domain_name }}">
+                <img src="http://www.{{ activity.domain_name }}/favicon.ico" height="25"
+                     onerror="this.onerror=null; this.style.display='none';">
+            </a>
+            <a href="{{ activity.get_absolute_url }}">{{ activity.description|truncatechars:30 }}</a>
+            {% if activity.status == "open" %}
+                <span class="label label-success text-capitalize">{{ activity.status }}</span>
+            {% else %}
+                <span class="label label-danger text-capitalize">{{ activity.status }}</span>
+            {% endif %}
+            <span class="label label-info bug-type">{{ activity.get_label_display }}</span>
+            <div class="small">
+                <a href="{{ activity.user.get_absolute_url }}" data-toggle="popover"
+                   data-tag="{{ activity.user.userprofile.get_title_display }}">
+                    {{ activity.user }}
+                </a>
+                found a bug on <a
+                    href="/domain/{{ activity.domain_name }}">{{ activity.domain_title }}</a> {{ activity.created|timesince }}
+                ago
+            </div>
+            <a class="comment_link" href="{{ activity.get_absolute_url }}#comments">
+                {{ activity.comments.all|length }} comments
+            </a>
+        </div>
     </div>
-    <div style="float:right;  display:block; margin-top: -60px; overflow:hidden; height: 72px;">
-        {% if activity.target.screenshot %}
-            <a href="{{ activity.target.get_absolute_url }}">
-                <img src="{{ activity.target.screenshot.url }}" width="100" style="float:right;" >
+    <div class="activity-screenshot">
+        {% if activity.screenshot %}
+            <a href="{{ activity.get_absolute_url }}">
+                <img src="{{ activity.screenshot.url }}">
             </a>
         {% endif %}
     </div>

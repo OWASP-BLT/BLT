@@ -1,0 +1,258 @@
+# Chinese Translations.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Sourav Badami <souravbadami@gmail.com>, 2017.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-07-13 02:43+0530\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: bugheist/settings.py:145
+msgid "English"
+msgstr "英语"
+
+#: bugheist/settings.py:146
+msgid "French"
+msgstr "法国"
+
+#: bugheist/settings.py:147
+msgid "Chinese"
+msgstr "中文"
+
+#: website/templates/_subscriptions.html:71
+#: website/templates/_subscriptions.html:92
+#: website/templates/_subscriptions.html:113
+msgid "Featured on Homepage"
+msgstr "在主页上精选"
+
+#: website/templates/_subscriptions.html:74
+#: website/templates/_subscriptions.html:95
+#: website/templates/_subscriptions.html:117
+msgid "Start"
+msgstr "开始"
+
+#: website/templates/_subscriptions.html:93
+#: website/templates/_subscriptions.html:114
+msgid "Featured in Newsletter"
+msgstr "特刊在通讯"
+
+#: website/templates/_subscriptions.html:115
+msgid "Announced to Users"
+msgstr "向用户宣布"
+
+#: website/templates/account/login.html:76
+msgid "Sign In"
+msgstr "签到"
+
+#: website/templates/account/login.html:77
+msgid "Forgot Password?"
+msgstr "忘记密码？"
+
+#: website/templates/account/logout.html:6
+msgid "Sign Out"
+msgstr "登出"
+
+#: website/templates/account/logout.html:7
+msgid "Are you sure?"
+msgstr "你确定？"
+
+#: website/templates/account/logout.html:13
+msgid "Yes"
+msgstr "是"
+
+#: website/templates/account/logout.html:14
+msgid "Cancel"
+msgstr "取消"
+
+#: website/templates/account/password_change.html:22
+#: website/templates/account/password_change.html:41
+#: website/templates/account/password_reset_from_key.html:26
+#: website/templates/account/password_reset_from_key.html:50
+#: website/templates/base.html:83 website/templates/base_home.html.py:86
+msgid "Change Password"
+msgstr "更改密码"
+
+#: website/templates/account/password_reset.html:27
+msgid "Password Reset"
+msgstr "重设密码"
+
+#: website/templates/account/password_reset.html:29
+msgid ""
+"Forgotten your password? Enter your e-mail address below, and we'll send you "
+"an e-mail allowing you to reset it."
+msgstr ""
+"忘记了你的密码？在下面输入您的电子邮件地址，我们将向您发送一封电子邮件，允许"
+"您重置它。"
+
+#: website/templates/account/password_reset.html:38
+msgid "Reset My Password"
+msgstr "重置我的密码"
+
+#: website/templates/account/password_reset_from_key.html:24
+msgid "Bad Token"
+msgstr "坏令牌"
+
+#: website/templates/account/password_reset_from_key.html:53
+msgid "Your password is now changed!"
+msgstr "您的密码现在已更改！"
+
+#: website/templates/account/signup.html:22
+#: website/templates/account/signup.html:65
+msgid "Sign Up"
+msgstr "注册"
+
+#: website/templates/account/signup.html:67
+#, python-format
+msgid "Already have an account? <a href=\"%(login_url)s\">Login</a>."
+msgstr "已经有账户？ <a href=\"%(login_url)s\">登录</a>."
+
+#: website/templates/base.html:58 website/templates/base_home.html.py:60
+msgid "Add to chrome"
+msgstr "添加到 chrome"
+
+#: website/templates/base.html:59 website/templates/base_home.html.py:61
+msgid "Social"
+msgstr "社会"
+
+#: website/templates/base.html:60 website/templates/base_home.html.py:62
+#: website/templates/base_home.html:144
+msgid "Report Bug"
+msgstr "报告软件缺陷"
+
+#: website/templates/base.html:61 website/templates/base_home.html.py:63
+msgid "Bug Hunt"
+msgstr "狩猎"
+
+#: website/templates/base.html:78 website/templates/base_home.html.py:81
+msgid "User Profile"
+msgstr "用户资料"
+
+#: website/templates/base.html:89 website/templates/base_home.html.py:92
+msgid "Logout"
+msgstr "登出"
+
+#: website/templates/base.html:95 website/templates/base_home.html.py:98
+msgid "Signup"
+msgstr "注册"
+
+#: website/templates/base.html:96 website/templates/base_home.html.py:99
+msgid "Login"
+msgstr "登录"
+
+#: website/templates/base.html:101 website/templates/base_home.html.py:104
+msgid "Search"
+msgstr "搜索"
+
+#: website/templates/base.html:160 website/templates/base_home.html.py:196
+msgid "About"
+msgstr "关于"
+
+#: website/templates/base.html:161 website/templates/base_home.html.py:197
+msgid "Stats"
+msgstr "统计"
+
+#: website/templates/base.html:179 website/templates/base_home.html.py:215
+msgid "Company Scoreboard"
+msgstr "公司记分牌"
+
+#: website/templates/base.html:180 website/templates/base_home.html.py:216
+msgid "Terms of Service"
+msgstr "服务条款"
+
+#: website/templates/base_home.html:64
+msgid "Tour"
+msgstr "游览"
+
+#: website/templates/base_home.html:124
+msgid "Describe bug issue"
+msgstr "描述错误问题"
+
+#: website/templates/base_home.html:139
+msgid "Upload Screenshot"
+msgstr "上传截图"
+
+#: website/templates/index.html:13
+msgid "Find Bugs, Win Points and Prizes"
+msgstr "查找错误，获胜点和奖品"
+
+#: website/templates/index.html:17
+msgid "Fix issues on websites, apps or hardware (+3 points)"
+msgstr "解决网站，应用或硬件问题（+3分）"
+
+#: website/templates/index.html:18
+msgid "Verify other bug reports(+2 points)"
+msgstr "验证其他错误报告（+2分）"
+
+#: website/templates/index.html:19
+msgid "Invite friends (when they signup , get +1 point)"
+msgstr "邀请朋友（注册时获得+1点）"
+
+#: website/templates/index.html:20
+msgid "Find a bug on a new site or app (+4 points)"
+msgstr "在新的网站或应用程式中查找错误（+4分）"
+
+#: website/templates/index.html:33
+msgid "Number Error"
+msgstr "数字错误"
+
+#: website/templates/index.html:34
+msgid "For pages where you see a number 404, 500."
+msgstr "对于您看到数字404，500的页面。"
+
+#: website/templates/index.html:43
+msgid "Functional"
+msgstr "实用"
+
+#: website/templates/index.html:44
+msgid "Something doesn't work."
+msgstr "某事不行"
+
+#: website/templates/index.html:52
+msgid "Performance"
+msgstr "性能"
+
+#: website/templates/index.html:53
+msgid "Anything over 5 seconds."
+msgstr "超过5秒钟。"
+
+#: website/templates/index.html:65
+msgid "Security"
+msgstr "安全"
+
+#: website/templates/index.html:66
+msgid "Data leaks, exploits or anything smelly."
+msgstr "数据泄漏，漏洞或任何臭味。"
+
+#: website/templates/index.html:74
+msgid "Typo"
+msgstr "错字"
+
+#: website/templates/index.html:75
+msgid "Miss-spellings, miss-grammar and more."
+msgstr "拼写错误，错误语法等等。"
+
+#: website/templates/index.html:83
+msgid "Design"
+msgstr "设计"
+
+#: website/templates/index.html:84
+msgid "Layout, responsiveness and improvements"
+msgstr "布局，响应和改进"
+
+#: website/templates/index.html:96
+msgid "Featured Websites"
+msgstr "特色网站"
+
+#: website/templates/index.html:159
+msgid "Leaderboard"
+msgstr "排行榜"

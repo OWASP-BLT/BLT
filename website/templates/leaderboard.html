@@ -1,32 +1,62 @@
 {% extends "base.html" %}
 {% load gravatar %}
-{% block content %}
-        <div class="row">
-            <div class="col-lg-6">
-                <h1 class="page-header">Global Leaderboard</h1>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-9">
-                <div class="panel panel-default">
 
-                    <div class="panel-body">
-                        <div class="list-group" >
-                            {% for leader in leaderboard %}
-                                <div class="list-group-item">
-                                    {% if leader.socialaccount_set.all.0.get_avatar_url %}
-                                        <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
-                                    {% else %}
-                                        {% gravatar leader.email 50 %}
-                                    {% endif %}
-                                    <a href="/profile/{{leader.username}}" style="margin-left:5px;">{{leader.username}}</a>
-                                    <span class="pull-right text-muted small"><em> {{leader.total_score}} points</em>
-                                    </span>
-                                </div>
-                            {% endfor %}
-                        </div>
+{% block style %}
+    .list-group-item img {
+    width: 50px;
+    height: 50px;
+    }
+    .list-group-item .badge {
+    margin-top: 15px;
+    }
+    .list-group-item a {
+    text-decoration: none;
+    margin-left: 10px;
+    }
+    .silver {
+    background-color: lightblue;
+    color: #333;
+    }
+    .gold {
+    background-color: #D4AF37;
+    color: #333;
+    }
+    .bronze {
+    background-color: #C9AE5D;
+    color: #333;
+    }
+
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-lg-6">
+            <h1 class="page-header">Global Leaderboard</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-9">
+            <div class="list-group">
+                {% for leader in leaderboard %}
+                    <div class="list-group-item">
+                        {% if leader.userprofile.avatar %}
+                            <img src="{{ leader.userprofile.avatar }}" class="img-responsive img-thumbnail">
+                        {% elif leader.socialaccount_set.all.0.get_avatar_url %}
+                            <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}">
+                        {% else %}
+                            <img src="{% gravatar_url leader.email 50 %}">
+                        {% endif %}
+                        <a href="/profile/{{ leader.username }}">{{ leader.username }}</a>
+                        <span class="pull-right badge">{{ leader.total_score }} Points</span>
+                        {% if leader.userprofile.winnings %}
+                            <span class="pull-right badge">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
+                        {% endif %}
+
+                        <span><kbd
+                                class="{{ leader.userprofile.get_title_display }}">{{ leader.userprofile.get_title_display }}</kbd></span>
                     </div>
-                </div>
+                {% endfor %}
             </div>
         </div>
+    </div>
 {% endblock %}

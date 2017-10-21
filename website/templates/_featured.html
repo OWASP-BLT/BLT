@@ -1,0 +1,91 @@
+{% comment %}
+     {% for hunt in hunts %}
+        <div class="col-lg-6 col-md-6">
+            <div class="panel" id="hunt_{{domain.id}}" style="background-color:{{domain.get_color}}">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-xs-3  image_container">
+                            <img src="{{MEDIA_URL}}{{domain.logo}}" id="hunt_image{{domain.id}}"
+                            onerror="this.onerror=null; this.style.display='none';" height="75" width="75">
+                        </div>
+                        <div class="col-xs-9 text-right">
+                            <div class="huge"><span><a href="/domain/{{domain.name}}/">{{domain.get_name}}</a></span></div>
+                            <div>{% if domain.prize %}Grand Prize ${{domain.prize}}{% endif %}</div>
+                        </div>
+                    </div>
+                    <div class="row issue_count">
+                        <div class="col-xs-12 text-right">
+                            Issues 
+                            <span>
+                                <a href="/domain/{{domain.name}}/#open">Open {{domain.open_issues.count}}</a>
+                            </span>
+                            <span>
+                                <a href="/domain/{{domain.name}}/#closed"> Closed {{domain.closed_issues.count}}</a>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <a href="{{domain.url}}" target="_new">
+                    <div class="panel-footer">
+                        <span class="pull-left" id="hunt_link{{domain.id}}" style="color:{{domain.get_color}}">View Website</span>
+                        <span class="pull-right"><i class="fa fa-arrow-circle-right" id="hunt_icon{{domain.id}}" style="color:{{domain.get_color}}"></i></span>
+                        <div class="clearfix"></div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    {% endfor %}
+{% endcomment %}
+
+<div class="col-lg-6 col-md-6">
+    <div class="panel owasp-panel">
+        <div class="panel-heading" style="color:#fff">
+            <div class="row">
+                <div class="col-xs-3 image_container">
+                    <img src="https://www.owasp.org/images/thumb/2/2f/Owasp_logo_flat2_icon.jpg/100px-Owasp_logo_flat2_icon.jpg"
+                         width="75" height="75">
+                </div>
+                <div class="col-xs-8 col-xs-offset-1">
+                    On OWASP.org - testing and reporting all of the salesforce integrations with webforms, and webform
+                    data on the website.
+                    Get a complete list of all of the forms in use which we can pull from the chapter (leaders)
+                    handbook, and the current site.
+                    test each one and file bug reports for them. In particular, each form should be able to do the
+                    following:
+                    Receive the post data accurately
+                    Return to the user's browser the confirmation that it was received on the screen when submitted
+                    along with an issue number.
+                    Issu8 a receipt to the user via email with complete data submitted by the form. If there is credit
+                    card info or personal info, it should be only partial but enough to verify that it was included in
+                    the submission.
+                    There should be a timeline or some kind of data that the user receives in the email to expect a
+                    resolution of their issue, and the forms should be logged in a place where the user can access the
+                    log data through their account, as well as tracked on the resolution and progress of the issue's
+                    progress.
+                </div>
+                <div class="col-xs-12 text-right">
+                    <strong>OWASP Grand Prize $100</strong>
+                </div>
+            </div>
+            <div class="row issue_count">
+                <div class="col-xs-12 text-right">
+                    <span>
+                        <a href="/domain/owasp.org/#open">Open {{ open_issue_owasp }}</a>
+                    </span>
+                    <span>
+                        <a href="/domain/owasp.org/#closed">Closed {{ closed_issue_owasp }}</a>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <a href="https://www.owasp.org/index.php/Bug_Bounty_Projects" target="_new">
+            <div class="panel-footer">
+                <span class="pull-left" style="color:#234082">View Website</span>
+                <span class="pull-right">
+                    <i class="fa fa-arrow-circle-right" style="color:#234082"></i>
+                </span>
+                <div class="clearfix"></div>
+            </div>
+        </a>
+    </div>
+</div>

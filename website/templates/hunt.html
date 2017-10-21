@@ -1,174 +1,152 @@
 {% extends "base.html" %}
 {% load staticfiles %}
+
+{% block style %}
+    .row .col-md-6:nth-child(1) .panel {
+    background-color:#F76B78;
+    }
+    .row .col-md-6:nth-child(2) .panel {
+    background-color:#DC4353;
+    }
+    .row .col-md-6:nth-child(3) .panel {
+    background-color:#C41E2E;
+    }
+    .row .col-md-6:nth-child(4) .panel {
+    background-color:#9B0C1A;
+    }
+    .row .col-md-6:nth-child(1) .panel button {
+    background-color:#F76B78;
+    border-color:#F76B78;
+    }
+    .row .col-md-6:nth-child(2) .panel button {
+    background-color:#DC4353;
+    border-color:#DC4353;
+    }
+    .row .col-md-6:nth-child(3) .panel button {
+    background-color:#C41E2E;
+    border-color:#C41E2E;
+    }
+    .row .col-md-6:nth-child(4) .panel button {
+    background-color:#9B0C1A;
+    border-color:#9B0C1A;
+    }
+    .text-danger {
+    margin-left:0px;
+    }
+    input[type='file'] {
+    height:auto;
+    width:auto;
+    opacity:1;
+    }
+    .slider {
+    width: 100% !important;
+    }
+    .hunt-form .form-group {
+    margin-top: 30px;
+    }
+{% endblock %}
+
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
-    <form role="form" id="form1" action="/hunt/" method="post" enctype="multipart/form-data" >
-        <div class="row">
-            <div class="col-lg-6">
-                <h1 class="page-header">Start a bug hunt!</h1> 
-                All paid plans are currently featured on the homepage under the sponsored bug hunt area.
+    <form role="form" action="/hunt/" method="post" enctype="multipart/form-data" class="hunt-form">
+        {% csrf_token %}
+        <div class="row main">
+            <div class="panel-heading">
+                <div class="panel-title text-center">
+                    <h1 class="title">Start a bug hunt!</h1>
+                    All paid plans are currently featured on the homepage under the sponsored bug hunt area.
+                    <hr/>
+                </div>
             </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-6">
+            <div class="main-issue-form main-center">
                 {% csrf_token %}
                 <input type="hidden" name="plan" value="Flea" id="plan">
                 <div class="form-group">
-                    <label>URL:
-                        {% if not user.is_authenticated %}
-                            <span style="color:#DD4351; margin-left:170px;">* login required</span>
-                        {% endif %}
-                    </label>
-                    <input class="form-control required url" placeholder="Website URL.  e.g.  http://example.com" name="url" value="{{form.url.value|default:""}}">
+                    <div class="input-group">
+                        <span class="input-group-addon">
+                            <i class="fa fa-link" aria-hidden="true"></i>
+                        </span>
+                        <input class="form-control required url" placeholder="http://example.com" name="url"
+                               value="{{ form.url.value|default:"" }}">
+                    </div>
                     {% if form.url.errors %}
-                    <label id="url-error" class="error" for="url">{{form.url.errors}}</label>
+                        <label id="url-error" class="error" for="url">{{ form.url.errors }}</label>
                     {% endif %}
-
                 </div>
                 <div class="form-group">
-                    <label>Logo (square)</label>
-                    <input type="file" name="logo" class="required">
+                    <div class="input-group">
+                        <span class="input-group-addon">
+                            <i class="fa fa-file-picture-o" aria-hidden="true"></i>
+                        </span>
+                        <input type="file" name="logo" class="required form-control">
+                    </div>
                     {% if form.logo.errors %}
-                    <label id="url-error" class="error" for="url">{{form.logo.errors}}</label>
+                        <label id="url-error" class="error" for="url">{{ form.logo.errors }}</label>
                     {% endif %}
                 </div>
 
-                <div class="form-group" style="margin-top:10px;">
-                    <label style="margin-bottom:35px;">Grand Prize:</label>
-                    (Maximum tip Amount, you are encouraged to tip the bug finders, this is the maximum amount they can expect)
-                    <div style="display:inline;margin-left:25px;padding-top:20px;">
-                        <input class="slider" style="width:100%"
-                        type="text"
-                        name="prize"
-                        value="{{form.prize.value|default:'100'}}"
-                        data-provide="slider"
-                        data-slider-min="100"
-                        data-slider-max="10000"
-                        data-slider-step="100"
-                        data-slider-value="{{form.prize.value|default:'100'}}">
-                    </div>{{form.prize.errors}}
+                <div class="form-group">
+                    <strong>Grand Prize:</strong>
+                    <p>(Maximum tip Amount, you are encouraged to tip the bug finders, this is the maximum amount they
+                        can expect)</p>
+                    <div>
+                        <input class="slider"
+                               type="text"
+                               name="prize"
+                               value="{{ form.prize.value|default:'100' }}"
+                               data-provide="slider"
+                               data-slider-min="100"
+                               data-slider-max="10000"
+                               data-slider-step="100"
+                               data-slider-value="{{ form.prize.value|default:'100' }}">
+                    </div>
+                    {{ form.prize.errors }}
                 </div>
-            </div>
-        </div>
-        <div class="row">
-
-            <div class="col-lg-12">
-            Payments are handled through Paypal.  You will be charged from Coderbounty, Inc.  (our current parent company)
-                <h1 class="page-header">Subscription:</h1>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-3 col-md-6">
-                <div class="panel" style="background-color:#F76B78">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <img src="{% static 'img/flea.svg' %}" width="100" height="100">
-                            </div>
-                            <div class="col-xs-9 text-right" style="color:white;">
-                                <div class="huge">Flea</div>
-                                <span style="font-size:24pt">$9</span> / month
-                            </div>
-                        </div>
-                    </div>
-                    <div class="panel-footer">
-                        <span class="pull-left" ><i class="fa fa-balance-scale"></i> $4 Bugheist / $5 tips</span>
-                        <span class="pull-right"></span>
-                        <div class="clearfix"></div></br><center>
-                        <button type="submit" onclick="javascript:document.getElementById('plan').value='Flea'"  class="btn btn-primary btn-lg " id="btn" style="background-color:#F76B78;border-color:#F76B78">Start</button></center>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="panel"  style="background-color:#DC4353">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3" >
-                                <img src="{% static 'img/ant.svg' %}" width="100" height="100">
-                            </div>
-                            <div class="col-xs-9 text-right " style="color:white;">
-                                <div class="huge">Ant</div>
-                                <span style="font-size:24pt">$99</span> / month
-                            </div>
-                        </div>
-                    </div>
-                    <div class="panel-footer">
-                        <span class="pull-left" ><i class="fa fa-balance-scale" style="width:20px;"></i> $49 Bugheist / $50 tips</span></br>
-                        <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> Weekly Announcement</span>
-                        <div class="clearfix"></div></br><center>
-                        <button type="submit" onclick="javascript:document.getElementById('plan').value='Ant'"  onclick="changeValue(this)" class="btn btn-primary btn-lg " style="background-color:#DC4353;border-color:#DC4353">Start </button></center>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="panel" style="background-color:#C41E2E ">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <img src="{% static 'img/wasp.svg' %}" width="100" height="100">
-                            </div>
-                            <div class="col-xs-9 text-right" style="color:white;">
-                                <div class="huge">Wasp</div>
-                                <span style="font-size:24pt">$499</span> / month
-                            </div>
-                        </div>
-                    </div>
-                    <div class="panel-footer">
-                        <span class="pull-left" ><i class="fa fa-balance-scale" style="width:20px;"></i> $99 Bugheist / $400 tips</span></br>
-                        <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> Weekly Announcement</span>
-                        <span class="pull-left" style="font-size:20pt;"><i class="fa fa-globe"  style="width:25px;"></i> Homepage Featured</span>
-                        <div class="clearfix"></div></br><center>
-                        <button type="submit" onclick="javascript:document.getElementById('plan').value='Wasp'"  class="btn btn-primary btn-lg " style="background-color:#C41E2E;border-color:#C41E2E">Start </button></center>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="panel" style="background-color:#9B0C1A">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3">
-                                <img src="{% static 'img/scorpion.svg' %}" width="100" height="100">
-                            </div>
-                            <div class="col-xs-9 text-right" style="color:white;">
-                                <div class="huge">Scorpion</div>
-                                <span style="font-size:24pt">$1,499</span> / month
-                            </div>
-                        </div>
-                    </div>
-                    <div class="panel-footer">
-                        <span class="pull-left" ><i class="fa fa-balance-scale" style="width:20px;"></i> $199 Bugheist / $1,300 tips</span></br>
-                        <span class="pull-left" style="font-size:18pt;"><i class="fa fa-bullhorn"  style="width:25px;"></i> Weekly Announcement</span>
-                        <span class="pull-left" style="font-size:20pt;"><i class="fa fa-globe"  style="width:25px;"></i> Homepage Featured</span>
-                        <span class="pull-left" style="font-size:23pt;"><i class="fa fa-trophy"  style="width:25px;"></i> Monthly Hackathon</span>
-                        <div class="clearfix"></div></br><center>
-                        <button type="submit"  onclick="javascript:document.getElementById('plan').value='Scorpion'" class="btn btn-primary btn-lg " style="background-color:#9B0C1A;border-color:#9B0C1A">Start </button></center>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-12">
-                <h2>Free Plan:</h2>Limited to 5 bugs per month:</br> <button type="submit"  onclick="javascript:document.getElementById('plan').value='Free'" class="btn btn-primary btn-lg " >Start</button>
+                Payments are handled through Paypal. You will be charged from Coderbounty, Inc. (Our current parent
+                company)
+                {% if not user.is_authenticated %}
+                    <br><span class="text-danger">*Login required</span>
+                {% endif %}
             </div>
         </div>
     </form>
+    <h1 class="page-sub-header">Subscription:</h1>
+    {% include '_subscriptions.html' %}
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="free-plan-text">
+                <h2>Free Plan:</h2>
+                <p>Limited to 5 bugs per month:</p>
+            </div>
+            <button type="submit" class="submit_button"
+                    onclick="javascript:document.getElementById('plan').value='Free'" class="btn btn-primary btn-lg">
+                Start
+            </button>
+            <br><br>
+        </div>
+    </div>
 {% endblock %}
-{% block after_js %}
 
+{% block after_js %}
     <script src="{% static "js/bootstrap-slider.js" %}"></script>
+
     <script>
-    $('.btn').on('click', function() { $("#form1").valid(); });
-    function numberWithCommas(x) {
-    var parts = x.toString().split(".");
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return parts.join(".");
-    }
-    $(".slider").slider({
-    tooltip: 'always',
-    formatter: function (value) {
-    return '$'+numberWithCommas(value);
-    }
-    });
+        $('.btn').on('click', function () {
+            $(".hunt-form").valid();
+        });
+
+        function numberWithCommas(x) {
+            var parts = x.toString().split(".");
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            return parts.join(".");
+        }
+
+        $(".slider").slider({
+            tooltip: 'always',
+            formatter: function (value) {
+                return '$' + numberWithCommas(value);
+            }
+        });
     </script>
 {% endblock %}

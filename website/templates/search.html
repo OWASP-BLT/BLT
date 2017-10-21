@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load gravatar %}
+{% load staticfiles %}
+{% load humanize %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-4 col-md-offset-4">
+            <h3 class="text-center">Search for Bugs & Issues</h3>
+            <hr>
+            <form method="GET" action=".">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="query"
+                           value="{% if type != 'label' %}{{ query }}{% endif %}" placeholder="Search for issues...">
+                    <span class="input-group-btn">
+                        <select class="form-control" name="type" style="width:150%">
+                            <option value="issue" selected="selected">Issue</option>
+                            <option value="domain">Domain</option>
+                            <option value="user">User</option>
+                        </select>
+                        <button class="btn btn-default" type="submit">Search</button>
+                    </span>
+                </div>
+            </form>
+            {% if type %}
+                <script type="text/javascript">
+                    $('select').val("{{type}}");
+                </script>
+            {% endif %}
+        </div>
+    </div>
+    {% if query %}
+        <div class="row">
+            {% if issues %}
+                <div class="col-md-10 col-md-offset-1">
+                    {% for activity in issues %}
+                        {% include '_activity.html' %}
+                    {% endfor %}
+                </div>
+            {% elif domains %}
+                <div class="col-md-8 col-md-offset-2">
+                    <div class="list-group">
+                        {% for domain in domains %}
+                            <div class="list-group-item">
+                                <a href="{{ domain.get_absolute_url }}">
+                                    <img src="{{ domain.get_logo }}" height="100"
+                                         onerror="this.onerror=null; this.style.display ='none';">
+                                    <strong>{{ domain.name }}</strong>
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% elif users %}
+                <div class="col-md-8 col-md-offset-2">
+                    <div class="list-group">
+                        {% for user in users %}
+                            <div class="list-group-item">
+                                {% if user.socialaccount_set.all.0.get_avatar_url %}
+                                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" height="50px">
+                                {% else %}
+                                    <img src="{% gravatar_url user.email 50 %}">
+                                {% endif %}
+                                <a href="/profile/{{ user.username }}">{{ user.username }}</a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="col-md-8 col-md-offset-2">
+                    <div class="alert alert-danger text-center" role="alert">Nothing Found!</div>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}

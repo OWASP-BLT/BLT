@@ -1,26 +1,21 @@
-import hashlib
-import urllib
-
-from django.db import models
-from django.contrib.auth.models import User
-from django.conf import settings
-from allauth.account.signals import user_signed_up, user_logged_in
-from actstream import action
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from urlparse import urlparse
-from django.db.models import signals
 import os
-import urllib2
-import tweepy
-import tempfile
-from django.core.files.storage import default_storage
-from django.core.exceptions import ValidationError
-from unidecode import unidecode
-from django.core.files.base import ContentFile
+from urlparse import urlparse
+
 import requests
+import tweepy
 from PIL import Image
+from annoying.fields import AutoOneToOneField
+from colorthief import ColorThief
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.db import models
 from django.db.models import Count
+from django.db.models import signals
+from django.db.models.signals import post_save
+from unidecode import unidecode
 
 
 class Domain(models.Model):
@@ -38,7 +33,6 @@ class Domain(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
-
     def __unicode__(self):
         return self.name
 
@@ -50,25 +44,43 @@ class Domain(models.Model):
     def closed_issues(self):
         return Issue.objects.filter(domain=self).filter(status="closed")
 
-
     @property
     def top_tester(self):
         return User.objects.filter(issue__domain=self).annotate(total=Count('issue')).order_by('-total').first()
-
 
     @property
     def get_name(self):
         parsed_url = urlparse(self.url)
         return parsed_url.netloc.split(".")[-2:][0].title()
 
-    @property
     def get_logo(self):
         if self.logo:
             return self.logo.url
+        image_request = requests.get("https://logo.clearbit.com/" + self.name)
+        try:
+            if image_request.status_code == 200:
+                image_content = ContentFile(image_request.content)
+                self.logo.save(self.name + ".jpg", image_content)
+                return self.logo.url
+
+        except:
+            favicon_url = self.url + '/favicon.ico'
+            return favicon_url
+
+    @property
+    def get_color(self):
+        if self.color:
+            return self.color
         else:
-            image_content = ContentFile(requests.get("https://logo.clearbit.com/"+self.name).content)
-            self.logo.save(self.name +".jpg", image_content)
-            return self.logo.url
+            if not self.logo:
+                self.get_logo()
+            try:
+                color_thief = ColorThief(self.logo)
+                self.color = '#%02x%02x%02x' % color_thief.get_color(quality=1)
+            except:
+                self.color = "#0000ff"
+            self.save()
+            return self.color
 
     @property
     def hostname_domain(self):
@@ -80,7 +92,7 @@ class Domain(models.Model):
         parsed_url = urlparse(self.url)
         domain = parsed_url.hostname
         temp = domain.rsplit('.')
-        if(len(temp) == 3):
+        if (len(temp) == 3):
             domain = temp[1] + '.' + temp[2]
         return domain
 
@@ -89,22 +101,35 @@ class Domain(models.Model):
 
 
 def validate_image(fieldfile_obj):
-        filesize = fieldfile_obj.file.size
-        megabyte_limit = 3.0
-        if filesize > megabyte_limit*1024*1024:
-            raise ValidationError("Max file size is %sMB" % str(megabyte_limit))
+    filesize = fieldfile_obj.file.size
+    megabyte_limit = 3.0
+    if filesize > megabyte_limit * 1024 * 1024:
+        raise ValidationError("Max file size is %sMB" % str(megabyte_limit))
 
 
 class Issue(models.Model):
+    labels = (
+        (0, 'General'),
+        (1, 'Number Error'),
+        (2, 'Functional'),
+        (3, 'Performance'),
+        (4, 'Security'),
+        (5, 'Typo'),
+        (6, 'Design')
+    )
     user = models.ForeignKey(User, null=True, blank=True)
     domain = models.ForeignKey(Domain, null=True, blank=True)
     url = models.URLField()
     description = models.TextField()
+    label = models.PositiveSmallIntegerField(choices=labels, default=0)
     views = models.IntegerField(null=True, blank=True)
     status = models.CharField(max_length=10, default="open", null=True, blank=True)
     user_agent = models.CharField(max_length=255, default="", null=True, blank=True)
     ocr = models.TextField(default="", null=True, blank=True)
     screenshot = models.ImageField(upload_to="screenshots", validators=[validate_image])
+    closed_by = models.ForeignKey(User, null=True, blank=True, related_name="closed_by")
+    closed_date = models.DateTimeField(default=None, null=True, blank=True)
+    github_url = models.URLField(default="", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
@@ -126,15 +151,16 @@ class Issue(models.Model):
         parsed_url = urlparse(self.url)
         domain = parsed_url.hostname
         temp = domain.rsplit('.')
-        if(len(temp) == 3):
+        if (len(temp) == 3):
             domain = temp[1] + '.' + temp[2]
         return domain
 
     def get_twitter_message(self):
-        issue_link = " bugheist.com/issue/"+str(self.id)
+        issue_link = " bugheist.com/issue/" + str(self.id)
         prefix = "Bug found on @"
         spacer = " | "
-        msg =  prefix + self.domain_title + spacer + self.description[:140-(len(prefix)+len(self.domain_title)+len(spacer)+len(issue_link))] + issue_link
+        msg = prefix + self.domain_title + spacer + self.description[:140 - (
+            len(prefix) + len(self.domain_title) + len(spacer) + len(issue_link))] + issue_link
         return msg
 
     def get_ocr(self):
@@ -149,7 +175,6 @@ class Issue(models.Model):
             except:
                 return "OCR not installed"
 
-
     @property
     def get_absolute_url(self):
         return "/issue/" + str(self.id)
@@ -162,10 +187,8 @@ TWITTER_MAXLENGTH = getattr(settings, 'TWITTER_MAXLENGTH', 140)
 
 
 def post_to_twitter(sender, instance, *args, **kwargs):
-
     if not kwargs.get('created'):
         return False
-
     try:
         consumer_key = os.environ['TWITTER_CONSUMER_KEY']
         consumer_secret = os.environ['TWITTER_CONSUMER_SECRET']
@@ -200,8 +223,9 @@ def post_to_twitter(sender, instance, *args, **kwargs):
 
         except Exception, ex:
             print 'ERROR:', str(ex)
-            logger.debug('rem %s'%str(ex))
+            logger.debug('rem %s' % str(ex))
             return False
+
 
 signals.post_save.connect(post_to_twitter, sender=Issue)
 
@@ -235,8 +259,8 @@ class Points(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
 
-#@receiver(user_logged_in, dispatch_uid="some.unique.string.id.for.allauth.user_logged_in")
-#def user_logged_in_(request, user, **kwargs):
+# @receiver(user_logged_in, dispatch_uid="some.unique.string.id.for.allauth.user_logged_in")
+# def user_logged_in_(request, user, **kwargs):
 #    if not settings.TESTING:
 #    	action.send(user, verb='logged in')
 
@@ -259,9 +283,20 @@ def user_images_path(instance, filename):
 
 
 class UserProfile(models.Model):
-
-    user = models.OneToOneField(User, related_name="userprofile")
+    title = (
+        (0, 'Unrated'),
+        (1, 'Bronze'),
+        (2, 'Silver'),
+        (3, 'Gold'),
+        (4, 'Platinum'),
+    )
+    follows = models.ManyToManyField('self', related_name='follower', symmetrical=False, blank=True)
+    user = AutoOneToOneField('auth.user', related_name="userprofile")
     user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
+    title = models.IntegerField(choices=title, default=0)
+    winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
+    issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
 
     def avatar(self, size=36):
         if self.user_avatar:
@@ -282,5 +317,6 @@ def create_profile(sender, **kwargs):
     if kwargs["created"]:
         profile = UserProfile(user=user)
         profile.save()
+
 
 post_save.connect(create_profile, sender=User)

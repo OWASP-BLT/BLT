@@ -1,286 +1,242 @@
-{% extends "base.html" %}
+{% extends "base_home.html" %}
 {% load staticfiles %}
 {% load gravatar %}
 {% load socialaccount %}
 {% load humanize %}
 {% providers_media_js %}
+{% load i18n %}
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
-    <style>
-    .ds-btn li{ list-style:none; float:left; padding:10px; }
-    .ds-btn li a span{padding-left:15px;padding-right:5px;width:100%;display:inline-block; text-align:left;}
-    .ds-btn li a span small{width:100%; display:inline-block; text-align:left;}
-    .huge {overflow:auto;}
-    </style>
-    <div class="row">
-        <div class="col-lg-12">
-            <h1 class="page-header">Win points for reporting bugs on any website!
-            <a id="chrome_ext" style="float:right;" href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en" target="_new">
-                        <img src="{% static 'img/chrome-button.png' %}" >
-                    </a></h1>
+    <script src="{% static 'js/activity.js' %}"></script>
+    <section class="hero">
+        <div class="heading">
+            <h1 class="page-header">{% trans "Find Bugs, Win Points and Prizes" %}</h1>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-6">
-            <form role="form" action="/issue/" method="post" id="form1" enctype="multipart/form-data" >
-                {% csrf_token %}
-                <div class="form-group">
-                    <label>Find a bug on any website
-                        {% if not user.is_authenticated %}
-                            <span style="color:#DD4252; margin-left:60px;">* login required</span>
-                        {% endif %}
-                    </label>
-                    {% if request.GET.url %}
-                        <input class="form-control required"  placeholder="www.testsite.com/bug-found" name="url" value="{{request.GET.url}}">
-                    {% else %}
-                        <input class="form-control required" placeholder="www.testsite.com/bug-found" name="url" value="{{form.url.value|default:""}}">
-                    {% endif %}
-                    {% if form.url.errors %}
-                        <label id="description-error" class="error" for="description">{{form.url.errors}}</label>
-                    {% endif %}
-                </div>
-                <div class="form-group">
-                    <label>Describe the bug</label>
-                    <textarea data-required="true" class="form-control required" rows="3" placeholder="I found a bug on a site."  id="description" name="description">{{form.description.value|default:""}}</textarea>
-                    {% if form.description.errors %}
-                        <label id="description-error" class="error" for="description">{{form.description.errors}}</label>
-                    {% endif %}
-                </div>
-                
-                <div class="form-group">
-                    <label>Attach Screenshot</label>
-                    {% if request.GET.hash %}</br>
-                        <img src="{{ MEDIA_URL }}uploads/{{request.GET.hash}}.png" height="100" style=" border: 1px solid #d43f3a;">
-                        <input type="hidden" class="required" name="screenshot-hash" value="{{request.GET.hash}}">
-                    {% else %}
-                        <input type="file" class="required" name="screenshot">
-                    {% endif %}
-                    {% if form.screenshot.errors %}
-                        <label id="description-error" class="error" for="description">{{form.screenshot.errors}}</label>
-                    {% endif %}
-                </div>
-               
-                <div class="form-group">
-                    <button type="submit" id="btn" class="btn btn-default btn-danger" style="background:#dd4252; height:43px; font-size:14px;">Enter Bug</button>
-                    </form> 
-                    <label style="color:#dd4252; margin-left: 20px"> Win +3 points!</label>
-                    {% if not user.is_authenticated %}
-                        <a href="/accounts/login">
-                            <button class="btn btn-default btn-caution" style="float:right;">
-                            <i class="fa fa-envelope fa-2x"></i>
-                            </button>
-                        </a>
-                        <a href="{% provider_login_url "facebook" method="js_sdk" %}">
-                            <button class="btn btn-default btn-caution" style="float:right;">
-                            <i class="fa fa-facebook fa-2x"></i>
-                            </button>
-                        </a>
-                        <a href="{% provider_login_url "google" method="js_sdk" %}">
-                            <button class="btn btn-default btn-caution" style="float:right;">
-                            <i class="fa fa-google fa-2x"></i>
-                            </button>
-                        </a>
-                        <a href="{% provider_login_url "github" method="js_sdk" %}">
-                            <button class="btn btn-default btn-caution" style="float:right;">
-                            <i class="fa fa-github fa-2x"></i>
-                            </button>
-                        </a>
-                        <a href="/accounts/login">
-                            <button class="btn btn-default btn-caution" style="color:#dd4252; float:right; height:43px; font-size:14px;">Login</button>
-                        </a>
-                    {% endif %}
-                </div>
-            
+        <div class="text-slider">
+            <ul>
+                <li class="text-slider-list"><h2
+                        class="text-slider-line active-line animated fadeInUp">{% trans "Fix issues on websites, apps or hardware (+3 points)" %}</h2>
+                </li>
+                <li class="text-slider-list"><h2
+                        class="text-slider-line animated fadeInUp">{% trans "Verify other bug reports(+2 points)" %}</h2>
+                </li>
+                <li class="text-slider-list"><h2
+                        class="text-slider-line animated fadeInUp">{% trans "Invite friends (when they signup , get +1 point)" %}</h2>
+                </li>
+                <li class="text-slider-list"><h2
+                        class="text-slider-line animated fadeInUp">{% trans "Find a bug on a new site or app (+4 points)" %}</h2>
+                </li>
+            </ul>
         </div>
-        
-        <div class="col-lg-6">
-            <center>
-            <span id="video_span">
-                <iframe width="560" height="315" id="video_iframe" src="https://www.youtube.com/embed/o-t6HDXjpP8?rel=0&amp;controls=0&amp;showinfo=0" frameborder="0" allowfullscreen></iframe>
-            </span>
-            </center>
-        </div>
-        
-    </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <h1 class="page-header">Sponsored Bug Hunts
-            </h1>
-        </div>
-    </div>
-    <div class="row">
-        {% for hunt in hunts %}
-            <div class="col-lg-3 col-md-6">
-                <div class="panel"  id="hunt_{{hunt.id}}">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3" >
-                                <img src="{{MEDIA_URL}}{{hunt.logo}}" width="75" height="75" id="hunt_image{{hunt.id}}" style="background-color:white;">
-                            </div>
-                            <div class="col-xs-9 text-right" style="color:white;">
-                                <div class="huge">{{hunt.domain_title}}</div>
-                                <div>Grand Prize ${{hunt.prize}}</div>
+        <br>
+    </section>
+    <div class="container">
+        <center>
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="cborder">
+                        <div class="card cardbox">
+                            <center><i class="fa fa-exclamation-triangle fa-3x"></i></center>
+                            <div class="card-block">
+                                <h4 class="card-title">{% trans "Number Error" %}</h4>
+                                <p class="card-text">{% trans "For pages where you see a number 404, 500." %}</p>
                             </div>
                         </div>
+                        <ul class="list-group list-group-flush">
+                            <a class="btn btn-default" href="/search/?query=1&type=label">Examples</a>
+                        </ul>
                     </div>
-                    <a href="{{hunt.url}}" target="_new">
-                        <div class="panel-footer">
-                            <span class="pull-left" id="hunt_link{{hunt.id}}">View Website</span>
-                            <span class="pull-right"><i class="fa fa-arrow-circle-right" id="hunt_icon{{hunt.id}}"></i></span>
-                            <div class="clearfix"></div>
-                        </div>
-                    </a>
                 </div>
-                <script>
-                $('#hunt_{{hunt.id}}').css('background-color', "{{hunt.color}}");
-                $('#hunt_icon{{hunt.id}}').css('color', "{{hunt.color}}");
-                $('#hunt_link{{hunt.id}}').css('color', "{{hunt.color}}");
-                </script>
+                <div class="col-sm-4">
+                    <div class="cborder">
+                        <div class="card cardbox">
+                            <center><i class="fa fa-trophy fa-3x"></i></center>
+                            <div class="card-block">
+                                <h4 class="card-title">{% trans "Functional" %}</h4>
+                                <p class="card-text">{% trans "Something doesn't work as intended" %}</p>
+                            </div>
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            <a class="btn btn-default" href="/search/?query=2&type=label">Examples</a>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="cborder">
+                        <div class="card cardbox">
+                            <center><i class="fa fa-flash fa-3x"></i></center>
+                            <div class="card-block">
+                                <h4 class="card-title">{% trans "Performance" %}</h4>
+                                <p class="card-text">{% trans "Any process that takes over 5 seconds." %}</p>
+                            </div>
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            <a class="btn btn-default" href="/search/?query=3&type=label">Examples</a>
+                        </ul>
+                    </div>
+                </div>
             </div>
-        {% endfor %}
-        <div class="col-lg-3 col-md-6">
-            <div class="panel"  style="background-color:#234082">
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="cborder">
+                        <div class="card cardbox">
+                            <center><i class="fa fa-lock fa-3x"></i></center>
+                            <div class="card-block">
+                                <h4 class="card-title">{% trans "Security" %}</h4>
+                                <p class="card-text">{% trans "Data leaks, exploits or anything smelly." %}</p>
+                            </div>
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            <a class="btn btn-default" href="/search/?query=4&type=label">Examples</a>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="cborder">
+                        <div class="card cardbox">
+                            <center><i class="fa fa-eraser fa-3x"></i></center>
+                            <div class="card-block">
+                                <h4 class="card-title">{% trans "Typo" %}</h4>
+                                <p class="card-text">{% trans "Miss-spellings, miss-grammar and more." %}</p>
+                            </div>
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            <a class="btn btn-default" href="/search/?query=5&type=label">Examples</a>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="cborder">
+                        <div class="card cardbox">
+                            <center><i class="fa fa-code fa-3x"></i></center>
+                            <div class="card-block">
+                                <h4 class="card-title">{% trans "Design" %}</h4>
+                                <p class="card-text">{% trans "Layout, responsiveness and improvements" %}</p>
+                            </div>
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            <a class="btn btn-default" href="/search/?query=6&type=label">Examples</a>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </center>
+    </div>
+    <div class="row" style="margin-left: 10px;">
+        <div class="col-lg-12">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1 class="page-sub-header">{% trans "Featured Bug Hunts" %}</h1>
+                </div>
+            </div>
+            <div class="row" data-intro="These are the lists of featured websites on BugHeist." data-step="2">
+                {% include '_featured.html' %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row" style="margin-left: 10px;">
+        <div class="col-lg-3 col-md-3">
+            <div class="panel panel-primary">
                 <div class="panel-heading">
                     <div class="row">
-                        <div class="col-xs-3">
-                            <img src="https://www.owasp.org/images/thumb/2/2f/Owasp_logo_flat2_icon.jpg/100px-Owasp_logo_flat2_icon.jpg" width="75" height="75">
-                        </div>
-                        <div class="col-xs-9 text-right " style="color:white;">
-                            <div class="huge">OWASP</div>
-                            <div>Grand Prize $500</div>
-                        </div>
+                        <h4 class="text-center"><i class="fa fa-bug"></i> {{ bug_count }} Bugs</h4>
                     </div>
-                </div>
-                <a href="https://www.owasp.org/index.php/Bug_Bounty_Projects" target="_new">
-                    <div class="panel-footer">
-                        <span class="pull-left" style="color:#234082">View Website</span>
-                        <span class="pull-right"><i class="fa fa-arrow-circle-right" style="color:#234082"></i></span>
-                        <div class="clearfix"></div>
-                    </div>
-                </a>
-            </div>
-        </div>
-        
-    </div>
-    <a href="/start">
-        <button type="submit" class="btn btn-default btn-danger" style="background:#dd4252; height:43px; font-size:14px;">Sponsor a Bug Hunt</button>
-    </a>
-    <div class="row">
-        <div class="col-lg-9">
-            <h1 class="page-header">Activity</h1>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-9">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    Latest
-                </div>
-                <div class="panel-body">
-                    <div class="list-group" >
-                        {% for activity in activities %}
-                            {% include '_activity.html' %}
-                        {% endfor %}
-                    </div>
-                    <a href="/all_activity" class="btn btn-default btn-block">View All Activity</a>
                 </div>
             </div>
         </div>
-        <div class="col-lg-3">
-            <div class="panel panel-default">
+        <div class="col-lg-3 col-md-3">
+            <div class="panel panel-green">
                 <div class="panel-heading">
-                    {% now "F" %} Leaderboard
+                    <div class="row">
+                        <h4 class="text-center"><i class="fa fa-user"></i> {{ user_count }} Users</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-3">
+            <div class="panel panel-yellow">
+                <div class="panel-heading">
+                    <div class="row">
+                        <h4 class="text-center"><i class="fa fa-bullseye"></i> {{ hunt_count }} Hunts</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-3">
+            <div class="panel panel-red">
+                <div class="panel-heading">
+                    <div class="row">
+                        <h4 class="text-center"><i class="fa fa-support"></i> {{ domain_count }} Domains</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                </div>
-                <div class="panel-body">
-                    <div style="border-left: 1px solid #ccc; border-top: 1px solid #ccc; border-right: 1px solid #888; border-bottom: 1px solid #888; background-color: #00ffcd; padding: 10px;">
-                        <div style="margin-bottom:5px;font-weight:bold;font-size:16px;">The 1st Place Hunter for  {% now "F" %} will receive</div>
-                        <div style="border: 3px solid #dd4252; display:block;padding:7px;margin-right:5px;padding-top:10px;background:white;margin-bottom:8px;">
-                            <span style="font-size:20px; font-weight:bold;margin-right:5px;">$25</i>
-                            </span> from
-                            <a href="/domain/owasp.org/">
-                                <img src="http://www.owasp.org/favicon.ico" height="25" width="25" style="vertical-align:top"> OWASP
-                            </a>
-                        </div>
-                        <div style="border: 3px solid #dd4252; display:block;padding:7px;margin-right:5px;padding-top:10px;background:white;">
-                            <span style="font-size:20px; font-weight:bold;margin-right:5px;">$?? 
-                            </span> from
-                            
-                                 [ Your Website Here ]   <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr"  method="post" style="display:inline;margin-bottom:10px;">
-                        <input type="hidden" name="cmd" value="_xclick">
-                        <input type="hidden" name="business" value="coderbounty@gmail.com">
-                        <input type="hidden" name="item_name" value="Sponsor a Prize for the {% now "F" %} Leaderboard on Bugheist">
-                        <input type="hidden" name="currency_code" value="USD">
-                        <button type="submit" class="btn btn-danger btn-small pull-right" style="margin-top:-4px;" >
-                        Sponsor a Prize</button>
-                    </form>
-                            
+    <div class="row" data-intro="View latest activities here." data-step="3" style="margin-left: 10px;">
+        <div class="col-md-8">
+            <h1 class="page-sub-header">Latest activity</h1>
+            <div class="list-group">
+                {% for activity in activities %}
+                    {% include '_activity.html' %}
+                {% endfor %}
+            </div>
+            <a href="/all_activity" class="btn btn-default btn-block">View All Activity</a>
+        </div>
+        <div class="col-md-4">
+            <div class="row">
+                <div class="panel panel-default">
+                    <div class="panel-heading page-sub-header">
+                        {% now "F" %} {% trans "Leaderboard" %}
+                    </div>
+                    <br>
+                    <div class="panel-body leaderboard-panel">
+                        <strong>The 1st Place Hunter for {% now "F" %} will receive</strong>
+                        <div class="box">
+                            <strong>$?? from [ Your Website Here ]</strong>
+                            <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post"
+                                  style="display:inline;margin-bottom:10px;">
+                                <input type="hidden" name="cmd" value="_xclick">
+                                <input type="hidden" name="business" value="coderbounty@gmail.com">
+                                <input type="hidden" name="item_name"
+                                       value="Sponsor a Prize for the {% now "F" %} Leaderboard on Bugheist">
+                                <input type="hidden" name="currency_code" value="USD">
+                                <button type="submit" class="btn btn-danger btn-sm">Sponsor a Prize</button>
+                            </form>
                         </div>
                     </div>
 
                     <div class="list-group">
                         {% if leaderboard %}
                             {% for leader in leaderboard %}
-                                <div class="list-group-item">
-                                <span class="pull-right " style="font-size:18px;margin-top:13px;" >{{forloop.counter|ordinal}}</span>
+                                <div class="list-group-item activity-strip"
+                                     style="height: 80px; border: 1px solid #DDDDDD">
                                     {% if leader.socialaccount_set.all.0.get_avatar_url %}
-                                        <img src="{{leader.socialaccount_set.all.0.get_avatar_url}}" width="50" height="50">
+                                        <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" width="50"
+                                             height="50">
                                     {% else %}
-                                        {% gravatar leader.email 50 %}
+                                        <img src="{% gravatar_url leader.email 50 %}">
                                     {% endif %}
-                                    <a href="/profile/{{leader.username}}" style="margin-left:5px;">{{leader.username}}</a>
-                                    <span class="pull-right text-muted small"><em> {{leader.total_score}} points</em>
-                                    </span>
+                                    <a href="/profile/{{ leader.username }}"
+                                       class="text-capitalize leaderboard-name">{{ leader.username|truncatechars:20 }}</a>
+                                    <span class="label label-success leaderboard-rank">{{ forloop.counter|ordinal }}</span>
+                                    <div class="badge leaderboard-points">{{ leader.total_score }} Points</div>
                                 </div>
                             {% endfor %}
                         {% else %}
-                            </br>
-                            Leaderboard reset for {% now "F" %}. Be first to find issues!
+                            </br> Leaderboard reset for {% now "F" %}. Be first to find issues!
                         {% endif %}
                     </div>
-                    <a href="/leaderboard" class="btn btn-default btn-block">View All</a>
+                    <a href="/leaderboard" class="btn btn-default btn-block submit_button">View All</a>
                 </div>
             </div>
-        </div>
-        <div class="col-lg-3">
-            <a class="twitter-timeline" data-height="800" href="https://twitter.com/Bugheist">Tweets by Bugheist</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
         </div>
     </div>
     <div class="row">
         <div class="col-lg-12">
-            <h1 class="page-header">Get started by finding issues on <a class="btn btn-lg" style="background-color:{{domain.color}}" href="/domain/{{domain}}">
-                <img src="http://www.{{domain.domain_name}}/favicon.ico" height="25" width="25" style="vertical-align:top" onerror="this.onerror=null; this.style.display ='none';">
-                <span>{{domain.domain_name}}<br><small>{{domain.issue_set.all|length}} issues </small></span>
-            </a>
-            </h1>
+            <h1 class="page-sub-header">Subscriptions:</h1>
         </div>
     </div>
-    <script>
-    var player_width = 560;
-    var player_height = 315;
-    var responsiveVideo = function() {
-    var player_window_buffer = 120;
-    var window_width = $(window).width();
-    var aspect_ratio = player_width/player_height;
-    var player_span = $('#video_span');
-    var player_iframe = $('#video_iframe');
-    if (window_width >= player_width) {
-    $(player_span).width(player_width)
-    $(player_span).height(player_height).css('line-height', player_height + 'px');
-    $(player_iframe).width(player_width);
-    $(player_iframe).height(player_height);
-    $('#chrome_ext').show();
-    } else {
-    $(player_span).width(window_width-player_window_buffer);
-    var new_wrapper_height = $(player_span).width()/aspect_ratio;
-    $(player_span).height(new_wrapper_height).css('line-height', new_wrapper_height + 'px');
-    $(player_iframe).width(window_width-player_window_buffer);
-    $(player_iframe).height(($(player_span).width()/aspect_ratio));
-    $('#chrome_ext').hide();
-    }
-    }
-    $(document).ready(function(){responsiveVideo();});
-    $(window).resize(function() {responsiveVideo();});
-    $('#btn').on('click', function() { $("#form1").valid(); });
-    </script>
+    {% include '_subscriptions.html' %}
 {% endblock %}
