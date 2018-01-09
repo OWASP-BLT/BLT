@@ -23,7 +23,7 @@
             <div class="small">
                 <a href="{{ activity.user.get_absolute_url }}" data-toggle="popover"
                    data-tag="{{ activity.user.userprofile.get_title_display }}">
-                    {{ activity.user }}
+                    {{ activity.user|default: "Anonymous" }}
                 </a>
                 found a bug on <a
                     href="/domain/{{ activity.domain_name }}">{{ activity.domain_title }}</a> {{ activity.created|timesince }}
