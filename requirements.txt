@@ -20,7 +20,7 @@ gunicorn==19.4.5
 oauthlib==1.1.2
 parse==1.6.6
 Pillow==3.3.1
-psycopg2==2.6.1
+psycopg2==2.7.1
 pytesseract==0.1.6
 python-openid==2.2.5
 pytz==2016.6.1
