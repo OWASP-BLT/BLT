@@ -1,5 +1,5 @@
 #page-wrapper {
-    height: 100%;
+    height: auto;
 }
 
 @media screen and (max-width: 720px) {
