@@ -2012,13 +2012,13 @@ pre code {
 @media (min-width: 992px) {
     .container {
         width: 970px;
-        height: 100%;
     }
 }
 
 @media (min-width: 1200px) {
     .container {
         width: 1170px;
+        height: 100%;
     }
 }
 
