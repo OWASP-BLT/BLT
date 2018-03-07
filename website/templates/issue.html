@@ -59,6 +59,22 @@
     .like_btn a.liked-by {
     vertical-align: top;
     }
+    .fb-btn{
+    margin-top: -1px;
+    }
+    .tweet-btn{
+    background-color: #1b95e0;
+    font-weight :500;
+    display :inline-block;
+    vertical-align: top;
+    padding: 1px 5px;
+    color: #fff;
+    font:normal normal normal 11px FontAwesome,Arial,sans-serif;
+    line-height:1.63;
+    }
+    .tweet-btn:hover{
+    background-color: #0c7abf;
+    }
 {% endblock %}
 {% block content %}
     <script type="text/javascript" src="{% static "js/clipboard.min.js" %}"></script>
@@ -110,12 +126,12 @@
                         <i class="fa fa-bookmark-o"></i> Bookmark
                     </a>
                 {% endif %}
-                <a class="twitter-share-button btn btn-info"
+                <a class="tweet-btn fa fa-twitter btn btn-xs tweet-btn"
                    href="https://twitter.com/intent/tweet?text=Bug on @{{ object.domain_title }} - {{ object.description }}"
-                   data-size="small">Tweet</a>
+                   data-size="small"> Tweet</a>
                 <span class="fb-share-button" data-href="https://www.bugheist.com/issue/{{ object.id }} "
                       data-layout="button_count" data-size="small" data-mobile-iframe="true">
-                    <a class="fb-xfbml-parse-ignore btn btn-primary btn-xs" target="_blank">
+                    <a class="fb-xfbml-parse-ignore btn btn-primary btn-xs fb-btn" target="_blank">
                         <i class="fa fa-facebook fa-white"></i> Share
                     </a>
                 </span>
