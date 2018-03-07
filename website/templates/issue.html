@@ -75,6 +75,16 @@
     .tweet-btn:hover{
     background-color: #0c7abf;
     }
+    .btn_issclose{
+    position: absolute;
+    margin-top: 1.5px;
+    margin-left: 3%;
+    }
+    .btn_addedon{
+    position: absolute;
+    margin-top: 1.5%;
+    margin-left: 5%;
+    }
 {% endblock %}
 {% block content %}
     <script type="text/javascript" src="{% static "js/clipboard.min.js" %}"></script>
@@ -237,13 +247,13 @@
                                     <strong>Status:</strong>
                                     <span class="label label-{% if object.status == 'open' %}success{% else %}danger{% endif %} text-capitalize status">{{ object.status }}</span>
                                     {% if request.user.is_authenticated %}
-                                        <a class="btn btn-default btn-xs edit-issue-status" id="issue_stat">Click to
+                                        <a class="btn btn-default btn-xs edit-issue-status btn_issclose" id="issue_stat">Click to
                                             {% if object.status == "open" %}Close{% else %}Open{% endif %}</a>
                                     {% endif %}
                                 </div>
                                 <div class="bug-info">
                                     <strong>Added on:</strong>
-                                    <span class="label label-info">{{ object.created }}</span>
+                                    <span class="label label-info btn_addedon">{{ object.created }}</span>
                                 </div>
                             </div>
                             <div class="col-xs-6 operations">
