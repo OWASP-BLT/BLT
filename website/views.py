@@ -41,7 +41,7 @@ from django.views.generic import View
 from django.views.generic.edit import CreateView
 from user_agents import parse
 
-from website.models import Issue, Points, Hunt, Domain, InviteFriend, UserProfile
+from website.models import Issue, Points, Hunt, Domain, InviteFriend, UserProfile, IP
 from .forms import FormInviteFriend, UserProfileForm
 
 
@@ -685,12 +685,29 @@ class IssueView(DetailView):
     model = Issue
     slug_field = "id"
     template_name = "issue.html"
-
     def get(self, request, *args, **kwargs):
+        ipdetails = IP()
+        self.object = self.get_object()
+        ipdetails.user = self.request.user
+        ipdetails.address = get_client_ip(request)
+        ipdetails.issuenumber =  self.object.id
         try:
-            self.object = self.get_object()
-            self.object.views = (self.object.views or 0) + 1
-            self.object.save()
+            if self.request.user.is_authenticated():
+                try:
+                    objectget = IP.objects.get(user = self.request.user, issuenumber = self.object.id)
+                    self.object.save()
+                except:
+                    ipdetails.save()
+                    self.object.views = (self.object.views or 0) + 1
+                    self.object.save()    
+            else :
+                try:
+                    objectget = IP.objects.get(address = get_client_ip(request), issuenumber = self.object.id)
+                    self.object.save()
+                except:
+                    ipdetails.save()
+                    self.object.views = (self.object.views or 0) + 1
+                    self.object.save()
         except:
             messages.error(self.request, 'That issue was not found.')
             return redirect("/")
@@ -985,3 +1002,11 @@ def unsave_issue(request, issue_pk):
     userprof = UserProfile.objects.get(user=request.user)
     userprof.issue_saved.remove(issue)
     return HttpResponse('OK')
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip

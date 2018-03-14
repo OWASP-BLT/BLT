@@ -262,7 +262,7 @@ class Points(models.Model):
 # @receiver(user_logged_in, dispatch_uid="some.unique.string.id.for.allauth.user_logged_in")
 # def user_logged_in_(request, user, **kwargs):
 #    if not settings.TESTING:
-#    	action.send(user, verb='logged in')
+#      action.send(user, verb='logged in')
 
 
 class InviteFriend(models.Model):
@@ -320,3 +320,17 @@ def create_profile(sender, **kwargs):
 
 
 post_save.connect(create_profile, sender=User)
+
+class IP(models.Model):
+    address = models.CharField(max_length=25, null=True, blank=True)
+    user = models.CharField(max_length=25, null=True, blank=True)
+    issuenumber = models.IntegerField(null=True, blank=True)
+    def ipaddress(self):
+        return self.ipaddress
+
+    def user_name(self):
+        return self.user
+
+    def issue_number(self):
+        return self.issuenumber 
+    
