@@ -194,7 +194,7 @@
                     <br>
                     <div class="panel-body leaderboard-panel">
                         <strong>The 1st Place Hunter for {% now "F" %} will receive</strong>
-                        <div class="box">
+                        <div class="box leaderboardbox">
                             <strong>$25 from <a href="www.owasp.org">Owasp</a></strong>
                             <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post"
                                   style="display:inline;margin-bottom:10px;">
@@ -203,7 +203,7 @@
                                 <input type="hidden" name="item_name"
                                        value="Sponsor a Prize for the {% now "F" %} Leaderboard on Bugheist">
                                 <input type="hidden" name="currency_code" value="USD">
-                                <button type="submit" class="btn btn-danger btn-sm">Sponsor a Prize</button>
+                                <button type="submit" class="btn btn-danger btn-sm prizebtn">Sponsor a Prize</button>
                             </form>
                         </div>
                     </div>
@@ -214,10 +214,10 @@
                                 <div class="list-group-item activity-strip"
                                      style="height: 80px; border: 1px solid #DDDDDD">
                                     {% if leader.socialaccount_set.all.0.get_avatar_url %}
-                                        <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" width="50"
+                                        <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class = "profileimage" width="50"
                                              height="50">
                                     {% else %}
-                                        <img src="{% gravatar_url leader.email 50 %}">
+                                        <img src="{% gravatar_url leader.email 50 %}" class = "profileimage">
                                     {% endif %}
                                     <a href="/profile/{{ leader.username }}"
                                        class="text-capitalize leaderboard-name">{{ leader.username|truncatechars:20 }}</a>
