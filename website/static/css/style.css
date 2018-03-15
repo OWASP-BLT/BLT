@@ -394,6 +394,16 @@ a:hover {
     left: 10px;
 }
 
+.leaderboardbox {
+    line-height: 2;
+}
+
+.prizebtn {
+    position: absolute;
+    margin-top: 0.5%;
+    margin-left: 8%;
+}
+
 .leaderboard-rank {
     padding: 0px 5px;
 }
@@ -616,3 +626,7 @@ input[type='file'] {
 i.fa-5x {
     color: #333333;
 }
+
+.profileimage{
+    border-radius:50%;
+    }
