@@ -25,6 +25,14 @@
     background-color: #C9AE5D;
     color: #333;
     }
+    .profileimage{
+    border-radius:50%;
+    }
+    .titleuser{
+    position : absolute;
+    margin-top : 12px;
+    margin-left : 5px;
+    }
 
 {% endblock %}
 
@@ -40,11 +48,11 @@
                 {% for leader in leaderboard %}
                     <div class="list-group-item">
                         {% if leader.userprofile.avatar %}
-                            <img src="{{ leader.userprofile.avatar }}" class="img-responsive img-thumbnail">
+                            <img src="{{ leader.userprofile.avatar }}" class="img-responsive img-thumbnail profileimage">
                         {% elif leader.socialaccount_set.all.0.get_avatar_url %}
-                            <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}">
+                            <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class="profileimage">
                         {% else %}
-                            <img src="{% gravatar_url leader.email 50 %}">
+                            <img src="{% gravatar_url leader.email 50 %}" class="profileimage">
                         {% endif %}
                         <a href="/profile/{{ leader.username }}">{{ leader.username }}</a>
                         <span class="pull-right badge">{{ leader.total_score }} Points</span>
@@ -53,7 +61,7 @@
                         {% endif %}
 
                         <span><kbd
-                                class="{{ leader.userprofile.get_title_display }}">{{ leader.userprofile.get_title_display }}</kbd></span>
+                                class="{{ leader.userprofile.get_title_display }} titleuser">{{ leader.userprofile.get_title_display }}</kbd></span>
                     </div>
                 {% endfor %}
             </div>
