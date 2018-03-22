@@ -10,8 +10,10 @@ from django.views.generic.base import RedirectView
 
 import comments.views
 import website.views
+from website.serializers import router
 from website.views import (UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView,
-                           InboundParseWebhookView, LeaderboardView, IssueView, AllIssuesView, SpecificIssuesView,                            HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend,
+                           InboundParseWebhookView, LeaderboardView, IssueView, AllIssuesView, SpecificIssuesView,                            
+                           HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend,
                            ScoreboardView)
 
 favicon_view = RedirectView.as_view(url='/static/favicon.ico', permanent=True)
@@ -70,6 +72,8 @@ urlpatterns = [
                   url(r'^report/$', TemplateView.as_view(template_name="report.html")),
                   url(r'^i18n/', include('django.conf.urls.i18n')),
                   url(r'^domain_check/$', website.views.domain_check),
+                  url(r'^api/v1/', include(router.urls)),
+
               ] 
 
 if settings.DEBUG:
