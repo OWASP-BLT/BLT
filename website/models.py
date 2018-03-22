@@ -1,5 +1,5 @@
 import os
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 import requests
 import tweepy
@@ -117,8 +117,8 @@ class Issue(models.Model):
         (5, 'Typo'),
         (6, 'Design')
     )
-    user = models.ForeignKey(User, null=True, blank=True)
-    domain = models.ForeignKey(Domain, null=True, blank=True)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     url = models.URLField()
     description = models.TextField()
     label = models.PositiveSmallIntegerField(choices=labels, default=0)
@@ -127,7 +127,7 @@ class Issue(models.Model):
     user_agent = models.CharField(max_length=255, default="", null=True, blank=True)
     ocr = models.TextField(default="", null=True, blank=True)
     screenshot = models.ImageField(upload_to="screenshots", validators=[validate_image])
-    closed_by = models.ForeignKey(User, null=True, blank=True, related_name="closed_by")
+    closed_by = models.ForeignKey(User, null=True, blank=True, related_name="closed_by", on_delete=models.CASCADE)
     closed_date = models.DateTimeField(default=None, null=True, blank=True)
     github_url = models.URLField(default="", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
@@ -195,18 +195,18 @@ def post_to_twitter(sender, instance, *args, **kwargs):
         access_key = os.environ['TWITTER_ACCESS_KEY']
         access_secret = os.environ['TWITTER_ACCESS_SECRET']
     except KeyError:
-        print 'WARNING: Twitter account not configured.'
+        print ('WARNING: Twitter account not configured.')
         return False
 
     try:
         text = instance.get_twitter_message()
     except AttributeError:
-        text = unicode(instance)
+        text = str(instance)
 
-    mesg = u'%s' % (text)
+    mesg = '%s' % (text)
     if len(mesg) > TWITTER_MAXLENGTH:
         size = len(mesg + '...') - TWITTER_MAXLENGTH
-        mesg = u'%s...' % (text[:-size])
+        mesg = '%s...' % (text[:-size])
 
     import logging
     logger = logging.getLogger('testlogger')
@@ -221,8 +221,8 @@ def post_to_twitter(sender, instance, *args, **kwargs):
             params = dict(status=mesg, media_ids=[media_ids.media_id_string])
             api.update_status(**params)
 
-        except Exception, ex:
-            print 'ERROR:', str(ex)
+        except Exception as ex:
+            print(('ERROR:', str(ex)))
             logger.debug('rem %s' % str(ex))
             return False
 
@@ -231,7 +231,7 @@ signals.post_save.connect(post_to_twitter, sender=Issue)
 
 
 class Hunt(models.Model):
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     url = models.URLField()
     prize = models.IntegerField()
     logo = models.ImageField(upload_to="logos", null=True, blank=True)
@@ -251,9 +251,9 @@ class Hunt(models.Model):
 
 
 class Points(models.Model):
-    user = models.ForeignKey(User)
-    issue = models.ForeignKey(Issue, null=True, blank=True)
-    domain = models.ForeignKey(Domain, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    issue = models.ForeignKey(Issue, null=True, blank=True, on_delete=models.CASCADE)
+    domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     score = models.IntegerField()
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
@@ -266,7 +266,7 @@ class Points(models.Model):
 
 
 class InviteFriend(models.Model):
-    sender = models.ForeignKey(User)
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
     recipient = models.EmailField()
     sent = models.DateTimeField(auto_now_add=True, db_index=True)
 
@@ -291,7 +291,7 @@ class UserProfile(models.Model):
         (4, 'Platinum'),
     )
     follows = models.ManyToManyField('self', related_name='follower', symmetrical=False, blank=True)
-    user = AutoOneToOneField('auth.user', related_name="userprofile")
+    user = AutoOneToOneField('auth.user', related_name="userprofile", on_delete=models.CASCADE)
     user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
     title = models.IntegerField(choices=title, default=0)
     winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

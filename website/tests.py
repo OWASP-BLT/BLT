@@ -1,5 +1,6 @@
 import os
 import time
+import sys
 
 from django.test import LiveServerTestCase
 
@@ -14,6 +15,7 @@ class MySeleniumTests(LiveServerTestCase):
 
     @classmethod
     def setUpClass(cls):
+        print (sys.path)
         cls.selenium = WebDriver()
         super(MySeleniumTests, cls).setUpClass()
 
@@ -32,7 +34,7 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element_by_name("signup_button").click()
         time.sleep(8)
         body = self.selenium.find_element_by_tag_name('body')
-        self.assertIn(u'bugbugbug (0 Pts)', body.text)
+        self.assertIn('bugbugbug (0 Pts)', body.text)
 
     @override_settings(DEBUG=True)
     def test_login(self):
@@ -42,7 +44,7 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element_by_name("login_button").click()
         time.sleep(8)
         body = self.selenium.find_element_by_tag_name('body')
-        self.assertIn(u'bugbug (0 Pts)', body.text)
+        self.assertIn('bugbug (0 Pts)', body.text)
 
     @override_settings(DEBUG=True)
     def test_post_bug(self):
@@ -61,4 +63,4 @@ class MySeleniumTests(LiveServerTestCase):
         time.sleep(3)
         self.selenium.get('%s%s' % (self.live_server_url, '/'))
         body = self.selenium.find_element_by_tag_name('body')
-        self.assertIn(u'Description of bug', body.text)
+        self.assertIn('Description of bug', body.text)

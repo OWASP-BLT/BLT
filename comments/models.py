@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+
 
 from django.contrib.auth.models import User
 from django.db import models
@@ -10,7 +10,7 @@ from website.models import Issue
 # Create your models here.
 
 class Comment(models.Model):
-    parent = models.ForeignKey('self', null=True)
+    parent = models.ForeignKey('self', null=True, on_delete=models.CASCADE)
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name='comments')
     author = models.CharField(max_length=200)
     author_url = models.CharField(max_length=200)
