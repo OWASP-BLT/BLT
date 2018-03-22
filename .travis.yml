@@ -4,13 +4,13 @@ addons:
 language: python
 
 python:
-  - "2.7"
+  - "3.6"
 
 env:
-  -DJANGO=1.9.2 DB=sqlite
+  -DJANGO=2.0 DB=sqlite
 
 install:
-  - pip install -r requirements.txt
+  - pipenv install
 
 before_script:
   - "export DISPLAY=:99.0"
