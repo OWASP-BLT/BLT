@@ -20,9 +20,8 @@ before_script:
   - sleep 3
 
 script:
-  - pipenv shell
-  - python manage.py collectstatic --noinput
-  - python manage.py test --settings=bugheist.settings
+  - pipenv run python manage.py collectstatic --noinput
+  - pipenv run python manage.py test --settings=bugheist.settings
 
 notifications:
   slack: owasp:Ly2aPB4oB9U05W6BLDAl8oM8
