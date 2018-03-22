@@ -28,7 +28,7 @@ A floating bug reporting button for your website which redirects back to Bugheis
 
 ## Setting Up Development Server
 
-Please follow the development server setup procedure [here](https://github.com/OWASP/BLT/wiki/Setting-up-the-development-server). Currently, development server can be installed using virtualenv or vagrant.
+Please follow the development server setup procedure [here](https://github.com/OWASP/BLT/wiki/Setting-up-the-development-server). Currently, development server can be installed using virtualenv or vagrant. You can also use pipenv install, pipenv shell and then continue with the remaining instructions.
 
 ## Coding style guide
 
