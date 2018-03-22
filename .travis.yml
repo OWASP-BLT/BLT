@@ -1,5 +1,5 @@
 addons:
-  firefox: latest-unsigned
+  firefox: "49.0.2"
   
 language: python
 
