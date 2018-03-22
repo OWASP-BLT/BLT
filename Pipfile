@@ -44,9 +44,12 @@ rollbar = "*"
 six = "*"
 tablib = "*"
 ua-parser = "*"
+djangorestframework = "*"
 
 
 [dev-packages]
+
+
 
 [requires]
 

@@ -54,6 +54,7 @@ INSTALLED_APPS = (
     'import_export',
     'comments',
     'annoying',
+    'rest_framework',
 )
 
 MIDDLEWARE = (
