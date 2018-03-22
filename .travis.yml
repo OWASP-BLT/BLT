@@ -10,7 +10,9 @@ env:
   -DJANGO=2.0 DB=sqlite
 
 install:
+  - pip install pipenv
   - pipenv install
+
 
 before_script:
   - "export DISPLAY=:99.0"
@@ -18,6 +20,7 @@ before_script:
   - sleep 3
 
 script:
+  - pipenv shell
   - python manage.py collectstatic --noinput
   - python manage.py test --settings=bugheist.settings
 
