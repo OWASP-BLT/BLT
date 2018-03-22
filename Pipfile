@@ -1,0 +1,50 @@
+[[source]]
+
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+
+[packages]
+
+django = "*"
+dj-database-url = "*"
+django-allauth = "*"
+"beautifulsoup4" = "*"
+colorthief = "*"
+django-email-obfuscator = "*"
+"django-gravatar2" = "*"
+django-import-export = "*"
+django-annoying = "*"
+tweepy = "*"
+unidecode = "*"
+user-agents = "*"
+whitenoise = "*"
+django-debug-toolbar = "*"
+selenium = "*"
+pylibmc = "*"
+"psycopg2" = "*"
+boto = "*"
+django-cors-headers = "*"
+django-storages = "*"
+django-timedeltafield = "*"
+easyprocess = "*"
+"giturlparse.py" = "*"
+gunicorn = "*"
+oauthlib = "*"
+parse = "*"
+pillow = "*"
+python-openid = "*"
+pytesseract = "*"
+pytz = "*"
+pyvirtualdisplay = "*"
+requests = {extras = ["security"]}
+requests-oauthlib = "*"
+rollbar = "*"
+six = "*"
+tablib = "*"
+ua-parser = "*"
+
+
+[dev-packages]
+

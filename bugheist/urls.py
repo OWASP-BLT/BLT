@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.urls import path
 from django.conf.urls import include, url
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -19,7 +20,7 @@ admin.autodiscover()
 
 urlpatterns = [
                   url(r'^$', website.views.index, name='index'),
-                  url(r'^' + settings.ADMIN_URL + '/', include(admin.site.urls)),
+                  path(settings.ADMIN_URL + '/', admin.site.urls),
                   url(r'^like_issue/(?P<issue_pk>\d+)/$', website.views.like_issue, name="like_issue"),
                   url(r'^save_issue/(?P<issue_pk>\d+)/$', website.views.save_issue, name="save_issue"),
                   url(r'^unsave_issue/(?P<issue_pk>\d+)/$', website.views.unsave_issue, name="unsave_issue"),
@@ -69,7 +70,7 @@ urlpatterns = [
                   url(r'^report/$', TemplateView.as_view(template_name="report.html")),
                   url(r'^i18n/', include('django.conf.urls.i18n')),
                   url(r'^domain_check/$', website.views.domain_check),
-              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+              ] 
 
 if settings.DEBUG:
     import debug_toolbar

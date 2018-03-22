@@ -3,11 +3,11 @@ import os
 import random
 import re
 import time
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 from collections import deque
 from datetime import datetime
-from urlparse import urlparse
-from urlparse import urlsplit
+from urllib.parse import urlparse
+from urllib.parse import urlsplit
 
 import requests
 import requests.exceptions
@@ -23,8 +23,8 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.core.urlresolvers import reverse
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse, reverse_lazy
+
 from django.db.models import Sum, Count, Q
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
@@ -56,8 +56,8 @@ def index(request, template="index.html"):
             show_message = 'Please verify your email address'
     except:
         show_message = ''
-    open_issue_owasp = Domain.objects.get(name='owasp.org').open_issues.count()
-    closed_issue_owasp = Domain.objects.get(name='owasp.org').closed_issues.count()
+    #open_issue_owasp = Domain.objects.get(name='owasp.org').open_issues.count()
+    #closed_issue_owasp = Domain.objects.get(name='owasp.org').closed_issues.count()
     bug_count = Issue.objects.all().count()
     user_count = User.objects.all().count()
     hunt_count = Hunt.objects.all().count()
@@ -70,8 +70,8 @@ def index(request, template="index.html"):
                                            points__created__year=datetime.now().year).annotate(
             total_score=Sum('points__score')).order_by('-total_score')[:10],
         'not_verified': show_message,
-        'open_issue_owasp': open_issue_owasp,
-        'closed_issue_owasp': closed_issue_owasp,
+        #'open_issue_owasp': open_issue_owasp,
+        #'closed_issue_owasp': closed_issue_owasp,
         'bug_count': bug_count,
         'user_count': user_count,
         'hunt_count': hunt_count,
@@ -83,7 +83,7 @@ def index(request, template="index.html"):
 def find_key(request, token):
     if token == os.environ.get("ACME_TOKEN"):
         return HttpResponse(os.environ.get("ACME_KEY"))
-    for k, v in os.environ.items():  # os.environ.iteritems() in Python 2
+    for k, v in list(os.environ.items()):  # os.environ.iteritems() in Python 2
         if v == token and k.startswith("ACME_TOKEN_"):
             n = k.replace("ACME_TOKEN_", "")
             return HttpResponse(os.environ.get("ACME_KEY_%s" % n))
@@ -241,12 +241,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
     def form_valid(self, form):
         obj = form.save(commit=False)
-        if self.request.user.is_authenticated():
+        if self.request.user.is_authenticated:
             obj.user = self.request.user
         domain, created = Domain.objects.get_or_create(name=obj.domain_name.replace("www.", ""), defaults={
             'url': "http://" + obj.domain_name.replace("www.", "")})
         obj.domain = domain
-        if created and self.request.user.is_authenticated():
+        if created and self.request.user.is_authenticated:
             p = Points.objects.create(user=self.request.user, domain=domain, score=1)
             messages.success(self.request, 'Domain added! + 1')
 
@@ -257,7 +257,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         obj.user_agent = self.request.META.get('HTTP_USER_AGENT')
         obj.save()
 
-        if self.request.user.is_authenticated():
+        if self.request.user.is_authenticated:
             total_issues = Issue.objects.filter(user=self.request.user).count()
             user_prof = UserProfile.objects.get(user=self.request.user)
             if total_issues <= 10:
@@ -292,13 +292,13 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
         redirect_url = '/report'
         # redirect users to login
-        if not self.request.user.is_authenticated():
+        if not self.request.user.is_authenticated:
             # we store the issue id on the user session to assign it as soon as he login/register
             self.request.session['issue'] = obj.id
             self.request.session['created'] = created
             self.request.session['domain'] = domain.id
             login_url = reverse('account_login')
-            return HttpResponseRedirect(u'{}?next={}'.format(login_url, redirect_url))
+            return HttpResponseRedirect('{}?next={}'.format(login_url, redirect_url))
 
         # assign issue
         self.process_issue(self.request.user, obj, created, domain)
@@ -337,7 +337,7 @@ class InviteCreate(TemplateView):
         if email:
             domain = email.split("@")[-1]
             try:
-                ret = urllib2.urlopen('http://' + domain + '/favicon.ico')
+                ret = urllib.request.urlopen('http://' + domain + '/favicon.ico')
                 if ret.code == 200:
                     exists = "exists"
             except:
@@ -373,7 +373,7 @@ class UserProfileDetailView(DetailView):
     def get_context_data(self, **kwargs):
         user = self.object
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
-        context['my_score'] = Points.objects.filter(user=self.object).aggregate(total_score=Sum('score')).values()[0]
+        context['my_score'] = list(Points.objects.filter(user=self.object).aggregate(total_score=Sum('score')).values())[0]
         context['websites'] = Domain.objects.filter(issue__user=self.object).annotate(total=Count('issue')).order_by(
             '-total')
         context['activities'] = Issue.objects.filter(user=self.object)[0:10]
@@ -692,7 +692,7 @@ class IssueView(DetailView):
         ipdetails.address = get_client_ip(request)
         ipdetails.issuenumber =  self.object.id
         try:
-            if self.request.user.is_authenticated():
+            if self.request.user.is_authenticated:
                 try:
                     objectget = IP.objects.get(user = self.request.user, issuenumber = self.object.id)
                     self.object.save()
@@ -722,7 +722,7 @@ class IssueView(DetailView):
             context['os_family'] = user_agent.os.family
             context['os_version'] = user_agent.os.version_string
         context['users_score'] = \
-            Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values()[0]
+            list(Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values())[0]
         context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context['all_comment'] = self.object.comments.all
         context['all_users'] = User.objects.all()
@@ -745,7 +745,6 @@ def IssueEdit(request):
             issue.description = request.POST.get('description')
             issue.label = request.POST.get('label')
             issue.save()
-            print issue.url
             if created:
                 return HttpResponse("Domain Created")
             else:
@@ -813,7 +812,7 @@ class InboundParseWebhookView(View):
                 if event.get('event') == "click":
                     domain.clicks = int(domain.clicks or 0) + 1
                 domain.save()
-            except Exception, e:
+            except Exception as e:
                 pass
 
         return JsonResponse({'detail': 'Inbound Sendgrid Webhook recieved'})
