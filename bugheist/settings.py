@@ -55,6 +55,7 @@ INSTALLED_APPS = (
     'comments',
     'annoying',
     'rest_framework',
+    'tellme',
 )
 
 MIDDLEWARE = (
@@ -199,6 +200,9 @@ EMAIL_PORT = 1025
 # python -m smtpd -n -c DebuggingServer localhost:1025
 # if DEBUG:
 #    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+TELLME_FEEDBACK_EMAIL = 'admin@tellme.com'
+
+
 
 
 if 'DATABASE_URL' in os.environ:
