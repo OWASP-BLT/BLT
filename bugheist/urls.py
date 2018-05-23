@@ -73,7 +73,6 @@ urlpatterns = [
                   url(r'^i18n/', include('django.conf.urls.i18n')),
                   url(r'^domain_check/$', website.views.domain_check),
                   url(r'^api/v1/', include(router.urls)),
-                  url(r'^tellme/', include("tellme.urls")),
 
               ] 
 
