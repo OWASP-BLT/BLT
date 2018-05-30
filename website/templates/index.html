@@ -8,7 +8,6 @@
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <script src="{% static 'js/activity.js' %}"></script>
-    <link href="{% static 'tellme/feedback.min.css' %}" rel="stylesheet">
     <section class="hero">
         <div class="heading">
             <center><span><a href="https://steemit.com/@bugheist">Check out our new blog, the Bugheist Beacon</a></span></center>
@@ -235,14 +234,10 @@
             </div>
         </div>
     </div>
-    <button type="button" id="feedback-btn" class="btn btn-info vertical-right-aligned">
-    Feedback <span class="glyphicon glyphicon-bullhorn" aria-hidden="true"></span>
-</button>
     <div class="row">
         <div class="col-lg-12">
             <h1 class="page-sub-header">Subscriptions:</h1>
         </div>
     </div>
     {% include '_subscriptions.html' %}
-    {%  include 'tellme/js_inc.html' %}
 {% endblock %}

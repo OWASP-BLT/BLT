@@ -45,7 +45,6 @@ six = "*"
 tablib = "*"
 ua-parser = "*"
 djangorestframework = "*"
-django-tellme = "*"
 
 
 [dev-packages]
