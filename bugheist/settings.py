@@ -55,6 +55,7 @@ INSTALLED_APPS = (
     'comments',
     'annoying',
     'rest_framework',
+    'tellme',
 )
 
 MIDDLEWARE = (
