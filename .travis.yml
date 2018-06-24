@@ -17,7 +17,7 @@ env:
 
 install:
   - pip install pipenv
-  - pipenv install
+  - pipenv install --skip-lock
 
 
 before_script:
