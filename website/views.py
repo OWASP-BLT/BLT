@@ -24,7 +24,7 @@ from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.urls import reverse, reverse_lazy
-
+from django.db import models
 from django.db.models import Sum, Count, Q
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
@@ -1009,3 +1009,22 @@ def get_client_ip(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
     return ip
+
+def get_score(request):
+    users = list()
+    temp_users = User.objects.annotate(total_score=Sum('points__score')).order_by(
+            '-total_score').filter(total_score__gt=0)
+    rank_user = 1;
+    for each in temp_users.all():
+        temp = dict()
+        temp['rank'] = rank_user
+        temp['id'] = each.id
+        temp['User'] = each.username
+        temp['score'] = Points.objects.filter(user=each.id).aggregate(total_score=Sum('score'))
+        temp['image'] = list(UserProfile.objects.filter(user=each.id).values('user_avatar'))[0]
+        temp['title_type'] = list(UserProfile.objects.filter(user=each.id).values('title'))[0]
+        temp['follows'] = list(UserProfile.objects.filter(user=each.id).values('follows'))[0]
+        temp['savedissue'] = list(UserProfile.objects.filter(user=each.id).values('issue_saved'))[0]
+        rank_user = rank_user + 1
+        users.append(temp)   
+    return JsonResponse(users, safe=False)
