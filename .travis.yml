@@ -17,7 +17,7 @@ env:
 
 install:
   - pip install pipenv
-  - pipenv install
+  - pipenv install --system
 
 
 before_script:
