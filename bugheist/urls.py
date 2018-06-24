@@ -14,7 +14,7 @@ from website.serializers import router
 from website.views import (UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView,
                            InboundParseWebhookView, LeaderboardView, IssueView, AllIssuesView, SpecificIssuesView,                            
                            HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend,
-                           ScoreboardView)
+                           ScoreboardView,get_score)
 
 favicon_view = RedirectView.as_view(url='/static/favicon.ico', permanent=True)
 
@@ -73,6 +73,7 @@ urlpatterns = [
                   url(r'^i18n/', include('django.conf.urls.i18n')),
                   url(r'^domain_check/$', website.views.domain_check),
                   url(r'^api/v1/', include(router.urls)),
+                  url(r'^api/v1/userscore$', website.views.get_score),
 
               ] 
 
