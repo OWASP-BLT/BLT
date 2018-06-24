@@ -45,9 +45,7 @@ six = "*"
 tablib = "*"
 ua-parser = "*"
 djangorestframework = "*"
-django-filter = "*"
-djangorestframework-filters = "*"
-
+django_filters = "*"
 
 [dev-packages]
 
