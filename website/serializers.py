@@ -6,7 +6,7 @@ import django_filters
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id','username','email')
+        fields = ('id','username')
 
 class IssueSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
