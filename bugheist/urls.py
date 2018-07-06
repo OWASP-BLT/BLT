@@ -14,7 +14,8 @@ from website.serializers import router
 from website.views import (UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView,
                            InboundParseWebhookView, LeaderboardView, IssueView, AllIssuesView, SpecificIssuesView,                            
                            HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend,
-                           ScoreboardView,get_score)
+                           ScoreboardView,get_score,CustomObtainAuthToken)
+from rest_framework.authtoken import views
 
 favicon_view = RedirectView.as_view(url='/static/favicon.ico', permanent=True)
 
@@ -74,6 +75,7 @@ urlpatterns = [
                   url(r'^domain_check/$', website.views.domain_check),
                   url(r'^api/v1/', include(router.urls)),
                   url(r'^api/v1/userscore$', website.views.get_score),
+                  url(r'^authenticate/', CustomObtainAuthToken.as_view()),
 
               ] 
 

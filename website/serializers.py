@@ -29,6 +29,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class UserProfileViewSet(viewsets.ModelViewSet):
     serializer_class = UserProfileSerializer
     queryset = UserProfile.objects.all()
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('id', 'user__id','user__username')
 
 class DomainSerializer(serializers.ModelSerializer):
     class Meta:

@@ -40,10 +40,15 @@ from django.views.generic import DetailView, TemplateView, ListView
 from django.views.generic import View
 from django.views.generic.edit import CreateView
 from user_agents import parse
+from rest_framework.authtoken.models import Token
+from rest_framework.response import Response
 
+from rest_framework.authtoken.views import ObtainAuthToken
 from website.models import Issue, Points, Hunt, Domain, InviteFriend, UserProfile, IP
 from .forms import FormInviteFriend, UserProfileForm
 
+for user in User.objects.all():
+    Token.objects.get_or_create(user=user)
 
 def index(request, template="index.html"):
     try:
@@ -1028,3 +1033,10 @@ def get_score(request):
         rank_user = rank_user + 1
         users.append(temp)   
     return JsonResponse(users, safe=False)
+
+
+class CustomObtainAuthToken(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        response = super(CustomObtainAuthToken, self).post(request, *args, **kwargs)
+        token = Token.objects.get(key=response.data['token'])
+        return Response({'token': token.key, 'id': token.user_id})
