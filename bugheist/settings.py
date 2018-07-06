@@ -56,6 +56,7 @@ INSTALLED_APPS = (
     'annoying',
     'rest_framework',
     'django_filters',
+    'rest_framework.authtoken'
 )
 
 MIDDLEWARE = (
@@ -330,5 +331,8 @@ else:
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
-    'PAGE_SIZE': 50
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+         'rest_framework.authentication.TokenAuthentication',
+),
+    'PAGE_SIZE': 10
 }
