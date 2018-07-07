@@ -47,8 +47,7 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from website.models import Issue, Points, Hunt, Domain, InviteFriend, UserProfile, IP
 from .forms import FormInviteFriend, UserProfileForm
 
-for user in User.objects.all():
-    Token.objects.get_or_create(user=user)
+
 
 def index(request, template="index.html"):
     try:
@@ -1040,3 +1039,8 @@ class CustomObtainAuthToken(ObtainAuthToken):
         response = super(CustomObtainAuthToken, self).post(request, *args, **kwargs)
         token = Token.objects.get(key=response.data['token'])
         return Response({'token': token.key, 'id': token.user_id})
+
+def create_tokens(request):
+    for user in User.objects.all():
+        Token.objects.get_or_create(user=user)
+    return JsonResponse("Created", safe=False)
