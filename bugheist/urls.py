@@ -14,7 +14,7 @@ from website.serializers import router
 from website.views import (UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView,
                            InboundParseWebhookView, LeaderboardView, IssueView, AllIssuesView, SpecificIssuesView,                            
                            HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend,
-                           ScoreboardView,get_score,CustomObtainAuthToken,create_tokens)
+                           ScoreboardView,get_score,CustomObtainAuthToken,create_tokens,issue_count)
 from rest_framework.authtoken import views
 
 favicon_view = RedirectView.as_view(url='/static/favicon.ico', permanent=True)
@@ -77,6 +77,8 @@ urlpatterns = [
                   url(r'^api/v1/userscore$', website.views.get_score),
                   url(r'^authenticate/', CustomObtainAuthToken.as_view()),
                   url(r'^api/v1/create_tokens/$', website.views.create_tokens),
+                  url(r'^api/v1/count/$', website.views.issue_count),
+                  url(r'^api/v1/createissues/$', csrf_exempt(IssueCreate.as_view()), name="issuecreate"),
               ] 
 
 if settings.DEBUG:
