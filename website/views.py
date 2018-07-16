@@ -1131,25 +1131,3 @@ def issue_count(request):
     open_issue = Issue.objects.filter(status="open").count()
     close_issue = Issue.objects.filter(status="closed").count()
     return JsonResponse({'open': open_issue , 'closed': close_issue},safe=False)
-
-def upload(request):
-    url = "http://192.168.0.102:8000/api/v1/createissues/"
-
-    payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"url\"\r\n\r\nwww.asdmaskdnj.com\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"description\"\r\n\r\nsdads\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"label\"\r\n\r\n3\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"screenshot\"; filename=\"C:\\Users\\srahu\\Desktop\\New folder\\Picture.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"token\"\r\n\r\na9e6e6c4dd554bb9914488db3b5d18bb20c0e640\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
-    headers = {
-        'content-type': "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW",
-        'Cache-Control': "no-cache",
-        'Postman-Token': "2888b8bf-bdc1-4b57-bec7-70eb05b9388e"
-        }
-
-    response = requests.request("POST", url, data=payload, headers=headers)
-
-    return HttpResponse("Done")          
-
-def get_file_extension(self, file_name, decoded_file):
-    import imghdr
-
-    extension = imghdr.what(file_name, decoded_file)
-    extension = "jpg" if extension == "jpeg" else extension
-
-    return extension    
