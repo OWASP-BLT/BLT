@@ -11,6 +11,11 @@ from urllib.parse import urlsplit
 
 import requests
 import requests.exceptions
+import base64
+import six
+import uuid
+
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
 from bs4 import BeautifulSoup
@@ -46,7 +51,6 @@ from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken
 from website.models import Issue, Points, Hunt, Domain, InviteFriend, UserProfile, IP
 from .forms import FormInviteFriend, UserProfileForm
-
 
 
 def index(request, template="index.html"):
@@ -170,7 +174,7 @@ class IssueBaseCreate(object):
         obj.save()
         p = Points.objects.create(user=self.request.user, issue=obj, score=score)
 
-    def process_issue(self, user, obj, created, domain, score=3):
+    def process_issue(self, user, obj, created, domain, tokenauth=False, score=3):
         p = Points.objects.create(user=user, issue=obj, score=score)
         messages.success(self.request, 'Bug added! +' + str(score))
 
@@ -204,23 +208,40 @@ class IssueBaseCreate(object):
                 name = "support"
                 domain.email = email_to
                 domain.save()
-
-            msg_plain = render_to_string('email/bug_added.txt', {
-                'domain': domain.name,
-                'name': name,
-                'username': self.request.user,
-                'id': obj.id,
-                'description': obj.description,
-                'label': obj.get_label_display,
-            })
-            msg_html = render_to_string('email/bug_added.txt', {
-                'domain': domain.name,
-                'name': name,
-                'username': self.request.user,
-                'id': obj.id,
-                'description': obj.description,
-                'label': obj.get_label_display,
-            })
+            if tokenauth == False : 
+                msg_plain = render_to_string('email/bug_added.txt', {
+                    'domain': domain.name,
+                    'name': name,
+                    'username': self.request.user,
+                    'id': obj.id,
+                    'description': obj.description,
+                    'label': obj.get_label_display,
+                })
+                msg_html = render_to_string('email/bug_added.txt', {
+                    'domain': domain.name,
+                    'name': name,
+                    'username': self.request.user,
+                    'id': obj.id,
+                    'description': obj.description,
+                    'label': obj.get_label_display,
+                })
+            else :                   
+                msg_plain = render_to_string('email/bug_added.txt', {
+                    'domain': domain.name,
+                    'name': name,
+                    'username': user,
+                    'id': obj.id,
+                    'description': obj.description,
+                    'label': obj.get_label_display,
+                })
+                msg_html = render_to_string('email/bug_added.txt', {
+                    'domain': domain.name,
+                    'name': name,
+                    'username': user,
+                    'id': obj.id,
+                    'description': obj.description,
+                    'label': obj.get_label_display,
+                })
             send_mail(
                 'Bug found on ' + domain.name,
                 msg_plain,
@@ -231,26 +252,70 @@ class IssueBaseCreate(object):
 
         return HttpResponseRedirect("/")
 
-
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
     fields = ['url', 'description', 'screenshot', 'domain', 'label']
     template_name = "report.html"
-
     def get_initial(self):
+        try:
+            json_data = json.loads(self.request.body)
+            if not self.request.GET._mutable:
+               self.request.POST._mutable = True
+            self.request.POST['url'] = json_data['url']
+            self.request.POST['description'] = json_data['description']
+            self.request.POST['file'] = json_data['file']
+            self.request.POST['label'] = json_data['label']
+            self.request.POST['token'] = json_data['token']
+            self.request.POST['type'] = json_data['type']
+            if self.request.POST.get('file'):
+                if isinstance(self.request.POST.get('file'), six.string_types):
+                    import imghdr
+                # Check if the base64 string is in the "data:" format
+                    data = "data:image/"+ self.request.POST.get('type') + ";base64," + self.request.POST.get('file')
+                    data = data.replace(" ", "")
+                    data += "=" * ((4 - len(data) % 4) % 4)
+                    if 'data:' in data and ';base64,' in data:
+                # Break out the header from the base64 content
+                        header, data = data.split(';base64,')
+
+                    # Try to decode the file. Return validation error if it fails.
+                    try:
+                        decoded_file = base64.b64decode(data)
+                    except TypeError:
+                        TypeError('invalid_image')
+
+                    # Generate file name:
+                    file_name = str(uuid.uuid4())[:12] # 12 characters are more than enough.
+                    # Get the file name extension:
+                    extension = imghdr.what(file_name, decoded_file)
+                    extension = "jpg" if extension == "jpeg" else extension
+                    file_extension = extension
+
+                    complete_file_name = "%s.%s" % (file_name, file_extension, )
+
+                    self.request.FILES['screenshot'] = ContentFile(decoded_file, name=complete_file_name)
+        except:
+            tokenauth = False        
         initial = super(IssueCreate, self).get_initial()
         if self.request.POST.get('screenshot-hash'):
             initial['screenshot'] = 'uploads\/' + self.request.POST.get('screenshot-hash') + '.png'
         return initial
 
     def form_valid(self, form):
+        tokenauth = False
         obj = form.save(commit=False)
         if self.request.user.is_authenticated:
             obj.user = self.request.user
+        if not self.request.user.is_authenticated:
+            for token in Token.objects.all():
+                if self.request.POST.get('token') == token.key:
+                    obj.user = User.objects.get(id = token.user_id)  
+                    tokenauth = True   
+
         domain, created = Domain.objects.get_or_create(name=obj.domain_name.replace("www.", ""), defaults={
             'url': "http://" + obj.domain_name.replace("www.", "")})
         obj.domain = domain
-        if created and self.request.user.is_authenticated:
+        if created and (self.request.user.is_authenticated or tokenauth):
             p = Points.objects.create(user=self.request.user, domain=domain, score=1)
             messages.success(self.request, 'Domain added! + 1')
 
@@ -275,6 +340,20 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             user_prof.save()
 
+        if tokenauth:
+            total_issues = Issue.objects.filter(user = User.objects.get(id = token.user_id)).count()
+            user_prof = UserProfile.objects.get(user = User.objects.get(id = token.user_id))
+            if total_issues <= 10:
+                user_prof.title = 1
+            elif total_issues <= 50:
+                user_prof.title = 2
+            elif total_issues <= 200:
+                user_prof.title = 3
+            else:
+                user_prof.title = 4
+
+            user_prof.save()            
+
         if domain.github and os.environ.get("GITHUB_PASSWORD"):
             from giturlparse import parse
             from requests.auth import HTTPBasicAuth
@@ -296,7 +375,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
         redirect_url = '/report'
         # redirect users to login
-        if not self.request.user.is_authenticated:
+        if not (self.request.user.is_authenticated or tokenauth):
             # we store the issue id on the user session to assign it as soon as he login/register
             self.request.session['issue'] = obj.id
             self.request.session['created'] = created
@@ -305,8 +384,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
             return HttpResponseRedirect('{}?next={}'.format(login_url, redirect_url))
 
         # assign issue
-        self.process_issue(self.request.user, obj, created, domain)
-        return HttpResponseRedirect(self.request.META.get('HTTP_REFERER'))
+        if tokenauth:
+            self.process_issue(User.objects.get(id = token.user_id), obj, created, domain, True)
+            return JsonResponse("Created", safe=False)
+        else:
+            self.process_issue(self.request.user, obj, created, domain)
+            return HttpResponseRedirect(self.request.META.get('HTTP_REFERER'))
 
     def get_context_data(self, **kwargs):
         context = super(IssueCreate, self).get_context_data(**kwargs)
@@ -316,7 +399,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                                      points__created__year=datetime.now().year).annotate(
             total_score=Sum('points__score')).order_by('-total_score')[:10],
         return context
-
 
 class UploadCreate(View):
     template_name = "index.html"
@@ -1044,3 +1126,30 @@ def create_tokens(request):
     for user in User.objects.all():
         Token.objects.get_or_create(user=user)
     return JsonResponse("Created", safe=False)
+
+def issue_count(request):
+    open_issue = Issue.objects.filter(status="open").count()
+    close_issue = Issue.objects.filter(status="closed").count()
+    return JsonResponse({'open': open_issue , 'closed': close_issue},safe=False)
+
+def upload(request):
+    url = "http://192.168.0.102:8000/api/v1/createissues/"
+
+    payload = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"url\"\r\n\r\nwww.asdmaskdnj.com\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"description\"\r\n\r\nsdads\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"label\"\r\n\r\n3\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"screenshot\"; filename=\"C:\\Users\\srahu\\Desktop\\New folder\\Picture.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"token\"\r\n\r\na9e6e6c4dd554bb9914488db3b5d18bb20c0e640\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--"
+    headers = {
+        'content-type': "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW",
+        'Cache-Control': "no-cache",
+        'Postman-Token': "2888b8bf-bdc1-4b57-bec7-70eb05b9388e"
+        }
+
+    response = requests.request("POST", url, data=payload, headers=headers)
+
+    return HttpResponse("Done")          
+
+def get_file_extension(self, file_name, decoded_file):
+    import imghdr
+
+    extension = imghdr.what(file_name, decoded_file)
+    extension = "jpg" if extension == "jpeg" else extension
+
+    return extension    
