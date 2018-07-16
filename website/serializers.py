@@ -18,7 +18,7 @@ class IssueViewSet(viewsets.ModelViewSet):
     queryset = Issue.objects.all()
     serializer_class = IssueSerializer
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('url', 'description')
+    search_fields = ('url', 'description', 'user__id')
 
 class UserProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
