@@ -74,11 +74,13 @@ urlpatterns = [
                   url(r'^i18n/', include('django.conf.urls.i18n')),
                   url(r'^domain_check/$', website.views.domain_check),
                   url(r'^api/v1/', include(router.urls)),
-                  url(r'^api/v1/userscore$', website.views.get_score),
+                  url(r'^api/v1/userscore/$', website.views.get_score),
                   url(r'^authenticate/', CustomObtainAuthToken.as_view()),
                   url(r'^api/v1/create_tokens/$', website.views.create_tokens),
                   url(r'^api/v1/count/$', website.views.issue_count),
                   url(r'^api/v1/createissues/$', csrf_exempt(IssueCreate.as_view()), name="issuecreate"),
+                  url(r'^api/v1/delete_issue/(?P<id>\w+)/$', csrf_exempt(website.views.delete_issue)),   
+                  url(r'^api/v1/issue/update/$', csrf_exempt(website.views.UpdateIssue)),               
               ] 
 
 if settings.DEBUG:
