@@ -497,14 +497,22 @@ class UserProfileDetailView(DetailView):
             form.save()
         return redirect(reverse('profile', kwargs={'slug': kwargs.get('slug')}))
 
-
 def delete_issue(request, id):
+    try:
+        for token in Token.objects.all():
+            if request.POST['token'] == token.key:
+                request.user = User.objects.get(id = token.user_id)
+                tokenauth = True
+    except:
+        tokenauth = False              
     issue = Issue.objects.get(id=id)
     if request.user.is_superuser or request.user == issue.user:
         issue.delete()
         messages.success(request, 'Issue deleted')
-    return redirect('/')
-
+    if tokenauth == True :
+        return JsonResponse("Deleted", safe=False)    
+    else :
+        return redirect('/')
 
 class DomainDetailView(ListView):
     template_name = "domain.html"
@@ -695,7 +703,6 @@ class ScoreboardView(ListView):
             scoreboard_paginated = paginator.page(1)
         except EmptyPage:
             scoreboard_paginated = paginator.page(paginator.num_pages)
-
         context['scoreboard'] = scoreboard_paginated
         context['user'] = self.request.GET.get('user')
         return context
@@ -905,11 +912,18 @@ class InboundParseWebhookView(View):
 
 
 def UpdateIssue(request):
+    print(request.POST.get('action'))
     try:
         issue = Issue.objects.get(id=request.POST.get('issue_pk'))
     except Issue.DoesNoTExist:
         raise Http404("issue not found")
-
+    try:
+        for token in Token.objects.all():
+            if request.POST['token'] == token.key:
+                request.user = User.objects.get(id = token.user_id)
+                tokenauth = True
+    except:
+        tokenauth = False          
     if request.method == "POST" and request.user.is_superuser or (issue is not None and request.user == issue.user):
         if request.POST.get('action') == "close":
             issue.status = "closed"
