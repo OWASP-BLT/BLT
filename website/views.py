@@ -1157,6 +1157,7 @@ def get_scoreboard(request):
         temp['modified'] = each.modified
         try:
             temp['logo'] = each.logo.url
+            temp['logo'] = temp['logo'].replace('/media', '')
         except:
             temp['logo'] = "None"    
         if each.top_tester == None :
