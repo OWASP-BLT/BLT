@@ -1145,3 +1145,24 @@ def issue_count(request):
     open_issue = Issue.objects.filter(status="open").count()
     close_issue = Issue.objects.filter(status="closed").count()
     return JsonResponse({'open': open_issue , 'closed': close_issue},safe=False)
+
+def get_scoreboard(request):
+    scoreboard = list()
+    temp_domain = Domain.objects.all();
+    for each in temp_domain:
+        temp = dict()
+        temp['name'] = each.name
+        temp['open'] = len(each.open_issues)
+        temp['closed'] = len(each.closed_issues)
+        temp['modified'] = each.modified
+        try:
+            temp['logo'] = each.logo.url
+            temp['logo'] = temp['logo'].replace('/media', '')
+        except:
+            temp['logo'] = "None"    
+        if each.top_tester == None :
+            temp['top'] = "None"
+        else :  
+            temp['top'] = each.top_tester.username
+        scoreboard.append(temp)   
+    return JsonResponse(scoreboard, safe=False)
