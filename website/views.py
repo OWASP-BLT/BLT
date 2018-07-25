@@ -1147,6 +1147,7 @@ def issue_count(request):
     return JsonResponse({'open': open_issue , 'closed': close_issue},safe=False)
 
 def get_scoreboard(request):
+    from PIL import Image
     scoreboard = list()
     temp_domain = Domain.objects.all();
     for each in temp_domain:
@@ -1156,6 +1157,9 @@ def get_scoreboard(request):
         temp['closed'] = len(each.closed_issues)
         temp['modified'] = each.modified
         try:
+            from io import BytesIO
+            r = requests.get(each.logo.url)
+            im = Image.open(BytesIO(r.content))
             temp['logo'] = each.logo.url
             temp['logo'] = temp['logo'].replace('/media', '')
         except:
