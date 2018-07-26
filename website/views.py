@@ -1169,4 +1169,12 @@ def get_scoreboard(request):
         else :  
             temp['top'] = each.top_tester.username
         scoreboard.append(temp)   
-    return JsonResponse(scoreboard, safe=False)
+    paginator = Paginator(scoreboard, 10) 
+    page = request.GET.get('page')
+    try:
+        domain = paginator.page(page)
+    except PageNotAnInteger:
+       domain = paginator.page(1)
+    except EmptyPage:   
+       domain = paginator.page(paginator.num_pages)
+    return HttpResponse(json.dumps(domain.object_list, default=str) , content_type='application/json'  )
