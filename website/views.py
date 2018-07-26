@@ -1172,9 +1172,9 @@ def get_scoreboard(request):
     paginator = Paginator(scoreboard, 10) 
     page = request.GET.get('page')
     try:
-        contacts = paginator.page(page)
+        domain = paginator.page(page)
     except PageNotAnInteger:
-       contacts = paginator.page(1)
+       domain = paginator.page(1)
     except EmptyPage:   
-       contacts = paginator.page(paginator.num_pages)
-    return HttpResponse(json.dumps(contacts.object_list, default=str) , content_type='application/json'  )
+       domain = paginator.page(paginator.num_pages)
+    return HttpResponse(json.dumps(domain.object_list, default=str) , content_type='application/json'  )
