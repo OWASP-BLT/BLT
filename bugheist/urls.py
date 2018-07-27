@@ -55,6 +55,7 @@ urlpatterns = [
                       name='invite_friend'),
                   url(r'^terms/$', TemplateView.as_view(template_name="terms.html")),
                   url(r'^about/$', TemplateView.as_view(template_name="about.html")),
+                  url(r'^privacypolicy/$', TemplateView.as_view(template_name="privacy.html")),
                   url(r'^stats/$', StatsDetailView.as_view()),
                   url(r'^favicon\.ico$', favicon_view),
                   url(r'^sendgrid_webhook/$', csrf_exempt(InboundParseWebhookView.as_view()),
