@@ -258,9 +258,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
     fields = ['url', 'description', 'screenshot', 'domain', 'label']
     template_name = "report.html"
     def get_initial(self):
+        print("HERE")
         try:
             json_data = json.loads(self.request.body)
-            print(json_data['url'])
             if not self.request.GET._mutable:
                self.request.POST._mutable = True
             self.request.POST['url'] = json_data['url']
@@ -297,10 +297,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
                     self.request.FILES['screenshot'] = ContentFile(decoded_file, name=complete_file_name)
         except:
-            tokenauth = False  
-        initial = super(IssueCreate, self).get_initial()  
+            tokenauth = False        
+        initial = super(IssueCreate, self).get_initial()
         if self.request.POST.get('screenshot-hash'):
-            initial['screenshot'] = 'uploads\/' + self.request.POST.get('screenshot-hash') + '.png'    
+            initial['screenshot'] = 'uploads\/' + self.request.POST.get('screenshot-hash') + '.png'
         return initial
 
     def form_valid(self, form):
@@ -914,6 +914,7 @@ class InboundParseWebhookView(View):
 
 
 def UpdateIssue(request):
+    print(request.POST.get('action'))
     try:
         issue = Issue.objects.get(id=request.POST.get('issue_pk'))
     except Issue.DoesNoTExist:
@@ -1268,8 +1269,8 @@ class CreateIssue(CronJobBase):
                 )    
             else : 
                 data = {'url':url ,'description':email_message['Subject'],'file':str(screenshot_base64),'token':token, 'label':label ,'type' :'jpg'}                      
-                headers = {'Content-Type': 'application/json'}
-                requests.post('https://www.bugheist.com/api/v1/createissues/', data=json.dumps(data), headers=headers)
+                headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+                requests.post('http://192.168.137.1:8000/api/v1/createissues/', data=json.dumps(data), headers=headers)
         mail.logout()    
 
 
