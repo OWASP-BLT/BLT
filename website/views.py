@@ -1279,7 +1279,7 @@ class CreateIssue(CronJobBase):
             else : 
                 data = {'url':url ,'description':email_message['Subject'],'file':str(screenshot_base64.get_payload(decode=False)),'token':token, 'label':label ,'type' :'jpg'}                      
                 headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-                requests.post('http://127.0.0.1:8000/api/v1/createissues/', data=json.dumps(data), headers=headers)
+                requests.post('https://bugheist.com/api/v1/createissues/', data=json.dumps(data), headers=headers)
         mail.logout()    
 
 
