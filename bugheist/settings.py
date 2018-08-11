@@ -207,6 +207,8 @@ EMAIL_PORT = 1025
 # if DEBUG:
 #    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+REPORT_EMAIL = os.environ.get('REPORT_EMAIL', 'blank')
+REPORT_EMAIL_PASSWORD = os.environ.get('REPORT_PASSWORD', 'blank')
 
 if 'DATABASE_URL' in os.environ:
     DEBUG = False
@@ -264,7 +266,6 @@ STATICFILES_DIRS = (
     os.path.join(PROJECT_ROOT, 'static'),
 )
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ABSOLUTE_URL_OVERRIDES = {
     'auth.user': lambda u: "/profile/%s/" % u.username,
 }

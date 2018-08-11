@@ -258,7 +258,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
     fields = ['url', 'description', 'screenshot', 'domain', 'label']
     template_name = "report.html"
     def get_initial(self):
-        print("HERE")
         try:
             json_data = json.loads(self.request.body)
             if not self.request.GET._mutable:
@@ -296,6 +295,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     complete_file_name = "%s.%s" % (file_name, file_extension, )
 
                     self.request.FILES['screenshot'] = ContentFile(decoded_file, name=complete_file_name)
+                    newPic = Pic(self.request.FILES['screenshot'])
+                    newPic.save
         except:
             tokenauth = False        
         initial = super(IssueCreate, self).get_initial()
@@ -914,7 +915,6 @@ class InboundParseWebhookView(View):
 
 
 def UpdateIssue(request):
-    print(request.POST.get('action'))
     try:
         issue = Issue.objects.get(id=request.POST.get('issue_pk'))
     except Issue.DoesNoTExist:
@@ -1188,15 +1188,15 @@ class CreateIssue(CronJobBase):
     code = 'bugheist.create_issue'    # a unique code
 
     def do(self):
-        print("1st")
+        from django.conf import settings
         import imaplib
         mail = imaplib.IMAP4_SSL('imap.gmail.com',993)
         error = False
-        mail.login('mailkammu4664@gmail.com', 'hello4664')
+        mail.login(settings.REPORT_EMAIL, settings.REPORT_EMAIL_PASSWORD)
         mail.list()
         # Out: list of "folders" aka labels in gmail.
         mail.select("inbox") # connect to inbox.
-        typ, data = mail.search(None, 'ALL')
+        typ, data = mail.search(None, 'ALL' , 'UNSEEN')
         import email
         for num in data[0].split():
             image = False
@@ -1208,6 +1208,7 @@ class CreateIssue(CronJobBase):
             raw_email = ((data[0][1]).decode('utf-8'))
             email_message = email.message_from_string(raw_email)
             maintype = email_message.get_content_maintype()
+            error = False
             for part in email_message.walk():
                 if part.get_content_type() == "text/plain": # ignore attachments/html
                     body = part.get_payload(decode=True)
@@ -1241,36 +1242,44 @@ class CreateIssue(CronJobBase):
                     break;
             if label.lower() == "general":
                 label = 0
-            elif label.lower() == "Number Error":
+            elif label.lower() == "number error":
                 label = 1
-            elif label.lower() == "Functional":
+            elif label.lower() == "functional":
                 label = 2
-            elif label.lower() == "Performance":
+            elif label.lower() == "performance":
                 label = 3
-            elif label.lower() == "Security":
+            elif label.lower() == "security":
                 label = 4
-            elif label.lower() == "Typo":
+            elif label.lower() == "typo":
                 label = 5
-            elif label.lower() == "Design":
+            elif label.lower() == "design":
                 label = 6
             else :
-                error = True    
+                error = True      
             if token == "None" :
-                error = True
+                error = "TokenTrue"
             if image == False :
                 error = True
             if error == True :
                 send_mail(
-                    'Error In Your ',
+                    'Error In Your Report',
                     'There was something wrong with the mail you sent regarding the issue to be created. Please check the content and try again later !',
                     'Bugheist <support@bugheist.com>',
                     [address],
                     fail_silently=False,
-                )    
+                )  
+            elif error == "TokenTrue" :
+                  send_mail(
+                    'You are not a user of Bugheist',
+                    'You are not a Registered user at Bugheist .Please first Signup at Bugheist and Try Again Later ! .',
+                    'Bugheist <support@bugheist.com>',
+                    [address],
+                    fail_silently=False,
+                )  
             else : 
-                data = {'url':url ,'description':email_message['Subject'],'file':str(screenshot_base64),'token':token, 'label':label ,'type' :'jpg'}                      
+                data = {'url':url ,'description':email_message['Subject'],'file':str(screenshot_base64.get_payload(decode=False)),'token':token, 'label':label ,'type' :'jpg'}                      
                 headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-                requests.post('http://192.168.137.1:8000/api/v1/createissues/', data=json.dumps(data), headers=headers)
+                requests.post('http://127.0.0.1:8000/api/v1/createissues/', data=json.dumps(data), headers=headers)
         mail.logout()    
 
 
