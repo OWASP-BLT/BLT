@@ -15,6 +15,7 @@ import base64
 import six
 import uuid
 
+from django_cron import CronJobBase, Schedule
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
@@ -257,6 +258,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
     fields = ['url', 'description', 'screenshot', 'domain', 'label']
     template_name = "report.html"
     def get_initial(self):
+        print("HERE")
         try:
             json_data = json.loads(self.request.body)
             if not self.request.GET._mutable:
@@ -1145,3 +1147,130 @@ def issue_count(request):
     open_issue = Issue.objects.filter(status="open").count()
     close_issue = Issue.objects.filter(status="closed").count()
     return JsonResponse({'open': open_issue , 'closed': close_issue},safe=False)
+
+def get_scoreboard(request):
+    from PIL import Image
+    scoreboard = list()
+    temp_domain = Domain.objects.all();
+    for each in temp_domain:
+        temp = dict()
+        temp['name'] = each.name
+        temp['open'] = len(each.open_issues)
+        temp['closed'] = len(each.closed_issues)
+        temp['modified'] = each.modified
+        try:
+            from io import BytesIO
+            r = requests.get(each.logo.url)
+            im = Image.open(BytesIO(r.content))
+            temp['logo'] = each.logo.url
+            temp['logo'] = temp['logo'].replace('/media', '')
+        except:
+            temp['logo'] = "None"    
+        if each.top_tester == None :
+            temp['top'] = "None"
+        else :  
+            temp['top'] = each.top_tester.username
+        scoreboard.append(temp)   
+    paginator = Paginator(scoreboard, 10) 
+    page = request.GET.get('page')
+    try:
+        domain = paginator.page(page)
+    except PageNotAnInteger:
+       domain = paginator.page(1)
+    except EmptyPage:   
+       domain = paginator.page(paginator.num_pages)
+    return HttpResponse(json.dumps(domain.object_list, default=str) , content_type='application/json'  )
+
+class CreateIssue(CronJobBase):
+    RUN_EVERY_MINS = 1
+
+    schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+    code = 'bugheist.create_issue'    # a unique code
+
+    def do(self):
+        print("1st")
+        import imaplib
+        mail = imaplib.IMAP4_SSL('imap.gmail.com',993)
+        error = False
+        mail.login('mailkammu4664@gmail.com', 'hello4664')
+        mail.list()
+        # Out: list of "folders" aka labels in gmail.
+        mail.select("inbox") # connect to inbox.
+        typ, data = mail.search(None, 'ALL')
+        import email
+        for num in data[0].split():
+            image = False
+            screenshot_base64 = ""
+            url = ""
+            label = ""
+            token = "None"
+            typ, data = mail.fetch(num, '(RFC822)')
+            raw_email = ((data[0][1]).decode('utf-8'))
+            email_message = email.message_from_string(raw_email)
+            maintype = email_message.get_content_maintype()
+            for part in email_message.walk():
+                if part.get_content_type() == "text/plain": # ignore attachments/html
+                    body = part.get_payload(decode=True)
+                    body_text = (body.decode('utf-8'))
+                    words = body_text.split()
+                    flag_word = False
+                    for word in words:
+                        if word.lower() == ":":
+                            continue
+                        if word.lower() == "url":
+                            continue
+                        if word.lower() == "type":
+                            flag_word = True
+                            continue    
+                        if flag_word == False:
+                            url = word
+                            continue
+                        if flag_word == True:
+                            label = word    
+                if part.get_content_maintype() == 'multipart':
+                    continue
+                if part.get('Content-Disposition') is None:
+                    continue
+                image = True
+                screenshot_base64 = part
+            sender = email_message['From'].split()[-1]
+            address = re.sub(r'[<>]','',sender)
+            for user in User.objects.all() :
+                if user.email == address :
+                    token = Token.objects.get(user_id = user.id).key
+                    break;
+            if label.lower() == "general":
+                label = 0
+            elif label.lower() == "Number Error":
+                label = 1
+            elif label.lower() == "Functional":
+                label = 2
+            elif label.lower() == "Performance":
+                label = 3
+            elif label.lower() == "Security":
+                label = 4
+            elif label.lower() == "Typo":
+                label = 5
+            elif label.lower() == "Design":
+                label = 6
+            else :
+                error = True    
+            if token == "None" :
+                error = True
+            if image == False :
+                error = True
+            if error == True :
+                send_mail(
+                    'Error In Your ',
+                    'There was something wrong with the mail you sent regarding the issue to be created. Please check the content and try again later !',
+                    'Bugheist <support@bugheist.com>',
+                    [address],
+                    fail_silently=False,
+                )    
+            else : 
+                data = {'url':url ,'description':email_message['Subject'],'file':str(screenshot_base64),'token':token, 'label':label ,'type' :'jpg'}                      
+                headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+                requests.post('http://192.168.137.1:8000/api/v1/createissues/', data=json.dumps(data), headers=headers)
+        mail.logout()    
+
+

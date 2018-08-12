@@ -56,8 +56,13 @@ INSTALLED_APPS = (
     'annoying',
     'rest_framework',
     'django_filters',
-    'rest_framework.authtoken'
+    'rest_framework.authtoken',
+    'django_cron'
 )
+
+CRON_CLASSES = [
+    "website.views.CreateIssue"
+]
 
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -139,7 +144,7 @@ AUTHENTICATION_BACKENDS = (
 # }
 
 CONN_MAX_AGE = None
-
+DEBUG = True
 WSGI_APPLICATION = 'bugheist.wsgi.application'
 
 # Database
@@ -259,6 +264,7 @@ STATICFILES_DIRS = (
     os.path.join(PROJECT_ROOT, 'static'),
 )
 
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ABSOLUTE_URL_OVERRIDES = {
     'auth.user': lambda u: "/profile/%s/" % u.username,
 }
