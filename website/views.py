@@ -1212,7 +1212,7 @@ class CreateIssue(CronJobBase):
                     body = part.get_payload(decode=True)
                     body_text = (body.decode('utf-8'))
                     words = body_text.split()
-                    flag_word = False
+                    flag_word = False 
                     for word in words:
                         if word.lower() == ":":
                             continue
@@ -1225,7 +1225,7 @@ class CreateIssue(CronJobBase):
                             url = word
                             continue
                         if flag_word == True:
-                            label = word    
+                            label = word   
                 if part.get_content_maintype() == 'multipart':
                     continue
                 if part.get('Content-Disposition') is None:
@@ -1277,6 +1277,6 @@ class CreateIssue(CronJobBase):
             else : 
                 data = {'url':url ,'description':email_message['Subject'],'file':str(screenshot_base64.get_payload(decode=False)),'token':token, 'label':label ,'type' :'jpg'}                      
                 headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-                requests.post('https://bugheist.com/api/v1/createissues/', data=json.dumps(data), headers=headers)
+                requests.post('https://www.bugheist.com/api/v1/createissues/', data=json.dumps(data), headers=headers)
         mail.logout()    
 
