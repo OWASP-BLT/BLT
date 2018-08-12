@@ -7,6 +7,7 @@ name = "pypi"
 
 [packages]
 
+django_cron = "*"
 django = "*"
 dj-database-url = "*"
 django-allauth = "*"
