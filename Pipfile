@@ -1,12 +1,10 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [packages]
-
+django_cron = "*"
 django = "*"
 dj-database-url = "*"
 django-allauth = "*"
@@ -19,7 +17,7 @@ django-annoying = "*"
 tweepy = "*"
 unidecode = "*"
 user-agents = "*"
-whitenoise = "*"
+whitenoise = "==3.3.1"
 django-debug-toolbar = "*"
 selenium = "*"
 pylibmc = "*"
@@ -49,8 +47,5 @@ django_filter = "*"
 
 [dev-packages]
 
-
-
 [requires]
-
 python_version = "3.6"
