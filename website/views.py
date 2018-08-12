@@ -295,8 +295,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     complete_file_name = "%s.%s" % (file_name, file_extension, )
 
                     self.request.FILES['screenshot'] = ContentFile(decoded_file, name=complete_file_name)
-                    newPic = Pic(self.request.FILES['screenshot'])
-                    newPic.save
         except:
             tokenauth = False        
         initial = super(IssueCreate, self).get_initial()
