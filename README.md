@@ -1,4 +1,4 @@
-# [OWASP BLT](https://www.bugheist.com) [![Build Status](https://travis-ci.org/OWASP/BLT.svg?branch=master)](https://travis-ci.org/OWASP/BLT)
+# [OWASP BLT](https://www.bugheist.com) [![Build Status](https://travis-ci.org/OWASP/BLT.svg?branch=master)](https://travis-ci.org/OWASP/BLT) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/5d899b7004cc44f1977b03bc7d664ad9)](https://www.codacy.com/project/souravbadami/BLT/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=OWASP/BLT&amp;utm_campaign=Badge_Grade_Dashboard)
 
 **Report issues and get points, companies are held accountable.**
 
