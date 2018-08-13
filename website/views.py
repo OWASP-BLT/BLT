@@ -913,6 +913,7 @@ class InboundParseWebhookView(View):
 
 
 def UpdateIssue(request):
+    print(request.POST.get('action'))
     try:
         issue = Issue.objects.get(id=request.POST.get('issue_pk'))
     except Issue.DoesNoTExist:
