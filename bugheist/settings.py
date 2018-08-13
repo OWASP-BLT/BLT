@@ -56,8 +56,13 @@ INSTALLED_APPS = (
     'annoying',
     'rest_framework',
     'django_filters',
-    'rest_framework.authtoken'
+    'rest_framework.authtoken',
+    'django_cron'
 )
+
+CRON_CLASSES = [
+    "website.views.CreateIssue"
+]
 
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -202,6 +207,8 @@ EMAIL_PORT = 1025
 # if DEBUG:
 #    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+REPORT_EMAIL = os.environ.get('REPORT_EMAIL', 'blank')
+REPORT_EMAIL_PASSWORD = os.environ.get('REPORT_PASSWORD', 'blank')
 
 if 'DATABASE_URL' in os.environ:
     DEBUG = False
