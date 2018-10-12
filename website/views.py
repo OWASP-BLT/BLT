@@ -1157,6 +1157,7 @@ def get_scoreboard(request):
         temp['open'] = len(each.open_issues)
         temp['closed'] = len(each.closed_issues)
         temp['modified'] = each.modified
+        temp['logo'] = each.logo
         if each.top_tester == None :
             temp['top'] = "None"
         else :  
