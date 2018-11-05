@@ -1157,29 +1157,31 @@ def get_scoreboard(request):
         temp['open'] = len(each.open_issues)
         temp['closed'] = len(each.closed_issues)
         temp['modified'] = each.modified
-        try:
-            from io import BytesIO
-            r = requests.get(each.logo.url)
-            im = Image.open(BytesIO(r.content))
-            temp['logo'] = each.logo.url
-            temp['logo'] = temp['logo'].replace('/media', '')
-        except:
-            temp['logo'] = "None"    
+        temp['logo'] = each.logo
         if each.top_tester == None :
             temp['top'] = "None"
         else :  
             temp['top'] = each.top_tester.username
         scoreboard.append(temp)   
     paginator = Paginator(scoreboard, 10) 
+    domain_list = list()
+    for data in scoreboard:
+        domain_list.append(data)
+    count = (Paginator(scoreboard, 10).count)%10
+    for i in range(10-count):
+         domain_list.append(None)
+    temp = dict()
+    temp['name'] = None
+    domain_list.append(temp)
+    paginator = Paginator(domain_list, 10)
     page = request.GET.get('page')
     try:
         domain = paginator.page(page)
     except PageNotAnInteger:
-       domain = paginator.page(1)
+        domain = paginator.page(1)
     except EmptyPage:   
-       domain = paginator.page(paginator.num_pages)
+        domain = paginator.page(paginator.num_pages)
     return HttpResponse(json.dumps(domain.object_list, default=str) , content_type='application/json'  )
-
 class CreateIssue(CronJobBase):
     RUN_EVERY_MINS = 1
 
