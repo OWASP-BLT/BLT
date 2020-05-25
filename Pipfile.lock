@@ -1,11 +1,11 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "b612654c07068770d0a718698b59a69a06fa83a576049de6b5033b8df7a064c6"
+            "sha256": "831d21c0f45e8bf2dac2ee7769b990da6bf94baf39d00bc9407cc6c9535cf2fc"
         },
         "pipfile-spec": 6,
         "requires": {
-            "python_version": "3.6"
+            "python_version": "3.8"
         },
         "sources": [
             {
@@ -402,6 +402,7 @@
                 "sha256:e6c0c452336db0868d0de521d48872c2a359b1233b974c6b32c36ce68abc4820"
             ],
             "index": "pypi",
+            "markers": "sys_platform != 'win32'",
             "version": "==1.6.1"
         },
         "pyopenssl": {
