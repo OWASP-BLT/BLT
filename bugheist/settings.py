@@ -285,21 +285,18 @@ LOGIN_REDIRECT_URL = "/"
 
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': True,
+    'disable_existing_loggers': False,
     'handlers': {
         'console': {
-            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
         },
         'mail_admins': {
-            'level': 'DEBUG',
             'class': 'django.utils.log.AdminEmailHandler',
         },
     },
     'loggers': {
         '': {
             'handlers': ['console','mail_admins'],
-            'propagate': True,
             'level': 'DEBUG',
         },
     },
