@@ -82,7 +82,8 @@ urlpatterns = [
                   url(r'^api/v1/createissues/$', csrf_exempt(IssueCreate.as_view()), name="issuecreate"),
                   url(r'^api/v1/delete_issue/(?P<id>\w+)/$', csrf_exempt(website.views.delete_issue)),   
                   url(r'^api/v1/issue/update/$', csrf_exempt(website.views.UpdateIssue)),       
-                  url(r'^api/v1/scoreboard/$', website.views.get_scoreboard),        
+                  url(r'^api/v1/scoreboard/$', website.views.get_scoreboard),
+                  url(r'^error/', website.views.throw_error, name='post_error'),
               ] 
 
 if settings.DEBUG:
