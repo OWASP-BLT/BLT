@@ -20,6 +20,13 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 ADMIN_URL = os.environ.get('ADMIN_URL', 'admin')
 DEFAULT_FROM_EMAIL = "support@bugheist.com"
 
+ADMINS = (
+    ('Admin', DEFAULT_FROM_EMAIL),
+)
+
+
+MANAGERS = ADMINS
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
