@@ -50,7 +50,7 @@ class DomainViewSet(viewsets.ModelViewSet):
 
 
 router = routers.DefaultRouter()
-router.register(r'issues', IssueViewSet, base_name="issues")
-router.register(r'userissues', UserIssueViewSet, base_name="userissues")
-router.register(r'profile', UserProfileViewSet, base_name="profile")
-router.register(r'domain', DomainViewSet, base_name="domain")
+router.register(r'issues', IssueViewSet, basename="issues")
+router.register(r'userissues', UserIssueViewSet, basename="userissues")
+router.register(r'profile', UserProfileViewSet, basename="profile")
+router.register(r'domain', DomainViewSet, basename="domain")
