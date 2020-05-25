@@ -1283,3 +1283,5 @@ class CreateIssue(CronJobBase):
                 requests.post('https://www.bugheist.com/api/v1/createissues/', data=json.dumps(data), headers=headers)
         mail.logout()    
 
+def throw_error(request):
+    raise ValueError('error')
