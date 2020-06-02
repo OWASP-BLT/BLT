@@ -23,10 +23,28 @@ body {
 
 .page-header {
     font-weight: 400;
+    font-size: 20px;
+    padding: 20px 0px 0px 0px;
+    color: #333;
+    margin: 0 0;
+    border-bottom-width: 1px;
+}
+
+.page-header-index {
+    font-weight: 400;
     font-size: 40px;
     padding: 30px;
     margin: 20px 0;
     border-bottom-width: 1px;
+}
+
+.user-details{
+    background: #333;
+    margin: 0px -15px;
+}
+
+.user-profile-panel{
+    background-color: #f0f0f0;
 }
 
 .chrome-plugin {
@@ -367,13 +385,13 @@ a:hover {
 }
 
 .leaderboard-panel {
+    box-shadow: 0 8px 6px -6px black;
     border-left: 1px solid #ccc;
     border-top: 1px solid #ccc;
-    border-right: 1px solid #888;
+    border-right: 1px solid #ccc;
     border-bottom: 1px solid #888;
-    background-color: #ddd;
     padding: 10px;
-    margin-top: -7px;
+    margin-top: 66px;
 }
 
 .leaderboard-panel .box {
@@ -410,8 +428,12 @@ a:hover {
 
 .leaderboard-points {
     position: absolute;
-    top: 40px;
-    left: 75px;
+    top: 55px;
+    left: 10px;
+}
+
+textarea.bug-description {
+    resize: none;
 }
 
 textarea {
@@ -627,6 +649,6 @@ i.fa-5x {
     color: #333333;
 }
 
-.profileimage{
+.leaderboard-profile-image{
     border-radius:50%;
     }
