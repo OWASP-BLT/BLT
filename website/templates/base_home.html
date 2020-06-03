@@ -56,6 +56,7 @@
             </button>
             <a class="navbar-brand" href="/">
                 <img src="{% static "img/logo-small-transparent.png" %}">
+                <div><span>Report Issue, Win Prizes</span></div>
             </a>
         </div>
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
@@ -176,10 +177,40 @@
         </div>
     </div>
 </nav>
-<br><br><br><br>
+<br><br>
+
+<div class="full" style="background-image:url('https://hips.hearstapps.com/hmg-prod.s3.amazonaws.com/images/gettyimages-153946484-1-1575996437.jpg');">
+  <div class="container">
+    <div class="row clearfix">
+      <div style="padding: 0 0 400px 0;">
+        <br />
+         <div class="row row-header">
+            <div class="panel-group text-center">
+                <div class="panel panel-header panel-default">
+                  <div class="panel-heading">
+                    <h1 class="page-header-index header-title">{% trans "Find Bugs" %}</h1><h1 class="header-sub-title">{% trans "Win Points Prizes" %}</h1></div>
+                  <div class="panel-body">Enter URL, App name or GPS location of the issue
+                   <form class="form-group">
+                      <div class="form-group">
+                        <input type="url" class="form-control" id="exampleInputEmail3" placeholder="Enter Website">
+                      </div>
+                      <div class="form-group">
+                        <textarea class="form-control bug-description" rows="3" placeholder="Description"></textarea>
+                      </div>
+                      <button type="submit" class="btn btn-danger btn-sm prizebtn">Report Bug (+3 Points)</button>
+                    </form>
+                  </div>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="wrapper">
     <div id="page-wrapper">
-        <div class="container">
+        <div class="container-fluid">
             {% block content %}
             {% endblock %}
         </div>

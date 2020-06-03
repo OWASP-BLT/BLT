@@ -9,27 +9,177 @@
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <script src="{% static 'js/activity.js' %}"></script>
     <section class="hero">
-        <div class="heading">
-            <center><span><a href="https://steemit.com/@bugheist">Check out our new blog, the Bugheist Beacon</a></span></center>
-            <h1 class="page-header">{% trans "Find Bugs, Win Points and Prizes" %}</h1>
+       <div class="row" data-intro="View latest activities here." data-step="3" style="margin-left: 10px;">
+        <div class="col-md-8">
+            <h1 class="page-sub-header">Latest activity</h1>
+            <div class="list-group">
+                {% for activity in activities %}
+                    {% include '_activity.html' %}
+                {% endfor %}
+            </div>
+            <a href="/all_activity" class="btn btn-default btn-block">View All Activity</a>
         </div>
-        <div class="text-slider">
-            <ul>
-                <li class="text-slider-list"><h2
-                        class="text-slider-line active-line animated fadeInUp">{% trans "Fix issues on websites, apps or hardware (+3 points)" %}</h2>
-                </li>
-                <li class="text-slider-list"><h2
-                        class="text-slider-line animated fadeInUp">{% trans "Verify other bug reports(+2 points)" %}</h2>
-                </li>
-                <li class="text-slider-list"><h2
-                        class="text-slider-line animated fadeInUp">{% trans "Invite friends (when they signup , get +1 point)" %}</h2>
-                </li>
-                <li class="text-slider-list"><h2
-                        class="text-slider-line animated fadeInUp">{% trans "Find a bug on a new site or app (+4 points)" %}</h2>
-                </li>
-            </ul>
+        <div class="col-md-4">
+            <div class="row">
+                <div class="panel panel-default text-center">
+                    
+                    <br>
+                    <div class="panel-body leaderboard-panel">
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="panel-heading page-sub-header">
+                                {% now "F" %} <br>{% trans "Leaderboard" %}
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                               <div class="panel-heading page-sub-header">
+                                Grand Prize<br>250$
+                            </div>
+                          </div>
+                        </div>
+                       
+                    </div>
+
+                    <div class="list-group">
+                        {% if leaderboard %}
+                            {% for leader in leaderboard %}
+                                <div class="list-group-item activity-strip"
+                                     style="height: 80px; border: 1px solid #DDDDDD">
+                                    {% if leader.socialaccount_set.all.0.get_avatar_url %}
+                                        <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class = "leaderboard-profile-image pull-left" width="50"
+                                             height="50">
+                                    {% else %}
+                                        <img src="{% gravatar_url leader.email 50 %}" class = "leaderboard-profile-image pull-left">
+                                    {% endif %}
+                                    <a href="/profile/{{ leader.username }}"
+                                       class="text-capitalize leaderboard-name">{{ leader.username|truncatechars:20 }}</a>
+                                    <span class="label label-success leaderboard-rank">{{ forloop.counter|ordinal }}</span>
+                                    <div class="badge leaderboard-points">{{ leader.total_score }} Points</div>
+                                    <button type="submit" class="btn btn-danger btn-sm prizebtn">View Profile</button>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            </br> Leaderboard reset for {% now "F" %}. Be first to find issues!
+                        {% endif %}
+                    </div>
+                    <a href="/leaderboard" class="btn btn-default btn-block submit_button">View All</a>
+                </div>
+            </div>
         </div>
+    </div>
         <br>
+         
+
+        <div class="row">
+          <div class="col-sm-6 col-md-3">
+            <div class="thumbnail">
+               <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12 mt-3">
+                            <div class="card">
+                                <div class="card-horizontal">
+                                    <div class="img-square-wrapper">
+                                        <img class="" src="https://pbs.twimg.com/profile_images/1207726079374430208/j0_gmfGK_400x400.jpg" alt="Card image cap">
+                                    </div>
+                                    <div class="card border-primary mb-3 card-details" style="max-width: 25rem;">
+                                      <div class="card-header">Header</div>
+                                      <div class="card-body text-primary">
+                                        <h5 class="card-title">Primary card title</h5>
+                                        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                                      </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <small class="text-muted">Last updated 3 mins ago</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="thumbnail">
+               <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12 mt-3">
+                            <div class="card">
+                                <div class="card-horizontal">
+                                    <div class="img-square-wrapper">
+                                        <img class="" src="https://pbs.twimg.com/profile_images/1207726079374430208/j0_gmfGK_400x400.jpg" alt="Card image cap">
+                                    </div>
+                                    <div class="card border-primary mb-3 card-details" style="max-width: 25rem;">
+                                      <div class="card-header">Header</div>
+                                      <div class="card-body text-primary">
+                                        <h5 class="card-title">Primary card title</h5>
+                                        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                                      </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <small class="text-muted">Last updated 3 mins ago</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="thumbnail">
+               <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12 mt-3">
+                            <div class="card">
+                                <div class="card-horizontal">
+                                    <div class="img-square-wrapper">
+                                        <img class="" src="https://pbs.twimg.com/profile_images/1207726079374430208/j0_gmfGK_400x400.jpg" alt="Card image cap">
+                                    </div>
+                                    <div class="card border-primary mb-3 card-details" style="max-width: 25rem;">
+                                      <div class="card-header">Header</div>
+                                      <div class="card-body text-primary">
+                                        <h5 class="card-title">Primary card title</h5>
+                                        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                                      </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <small class="text-muted">Last updated 3 mins ago</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+          </div>
+        </div>    
+        <div class="col-sm-6 col-md-3">
+            <div class="thumbnail">
+               <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12 mt-3">
+                            <div class="card">
+                                <div class="card-horizontal">
+                                    <div class="img-square-wrapper">
+                                        <img class="" src="https://pbs.twimg.com/profile_images/1207726079374430208/j0_gmfGK_400x400.jpg" alt="Card image cap">
+                                    </div>
+                                    <div class="card border-primary mb-3 card-details" style="max-width: 25rem;">
+                                      <div class="card-header">Header</div>
+                                      <div class="card-body text-primary">
+                                        <h5 class="card-title">Primary card title</h5>
+                                        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                                      </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <small class="text-muted">Last updated 3 mins ago</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+          </div>
+        </div>
+    </div>
     </section>
     <div class="container-footer">
         <center>
@@ -175,65 +325,7 @@
         </div>
     </div>
 
-    <div class="row" data-intro="View latest activities here." data-step="3" style="margin-left: 10px;">
-        <div class="col-md-8">
-            <h1 class="page-sub-header">Latest activity</h1>
-            <div class="list-group">
-                {% for activity in activities %}
-                    {% include '_activity.html' %}
-                {% endfor %}
-            </div>
-            <a href="/all_activity" class="btn btn-default btn-block">View All Activity</a>
-        </div>
-        <div class="col-md-4">
-            <div class="row">
-                <div class="panel panel-default">
-                    <div class="panel-heading page-sub-header">
-                        {% now "F" %} {% trans "Leaderboard" %}
-                    </div>
-                    <br>
-                    <div class="panel-body leaderboard-panel">
-                        <strong>The 1st Place Hunter for {% now "F" %} will receive</strong>
-                        <div class="box leaderboardbox">
-                            <strong>$25 from <a href="www.owasp.org">Owasp</a></strong>
-                            <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post"
-                                  style="display:inline;margin-bottom:10px;">
-                                <input type="hidden" name="cmd" value="_xclick">
-                                <input type="hidden" name="business" value="coderbounty@gmail.com">
-                                <input type="hidden" name="item_name"
-                                       value="Sponsor a Prize for the {% now "F" %} Leaderboard on Bugheist">
-                                <input type="hidden" name="currency_code" value="USD">
-                                <button type="submit" class="btn btn-danger btn-sm prizebtn">Sponsor a Prize</button>
-                            </form>
-                        </div>
-                    </div>
-
-                    <div class="list-group">
-                        {% if leaderboard %}
-                            {% for leader in leaderboard %}
-                                <div class="list-group-item activity-strip"
-                                     style="height: 80px; border: 1px solid #DDDDDD">
-                                    {% if leader.socialaccount_set.all.0.get_avatar_url %}
-                                        <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class = "profileimage" width="50"
-                                             height="50">
-                                    {% else %}
-                                        <img src="{% gravatar_url leader.email 50 %}" class = "profileimage">
-                                    {% endif %}
-                                    <a href="/profile/{{ leader.username }}"
-                                       class="text-capitalize leaderboard-name">{{ leader.username|truncatechars:20 }}</a>
-                                    <span class="label label-success leaderboard-rank">{{ forloop.counter|ordinal }}</span>
-                                    <div class="badge leaderboard-points">{{ leader.total_score }} Points</div>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            </br> Leaderboard reset for {% now "F" %}. Be first to find issues!
-                        {% endif %}
-                    </div>
-                    <a href="/leaderboard" class="btn btn-default btn-block submit_button">View All</a>
-                </div>
-            </div>
-        </div>
-    </div>
+    
     <div class="row">
         <div class="col-lg-12">
             <h1 class="page-sub-header">Subscriptions:</h1>
