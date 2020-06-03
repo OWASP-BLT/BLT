@@ -19,6 +19,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 ADMIN_URL = os.environ.get('ADMIN_URL', 'admin')
 DEFAULT_FROM_EMAIL = "support@bugheist.com"
+SERVER_EMAIL = "support@bugheist.com"
+
+ADMINS = (
+    ('Admin', DEFAULT_FROM_EMAIL),
+)
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
@@ -224,7 +230,7 @@ if 'DATABASE_URL' in os.environ:
     GS_ACCESS_KEY_ID = os.environ.get('GS_ACCESS_KEY_ID', 'blank')
     GS_SECRET_ACCESS_KEY = os.environ.get('GS_SECRET_ACCESS_KEY', 'blank')
     GS_BUCKET_NAME = 'bhfiles'
-    DEFAULT_FILE_STORAGE = 'storages.backends.gs.GSBotoStorage'
+    DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
     GS_FILE_OVERWRITE = False
     GS_QUERYSTRING_AUTH = False
     MEDIA_URL = "https://bhfiles.storage.googleapis.com/"
@@ -279,22 +285,20 @@ LOGIN_REDIRECT_URL = "/"
 
 LOGGING = {
     'version': 1,
+    'disable_existing_loggers': False,
     'handlers': {
         'console': {
-            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
+        },
+        'mail_admins': {
+            'class': 'django.utils.log.AdminEmailHandler',
         },
     },
     'loggers': {
-        'django.request': {
-            'handlers': ['console'],
-            'propagate': True,
+        '': {
+            'handlers': ['console','mail_admins'],
             'level': 'DEBUG',
         },
-        'testlogger': {
-            'handlers': ['console'],
-            'level': 'INFO',
-        }
     },
 }
 

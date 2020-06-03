@@ -20,11 +20,12 @@ user-agents = "*"
 whitenoise = "==5"
 django-debug-toolbar = "*"
 selenium = "*"
-pylibmc = "*"
+pylibmc = {version = "*",sys_platform = "!= 'win32'"}
 "psycopg2-binary" = "*"
 boto = "*"
 django-cors-headers = "*"
-django-storages = "*"
+protobuf = {version = "*",sys_platform = "!= 'win32'"}
+django-storages = {version = "*",sys_platform = "!= 'win32'",extras = ["google"]}
 django-timedeltafield = "*"
 easyprocess = "*"
 "giturlparse.py" = "*"
@@ -49,4 +50,4 @@ cffi = "*"
 [dev-packages]
 
 [requires]
-python_version = "3.6"
+python_version = "3.8"
