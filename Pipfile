@@ -46,6 +46,7 @@ ua-parser = "*"
 djangorestframework = "*"
 django_filter = "*"
 cffi = "*"
+django-tellme = "*"
 
 [dev-packages]
 

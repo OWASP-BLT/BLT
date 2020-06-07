@@ -63,7 +63,8 @@ INSTALLED_APPS = (
     'rest_framework',
     'django_filters',
     'rest_framework.authtoken',
-    'django_cron'
+    'django_cron',
+    'tellme',
 )
 
 CRON_CLASSES = [
