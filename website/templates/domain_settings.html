@@ -1,0 +1,41 @@
+{% extends "base_dashboard_domain.html" %}
+{% load socialaccount %}
+{% load gravatar %}
+{% load static %}
+{% block content %}
+                <div class="col-md-4 widget_middle_left">
+              <div class="online">
+                    {% if admins %}
+                      {% for admin in admins %}                
+                        <a href="#"><div class="online-top">
+                          <div class="top-at">
+                            {% if request.user.userprofile.avatar %}
+                                <img class="img-responsive" src="{{ request.user.userprofile.avatar }}">
+                            {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
+                                <img class="img-responsive" src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}">
+                            {% else %}
+                                {% gravatar request.user.email 20 %}
+                            {% endif %}
+                          </div>
+                          <div class="top-on">
+                            <div class="top-on1">
+                              <p>{{admin.user}}</p>
+                              {% ifequal admin.user request.user %}
+                                you
+                              {% endifequal %}
+                              <span>{{admin.get_role_display}}</span>
+                            </div>
+                            <button type="button" class="btn btn_5 btn-lg btn-danger role-change-button">Chanage Role</button>
+                            <div class="clearfix"> </div>
+                          </div>
+                          <div class="clearfix"> </div>
+                        </div>
+                      </a>
+                      {% endfor %}
+                  {% else %}
+                      </br> no more admins !
+                  {% endif %}   
+              </div>
+            </div>
+            <button type="button" class="btn btn_5 btn-lg btn-success add-admin-button"><i class="lnr lnr-plus-circle"> </i></button>
+{% endblock %}

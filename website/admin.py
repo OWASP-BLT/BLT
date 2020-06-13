@@ -31,7 +31,7 @@ class IssueAdmin(admin.ModelAdmin):
 
 
 class HuntAdmin(admin.ModelAdmin):
-    list_display = ('domain', 'url', 'prize', 'logo', 'plan', 'created', 'modified')
+    list_display = ('domain', 'url', 'prize', 'logo', 'starts_on','end_on', 'plan', 'created', 'modified')
 
 
 class DomainAdminPanel(ImportExportModelAdmin):
