@@ -47,7 +47,6 @@ class Domain(models.Model):
     facebook = models.URLField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
-    is_published = models.BooleanField(default=False)
     subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.CASCADE)
 
     def __unicode__(self):
@@ -256,6 +255,9 @@ class Hunt(models.Model):
     txn_id = models.CharField(max_length=50, null=True, blank=True)
     color = models.CharField(max_length=10, null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
+    starts_on = models.DateTimeField(null=True, blank=True)
+    end_on = models.DateTimeField(null=True, blank=True)
+    is_published = models.BooleanField(default=False)
     modified = models.DateTimeField(auto_now=True)
 
     @property

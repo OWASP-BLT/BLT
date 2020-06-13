@@ -2799,8 +2799,8 @@ canvas#doughnut, canvas#line, canvas#polarArea, #bar, #pie, #radar{
   border-color:rgb(3, 197, 135);
 }
 .btn-success:hover{
-    border-color: #db4553 !important;
-    background: #db4553 !important;
+    border-color: #458ddb !important;
+    background: #458ddb !important;
 }
 .control2{
   height:253px;
@@ -3447,14 +3447,14 @@ div.checker input {
 }
 .badge-success, .bg-green, .bootstrap-switch-success, .btn-success {
 	border: none;
-    background:#db4553;
+    background:#458ddb;
     padding: 9.5px 12px;
 	outline:none;
 }
 .btn-success:hover, .btn-success:focus, .btn-success:active, .btn-success.active, .open .dropdown-toggle.btn-success {
   color: #fff;
-  background-color:#b8c9f1;
-  border-color:#b8c9f1;
+  background-color:#458ddb;
+  border-color:#458ddb;
   outline:none;
 }
 .btn-toolbar {
@@ -4407,7 +4407,7 @@ button.rew:hover {
 h1.blank,h3.blank1 {
 	font-size:2em;
 	color:#999;
-	margin:0 0 1em;
+	margin:0 0 ;
 }
 /*-- //blank_page --*/
 /*-- grid_page --*/
@@ -4420,6 +4420,23 @@ h1.blank,h3.blank1 {
 }
 .grd_tble {
     margin-bottom: 0px;
+}
+.role-change-button{
+    margin: 0 20px 0 20px;
+}
+.add-admin-button{
+    position: fixed;
+    width:60px;
+    height:60px;
+    bottom:40px;
+    right:40px;
+    /* background-color:#0C9; */
+    color:#FFF;
+    border-radius:14px;
+    text-align:center;
+    box-shadow: 2px 2px 3px #999;
+    font-size: 30;
+
 }
 .main-content1 {
     min-height: 1080px !important;

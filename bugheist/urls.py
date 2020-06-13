@@ -14,7 +14,8 @@ from website.serializers import router
 from website.views import (UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView,
                            InboundParseWebhookView, LeaderboardView, IssueView, AllIssuesView, SpecificIssuesView,                            
                            HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend,
-                           ScoreboardView,get_score,CustomObtainAuthToken,create_tokens,issue_count,get_scoreboard)
+                           ScoreboardView,get_score,CustomObtainAuthToken,create_tokens,issue_count,get_scoreboard,
+                           CreateHunt, DraftHunts, UpcomingHunts, DomainSettings)
 from rest_framework.authtoken import views
 
 favicon_view = RedirectView.as_view(url='/static/favicon.ico', permanent=True)
@@ -23,7 +24,11 @@ admin.autodiscover()
 
 urlpatterns = [
                   url(r'^$', website.views.index, name='index'),
-                  url(r'^dashboard/domain/$', website.views.domain_dashboard, name='domain'),
+                  url(r'^dashboard/domain/$', website.views.domain_dashboard, name='domain_dashboar_home'),
+                  url(r'^dashboard/domain/hunt/create$', CreateHunt.as_view(), name='create_hunt'),
+                  url(r'^dashboard/domain/hunt/drafts$', DraftHunts.as_view(), name='draft_hunts'),
+                  url(r'^dashboard/domain/hunt/upcoming$', UpcomingHunts.as_view(), name='upcoming_hunts'),
+                  url(r'^dashboard/domain/settings$', DomainSettings.as_view(), name='domain-settings'),
                   url(r'^dashboard/user/$', website.views.user_dashboard, name='domain'),
                   path(settings.ADMIN_URL + '/', admin.site.urls),
                   url(r'^like_issue/(?P<issue_pk>\d+)/$', website.views.like_issue, name="like_issue"),

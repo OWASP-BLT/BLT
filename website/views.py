@@ -5,7 +5,7 @@ import re
 import time
 import urllib.request, urllib.error, urllib.parse
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import urlparse
 from urllib.parse import urlsplit
 
@@ -95,11 +95,21 @@ def index(request, template="index.html"):
 
 @login_required(login_url='/accounts/login')
 def domain_dashboard(request, template="index_domain.html"):
-    try:
-        domain_admin = DomainAdmin.objects.get(user=request.user)
-        return render(request, template)
-    except:
-        return HttpResponseRedirect("/")
+
+    domain_admin = DomainAdmin.objects.get(user=request.user)
+    hunts = Hunt.objects.filter(is_published=True,domain=domain_admin.domain)
+    upcoming_hunt = list()
+    ongoing_hunt = list()
+    previous_hunt = list()
+    for hunt in hunts:
+        if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
+            upcoming_hunt.append(hunt)
+        elif((hunt.end_on-datetime.now(timezone.utc)).total_seconds()) < 0:
+            previous_hunt.append(hunt)
+        else:
+            ongoing_hunt.append(hunt)
+    context = {'upcoming_hunts': upcoming_hunt,'ongoing_hunt':ongoing_hunt,'previous_hunt':previous_hunt}
+    return render(request, template, context)
 
 
 @login_required(login_url='/accounts/login')
@@ -1303,3 +1313,95 @@ class CreateIssue(CronJobBase):
 
 def throw_error(request):
     raise ValueError('error')
+
+class CreateHunt(TemplateView):
+    model = Hunt
+    fields = ['url', 'logo', 'domain', 'plan', 'prize', 'txn_id']
+    template_name = "create_hunt.html"
+
+    @method_decorator(login_required)
+    def get(self, request, *args, **kwargs):
+        try:
+            domain_admin = DomainAdmin.objects.get(user=request.user)
+            hunt = self.model.objects.filter(is_published=False)
+            context = {'hunts': hunt}
+            return render(request, self.template_name, context)
+        except:
+            return HttpResponseRedirect("/")
+
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
+        if form.is_valid():
+            form.save()
+        return redirect(reverse('profile', kwargs={'slug': kwargs.get('slug')}))
+
+class DraftHunts(TemplateView):
+    model = Hunt
+    fields = ['url', 'logo', 'domain', 'plan', 'prize', 'txn_id']
+    template_name = "hunt_drafts.html"
+
+    @method_decorator(login_required)
+    def get(self, request, *args, **kwargs):
+        try:
+            domain_admin = DomainAdmin.objects.get(user=request.user)
+            hunt = self.model.objects.filter(is_published=False)
+            context = {'hunts': hunt}
+            return render(request, self.template_name, context)
+        except:
+            return HttpResponseRedirect("/")
+
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
+        if form.is_valid():
+            form.save()
+        return redirect(reverse('profile', kwargs={'slug': kwargs.get('slug')}))
+
+class UpcomingHunts(TemplateView):
+    model = Hunt
+    fields = ['url', 'logo', 'domain', 'plan', 'prize', 'txn_id']
+    template_name = "hunt_upcoming.html"
+
+    @method_decorator(login_required)
+    def get(self, request, *args, **kwargs):
+        try:
+            domain_admin = DomainAdmin.objects.get(user=request.user)
+            hunts = self.model.objects.filter(is_published=True)
+            new_hunt = list()
+            for hunt in hunts:
+                if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
+                    new_hunt.append(hunt)
+            context = {'hunts': new_hunt}
+            return render(request, self.template_name, context)
+        except:
+            return HttpResponseRedirect("/")
+
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
+        if form.is_valid():
+            form.save()
+        return redirect(reverse('profile', kwargs={'slug': kwargs.get('slug')}))
+
+class DomainSettings(TemplateView):
+    model = DomainAdmin
+    fields = ['user', 'domain', 'role']
+    template_name = "domain_settings.html"
+
+    @method_decorator(login_required)
+    def get(self, request, *args, **kwargs):
+        try:
+            domain_admin = DomainAdmin.objects.get(user=request.user)
+            domain_admins = DomainAdmin.objects.filter(domain=domain_admin.domain)
+            context = {'admins': domain_admins}
+            return render(request, self.template_name, context)
+        except:
+            return HttpResponseRedirect("/")
+
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
+        if form.is_valid():
+            form.save()
+        return redirect(reverse('profile', kwargs={'slug': kwargs.get('slug')}))
