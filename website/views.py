@@ -88,6 +88,9 @@ def index(request, template="index.html"):
     }
     return render(request, template, context)
 
+@login_required(login_url='/accounts/login')
+def domain(request, template="base_dashboard.html"):
+    return render(request, template)
 
 def find_key(request, token):
     if token == os.environ.get("ACME_TOKEN"):

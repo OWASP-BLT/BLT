@@ -26,8 +26,14 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
         Token.objects.create(user=instance)
 
 
+class Subscription(models.Model):
+    name = models.CharField(max_length=25, null=False, blank=True)
+    charge_per_month = models.IntegerField(null=False, blank=True)
+    feature = models.BooleanField(default=True)
+
 
 class Domain(models.Model):
+    admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=255, unique=True)
     url = models.URLField()
     logo = models.ImageField(upload_to="logos", null=True, blank=True)
@@ -41,6 +47,8 @@ class Domain(models.Model):
     facebook = models.URLField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
+    is_published = models.BooleanField(default=False)
+    subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.CASCADE)
 
     def __unicode__(self):
         return self.name
@@ -240,7 +248,7 @@ signals.post_save.connect(post_to_twitter, sender=Issue)
 
 
 class Hunt(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
     url = models.URLField()
     prize = models.IntegerField()
     logo = models.ImageField(upload_to="logos", null=True, blank=True)
@@ -342,3 +350,13 @@ class IP(models.Model):
 
     def issue_number(self):
         return self.issuenumber 
+
+class DomainAdmin(models.Model):
+    role = (
+        (0, 'Super Admin'),
+        (1, 'Hunt Admin'),
+    )
+    role = models.IntegerField(choices=role, default=0)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True)
