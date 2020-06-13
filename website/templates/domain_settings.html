@@ -37,5 +37,29 @@
                   {% endif %}   
               </div>
             </div>
-            <button type="button" class="btn btn_5 btn-lg btn-success add-admin-button"><i class="lnr lnr-plus-circle"> </i></button>
+
+            <div id="addUserModal" class="modal fade" role="dialog">
+              <div class="modal-dialog">
+
+                <!-- Modal content-->
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Add an Admin ?</h4>
+                  </div>
+                  <div class="modal-body">
+                    <div class="form-group">
+                      <label for="email">Email address:</label>
+                      <input type="email" class="form-control" id="email">
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Submit</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+            <button type="button" class="btn btn_5 btn-lg btn-success add-admin-button" data-toggle="modal" data-target="#addUserModal"><i class="lnr lnr-plus-circle"> </i></button>
 {% endblock %}
