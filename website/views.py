@@ -38,7 +38,7 @@ from django.http import Http404
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -50,7 +50,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 
 from rest_framework.authtoken.views import ObtainAuthToken
-from website.models import Issue, Points, Hunt, Domain, InviteFriend, UserProfile, IP
+from website.models import Issue, Points, Hunt, Domain, InviteFriend, UserProfile, IP, DomainAdmin
 from .forms import FormInviteFriend, UserProfileForm
 
 
@@ -71,6 +71,10 @@ def index(request, template="index.html"):
     user_count = User.objects.all().count()
     hunt_count = Hunt.objects.all().count()
     domain_count = Domain.objects.all().count()
+    try:
+        domain_admin = DomainAdmin.objects.get(user=request.user)
+    except:
+        domain_admin = None
     context = {
         'activities': Issue.objects.all()[0:10],
         'domains': domains,
@@ -81,6 +85,7 @@ def index(request, template="index.html"):
         'not_verified': show_message,
         #'open_issue_owasp': open_issue_owasp,
         #'closed_issue_owasp': closed_issue_owasp,
+        'domain_admin' : domain_admin,
         'bug_count': bug_count,
         'user_count': user_count,
         'hunt_count': hunt_count,
@@ -89,8 +94,18 @@ def index(request, template="index.html"):
     return render(request, template, context)
 
 @login_required(login_url='/accounts/login')
-def domain(request, template="base_dashboard.html"):
+def domain_dashboard(request, template="index_domain.html"):
+    try:
+        domain_admin = DomainAdmin.objects.get(user=request.user)
+        return render(request, template)
+    except:
+        return HttpResponseRedirect("/")
+
+
+@login_required(login_url='/accounts/login')
+def user_dashboard(request, template="index_user.html"):
     return render(request, template)
+
 
 def find_key(request, token):
     if token == os.environ.get("ACME_TOKEN"):

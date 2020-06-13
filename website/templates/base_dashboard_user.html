@@ -30,10 +30,7 @@
     <link href="{% static "css/text-slider.css" %}" rel="stylesheet" type="text/css">
     <link href="{% static "css/activity.css" %}" rel="stylesheet" type="text/css">
     <script src="{% static "vendor/jquery/jquery-1.10.2.min.js" %}"></script>
-    <script src="{% static "js/notify.js" %}"></script>
-    <script src="{% static "js/intro.js" %}"></script>
-    <script src="{% static "js/text-slider.js" %}"></script>
-    <script src="{% static "js/embed.js" %}"></script>
+
     <style>
         {% block style %}
         {% endblock %}
@@ -60,18 +57,10 @@
                 
                     <ul class="nav nav-pills nav-stacked custom-nav">
                         <li class="active"><a href="index.html"><i class="lnr lnr-power-switch"></i><span>Home</span></a></li>
-                        <li class="menu-list">
-                            <a href="#"><i class="lnr lnr-rocket"></i>
-                                <span>Create</span></a>
-                                <ul class="sub-menu-list">
-                                    <li><a href="grids.html">Bug Hunt</a> </li>
-                                    <li><a href="widgets.html">Bugathon</a></li>
-                                </ul>
-                        </li>
                         <li><a href="#"><i class="lnr lnr-train"></i> <span>Ongoing Hunts</span></a></li>
                         <li><a href="#"><i class="lnr lnr-spell-check"></i> <span>Previous Hunts</span></a></li>
                         <li><a href="#"><i class="lnr lnr-diamond"></i> <span>Wallet</span></a></li>              
-                        <li><a href="#"><i class="lnr lnr-cog"></i> <span>Settings</span></a></li>
+                        <li><a href="#"><i class="lnr lnr-gift"></i> <span>Rewards</span></a></li>
                     </ul>
                 
             </div>
@@ -127,8 +116,57 @@
             </div>
         
             <div id="page-wrapper">
-                            
-            
+                <div>
+                    <div class="col_3">
+                        <h1 class="text-left dashboard-header-text">Ongoing Hunt</h1>                        
+                        <div class="col-md-3 widget widget1">
+                            <div class="r3_counter_box">
+                                <i class="fa fa-mail-forward"></i>
+                                <div class="stats">
+                                  <h5>Description<span></span></h5>
+                                  <div class="hunt">
+                                    <p>A Hunt</p>
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="clearfix"> </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="col_3">
+                        <h1 class="text-left dashboard-header-text">Upcoming Hunt</h1>
+                        <div class="col-md-3 widget widget1">
+                            <div class="r3_counter_box">
+                                <i class="fa fa-mail-forward"></i>
+                                <div class="stats">
+                                  <h5>Description <span></span></h5>
+                                  <div class="hunt">
+                                    <p>A hunt</p>
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="clearfix"> </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="col_3">
+                        <h1 class="text-left dashboard-header-text">Previous Hunt</h1>
+                        <div class="col-md-3 widget widget1">
+                            <div class="r3_counter_box">
+                                <i class="fa fa-mail-forward"></i>
+                                <div class="stats">
+                                  <h5>Descrirption<span></span></h5>
+                                  <div class="hunt">
+                                    <p>A Hunt</p>
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="clearfix"> </div>
+                    </div>
+                </div>                            
             </div>
              
         </div>

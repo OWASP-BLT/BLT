@@ -119,7 +119,19 @@
                 </button>
             </form>
             <ul class="nav navbar-nav navbar-right">
-                <li><p class="navbar-text">Found a bug ?</p></li>
+                <li> 
+                    {% if request.user.is_authenticated %}
+                        {% if domain_admin %}
+                            <a href="/dashboard/domain/">{{domain_admin.domain.name}}</a>
+                        {% endif %} 
+                    {% endif %}
+                </li>
+                <li> 
+                    {% if request.user.is_authenticated %}
+                        <a href="/dashboard/user/">{% trans "Dashboard" %}</a>
+                    {% endif %}
+                </li>
+                <li><p class="navbar-text"> Found a bug ?</p></li>
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-intro="Click here to report any kind of bug." data-step="1"
                        data-toggle="dropdown"><b>Report here</b> <span class="caret"></span></a>
