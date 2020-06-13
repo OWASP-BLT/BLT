@@ -1,0 +1,60 @@
+{% extends "base_dashboard_domain.html" %}
+{% load static %}
+{% load gravatar %}
+{% load socialaccount %}
+{% load humanize %}
+{% providers_media_js %}
+{% load i18n %}
+{% block content %}
+                <div>
+                    <div class="col_3">
+                        <h1 class="text-left dashboard-header-text">Ongoing Hunt</h1>                        
+                        <div class="col-md-3 widget widget1">
+                            <div class="r3_counter_box">
+                                <i class="fa fa-mail-forward"></i>
+                                <div class="stats">
+                                  <h5>Description<span></span></h5>
+                                  <div class="hunt">
+                                    <p>A Hunt</p>
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="clearfix"> </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="col_3">
+                        <h1 class="text-left dashboard-header-text">Upcoming Hunt</h1>
+                        <div class="col-md-3 widget widget1">
+                            <div class="r3_counter_box">
+                                <i class="fa fa-mail-forward"></i>
+                                <div class="stats">
+                                  <h5>Description <span></span></h5>
+                                  <div class="hunt">
+                                    <p>A hunt</p>
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="clearfix"> </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="col_3">
+                        <h1 class="text-left dashboard-header-text">Previous Hunt</h1>
+                        <div class="col-md-3 widget widget1">
+                            <div class="r3_counter_box">
+                                <i class="fa fa-mail-forward"></i>
+                                <div class="stats">
+                                  <h5>Descrirption<span></span></h5>
+                                  <div class="hunt">
+                                    <p>A Hunt</p>
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="clearfix"> </div>
+                    </div>
+                </div>
+{% endblock %}

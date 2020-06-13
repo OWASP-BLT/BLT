@@ -23,7 +23,8 @@ admin.autodiscover()
 
 urlpatterns = [
                   url(r'^$', website.views.index, name='index'),
-                  url(r'^dashboard/domain/$', website.views.domain, name='domain'),
+                  url(r'^dashboard/domain/$', website.views.domain_dashboard, name='domain'),
+                  url(r'^dashboard/user/$', website.views.user_dashboard, name='domain'),
                   path(settings.ADMIN_URL + '/', admin.site.urls),
                   url(r'^like_issue/(?P<issue_pk>\d+)/$', website.views.like_issue, name="like_issue"),
                   url(r'^save_issue/(?P<issue_pk>\d+)/$', website.views.save_issue, name="save_issue"),
