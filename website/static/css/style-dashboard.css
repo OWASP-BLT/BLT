@@ -3811,11 +3811,11 @@ label.round {
   font-size: 0.9em;
   color: #dc483a;
 }
-.top-on1 p {
+/*.top-on1 p {
   font-size: 1em;
   color: #000;
   font-weight:500;
-}
+}*/
 .online-top1{
 	border-bottom:none;
 }
@@ -4423,6 +4423,11 @@ h1.blank,h3.blank1 {
 }
 .role-change-button{
     margin: 0 20px 0 20px;
+    float: right;
+}
+.role-submit-button{
+    margin: 30px 20px 0 20px;
+    float: right;
 }
 .add-admin-button{
     position: fixed;
@@ -4437,6 +4442,10 @@ h1.blank,h3.blank1 {
     box-shadow: 2px 2px 3px #999;
     font-size: 30;
 
+}
+.user-role {
+	font-size: 0.9em;
+	color: #dc483a;
 }
 .main-content1 {
     min-height: 1080px !important;

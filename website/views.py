@@ -1345,7 +1345,7 @@ class DraftHunts(TemplateView):
     def get(self, request, *args, **kwargs):
         try:
             domain_admin = DomainAdmin.objects.get(user=request.user)
-            hunt = self.model.objects.filter(is_published=False)
+            hunt = self.model.objects.filter(is_published=False,domain=domain_admin.domain)
             context = {'hunts': hunt}
             return render(request, self.template_name, context)
         except:
@@ -1367,10 +1367,66 @@ class UpcomingHunts(TemplateView):
     def get(self, request, *args, **kwargs):
         try:
             domain_admin = DomainAdmin.objects.get(user=request.user)
-            hunts = self.model.objects.filter(is_published=True)
+            hunts = self.model.objects.filter(is_published=True,domain=domain_admin.domain)
             new_hunt = list()
             for hunt in hunts:
                 if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
+                    new_hunt.append(hunt)
+            context = {'hunts': new_hunt}
+            return render(request, self.template_name, context)
+        except:
+            return HttpResponseRedirect("/")
+
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
+        if form.is_valid():
+            form.save()
+        return redirect(reverse('profile', kwargs={'slug': kwargs.get('slug')}))
+
+class OngoingHunts(TemplateView):
+    model = Hunt
+    fields = ['url', 'logo', 'domain', 'plan', 'prize', 'txn_id']
+    template_name = "hunt_ongoing.html"
+
+    @method_decorator(login_required)
+    def get(self, request, *args, **kwargs):
+        try:
+            domain_admin = DomainAdmin.objects.get(user=request.user)
+            hunts = self.model.objects.filter(is_published=True,domain=domain_admin.domain)
+            new_hunt = list()
+            for hunt in hunts:
+                if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
+                    new_hunt.append(hunt)
+            context = {'hunts': new_hunt}
+            return render(request, self.template_name, context)
+        except:
+            return HttpResponseRedirect("/")
+
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
+        if form.is_valid():
+            form.save()
+        return redirect(reverse('profile', kwargs={'slug': kwargs.get('slug')}))
+
+class PreviousHunts(TemplateView):
+    model = Hunt
+    fields = ['url', 'logo', 'domain', 'plan', 'prize', 'txn_id']
+    template_name = "hunt_previous.html"
+
+    @method_decorator(login_required)
+    def get(self, request, *args, **kwargs):
+        try:
+            domain_admin = DomainAdmin.objects.get(user=request.user)
+            hunts = self.model.objects.filter(is_published=True,domain=domain_admin.domain)
+            new_hunt = list()
+            for hunt in hunts:
+                if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
+                    pass
+                elif((hunt.end_on-datetime.now(timezone.utc)).total_seconds()) < 0:
+                    pass
+                else:
                     new_hunt.append(hunt)
             context = {'hunts': new_hunt}
             return render(request, self.template_name, context)
@@ -1393,7 +1449,7 @@ class DomainSettings(TemplateView):
     def get(self, request, *args, **kwargs):
         try:
             domain_admin = DomainAdmin.objects.get(user=request.user)
-            domain_admins = DomainAdmin.objects.filter(domain=domain_admin.domain)
+            domain_admins = DomainAdmin.objects.filter(domain=domain_admin.domain,is_active=True)
             context = {'admins': domain_admins}
             return render(request, self.template_name, context)
         except:
@@ -1405,3 +1461,52 @@ class DomainSettings(TemplateView):
         if form.is_valid():
             form.save()
         return redirect(reverse('profile', kwargs={'slug': kwargs.get('slug')}))
+ 
+@login_required(login_url='/accounts/login')
+def update_role(request):
+    if request.method == "POST":
+        domain_admin = DomainAdmin.objects.get(user=request.user)
+        if domain_admin.role==0 and domain_admin.is_active:
+            for key, value in request.POST.items():
+                if key.startswith('user@'):
+                    user = User.objects.get(username=value)
+                    domain_admin = DomainAdmin.objects.get(user=user)
+                    print(request.POST['role@'+value])
+                    domain_admin.role = request.POST['role@'+value]
+                    domain_admin.save()
+
+            return HttpResponse("success")
+        else:
+            return HttpResponse("failed")
+    else:
+        return HttpResponse("failed")
+
+@login_required(login_url='/accounts/login')
+def add_role(request):
+    if request.method == "POST":
+        domain_admin = DomainAdmin.objects.get(user=request.user)
+        if domain_admin.role==0 and domain_admin.is_active:
+            email = request.POST['email']
+            try:
+                user = User.objects.get(email=email)
+                admin = DomainAdmin.objects.get(user=user)
+                admin.is_active = True
+                admin.save()
+                return HttpResponse("success")
+            except:
+                try:
+                    user = User.objects.get(email=email)
+                    admin = DomainAdmin()
+                    admin.user = user
+                    admin.role = 1
+                    admin.domain = domain_admin.domain
+                    admin.is_active = True
+                    admin.save()
+                    return HttpResponse("success")
+                except:
+                    return HttpResponse("failed")
+        else:
+            return HttpResponse("failed")
+    else:
+        return HttpResponse("failed")
+
