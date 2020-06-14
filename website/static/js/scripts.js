@@ -16,7 +16,7 @@
             url: "/dashboard/domain/settings/role/update",
             data: serializedData,
             success: function (response) {
-              console.log("SUCCESS")
+              window.location.reload();
             },
             error: function (response) {
                 // alert the error if any error occured
@@ -34,7 +34,26 @@
             url: "/dashboard/domain/settings/role/add",
             data: serializedData,
             success: function (response) {
-              console.log("SUCCESS")
+              window.location.reload();
+            },
+            error: function (response) {
+                // alert the error if any error occured
+                alert(response["responseJSON"]["error"]);
+            }
+        })
+    });
+
+
+  $("#add-or-update-domain").submit(function(e){
+    e.preventDefault();
+      var serializedData = $(this).serialize();
+      console.log(serializedData)
+      $.ajax({
+            type: 'POST',
+            url: "/dashboard/admin/domain/addorupdate",
+            data: serializedData,
+            success: function (response) {
+              console.log(response)
               window.location.reload();
             },
             error: function (response) {
