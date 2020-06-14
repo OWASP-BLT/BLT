@@ -1,9 +1,48 @@
 (function() {
     "use strict";
 
-    // custom scrollbar
+  $('.userRoleListItem').click(function(e) {
+      var name = e.currentTarget;
+      $("#user_"+name.getAttribute("id")).text(name.getAttribute("data-name"));
+      $("#role_"+name.getAttribute("id")).val(name.getAttribute("value"));
+  });
 
+  $("#update-role").submit(function(e){
+    e.preventDefault();
+      var serializedData = $(this).serialize();
+      console.log(serializedData)
+      $.ajax({
+            type: 'POST',
+            url: "/dashboard/domain/settings/role/update",
+            data: serializedData,
+            success: function (response) {
+              console.log("SUCCESS")
+            },
+            error: function (response) {
+                // alert the error if any error occured
+                alert(response["responseJSON"]["error"]);
+            }
+        })
+    });
 
+  $("#add-role").submit(function(e){
+    e.preventDefault();
+      var serializedData = $(this).serialize();
+      console.log(serializedData)
+      $.ajax({
+            type: 'POST',
+            url: "/dashboard/domain/settings/role/add",
+            data: serializedData,
+            success: function (response) {
+              console.log("SUCCESS")
+              window.location.reload();
+            },
+            error: function (response) {
+                // alert the error if any error occured
+                alert(response["responseJSON"]["error"]);
+            }
+        })
+    });
 
     // Toggle Left Menu
    jQuery('.menu-list > a').click(function() {
