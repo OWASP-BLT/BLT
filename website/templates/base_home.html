@@ -121,7 +121,7 @@
             <ul class="nav navbar-nav navbar-right">
                 <li> 
                     {% if request.user.is_authenticated %}
-                        {% if domain_admin %}
+                        {% if domain_admin.is_active %}
                             <a href="/dashboard/domain/">{{domain_admin.domain.name}}</a>
                         {% endif %} 
                     {% endif %}
