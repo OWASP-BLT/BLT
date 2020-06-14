@@ -29,13 +29,23 @@
                               <p class="user-role" id="user_{{admin.user}}">{{admin.get_role_display}}</p>
                             </div>
                             <div class="dropdown">
-
+                              
                               <button class="btn btn_5 btn-lg btn-danger role-change-button dropdown-toggle" type="button" data-toggle="dropdown">Role
                               <span class="caret"></span></button>
                               <ul class="dropdown-menu">
+                                {% ifequal user.role 0 %}
                                 <li><a id="{{admin.user}}" class="userRoleListItem" value="0" data-name="Super Admin" href="#">Super Admin</a></li>
+                                
                                 <li><a id="{{admin.user}}" class="userRoleListItem" value="1" data-name="Hunt Admin" href="#">Hunt Admin</a></li>
+                                {% ifnotequal admin.user request.user %}<li><a id="{{admin.user}}" class="userRoleListItem" value="9" data-name="None" href="#">None</a></li>
+                                {% endifnotequal %}
+                                {% endifequal %}
+
+                                {% ifequal user.role 1 %}
+                                {% ifnotequal admin.role 0 %}
                                 <li><a id="{{admin.user}}" class="userRoleListItem" value="9" data-name="None" href="#">None</a></li>
+                                {% endifnotequal %}
+                                {% endifequal %}
                               </ul>
                             </div>
                             <div class="clearfix"> </div>
