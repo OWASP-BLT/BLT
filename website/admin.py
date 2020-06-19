@@ -4,7 +4,7 @@ from django.template.defaultfilters import truncatechars
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
-from website.models import Issue, Points, Hunt, Domain, UserProfile
+from website.models import Issue, Points, Hunt, Domain, UserProfile, Subscription, DomainAdmin
 
 
 class UserResource(resources.ModelResource):
@@ -16,6 +16,14 @@ class DomainResource(resources.ModelResource):
     class Meta:
         model = Domain
 
+class SubscriptionResource(resources.ModelResource):
+    class Meta:
+        model = Subscription
+
+class DomainAdminResource(resources.ModelResource):
+    class Meta:
+        model = DomainAdmin
+
 
 class IssueAdmin(admin.ModelAdmin):
     list_display = (
@@ -23,13 +31,23 @@ class IssueAdmin(admin.ModelAdmin):
 
 
 class HuntAdmin(admin.ModelAdmin):
-    list_display = ('user', 'url', 'prize', 'logo', 'plan', 'created', 'modified')
+    list_display = ('domain', 'url', 'prize', 'logo', 'starts_on','end_on', 'plan', 'created', 'modified')
 
 
-class DomainAdmin(ImportExportModelAdmin):
+class DomainAdminPanel(ImportExportModelAdmin):
     resource_class = DomainResource
     list_display = (
-        'name', 'url', 'logo', 'clicks', 'color', 'email', 'email_event', 'twitter', 'facebook', 'created', 'modified')
+        'admin', 'name', 'url', 'logo', 'clicks', 'color', 'email', 'email_event', 'twitter', 'facebook', 'created', 'modified')
+
+class DomainUserAdmin(ImportExportModelAdmin):
+    resource_class = DomainAdminResource
+    list_display = (
+        'role', 'user', 'domain', 'is_active')
+
+class SubscriptionAdmin(ImportExportModelAdmin):
+    resource_class = SubscriptionResource
+    list_display = (
+        'name', 'charge_per_month', 'feature')
 
 
 class PointsAdmin(admin.ModelAdmin):
@@ -50,8 +68,11 @@ class UserAdmin(ImportExportModelAdmin):
 admin.site.register(UserProfile)
 admin.site.register(User, UserAdmin)
 
-admin.site.register(Domain, DomainAdmin)
+admin.site.register(Domain, DomainAdminPanel)
 
 admin.site.register(Issue, IssueAdmin)
 admin.site.register(Points, PointsAdmin)
 admin.site.register(Hunt, HuntAdmin)
+
+admin.site.register(DomainAdmin, DomainUserAdmin)
+admin.site.register(Subscription, SubscriptionAdmin)

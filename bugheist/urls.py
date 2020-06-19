@@ -14,7 +14,8 @@ from website.serializers import router
 from website.views import (UserProfileDetailView, IssueCreate, UploadCreate, EmailDetailView,
                            InboundParseWebhookView, LeaderboardView, IssueView, AllIssuesView, SpecificIssuesView,                            
                            HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend,
-                           ScoreboardView,get_score,CustomObtainAuthToken,create_tokens,issue_count,get_scoreboard)
+                           ScoreboardView,get_score,CustomObtainAuthToken,create_tokens,issue_count,get_scoreboard,
+                           CreateHunt, DraftHunts, UpcomingHunts, DomainSettings, OngoingHunts, PreviousHunts)
 from rest_framework.authtoken import views
 
 favicon_view = RedirectView.as_view(url='/static/favicon.ico', permanent=True)
@@ -23,6 +24,20 @@ admin.autodiscover()
 
 urlpatterns = [
                   url(r'^$', website.views.index, name='index'),
+                  url(r'^dashboard/domain/$', website.views.domain_dashboard, name='domain_dashboar_home'),
+                  url(r'^dashboard/admin$', website.views.admin_dashboard, name='admin_dashboard'),
+                  url(r'^dashboard/admin/domain$', website.views.admin_domain_dashboard, name='admin_domain_dashboard'),
+                  url(r'^dashboard/admin/domain/addorupdate$', website.views.add_or_update_domain, name='add_or_update_domain'),
+                  path('dashboard/admin/domain/<int:pk>/', website.views.admin_domain_dashboard_detail, name='admin_domain_dashboard_detail'),
+                  url(r'^dashboard/domain/hunt/create$', CreateHunt.as_view(), name='create_hunt'),
+                  url(r'^dashboard/domain/hunt/drafts$', DraftHunts.as_view(), name='draft_hunts'),
+                  url(r'^dashboard/domain/hunt/upcoming$', UpcomingHunts.as_view(), name='upcoming_hunts'),
+                  url(r'^dashboard/domain/hunt/previous$', PreviousHunts.as_view(), name='previous_hunts'),
+                  url(r'^dashboard/domain/hunt/ongoing$', OngoingHunts.as_view(), name='ongoing_hunts'),
+                  url(r'^dashboard/domain/settings$', DomainSettings.as_view(), name='domain-settings'),
+                  url(r'^dashboard/domain/settings/role/update$', website.views.update_role, name='update-role'),
+                  url(r'^dashboard/domain/settings/role/add$', website.views.add_role, name='add-role'),
+                  url(r'^dashboard/user/$', website.views.user_dashboard, name='domain'),
                   path(settings.ADMIN_URL + '/', admin.site.urls),
                   url(r'^like_issue/(?P<issue_pk>\d+)/$', website.views.like_issue, name="like_issue"),
                   url(r'^save_issue/(?P<issue_pk>\d+)/$', website.views.save_issue, name="save_issue"),
