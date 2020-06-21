@@ -63,7 +63,9 @@ INSTALLED_APPS = (
     'rest_framework',
     'django_filters',
     'rest_framework.authtoken',
-    'django_cron'
+    'django_cron',
+    'mdeditor',
+    'bootstrap_datepicker_plus'
 )
 
 CRON_CLASSES = [
@@ -347,4 +349,13 @@ REST_FRAMEWORK = {
          'rest_framework.authentication.TokenAuthentication',
 ),
     'PAGE_SIZE': 10
+}
+
+X_FRAME_OPTIONS = 'SAMEORIGIN' 
+
+MDEDITOR_CONFIGS = {
+    'default': {
+        'language': 'en',
+        'toolbar': ["undo", "redo", "|","bold", "del", "italic", "quote", "ucwords", "uppercase", "lowercase", "|","h1", "h2", "h3", "h5", "h6", "|","list-ul", "list-ol", "hr", "|", "link", "reference-link", "code", "code-block", "table", "datetime", "||", "preview", "watch", "fullscreen"]
+        }
 }

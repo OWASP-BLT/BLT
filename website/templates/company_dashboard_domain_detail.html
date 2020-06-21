@@ -1,4 +1,4 @@
-{% extends "base_admin.html" %}
+{% extends "base_dashboard_company.html" %}
 {% load static %}
 {% block content %}
                 <div>
@@ -18,11 +18,7 @@
                       </div>
                       <div class="form-group">
                         <label for="url">Website:</label>
-                        <input type="url" name="url" class="form-control" id="url" value="{{domain.url}}">
-                      </div>
-                      <div class="form-group">
-                        <label for="admin">Admin:</label>
-                        <input type="email" name="admin" class="form-control" id="admin" value="{{domain.admin.email}}">
+                        <input disabled="" type="url" name="url" class="form-control" id="url" value="{{domain.url}}">
                       </div>
                       <div class="form-group">
                         <label for="logo">Logo:</label>
@@ -35,10 +31,6 @@
                       <div class="form-group">
                         <label for="github">Github:</label>
                         <input type="url" name="github" class="form-control" id="github" value="{{domain.github}}">
-                      </div>
-                      <div class="form-group">
-                        <label for="subscription">Subscription:</label>
-                        <input type="text" name="subscription" class="form-control" id="subscription" value="{{domain.subscription.name}}">
                       </div>
                     </div>
                     <div class="modal-footer">

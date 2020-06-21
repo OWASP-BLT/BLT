@@ -122,7 +122,7 @@
                 <li> 
                     {% if request.user.is_authenticated %}
                         {% if domain_admin.is_active %}
-                            <a href="/dashboard/domain/">{{domain_admin.domain.name}}</a>
+                            <a href="/dashboard/company/">{{domain_admin.company.name}}</a>
                         {% endif %} 
                     {% endif %}
                 </li>

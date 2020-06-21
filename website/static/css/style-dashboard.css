@@ -3140,14 +3140,14 @@ select[multiple] {
 .pad0A {
   padding: 0!important;
 }
-.input-group {
+/*.input-group {
 	position: relative;
     display: table;
     width: 45%;
     float: left;
     margin: 0 0 0 10em;
     border-collapse: separate;
-}
+}*/
 .has-success .input-group-addon {
   border-color:#A4E7A5 !important;
 }
