@@ -1357,17 +1357,6 @@ class CreateHunt(TemplateView):
 
 	@method_decorator(login_required)
 	def get(self, request, *args, **kwargs):
-		domain_admin = CompanyAdmin.objects.get(user=request.user)
-		if not domain_admin.is_active:
-			return HttpResponseRedirect("/")
-		domain = []
-		if domain_admin.role == 0:
-			domain = Domain.objects.filter(company=domain_admin.company)
-		else:
-			domain = Domain.objects.filter(pk=domain_admin.domain.pk)
-		# hunt = self.model.objects.filter(is_published=False, domain=domain_admin.domain)
-		context = {'domains': domain,'hunt_form': HuntForm(),'date_form': DateTimeForm()}
-		return render(request, self.template_name, context)
 		try:
 			domain_admin = CompanyAdmin.objects.get(user=request.user)
 			if not domain_admin.is_active:
@@ -1385,17 +1374,28 @@ class CreateHunt(TemplateView):
 
 	@method_decorator(login_required)
 	def post(self, request, *args, **kwargs):
-		for key, value in request.POST.items():
-			print(key + "=" + value )
 		try:
 			domain_admin = CompanyAdmin.objects.get(user=request.user)
 			print(((request.POST['domain']).split('-'))[0].replace(" ", ""))
-			if (str(domain_admin.domain.pk) == ((request.POST['domain']).split('-'))[0].replace(" ", "")) or (domain_admin.role == 0):
-				print("ACCESS")
+			if (domain_admin.role == 1 and (str(domain_admin.domain.pk) == ((request.POST['domain']).split('-'))[0].replace(" ", ""))) or domain_admin.role == 0:
+				print("HERE")
+				hunt = Hunt()
+				hunt.domain = Domain.objects.get(pk=(request.POST['domain']).split('-')[0].replace(" ", ""))
+				hunt.starts_on = request.POST['startdate']
+				hunt.end_on = request.POST['enddate']
+				hunt.name = request.POST['name']
+				hunt.description = request.POST['content']
+				try:
+					is_published = request.POST['publish']
+					hunt.is_published = True
+				except:
+					hunt.is_published = False
+				hunt.save()
+				return HttpResponse("success")
 			else:
-				return HttpResponseRedirect("/")
+				return HttpResponse("failed")
 		except:
-			return HttpResponseRedirect("/")
+			return HttpResponse("failed")
 
 class DraftHunts(TemplateView):
 	model = Hunt
@@ -1408,7 +1408,10 @@ class DraftHunts(TemplateView):
 			domain_admin = CompanyAdmin.objects.get(user=request.user)
 			if not domain_admin.is_active:
 				return HttpResponseRedirect("/")
-			hunt = self.model.objects.filter(is_published=False,domain=domain_admin.domain)
+			if domain_admin.role == 0:
+				hunt = self.model.objects.filter(is_published=False)
+			else:
+				hunt = self.model.objects.filter(is_published=False,domain=domain_admin.domain)
 			context = {'hunts': hunt}
 			return render(request, self.template_name, context)
 		except:
@@ -1425,7 +1428,11 @@ class UpcomingHunts(TemplateView):
 			domain_admin = CompanyAdmin.objects.get(user=request.user)
 			if not domain_admin.is_active:
 				return HttpResponseRedirect("/")
-			hunts = self.model.objects.filter(is_published=True,domain=domain_admin.domain)
+
+			if domain_admin.role == 0:
+				hunts = self.model.objects.filter(is_published=True)
+			else:
+				hunts = self.model.objects.filter(is_published=True,domain=domain_admin.domain)
 			new_hunt = list()
 			for hunt in hunts:
 				if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
@@ -1446,7 +1453,10 @@ class OngoingHunts(TemplateView):
 			domain_admin = CompanyAdmin.objects.get(user=request.user)
 			if not domain_admin.is_active:
 				return HttpResponseRedirect("/")
-			hunts = self.model.objects.filter(is_published=True,domain=domain_admin.domain)
+			if domain_admin.role == 0:
+				hunts = self.model.objects.filter(is_published=True)
+			else:
+				hunts = self.model.objects.filter(is_published=True,domain=domain_admin.domain)
 			new_hunt = list()
 			for hunt in hunts:
 				if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
@@ -1467,7 +1477,10 @@ class PreviousHunts(TemplateView):
 			domain_admin = CompanyAdmin.objects.get(user=request.user)
 			if not domain_admin.is_active:
 				return HttpResponseRedirect("/")
-			hunts = self.model.objects.filter(is_published=True,domain=domain_admin.domain)
+			if domain_admin.role == 0:
+				hunts = self.model.objects.filter(is_published=True)
+			else:
+				hunts = self.model.objects.filter(is_published=True,domain=domain_admin.domain)
 			new_hunt = list()
 			for hunt in hunts:
 				if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
@@ -1755,3 +1768,52 @@ def company_dashboard_domain_detail(request, pk, template="company_dashboard_dom
 			return redirect('/')
 	except:
 		return redirect('/')
+
+@login_required(login_url='/accounts/login')
+def company_dashboard_hunt_detail(request, pk, template="company_dashboard_hunt_detail.html"):
+	hunt = get_object_or_404(Hunt, pk=pk)
+	print(hunt.description)
+	return render(request, template, {'hunt': hunt})
+
+@login_required(login_url='/accounts/login')
+def company_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_edit.html"):
+	if request.method == "GET":
+		hunt = get_object_or_404(Hunt, pk=pk)
+		domain_admin = CompanyAdmin.objects.get(user=request.user)
+		if not domain_admin.is_active:
+			return HttpResponseRedirect("/")
+		if domain_admin.role==1:
+			if hunt.domain != domain_admin.domain:
+				return HttpResponseRedirect("/")
+		domain = []
+		if domain_admin.role == 0:
+			domain = Domain.objects.filter(company=domain_admin.company)
+		else:
+			domain = Domain.objects.filter(pk=domain_admin.domain.pk)
+		# hunt = self.model.objects.filter(is_published=False, domain=domain_admin.domain)
+		initial = {'content' : hunt.description}
+		context = {'hunt': hunt,'domains': domain,'hunt_form': HuntForm(initial),'date_form': DateTimeForm()}
+		return render(request, template, context)
+	else:
+		hunt = get_object_or_404(Hunt, pk=pk)
+		domain_admin = CompanyAdmin.objects.get(user=request.user)
+		if not domain_admin.is_active:
+			return HttpResponse("failed")
+		if domain_admin.role==1:
+			if hunt.domain != domain_admin.domain:
+				return HttpResponse("failed")
+		hunt.domain = Domain.objects.get(pk=(request.POST['domain']).split('-')[0].replace(" ", ""))
+		if request.POST['startdate'] != '':
+			hunt.starts_on = request.POST['startdate']
+		print(request.POST['enddate'])
+		if request.POST['enddate'] != '':
+			hunt.end_on = request.POST['enddate']
+		hunt.name = request.POST['name']
+		hunt.description = request.POST['content']
+		try:
+			is_published = request.POST['publish']
+			hunt.is_published = True
+		except:
+			hunt.is_published = False
+		hunt.save()
+		return HttpResponse("success")

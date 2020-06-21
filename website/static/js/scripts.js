@@ -33,6 +33,27 @@
     });
 
 
+  $("#update-hunt").submit(function(e){
+    e.preventDefault();
+
+      var serializedData = $(this).serialize();
+      var value = ($( this ).serializeArray())[1].value;
+      console.log( value );
+      $.ajax({
+            type: 'POST',
+            url: "/dashboard/company/hunt/"+value+"/edit",
+            data: serializedData,
+            success: function (response) {
+              window.location.reload();
+            },
+            error: function (response) {
+                // alert the error if any error occured
+                alert(response["responseJSON"]["error"]);
+            }
+        })
+    });
+
+
   $("#create-hunt").submit(function(e){
     e.preventDefault();
       var serializedData = $(this).serialize();

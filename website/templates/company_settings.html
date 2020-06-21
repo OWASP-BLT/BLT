@@ -35,9 +35,9 @@
                               <span class="caret"></span></button>
                               <ul class="dropdown-menu">
                                 {% ifequal user.role 0 %}
-                                <li><a id="{{admin.user}}" class="userRoleListItem" value="0" data-name="Super Admin" href="#">Super Admin</a></li>
+                                <li><a id="{{admin.user}}" class="userRoleListItem" value="0" data-name="Admin" href="#">Admin</a></li>
                                 
-                                <li><a id="{{admin.user}}" class="userRoleListItem" value="1" data-name="Hunt Admin" href="#">Hunt Admin</a></li>
+                                <li><a id="{{admin.user}}" class="userRoleListItem" value="1" data-name="Moderator" href="#">Moderator</a></li>
                                 {% ifnotequal admin.user request.user %}<li><a id="{{admin.user}}" class="userRoleListItem" value="9" data-name="None" href="#">None</a></li>
                                 {% endifnotequal %}
                                 {% endifequal %}

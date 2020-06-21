@@ -261,9 +261,10 @@ signals.post_save.connect(post_to_twitter, sender=Issue)
 
 class Hunt(models.Model):
 	domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
+	name = models.CharField(max_length=25)
 	description = MDTextField()
 	url = models.URLField()
-	prize = models.IntegerField()
+	prize = models.IntegerField(null=True, blank=True)
 	logo = models.ImageField(upload_to="logos", null=True, blank=True)
 	plan = models.CharField(max_length=10)
 	txn_id = models.CharField(max_length=50, null=True, blank=True)
@@ -369,8 +370,8 @@ class IP(models.Model):
 
 class CompanyAdmin(models.Model):
 	role = (
-		(0, 'Super Admin'),
-		(1, 'Hunt Admin'),
+		(0, 'Admin'),
+		(1, 'Moderator'),
 	)
 	role = models.IntegerField(choices=role, default=0)
 	user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
