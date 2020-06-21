@@ -7,13 +7,39 @@
       $("#role_"+name.getAttribute("id")).val(name.getAttribute("value"));
   });
 
+  $('.userDomainListItem').click(function(e) {
+      var name = e.currentTarget;
+      console.log(name)
+      $("#domain_"+name.getAttribute("id")).text(name.getAttribute("data-name"));
+      $("#domain"+name.getAttribute("id")).val(name.getAttribute("value"));
+  });
+
   $("#update-role").submit(function(e){
     e.preventDefault();
       var serializedData = $(this).serialize();
       console.log(serializedData)
       $.ajax({
             type: 'POST',
-            url: "/dashboard/domain/settings/role/update",
+            url: "/dashboard/company/settings/role/update",
+            data: serializedData,
+            success: function (response) {
+              window.location.reload();
+            },
+            error: function (response) {
+                // alert the error if any error occured
+                alert(response["responseJSON"]["error"]);
+            }
+        })
+    });
+
+
+  $("#create-hunt").submit(function(e){
+    e.preventDefault();
+      var serializedData = $(this).serialize();
+      console.log(serializedData)
+      $.ajax({
+            type: 'POST',
+            url: "/dashboard/company/hunt/create",
             data: serializedData,
             success: function (response) {
               window.location.reload();
@@ -31,9 +57,29 @@
       console.log(serializedData)
       $.ajax({
             type: 'POST',
-            url: "/dashboard/domain/settings/role/add",
+            url: "/dashboard/company/settings/role/add",
             data: serializedData,
             success: function (response) {
+              window.location.reload();
+            },
+            error: function (response) {
+                // alert the error if any error occured
+                alert(response["responseJSON"]["error"]);
+            }
+        })
+    });
+
+
+  $("#add-or-update-company").submit(function(e){
+    e.preventDefault();
+      var serializedData = $(this).serialize();
+      console.log(serializedData)
+      $.ajax({
+            type: 'POST',
+            url: "/dashboard/admin/company/addorupdate",
+            data: serializedData,
+            success: function (response) {
+              console.log(response)
               window.location.reload();
             },
             error: function (response) {
@@ -50,7 +96,7 @@
       console.log(serializedData)
       $.ajax({
             type: 'POST',
-            url: "/dashboard/admin/domain/addorupdate",
+            url: "/dashboard/company/domain/addorupdate",
             data: serializedData,
             success: function (response) {
               console.log(response)
