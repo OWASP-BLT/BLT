@@ -46,6 +46,8 @@ ua-parser = "*"
 djangorestframework = "*"
 django_filter = "*"
 cffi = "*"
+django-mdeditor = "*"
+django-bootstrap-datepicker-plus = "*"
 
 [dev-packages]
 

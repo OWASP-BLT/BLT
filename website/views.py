@@ -50,8 +50,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 
 from rest_framework.authtoken.views import ObtainAuthToken
-from website.models import Issue, Points, Hunt, Domain, InviteFriend, UserProfile, IP, DomainAdmin, Subscription
-from .forms import FormInviteFriend, UserProfileForm
+from website.models import Issue, Points, Hunt, Domain, InviteFriend, UserProfile, IP, CompanyAdmin, Subscription, Company
+from .forms import FormInviteFriend, UserProfileForm, HuntForm, DateTimeForm
 
 
 def index(request, template="index.html"):
@@ -72,7 +72,7 @@ def index(request, template="index.html"):
 	hunt_count = Hunt.objects.all().count()
 	domain_count = Domain.objects.all().count()
 	try:
-		domain_admin = DomainAdmin.objects.get(user=request.user)
+		domain_admin = CompanyAdmin.objects.get(user=request.user)
 	except:
 		domain_admin = None
 	context = {
@@ -94,12 +94,12 @@ def index(request, template="index.html"):
 	return render(request, template, context)
 
 @login_required(login_url='/accounts/login')
-def domain_dashboard(request, template="index_domain.html"):
+def company_dashboard(request, template="index_company.html"):
 
-	domain_admin = DomainAdmin.objects.get(user=request.user)
-	if not domain_admin.is_active:
+	company_admin = CompanyAdmin.objects.get(user=request.user)
+	if not company_admin.is_active:
 		return HttpResponseRedirect("/")
-	hunts = Hunt.objects.filter(is_published=True,domain=domain_admin.domain)
+	hunts = Hunt.objects.filter(is_published=True,domain=company_admin.domain)
 	upcoming_hunt = list()
 	ongoing_hunt = list()
 	previous_hunt = list()
@@ -114,25 +114,25 @@ def domain_dashboard(request, template="index_domain.html"):
 	return render(request, template, context)
 
 @login_required(login_url='/accounts/login')
-def admin_domain_dashboard(request, template="admin_dashboard_domain.html"):
+def admin_company_dashboard(request, template="admin_dashboard_company.html"):
 	user = request.user
 	if(user.is_superuser):
 		if not user.is_active:
 			return HttpResponseRedirect("/")
-		domain = Domain.objects.all()
-		context = {'domains': domain}
+		company = Company.objects.all()
+		context = {'companys': company}
 		return render(request, template, context)
 	else:
 		return redirect('/')
 
 @login_required(login_url='/accounts/login')
-def admin_domain_dashboard_detail(request, pk, template="admin_dashboard_domain_detail.html"):
+def admin_company_dashboard_detail(request, pk, template="admin_dashboard_company_detail.html"):
 	user = request.user
 	if(user.is_superuser):
 		if not user.is_active:
 			return HttpResponseRedirect("/")
-		domain = get_object_or_404(Domain, pk=pk)
-		return render(request, template, {'domain': domain})
+		company = get_object_or_404(Company, pk=pk)
+		return render(request, template, {'company': company})
 	else:
 		return redirect('/')
 	
@@ -1358,21 +1358,44 @@ class CreateHunt(TemplateView):
 	@method_decorator(login_required)
 	def get(self, request, *args, **kwargs):
 		try:
-			domain_admin = DomainAdmin.objects.get(user=request.user)
+			domain_admin = CompanyAdmin.objects.get(user=request.user)
 			if not domain_admin.is_active:
 				return HttpResponseRedirect("/")
-			hunt = self.model.objects.filter(is_published=False)
-			context = {'hunts': hunt}
+			domain = []
+			if domain_admin.role == 0:
+				domain = Domain.objects.filter(company=domain_admin.company)
+			else:
+				domain = Domain.objects.filter(pk=domain_admin.domain.pk)
+			# hunt = self.model.objects.filter(is_published=False, domain=domain_admin.domain)
+			context = {'domains': domain,'hunt_form': HuntForm(),'date_form': DateTimeForm()}
 			return render(request, self.template_name, context)
 		except:
 			return HttpResponseRedirect("/")
 
 	@method_decorator(login_required)
 	def post(self, request, *args, **kwargs):
-		form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
-		if form.is_valid():
-			form.save()
-		return redirect(reverse('profile', kwargs={'slug': kwargs.get('slug')}))
+		try:
+			domain_admin = CompanyAdmin.objects.get(user=request.user)
+			print(((request.POST['domain']).split('-'))[0].replace(" ", ""))
+			if (domain_admin.role == 1 and (str(domain_admin.domain.pk) == ((request.POST['domain']).split('-'))[0].replace(" ", ""))) or domain_admin.role == 0:
+				print("HERE")
+				hunt = Hunt()
+				hunt.domain = Domain.objects.get(pk=(request.POST['domain']).split('-')[0].replace(" ", ""))
+				hunt.starts_on = request.POST['startdate']
+				hunt.end_on = request.POST['enddate']
+				hunt.name = request.POST['name']
+				hunt.description = request.POST['content']
+				try:
+					is_published = request.POST['publish']
+					hunt.is_published = True
+				except:
+					hunt.is_published = False
+				hunt.save()
+				return HttpResponse("success")
+			else:
+				return HttpResponse("failed")
+		except:
+			return HttpResponse("failed")
 
 class DraftHunts(TemplateView):
 	model = Hunt
@@ -1382,21 +1405,17 @@ class DraftHunts(TemplateView):
 	@method_decorator(login_required)
 	def get(self, request, *args, **kwargs):
 		try:
-			domain_admin = DomainAdmin.objects.get(user=request.user)
+			domain_admin = CompanyAdmin.objects.get(user=request.user)
 			if not domain_admin.is_active:
 				return HttpResponseRedirect("/")
-			hunt = self.model.objects.filter(is_published=False,domain=domain_admin.domain)
+			if domain_admin.role == 0:
+				hunt = self.model.objects.filter(is_published=False)
+			else:
+				hunt = self.model.objects.filter(is_published=False,domain=domain_admin.domain)
 			context = {'hunts': hunt}
 			return render(request, self.template_name, context)
 		except:
 			return HttpResponseRedirect("/")
-
-	@method_decorator(login_required)
-	def post(self, request, *args, **kwargs):
-		form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
-		if form.is_valid():
-			form.save()
-		return redirect(reverse('profile', kwargs={'slug': kwargs.get('slug')}))
 
 class UpcomingHunts(TemplateView):
 	model = Hunt
@@ -1406,10 +1425,14 @@ class UpcomingHunts(TemplateView):
 	@method_decorator(login_required)
 	def get(self, request, *args, **kwargs):
 		try:
-			domain_admin = DomainAdmin.objects.get(user=request.user)
+			domain_admin = CompanyAdmin.objects.get(user=request.user)
 			if not domain_admin.is_active:
 				return HttpResponseRedirect("/")
-			hunts = self.model.objects.filter(is_published=True,domain=domain_admin.domain)
+
+			if domain_admin.role == 0:
+				hunts = self.model.objects.filter(is_published=True)
+			else:
+				hunts = self.model.objects.filter(is_published=True,domain=domain_admin.domain)
 			new_hunt = list()
 			for hunt in hunts:
 				if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
@@ -1418,13 +1441,6 @@ class UpcomingHunts(TemplateView):
 			return render(request, self.template_name, context)
 		except:
 			return HttpResponseRedirect("/")
-
-	@method_decorator(login_required)
-	def post(self, request, *args, **kwargs):
-		form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
-		if form.is_valid():
-			form.save()
-		return redirect(reverse('profile', kwargs={'slug': kwargs.get('slug')}))
 
 class OngoingHunts(TemplateView):
 	model = Hunt
@@ -1434,10 +1450,13 @@ class OngoingHunts(TemplateView):
 	@method_decorator(login_required)
 	def get(self, request, *args, **kwargs):
 		try:
-			domain_admin = DomainAdmin.objects.get(user=request.user)
+			domain_admin = CompanyAdmin.objects.get(user=request.user)
 			if not domain_admin.is_active:
 				return HttpResponseRedirect("/")
-			hunts = self.model.objects.filter(is_published=True,domain=domain_admin.domain)
+			if domain_admin.role == 0:
+				hunts = self.model.objects.filter(is_published=True)
+			else:
+				hunts = self.model.objects.filter(is_published=True,domain=domain_admin.domain)
 			new_hunt = list()
 			for hunt in hunts:
 				if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
@@ -1447,13 +1466,6 @@ class OngoingHunts(TemplateView):
 		except:
 			return HttpResponseRedirect("/")
 
-	@method_decorator(login_required)
-	def post(self, request, *args, **kwargs):
-		form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
-		if form.is_valid():
-			form.save()
-		return redirect(reverse('profile', kwargs={'slug': kwargs.get('slug')}))
-
 class PreviousHunts(TemplateView):
 	model = Hunt
 	fields = ['url', 'logo', 'domain', 'plan', 'prize', 'txn_id']
@@ -1462,10 +1474,13 @@ class PreviousHunts(TemplateView):
 	@method_decorator(login_required)
 	def get(self, request, *args, **kwargs):
 		try:
-			domain_admin = DomainAdmin.objects.get(user=request.user)
+			domain_admin = CompanyAdmin.objects.get(user=request.user)
 			if not domain_admin.is_active:
 				return HttpResponseRedirect("/")
-			hunts = self.model.objects.filter(is_published=True,domain=domain_admin.domain)
+			if domain_admin.role == 0:
+				hunts = self.model.objects.filter(is_published=True)
+			else:
+				hunts = self.model.objects.filter(is_published=True,domain=domain_admin.domain)
 			new_hunt = list()
 			for hunt in hunts:
 				if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
@@ -1486,19 +1501,24 @@ class PreviousHunts(TemplateView):
 			form.save()
 		return redirect(reverse('profile', kwargs={'slug': kwargs.get('slug')}))
 
-class DomainSettings(TemplateView):
-	model = DomainAdmin
-	fields = ['user', 'domain', 'role']
-	template_name = "domain_settings.html"
+class CompanySettings(TemplateView):
+	model = CompanyAdmin
+	fields = ['user', 'domain', 'role', 'is_active']
+	template_name = "company_settings.html"
 
 	@method_decorator(login_required)
 	def get(self, request, *args, **kwargs):
 		try:
-			domain_admin = DomainAdmin.objects.get(user=request.user)
+			domain_admin = CompanyAdmin.objects.get(user=request.user)
 			if not domain_admin.is_active:
 				return HttpResponseRedirect("/")
-			domain_admins = DomainAdmin.objects.filter(domain=domain_admin.domain,is_active=True)
-			context = {'admins': domain_admins,'user':domain_admin}
+			domain_admins = []
+			domain_list = Domain.objects.filter(company=domain_admin.company)
+			if domain_admin.role==0:
+				domain_admins = CompanyAdmin.objects.filter(company=domain_admin.company,is_active=True)
+			else:
+				domain_admins = CompanyAdmin.objects.filter(domain=domain_admin.domain,is_active=True)
+			context = {'admins': domain_admins,'user':domain_admin,'domain_list':domain_list}
 			return render(request, self.template_name, context)
 		except:
 			return HttpResponseRedirect("/")
@@ -1513,34 +1533,36 @@ class DomainSettings(TemplateView):
 @login_required(login_url='/accounts/login')
 def update_role(request):
 	if request.method == "POST":
-		domain_admin = DomainAdmin.objects.get(user=request.user)
+		domain_admin = CompanyAdmin.objects.get(user=request.user)
 		if domain_admin.role==0 and domain_admin.is_active:
 			for key, value in request.POST.items():
 				if key.startswith('user@'):
 					user = User.objects.get(username=value)
-					if domain_admin.domain.admin==request.user:
-						print("HERE")
+					if domain_admin.company.admin==request.user:
 						pass
-					domain_admin = DomainAdmin.objects.get(user=user)
+					domain_admin = CompanyAdmin.objects.get(user=user)
 					print(request.POST['role@'+value])
-					if request.POST['role@'+value]!='9':
+					if request.POST['role@'+value]!= '9':
 						domain_admin.role = request.POST['role@'+value]
-					elif request.POST['role@'+value] =='9':
+					elif request.POST['role@'+value] == '9':
 						domain_admin.is_active = False
+					if request.POST['domain@'+value] != '':
+						domain_admin.domain = Domain.objects.get(pk=request.POST['domain@'+value])
+					else:
+						domain_admin.domain = None
 					domain_admin.save()
 			return HttpResponse("success")
 		elif domain_admin.role==1 and domain_admin.is_active:
 			for key, value in request.POST.items():
 				if key.startswith('user@'):
 					user = User.objects.get(username=value)
-					if domain_admin.domain.admin==request.user:
-						print("HERE")
+					if domain_admin.company.admin==request.user:
 						pass
-					domain_admin = DomainAdmin.objects.get(user=user)
+					domain_admin = CompanyAdmin.objects.get(user=user)
 					print(request.POST['role@'+value])
-					if request.POST['role@'+value] =='1':
+					if request.POST['role@'+value] == '1':
 						domain_admin.role = request.POST['role@'+value]
-					elif request.POST['role@'+value] =='9':
+					elif request.POST['role@'+value] == '9':
 						domain_admin.is_active = False
 					domain_admin.save()
 			return HttpResponse("success")
@@ -1552,27 +1574,34 @@ def update_role(request):
 @login_required(login_url='/accounts/login')
 def add_role(request):
 	if request.method == "POST":
-		domain_admin = DomainAdmin.objects.get(user=request.user)
+		domain_admin = CompanyAdmin.objects.get(user=request.user)
 		if domain_admin.role==0 and domain_admin.is_active:
 			email = request.POST['email']
 			user = User.objects.get(email=email)
 			if request.user == user:
 				return HttpResponse("success")
+			print("HERE")
 			try:
-				admin = DomainAdmin.objects.get(user=user)
-				admin.is_active = True
-				admin.save()
-				return HttpResponse("success")
+				print("HERE2")
+				admin = CompanyAdmin.objects.get(user=user)
+				if admin.company==domain_admin.company:
+					admin.is_active = True
+					admin.save()
+					return HttpResponse("success")
+				else:
+					return HttpResponse("already admin of another domain")
 			except:
 				try:
-					admin = DomainAdmin()
+					print("HERE3")
+					admin = CompanyAdmin()
 					admin.user = user
 					admin.role = 1
-					admin.domain = domain_admin.domain
+					admin.company = domain_admin.company
 					admin.is_active = True
 					admin.save()
 					return HttpResponse("success")
 				except:
+					print("HERE4")
 					return HttpResponse("failed")
 		else:
 			return HttpResponse("failed")
@@ -1581,7 +1610,7 @@ def add_role(request):
 
 
 @login_required(login_url='/accounts/login')
-def add_or_update_domain(request):
+def add_or_update_company(request):
 	user = request.user
 	if(user.is_superuser):
 		if not user.is_active:
@@ -1589,56 +1618,56 @@ def add_or_update_domain(request):
 		if request.method == "POST":
 			try:
 				domain_pk = request.POST['id']
-				domain = Domain.objects.get(pk=domain_pk)
-				user = domain.admin
+				company = Company.objects.get(pk=domain_pk)
+				user = company.admin
 				if(user!=User.objects.get(email=request.POST['admin'])):
 					try:
-						admin = DomainAdmin.objects.get(user=user, domain=domain)
+						admin = CompanyAdmin.objects.get(user=user, company=company)
 						admin.user = User.objects.get(email=request.POST['admin'])
 						admin.save()
 					except:
-						admin = DomainAdmin()
+						admin = CompanyAdmin()
 						admin.user = User.objects.get(email=request.POST['admin'])
 						admin.role = 0
-						admin.domain = domain
+						admin.company = company
 						admin.is_active = True
 						admin.save()
-				domain.name = request.POST['name']
-				domain.email = request.POST['email']
-				domain.url = request.POST['url']
-				domain.admin = User.objects.get(email=request.POST['admin'])
-				domain.github = request.POST['github']
+				company.name = request.POST['name']
+				company.email = request.POST['email']
+				company.url = request.POST['url']
+				company.admin = User.objects.get(email=request.POST['admin'])
+				company.github = request.POST['github']
 				try:
-					domain.subscription = Subscription.objects.get(name=request.POST['subscription'])
+					company.subscription = Subscription.objects.get(name=request.POST['subscription'])
 				except:
 					pass
 				try:
-					domain.logo = request.FILES['logo']
+					company.logo = request.FILES['logo']
 				except:
 					pass
-				domain.save()
+				company.save()
 				return HttpResponse("success")
 			except:
 				try:
-					domain = Domain()
-					domain.name = request.POST['name']
-					domain.email = request.POST['email']
-					domain.url = request.POST['url']
-					domain.admin = User.objects.get(email=request.POST['admin'])
-					domain.github = request.POST['github']
+					company = Company()
+					company.name = request.POST['name']
+					company.email = request.POST['email']
+					company.url = request.POST['url']
+					company.admin = User.objects.get(email=request.POST['admin'])
+					company.github = request.POST['github']
 					try:
-						domain.subscription = Subscription.objects.get(name=request.POST['subscription'])
+						company.subscription = Subscription.objects.get(name=request.POST['subscription'])
 					except:
 						pass
 					try:
-						domain.logo = request.FILES['logo']
+						company.logo = request.FILES['logo']
 					except:
 						pass
-					domain.save()
-					admin = DomainAdmin()
+					company.save()
+					admin = CompanyAdmin()
 					admin.user = User.objects.get(email=request.POST['admin'])
 					admin.role = 0
-					admin.domain = domain
+					admin.company = company
 					admin.is_active = True
 					admin.save()
 					return HttpResponse("success")  
@@ -1648,3 +1677,143 @@ def add_or_update_domain(request):
 			return HttpResponse("failed")
 	else:
 		return HttpResponse("no access")
+
+class DomainList(TemplateView):
+	model = Domain
+	# fields = ['url', 'logo', 'domain', 'plan', 'prize', 'txn_id']
+	template_name = "company_domain_lists.html"
+
+	@method_decorator(login_required)
+	def get(self, request, *args, **kwargs):
+		domain_admin = CompanyAdmin.objects.get(user=request.user)
+		if not domain_admin.is_active:
+			return HttpResponseRedirect("/")
+		domain = []
+		if domain_admin.role == 0:
+			domain = self.model.objects.filter(company=domain_admin.company)
+		else:
+			domain = self.model.objects.filter(pk=domain_admin.domain.pk)
+		context = {'domains': domain}
+		return render(request, self.template_name, context)
+		try:
+			domain_admin = CompanyAdmin.objects.get(user=request.user)
+			if not domain_admin.is_active:
+				return HttpResponseRedirect("/")
+			domain = []
+			if domain_admin.role == 0:
+				domain = self.model.objects.filter(company=domain_admin.company)
+			else:
+				domain = self.model.objects.filter(domain=domain_admin.domain)
+			context = {'domains': domain}
+			return render(request, self.template_name, context)
+		except:
+			return HttpResponseRedirect("/")
+
+
+@login_required(login_url='/accounts/login')
+def add_or_update_domain(request):
+	if request.method == "POST":
+		company_admin = CompanyAdmin.objects.get(user=request.user)
+		print("HERE")
+		subscription = company_admin.company.subscription
+		count_domain = Domain.objects.filter(company=company_admin.company).count()
+		try:
+			try:
+				domain_pk = request.POST['id']
+				domain = Domain.objects.get(pk=domain_pk)
+				domain.name = request.POST['name']
+				# domain.url = request.POST['url']
+				domain.email = request.POST['email']
+				domain.github = request.POST['github']
+				try:
+					domain.logo = request.FILES['logo']
+				except:
+					pass
+				domain.save()
+				return HttpResponse("Domain Updated")
+			except:
+				if count_domain == subscription.number_of_domains:
+					return HttpResponse("Domains Reached Limit")
+				else:
+					if company_admin.role == 0:
+						domain = Domain()
+						domain.name = request.POST['name']
+						domain.url = request.POST['url']
+						domain.email = request.POST['email']
+						domain.github = request.POST['github']
+						try:
+							domain.logo = request.FILES['logo']
+						except:
+							pass
+						domain.company = company_admin.company
+						domain.save()
+						return HttpResponse("Domain Created")
+					else:
+						return HttpResponse("failed")
+		except:
+			return HttpResponse("failed")
+
+
+@login_required(login_url='/accounts/login')
+def company_dashboard_domain_detail(request, pk, template="company_dashboard_domain_detail.html"):
+	user = request.user
+	domain_admin = CompanyAdmin.objects.get(user=request.user)
+	try:
+		if (Domain.objects.get(pk=pk))==domain_admin.domain:
+			if not user.is_active:
+				return HttpResponseRedirect("/")
+			domain = get_object_or_404(Domain, pk=pk)
+			return render(request, template, {'domain': domain})
+		else:
+			return redirect('/')
+	except:
+		return redirect('/')
+
+@login_required(login_url='/accounts/login')
+def company_dashboard_hunt_detail(request, pk, template="company_dashboard_hunt_detail.html"):
+	hunt = get_object_or_404(Hunt, pk=pk)
+	print(hunt.description)
+	return render(request, template, {'hunt': hunt})
+
+@login_required(login_url='/accounts/login')
+def company_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_edit.html"):
+	if request.method == "GET":
+		hunt = get_object_or_404(Hunt, pk=pk)
+		domain_admin = CompanyAdmin.objects.get(user=request.user)
+		if not domain_admin.is_active:
+			return HttpResponseRedirect("/")
+		if domain_admin.role==1:
+			if hunt.domain != domain_admin.domain:
+				return HttpResponseRedirect("/")
+		domain = []
+		if domain_admin.role == 0:
+			domain = Domain.objects.filter(company=domain_admin.company)
+		else:
+			domain = Domain.objects.filter(pk=domain_admin.domain.pk)
+		# hunt = self.model.objects.filter(is_published=False, domain=domain_admin.domain)
+		initial = {'content' : hunt.description}
+		context = {'hunt': hunt,'domains': domain,'hunt_form': HuntForm(initial),'date_form': DateTimeForm()}
+		return render(request, template, context)
+	else:
+		hunt = get_object_or_404(Hunt, pk=pk)
+		domain_admin = CompanyAdmin.objects.get(user=request.user)
+		if not domain_admin.is_active:
+			return HttpResponse("failed")
+		if domain_admin.role==1:
+			if hunt.domain != domain_admin.domain:
+				return HttpResponse("failed")
+		hunt.domain = Domain.objects.get(pk=(request.POST['domain']).split('-')[0].replace(" ", ""))
+		if request.POST['startdate'] != '':
+			hunt.starts_on = request.POST['startdate']
+		print(request.POST['enddate'])
+		if request.POST['enddate'] != '':
+			hunt.end_on = request.POST['enddate']
+		hunt.name = request.POST['name']
+		hunt.description = request.POST['content']
+		try:
+			is_published = request.POST['publish']
+			hunt.is_published = True
+		except:
+			hunt.is_published = False
+		hunt.save()
+		return HttpResponse("success")
