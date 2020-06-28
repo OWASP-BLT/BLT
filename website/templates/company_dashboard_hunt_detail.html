@@ -16,10 +16,10 @@
                         <div id="content"><textarea>{{ hunt.description }}</textarea></div>
                       </div>
                       <div>
-                        Starting Time : {{ hunt.starts_on }}
+                        Starting Time : {{ hunt.starts_on|date:'Y-m-d H:i' }}
                       </div>
                       <div>
-                        Ending Time : {{ hunt.starts_on }}
+                        Ending Time : {{ hunt.end_on|date:'Y-m-d H:i' }}
                       </div>
                     </div>
                   </div>
@@ -28,6 +28,11 @@
                     </div>
                 </div>
 
+                    <div class="modal-footer">
+                      <a href="/dashboard/company/hunt/{{hunt.pk}}/edit" >
+                        <input type="submit"  class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button" value="Edit" />
+                      </a>
+                    </div>
                   <script src="{% static 'mdeditor/js/jquery.min.js' %}"></script>
   <script src="{% static 'mdeditor/js/editormd.min.js' %}"></script>
   <script src="{% static 'mdeditor/js/lib/marked.min.js' %}"></script>
