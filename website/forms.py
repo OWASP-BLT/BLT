@@ -17,9 +17,7 @@ class UserProfileForm(forms.ModelForm):
         model = UserProfile
         fields = ('user_avatar',)
 
-class HuntForm (forms.Form):
+class HuntForm (forms.Form): 
     content = MDTextFormField ()
-
-class DateTimeForm(forms.Form):
-    start_date = forms.DateTimeField(
-        widget=DateTimePickerInput())
+    start_date = forms.DateTimeField(widget=forms.DateTimeInput(attrs={'class': 'col-sm-6', 'readonly' : True}),label='', required=False ) 
+    end_date = forms.DateTimeField(widget=forms.DateTimeInput(attrs={'class': 'col-sm-6', 'readonly' : True}),label='', required=False)

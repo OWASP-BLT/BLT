@@ -1,5 +1,6 @@
 {% extends "base_dashboard_company.html" %}
 {% load static %}
+{% load tz_detect %}
 {% block content %}
                 <div>
                     <div class="col_3">               
@@ -42,4 +43,5 @@
                         <div class="clearfix"> </div>
                     </div>
                 </div>
+{% tz_detect %}
 {% endblock %}
