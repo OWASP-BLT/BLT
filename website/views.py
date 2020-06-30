@@ -5,7 +5,7 @@ import re
 import time
 import urllib.request, urllib.error, urllib.parse
 from collections import deque
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from urllib.parse import urlparse
 from urllib.parse import urlsplit
 
@@ -51,8 +51,8 @@ from rest_framework.response import Response
 
 from rest_framework.authtoken.views import ObtainAuthToken
 from website.models import Issue, Points, Hunt, Domain, InviteFriend, UserProfile, IP, CompanyAdmin, Subscription, Company
-from .forms import FormInviteFriend, UserProfileForm, HuntForm, DateTimeForm
-
+from .forms import FormInviteFriend, UserProfileForm, HuntForm
+from django.utils.timezone import make_aware
 
 def index(request, template="index.html"):
 	try:
@@ -1367,7 +1367,7 @@ class CreateHunt(TemplateView):
 			else:
 				domain = Domain.objects.filter(pk=domain_admin.domain.pk)
 			# hunt = self.model.objects.filter(is_published=False, domain=domain_admin.domain)
-			context = {'domains': domain,'hunt_form': HuntForm(),'date_form': DateTimeForm()}
+			context = {'domains': domain,'hunt_form': HuntForm()}
 			return render(request, self.template_name, context)
 		except:
 			return HttpResponseRedirect("/")
@@ -1376,13 +1376,41 @@ class CreateHunt(TemplateView):
 	def post(self, request, *args, **kwargs):
 		try:
 			domain_admin = CompanyAdmin.objects.get(user=request.user)
-			print(((request.POST['domain']).split('-'))[0].replace(" ", ""))
 			if (domain_admin.role == 1 and (str(domain_admin.domain.pk) == ((request.POST['domain']).split('-'))[0].replace(" ", ""))) or domain_admin.role == 0:
-				print("HERE")
 				hunt = Hunt()
 				hunt.domain = Domain.objects.get(pk=(request.POST['domain']).split('-')[0].replace(" ", ""))
-				hunt.starts_on = request.POST['startdate']
-				hunt.end_on = request.POST['enddate']
+				data = {}
+				data['content'] = request.POST['content']
+				data['start_date'] = request.POST['start_date']
+				data['end_date'] = request.POST['end_date']
+				form = HuntForm(data)
+				if not form.is_valid():
+					return HttpResponse("failed")
+				if not domain_admin.is_active:
+					return HttpResponse("failed")
+				if domain_admin.role==1:
+					if hunt.domain != domain_admin.domain:
+						return HttpResponse("failed")
+				hunt.domain = Domain.objects.get(pk=(request.POST['domain']).split('-')[0].replace(" ", ""))
+				tzsign = 1
+				offset = request.POST['tzoffset']
+				if int(offset)<0 :
+					offset = int(offset) * (-1)
+					tzsign = -1
+				start_date = form.cleaned_data['start_date']
+				# start_date = datetime.strptime(request.POST['date1'], '%Y-%m-%d %H:%M')
+				# end_date = datetime.strptime(request.POST['date2'], '%Y-%m-%d %H:%M')
+				end_date = form.cleaned_data['end_date']
+				if tzsign > 0:
+					start_date = start_date + timedelta(hours=int(int(offset)/60),minutes=int(int(offset)%60)) 
+					end_date = end_date +  timedelta(hours=int(int(offset)/60),minutes=int(int(offset)%60)) 
+				else:
+					start_date = start_date  -(timedelta(hours=int(int(offset)/60),minutes=int(int(offset)%60))) 
+					end_date = end_date -  (timedelta(hours=int(int(offset)/60),minutes=int(int(offset)%60)))
+				hunt.starts_on = start_date
+				# hunt.starts_on = make_aware(datetime.strptime(request.POST['date1'], '%Y-%m-%d %H:%M'))
+				# hunt.end_on = make_aware(datetime.strptime(request.POST['date2'], '%Y-%m-%d %H:%M'))
+				hunt.end_on = end_date
 				hunt.name = request.POST['name']
 				hunt.description = request.POST['content']
 				try:
@@ -1541,7 +1569,6 @@ def update_role(request):
 					if domain_admin.company.admin==request.user:
 						pass
 					domain_admin = CompanyAdmin.objects.get(user=user)
-					print(request.POST['role@'+value])
 					if request.POST['role@'+value]!= '9':
 						domain_admin.role = request.POST['role@'+value]
 					elif request.POST['role@'+value] == '9':
@@ -1559,7 +1586,6 @@ def update_role(request):
 					if domain_admin.company.admin==request.user:
 						pass
 					domain_admin = CompanyAdmin.objects.get(user=user)
-					print(request.POST['role@'+value])
 					if request.POST['role@'+value] == '1':
 						domain_admin.role = request.POST['role@'+value]
 					elif request.POST['role@'+value] == '9':
@@ -1580,9 +1606,7 @@ def add_role(request):
 			user = User.objects.get(email=email)
 			if request.user == user:
 				return HttpResponse("success")
-			print("HERE")
 			try:
-				print("HERE2")
 				admin = CompanyAdmin.objects.get(user=user)
 				if admin.company==domain_admin.company:
 					admin.is_active = True
@@ -1592,7 +1616,6 @@ def add_role(request):
 					return HttpResponse("already admin of another domain")
 			except:
 				try:
-					print("HERE3")
 					admin = CompanyAdmin()
 					admin.user = user
 					admin.role = 1
@@ -1601,7 +1624,6 @@ def add_role(request):
 					admin.save()
 					return HttpResponse("success")
 				except:
-					print("HERE4")
 					return HttpResponse("failed")
 		else:
 			return HttpResponse("failed")
@@ -1714,7 +1736,6 @@ class DomainList(TemplateView):
 def add_or_update_domain(request):
 	if request.method == "POST":
 		company_admin = CompanyAdmin.objects.get(user=request.user)
-		print("HERE")
 		subscription = company_admin.company.subscription
 		count_domain = Domain.objects.filter(company=company_admin.company).count()
 		try:
@@ -1772,7 +1793,6 @@ def company_dashboard_domain_detail(request, pk, template="company_dashboard_dom
 @login_required(login_url='/accounts/login')
 def company_dashboard_hunt_detail(request, pk, template="company_dashboard_hunt_detail.html"):
 	hunt = get_object_or_404(Hunt, pk=pk)
-	print(hunt.description)
 	return render(request, template, {'hunt': hunt})
 
 @login_required(login_url='/accounts/login')
@@ -1792,9 +1812,16 @@ def company_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_ed
 			domain = Domain.objects.filter(pk=domain_admin.domain.pk)
 		# hunt = self.model.objects.filter(is_published=False, domain=domain_admin.domain)
 		initial = {'content' : hunt.description}
-		context = {'hunt': hunt,'domains': domain,'hunt_form': HuntForm(initial),'date_form': DateTimeForm()}
+		context = {'hunt': hunt,'domains': domain,'hunt_form': HuntForm(initial)}
 		return render(request, template, context)
 	else:
+		data = {}
+		data['content'] = request.POST['content']
+		data['start_date'] = request.POST['start_date']
+		data['end_date'] = request.POST['end_date']
+		form = HuntForm(data)
+		if not form.is_valid():
+			return HttpResponse("failed")
 		hunt = get_object_or_404(Hunt, pk=pk)
 		domain_admin = CompanyAdmin.objects.get(user=request.user)
 		if not domain_admin.is_active:
@@ -1803,13 +1830,28 @@ def company_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_ed
 			if hunt.domain != domain_admin.domain:
 				return HttpResponse("failed")
 		hunt.domain = Domain.objects.get(pk=(request.POST['domain']).split('-')[0].replace(" ", ""))
-		if request.POST['startdate'] != '':
-			hunt.starts_on = request.POST['startdate']
-		print(request.POST['enddate'])
-		if request.POST['enddate'] != '':
-			hunt.end_on = request.POST['enddate']
+		tzsign = 1
+		offset = request.POST['tzoffset']
+		if int(offset)<0 :
+			offset = int(offset) * (-1)
+			tzsign = -1
+		start_date = form.cleaned_data['start_date']
+		# start_date = datetime.strptime(request.POST['date1'], '%Y-%m-%d %H:%M')
+		# end_date = datetime.strptime(request.POST['date2'], '%Y-%m-%d %H:%M')
+		end_date = form.cleaned_data['end_date']
+		if tzsign > 0:
+			start_date = start_date + timedelta(hours=int(int(offset)/60),minutes=int(int(offset)%60)) 
+			end_date = end_date +  timedelta(hours=int(int(offset)/60),minutes=int(int(offset)%60)) 
+		else:
+			start_date = start_date  -(timedelta(hours=int(int(offset)/60),minutes=int(int(offset)%60))) 
+			end_date = end_date -  (timedelta(hours=int(int(offset)/60),minutes=int(int(offset)%60)))
+		hunt.starts_on = start_date
+		# hunt.starts_on = make_aware(datetime.strptime(request.POST['date1'], '%Y-%m-%d %H:%M'))
+		# hunt.end_on = make_aware(datetime.strptime(request.POST['date2'], '%Y-%m-%d %H:%M'))
+		hunt.end_on = end_date
+
 		hunt.name = request.POST['name']
-		hunt.description = request.POST['content']
+		hunt.description = form.cleaned_data['content']
 		try:
 			is_published = request.POST['publish']
 			hunt.is_published = True

@@ -7,7 +7,7 @@
                     <div class="col_3">
                         <h3 class="text-left blank1">Drafts</h3>  
                            {% if hunts %}
-                            {% for hunt in hunts %}                
+                            {% for hunt in hunts %} <a href="/dashboard/company/hunt/{{hunt.pk}}">              
                               <div class="col-md-3 widget widget1">
                                 <div class="r3_counter_box">
                                     <i class="fa fa-mail-forward"></i>
@@ -18,7 +18,7 @@
                                       </div>
                                     </div>
                                 </div>
-                            </div>
+                            </div></a> 
                             {% endfor %}
                         {% else %}
                             </br> no drafts found !
