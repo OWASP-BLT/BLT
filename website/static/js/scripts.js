@@ -36,9 +36,14 @@
   $("#update-hunt").submit(function(e){
     e.preventDefault();
 
-      var serializedData = $(this).serialize();
+      var date1 = document.getElementById('datepicker-1-res').innerHTML;
+      var date2 = document.getElementById('datepicker-2-res').innerHTML;
+      var serializedData = $(this).serializeArray();
+      var offset = new Date().getTimezoneOffset();
+      serializedData.push({name:"tzoffset", value: offset});
+      serializedData.push({name:"date1", value: date1});
+      serializedData.push({name:"date2", value: date2});
       var value = ($( this ).serializeArray())[1].value;
-      console.log( value );
       $.ajax({
             type: 'POST',
             url: "/dashboard/company/hunt/"+value+"/edit",
@@ -56,12 +61,17 @@
 
   $("#create-hunt").submit(function(e){
     e.preventDefault();
-      var serializedData = $(this).serialize();
-      console.log(serializedData)
+      var date1 = document.getElementById('datepicker-1-res').innerHTML;
+      var date2 = document.getElementById('datepicker-2-res').innerHTML;
+      var serializedData = $(this).serializeArray();
+      var offset = new Date().getTimezoneOffset();
+      serializedData.push({name:"tzoffset", value: offset});
+      serializedData.push({name:"date1", value: date1});
+      serializedData.push({name:"date2", value: date2});
       $.ajax({
             type: 'POST',
             url: "/dashboard/company/hunt/create",
-            data: serializedData,
+            data: $.param(serializedData),
             success: function (response) {
               window.location.reload();
             },
@@ -100,7 +110,6 @@
             url: "/dashboard/admin/company/addorupdate",
             data: serializedData,
             success: function (response) {
-              console.log(response)
               window.location.reload();
             },
             error: function (response) {

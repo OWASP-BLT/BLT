@@ -47,7 +47,7 @@ djangorestframework = "*"
 django_filter = "*"
 cffi = "*"
 django-mdeditor = "*"
-django-bootstrap-datepicker-plus = "*"
+django-tz-detect = "*"
 
 [dev-packages]
 

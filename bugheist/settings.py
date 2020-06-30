@@ -65,7 +65,8 @@ INSTALLED_APPS = (
     'rest_framework.authtoken',
     'django_cron',
     'mdeditor',
-    'bootstrap_datepicker_plus'
+    'bootstrap_datepicker_plus',
+    'tz_detect'
 )
 
 CRON_CLASSES = [
@@ -82,6 +83,7 @@ MIDDLEWARE = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'tz_detect.middleware.TimezoneMiddleware',
 )
 
 TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
