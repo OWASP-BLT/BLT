@@ -53,6 +53,7 @@
                 "sha256:8fc0819f1f30ba15bdb34cceffb9ef04d99f420f68eb75d901e9560b8749fc41"
             ],
             "version": "==2020.6.20"
+
         },
         "cffi": {
             "hashes": [
@@ -155,6 +156,7 @@
             ],
             "index": "pypi",
             "version": "==3.0.8"
+
         },
         "django-allauth": {
             "hashes": [
