@@ -48,6 +48,8 @@ django_filter = "*"
 cffi = "*"
 django-mdeditor = "*"
 django-tz-detect = "*"
+django-tellme = "*"
+django-bootstrap-datepicker-plus = "*"
 
 [dev-packages]
 

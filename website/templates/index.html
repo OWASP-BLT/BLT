@@ -324,7 +324,68 @@
             </div>
         </div>
     </div>
+    <div class="row" data-intro="View latest activities here." data-step="3" style="margin-left: 10px;">
+        <div class="col-md-8">
+            <h1 class="page-sub-header">Latest activity</h1>
+            <div class="list-group">
+                {% for activity in activities %}
+                    {% include '_activity.html' %}
+                {% endfor %}
+            </div>
+            <a href="/all_activity" class="btn btn-default btn-block">View All Activity</a>
+        </div>
+        <div class="col-md-4">
+            <div class="row">
+                <div class="panel panel-default">
+                    <div class="panel-heading page-sub-header">
+                        {% now "F" %} {% trans "Leaderboard" %}
+                    </div>
+                    <br>
+                    <div class="panel-body leaderboard-panel">
+                        <strong>The 1st Place Hunter for {% now "F" %} will receive</strong>
+                        <div class="box leaderboardbox">
+                            <strong>$25 from <a href="www.owasp.org">Owasp</a></strong>
+                            <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post"
+                                  style="display:inline;margin-bottom:10px;">
+                                <input type="hidden" name="cmd" value="_xclick">
+                                <input type="hidden" name="business" value="coderbounty@gmail.com">
+                                <input type="hidden" name="item_name"
+                                       value="Sponsor a Prize for the {% now "F" %} Leaderboard on Bugheist">
+                                <input type="hidden" name="currency_code" value="USD">
+                                <button type="submit" class="btn btn-danger btn-sm prizebtn">Sponsor a Prize</button>
+                            </form>
+                        </div>
+                    </div>
 
+                    <div class="list-group">
+                        {% if leaderboard %}
+                            {% for leader in leaderboard %}
+                                <div class="list-group-item activity-strip"
+                                     style="height: 80px; border: 1px solid #DDDDDD">
+                                    {% if leader.socialaccount_set.all.0.get_avatar_url %}
+                                        <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class = "profileimage" width="50"
+                                             height="50">
+                                    {% else %}
+                                        <img src="{% gravatar_url leader.email 50 %}" class = "profileimage">
+                                    {% endif %}
+                                    <a href="/profile/{{ leader.username }}"
+                                       class="text-capitalize leaderboard-name">{{ leader.username|truncatechars:20 }}</a>
+                                    <span class="label label-success leaderboard-rank">{{ forloop.counter|ordinal }}</span>
+                                    <div class="badge leaderboard-points">{{ leader.total_score }} Points</div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            </br> Leaderboard reset for {% now "F" %}. Be first to find issues!
+                        {% endif %}
+                    </div>
+                    <a href="/leaderboard" class="btn btn-default btn-block submit_button">View All</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <button type="button" id="feedback-btn" class="btn btn-info vertical-right-aligned">
+        Feedback <span class="glyphicon glyphicon-bullhorn" aria-hidden="true"></span>
+    </button>
     
     <div class="row">
         <div class="col-lg-12">
