@@ -51,6 +51,7 @@ django-tz-detect = "*"
 django-tellme = "*"
 django-bootstrap-datepicker-plus = "*"
 
+
 [dev-packages]
 
 [requires]

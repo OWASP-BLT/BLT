@@ -8,6 +8,7 @@
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <script src="{% static 'js/activity.js' %}"></script>
+    <link href="{% static 'tellme/feedback.min.css' %}" rel="stylesheet">
     <section class="hero">
        <div class="row" data-intro="View latest activities here." data-step="3" style="margin-left: 10px;">
         <div class="col-md-8">
@@ -386,11 +387,11 @@
     <button type="button" id="feedback-btn" class="btn btn-info vertical-right-aligned">
         Feedback <span class="glyphicon glyphicon-bullhorn" aria-hidden="true"></span>
     </button>
-    
     <div class="row">
         <div class="col-lg-12">
             <h1 class="page-sub-header">Subscriptions:</h1>
         </div>
     </div>
     {% include '_subscriptions.html' %}
+    {%  include 'tellme/js_inc.html' %}
 {% endblock %}
