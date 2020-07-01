@@ -45,4 +45,6 @@ The BLT code is released under [GNU Affero General Public License v3.0 (AGPL-3.0
 ## Notes
 
 - If you find a bug or have an improvement, use BLT to report it!
+- Our staging server is now live at https://bugheist-staging.herokuapp.com/ - staging uses the master branch and we have review apps setup that deploy a new instance for each pull request. 
+- for each new issue, create a new branch with issue-382 or similar matching the issue number - when you commit add fixes #288 to link the issue to the pull request
 
