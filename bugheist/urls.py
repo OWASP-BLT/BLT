@@ -106,6 +106,7 @@ urlpatterns = [
                   url(r'^api/v1/scoreboard/$', website.views.get_scoreboard),
                   url(r'^error/', website.views.throw_error, name='post_error'),
                   url(r'^tz_detect/', include('tz_detect.urls')),
+                  url(r'^tellme/', include("tellme.urls")),
               ] 
 
 if settings.DEBUG:

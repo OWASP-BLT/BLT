@@ -66,7 +66,8 @@ INSTALLED_APPS = (
     'django_cron',
     'mdeditor',
     'bootstrap_datepicker_plus',
-    'tz_detect'
+    'tz_detect',
+    'tellme',
 )
 
 CRON_CLASSES = [
