@@ -191,7 +191,7 @@
 </nav>
 <br><br>
 
-<div class="full" style="background-image:url('https://hips.hearstapps.com/hmg-prod.s3.amazonaws.com/images/gettyimages-153946484-1-1575996437.jpg');">
+<div class="full" style="background-image:url('{% static "img/banner.png" %}');">
   <div class="container">
     <div class="row clearfix">
       <div style="padding: 0 0 400px 0;">
@@ -200,16 +200,62 @@
             <div class="panel-group text-center">
                 <div class="panel panel-header panel-default">
                   <div class="panel-heading">
-                    <h1 class="page-header-index header-title">{% trans "Find Bugs" %}</h1><h1 class="header-sub-title">{% trans "Win Points Prizes" %}</h1></div>
+                    <h1 class="page-header-index header-title">{% trans "FIND BUGS" %}</h1><h1 class="header-sub-title">{% trans "Win POINT PRIZES !" %}</h1></div>
                   <div class="panel-body">Enter URL, App name or GPS location of the issue
-                   <form class="form-group">
+                   <form class="form-group bug-form">
                       <div class="form-group">
                         <input type="url" class="form-control" id="exampleInputEmail3" placeholder="Enter Website">
                       </div>
                       <div class="form-group">
                         <textarea class="form-control bug-description" rows="3" placeholder="Description"></textarea>
                       </div>
-                      <button type="submit" class="btn btn-danger btn-sm prizebtn">Report Bug (+3 Points)</button>
+                      <div class="form-group col-md-8 p0">
+                        <div class="col-md-3 p0">
+                            <input type="radio" id="web" name="type" value="Android Development">
+                            <label for="web">Web</label>
+                        </div>
+                        <div class="col-md-3 p0">
+                            <input type="radio" id="ios" name="type" value="iOS Development">
+                            <label for="ios">iOS</label>
+                        </div>
+                        <div class="col-md-3 p0">
+                            <input type="radio" id="android" name="type" value="iOS Development">
+                            <label for="android">Android</label>
+                        </div>
+                        <div class="col-md-3 p0">
+                            <input type="radio" id="url" name="type" value="iOS Development">
+                            <label for="url">URL</label>
+                        </div>
+                      </div>
+                      <div class="form-group col-md-2 pr0">
+                        <select required name="label" class="form-control bug-select">
+                            <option value="0" selected="selected">General</option>
+                            <option value="1">Number error</option>
+                            <option value="2">Functional</option>
+                            <option value="3">Performance</option>
+                            <option value="4">Security</option>
+                            <option value="5">Typo</option>
+                            <option value="6">Design</option>
+                        </select>
+                      </div>
+                      <div class="form-group col-md-2 pr0">
+                         <span>
+                            <input type="file" class="required"
+                                   id='${multipartFilePath}' name="screenshot"/>
+                            <button style="width: 100%;padding: 6px 0px;height: 43px;
+    margin-top: -2px;" class="btn btn-primary"
+                                    name="test_files" type="button">
+                                <i class="fa fa-upload"
+                                   aria-hidden="true"></i> {% trans "Screenshot" %}
+                            </button>
+                            <center><span style="margin-top: 10px;"
+                                          class="badge badge-important"></span></center>
+                        </span>
+                      </div>
+                      <div class="bottom text-center">
+                                            <button type="submit" class="btn btn-danger">{% trans "Report Bug" %} <i
+                                                    class="fa fa-trophy" aria-hidden="true">+3</i></button>
+                                        </div>
                     </form>
                   </div>
                 </div>
@@ -219,7 +265,15 @@
     </div>
   </div>
 </div>
-
+<!-- <div class="hero-image" style="background-image:url('{% static "img/banner.png" %}');height: 50%;background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  position: relative; ">>
+  <div class="hero-text">
+    <h1>Report Issues,</h1>
+    <p>Win Prizes</p>
+  </div>
+</div> -->
 <div id="wrapper">
     <div id="page-wrapper">
         <div class="container-fluid">
@@ -262,11 +316,41 @@
         </div>
     </div>
 </div>
-<footer id="myFooter">
-    <div class="container-footer">
+<footer class="footer-distributed">
+
+    <div class="footer-right">
+
+        <a href="http://facebook.com/bugheist"><i class="fa fa-facebook"></i></a>
+        <a href="http://twitter.com/bugheist"><i class="fa fa-twitter"></i></a>
+        <a href="http://github.com/bugheist/website"><i class="fa fa-github"></i></a>
+
+    </div>
+
+    <div class="footer-left">
+        <img src="{% static "img/logo-small-transparent.png" %}">
+    </div>
+
+    <div class="footer-center">
+
+        <p class="footer-links">
+            
+            <a class="link-1" href="/about">About</a>
+
+            <a href="/stats">Stats</a>
+
+            <a href="/scoreboard">Company Scoreboard</a>
+
+            <a href="/terms">Terms of Service</a>
+
+        </p>
+    </div>
+
+</footer>
+<!-- <footer id="myFooter">
+    <div class="container-footer base-footer">
         <div class="row">
             <div class="col-sm-3">
-                <center><img src="{% static "img/logo.png" %}"></center>
+                <center><img src="{% static "img/logo-small-transparent.png" %}"></center>
             </div>
             <div class="col-sm-3">
                 <ul>
@@ -309,7 +393,7 @@
             Tool</p>
         </a>
     </div>
-</footer>
+</footer> -->
 <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
 <script src="{% static 'js/ui.js' %}"></script>
 {% block after_js %}
