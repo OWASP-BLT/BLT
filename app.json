@@ -4,5 +4,13 @@
   "image": "heroku/python",
   "repository": "https://github.com/OWASP/BLT",
   "keywords": ["python", "django" ],
-  "addons": [ "heroku-postgresql" ]
+  "addons": [ "heroku-postgresql" ],
+  "scripts": {
+    "postdeploy": "pg_dump $STAGING_DATABASE_URL | psql $DATABASE_URL && yes 'yes' | python manage.py migrate"
+  },
+  "env": {
+    "STAGING_DATABASE_URL": {
+      "required": true
+    }
+  }
 }
