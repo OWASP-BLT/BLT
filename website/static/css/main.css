@@ -35,7 +35,7 @@
 
 .header-title {
     color: #DB4553;
-    font-weight: bold;
+    margin: 0px;
 }
 
 
@@ -58,7 +58,6 @@
 }
 
 .panel-header {
-    height: 60%;
     width: 60%;
 }
 .navbar-brand {
@@ -280,9 +279,14 @@ hr {
     width: 10%;
     color: #fff;
 }
-
+.p0 {
+    padding: 0px;
+}
+.pr0 {
+    padding-right: 0px;
+}
 .form-group {
-    margin-bottom: 15px;
+    margin: 15px 0px;
 }
 
 label {
