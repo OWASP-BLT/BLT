@@ -73,6 +73,10 @@
                                     <img src="{% gravatar_url user.email 50 %}">
                                 {% endif %}
                                 <a class="search-username" href="/profile/{{ user.username }}">{{ user.username }}</a>
+                                
+                                 <div style="padding:0px 75px;    line-height: 0px;">
+                                    {{ user.total_score }} Points
+                                 </div>
                                  <a style="position: absolute;right: 22px;top: 14px;" href="/profile/{{ user.username }}" class="btn btn-danger btn-sm prizebtn">View Profile</a>
                             </div>
                         {% endfor %}
