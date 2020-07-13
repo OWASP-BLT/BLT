@@ -52,7 +52,102 @@ body, html {
   text-align: center;
 }
 /* Footer links */
+.container-main {
+    width: 90%;
+}
+.searchbox {
+    margin: 0px;
+}
+.selectdiv {
+  position: relative;
+  /*Don't really need this just for demo styling*/
+  
+  float: left;
+  min-width: 200px;
+  /*margin: 50px 33%;*/
+}
 
+.selectdiv:before {
+    content: '\f0b0';
+    font: normal normal normal 17px/1 FontAwesome;
+    color: #ccc;
+    left: 0px;
+    top: 2px;
+    height: 47px;
+    padding: 15px 8px 0px 8px;
+    border-right: 1px solid #ccc;
+    position: absolute;
+    pointer-events: none;
+    z-index: 999;
+    float: left;    
+}
+select::-ms-expand {
+display: none;
+}
+.search{
+        border: 1px solid #c4c4c4;
+        width: 500px;
+        overflow-x: hidden;
+        display: flex;
+        border-radius: 50px;
+        font-size: 18px;
+        position: relative;
+        left:30%;
+        top:200px;
+    }
+    .search input{
+        width: 300px;
+        height:65px;
+        border: none;
+        padding: 8px 20px;
+        outline: none;
+        font-size: 18px;
+       
+    }
+    .button-src{
+        padding: 10px 110px; 
+        display: inline-block;
+    }
+    .button-src button{
+        padding: 10px 35px 10px 35px;
+        border-radius: 50px;
+        border: none;
+        margin: 9px 7px;
+        background-color: #FF7A00;
+        color: #ffffff;
+        font-size: 18px;
+    }
+.search-username {
+    padding: 20px;
+}
+.search-header-query {
+    font-weight: 500;
+}
+.search-header-query {
+    color:#d9534f;
+    font-weight: 500;
+}
+.selectdiv select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  /* Add some styling */
+  
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: 50px;
+  float: right;
+  padding: 0px 40px;
+  font-size: 16px;
+  line-height: 1.75;
+  color: #333;
+  background-color: #ffffff;
+  background-image: none;
+  border: 1px solid #ccc;
+  -ms-word-break: normal;
+  word-break: normal;
+}
 .footer-distributed p.footer-links {
   font-size: 18px;
   font-weight: bold;
