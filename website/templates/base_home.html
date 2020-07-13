@@ -111,7 +111,7 @@
                 {% endif %}
             </ul>
             <form class="navbar-form navbar-right" action="/search" method="get">
-                <div class="form-group">
+                <div class="form-group" style="margin:0px">
                     <input type="text" name="query" class="form-control" placeholder="{% trans "Search" %}">
                 </div>
                 <button type="submit" class="btn btn-default">
@@ -131,7 +131,7 @@
                         <a href="/dashboard/user/">{% trans "Dashboard" %}</a>
                     {% endif %}
                 </li>
-                <li><p class="navbar-text"> Found a bug ?</p></li>
+                <!-- <li><p class="navbar-text"> Found a bug ?</p></li>
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-intro="Click here to report any kind of bug." data-step="1"
                        data-toggle="dropdown"><b>Report here</b> <span class="caret"></span></a>
@@ -182,7 +182,7 @@
                                     </form>
                                 </div>
                             </div>
-                        </li>
+                        </li> -->
                     </ul>
                 </li>
             </ul>
@@ -191,7 +191,9 @@
 </nav>
 <br><br>
 
-<div class="full" style="background-image:url('{% static "img/banner.png" %}');">
+<div id="background" style="background-image:url('{% static "img/banner.png" %}');background-position: center;
+  background-size: cover;
+  width: 100%;">
   <div class="container">
     <div class="row clearfix">
       <div style="padding: 0 0 400px 0;">
