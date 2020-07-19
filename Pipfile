@@ -50,7 +50,7 @@ django-mdeditor = "*"
 django-tz-detect = "*"
 django-tellme = "*"
 django-bootstrap-datepicker-plus = "*"
-
+django-star-ratings = "*"
 
 [dev-packages]
 

@@ -68,6 +68,7 @@ INSTALLED_APPS = (
     'bootstrap_datepicker_plus',
     'tz_detect',
     'tellme',
+    'star_ratings',
 )
 
 CRON_CLASSES = [
