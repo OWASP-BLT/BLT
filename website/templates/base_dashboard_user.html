@@ -60,7 +60,8 @@
                         <li><a href="#"><i class="lnr lnr-train"></i> <span>Ongoing Hunts</span></a></li>
                         <li><a href="#"><i class="lnr lnr-spell-check"></i> <span>Previous Hunts</span></a></li>
                         <li><a href="#"><i class="lnr lnr-diamond"></i> <span>Wallet</span></a></li>              
-                        <li><a href="#"><i class="lnr lnr-gift"></i> <span>Rewards</span></a></li>
+                        <li><a href="#"><i class="lnr lnr-gift"></i> <span>Rewards</span></a></li>        
+                        <li><a href="/dashboard/user/profile/{{user.username}}"><i class="lnr lnr-user"></i> <span>Profile</span></a></li>
                     </ul>
                 
             </div>
@@ -116,57 +117,8 @@
             </div>
         
             <div id="page-wrapper">
-                <div>
-                    <div class="col_3">
-                        <h1 class="text-left dashboard-header-text">Ongoing Hunt</h1>                        
-                        <div class="col-md-3 widget widget1">
-                            <div class="r3_counter_box">
-                                <i class="fa fa-mail-forward"></i>
-                                <div class="stats">
-                                  <h5>Description<span></span></h5>
-                                  <div class="hunt">
-                                    <p>A Hunt</p>
-                                  </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="clearfix"> </div>
-                    </div>
-                </div>
-                <div>
-                    <div class="col_3">
-                        <h1 class="text-left dashboard-header-text">Upcoming Hunt</h1>
-                        <div class="col-md-3 widget widget1">
-                            <div class="r3_counter_box">
-                                <i class="fa fa-mail-forward"></i>
-                                <div class="stats">
-                                  <h5>Description <span></span></h5>
-                                  <div class="hunt">
-                                    <p>A hunt</p>
-                                  </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="clearfix"> </div>
-                    </div>
-                </div>
-                <div>
-                    <div class="col_3">
-                        <h1 class="text-left dashboard-header-text">Previous Hunt</h1>
-                        <div class="col-md-3 widget widget1">
-                            <div class="r3_counter_box">
-                                <i class="fa fa-mail-forward"></i>
-                                <div class="stats">
-                                  <h5>Descrirption<span></span></h5>
-                                  <div class="hunt">
-                                    <p>A Hunt</p>
-                                  </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="clearfix"> </div>
-                    </div>
-                </div>                            
+            {% block content %}
+            {% endblock %}   
             </div>
              
         </div>

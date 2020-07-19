@@ -16,7 +16,7 @@ from website.views import (UserProfileDetailView, IssueCreate, UploadCreate, Ema
                            HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend,
                            ScoreboardView,get_score,CustomObtainAuthToken,create_tokens,issue_count,get_scoreboard,
                            CreateHunt, DraftHunts, UpcomingHunts, CompanySettings, OngoingHunts, PreviousHunts,
-                           DomainList )
+                           DomainList, UserProfileDetailsView )
 from rest_framework.authtoken import views
 
 favicon_view = RedirectView.as_view(url='/static/favicon.ico', permanent=True)
@@ -44,6 +44,8 @@ urlpatterns = [
                   url(r'^dashboard/company/settings/role/update$', website.views.update_role, name='update-role'),
                   url(r'^dashboard/company/settings/role/add$', website.views.add_role, name='add-role'),
                   url(r'^dashboard/user/$', website.views.user_dashboard, name='user'),
+                  url(r'^dashboard/user/profile/(?P<slug>[^/]+)/$',
+                      UserProfileDetailsView.as_view(), name="user_profile"),
                   path(settings.ADMIN_URL + '/', admin.site.urls),
                   url(r'^like_issue/(?P<issue_pk>\d+)/$', website.views.like_issue, name="like_issue"),
                   url(r'^save_issue/(?P<issue_pk>\d+)/$', website.views.save_issue, name="save_issue"),
@@ -107,6 +109,8 @@ urlpatterns = [
                   url(r'^error/', website.views.throw_error, name='post_error'),
                   url(r'^tz_detect/', include('tz_detect.urls')),
                   url(r'^tellme/', include("tellme.urls")),
+                  url(r'^ratings/', include('star_ratings.urls',namespace='ratings')),
+
               ] 
 
 if settings.DEBUG:

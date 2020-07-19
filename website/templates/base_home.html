@@ -131,7 +131,7 @@
                         <a href="/dashboard/user/">{% trans "Dashboard" %}</a>
                     {% endif %}
                 </li>
-                <!-- <li><p class="navbar-text"> Found a bug ?</p></li>
+                <!-- <li><p class="navbar-text">Found a bug ?</p></li>
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-intro="Click here to report any kind of bug." data-step="1"
                        data-toggle="dropdown"><b>Report here</b> <span class="caret"></span></a>
@@ -182,9 +182,9 @@
                                     </form>
                                 </div>
                             </div>
-                        </li> -->
+                        </li>
                     </ul>
-                </li>
+                </li> -->
             </ul>
         </div>
     </div>
@@ -204,7 +204,8 @@
                   <div class="panel-heading">
                     <h1 class="page-header-index header-title">{% trans "FIND BUGS" %}</h1><h1 class="header-sub-title">{% trans "Win POINT PRIZES !" %}</h1></div>
                   <div class="panel-body">Enter URL, App name or GPS location of the issue
-                   <form class="form-group bug-form">
+                   <form class="form-group bug-form" action="/issue/" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
                       <div class="form-group">
                         <input type="url" class="form-control" id="exampleInputEmail3" placeholder="Enter Website">
                       </div>
