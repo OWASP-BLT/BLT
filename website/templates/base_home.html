@@ -191,7 +191,7 @@
 </nav>
 <br><br>
 
-<div id="background" style="background-image:url('{% static "img/banner.png" %}');background-position: center;
+<!-- <div id="background" style="background-image:url('{% static "img/banner.png" %}');background-position: center;
   background-size: cover;
   width: 100%;">
   <div class="container">
@@ -267,16 +267,78 @@
       </div>
     </div>
   </div>
-</div>
-<!-- <div class="hero-image" style="background-image:url('{% static "img/banner.png" %}');height: 50%;background-position: center;
+</div> -->
+<div class="hero-image" style="background-image:url('{% static "img/banner.png" %}');height: 84%;background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
   position: relative; ">>
   <div class="hero-text">
-    <h1>Report Issues,</h1>
-    <p>Win Prizes</p>
+    <div class="panel-group text-center">
+                <div class="panel panel-header panel-default">
+                  <div class="panel-heading">
+                    <h1 class="page-header-index header-title">{% trans "FIND BUGS" %}</h1><h1 class="header-sub-title">{% trans "Win POINT PRIZES !" %}</h1></div>
+                  <div class="panel-body">Enter URL, App name or GPS location of the issue
+                   <form class="form-group bug-form" action="/issue/" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                      <div class="form-group">
+                        <input type="url" class="form-control" id="exampleInputEmail3" placeholder="Enter Website">
+                      </div>
+                      <div class="form-group">
+                        <textarea class="form-control bug-description" rows="3" placeholder="Description"></textarea>
+                      </div>
+                      <div class="form-group col-md-8 p0">
+                        <div class="col-md-3 p0">
+                            <input type="radio" id="web" name="type" value="Android Development">
+                            <label for="web">Web</label>
+                        </div>
+                        <div class="col-md-3 p0">
+                            <input type="radio" id="ios" name="type" value="iOS Development">
+                            <label for="ios">iOS</label>
+                        </div>
+                        <div class="col-md-3 p0">
+                            <input type="radio" id="android" name="type" value="iOS Development">
+                            <label for="android">Android</label>
+                        </div>
+                        <div class="col-md-3 p0">
+                            <input type="radio" id="url" name="type" value="iOS Development">
+                            <label for="url">URL</label>
+                        </div>
+                      </div>
+                      <div class="form-group col-md-2 pr0">
+                        <select required name="label" class="form-control bug-select">
+                            <option value="0" selected="selected">General</option>
+                            <option value="1">Number error</option>
+                            <option value="2">Functional</option>
+                            <option value="3">Performance</option>
+                            <option value="4">Security</option>
+                            <option value="5">Typo</option>
+                            <option value="6">Design</option>
+                        </select>
+                      </div>
+                      <div class="form-group col-md-2 pr0">
+                         <span>
+                            <input type="file" class="required"
+                                   id='${multipartFilePath}' name="screenshot"/>
+                            <button style="width: 100%;padding: 6px 0px;height: 43px;
+    margin-top: -2px;" class="btn btn-primary"
+                                    name="test_files" type="button">
+                                <i class="fa fa-upload"
+                                   aria-hidden="true"></i> {% trans "Screenshot" %}
+                            </button>
+                            <center><span style="margin-top: 10px;"
+                                          class="badge badge-important"></span></center>
+                        </span>
+                      </div>
+                      <div class="bottom text-center">
+                                            <button type="submit" class="btn btn-danger">{% trans "Report Bug" %} <i
+                                                    class="fa fa-trophy" aria-hidden="true">+3</i></button>
+                                        </div>
+                    </form>
+                  </div>
+                </div>
+            </div>
   </div>
-</div> -->
+</div>
 <div id="wrapper">
     <div id="page-wrapper">
         <div class="container-fluid">
@@ -290,7 +352,7 @@
             <div class="modal-content">
                 <div class="modal-body text-center">
                     <a href="/">
-                        <img src="{% static "img/logo-small-transparent.png" %}">
+                        <img src="{% static "img/logo-small-transparent-bw.png.png" %}">
                     </a>
                     <hr>
                     <a href="/accounts/login">
@@ -330,7 +392,7 @@
     </div>
 
     <div class="footer-left">
-        <img src="{% static "img/logo-small-transparent.png" %}">
+        <img src="{% static "img/logo-small-transparent-bw.png" %}">
     </div>
 
     <div class="footer-center">
