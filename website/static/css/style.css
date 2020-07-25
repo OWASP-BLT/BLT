@@ -1,6 +1,6 @@
 body {
     font-family: 'Open Sans', arial;
-    background-color: #fff;
+    background-color: #f9f9f9;
 }
 
 @media only screen and (max-width: 800px) {
@@ -224,7 +224,7 @@ display: none;
 .hero-text {
   text-align: center;
   position: absolute;
-  top: 50%;
+  top: 57%;
   left: 50%;
   transform: translate(-50%, -50%);
   color: #000;
@@ -265,11 +265,112 @@ display: none;
 .page-header-index {
     font-weight: 400;
     font-size: 60px;
-    padding: 30px;
     margin: 20px 0;
     border-bottom-width: 1px;
 }
 
+
+.wrapper {
+  
+}
+.wrapper .wrapper__header {
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  background: #d9534f;
+  padding: 27px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.wrapper .wrapper__header .b_caption p {
+  color: #dae0fb;
+  font-size: 16px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+.wrapper .wrapper__header .b_caption p span {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-size: 13px;
+}
+.wrapper .wrapper__content {
+  background: #fff;
+  padding: 10px;
+}
+.company__leaderboard__left {
+    padding: 10px 10px 0px 0px;
+}
+.company__leaderboard__right {
+    padding: 10px 0px 0px  10px;
+}
+.img-square-wrapper {
+    text-align: center;
+}
+.wrapper .wrapper__body {
+    background: #fff;
+    padding: 10px;
+    border: 1px solid #e8e8e8;
+    border-top: none;
+    border-radius: 0px 0px 5px 5px;
+}
+.wrapper .wrapper__content ul {
+  list-style: none;
+  padding-left: 0px;
+}
+.wrapper .wrapper__content ul li {
+  cursor: pointer;
+  background: #fefefe;
+  padding: 10px 5px;
+  border-radius: 5px;
+  box-shadow: 0px 0px 10px 1px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: transform 0.1s ease-in-out;
+  z-index: 4;
+}
+.wrapper .wrapper__content ul li:hover {
+  z-index: 5;
+  transform: scale(1.1);
+  box-shadow: 0px 0px 16px 13px rgba(0, 0, 0, 0.1);
+}
+.wrapper .wrapper__content ul li:not(:last-child) {
+  margin-bottom: 10px;
+}
+.wrapper .wrapper__content ul li .graphic {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #ebeef3;
+  overflow: hidden;
+  padding: 5px;
+}
+.wrapper .wrapper__content ul li .graphic img {
+  width: 100%;
+  border-radius: 50%;
+}
+.wrapper .wrapper__content ul li .name span {
+  vertical-align: middle;
+}
+.wrapper .wrapper__content ul li .name span.header {
+  color: #979cb0;
+  font-weight: 700;
+  margin-right: 15px;
+  vertical-align: middle;
+}
+.wrapper .wrapper__content ul li .name span.stat {
+  color: #35d8ac;
+  font-weight: 700;
+  font-size: 25px;
+}
+.wrapper .wrapper__content ul li .name span.sub {
+  color: #35d8ac;
+  font-weight: 700;
+  font-size: 10px;
+  vertical-align: sub;
+}
 .user-details{
     background: #333;
     margin: 0px -15px;
