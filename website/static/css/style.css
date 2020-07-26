@@ -273,6 +273,13 @@ display: none;
 .wrapper {
   
 }
+.search-page-bar {
+    height: 50px;
+    -webkit-box-shadow: 11px 13px 23px -13px rgba(0,0,0,0.42);
+    -moz-box-shadow: 11px 13px 23px -13px rgba(0,0,0,0.42);
+    box-shadow: 11px 13px 23px -13px rgba(0,0,0,0.42);
+    z-index: 999;
+}
 .wrapper .wrapper__header {
   border-top-left-radius: 4px;
   border-top-right-radius: 4px;
@@ -668,7 +675,7 @@ a:hover {
 
 .activity-strip {
     height: 120px;
-    margin-bottom: 5px;
+    /*margin-bottom: 5px;*/
     overflow: hidden;
 }
 

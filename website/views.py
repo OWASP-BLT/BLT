@@ -862,8 +862,8 @@ def search(request, template="search.html"):
 		context = {
 			'query': query,
 			'type': stype,
-			'users': User.objects.filter(Q(username__icontains=query)).annotate(
-			total_score=Sum('points__score')).order_by('-total_score')[0:20]
+			'users': UserProfile.objects.filter(Q(user__username__icontains=query)).annotate(
+			total_score=Sum('user__points__score')).order_by('-total_score')[0:20]
 		}
 	elif stype == "label":
 		context = {
