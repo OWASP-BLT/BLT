@@ -281,6 +281,9 @@ display: none;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  -webkit-box-shadow: 6px 10px 22px 1px rgba(0,0,0,0.75);
+  -moz-box-shadow: 6px 10px 22px 1px rgba(0,0,0,0.75);
+  box-shadow: 6px 10px 22px 1px rgba(0,0,0,0.75);
 }
 .wrapper .wrapper__header .b_caption p {
   color: #dae0fb;
@@ -318,6 +321,70 @@ display: none;
 .wrapper .wrapper__content ul {
   list-style: none;
   padding-left: 0px;
+}
+.card-text {
+    margin: 0px;
+    color: #000;
+    line-height: 2;
+}
+#myCarousel .thumbnail {
+    margin-bottom: 0;
+}
+.carousel-control.left, .carousel-control.right {
+    background-image:none !important;
+}
+.carousel-control {
+    color:#fff;
+    top:40%;
+    color:#428BCA;
+    bottom:auto;
+    padding-top:4px;
+    width:30px;
+    height:30px;
+    text-shadow:none;
+    opacity:1;
+}
+.carousel-control:hover {
+    color: #d9534f;
+}
+.carousel-control.left, .carousel-control.right {
+    background-image:none !important;
+}
+.carousel-control.right {
+    left:auto;
+    right:-32px;
+}
+.carousel-control.left {
+    right:auto;
+    left:-32px;
+}
+.carousel-indicators {
+    bottom:-30px;
+}
+.carousel-indicators li {
+    border-radius:0;
+    width:10px;
+    height:10px;
+    background:#ccc;
+    border:1px solid #ccc;
+    border-radius: 15px;
+}
+.carousel-indicators .active {
+    width:12px;
+    height:12px;
+    background:#3276b1;
+    border-color:#3276b1;
+}
+.card-header {
+    font-weight: 900;
+    font-size: larger;
+    text-transform: uppercase;
+    font-family: sans-serif;
+}
+.card-title {
+    color: #000;
+    line-height: 0;
+    font-size: 12px;
 }
 .wrapper .wrapper__content ul li {
   cursor: pointer;
@@ -625,7 +692,48 @@ a:hover {
 .activity-strip-section > div a {
     text-decoration: none;
 }
+.carousel-image {
+    width: 100%;
+    height: auto;
+}
+.profileimage {
+    float: left;
+    border-radius: 30px;
+}
+.activity-description {
+    margin-top: 0px;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 10px;
+}
 
+.profImg{
+  width: 50px;
+  height: 50px;
+  border:1px solid #ccc;
+  border-radius: 25px;
+  position:absolute;
+  left:30px;
+  bottom:60px;
+}
+.profImg img {   
+  width: 50px;
+  height: 50px;
+  border-radius:50%;
+}
+.profileInfo {
+    padding-left: 70px;
+}
+.profileInfo span {
+  display:block;
+  font-size:14px;
+  line-height:18px;
+  color:#000;
+}
+.profileInfo .dist {
+ text-align:right;
+ color:#ccc;
+}
 .activity-strip-section > div > .small {
     font-size: 14px;
     font-weight: initial;

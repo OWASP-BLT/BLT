@@ -189,15 +189,16 @@
                                         <img class="" src="https://pbs.twimg.com/profile_images/1164033557129547776/vM3X2gX5_400x400.jpg" alt="Card image cap">
                                     </div>
                                     <div class="card border-primary mb-3 card-details" style="max-width: 25rem;">
-                                      <div class="card-header">Header</div>
+                                      <div class="card-header">CoderBounty</div>
                                       <div class="card-body text-primary">
-                                        <h5 class="card-title">Primary card title</h5>
-                                        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                                        <h5 class="card-title">coderbounty.com</h5>
+                                        <p class="card-text"><i class="fa fa-arrow-up" style="color: #75a49a;"></i>5 <i class="fa fa-arrow-down" style="color: #bd5c6d;"></i>0</p>
+                                        <p class="card-text">25$</p>
                                       </div>
                                     </div>
                                 </div>
                                 <div class="card-footer">
-                                    <small class="text-muted">Last updated 3 mins ago</small>
+                                    <!-- <small class="text-muted">Last updated 3 mins ago</small> -->
                                 </div>
                             </div>
                         </div>
@@ -216,15 +217,16 @@
                                         <img class="" src="https://pbs.twimg.com/profile_images/1164033557129547776/vM3X2gX5_400x400.jpg" alt="Card image cap">
                                     </div>
                                     <div class="card border-primary mb-3 card-details" style="max-width: 25rem;">
-                                      <div class="card-header">Header</div>
+                                      <div class="card-header">CoderBounty</div>
                                       <div class="card-body text-primary">
-                                        <h5 class="card-title">Primary card title</h5>
-                                        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                                        <h5 class="card-title">coderbounty.com</h5>
+                                        <p class="card-text"><i class="fa fa-arrow-up" style="color: #75a49a;"></i>5 <i class="fa fa-arrow-down" style="color: #bd5c6d;"></i>0</p>
+                                        <p class="card-text">25$</p>
                                       </div>
                                     </div>
                                 </div>
                                 <div class="card-footer">
-                                    <small class="text-muted">Last updated 3 mins ago</small>
+                                    <!-- <small class="text-muted">Last updated 3 mins ago</small> -->
                                 </div>
                             </div>
                         </div>
@@ -243,15 +245,16 @@
                                         <img class="" src="https://pbs.twimg.com/profile_images/1164033557129547776/vM3X2gX5_400x400.jpg" alt="Card image cap">
                                     </div>
                                     <div class="card border-primary mb-3 card-details" style="max-width: 25rem;">
-                                      <div class="card-header">Header</div>
+                                      <div class="card-header">CoderBounty</div>
                                       <div class="card-body text-primary">
-                                        <h5 class="card-title">Primary card title</h5>
-                                        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                                        <h5 class="card-title">coderbounty.com</h5>
+                                        <p class="card-text"><i class="fa fa-arrow-up" style="color: #75a49a;"></i>5 <i class="fa fa-arrow-down" style="color: #bd5c6d;"></i>0</p>
+                                        <p class="card-text">25$</p>
                                       </div>
                                     </div>
                                 </div>
                                 <div class="card-footer">
-                                    <small class="text-muted">Last updated 3 mins ago</small>
+                                    <!-- <small class="text-muted">Last updated 3 mins ago</small> -->
                                 </div>
                             </div>
                         </div>
@@ -270,21 +273,145 @@
                                         <img class="" src="https://pbs.twimg.com/profile_images/1164033557129547776/vM3X2gX5_400x400.jpg" alt="Card image cap">
                                     </div>
                                     <div class="card border-primary mb-3 card-details" style="max-width: 25rem;">
-                                      <div class="card-header">Header</div>
+                                      <div class="card-header">CoderBounty</div>
                                       <div class="card-body text-primary">
-                                        <h5 class="card-title">Primary card title</h5>
-                                        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                                        <h5 class="card-title">coderbounty.com</h5>
+                                        <p class="card-text"><i class="fa fa-arrow-up" style="color: #75a49a;"></i>5 <i class="fa fa-arrow-down" style="color: #bd5c6d;"></i>0</p>
+                                        <p class="card-text">25$</p>
                                       </div>
                                     </div>
                                 </div>
                                 <div class="card-footer">
-                                    <small class="text-muted">Last updated 3 mins ago</small>
+                                    <!-- <small class="text-muted">Last updated 3 mins ago</small> -->
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
           </div>
+        </div>
+    </div>
+
+    <div class="row" style="margin-left: 10px;">
+        <div class="col-lg-12">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1 class="page-sub-header">{% trans "Most Popular Bugs" %}</h1>
+                </div>
+            </div>
+            <div>
+                <div>       
+                    <div id="myCarousel" class="carousel slide">
+                        <div class="carousel-inner">
+                            {% for activity in activities %}
+                                {% if forloop.counter == 1 %}
+                                    <div class="item active">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <a href="{{ activity.get_absolute_url }}">
+                                                <div class="thumbnail">
+                                                  <img class="carousel-image" src="https://storage.googleapis.com/bhfiles/screenshots/Screenshot_from_2020-07-07_16-55-29.png?Expires=1595852085&GoogleAccessId=153418300371-compute%40developer.gserviceaccount.com&Signature=LygvMu5O65ZGVtT%2Fm0ZV9VP9LWcEofiefhO4Gcq63dR47HwsXQ2uJBEJMUV7BG%2FBHKA3JATD5gZmtG4IvU4hFKykGEVQNtrXRFzbc8Va6Nij6fXEaenxfAPV7oSdw9%2Fd5sxi9%2F93qjP31iWsoC2h1NanBzu1ASyp%2FDFdCRLGePWThgq7idMCWQyusZwzY0WS%2BzxYuHfNnceZ%2FP8%2BGKLByzNxGiBbB8xzvUdaMRZtJjFzxVsty%2Be8KZ%2B70hqXzjI8lvKyaTEIPLlPaTr1W9EourlIyneUTg2NtP79rE9Y%2BvkVevOF7e4OFpeANfTyDV7SLShgjBcUR0ThynsRxzlPTw%3D%3D">
+                                                  <!-- <img class="carousel-image" src="{{ activity.screenshot.url }}"> -->
+                                                  <div class="caption">
+                                                     <div class="profImg">
+      {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
+                                                        <img src="{{ activity.user.socialaccount_set.all.0.get_avatar_url }}" class = "profileimage" width="50"
+                                                             height="50">
+                                                    {% else %}
+                                                        <img src="{% gravatar_url activity.user.email 50 %}" class = "profileimage">
+                                                    {% endif %}
+                                                    </div>
+                                                    <div class="profileInfo">
+                                                      <!-- <span class="dist">13.5Km</span> -->
+                                                      <span class="activity-description">{{activity.domain.name}} Bug by {{activity.user.username}}</span>
+                                                      <span><i class="fa fa-eye" style="color: #bd5c6d;"></i> {{activity.views}} Views</span>
+                                                      {% if activity.status == "open" %}
+                                                                <span class="label label-success text-capitalize">{{ activity.status }}</span>
+                                                            {% else %}
+                                                                <span class="label label-danger text-capitalize">{{ activity.status }}</span>
+                                                            {% endif %}
+                                                      <a href="#">View Profile</a>      
+                                                    </div>    
+                                                  </div>
+                                                </div> 
+                                                </a>       
+                                            </div>
+                                
+                                {% elif forloop.counter0|divisibleby:4 %}
+                                        </div>
+                                    </div>
+                                    <div class="item">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <a href="{{ activity.get_absolute_url }}">
+                                                <div class="thumbnail">
+                                                  <img class="carousel-image" src="https://storage.googleapis.com/bhfiles/screenshots/Screenshot_from_2020-07-07_16-55-29.png?Expires=1595852085&GoogleAccessId=153418300371-compute%40developer.gserviceaccount.com&Signature=LygvMu5O65ZGVtT%2Fm0ZV9VP9LWcEofiefhO4Gcq63dR47HwsXQ2uJBEJMUV7BG%2FBHKA3JATD5gZmtG4IvU4hFKykGEVQNtrXRFzbc8Va6Nij6fXEaenxfAPV7oSdw9%2Fd5sxi9%2F93qjP31iWsoC2h1NanBzu1ASyp%2FDFdCRLGePWThgq7idMCWQyusZwzY0WS%2BzxYuHfNnceZ%2FP8%2BGKLByzNxGiBbB8xzvUdaMRZtJjFzxVsty%2Be8KZ%2B70hqXzjI8lvKyaTEIPLlPaTr1W9EourlIyneUTg2NtP79rE9Y%2BvkVevOF7e4OFpeANfTyDV7SLShgjBcUR0ThynsRxzlPTw%3D%3D">
+                                                  <!-- <img class="carousel-image" src="{{ activity.screenshot.url }}"> -->
+                                                  <div class="caption">
+                                                     <div class="profImg">
+      {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
+                                                        <img src="{{ activity.user.socialaccount_set.all.0.get_avatar_url }}" class = "profileimage" width="50"
+                                                             height="50">
+                                                    {% else %}
+                                                        <img src="{% gravatar_url activity.user.email 50 %}" class = "profileimage">
+                                                    {% endif %}
+                                                    </div>
+                                                    <div class="profileInfo">
+                                                      <!-- <span class="dist">13.5Km</span> -->
+                                                      <span class="activity-description">{{activity.domain.name}} Bug by {{activity.user.username}}</span>
+                                                      <span><i class="fa fa-eye" style="color: #bd5c6d;"></i> {{activity.views}} Views</span>
+                                                      {% if activity.status == "open" %}
+                                                                <span class="label label-success text-capitalize">{{ activity.status }}</span>
+                                                            {% else %}
+                                                                <span class="label label-danger text-capitalize">{{ activity.status }}</span>
+                                                            {% endif %}
+                                                      <a href="#">View Profile</a>      
+                                                    </div>    
+                                                  </div>
+                                                </div>  
+                                                </a>      
+                                            </div>
+                                {% else %} 
+                                    <div class="col-md-3">
+                                                <a href="{{ activity.get_absolute_url }}">
+                                                <div class="thumbnail">
+
+                                                  <img class="carousel-image" src="https://storage.googleapis.com/bhfiles/screenshots/Screenshot_from_2020-07-07_16-55-29.png?Expires=1595852085&GoogleAccessId=153418300371-compute%40developer.gserviceaccount.com&Signature=LygvMu5O65ZGVtT%2Fm0ZV9VP9LWcEofiefhO4Gcq63dR47HwsXQ2uJBEJMUV7BG%2FBHKA3JATD5gZmtG4IvU4hFKykGEVQNtrXRFzbc8Va6Nij6fXEaenxfAPV7oSdw9%2Fd5sxi9%2F93qjP31iWsoC2h1NanBzu1ASyp%2FDFdCRLGePWThgq7idMCWQyusZwzY0WS%2BzxYuHfNnceZ%2FP8%2BGKLByzNxGiBbB8xzvUdaMRZtJjFzxVsty%2Be8KZ%2B70hqXzjI8lvKyaTEIPLlPaTr1W9EourlIyneUTg2NtP79rE9Y%2BvkVevOF7e4OFpeANfTyDV7SLShgjBcUR0ThynsRxzlPTw%3D%3D">
+                                                  <!-- <img class="carousel-image" src="{{ activity.screenshot.url }}"> -->
+                                                  <div class="caption">
+                                                     <div class="profImg">
+      {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
+                                                        <img src="{{ activity.user.socialaccount_set.all.0.get_avatar_url }}" class = "profileimage" width="50"
+                                                             height="50">
+                                                    {% else %}
+                                                        <img src="{% gravatar_url activity.user.email 50 %}" class = "profileimage">
+                                                    {% endif %}
+                                                    </div>
+                                                    <div class="profileInfo">
+                                                      <!-- <span class="dist">13.5Km</span> -->
+                                                      <span class="activity-description">{{activity.domain.name}} Bug by {{activity.user.username}}</span>
+                                                      <span><i class="fa fa-eye" style="color: #bd5c6d;"></i> {{activity.views}} Views</span>
+                                                      {% if activity.status == "open" %}
+                                                                <span class="label label-success text-capitalize">{{ activity.status }}</span>
+                                                            {% else %}
+                                                                <span class="label label-danger text-capitalize">{{ activity.status }}</span>
+                                                            {% endif %}
+                                                      <!-- <a href="#">View Profile</a>   -->    
+                                                    </div>    
+                                                  </div>
+                                                </div>   
+                                                </a>     
+                                            </div>
+                                {% endif %}
+                            {% endfor %}
+                                </div>        
+                            </div>
+                        </div>
+                        <a class="left carousel-control" href="#myCarousel" data-slide="prev"><i class="fa fa-chevron-left fa-2x"></i></a>
+                        <a class="right carousel-control" href="#myCarousel" data-slide="next"><i class="fa fa-chevron-right fa-2x"></i></a>           
+                    </div> 
+                </div>
+            </div>
         </div>
     </div>
     </section>
@@ -431,7 +558,7 @@
             </div>
         </div>
     </div>
-    <div class="row container-main" data-intro="View latest activities here." data-step="3" style="margin-left: 10px;">
+    <!-- <div class="row container-main" data-intro="View latest activities here." data-step="3" style="margin-left: 10px;">
         <div class="col-md-8">
             <h1 class="page-sub-header">Latest activity</h1>
             <div class="list-group">
@@ -489,7 +616,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
     <button type="button" id="feedback-btn" class="btn btn-info vertical-right-aligned">
         Feedback <span class="glyphicon glyphicon-bullhorn" aria-hidden="true"></span>
     </button>
@@ -498,6 +625,11 @@
             <h1 class="page-sub-header">Subscriptions:</h1>
         </div>
     </div>
+    <script type="text/javascript">
+    $('#myCarousel').carousel({
+        interval:   4000
+    });
+</script>
     {% include '_subscriptions.html' %}
     {%  include 'tellme/js_inc.html' %}
 {% endblock %}
