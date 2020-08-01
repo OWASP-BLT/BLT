@@ -297,7 +297,7 @@ LOGGING = {
     },
     'loggers': {
         '': {
-            'handlers': ['console','mail_admins'],
+            'handlers': ['console'],
             'level': 'DEBUG',
         },
     },
