@@ -283,17 +283,21 @@ display: none;
 .wrapper .wrapper__header {
   border-top-left-radius: 4px;
   border-top-right-radius: 4px;
-  background: #d9534f;
+  background: #fff;
   padding: 27px 30px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  -webkit-box-shadow: 6px 10px 22px 1px rgba(0,0,0,0.75);
-  -moz-box-shadow: 6px 10px 22px 1px rgba(0,0,0,0.75);
-  box-shadow: 6px 10px 22px 1px rgba(0,0,0,0.75);
+  -webkit-box-shadow: 6px 10px 22px 1px rgba(197, 197, 197, 0.75);
+  -moz-box-shadow: 6px 10px 22px 1px rgba(197, 197, 197, 0.75);
+  box-shadow: 6px 10px 22px 1px rgba(197, 197, 197, 0.75);
+  overflow: hidden;
+  position: relative;
+  border: none;
+  display: flex;
 }
 .wrapper .wrapper__header .b_caption p {
-  color: #dae0fb;
+  color: #000;
   font-size: 16px;
   text-transform: uppercase;
   font-weight: 700;
@@ -400,7 +404,7 @@ display: none;
   border-radius: 5px;
   box-shadow: 0px 0px 10px 1px rgba(0, 0, 0, 0.1);
   display: flex;
-  justify-content: space-between;
+  /*justify-content: space-around;*/
   align-items: center;
   transition: transform 0.1s ease-in-out;
   z-index: 4;
@@ -435,12 +439,12 @@ display: none;
   vertical-align: middle;
 }
 .wrapper .wrapper__content ul li .name span.stat {
-  color: #35d8ac;
+  color: #adafae;
   font-weight: 700;
   font-size: 25px;
 }
 .wrapper .wrapper__content ul li .name span.sub {
-  color: #35d8ac;
+  color: #adafae;
   font-weight: 700;
   font-size: 10px;
   vertical-align: sub;
@@ -449,7 +453,16 @@ display: none;
     background: #333;
     margin: 0px -15px;
 }
-
+.hamb {
+    width: 35px;
+    height: 3px;
+    background-color: #db4853;
+    margin: 6px 0;
+    border-radius: 10px;
+    border-style: solid;
+    border-color: #db4853;
+    border-width: thin;
+}
 .user-profile-panel{
     background-color: #f0f0f0;
 }
@@ -645,8 +658,9 @@ a:hover {
 }
 
 .user-menu img {
-    height: 25px;
-    width: 25px;
+    height: 35px;
+    width: 35px;
+    border-radius: 35px;
 }
 
 @media only screen and (max-width: 1200px) {
@@ -713,7 +727,6 @@ a:hover {
     font-weight: 600;
     padding: 10px;
 }
-
 .profImg{
   width: 50px;
   height: 50px;
@@ -755,7 +768,9 @@ a:hover {
     display: block;
     overflow: hidden;
 }
-
+.carousel-image {
+    height: 250px
+}
 .activity-screenshot img {
     max-height: 100%;
     max-width: 100%;
