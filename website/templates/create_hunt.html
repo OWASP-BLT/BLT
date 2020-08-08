@@ -53,17 +53,25 @@
     <link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.min.css" %}"/>
     <link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.default-theme.min.css" %}" />
 
-   <form  id="create-hunt">
+   <form  id="create-hunt" style="
+    position: relative;
+    top: 105%;
+    left: 50%;
+    transform: translate(-50%, 0%);
+    width: 50%;
+">
                     {% csrf_token%}
                  <div class="modal-content">
                     <div class="modal-header">
-                      <button type="button" class="close" data-dismiss="modal">&times;</button>
-                      <h4 class="modal-title">Create Hunt</h4>
+                      <h4 class="modal-title"><span style="color:#000">START A</span> BUGHUNT</h4>
+
+                      <h6 class="modal-sub-title">Enter URL, App name or GPS location of issue</h6>
                     </div>
                     <div class="modal-body">
-                      <div class="form-group col-sm-12">
-                        <label for="name">Name:</label>
-                        <input type="text" name="name" required class="form-control" id="name" value="">
+                      <div class="form-group col-sm-12" style="
+    padding: 0px;
+">
+                        <input type="text" name="name" required class="form-control" placeholder="Enter Name for the Bughunt" id="name" value="">
                       </div>
 
                     <div>

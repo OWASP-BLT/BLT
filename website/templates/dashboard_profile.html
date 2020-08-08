@@ -3,187 +3,203 @@
 {% load static %}
 {% load ratings %}
 {% block style %}
-    a {
-    color: inherit;
-    text-decoration: inherit;
-    }
-    .img-thumbnail {
-    width: 200px;
-    height: 200px;
-    }
-    .fa-money {
-    margin-right: 5px;
-    }
-    .list-group .label-default {
-    margin-top:3px;
-    }
-    .icon-block kbd{
-    width: 180px;
-    height: 50px;
-    font-size: 16px;
-    text-align: center;
-    line-height: 45px;
-    margin: 2px;
-    }
-    .unrated {
-    position: absolute;
-    left: 130px;
-    top: 8px;
-    padding: 10px;
-    font-weight: bolder;
-    }
-    .silver {
-    background-color: lightblue;
-    color: #333;
-    position: absolute;
-    left: 140px;
-    top: 8px;
-    padding: 10px;
-    font-weight: bolder;
-    }
-    .gold {
-    background-color: #D4AF37;
-    color: #333;
-    position: absolute;
-    left: 155px;
-    top: 8px;
-    padding: 10px;
-    font-weight: bolder;
-    }
-    .bronze {
-    background-color: #C9AE5D;
-    color: #333;
-    position: absolute;
-    left: 140px;
-    top: 8px;
-    padding: 10px;
-    font-weight: bolder;
-    }
-    .upload-btn,
-    .upload-btn:hover {
-    margin-top: -40px;
-    opacity: 0.6;
-    width: 200px;
-    border: none;
-    height: 30px;
-    background: whitesmoke;
-    display: none;
-    }
-    .upload {
-    display: none;
-    width: 200px;
-    }
-    .fa-cogs {
-    color: white;
-    }
-    .fa-exclamation-triangle {
-    color: #ff4444;
-    }
-    .fa-trophy {
-    color:#FF8800;
-    }
-    .fa-flash {
-    color:#00C851;
-    }
-    .fa-lock {
-    color:#0099CC;
-    }
-    .fa-eraser {
-    color:white;
-    }
-    .fa-code {
-    color:#ef6c00;
-    }
-    .fa-star{
-    color:#0099CC;
-    }
-    .fa-bug {
-    color:#00C851;
-    }
-    .fa-code-fork {
-    color: #ff4444;
-    }
-    .scroll {
-    max-height: 1100px;
-    overflow-y: auto;
-    }
-    #target_div .btn {
-    width: 200px;
-    margin-top: 10px;
-    }
-    .list-group-item .badge {
-    margin-right: 30px;
-    margin-top: 10px;
-    }
-    .icon-block kbd a {
-    color: inherit;
-    text-decoration: none;
-    }
+
+.in-entire {
+  width: 100%;
+  height: 100%;
+  display: -webkit-box;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.left-cov, .right-cov {
+  height: 100%;
+}
+
+.left-cov {
+  width: 30%;
+  background: #3bd881;
+}
+
+.right-cov {
+  width: 70%;
+  background: #fff;
+  overflow: auto;
+}
+
+@media (max-width: 700px) {
+  .entire {
+    width: auto;
+    height: auto;
+  }
+
+  .left-cov, .right-cov {
+    width: 100%;
+  }
+}
+.profile {
+  margin: 100px auto 50px auto;
+  width: 100px;
+  padding: 10px;
+}
+
+.human {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto;
+  border: 9px solid #fff;
+  border-radius: 50%;
+  position: relative;
+}
+.human:before {
+  content: '';
+  width: 108px;
+  height: 100px;
+  position: absolute;
+  border: 3px solid #fff;
+  border-width: 9px 0 0 0;
+  right: -55%;
+  bottom: -112px;
+  border-radius: 50%;
+}
+
+.basic {
+  text-align: center;
+  font-size: 26px;
+  color: #fff;
+}
+.basic span {
+  display: block;
+  text-align: center;
+  font-size: 22px;
+}
+
+.detail {
+  padding: 1px;
+}
+
+.full-detail {
+  padding: 20px 30px;
+  overflow: auto;
+}
+
+h3 {
+  text-align: center;
+  position: relative;
+  padding: 1px;
+}
+h3:before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  bottom: -10px;
+  width: 30px;
+  height: 3px;
+  background: #3bd881;
+}
+
+h4 {
+  position: relative;
+  padding: 1px;
+}
+h4:before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 10px;
+  height: 2px;
+  background: #3bd881;
+}
+
+p a {
+  text-decoration: none;
+  color: #000;
+  font-size: 16px;
+}
+p a:hover {
+  color: #888;
+}
+
+.ball {
+  display: block;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border-radius: 50%;
+  margin: 0 auto;
+  opacity: 1;
+  -webkit-animation: jump 1s infinite alternate;
+          animation: jump 1s infinite alternate;
+}
+
+@-webkit-keyframes jump {
+  0% {
+    -webkit-transform: translatex(-10px);
+            transform: translatex(-10px);
+  }
+  50% {
+    -webkit-transform: translatex(10px);
+            transform: translatex(10px);
+  }
+}
+
+@keyframes jump {
+  0% {
+    -webkit-transform: translatex(-10px);
+            transform: translatex(-10px);
+  }
+  50% {
+    -webkit-transform: translatex(10px);
+            transform: translatex(10px);
+  }
+}
+
 {% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css" integrity="sha256-h20CPZ0QyXlBuAw7A+KluUYx/3pK+c7lYEpqLTlxjYQ=" crossorigin="anonymous" />
 
 <link rel="stylesheet" href="{% static 'star-ratings/css/star-ratings.css' %}">
 <script type="text/javascript" src="{% static 'star-ratings/js/dist/star-ratings.min.js' %}"></script>
-
-    <div class="team-single">
-        <div class="row">
-            <div class="col-lg-4 col-md-5 xs-margin-30px-bottom" style="
-    padding: 0px;
-">
-                <div class="team-single-img">
+<link link="link" href="https://fonts.googleapis.com/css?family=Titillium+Web" rel="stylesheet"/>
+<div class="entire">
+  <div class="in-entire">
+    <div class="left-cov">
+      <div class="profile">
+        <div class="team-single-img">
                     {% if user.userprofile.avatar %}
                         <img src="{{ user.userprofile.avatar }}" class="img-responsive img-circle center-block">
                     {% else %}
                         <img src="https://www.jamf.com/jamf-nation/img/default-avatars/generic-user-purple.png" class="img-responsive img-circle center-block">
                     {% endif %}
                 </div>
-                <div class="bg-light-gray padding-30px-all md-padding-25px-all sm-padding-20px-all text-center">
-                    <h4 class="margin-10px-bottom font-size24 md-font-size22 sm-font-size20 font-weight-600">{{user.username|title }}</h4>
+      </div>
+      <div class="basic">{{user.username|title }}</div>
+
                     {% ratings user %}
                     <div id="target_div">
                         {% include 'followers.html' %}
                     </div>
-                    <h4 class="margin-10px-bottom font-size24 md-font-size22 sm-font-size20 font-weight-600">About {{user.username|title }}</h4>
-                    <p class="sm-width-95 sm-margin-auto">{{user_details.description }}</p>
-                    <!-- <div class="margin-20px-top team-single-icons">
-                        <ul class="no-margin">
-                            <li><a href="javascript:void(0)"><i class="fab fa-facebook-f"></i></a></li>
-                            <li><a href="javascript:void(0)"><i class="fab fa-twitter"></i></a></li>
-                            <li><a href="javascript:void(0)"><i class="fab fa-google-plus-g"></i></a></li>
-                            <li><a href="javascript:void(0)"><i class="fab fa-instagram"></i></a></li>
-                        </ul>
-                    </div> -->
-                </div>
-            </div>
-
-            <div class="col-lg-8 col-md-7">
-                <div class="team-single-text padding-50px-left sm-no-padding-left">
-                    <h4 class="font-size38 sm-font-size32 xs-font-size30">{{user.username|title }} Activities</h4>
-                    <p class="no-margin-bottom">
-                        <div class="panel-body">
-                    {% if activities %}
-                        <div class="list-group">
-                            {% for activity in activities %}
-                                {% include '_activity.html' %}
-                            {% endfor %}
-                        </div>
-                        <a href="/all_activity?user={{ user.username }}" class="btn btn-default btn-block">View All
-                            Activity by {{ user.username }}</a>
-                    {% else %}
-                        <div class="text-center">No Activity Yet!</div>
-                    {% endif %}
-                </div>
-                    </p>
-                    
-                </div>
-            </div>
-
-            <div class="col-md-12">
-
-            </div>
-        </div>
+      <div class="baisc"><span>{{user_details.description }}</span><span class="ball"></span></div>
     </div>
+    <div class="right-cov">
+      <div class="detail">
+        <h3>My Profile</h3>
+      </div>
+      <div class="full-detail">
+        <h4>Skills</h4>
+        <p>HTML(PUG), CSS(SASS), JavaScript, Jquery, Illustrator</p>
+        <h4>Email</h4>
+        <p> <a href="mailto:subashmani47@gmail.com">mannyuiux@gmail.com</a></p>
+        <h4>Native</h4>
+        <p>Tirunelveli, India</p>
+        <h4>Connect</h4>
+        <p><a href="https://codepen.io/mannyuiux">CODEPEN</a></p>
+      </div>
+    </div>
+  </div>
+</div>
     
 {% endblock %}

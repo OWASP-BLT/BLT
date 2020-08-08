@@ -25,7 +25,7 @@
               <div class="wrapper__header">
                <!--  <div class="b_logo"><img src="https://images.vexels.com/media/users/3/135313/isolated/lists/9c44517fa04da541c35888362bce2d1b-award-trophy-icon.png" width="40" alt=""/></div> -->
                 <div class="b_caption">
-                  <p>{% now "F" %} <span>leaderboard</span></p>
+                  <p class="col-md-9"><span>Testing and reporting all the sales force integrations with web Testing and reporting all the sales force integrations with web Testing and reporting all the sales force integrations with web</span></p>
                 </div>
                 <div class="b_caption">
                   <p>Grand Prize <span>250$</span></p>
@@ -39,13 +39,19 @@
                                         Owasp
                                     </div>
                                     <div class="card border-primary mb-3 card-details col-md-12">
-                                      <div class="wrapper__content">
+                                      <div class="wrapper__content wrapper__content__main" style="
+    background: none;
+">
                 {% if leaderboard %}
                             <ul>
                             {% for leader in leaderboard %}
-                                <a href="/profile/{{ leader.username }}" class=" col-md-6">
+                                <a style="
+    text-decoration: none;" href="/profile/{{ leader.username }}" class=" col-md-6">
+
                                     <li class="leaderboard-company">
-                                        <div class="graphic">
+                                        <span style="
+                                            padding: 20px;
+                                        ">{{ forloop.counter }}</span>                                         <div class="graphic">
                                             {% if leader.socialaccount_set.all.0.get_avatar_url %}
                                             <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" alt=""/>
                                             {% else %}
@@ -82,9 +88,14 @@
                 {% if leaderboard %}
                             <ul>
                             {% for leader in leaderboard %}
-                                <a href="/profile/{{ leader.username }}">
+                                <a style="
+    text-decoration: none;
+" href="/profile/{{ leader.username }}">
+
                                     <li class="leaderboard-company">
-                                        <div class="graphic">
+                                        <span style="
+                                            padding: 20px;
+                                        ">{{ forloop.counter }}</span>                                         <div class="graphic">
                                             {% if leader.socialaccount_set.all.0.get_avatar_url %}
                                             <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" alt=""/>
                                             {% else %}
@@ -116,9 +127,14 @@
                 {% if leaderboard %}
                             <ul>
                             {% for leader in leaderboard %}
-                                <a href="/profile/{{ leader.username }}">
+                                <a style="
+    text-decoration: none;
+" href="/profile/{{ leader.username }}">
+
                                     <li class="leaderboard-company">
-                                        <div class="graphic">
+                                        <span style="
+                                            padding: 20px;
+                                        ">{{ forloop.counter }}</span>                                         <div class="graphic">
                                             {% if leader.socialaccount_set.all.0.get_avatar_url %}
                                             <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" alt=""/>
                                             {% else %}
@@ -153,8 +169,13 @@
                 {% if leaderboard %}
                             <ul>
                             {% for leader in leaderboard %}
-                                <a href="/profile/{{ leader.username }}">
+                                <a style="
+    text-decoration: none;
+" href="/profile/{{ leader.username }}">
                                     <li>
+                                        <span style="
+                                            padding: 20px;
+                                        ">{{ forloop.counter }}</span>  
                                         <div class="graphic">
                                             {% if leader.socialaccount_set.all.0.get_avatar_url %}
                                             <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" alt=""/>
@@ -163,6 +184,12 @@
                                             {% endif %}
                                         </div>
                                         <div class="name"><span class="header">{{leader.username|truncatechars:20}}</span><span class="stat">{{ leader.total_score }}</span><span class="sub">Points</span></div>
+                                        <button type="submit" style="
+    float: right;
+    position: absolute;
+    display: flex;
+    right: 45px;
+" class="btn btn-danger btn-sm prizebtn">View Profile</button>
                                     </li>
                                 </a>
                             {% endfor %}
@@ -310,8 +337,9 @@
                                             <div class="col-md-3">
                                                 <a href="{{ activity.get_absolute_url }}">
                                                 <div class="thumbnail">
-                                                  <img class="carousel-image" src="https://storage.googleapis.com/bhfiles/screenshots/Screenshot_from_2020-07-07_16-55-29.png?Expires=1595852085&GoogleAccessId=153418300371-compute%40developer.gserviceaccount.com&Signature=LygvMu5O65ZGVtT%2Fm0ZV9VP9LWcEofiefhO4Gcq63dR47HwsXQ2uJBEJMUV7BG%2FBHKA3JATD5gZmtG4IvU4hFKykGEVQNtrXRFzbc8Va6Nij6fXEaenxfAPV7oSdw9%2Fd5sxi9%2F93qjP31iWsoC2h1NanBzu1ASyp%2FDFdCRLGePWThgq7idMCWQyusZwzY0WS%2BzxYuHfNnceZ%2FP8%2BGKLByzNxGiBbB8xzvUdaMRZtJjFzxVsty%2Be8KZ%2B70hqXzjI8lvKyaTEIPLlPaTr1W9EourlIyneUTg2NtP79rE9Y%2BvkVevOF7e4OFpeANfTyDV7SLShgjBcUR0ThynsRxzlPTw%3D%3D">
-                                                  <!-- <img class="carousel-image" src="{{ activity.screenshot.url }}"> -->
+                                                  <img class="carousel-image" src="{{ activity.screenshot.url }}" style="
+                                                        height: 250px;
+                                                    ">
                                                   <div class="caption">
                                                      <div class="profImg">
       {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
@@ -345,8 +373,9 @@
                                             <div class="col-md-3">
                                                 <a href="{{ activity.get_absolute_url }}">
                                                 <div class="thumbnail">
-                                                  <img class="carousel-image" src="https://storage.googleapis.com/bhfiles/screenshots/Screenshot_from_2020-07-07_16-55-29.png?Expires=1595852085&GoogleAccessId=153418300371-compute%40developer.gserviceaccount.com&Signature=LygvMu5O65ZGVtT%2Fm0ZV9VP9LWcEofiefhO4Gcq63dR47HwsXQ2uJBEJMUV7BG%2FBHKA3JATD5gZmtG4IvU4hFKykGEVQNtrXRFzbc8Va6Nij6fXEaenxfAPV7oSdw9%2Fd5sxi9%2F93qjP31iWsoC2h1NanBzu1ASyp%2FDFdCRLGePWThgq7idMCWQyusZwzY0WS%2BzxYuHfNnceZ%2FP8%2BGKLByzNxGiBbB8xzvUdaMRZtJjFzxVsty%2Be8KZ%2B70hqXzjI8lvKyaTEIPLlPaTr1W9EourlIyneUTg2NtP79rE9Y%2BvkVevOF7e4OFpeANfTyDV7SLShgjBcUR0ThynsRxzlPTw%3D%3D">
-                                                  <!-- <img class="carousel-image" src="{{ activity.screenshot.url }}"> -->
+                                                  <img class="carousel-image" src="{{ activity.screenshot.url }}" style="
+                                                        height: 250px;
+                                                    ">
                                                   <div class="caption">
                                                      <div class="profImg">
       {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
@@ -376,8 +405,9 @@
                                                 <a href="{{ activity.get_absolute_url }}">
                                                 <div class="thumbnail">
 
-                                                  <img class="carousel-image" src="https://storage.googleapis.com/bhfiles/screenshots/Screenshot_from_2020-07-07_16-55-29.png?Expires=1595852085&GoogleAccessId=153418300371-compute%40developer.gserviceaccount.com&Signature=LygvMu5O65ZGVtT%2Fm0ZV9VP9LWcEofiefhO4Gcq63dR47HwsXQ2uJBEJMUV7BG%2FBHKA3JATD5gZmtG4IvU4hFKykGEVQNtrXRFzbc8Va6Nij6fXEaenxfAPV7oSdw9%2Fd5sxi9%2F93qjP31iWsoC2h1NanBzu1ASyp%2FDFdCRLGePWThgq7idMCWQyusZwzY0WS%2BzxYuHfNnceZ%2FP8%2BGKLByzNxGiBbB8xzvUdaMRZtJjFzxVsty%2Be8KZ%2B70hqXzjI8lvKyaTEIPLlPaTr1W9EourlIyneUTg2NtP79rE9Y%2BvkVevOF7e4OFpeANfTyDV7SLShgjBcUR0ThynsRxzlPTw%3D%3D">
-                                                  <!-- <img class="carousel-image" src="{{ activity.screenshot.url }}"> -->
+                                                  <img class="carousel-image" src="{{ activity.screenshot.url }}" style="
+                                                        height: 250px;
+                                                    ">
                                                   <div class="caption">
                                                      <div class="profImg">
       {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
@@ -625,11 +655,6 @@
             <h1 class="page-sub-header">Subscriptions:</h1>
         </div>
     </div>
-    <script type="text/javascript">
-    $('#myCarousel').carousel({
-        interval:   4000
-    });
-</script>
     {% include '_subscriptions.html' %}
     {%  include 'tellme/js_inc.html' %}
 {% endblock %}
