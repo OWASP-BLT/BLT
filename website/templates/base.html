@@ -54,67 +54,99 @@
             </button>
             <a class="navbar-brand" href="/">
                 <img src="{% static "img/logo-small-transparent.png" %}">
+                <div><span class="brand-slogan" style="
+                    text-align: left;
+                    font-size: 66%;
+                ">Win Prizes for reporting bugs</span></div>
+                <div><span class="brand-slogan" style="
+                    text-align: left;
+                    font-size: 66%;
+                ">We want everyone to love our website</span></div>
             </a>
         </div>
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-            <ul class="nav navbar-nav navbar-right">
-                <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Menu
-                    <span class="caret"></span></a>
-                    <ul class="dropdown-menu">
-                      <li><a href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en"
-                       target="_new">{% trans "Add to chrome" %}</a></li>
-                    <li><a href="/social">{% trans "Social" %}</a></li>
-                    <li><a href="/start">{% trans "Bug Hunt" %}</a></li>
-                    </ul>
-                </li>
-                <li><a href="/start" class="sponsor-hunt">{% trans "Start a Bug Hunt" %}</a></li>
+            <div>
 
-                {% if request.user.is_authenticated %}
-                    <li class="dropdown user-menu">
-                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                            {% if request.user.userprofile.avatar %}
-                                <img src="{{ request.user.userprofile.avatar }}">
-                            {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
-                                <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}">
-                            {% else %}
-                                {% gravatar request.user.email 20 %}
-                            {% endif %}
-                            {{ request.user.username }} ({{ request.user|score|default:"0" }} Pts) <i
-                                class="fa fa-caret-down"></i>
-                        </a>
-                        <ul class="dropdown-menu dropdown-user">
-                            <li>
-                                <a href="/accounts/profile/">
-                                    <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
-                                </a>
-                            </li>
-                            <li>
-                                <a href="/accounts/password/change/">
-                                    <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
-                                </a>
-                            </li>
-                            <li class="divider"></li>
-                            <li>
-                                <a href="/accounts/logout/">
-                                    <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
-                                </a>
-                            </li>
+                <ul class="nav navbar-nav navbar-right">
+                    <!-- <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Menu
+                        <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                          <li><a href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en"
+                           target="_new">{% trans "Add to chrome" %}</a></li>
+                        <li><a href="/social">{% trans "Social" %}</a></li>
+                        <li><a href="/start">{% trans "Bug Hunt" %}</a></li>
                         </ul>
-                    </li>
-                {% else %}
-                    <li><a href="/accounts/signup">{% trans "Signup" %}</a></li>
-                    <li><a href="#login" data-toggle="modal">{% trans "Login" %}</a></li>
-                {% endif %}
-            </ul>
-            <form class="navbar-form navbar-right" action="/search" method="get">
-                <div class="form-group" style="margin:0px" >
-                    <input type="text" name="query" class="form-control" placeholder="{% trans "Search" %}">
-                </div>
-                <button type="submit" class="btn btn-default">
-                    <i class="fa fa-search"></i>
-                </button>
-            </form>
+                    </li> -->
+                    <li><a href="/start" style="
+                        color: #d9524f;
+                    " class="sponsor-hunt">{% trans "Sponser the leaderboard" %}</a></li>
+                    <li><a href="/start" class="sponsor-hunt">{% trans "Start a Bug Bounty" %}</a></li>
+                    <li><a href="/start" class="sponsor-hunt">{% trans "Start a Heist" %}</a></li>
+                    <li><a href="/issue" class="sponsor-hunt">{% trans "Report a Bug" %}</a></li>
+
+                    {% if request.user.is_authenticated %}
+                        <li class="dropdown user-menu" style="
+                            margin-top: -10px;
+                        ">
+                            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                                {% if request.user.userprofile.avatar %}
+                                    <img src="{{ request.user.userprofile.avatar }}">
+                                {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
+                                    <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}">
+                                {% else %}
+                                    {% gravatar request.user.email 20 %}
+                                {% endif %}
+                                {{ request.user.username }} ({{ request.user|score|default:"0" }} Pts) <i
+                                    class="fa fa-caret-down"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-user">
+                                <li>
+                                    <a href="/accounts/profile/">
+                                        <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/accounts/password/change/">
+                                        <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
+                                    </a>
+                                </li>
+                                <li class="divider"></li>
+                                <li>
+                                    <a href="/accounts/logout/">
+                                        <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li><a href="/accounts/signup">{% trans "Signup" %}</a></li>
+                        <li><a href="#login" data-toggle="modal">{% trans "Login" %}</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+            <hr class="header-hr"/>
+            <div style="
+                position: absolute;
+                right: 20px;
+                line-height: 50px;
+                top: 91px;
+            ">
+                <form class="navbar-form navbar-right" action="/issue" method="get">
+                    Report a Bug
+                    <div class="form-group" style="margin:0px" >
+                        <input type="text" name="query" class="form-control" placeholder="{% trans "Enter Website" %}">
+                        <input type="text" name="query" class="form-control" placeholder="{% trans "Description" %}">
+                        <input type="file" class="required" id='${multipartFilePath}' name="screenshot"/> 
+                    </div>
+                    <button class="btn" data-intro="Upload a screenshot of the concerned page." name="test_files" type="button">
+                            <i class="fa fa-picture-o" aria-hidden="true"></i> Upload Screenshot
+                        </button>   
+                    <button type="submit" class="btn btn-danger">
+                        Submit Bug
+                    </button>
+                </form>
+            </div>
             <!-- <ul class="nav navbar-nav navbar-right">
                 <li><p class="navbar-text">Found a bug ?</p></li>
                 <li class="dropdown">
@@ -177,7 +209,9 @@
 <br><br><br><br>
 <div id="wrapper">
     <div id="page-wrapper">
-        <div class="container-fluid">
+        <div class="container-fluid" style="
+            margin-top: 120px;
+        ">
             {% block content %}
             {% endblock %}
         </div>
