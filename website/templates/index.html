@@ -10,27 +10,440 @@
     <script src="{% static 'js/activity.js' %}"></script>
     <link href="{% static 'tellme/feedback.min.css' %}" rel="stylesheet">
     <section class="hero">
-        <div class="heading">
-            <center><span><a href="https://steemit.com/@bugheist">Check out our new blog, the Bugheist Beacon</a></span></center>
-            <h1 class="page-header">{% trans "Find Bugs, Win Points and Prizes" %}</h1>
+       <div class="row" data-intro="View latest activities here." data-step="3" style="margin-left: 10px;">
+        <!-- <div class="col-md-8">
+            <h1 class="page-sub-header">Latest activity</h1>
+            <div class="list-group">
+                {% for activity in activities %}
+                    {% include '_activity.html' %}
+                {% endfor %}
+            </div>
+            <a href="/all_activity" class="btn btn-default btn-block">View All Activity</a>
+        </div> -->
+        <div class="col-md-8">
+            <div class="wrapper">
+              <div class="wrapper__header">
+               <!--  <div class="b_logo"><img src="https://images.vexels.com/media/users/3/135313/isolated/lists/9c44517fa04da541c35888362bce2d1b-award-trophy-icon.png" width="40" alt=""/></div> -->
+                <div class="b_caption">
+                  <p class="col-md-9"><span>Testing and reporting all the sales force integrations with web Testing and reporting all the sales force integrations with web Testing and reporting all the sales force integrations with web</span></p>
+                </div>
+                <div class="b_caption">
+                  <p>Grand Prize <span>250$</span></p>
+                </div>
+              </div>
+              <div class="wrapper__body">
+                <div class="card">
+                                <div class="card-horizontal">
+                                    <div class="img-square-wrapper">
+                                        <img class="" src="https://pbs.twimg.com/profile_images/1164033557129547776/vM3X2gX5_400x400.jpg" alt="Card image cap">
+                                        Owasp
+                                    </div>
+                                    <div class="card border-primary mb-3 card-details col-md-12">
+                                      <div class="wrapper__content wrapper__content__main" style="
+    background: none;
+">
+                {% if leaderboard %}
+                            <ul>
+                            {% for leader in leaderboard %}
+                                <a style="
+    text-decoration: none;" href="/profile/{{ leader.username }}" class=" col-md-6">
+
+                                    <li class="leaderboard-company">
+                                        <span style="
+                                            padding: 20px;
+                                        ">{{ forloop.counter }}</span>                                         <div class="graphic">
+                                            {% if leader.socialaccount_set.all.0.get_avatar_url %}
+                                            <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" alt=""/>
+                                            {% else %}
+                                                <img src="{% gravatar_url leader.email 50 %}">
+                                            {% endif %}
+                                        </div>
+                                        <div class="name"><span class="header">{{leader.username|truncatechars:20}}</span><span class="stat">{{ leader.total_score }}</span><span class="sub">Points</span></div>
+                                    </li>
+                                </a>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                            </br> Leaderboard reset for {% now "F" %}. Be first to find issues!
+                        {% endif %}
+                </div>
+                                    </div>
+                                </div>
+                                <!-- <div class="card-footer">
+                                    <small class="text-muted">Owasp</small>
+                                </div> -->
+                            </div>
+              </div>
+          </div>
+          <div class="col-md-6 company__leaderboard__left"> 
+            <div class="wrapper">
+              <div class="wrapper__header">
+                <div class="b_logo"><img src="https://i.ibb.co/WvvmN20/pngguru-com.png" width="80" alt=""/></div>
+                <div class="b_caption">
+                  <p>Grand Prize <span>250$</span></p>
+                </div>
+              </div>
+              <div class="wrapper__body">
+                <div class="wrapper__content">
+                {% if leaderboard %}
+                            <ul>
+                            {% for leader in leaderboard %}
+                                <a style="
+    text-decoration: none;
+" href="/profile/{{ leader.username }}">
+
+                                    <li class="leaderboard-company">
+                                        <span style="
+                                            padding: 20px;
+                                        ">{{ forloop.counter }}</span>                                         <div class="graphic">
+                                            {% if leader.socialaccount_set.all.0.get_avatar_url %}
+                                            <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" alt=""/>
+                                            {% else %}
+                                                <img src="{% gravatar_url leader.email 50 %}">
+                                            {% endif %}
+                                        </div>
+                                        <div class="name"><span class="header">{{leader.username|truncatechars:20}}</span><span class="stat">{{ leader.total_score }}</span><span class="sub">Points</span></div>
+                                    </li>
+                                </a>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                            </br> Leaderboard reset for {% now "F" %}. Be first to find issues!
+                        {% endif %}
+                </div>
+              </div>
+          </div>
+          </div>
+          <div class="col-md-6 company__leaderboard__right"> 
+            <div class="wrapper">
+              <div class="wrapper__header">
+                <div class="b_logo"><img src="https://i.ibb.co/WvvmN20/pngguru-com.png" width="80" alt=""/></div>
+                <div class="b_caption">
+                  <p>Grand Prize <span>250$</span></p>
+                </div>
+              </div>
+              <div class="wrapper__body">
+                <div class="wrapper__content">
+                {% if leaderboard %}
+                            <ul>
+                            {% for leader in leaderboard %}
+                                <a style="
+    text-decoration: none;
+" href="/profile/{{ leader.username }}">
+
+                                    <li class="leaderboard-company">
+                                        <span style="
+                                            padding: 20px;
+                                        ">{{ forloop.counter }}</span>                                         <div class="graphic">
+                                            {% if leader.socialaccount_set.all.0.get_avatar_url %}
+                                            <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" alt=""/>
+                                            {% else %}
+                                                <img src="{% gravatar_url leader.email 50 %}">
+                                            {% endif %}
+                                        </div>
+                                        <div class="name"><span class="header">{{leader.username|truncatechars:20}}</span><span class="stat">{{ leader.total_score }}</span><span class="sub">Points</span></div>
+                                    </li>
+                                </a>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                            </br> Leaderboard reset for {% now "F" %}. Be first to find issues!
+                        {% endif %}
+                </div>
+              </div>
+          </div>
+          </div>
         </div>
-        <div class="text-slider">
-            <ul>
-                <li class="text-slider-list"><h2
-                        class="text-slider-line active-line animated fadeInUp">{% trans "Fix issues on websites, apps or hardware (+3 points)" %}</h2>
-                </li>
-                <li class="text-slider-list"><h2
-                        class="text-slider-line animated fadeInUp">{% trans "Verify other bug reports(+2 points)" %}</h2>
-                </li>
-                <li class="text-slider-list"><h2
-                        class="text-slider-line animated fadeInUp">{% trans "Invite friends (when they signup , get +1 point)" %}</h2>
-                </li>
-                <li class="text-slider-list"><h2
-                        class="text-slider-line animated fadeInUp">{% trans "Find a bug on a new site or app (+4 points)" %}</h2>
-                </li>
-            </ul>
+        <div class="col-md-4"> 
+            <div class="wrapper">
+              <div class="wrapper__header">
+               <!--  <div class="b_logo"><img src="https://images.vexels.com/media/users/3/135313/isolated/lists/9c44517fa04da541c35888362bce2d1b-award-trophy-icon.png" width="40" alt=""/></div> -->
+                <div class="b_caption">
+                  <p>{% now "F" %} <span>leaderboard</span></p>
+                </div>
+                <div class="b_caption">
+                  <p>Grand Prize <span>250$</span></p>
+                </div>
+              </div>
+              <div class="wrapper__content">
+                {% if leaderboard %}
+                            <ul>
+                            {% for leader in leaderboard %}
+                                <a style="
+    text-decoration: none;
+" href="/profile/{{ leader.username }}">
+                                    <li>
+                                        <span style="
+                                            padding: 20px;
+                                        ">{{ forloop.counter }}</span>  
+                                        <div class="graphic">
+                                            {% if leader.socialaccount_set.all.0.get_avatar_url %}
+                                            <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" alt=""/>
+                                            {% else %}
+                                                <img src="{% gravatar_url leader.email 50 %}">
+                                            {% endif %}
+                                        </div>
+                                        <div class="name"><span class="header">{{leader.username|truncatechars:20}}</span><span class="stat">{{ leader.total_score }}</span><span class="sub">Points</span></div>
+                                        <button type="submit" style="
+    float: right;
+    position: absolute;
+    display: flex;
+    right: 45px;
+" class="btn btn-danger btn-sm prizebtn">View Profile</button>
+                                    </li>
+                                </a>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                            </br> Leaderboard reset for {% now "F" %}. Be first to find issues!
+                        {% endif %}
+              </div>
+            </div>
         </div>
+    </div>
         <br>
+         
+
+        <div class="row">
+          <div class="col-sm-6 col-md-3">
+            <div class="thumbnail">
+               <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12 mt-3">
+                            <div class="card">
+                                <div class="card-horizontal">
+                                    <div class="img-square-wrapper">
+                                        <img class="" src="https://pbs.twimg.com/profile_images/1164033557129547776/vM3X2gX5_400x400.jpg" alt="Card image cap">
+                                    </div>
+                                    <div class="card border-primary mb-3 card-details" style="max-width: 25rem;">
+                                      <div class="card-header">CoderBounty</div>
+                                      <div class="card-body text-primary">
+                                        <h5 class="card-title">coderbounty.com</h5>
+                                        <p class="card-text"><i class="fa fa-arrow-up" style="color: #75a49a;"></i>5 <i class="fa fa-arrow-down" style="color: #bd5c6d;"></i>0</p>
+                                        <p class="card-text">25$</p>
+                                      </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <!-- <small class="text-muted">Last updated 3 mins ago</small> -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="thumbnail">
+               <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12 mt-3">
+                            <div class="card">
+                                <div class="card-horizontal">
+                                    <div class="img-square-wrapper">
+                                        <img class="" src="https://pbs.twimg.com/profile_images/1164033557129547776/vM3X2gX5_400x400.jpg" alt="Card image cap">
+                                    </div>
+                                    <div class="card border-primary mb-3 card-details" style="max-width: 25rem;">
+                                      <div class="card-header">CoderBounty</div>
+                                      <div class="card-body text-primary">
+                                        <h5 class="card-title">coderbounty.com</h5>
+                                        <p class="card-text"><i class="fa fa-arrow-up" style="color: #75a49a;"></i>5 <i class="fa fa-arrow-down" style="color: #bd5c6d;"></i>0</p>
+                                        <p class="card-text">25$</p>
+                                      </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <!-- <small class="text-muted">Last updated 3 mins ago</small> -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="thumbnail">
+               <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12 mt-3">
+                            <div class="card">
+                                <div class="card-horizontal">
+                                    <div class="img-square-wrapper">
+                                        <img class="" src="https://pbs.twimg.com/profile_images/1164033557129547776/vM3X2gX5_400x400.jpg" alt="Card image cap">
+                                    </div>
+                                    <div class="card border-primary mb-3 card-details" style="max-width: 25rem;">
+                                      <div class="card-header">CoderBounty</div>
+                                      <div class="card-body text-primary">
+                                        <h5 class="card-title">coderbounty.com</h5>
+                                        <p class="card-text"><i class="fa fa-arrow-up" style="color: #75a49a;"></i>5 <i class="fa fa-arrow-down" style="color: #bd5c6d;"></i>0</p>
+                                        <p class="card-text">25$</p>
+                                      </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <!-- <small class="text-muted">Last updated 3 mins ago</small> -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+          </div>
+        </div>    
+        <div class="col-sm-6 col-md-3">
+            <div class="thumbnail">
+               <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12 mt-3">
+                            <div class="card">
+                                <div class="card-horizontal">
+                                    <div class="img-square-wrapper">
+                                        <img class="" src="https://pbs.twimg.com/profile_images/1164033557129547776/vM3X2gX5_400x400.jpg" alt="Card image cap">
+                                    </div>
+                                    <div class="card border-primary mb-3 card-details" style="max-width: 25rem;">
+                                      <div class="card-header">CoderBounty</div>
+                                      <div class="card-body text-primary">
+                                        <h5 class="card-title">coderbounty.com</h5>
+                                        <p class="card-text"><i class="fa fa-arrow-up" style="color: #75a49a;"></i>5 <i class="fa fa-arrow-down" style="color: #bd5c6d;"></i>0</p>
+                                        <p class="card-text">25$</p>
+                                      </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <!-- <small class="text-muted">Last updated 3 mins ago</small> -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+          </div>
+        </div>
+    </div>
+
+    <div class="row" style="margin-left: 10px;">
+        <div class="col-lg-12">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h1 class="page-sub-header">{% trans "Most Popular Bugs" %}</h1>
+                </div>
+            </div>
+            <div>
+                <div>       
+                    <div id="myCarousel" class="carousel slide">
+                        <div class="carousel-inner">
+                            {% for activity in activities %}
+                                {% if forloop.counter == 1 %}
+                                    <div class="item active">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <a href="{{ activity.get_absolute_url }}">
+                                                <div class="thumbnail">
+                                                  <img class="carousel-image" src="{{ activity.screenshot.url }}" style="
+                                                        height: 250px;
+                                                    ">
+                                                  <div class="caption">
+                                                     <div class="profImg">
+      {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
+                                                        <img src="{{ activity.user.socialaccount_set.all.0.get_avatar_url }}" class = "profileimage" width="50"
+                                                             height="50">
+                                                    {% else %}
+                                                        <img src="{% gravatar_url activity.user.email 50 %}" class = "profileimage">
+                                                    {% endif %}
+                                                    </div>
+                                                    <div class="profileInfo">
+                                                      <!-- <span class="dist">13.5Km</span> -->
+                                                      <span class="activity-description">{{activity.domain.name}} Bug by {{activity.user.username}}</span>
+                                                      <span><i class="fa fa-eye" style="color: #bd5c6d;"></i> {{activity.views}} Views</span>
+                                                      {% if activity.status == "open" %}
+                                                                <span class="label label-success text-capitalize">{{ activity.status }}</span>
+                                                            {% else %}
+                                                                <span class="label label-danger text-capitalize">{{ activity.status }}</span>
+                                                            {% endif %}
+                                                      <a href="#">View Profile</a>      
+                                                    </div>    
+                                                  </div>
+                                                </div> 
+                                                </a>       
+                                            </div>
+                                
+                                {% elif forloop.counter0|divisibleby:4 %}
+                                        </div>
+                                    </div>
+                                    <div class="item">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <a href="{{ activity.get_absolute_url }}">
+                                                <div class="thumbnail">
+                                                  <img class="carousel-image" src="{{ activity.screenshot.url }}" style="
+                                                        height: 250px;
+                                                    ">
+                                                  <div class="caption">
+                                                     <div class="profImg">
+      {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
+                                                        <img src="{{ activity.user.socialaccount_set.all.0.get_avatar_url }}" class = "profileimage" width="50"
+                                                             height="50">
+                                                    {% else %}
+                                                        <img src="{% gravatar_url activity.user.email 50 %}" class = "profileimage">
+                                                    {% endif %}
+                                                    </div>
+                                                    <div class="profileInfo">
+                                                      <!-- <span class="dist">13.5Km</span> -->
+                                                      <span class="activity-description">{{activity.domain.name}} Bug by {{activity.user.username}}</span>
+                                                      <span><i class="fa fa-eye" style="color: #bd5c6d;"></i> {{activity.views}} Views</span>
+                                                      {% if activity.status == "open" %}
+                                                                <span class="label label-success text-capitalize">{{ activity.status }}</span>
+                                                            {% else %}
+                                                                <span class="label label-danger text-capitalize">{{ activity.status }}</span>
+                                                            {% endif %}
+                                                      <a href="#">View Profile</a>      
+                                                    </div>    
+                                                  </div>
+                                                </div>  
+                                                </a>      
+                                            </div>
+                                {% else %} 
+                                    <div class="col-md-3">
+                                                <a href="{{ activity.get_absolute_url }}">
+                                                <div class="thumbnail">
+
+                                                  <img class="carousel-image" src="{{ activity.screenshot.url }}" style="
+                                                        height: 250px;
+                                                    ">
+                                                  <div class="caption">
+                                                     <div class="profImg">
+      {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
+                                                        <img src="{{ activity.user.socialaccount_set.all.0.get_avatar_url }}" class = "profileimage" width="50"
+                                                             height="50">
+                                                    {% else %}
+                                                        <img src="{% gravatar_url activity.user.email 50 %}" class = "profileimage">
+                                                    {% endif %}
+                                                    </div>
+                                                    <div class="profileInfo">
+                                                      <!-- <span class="dist">13.5Km</span> -->
+                                                      <span class="activity-description">{{activity.domain.name}} Bug by {{activity.user.username}}</span>
+                                                      <span><i class="fa fa-eye" style="color: #bd5c6d;"></i> {{activity.views}} Views</span>
+                                                      {% if activity.status == "open" %}
+                                                                <span class="label label-success text-capitalize">{{ activity.status }}</span>
+                                                            {% else %}
+                                                                <span class="label label-danger text-capitalize">{{ activity.status }}</span>
+                                                            {% endif %}
+                                                      <!-- <a href="#">View Profile</a>   -->    
+                                                    </div>    
+                                                  </div>
+                                                </div>   
+                                                </a>     
+                                            </div>
+                                {% endif %}
+                            {% endfor %}
+                                </div>        
+                            </div>
+                        </div>
+                        <a class="left carousel-control" href="#myCarousel" data-slide="prev"><i class="fa fa-chevron-left fa-2x"></i></a>
+                        <a class="right carousel-control" href="#myCarousel" data-slide="next"><i class="fa fa-chevron-right fa-2x"></i></a>           
+                    </div> 
+                </div>
+            </div>
+        </div>
+    </div>
     </section>
     <div class="container-footer">
         <center>
@@ -175,8 +588,7 @@
             </div>
         </div>
     </div>
-
-    <div class="row" data-intro="View latest activities here." data-step="3" style="margin-left: 10px;">
+    <!-- <div class="row container-main" data-intro="View latest activities here." data-step="3" style="margin-left: 10px;">
         <div class="col-md-8">
             <h1 class="page-sub-header">Latest activity</h1>
             <div class="list-group">
@@ -234,7 +646,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
     <button type="button" id="feedback-btn" class="btn btn-info vertical-right-aligned">
         Feedback <span class="glyphicon glyphicon-bullhorn" aria-hidden="true"></span>
     </button>

@@ -1,0 +1,487 @@
+{% extends "base_dashboard_user.html" %}
+{% load gravatar %}
+{% load static %}
+{% load ratings %}
+{% block style %}
+
+.in-entire {
+  width: 100%;
+  height: 100%;
+  display: -webkit-box;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.left-cov, .right-cov {
+  height: 100%;
+}
+
+.left-cov {
+  width: 30%;
+  background: #3bd881;
+}
+
+.right-cov {
+  width: 70%;
+  background: #fff;
+  overflow: auto;
+}
+
+@media (max-width: 700px) {
+  .entire {
+    width: auto;
+    height: auto;
+  }
+
+  .left-cov, .right-cov {
+    width: 100%;
+  }
+}
+.profile {
+  margin: 100px auto 50px auto;
+  width: 100px;
+  padding: 10px;
+}
+
+.human {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto;
+  border: 9px solid #fff;
+  border-radius: 50%;
+  position: relative;
+}
+.human:before {
+  content: '';
+  width: 108px;
+  height: 100px;
+  position: absolute;
+  border: 3px solid #fff;
+  border-width: 9px 0 0 0;
+  right: -55%;
+  bottom: -112px;
+  border-radius: 50%;
+}
+
+.basic {
+  text-align: center;
+  font-size: 26px;
+  color: #fff;
+}
+.basic span {
+  display: block;
+  text-align: center;
+  font-size: 22px;
+}
+
+.detail {
+  padding: 1px;
+}
+
+.full-detail {
+  padding: 20px 30px;
+  overflow: auto;
+}
+
+h3 {
+  text-align: center;
+  position: relative;
+  padding: 1px;
+}
+h3:before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  bottom: -10px;
+  width: 30px;
+  height: 3px;
+  background: #3bd881;
+}
+
+h4 {
+  position: relative;
+  padding: 1px;
+}
+h4:before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 10px;
+  height: 2px;
+  background: #3bd881;
+}
+
+p a {
+  text-decoration: none;
+  color: #000;
+  font-size: 16px;
+}
+p a:hover {
+  color: #888;
+}
+
+.ball {
+  display: block;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border-radius: 50%;
+  margin: 0 auto;
+  opacity: 1;
+  -webkit-animation: jump 1s infinite alternate;
+          animation: jump 1s infinite alternate;
+}
+
+@-webkit-keyframes jump {
+  0% {
+    -webkit-transform: translatex(-10px);
+            transform: translatex(-10px);
+  }
+  50% {
+    -webkit-transform: translatex(10px);
+            transform: translatex(10px);
+  }
+}
+
+@keyframes jump {
+  0% {
+    -webkit-transform: translatex(-10px);
+            transform: translatex(-10px);
+  }
+  50% {
+    -webkit-transform: translatex(10px);
+            transform: translatex(10px);
+  }
+}
+
+{% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'star-ratings/css/star-ratings.css' %}">
+<script type="text/javascript" src="{% static 'star-ratings/js/dist/star-ratings.min.js' %}"></script>
+<link link="link" href="https://fonts.googleapis.com/css?family=Titillium+Web" rel="stylesheet"/>
+
+
+<link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" id="bs-default-stylesheet" />
+<link href="{% static 'css/app.min.css' %}" rel="stylesheet" type="text/css" id="app-default-stylesheet" />
+
+        <!-- Begin page -->
+        <div id="wrapper">
+
+           <!-- Topbar Start -->
+            <!-- end Topbar -->
+
+            <!-- ========== Left Sidebar Start ========== -->
+            <div class="left-side-menu">
+
+                <div class="h-100" data-simplebar>
+
+
+                    <!--- Sidemenu -->
+                    <div id="sidebar-menu" style="
+    margin-top: 50px;
+">
+
+  <ul id="side-menu">
+
+    
+
+    
+    <li>
+      <div style="width:150px;height:150px;border-radius:10px;margin-left:50px;">
+        {% if user.userprofile.avatar %}
+                        <img src="{{ user.userprofile.avatar }}"  style="width:140px;height:140px;border-radius:80px">
+                    {% else %}
+                        <img src="https://www.jamf.com/jamf-nation/img/default-avatars/generic-user-purple.png"  style="width:140px;height:140px;border-radius:80px">
+                    {% endif %}
+      </div>
+      
+    </li>
+
+    <li>
+      
+      
+      <ul class="nav-second-level" style="
+    margin: 0;
+    padding: 0;
+    text-align: center;
+">
+        
+        <li>
+          <a href="#"><b>{{user.username|title}}</b></a>
+        </li>
+        <li>
+          {% ratings user %}
+        </li>
+        <li>
+
+                    <div id="target_div">
+                        {% include 'followers.html' %}
+                    </div>
+        </li>
+        
+        <li>
+          <a href="#"><b>About {{user.username|title}}</b></a>
+          <p>{{user_details.description }}</p>
+        </li>
+        
+        
+      </ul>
+    </li>
+    
+    <li>
+        <i data-feather="book"></i>
+        <span><b>Current Tasks</b></span>
+      <div id="sidebarContacts">
+        <ul class="nav-second-level">
+          <li>
+            <a href="#">345 Open Bugs</a>
+          </li>
+          
+          <li>
+            <a href="#">200 Closed Bugs</a>
+          </li>
+          
+          
+        </ul>
+      </div>
+    </li>
+
+  </ul>
+
+</div>
+                    <!-- End Sidebar -->
+
+                    <div class="clearfix"></div>
+
+                </div>
+                <!-- Sidebar -left -->
+
+            </div>
+            <!-- Left Sidebar End -->
+
+            <!-- ============================================================== -->
+            <!-- Start Page Content here -->
+            <!-- ============================================================== -->
+
+            <div class="content-page" style="
+    margin-top: 0px;
+">
+                <div class="content">
+
+                    <!-- Start Content-->
+                    <div class="container-fluid">
+                        
+                        <!-- start page title -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="page-title-box">
+                                    <div class="page-title-right">
+                                        <form class="form-inline">
+                                            <div class="form-group">
+                                                <div class="input-group input-group-sm">
+                                                    <input type="text" class="form-control border" id="dash-daterange">
+                                                </div>
+                                            </div>
+                                            <a href="javascript: void(0);" class="btn btn-blue btn-sm ml-2">
+                                                <i class="fa fa-filter"></i>
+                                            </a>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>     
+                        <!-- end page title --> 
+
+                        <div class="row">
+                            <div class="col-md-6 col-xl-3">
+                                <div class="widget-rounded-circle card-box">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="avatar-lg rounded-circle bg-soft-primary border-primary border">
+                                                <i class="fa fa-heart font-22 avatar-title text-primary"></i>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                    
+                    
+                                            <div class="text-right">
+                                                <h3 class="mt-1"><span data-plugin="counterup">2450</span></h3>
+                                                <p class="text-muted mb-1 text-truncate">Top Bug Reported</p>
+                                            </div>
+                                        </div>
+                                    </div> <!-- end row-->
+                                </div> <!-- end widget-rounded-circle-->
+                            </div> <!-- end col-->
+
+                            <div class="col-md-6 col-xl-3">
+                                <div class="widget-rounded-circle card-box">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="avatar-lg rounded-circle bg-soft-success border-success border">
+                                                <i class="fa fa-shopping-cart font-22 avatar-title text-success"></i>
+                                            </div>
+                                        </div>
+                    
+                    
+                    
+                                        <div class="col-6">
+                                            <div class="text-right">
+                                                <h3 class="mt-1"> <span data-plugin="counterup">719</span></h3>
+                                                <p class="text-muted mb-1 text-truncate">Total Bug Fixed</p>
+                                            </div>
+                                        </div>
+                                    </div> <!-- end row-->
+                                </div> <!-- end widget-rounded-circle-->
+                            </div> <!-- end col-->
+
+                          
+                                </div> <!-- end widget-rounded-circle-->
+                            </div----> <!-- end col-->
+
+                           <!-- end col-->
+                        </div>
+                        <!-- end row-->
+
+
+                        <div class="row">
+              <div class="col-xl-6">
+                                <div class="card-box">
+                                    <div class="dropdown float-right">
+                                        <a href="#" class="dropdown-toggle arrow-none card-drop" data-toggle="dropdown" aria-expanded="false">
+                                            <i class="fa fa-ellipsis-v"></i>
+                                        </a>
+                                       
+                                    </div>
+
+                                    <h4 class="header-title mb-3">Recent Activity</h4>
+
+                                    <div class="table-responsive">
+                                        <table class="table table-borderless table-nowrap table-hover table-centered m-0">
+
+                                            <thead class="thead-light">
+                                                <tr>
+                                                    <th>Url</th>
+                                                    <th>Details</th>
+                                                    
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                              {% if activities %}
+                                                {% for activity in activities %}
+                                                  <tr>
+                                                      <td>
+                                                          <h5 class="m-0 font-weight-normal"><a href="/domain/{{ activity.domain_name }}">{{ activity.domain_name }}</h5>
+                                                      </td>
+      
+                                                      <td>
+                                                        <a href="{{ activity.get_absolute_url }}">
+                                                          Submitted a Bug Report {{ activity.created|timesince }} ago
+                                                        </a>
+                                                      </td>
+      
+                                                      
+      
+                                                      <td>
+                                                          {{ activity.status }}</a>
+                                                      </td>
+                                                  </tr>
+                                                {% endfor %}
+                                              {% endif %}
+
+                                                                                             
+                                                
+
+                                               
+
+                                            </tbody>
+                                        </table>
+
+                                                
+                                              {% if activities %}
+                                               <a href="/all_activity?user={{ user.username }}" class="btn btn-default btn-block">View All
+                                                  Activity by {{ user.username }}</a>
+                                              {% else %}
+                                              <div class="text-center">No Activity Yet!</div>
+                                              {% endif %}
+                                    </div> <!-- end .table-responsive-->
+                                </div> <!-- end card-box-->
+                            </div> <!-- end col -->
+                            <div class="col-xl-6">
+                                <div class="card-box">
+                                    <div class="dropdown float-right">
+                                        <a href="#" class="dropdown-toggle arrow-none card-drop" data-toggle="dropdown" aria-expanded="false">
+                                            <i class="fa fa-ellipsis-v"></i>
+                                        </a>
+                                        
+                                    </div>
+
+                                    <h4 class="header-title mb-3"></h4>
+
+                                    <div class="table-responsive">
+                                        <table class="table table-borderless table-hover table-nowrap table-centered m-0">
+
+                                            <thead class="thead-light">
+                                                <tr>
+                                                    <th >Trading For</th>
+                                                    <th>Corelation With S & P - </th>
+                                                    <th>P/- Ration</th>
+                                                    
+                                                    
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                      
+                                                <tr>
+                                                    
+    
+                                                   <td >
+                                                        <h5 class="m-0 font-weight-normal">2 Years</h5>
+                                                        
+                                                    </td >
+    
+                                                    <td >
+                                                        0.1
+                                                    </td>
+    
+                                                    <td >
+                                                        2:1
+                                                    </td>
+    
+                                                    
+    
+                                                    
+                                                </tr>
+                      
+                                               
+                                                
+                                                
+                                                
+
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div> <!-- end col -->
+
+                            
+                        </div>
+                        <!-- end row -->
+                        
+                    </div> <!-- container -->
+
+                </div> <!-- content -->
+
+            </div>
+        </div>
+        <script>
+          document.getElementsByClassName("star-ratings-rating-average")[0].style.display="none";
+          document.getElementsByClassName("star-ratings-rating-count")[0].style.display="none";
+          document.getElementsByClassName("star-ratings-rating-user")[0].style.display="none";
+        </script>
+{% endblock %}

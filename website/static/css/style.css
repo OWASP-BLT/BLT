@@ -1,6 +1,6 @@
 body {
     font-family: 'Open Sans', arial;
-    background-color: #fff;
+    background-color: #f9f9f9;
 }
 
 @media only screen and (max-width: 800px) {
@@ -20,13 +20,465 @@ body {
     padding-left: 5px;
     font-weight: 300;
 }
+body, html {
+    height: 100%;
+}
+.base-footer {
+    width: 100%;
+}
 
+
+.footer-distributed {
+  background-color: #292c2f;
+  box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.12);
+  box-sizing: border-box;
+  width: 100%;
+  text-align: left;
+  font: normal 16px sans-serif;
+  padding: 45px 50px;
+}
+
+.footer-distributed .footer-left p {
+  color: #8f9296;
+  font-size: 14px;
+  margin: 0;
+}
+.footer-left {
+  float: left;
+}
+.footer-distributed .footer-center p {
+  color: #8f9296;
+  font-size: 14px;
+  text-align: center;
+}
+/* Footer links */
+.container-main {
+    width: 90%;
+}
+.searchbox {
+    margin: 0px;
+}
+.selectdiv {
+  position: relative;
+  /*Don't really need this just for demo styling*/
+  
+  float: left;
+  min-width: 200px;
+  /*margin: 50px 33%;*/
+}
+
+.selectdiv:before {
+    content: '\f0b0';
+    font: normal normal normal 17px/1 FontAwesome;
+    color: #ccc;
+    left: 0px;
+    top: 2px;
+    height: 47px;
+    padding: 15px 8px 0px 8px;
+    border-right: 1px solid #ccc;
+    position: absolute;
+    pointer-events: none;
+    z-index: 999;
+    float: left;    
+}
+select::-ms-expand {
+display: none;
+}
+.search{
+        border: 1px solid #c4c4c4;
+        width: 500px;
+        overflow-x: hidden;
+        display: flex;
+        border-radius: 50px;
+        font-size: 18px;
+        position: relative;
+        left:30%;
+        top:200px;
+    }
+    .search input{
+        width: 300px;
+        height:65px;
+        border: none;
+        padding: 8px 20px;
+        outline: none;
+        font-size: 18px;
+       
+    }
+    .button-src{
+        padding: 10px 110px; 
+        display: inline-block;
+    }
+    .button-src button{
+        padding: 10px 35px 10px 35px;
+        border-radius: 50px;
+        border: none;
+        margin: 9px 7px;
+        background-color: #FF7A00;
+        color: #ffffff;
+        font-size: 18px;
+    }
+.search-username {
+    padding: 20px;
+}
+.search-header-query {
+    font-weight: 500;
+}
+.search-header-query {
+    color:#d9534f;
+    font-weight: 500;
+}
+.selectdiv select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  /* Add some styling */
+  
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: 50px;
+  float: right;
+  padding: 0px 40px;
+  font-size: 16px;
+  line-height: 1.75;
+  color: #333;
+  background-color: #ffffff;
+  background-image: none;
+  border: 1px solid #ccc;
+  -ms-word-break: normal;
+  word-break: normal;
+}
+.footer-distributed p.footer-links {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffffff;
+  margin: 0 0 10px;
+  padding: 0;
+  transition: ease .25s;
+}
+
+.footer-distributed p.footer-links a {
+  display: inline-block;
+  line-height: 1.8;
+  text-decoration: none;
+  color: inherit;
+  transition: ease .25s;
+  padding: 20px;
+}
+.header-hr {
+    position: absolute;
+    background-color: #000;
+    width: 50%;
+    border-top: 1px solid #ccc;
+    top: 66px;
+    right: 0px;
+    margin-right: 20px;
+}
+.footer-distributed .footer-right {
+  float: right;
+  margin-top: 6px;
+  max-width: 180px;
+}
+.brand-slogan {
+    text-align: left;
+    width: 100%;
+    display: block;
+    font-size: 66%;
+    font-weight: 200;
+}
+.footer-distributed .footer-right a {
+  display: inline-block;
+  width: 35px;
+  height: 35px;
+  background-color: #33383b;
+  border-radius: 2px;
+  font-size: 20px;
+  color: #ffffff;
+  text-align: center;
+  line-height: 35px;
+  margin-left: 3px;
+  transition:all .25s;
+}
+
+.footer-distributed .footer-right a:hover{transform:scale(1.1); -webkit-transform:scale(1.1);}
+
+.footer-distributed p.footer-links a:hover{text-decoration:underline;}
+
+/* Media Queries */
+
+@media (max-width: 600px) {
+  .footer-distributed .footer-left, .footer-distributed .footer-right {
+    text-align: center;
+  }
+  .footer-distributed .footer-right {
+    float: none;
+    margin: 0 auto 20px;
+  }
+  .footer-distributed .footer-left p.footer-links {
+    line-height: 1.8;
+  }
+}
+
+/* The hero image */
+/*.hero-image {*/
+  /* Use "linear-gradient" to add a darken background effect to the image (photographer.jpg). This will make the text easier to read */
+  /*background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("photographer.jpg");*/
+
+  /* Set a specific height */
+  /*height: 50%;*/
+
+  /* Position and center the image to scale nicely on all screens */
+/*  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  position: relative;
+}*/
+
+/* Place text in the middle of the image */
+.hero-text {
+  text-align: center;
+  position: absolute;
+  top: 57%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #000;
+}
+.bug-form label {
+  display: inline-block;
+  width: 90px;
+  padding: 10px;
+  border: solid 2px #ccc;
+  transition: all 0.3s;
+}
+.bug-select {
+  border: solid 2px #ccc;
+  transition: all 0.3s;
+  height: 45px;
+}
+.bug-form input[type="radio"] {
+  display: none;
+}
+
+.bug-form input[type="radio"]:checked + label {
+  border: solid 2px #00b9ff;
+}
 .page-header {
     font-weight: 400;
-    font-size: 40px;
-    padding: 30px;
+    font-size: 20px;
+    padding: 20px 0px 0px 0px;
+    color: #333;
+    margin: 0 0;
+    border-bottom-width: 1px;
+}
+.header-sub-title {
+    margin: 0px;
+    font-weight: bold;
+    font-size: 56px;
+    color: #000;
+}
+.page-header-index {
+    font-weight: 400;
+    font-size: 60px;
     margin: 20px 0;
     border-bottom-width: 1px;
+}
+
+
+.wrapper {
+  
+}
+.search-page-bar {
+    height: 50px;
+    -webkit-box-shadow: 11px 13px 23px -13px rgba(0,0,0,0.42);
+    -moz-box-shadow: 11px 13px 23px -13px rgba(0,0,0,0.42);
+    box-shadow: 11px 13px 23px -13px rgba(0,0,0,0.42);
+    z-index: 999;
+}
+.wrapper .wrapper__header {
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  background: #fff;
+  padding: 27px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  -webkit-box-shadow: 6px 10px 22px 1px rgba(197, 197, 197, 0.75);
+  -moz-box-shadow: 6px 10px 22px 1px rgba(197, 197, 197, 0.75);
+  box-shadow: 6px 10px 22px 1px rgba(197, 197, 197, 0.75);
+  overflow: hidden;
+  position: relative;
+  border: none;
+  display: flex;
+}
+.wrapper .wrapper__header .b_caption p {
+  color: #000;
+  font-size: 16px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+.wrapper .wrapper__header .b_caption p span {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-size: 13px;
+}
+.wrapper .wrapper__content {
+  background: #fff;
+  padding: 10px;
+}
+.company__leaderboard__left {
+    padding: 10px 10px 0px 0px;
+}
+.company__leaderboard__right {
+    padding: 10px 0px 0px  10px;
+}
+.img-square-wrapper {
+    text-align: center;
+}
+.wrapper .wrapper__body {
+    background: #fff;
+    padding: 10px;
+    border: 1px solid #e8e8e8;
+    border-top: none;
+    border-radius: 0px 0px 5px 5px;
+}
+.wrapper .wrapper__content ul {
+  list-style: none;
+  padding-left: 0px;
+}
+.card-text {
+    margin: 0px;
+    color: #000;
+    line-height: 2;
+}
+#myCarousel .thumbnail {
+    margin-bottom: 0;
+}
+.carousel-control.left, .carousel-control.right {
+    background-image:none !important;
+}
+.carousel-control {
+    color:#fff;
+    top:40%;
+    color:#428BCA;
+    bottom:auto;
+    padding-top:4px;
+    width:30px;
+    height:30px;
+    text-shadow:none;
+    opacity:1;
+}
+.carousel-control:hover {
+    color: #d9534f;
+}
+.carousel-control.left, .carousel-control.right {
+    background-image:none !important;
+}
+.carousel-control.right {
+    left:auto;
+    right:-32px;
+}
+.carousel-control.left {
+    right:auto;
+    left:-32px;
+}
+.carousel-indicators {
+    bottom:-30px;
+}
+.carousel-indicators li {
+    border-radius:0;
+    width:10px;
+    height:10px;
+    background:#ccc;
+    border:1px solid #ccc;
+    border-radius: 15px;
+}
+.carousel-indicators .active {
+    width:12px;
+    height:12px;
+    background:#3276b1;
+    border-color:#3276b1;
+}
+.card-header {
+    font-weight: 900;
+    font-size: larger;
+    text-transform: uppercase;
+    font-family: sans-serif;
+}
+.card-title {
+    color: #000;
+    line-height: 0;
+    font-size: 12px;
+}
+.wrapper .wrapper__content ul li {
+  cursor: pointer;
+  background: #fefefe;
+  padding: 10px 5px;
+  border-radius: 5px;
+  box-shadow: 0px 0px 10px 1px rgba(0, 0, 0, 0.1);
+  display: flex;
+  /*justify-content: space-around;*/
+  align-items: center;
+  transition: transform 0.1s ease-in-out;
+  z-index: 4;
+}
+.wrapper .wrapper__content ul li:hover {
+  z-index: 5;
+  transform: scale(1.1);
+  box-shadow: 0px 0px 16px 13px rgba(0, 0, 0, 0.1);
+}
+.wrapper .wrapper__content ul li:not(:last-child) {
+  margin-bottom: 10px;
+}
+.wrapper .wrapper__content ul li .graphic {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #ebeef3;
+  overflow: hidden;
+  padding: 5px;
+}
+.wrapper .wrapper__content ul li .graphic img {
+  width: 100%;
+  border-radius: 50%;
+}
+.wrapper .wrapper__content ul li .name span {
+  vertical-align: middle;
+}
+.wrapper .wrapper__content ul li .name span.header {
+  color: #979cb0;
+  font-weight: 700;
+  margin-right: 15px;
+  vertical-align: middle;
+}
+.wrapper .wrapper__content ul li .name span.stat {
+  color: #adafae;
+  font-weight: 700;
+  font-size: 25px;
+}
+.wrapper .wrapper__content ul li .name span.sub {
+  color: #adafae;
+  font-weight: 700;
+  font-size: 10px;
+  vertical-align: sub;
+}
+.user-details{
+    background: #333;
+    margin: 0px -15px;
+}
+.hamb {
+    width: 35px;
+    height: 3px;
+    background-color: #db4853;
+    margin: 6px 0;
+    border-radius: 10px;
+    border-style: solid;
+    border-color: #db4853;
+    border-width: thin;
+}
+.user-profile-panel{
+    background-color: #f0f0f0;
 }
 
 .chrome-plugin {
@@ -220,8 +672,9 @@ a:hover {
 }
 
 .user-menu img {
-    height: 25px;
-    width: 25px;
+    height: 35px;
+    width: 35px;
+    border-radius: 35px;
 }
 
 @media only screen and (max-width: 1200px) {
@@ -250,7 +703,7 @@ a:hover {
 
 .activity-strip {
     height: 120px;
-    margin-bottom: 5px;
+    /*margin-bottom: 5px;*/
     overflow: hidden;
 }
 
@@ -274,7 +727,47 @@ a:hover {
 .activity-strip-section > div a {
     text-decoration: none;
 }
-
+.carousel-image {
+    width: 100%;
+    height: auto;
+}
+.profileimage {
+    float: left;
+    border-radius: 30px;
+}
+.activity-description {
+    margin-top: 0px;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 10px;
+}
+.profImg{
+  width: 50px;
+  height: 50px;
+  border:1px solid #ccc;
+  border-radius: 25px;
+  position:absolute;
+  left:30px;
+  bottom:60px;
+}
+.profImg img {   
+  width: 50px;
+  height: 50px;
+  border-radius:50%;
+}
+.profileInfo {
+    padding-left: 70px;
+}
+.profileInfo span {
+  display:block;
+  font-size:14px;
+  line-height:18px;
+  color:#000;
+}
+.profileInfo .dist {
+ text-align:right;
+ color:#ccc;
+}
 .activity-strip-section > div > .small {
     font-size: 14px;
     font-weight: initial;
@@ -289,7 +782,9 @@ a:hover {
     display: block;
     overflow: hidden;
 }
-
+.carousel-image {
+    height: 250px
+}
 .activity-screenshot img {
     max-height: 100%;
     max-width: 100%;
@@ -367,13 +862,13 @@ a:hover {
 }
 
 .leaderboard-panel {
+    box-shadow: 0 8px 6px -6px black;
     border-left: 1px solid #ccc;
     border-top: 1px solid #ccc;
-    border-right: 1px solid #888;
+    border-right: 1px solid #ccc;
     border-bottom: 1px solid #888;
-    background-color: #ddd;
     padding: 10px;
-    margin-top: -7px;
+    margin-top: 66px;
 }
 
 .leaderboard-panel .box {
@@ -410,8 +905,12 @@ a:hover {
 
 .leaderboard-points {
     position: absolute;
-    top: 40px;
-    left: 75px;
+    top: 55px;
+    left: 10px;
+}
+
+textarea.bug-description {
+    resize: none;
 }
 
 textarea {
@@ -627,6 +1126,6 @@ i.fa-5x {
     color: #333333;
 }
 
-.profileimage{
+.leaderboard-profile-image{
     border-radius:50%;
     }

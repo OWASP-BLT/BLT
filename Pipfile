@@ -46,7 +46,11 @@ ua-parser = "*"
 djangorestframework = "*"
 django_filter = "*"
 cffi = "*"
+django-mdeditor = "*"
+django-tz-detect = "*"
 django-tellme = "*"
+django-bootstrap-datepicker-plus = "*"
+django-star-ratings = "*"
 
 [dev-packages]
 

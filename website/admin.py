@@ -4,7 +4,7 @@ from django.template.defaultfilters import truncatechars
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
-from website.models import Issue, Points, Hunt, Domain, UserProfile
+from website.models import Issue, Points, Hunt, Domain, UserProfile, Subscription, CompanyAdmin, Company
 
 
 class UserResource(resources.ModelResource):
@@ -16,6 +16,18 @@ class DomainResource(resources.ModelResource):
     class Meta:
         model = Domain
 
+class SubscriptionResource(resources.ModelResource):
+    class Meta:
+        model = Subscription
+
+class CompanyAdminResource(resources.ModelResource):
+    class Meta:
+        model = CompanyAdmin
+
+class CompanyResource(resources.ModelResource):
+    class Meta:
+        model = Company
+
 
 class IssueAdmin(admin.ModelAdmin):
     list_display = (
@@ -23,13 +35,29 @@ class IssueAdmin(admin.ModelAdmin):
 
 
 class HuntAdmin(admin.ModelAdmin):
-    list_display = ('user', 'url', 'prize', 'logo', 'plan', 'created', 'modified')
+    list_display = ('domain', 'url', 'prize', 'logo', 'starts_on','end_on', 'plan', 'created', 'modified')
 
 
-class DomainAdmin(ImportExportModelAdmin):
+class DomainAdminPanel(ImportExportModelAdmin):
     resource_class = DomainResource
     list_display = (
-        'name', 'url', 'logo', 'clicks', 'color', 'email', 'email_event', 'twitter', 'facebook', 'created', 'modified')
+        'name', 'company', 'url', 'logo', 'clicks', 'color', 'email', 'email_event', 'twitter', 'facebook', 'created', 'modified')
+
+class CompanyUserAdmin(ImportExportModelAdmin):
+    resource_class = CompanyAdminResource
+    list_display = (
+        'role', 'user', 'company', 'domain', 'is_active')
+
+class SubscriptionAdmin(ImportExportModelAdmin):
+    resource_class = SubscriptionResource
+    list_display = (
+        'name', 'charge_per_month', 'hunt_per_domain', 'number_of_domains', 'feature')
+
+
+class CompanyAdmins(ImportExportModelAdmin):
+    resource_class = CompanyResource
+    list_display = (
+        'admin', 'name', 'url', 'email', 'twitter', 'facebook', 'created', 'modified', 'subscription')
 
 
 class PointsAdmin(admin.ModelAdmin):
@@ -50,8 +78,13 @@ class UserAdmin(ImportExportModelAdmin):
 admin.site.register(UserProfile)
 admin.site.register(User, UserAdmin)
 
-admin.site.register(Domain, DomainAdmin)
+admin.site.register(Domain, DomainAdminPanel)
 
 admin.site.register(Issue, IssueAdmin)
 admin.site.register(Points, PointsAdmin)
 admin.site.register(Hunt, HuntAdmin)
+
+admin.site.register(CompanyAdmin, CompanyUserAdmin)
+admin.site.register(Company, CompanyAdmins)
+
+admin.site.register(Subscription, SubscriptionAdmin)
