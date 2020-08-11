@@ -124,13 +124,13 @@
 {% block content %}
     <script type="text/javascript" src="{% static 'js/Chart.bundle.min.js' %}"></script>
     <div class="row">
-        <h1 class="page-header text-capitalize">{{ user.username }}</h1>
-        <div class="col-md-3">
+        <div class="col-md-2 user-profile-panel">
             {% if user.userprofile.avatar %}
-                <img src="{{ user.userprofile.avatar }}" class="img-responsive img-thumbnail">
+                <img src="{{ user.userprofile.avatar }}" class="img-responsive img-circle center-block">
             {% else %}
-                <img src="{% gravatar_url user.email 200 %}" class="img-responsive img-thumbnail">
+                <img src="https://www.jamf.com/jamf-nation/img/default-avatars/generic-user-purple.png" class="img-responsive img-circle center-block">
             {% endif %}
+            <h1 class="page-header text-capitalize text-center">{{ user.username }}</h1>
             {% if request.user == user %}
                 <button class="upload-btn">Edit Profile Pic</button>
                 <form method="post" action="." enctype="multipart/form-data">
@@ -147,37 +147,49 @@
             <div id="target_div">
                 {% include 'followers.html' %}
             </div>
-            <div class="icon-block">
-                <kbd class="fa fa-cogs">
-                    <a href="/label_activity?user={{ user.username }}&label=General">General {{ bug_type_0 | length }}</a>
-                </kbd>
-                <kbd class="fa fa-exclamation-triangle">
-                    <a href="/label_activity?user={{ user.username }}&label=Number">Number {{ bug_type_1 | length }}</a>
-                </kbd>
-            </div>
-            <div class="icon-block">
-                <kbd class="fa fa-trophy">
-                    <a href="/label_activity?user={{ user.username }}&label=Functional">Functional {{ bug_type_2 | length }}</a>
-                </kbd>
-                <kbd class="fa fa-flash">
-                    <a href="/label_activity?user={{ user.username }}&label=Performance">Performance {{ bug_type_3 | length }}</a>
-                </kbd>
-            </div>
-            <div class="icon-block">
-                <kbd class="fa fa-lock">
-                    <a href="/label_activity?user={{ user.username }}&label=Security">Security {{ bug_type_4 | length }}</a>
-                </kbd>
-                <kbd class="fa fa-eraser">
-                    <a href="/label_activity?user={{ user.username }}&label=Typo">Typo {{ bug_type_5 | length }}</a>
-                </kbd>
-            </div>
-            <div class="icon-block">
-                <kbd class="fa fa-code">
-                    <a href="/label_activity?user={{ user.username }}&label=Design">Design {{ bug_type_6 | length }}</a>
-                </kbd>
+            <div class="text-center user-details">
+                <div class="icon-block">
+                    <kbd class="fa fa-cogs">
+                        <a href="/label_activity?user={{ user.username }}&label=General">General {{ bug_type_0 | length }}</a>
+                    </kbd>
+                    <kbd class="fa fa-exclamation-triangle">
+                        <a href="/label_activity?user={{ user.username }}&label=Number">Number {{ bug_type_1 | length }}</a>
+                    </kbd>
+                </div>
+                <div class="icon-block">
+                    <kbd class="fa fa-trophy">
+                        <a href="/label_activity?user={{ user.username }}&label=Functional">Functional {{ bug_type_2 | length }}</a>
+                    </kbd>
+                    <kbd class="fa fa-flash">
+                        <a href="/label_activity?user={{ user.username }}&label=Performance">Performance {{ bug_type_3 | length }}</a>
+                    </kbd>
+                </div>
+                <div class="icon-block">
+                    <kbd class="fa fa-lock">
+                        <a href="/label_activity?user={{ user.username }}&label=Security">Security {{ bug_type_4 | length }}</a>
+                    </kbd>
+                    <kbd class="fa fa-eraser">
+                        <a href="/label_activity?user={{ user.username }}&label=Typo">Typo {{ bug_type_5 | length }}</a>
+                    </kbd>
+                </div>
+                <div class="icon-block">
+                    <kbd class="fa fa-code">
+                        <a href="/label_activity?user={{ user.username }}&label=Design">Design {{ bug_type_6 | length }}</a>
+                    </kbd>
+                </div>
+                 <div class="icon-block">
+                    <kbd class="fa fa-trophy"> Bugs Reported {{ total_bugs }}</kbd>
+                    <kbd class="fa fa-star"> Points {{ my_score|default:0 }}</kbd>
+                    <a href="/label_activity?user={{ user.username }}&label=open">
+                        <kbd class="fa fa-bug"> Open Issues {{ total_open }}</kbd>
+                    </a>
+                    <a href="/label_activity?user={{ user.username }}&label=closed">
+                        <kbd class="fa fa-code-fork"> Closed Issues {{ total_closed }}</kbd>
+                    </a>
+                </div>
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-9">
             <ul class="nav nav-tabs nav-justified" role="tablist">
                 <li role="presentation" class="active">
                     <a href="#home" aria-controls="home" role="tab" data-toggle="tab">Stats</a>
@@ -215,18 +227,6 @@
                 <div role="tabpanel" class="tab-pane" id="settings">
                     {% include '_bookmarks.html' %}
                 </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="icon-block">
-                <kbd class="fa fa-trophy"> Bugs Reported {{ total_bugs }}</kbd>
-                <kbd class="fa fa-star"> Points {{ my_score|default:0 }}</kbd>
-                <a href="/label_activity?user={{ user.username }}&label=open">
-                    <kbd class="fa fa-bug"> Open Issues {{ total_open }}</kbd>
-                </a>
-                <a href="/label_activity?user={{ user.username }}&label=closed">
-                    <kbd class="fa fa-code-fork"> Closed Issues {{ total_closed }}</kbd>
-                </a>
             </div>
         </div>
     </div>
