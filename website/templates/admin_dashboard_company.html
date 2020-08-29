@@ -4,22 +4,21 @@
                 <div>
                     <div class="col_3">
                            {% if companys %}
-                            {% for company in companys %}                
-                              <div class="col-md-3 widget widget1">
-                                <div class="r3_counter_box">
-                                    <a href="/dashboard/admin/company/{{company.pk}}"><i class="fa fa-pencil"></i></a>
-                                    <div class="stats">
-                                      <h5>{{company.name}}</h5>
-                                      <div class="hunt">
-                                        <p>{{company.email}}<span>$</span></p>
-                                      </div>
-                                    </div>
-                                </div>
-                            </div>
+                           <div class="list-group">
+                                <a href="#" class="list-group-item active">Company</a>
+                            {% for company in companys %}   
+                            {% if company.is_active %}
+                                <a href="/dashboard/admin/company/{{company.pk}}" class="list-group-item">{{company.name}}</a>
+                            {% else %}
+                                <a href="/dashboard/admin/company/{{company.pk}}" class="list-group-item list-group-item-danger ">{{company.name}}</a>
+                            {% endif %}            
+  
                             {% endfor %}
+                            </div>
                         {% else %}
                             </br> no company found !
                         {% endif %}   
+
                         <div class="clearfix"> </div>
                     </div>
                 </div>

@@ -44,6 +44,16 @@
     .hunt-form .form-group {
     margin-top: 30px;
     }
+    .winner_prize > .label_prize > div {
+    display: inline-block;
+    padding: 4px 3px 8px 8px;
+    font-size: 14px;
+    cursor: text;
+    color: #666;
+    position: absolute;
+    top: 0;
+    right: 0;
+    }
 {% endblock %}
 
 {% block content %}
@@ -94,6 +104,19 @@
                             <option>{{domain.id}} - {{domain.name}}</option>
                             {% endfor %}
                           </select>
+                      </div>
+                      Prizes
+                      <div class="form-group col-sm-12 winner_prize">
+                        <label class="label_prize col-sm-4 col-md-4" for="prize_winner">
+                            <input name="prize_winner" type="Number" placeholder="Winner" class="form-control" /><div>$</div>
+                        </label>
+                        <label class="label_prize col-sm-4 col-md-4" for="prize_runner">
+                            <input placeholder="Runner's Up" name="prize_runner" type="Number" class="form-control" /><div>$</div>
+                        </label>
+                        <label class="label_prize col-sm-4 col-md-4" for="prize_second_runner">
+                            <input placeholder="2nd Runner's Up" name="prize_second_runner" type="Number" class="form-control" /><div>$</div>
+                        </label>
+                        (Your wallet must contain the total prize money, if not you can go to profile to add money to wallet)
                       </div>
                       <label class="checkbox-inline col-sm-12"><input name="publish" type="checkbox" value="true">Publish (If Not Published, the Hunt Will be saved as a draft)</label>
                     </div>

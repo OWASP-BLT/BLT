@@ -50,9 +50,12 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 
 from rest_framework.authtoken.views import ObtainAuthToken
-from website.models import Issue, Points, Hunt, Domain, InviteFriend, UserProfile, IP, CompanyAdmin, Subscription, Company
+from website.models import Winner, Payment, Wallet, Transaction, Issue, Points, Hunt, Domain, InviteFriend, UserProfile, IP, CompanyAdmin, Subscription, Company
 from .forms import FormInviteFriend, UserProfileForm, HuntForm
 from django.utils.timezone import make_aware
+from decimal import Decimal
+import stripe
+import humanize
 
 def index(request, template="index.html"):
 	try:
@@ -75,6 +78,9 @@ def index(request, template="index.html"):
 		domain_admin = CompanyAdmin.objects.get(user=request.user)
 	except:
 		domain_admin = None
+	wallet = None
+	if request.user.is_authenticated:
+		wallet = Wallet.objects.get(user=request.user)
 	context = {
 		'activities': Issue.objects.all()[0:10],
 		'domains': domains,
@@ -85,9 +91,10 @@ def index(request, template="index.html"):
 		'not_verified': show_message,
 		#'open_issue_owasp': open_issue_owasp,
 		#'closed_issue_owasp': closed_issue_owasp,
-		'domain_admin' : domain_admin,
+		'domain_admin': domain_admin,
 		'bug_count': bug_count,
 		'user_count': user_count,
+		'wallet': wallet,
 		'hunt_count': hunt_count,
 		'domain_count': domain_count
 	}
@@ -95,23 +102,25 @@ def index(request, template="index.html"):
 
 @login_required(login_url='/accounts/login')
 def company_dashboard(request, template="index_company.html"):
-
-	company_admin = CompanyAdmin.objects.get(user=request.user)
-	if not company_admin.is_active:
-		return HttpResponseRedirect("/")
-	hunts = Hunt.objects.filter(is_published=True,domain=company_admin.domain)
-	upcoming_hunt = list()
-	ongoing_hunt = list()
-	previous_hunt = list()
-	for hunt in hunts:
-		if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
-			upcoming_hunt.append(hunt)
-		elif((hunt.end_on-datetime.now(timezone.utc)).total_seconds()) < 0:
-			previous_hunt.append(hunt)
-		else:
-			ongoing_hunt.append(hunt)
-	context = {'upcoming_hunts': upcoming_hunt,'ongoing_hunt':ongoing_hunt,'previous_hunt':previous_hunt}
-	return render(request, template, context)
+	try:
+		company_admin = CompanyAdmin.objects.get(user=request.user)
+		if not company_admin.is_active:
+			return HttpResponseRedirect("/")
+		hunts = Hunt.objects.filter(is_published=True,domain=company_admin.domain)
+		upcoming_hunt = list()
+		ongoing_hunt = list()
+		previous_hunt = list()
+		for hunt in hunts:
+			if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
+				upcoming_hunt.append(hunt)
+			elif((hunt.end_on-datetime.now(timezone.utc)).total_seconds()) < 0:
+				previous_hunt.append(hunt)
+			else:
+				ongoing_hunt.append(hunt)
+		context = {'upcoming_hunts': upcoming_hunt,'ongoing_hunt':ongoing_hunt,'previous_hunt':previous_hunt}
+		return render(request, template, context)
+	except:
+		return redirect('/')
 
 @login_required(login_url='/accounts/login')
 def admin_company_dashboard(request, template="admin_dashboard_company.html"):
@@ -150,7 +159,19 @@ def admin_dashboard(request, template="admin_home.html"):
 
 @login_required(login_url='/accounts/login')
 def user_dashboard(request, template="index_user.html"):
-	return render(request, template)
+	hunts = Hunt.objects.filter(is_published=True)
+	upcoming_hunt = list()
+	ongoing_hunt = list()
+	previous_hunt = list()
+	for hunt in hunts:
+		if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
+			upcoming_hunt.append(hunt)
+		elif((hunt.end_on-datetime.now(timezone.utc)).total_seconds()) < 0:
+			previous_hunt.append(hunt)
+		else:
+			ongoing_hunt.append(hunt)
+	context = {'upcoming_hunts': upcoming_hunt,'ongoing_hunt':ongoing_hunt,'previous_hunt':previous_hunt}
+	return render(request, template,context)
 
 
 def find_key(request, token):
@@ -459,6 +480,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
 	def get_context_data(self, **kwargs):
 		context = super(IssueCreate, self).get_context_data(**kwargs)
 		context['activities'] = Issue.objects.all()[0:10]
+		if self.request.user.is_authenticated:
+			context['wallet'] = Wallet.objects.get(user=self.request.user)
 		context['hunts'] = Hunt.objects.exclude(plan="Free")[:4]
 		context['leaderboard'] = User.objects.filter(points__created__month=datetime.now().month,
 													 points__created__year=datetime.now().year).annotate(
@@ -527,17 +550,19 @@ class UserProfileDetailView(DetailView):
 		context['my_score'] = list(Points.objects.filter(user=self.object).aggregate(total_score=Sum('score')).values())[0]
 		context['websites'] = Domain.objects.filter(issue__user=self.object).annotate(total=Count('issue')).order_by(
 			'-total')
-		context['activities'] = Issue.objects.filter(user=self.object)[0:10]
+		context['activities'] = Issue.objects.filter(user=self.object, hunt=None)[0:10]
 		context['profile_form'] = UserProfileForm()
 		context['total_open'] = Issue.objects.filter(user=self.object, status="open").count()
 		context['total_closed'] = Issue.objects.filter(user=self.object, status="closed").count()
 		context['current_month'] = datetime.now().month
+		if self.request.user.is_authenticated:
+			context['wallet'] = Wallet.objects.get(user=self.request.user)
 		context['graph'] = Issue.objects.filter(user=self.object).filter(created__month__gte=(datetime.now().month - 6),
 																		 created__month__lte=datetime.now().month) \
 			.annotate(month=ExtractMonth('created')).values('month').annotate(c=Count('id')).order_by()
-		context['total_bugs'] = Issue.objects.filter(user=self.object).count()
+		context['total_bugs'] = Issue.objects.filter(user=self.object, hunt=None).count()
 		for i in range(0, 7):
-			context['bug_type_' + str(i)] = Issue.objects.filter(user=self.object, label=str(i))
+			context['bug_type_' + str(i)] = Issue.objects.filter(user=self.object, hunt=None, label=str(i))
 
 		arr = []
 		allFollowers = user.userprofile.follower.all()
@@ -562,6 +587,7 @@ class UserProfileDetailView(DetailView):
 			form.save()
 		return redirect(reverse('profile', kwargs={'slug': kwargs.get('slug')}))
 
+
 class UserProfileDetailsView(DetailView):
 	model = get_user_model()
 	slug_field = "username"
@@ -569,7 +595,10 @@ class UserProfileDetailsView(DetailView):
 
 	def get(self, request, *args, **kwargs):
 		try:
-			self.object = self.get_object()
+			if request.user.is_authenticated:
+				self.object = self.get_object()
+			else:
+				return redirect("/accounts/login")
 		except Http404:
 			messages.error(self.request, 'That user was not found.')
 			return redirect("/")
@@ -581,18 +610,20 @@ class UserProfileDetailsView(DetailView):
 		context['my_score'] = list(Points.objects.filter(user=self.object).aggregate(total_score=Sum('score')).values())[0]
 		context['websites'] = Domain.objects.filter(issue__user=self.object).annotate(total=Count('issue')).order_by(
 			'-total')
-		context['activities'] = Issue.objects.filter(user=self.object)[0:10]
+		if self.request.user.is_authenticated:
+			context['wallet'] = Wallet.objects.get(user=self.request.user)
+		context['activities'] = Issue.objects.filter(user=self.object, hunt=None)[0:10]
 		context['profile_form'] = UserProfileForm()
 		context['total_open'] = Issue.objects.filter(user=self.object, status="open").count()
 		context['user_details'] = UserProfile.objects.get(user=self.object)
 		context['total_closed'] = Issue.objects.filter(user=self.object, status="closed").count()
 		context['current_month'] = datetime.now().month
-		context['graph'] = Issue.objects.filter(user=self.object).filter(created__month__gte=(datetime.now().month - 6),
+		context['graph'] = Issue.objects.filter(user=self.object, hunt=None).filter(created__month__gte=(datetime.now().month - 6),
 																		 created__month__lte=datetime.now().month) \
 			.annotate(month=ExtractMonth('created')).values('month').annotate(c=Count('id')).order_by()
 		context['total_bugs'] = Issue.objects.filter(user=self.object).count()
 		for i in range(0, 7):
-			context['bug_type_' + str(i)] = Issue.objects.filter(user=self.object, label=str(i))
+			context['bug_type_' + str(i)] = Issue.objects.filter(user=self.object, hunt=None, label=str(i))
 
 		arr = []
 		allFollowers = user.userprofile.follower.all()
@@ -643,9 +674,11 @@ class DomainDetailView(ListView):
 		parsed_url = urlparse("http://" + self.kwargs['slug'])
 
 		open_issue = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(
-			status="open")
+			status="open", hunt=None)
 		close_issue = Issue.objects.filter(domain__name__contains=self.kwargs['slug']).filter(
-			status="closed")
+			status="closed", hunt=None)
+		if self.request.user.is_authenticated:
+			context['wallet'] = Wallet.objects.get(user=self.request.user)
 
 		context['name'] = parsed_url.netloc.split(".")[-2:][0].title()
 
@@ -679,10 +712,10 @@ class DomainDetailView(ListView):
 		context['leaderboard'] = User.objects.filter(issue__url__contains=self.kwargs['slug']).annotate(
 			total=Count('issue')).order_by('-total')
 		context['current_month'] = datetime.now().month
-		context['domain_graph'] = Issue.objects.filter(domain=context['domain']).filter(
+		context['domain_graph'] = Issue.objects.filter(domain=context['domain'], hunt=None).filter(
 			created__month__gte=(datetime.now().month - 6), created__month__lte=datetime.now().month) \
 			.annotate(month=ExtractMonth('created')).values('month').annotate(c=Count('id')).order_by()
-		context['pie_chart'] = Issue.objects.filter(domain=context['domain']).values('label').annotate(
+		context['pie_chart'] = Issue.objects.filter(domain=context['domain'], hunt=None).values('label').annotate(
 			c=Count('label')).order_by()
 		return context
 
@@ -698,6 +731,8 @@ class StatsDetailView(TemplateView):
 
 		for item in soup.findAll("span", {"class": "e-f-ih"}):
 			stats = item.attrs['title']
+		if self.request.user.is_authenticated:
+			context['wallet'] = Wallet.objects.get(user=self.request.user)
 		context['extension_users'] = stats.replace(" users", "")
 		context['bug_count'] = Issue.objects.all().count()
 		context['user_count'] = User.objects.all().count()
@@ -718,9 +753,9 @@ class AllIssuesView(ListView):
 	def get_queryset(self):
 		username = self.request.GET.get('user')
 		if username is None:
-			self.activities = Issue.objects.all()
+			self.activities = Issue.objects.filter(hunt=None)
 		else:
-			self.activities = Issue.objects.filter(user__username=username)
+			self.activities = Issue.objects.filter(user__username=username, hunt=None)
 		return self.activities
 
 	def get_context_data(self, *args, **kwargs):
@@ -728,6 +763,8 @@ class AllIssuesView(ListView):
 		paginator = Paginator(self.activities, self.paginate_by)
 		page = self.request.GET.get('page')
 
+		if self.request.user.is_authenticated:
+			context['wallet'] = Wallet.objects.get(user=self.request.user)
 		try:
 			activities_paginated = paginator.page(page)
 		except PageNotAnInteger:
@@ -770,11 +807,11 @@ class SpecificIssuesView(ListView):
 			statu = 'closed';
 
 		if username is None:
-			self.activities = Issue.objects.all()
+			self.activities = Issue.objects.filter(hunt=None)
 		elif statu != 'none':
-			self.activities = Issue.objects.filter(user__username=username, status=statu)
+			self.activities = Issue.objects.filter(user__username=username, status=statu, hunt=None)
 		else:
-			self.activities = Issue.objects.filter(user__username=username, label=query)
+			self.activities = Issue.objects.filter(user__username=username, label=query, hunt=None)
 		return self.activities
 
 	def get_context_data(self, *args, **kwargs):
@@ -782,6 +819,8 @@ class SpecificIssuesView(ListView):
 		paginator = Paginator(self.activities, self.paginate_by)
 		page = self.request.GET.get('page')
 
+		if self.request.user.is_authenticated:
+			context['wallet'] = Wallet.objects.get(user=self.request.user)
 		try:
 			activities_paginated = paginator.page(page)
 		except PageNotAnInteger:
@@ -801,6 +840,9 @@ class LeaderboardView(ListView):
 
 	def get_context_data(self, *args, **kwargs):
 		context = super(LeaderboardView, self).get_context_data(*args, **kwargs)
+		
+		if self.request.user.is_authenticated:
+			context['wallet'] = Wallet.objects.get(user=self.request.user)
 		context['leaderboard'] = User.objects.annotate(total_score=Sum('points__score')).order_by(
 			'-total_score').filter(total_score__gt=0)
 		return context
@@ -817,6 +859,8 @@ class ScoreboardView(ListView):
 		paginator = Paginator(companies, self.paginate_by)
 		page = self.request.GET.get('page')
 
+		if self.request.user.is_authenticated:
+			context['wallet'] = Wallet.objects.get(user=self.request.user)
 		try:
 			scoreboard_paginated = paginator.page(page)
 		except PageNotAnInteger:
@@ -850,27 +894,30 @@ def search(request, template="search.html"):
 		context = {
 			'query': query,
 			'type': stype,
-			'issues': Issue.objects.filter(Q(description__icontains=query))[0:20]
+			'issues': Issue.objects.filter(Q(description__icontains=query), hunt=None)[0:20]
 		}
 	elif stype == "domain":
 		context = {
 			'query': query,
 			'type': stype,
-			'domains': Domain.objects.filter(Q(url__icontains=query))[0:20]
+			'domains': Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
 		}
 	elif stype == "user":
 		context = {
 			'query': query,
 			'type': stype,
-			'users': UserProfile.objects.filter(Q(user__username__icontains=query)).annotate(
+			'users': UserProfile.objects.filter(Q(user__username__icontains=query), hunt=None).annotate(
 			total_score=Sum('user__points__score')).order_by('-total_score')[0:20]
 		}
 	elif stype == "label":
 		context = {
 			'query': query,
 			'type': stype,
-			'issues': Issue.objects.filter(Q(label__icontains=query))[0:20]
+			'issues': Issue.objects.filter(Q(label__icontains=query), hunt=None)[0:20]
 		}
+
+	if request.user.is_authenticated:	
+		context['wallet'] = Wallet.objects.get(user=request.user)
 	return render(request, template, context)
 
 
@@ -937,6 +984,9 @@ class IssueView(DetailView):
 			context['os_version'] = user_agent.os.version_string
 		context['users_score'] = \
 			list(Points.objects.filter(user=self.object.user).aggregate(total_score=Sum('score')).values())[0]
+		
+		if self.request.user.is_authenticated:
+			context['wallet'] = Wallet.objects.get(user=self.request.user)
 		context['issue_count'] = Issue.objects.filter(url__contains=self.object.domain_name).count()
 		context['all_comment'] = self.object.comments.all
 		context['all_users'] = User.objects.all()
@@ -973,6 +1023,8 @@ class EmailDetailView(TemplateView):
 	def get_context_data(self, *args, **kwargs):
 		context = super(EmailDetailView, self).get_context_data(*args, **kwargs)
 		context['emails'] = get_email_from_domain(self.kwargs['slug'])
+		if self.request.user.is_authenticated:
+			context['wallet'] = Wallet.objects.get(user=self.request.user)
 		return context
 
 
@@ -1262,6 +1314,11 @@ def create_tokens(request):
 		Token.objects.get_or_create(user=user)
 	return JsonResponse("Created", safe=False)
 
+def create_wallet(request):
+	for user in User.objects.all():
+		Wallet.objects.get_or_create(user=user)
+	return JsonResponse("Created", safe=False)
+
 def issue_count(request):
 	open_issue = Issue.objects.filter(status="open").count()
 	close_issue = Issue.objects.filter(status="closed").count()
@@ -1433,6 +1490,10 @@ class CreateHunt(TemplateView):
 		try:
 			domain_admin = CompanyAdmin.objects.get(user=request.user)
 			if (domain_admin.role == 1 and (str(domain_admin.domain.pk) == ((request.POST['domain']).split('-'))[0].replace(" ", ""))) or domain_admin.role == 0:
+				wallet = Wallet.objects.get(user=request.user)
+				total_amount = Decimal(request.POST['prize_winner']) + Decimal(request.POST['prize_runner']) + Decimal(request.POST['prize_second_runner'])
+				if total_amount > wallet.current_balance:
+					return HttpResponse("failed")
 				hunt = Hunt()
 				hunt.domain = Domain.objects.get(pk=(request.POST['domain']).split('-')[0].replace(" ", ""))
 				data = {}
@@ -1466,9 +1527,14 @@ class CreateHunt(TemplateView):
 				hunt.starts_on = start_date
 				# hunt.starts_on = make_aware(datetime.strptime(request.POST['date1'], '%Y-%m-%d %H:%M'))
 				# hunt.end_on = make_aware(datetime.strptime(request.POST['date2'], '%Y-%m-%d %H:%M'))
+				hunt.prize_winner = Decimal(request.POST['prize_winner'])
+				hunt.prize_runner = Decimal(request.POST['prize_runner'])
+				hunt.prize_second_runner = Decimal(request.POST['prize_second_runner'])
 				hunt.end_on = end_date
 				hunt.name = request.POST['name']
 				hunt.description = request.POST['content']
+				wallet.withdraw(total_amount)
+				wallet.save()
 				try:
 					is_published = request.POST['publish']
 					hunt.is_published = True
@@ -1570,9 +1636,9 @@ class PreviousHunts(TemplateView):
 				if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
 					pass
 				elif((hunt.end_on-datetime.now(timezone.utc)).total_seconds()) < 0:
-					pass
-				else:
 					new_hunt.append(hunt)
+				else:
+					pass
 			context = {'hunts': new_hunt}
 			return render(request, self.template_name, context)
 		except:
@@ -1690,31 +1756,63 @@ def add_role(request):
 @login_required(login_url='/accounts/login')
 def add_or_update_company(request):
 	user = request.user
+	for key, value in request.POST.items():
+	    print('Key: %s' % (key) ) 
+	    # print(f'Key: {key}') in Python >= 3.7
+	    print('Value %s' % (value) )
 	if(user.is_superuser):
 		if not user.is_active:
 			return HttpResponseRedirect("/")    
 		if request.method == "POST":
+		
+			domain_pk = request.POST['id']
+			company = Company.objects.get(pk=domain_pk)
+			user = company.admin
+			if(user!=User.objects.get(email=request.POST['admin'])):
+				try:
+					admin = CompanyAdmin.objects.get(user=user, company=company)
+					admin.user = User.objects.get(email=request.POST['admin'])
+					admin.save()
+				except:
+					admin = CompanyAdmin()
+					admin.user = User.objects.get(email=request.POST['admin'])
+					admin.role = 0
+					admin.company = company
+					admin.is_active = True
+					admin.save()
+			company.name = request.POST['name']
+			company.email = request.POST['email']
+			company.url = request.POST['url']
+			company.admin = User.objects.get(email=request.POST['admin'])
+			company.github = request.POST['github']
 			try:
-				domain_pk = request.POST['id']
-				company = Company.objects.get(pk=domain_pk)
-				user = company.admin
-				if(user!=User.objects.get(email=request.POST['admin'])):
-					try:
-						admin = CompanyAdmin.objects.get(user=user, company=company)
-						admin.user = User.objects.get(email=request.POST['admin'])
-						admin.save()
-					except:
-						admin = CompanyAdmin()
-						admin.user = User.objects.get(email=request.POST['admin'])
-						admin.role = 0
-						admin.company = company
-						admin.is_active = True
-						admin.save()
+				is_verified =request.POST['verify']
+				print(is_verified)
+				if is_verified=='on':
+					company.is_active = True
+				else:
+					company.is_active = False
+			except:
+				company.is_active = False
+			try:
+				company.subscription = Subscription.objects.get(name=request.POST['subscription'])
+			except:
+				pass
+			try:
+				company.logo = request.FILES['logo']
+			except:
+				pass
+			company.save()
+			return HttpResponse("success")
+			try:
+				company = Company()
 				company.name = request.POST['name']
 				company.email = request.POST['email']
 				company.url = request.POST['url']
 				company.admin = User.objects.get(email=request.POST['admin'])
 				company.github = request.POST['github']
+				if request.POST['verify']=='true':
+					company.is_active = request.POST['verify']
 				try:
 					company.subscription = Subscription.objects.get(name=request.POST['subscription'])
 				except:
@@ -1724,33 +1822,15 @@ def add_or_update_company(request):
 				except:
 					pass
 				company.save()
-				return HttpResponse("success")
+				admin = CompanyAdmin()
+				admin.user = User.objects.get(email=request.POST['admin'])
+				admin.role = 0
+				admin.company = company
+				admin.is_active = True
+				admin.save()
+				return HttpResponse("success")  
 			except:
-				try:
-					company = Company()
-					company.name = request.POST['name']
-					company.email = request.POST['email']
-					company.url = request.POST['url']
-					company.admin = User.objects.get(email=request.POST['admin'])
-					company.github = request.POST['github']
-					try:
-						company.subscription = Subscription.objects.get(name=request.POST['subscription'])
-					except:
-						pass
-					try:
-						company.logo = request.FILES['logo']
-					except:
-						pass
-					company.save()
-					admin = CompanyAdmin()
-					admin.user = User.objects.get(email=request.POST['admin'])
-					admin.role = 0
-					admin.company = company
-					admin.is_active = True
-					admin.save()
-					return HttpResponse("success")  
-				except:
-					return HttpResponse("failed")
+				return HttpResponse("failed")
 		else:
 			return HttpResponse("failed")
 	else:
@@ -1915,3 +1995,379 @@ def company_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_ed
 			hunt.is_published = False
 		hunt.save()
 		return HttpResponse("success")
+
+
+@login_required(login_url='/accounts/login')
+def withdraw(request):
+	print("WITHDRAWING")
+	if request.method == "POST":
+		if request.user.is_authenticated:
+			wallet = Wallet.objects.get(user=request.user)
+			if(wallet.current_balance<Decimal(request.POST['amount'])):
+				return HttpResponse("msg : amount greater than wallet balance")
+			else:
+				# customer, created = Customer.get_or_create(subscriber=request.user)
+				amount = Decimal(request.POST['amount'])
+				# customer.charge(amount)
+			payments = Payment.objects.filter(wallet=wallet)
+			for payment in payments:
+				payment.active = False
+			payment = Payment()
+			payment.wallet = wallet
+			payment.value =  Decimal(request.POST['amount'])
+			payment.save()
+			from django.conf import settings
+			stripe.api_key = settings.STRIPE_TEST_SECRET_KEY			
+			if wallet.account_id:
+				account = stripe.Account.retrieve(wallet.account_id)
+				if account.payouts_enabled==True:
+					balance = stripe.Balance.retrieve()
+					if balance.available[0].amount > payment.value*100:
+						stripe.Transfer.create(
+						  amount=Decimal(request.POST['amount'])*100,
+						  currency="usd",
+						  destination=wallet.account_id,
+						  transfer_group="ORDER_95",
+						)
+						wallet.withdraw(Decimal(request.POST['amount']))
+						wallet.save()
+						payment.active = False
+						payment.save()
+						return HttpResponseRedirect("/dashboard/user/profile/"+request.user.username)
+					else:
+						return HttpResponse("INSUFFICIENT BALANCE")
+				else:
+					wallet.account_id=None
+					wallet.save()
+					account = stripe.Account.create(
+					  type='express',
+					)
+					wallet.account_id = account.id
+					wallet.save()
+					account_links = stripe.AccountLink.create(
+					  account=account,
+					  return_url='http://127.0.0.1:8000/dashboard/user/stripe/connected/'+request.user.username,
+					  refresh_url='http://127.0.0.1:8000/dashboard/user/profile/'+request.user.username,
+					  type='account_onboarding',
+					)
+					print(account_links)
+					return JsonResponse({'redirect': account_links.url, 'status': 'success'})
+			else:
+				account = stripe.Account.create(
+				  type='express',
+				)
+				wallet.account_id = account.id
+				wallet.save()
+				account_links = stripe.AccountLink.create(
+				  account=account,
+				  return_url='http://127.0.0.1:8000/dashboard/user/stripe/connected/'+request.user.username,
+				  refresh_url='http://127.0.0.1:8000/dashboard/user/profile/'+request.user.username,
+				  type='account_onboarding',
+				)
+				print(account_links)
+				return JsonResponse({'redirect': account_links.url, 'status': 'success'})
+		return JsonResponse({'status': 'error'})
+
+@login_required(login_url='/accounts/login')
+def addbalance(request):
+	if request.method == "POST":
+		if request.user.is_authenticated:
+			for key, value in request.POST.items():
+				print('Key: %s' % (key) ) 
+				# print(f'Key: {key}') in Python >= 3.7
+				print('Value %s' % (value) )
+			wallet = Wallet.objects.get(user=request.user)
+			from django.conf import settings
+			stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
+			charge = stripe.Charge.create(
+			  amount=int(Decimal(request.POST['amount'])*100),
+			  currency='usd',
+			  description='Example charge',
+			  source=request.POST['stripeToken'],
+			)
+			wallet.deposit(request.POST['amount'])
+			print(charge)
+		return HttpResponse("success")
+
+@login_required(login_url='/accounts/login')
+def stripe_connected(request, username):
+	user = User.objects.get(username = username)
+	wallet = Wallet.objects.get(user = user)
+	from django.conf import settings
+	stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
+	account = stripe.Account.retrieve(wallet.account_id)
+	if account.payouts_enabled==True:
+		payment = Payment.objects.get(wallet=wallet, active=True)
+		balance = stripe.Balance.retrieve()
+		if balance.available[0].amount > payment.value*100:
+			stripe.Transfer.create(
+			  amount=payment.value*100,
+			  currency="usd",
+			  destination="000123456789",
+			  transfer_group="ORDER_95",
+			)
+			wallet.withdraw(Decimal(request.POST['amount']))
+			wallet.save()
+			payment.active = False
+			payment.save()
+			return HttpResponseRedirect("/dashboard/user/profile/"+username)
+		else:
+			return HttpResponse("ERROR")
+	else:
+		wallet.account_id=None
+		wallet.save()
+	return HttpResponse("error")
+
+
+class JoinCompany(TemplateView):
+	model = Company
+	# fields = ['url', 'logo', 'domain', 'plan', 'prize', 'txn_id']
+	template_name = "join.html"
+
+	@method_decorator(login_required)
+	def get(self, request, *args, **kwargs):
+		# try:
+		wallet = Wallet.objects.get(user=request.user)
+		context = {'wallet': wallet}
+			# return render(request, self.template_name, context)
+		return render(request, self.template_name, context)
+		# except:
+		# 	return HttpResponseRedirect("/")
+	
+	def post(self, request, *args, **kwargs):
+		name = request.POST['company']
+		try:
+			company_exists = Company.objects.get(name=name)
+			return JsonResponse({'status': 'There was some error'})
+		except:
+			pass
+		url = request.POST['url']
+		email = request.POST['email']
+		product = request.POST['product']
+		sub = Subscription.objects.get(name=product)
+		if name == '' or url == '' or email == '' or product =='' :
+			return JsonResponse({'error': 'Empty Fields'})
+		paymentType = request.POST['paymentType']
+		if paymentType == 'wallet':
+			wallet = Wallet.objects.get(user=request.user)
+			if wallet.current_balance < sub.charge_per_month:
+				return JsonResponse({'error': 'insufficient balance in Wallet'})
+			wallet.withdraw(sub.charge_per_month)
+			company = Company()
+			company.admin = request.user
+			company.name = name
+			company.url = url
+			company.email = email
+			company.subscription = sub
+			company.save()
+			admin = CompanyAdmin()
+			admin.user = request.user
+			admin.role = 0
+			admin.company = company
+			admin.is_active = True
+			admin.save()
+			return JsonResponse({'status': 'Success'})
+			# company.subscription = 
+		elif paymentType == 'card':
+			from django.conf import settings
+			stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
+			charge = stripe.Charge.create(
+			  amount=int(Decimal(sub.charge_per_month)*100),
+			  currency='usd',
+			  description='Example charge',
+			  source=request.POST['stripeToken'],
+			)
+			print(charge)
+			company = Company()
+			company.admin = request.user
+			company.name = name
+			company.url = url
+			company.email = email
+			company.subscription = sub
+			company.save()
+			admin = CompanyAdmin()
+			admin.user = request.user
+			admin.role = 0
+			admin.company = company
+			admin.is_active = True
+			admin.save()
+			return JsonResponse({'status': 'Success'})
+		else:
+			return JsonResponse({'status': 'There was some error'})
+
+
+@login_required(login_url='/accounts/login')
+def view_hunt(request, pk, template="view_hunt.html"):
+	hunt = get_object_or_404(Hunt, pk=pk)
+	time_remaining = None
+	if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
+		hunt_active = False
+		hunt_completed = False
+		time_remaining = humanize.naturaltime(datetime.now(timezone.utc)-hunt.starts_on)
+	elif((hunt.end_on-datetime.now(timezone.utc)).total_seconds()) < 0:
+		hunt_active = False
+		hunt_completed = True
+	else:
+		hunt_active = True
+		hunt_completed = False
+	return render(request, template, {'hunt': hunt, 'hunt_completed': hunt_completed,'time_remaining': time_remaining, 'hunt_active': hunt_active})
+
+
+@login_required(login_url='/accounts/login')
+def submit_bug(request, pk, template="hunt_submittion.html"):
+	hunt = get_object_or_404(Hunt, pk=pk)
+	time_remaining = None
+	if request.method == 'GET':
+		if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
+			return redirect('/dashboard/user/hunt/'+str(pk)+'/') 
+		elif((hunt.end_on-datetime.now(timezone.utc)).total_seconds()) < 0:
+			return redirect('/dashboard/user/hunt/'+str(pk)+'/')
+		else:
+			return render(request, template, {'hunt': hunt})
+	elif request.method == 'POST':
+		if((hunt.starts_on-datetime.now(timezone.utc)).total_seconds()) > 0:
+			return redirect('/dashboard/user/hunt/'+str(pk)+'/') 
+		elif((hunt.end_on-datetime.now(timezone.utc)).total_seconds()) < 0:
+			return redirect('/dashboard/user/hunt/'+str(pk)+'/')
+		else:
+			url = request.POST['url']
+			description = request.POST['description']
+			if url=='' or description == '' :
+				issue_list = Issue.objects.filter(user=request.user, hunt=hunt)
+				return render(request, template, {'hunt': hunt, 'issue_list':issue_list})
+			parsed_url = urlparse(url)
+			if parsed_url.scheme == '':
+				url = 'https://' + url
+			parsed_url = urlparse(url)
+			if parsed_url.netloc == '':
+				issue_list = Issue.objects.filter(user=request.user, hunt=hunt)
+				return render(request, template, {'hunt': hunt, 'issue_list':issue_list})
+			label = request.POST['label']
+			if request.POST.get('file'):
+				if isinstance(request.POST.get('file'), six.string_types):
+					import imghdr
+				# Check if the base64 string is in the "data:" format
+					data = "data:image/"+ request.POST.get('type') + ";base64," + request.POST.get('file')
+					data = data.replace(" ", "")
+					data += "=" * ((4 - len(data) % 4) % 4)
+					if 'data:' in data and ';base64,' in data:
+				# Break out the header from the base64 content
+						header, data = data.split(';base64,')
+
+					# Try to decode the file. Return validation error if it fails.
+					try:
+						decoded_file = base64.b64decode(data)
+					except TypeError:
+						TypeError('invalid_image')
+
+					# Generate file name:
+					file_name = str(uuid.uuid4())[:12] # 12 characters are more than enough.
+					# Get the file name extension:
+					extension = imghdr.what(file_name, decoded_file)
+					extension = "jpg" if extension == "jpeg" else extension
+					file_extension = extension
+
+					complete_file_name = "%s.%s" % (file_name, file_extension, )
+
+					request.FILES['screenshot'] = ContentFile(decoded_file, name=complete_file_name)
+			issue = Issue()
+			issue.label = label
+			print(url)
+			issue.url = url
+			issue.user = request.user
+			issue.description = description 
+			try:
+				issue.screenshot = request.FILES['screenshot']
+			except:
+				print("IN HERE")
+				issue_list = Issue.objects.filter(user=request.user, hunt=hunt)
+				return render(request, template, {'hunt': hunt, 'issue_list':issue_list})
+			issue.hunt = hunt
+			issue.save()
+			issue_list = Issue.objects.filter(user=request.user, hunt=hunt)
+			return render(request, template, {'hunt': hunt, 'issue_list':issue_list})
+
+@login_required(login_url='/accounts/login')
+def hunt_results(request, pk, template="hunt_results.html"):
+	hunt = get_object_or_404(Hunt, pk=pk)
+	return render(request, template, {'hunt': hunt})
+
+@login_required(login_url='/accounts/login')
+def company_hunt_results(request, pk, template="company_hunt_results.html"):
+	hunt = get_object_or_404(Hunt, pk=pk)
+	issues = Issue.objects.filter(hunt=hunt)
+	context = {}
+	if request.method == "GET":
+		context['hunt'] = get_object_or_404(Hunt, pk=pk)
+		context['issues'] = Issue.objects.filter(hunt=hunt)
+		if hunt.result_published:
+			context['winner'] = Winner.objects.get(hunt=hunt)
+		return render(request, template, context)
+	else:
+		for issue in issues:
+			issue.verified = False
+			issue.score = 0
+			issue.save()
+		for key, value in request.POST.items():
+			if key != 'csrfmiddlewaretoken' and key!='submit' and key!='checkAll':
+				submit_type = key.split('_')[0]
+				issue_id = key.split('_')[1]
+				issue = Issue.objects.get(pk=issue_id)
+				if issue.hunt==hunt and submit_type =='item':
+					if value == 'on':
+						issue.verified = True
+				elif issue.hunt==hunt and submit_type == 'value':
+					if value != '':
+						issue.score = int(value)
+				try:
+					if request.POST['checkAll']:
+						issue.verified = True
+				except:
+					pass
+				issue.save()
+				print(issue.verified)
+				print("issue.verified")
+		if request.POST['submit'] == 'save':
+			pass
+		if request.POST['submit'] == 'publish':
+			issue.save()
+			index = 1
+			winner = Winner()
+			issue_with_score = Issue.objects.filter(hunt=hunt, verified=True).values('user').order_by('user').annotate(total_score=Sum('score'))
+			for obj in issue_with_score:
+				user = User.objects.get(pk=obj['user'])
+				if index == 1:
+					winner.winner = user
+				if index == 2:
+					winner.runner = user
+				if index == 3:
+					winner.second_runner = user
+				if index == 4:
+					break
+				index = index + 1
+			total_amount = Decimal(hunt.prize_winner) + Decimal(hunt.prize_runner) + Decimal(hunt.prize_second_runner)
+			from django.conf import settings
+			stripe.api_key = settings.STRIPE_TEST_SECRET_KEY			
+			balance = stripe.Balance.retrieve()
+			if balance.available[0].amount > total_amount*100:
+				if winner.winner:
+					wallet = Wallet.objects.get(user=winner.winner)
+					wallet.deposit(hunt.prize_winner)
+					wallet.save()
+				if winner.runner:
+					wallet = Wallet.objects.get(user=winner.runner)
+					wallet.deposit(hunt.prize_runner)
+					wallet.save()
+				if winner.second_runner:
+					wallet = Wallet.objects.get(user=winner.second_runner)
+					wallet.deposit(hunt.prize_second_runner)
+					wallet.save()
+			winner.prize_distributed = True
+			winner.hunt = hunt
+			winner.save()
+			hunt.result_published = True
+			hunt.save()
+			context['winner'] = winner
+		context['hunt'] = get_object_or_404(Hunt, pk=pk)
+		context['issues'] = Issue.objects.filter(hunt=hunt)
+		return render(request, template, context)

@@ -101,6 +101,9 @@
                             {% endif %}
                             {{ request.user.username }} <i class="fa fa-caret-down"></i> 
                         </a>
+                        <li>Balance - {{wallet.current_balance}}$
+                        </li>
+                        
                                 <ul class="dropdown-menu drp-mnu">
                                     <li> <a href="/accounts/profile/"><i class="fa fa-user"></i> {% trans "User Profile" %}</a> </li> 
                                     <li> <a href="/accounts/password/change/"><i class="fa fa-cog"></i> {% trans "Change Password" %}</a> </li> 

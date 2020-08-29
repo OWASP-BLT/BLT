@@ -82,7 +82,7 @@
                 {% if request.user.is_authenticated %}
                     <li class="dropdown user-menu">
                         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                            {{ request.user.username }} ({{ request.user|score|default:"0" }} Pts) 
+                            {{ request.user.username }} ({{ request.user|score|default:"0" }} Pts) - {{wallet.current_balance}} $
                             {% if request.user.userprofile.avatar %}
                                 <img src="{{ request.user.userprofile.avatar }}">
                             {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
@@ -417,6 +417,19 @@
             <a href="/scoreboard">Company Scoreboard</a>
 
             <a href="/terms">Terms of Service</a>
+
+
+            {% if request.user.is_authenticated %}
+                {% if domain_admin %}
+                    {% if domain_admin.is_active %}
+                        <a href="/dashboard/company/">{{domain_admin.company.name}}</a>
+                    {% endif %}
+                    {% else %}
+                    <a href="/join">Join ?</a>
+                {% endif %}
+                {% else %}
+                    <a href="/join">Join ?</a>
+            {% endif %}
 
         </p>
     </div>
