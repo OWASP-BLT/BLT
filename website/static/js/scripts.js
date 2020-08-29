@@ -14,7 +14,7 @@
       $("#domain"+name.getAttribute("id")).val(name.getAttribute("value"));
   });
 
-  $("#update-role").submit(function(e){
+  $("#update-role").submit(function(e){z
     e.preventDefault();
       var serializedData = $(this).serialize();
       console.log(serializedData)
@@ -50,6 +50,49 @@
             data: serializedData,
             success: function (response) {
               window.location.reload();
+            },
+            error: function (response) {
+                // alert the error if any error occured
+                alert(response["responseJSON"]["error"]);
+            }
+        })
+    });
+
+  $("#withdraw").submit(function(e){
+    e.preventDefault();
+    document.getElementsByClassName("overlay")[0].style.display="block";
+      var serializedData = $(this).serializeArray();
+      $.ajax({
+            type: 'POST',
+            url: "/dashboard/user/profile/withdraw",
+            data: serializedData,
+            success: function (response) {
+              console.log(response.redirect)
+              if(response.status=='success'){
+                window.location.href = response.redirect;
+
+              }
+              else{
+                window.location.reload();
+              }
+
+            },
+            error: function (response) {
+                // alert the error if any error occured
+                alert(response["responseJSON"]["error"]);
+            }
+        })
+    });
+  
+  $("#addbalance").submit(function(e){
+    e.preventDefault();
+      var serializedData = $(this).serializeArray();
+      $.ajax({
+            type: 'POST',
+            url: "/dashboard/user/profile/addbalance",
+            data: serializedData,
+            success: function (response) {
+              console.log("SUCCESS")
             },
             error: function (response) {
                 // alert the error if any error occured

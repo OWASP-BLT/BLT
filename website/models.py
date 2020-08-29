@@ -19,12 +19,13 @@ from unidecode import unidecode
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 from mdeditor.fields import MDTextField
-
+from decimal import Decimal
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
 	if created:
 		Token.objects.create(user=instance)
+		Wallet.objects.create(user=instance)
 
 
 class Subscription(models.Model):
@@ -45,6 +46,8 @@ class Company(models.Model):
 	created = models.DateTimeField(auto_now_add=True)
 	modified = models.DateTimeField(auto_now=True)
 	subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.CASCADE)
+	is_active = models.BooleanField(default=False)
+
 	
 class Domain(models.Model):
 	company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
@@ -136,6 +139,36 @@ def validate_image(fieldfile_obj):
 		raise ValidationError("Max file size is %sMB" % str(megabyte_limit))
 
 
+class Hunt(models.Model):
+	domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
+	name = models.CharField(max_length=25)
+	description = MDTextField()
+	url = models.URLField()
+	prize = models.IntegerField(null=True, blank=True)
+	prize_winner = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+	prize_runner = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+	prize_second_runner = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+	logo = models.ImageField(upload_to="logos", null=True, blank=True)
+	plan = models.CharField(max_length=10)
+	txn_id = models.CharField(max_length=50, null=True, blank=True)
+	color = models.CharField(max_length=10, null=True, blank=True)
+	created = models.DateTimeField(auto_now_add=True)
+	starts_on = models.DateTimeField(null=True, blank=True)
+	end_on = models.DateTimeField(null=True, blank=True)
+	is_published = models.BooleanField(default=False)
+	result_published = models.BooleanField(default=False)
+	modified = models.DateTimeField(auto_now=True)
+
+	@property
+	def domain_title(self):
+		parsed_url = urlparse(self.url)
+		return parsed_url.netloc.split(".")[-2:][0].title()
+
+	class Meta:
+		ordering = ['-id']
+
+
+
 class Issue(models.Model):
 	labels = (
 		(0, 'General'),
@@ -147,11 +180,14 @@ class Issue(models.Model):
 		(6, 'Design')
 	)
 	user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+	hunt = models.ForeignKey(Hunt, null=True, blank=True, on_delete=models.CASCADE)
 	domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
 	url = models.URLField()
 	description = models.TextField()
 	label = models.PositiveSmallIntegerField(choices=labels, default=0)
 	views = models.IntegerField(null=True, blank=True)
+	verified = models.BooleanField(default=False)
+	score = models.IntegerField(null=True, blank=True)
 	status = models.CharField(max_length=10, default="open", null=True, blank=True)
 	user_agent = models.CharField(max_length=255, default="", null=True, blank=True)
 	ocr = models.TextField(default="", null=True, blank=True)
@@ -177,6 +213,7 @@ class Issue(models.Model):
 
 	@property
 	def domain_name(self):
+		print(self.url)
 		parsed_url = urlparse(self.url)
 		domain = parsed_url.hostname
 		temp = domain.rsplit('.')
@@ -214,6 +251,12 @@ class Issue(models.Model):
 
 TWITTER_MAXLENGTH = getattr(settings, 'TWITTER_MAXLENGTH', 140)
 
+class Winner(models.Model):
+	hunt = models.ForeignKey(Hunt, null=True, blank=True, on_delete=models.CASCADE)
+	winner = models.ForeignKey(User, related_name='winner', null=True, blank=True, on_delete=models.CASCADE)
+	runner = models.ForeignKey(User, related_name='runner', null=True, blank=True, on_delete=models.CASCADE)
+	second_runner = models.ForeignKey(User, related_name='second_runner', null=True, blank=True, on_delete=models.CASCADE)
+	prize_distributed = models.BooleanField(default=False)
 
 def post_to_twitter(sender, instance, *args, **kwargs):
 	if not kwargs.get('created'):
@@ -257,31 +300,6 @@ def post_to_twitter(sender, instance, *args, **kwargs):
 
 
 signals.post_save.connect(post_to_twitter, sender=Issue)
-
-
-class Hunt(models.Model):
-	domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
-	name = models.CharField(max_length=25)
-	description = MDTextField()
-	url = models.URLField()
-	prize = models.IntegerField(null=True, blank=True)
-	logo = models.ImageField(upload_to="logos", null=True, blank=True)
-	plan = models.CharField(max_length=10)
-	txn_id = models.CharField(max_length=50, null=True, blank=True)
-	color = models.CharField(max_length=10, null=True, blank=True)
-	created = models.DateTimeField(auto_now_add=True)
-	starts_on = models.DateTimeField(null=True, blank=True)
-	end_on = models.DateTimeField(null=True, blank=True)
-	is_published = models.BooleanField(default=False)
-	modified = models.DateTimeField(auto_now=True)
-
-	@property
-	def domain_title(self):
-		parsed_url = urlparse(self.url)
-		return parsed_url.netloc.split(".")[-2:][0].title()
-
-	class Meta:
-		ordering = ['-id']
 
 
 class Points(models.Model):
@@ -380,3 +398,45 @@ class CompanyAdmin(models.Model):
 	domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
 	is_active = models.BooleanField(default=True)
 
+
+
+class Wallet(models.Model):
+	user = models.ForeignKey(User, on_delete=models.CASCADE)
+	account_id = models.TextField(null=True, blank=True)
+	current_balance = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+	created_at = models.DateTimeField(auto_now_add=True)
+	def deposit(self, value):
+		self.transaction_set.create(
+			value=value,
+			running_balance=self.current_balance + Decimal(value)
+		)
+		self.current_balance += Decimal(value)
+		self.save()
+
+	def withdraw(self, value):
+		if value > self.current_balance:
+			raise InsufficientBalance('This wallet has insufficient balance.')
+
+		self.transaction_set.create(
+			value=-value,
+			running_balance=self.current_balance - Decimal(value)
+		)
+		self.current_balance -= Decimal(value)
+		self.save()
+
+	def transfer(self, wallet, value):
+		self.withdraw(value)
+		wallet.deposit(value)
+
+
+
+class Transaction(models.Model):
+	wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
+	value = models.DecimalField(max_digits=6, decimal_places=2)
+	running_balance = models.DecimalField(max_digits=6, decimal_places=2)
+	created_at = models.DateTimeField(auto_now_add=True)
+
+class Payment(models.Model):
+	wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
+	value = models.DecimalField(max_digits=6, decimal_places=2)
+	active = models.BooleanField(default=True)
