@@ -54,7 +54,7 @@
     <link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.min.css" %}"/>
     <link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.default-theme.min.css" %}" />
 
-   <form  id="update-hunt">
+   <form id="update-hunt">
                     {% csrf_token%}
                  <div class="modal-content">
                     <div class="modal-header">
@@ -87,6 +87,18 @@
                             <option>{{domain.id}} - {{domain.name}}</option>
                             {% endfor %}
                           </select>
+                      </div>
+                      Prizes
+                      <div class="form-group col-sm-12 winner_prize">
+                        <label class="label_prize col-sm-4 col-md-4" for="prize_winner">
+                            <input name="prize_winner" type="Number" placeholder="Winner" class="form-control" disabled /><div>$</div>
+                        </label>
+                        <label class="label_prize col-sm-4 col-md-4" for="prize_runner">
+                            <input placeholder="Runner's Up" name="prize_runner" type="Number" class="form-control" disabled /><div>$</div>
+                        </label>
+                        <label class="label_prize col-sm-4 col-md-4" for="prize_second_runner">
+                            <input placeholder="2nd Runner's Up" name="prize_second_runner" type="Number" class="form-control" disabled /><div>$</div>
+                        </label>
                       </div>
                       <label class="checkbox-inline">
                         {% if hunt.is_published  %}

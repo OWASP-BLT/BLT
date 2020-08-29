@@ -6,55 +6,166 @@
 {% providers_media_js %}
 {% load i18n %}
 {% block content %}
+<style type="text/css">
+    
+
+img {
+  height: auto;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.btn {
+  color: #ffffff;
+  padding: 0.8rem;
+  font-size: 14px;
+  text-transform: uppercase;
+  border-radius: 4px;
+  font-weight: 400;
+  display: block;
+  width: 100%;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+}
+
+.btn:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cards_item {
+  display: flex;
+  padding: 1rem;
+}
+
+@media (min-width: 40rem) {
+  .cards_item {
+    width: 50%;
+  }
+}
+
+@media (min-width: 56rem) {
+  .cards_item {
+    width: 33.3333%;
+  }
+}
+
+.card {
+  background-color: white;
+  border-radius: 0.25rem;
+  box-shadow: 0 20px 40px -14px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.card_content {
+  padding: 1rem;
+  background: linear-gradient(to bottom left, #EF8D9C 40%, #FFC39E 100%);
+}
+
+.card_title {
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: capitalize;
+  margin: 0px;
+}
+
+.card_text {
+  color: #ffffff;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 1.25rem;    
+  font-weight: 400;
+}
+</style>
                 <div>
-                    <div class="col_3">
-                        <h3 class="text-left blank1">Ongoing Hunt</h3>                        
-                        <div class="col-md-3 widget widget1">
-                            <div class="r3_counter_box">
-                                <i class="fa fa-mail-forward"></i>
-                                <div class="stats">
-                                  <h5>Description<span></span></h5>
-                                  <div class="hunt">
-                                    <p>A Hunt</p>
-                                  </div>
-                                </div>
-                            </div>
+                    {% if upcoming_hunts %}
+                        <div class="col_3">
+                            <h3 class="text-left blank1">Upcoming Hunt</h3>                        
+                              <ul class="cards">
+                                {% for hunt in upcoming_hunts %}
+                                    <li class="cards_item">
+                                      <div class="card">
+                                        {% if hunt.logo %}
+                                        <div class="card_image"><img src="{{hunt.logo}}"></div>
+                                        {% endif %}
+                                        <div class="card_content">
+                                          <h2 class="card_title">{{hunt.name}}</h2>
+                                          <p class="card_text">{{hunt.domain.name}}, {{hunt.domain.company.name}} - Starts on {{hunt.starts_on}}</p>
+                                          <a href="/dashboard/user/hunt/{{hunt.pk}}">
+                                            <button class="btn card_btn">Read More</button>
+                                          </a>
+                                        </div>
+                                      </div>
+                                    </li>    
+                                {% endfor %}
+                              </ul>
+                            <div class="clearfix"> </div>
                         </div>
-                        <div class="clearfix"> </div>
-                    </div>
+                    {% endif %}
                 </div>
                 <div>
-                    <div class="col_3">
-                        <h3 class="text-left blank1">Upcoming Hunt</h3>
-                        <div class="col-md-3 widget widget1">
-                            <div class="r3_counter_box">
-                                <i class="fa fa-mail-forward"></i>
-                                <div class="stats">
-                                  <h5>Description <span></span></h5>
-                                  <div class="hunt">
-                                    <p>A hunt</p>
-                                  </div>
-                                </div>
-                            </div>
+                    {% if ongoing_hunt %}
+                        <div class="col_3">
+                            <h3 class="text-left blank1">Ongoing Hunt</h3>                        
+                              <ul class="cards">
+                                {% for hunt in ongoing_hunt %}
+                                    <li class="cards_item">
+                                      <div class="card">
+                                        {% if hunt.logo %}
+                                        <div class="card_image"><img src="{{hunt.logo}}"></div>
+                                        {% endif %}
+                                        <div class="card_content">
+                                          <h2 class="card_title">{{hunt.name}}</h2>
+                                          <p class="card_text">{{hunt.domain.name}}, {{hunt.domain.company.name}} - Already Started</p>
+                                          <a href="/dashboard/user/hunt/{{hunt.pk}}">
+                                            <button class="btn card_btn">Read More</button>
+                                          </a>
+                                        </div>
+                                      </div>
+                                    </li>    
+                                {% endfor %}
+                              </ul>
+                            <div class="clearfix"> </div>
                         </div>
-                        <div class="clearfix"> </div>
-                    </div>
+                    {% endif %}
                 </div>
                 <div>
-                    <div class="col_3">
-                        <h3 class="text-left blank1">Previous Hunt</h3>
-                        <div class="col-md-3 widget widget1">
-                            <div class="r3_counter_box">
-                                <i class="fa fa-mail-forward"></i>
-                                <div class="stats">
-                                  <h5>Descrirption<span></span></h5>
-                                  <div class="hunt">
-                                    <p>A Hunt</p>
-                                  </div>
-                                </div>
-                            </div>
+                    {% if previous_hunt %}
+                        <div class="col_3">
+                            <h3 class="text-left blank1">Previous Hunt</h3>                        
+                              <ul class="cards">
+                                {% for hunt in previous_hunt %}
+                                    <li class="cards_item">
+                                      <div class="card">
+                                        {% if hunt.logo %}
+                                        <div class="card_image"><img src="{{hunt.logo}}"></div>
+                                        {% endif %}
+                                        <div class="card_content">
+                                          <h2 class="card_title">{{hunt.name}}</h2>
+                                          <p class="card_text">{{hunt.domain.name}}, {{hunt.domain.company.name}} - Ended on {{hunt.end_on}}</p>
+                                          <a href="/dashboard/user/hunt/{{hunt.pk}}">
+                                            <button class="btn card_btn">Read More</button>
+                                          </a>
+                                        </div>
+                                      </div>
+                                    </li>    
+                                {% endfor %}
+                              </ul>
+                            <div class="clearfix"> </div>
                         </div>
-                        <div class="clearfix"> </div>
-                    </div>
+                    {% endif %}
                 </div>
+                
 {% endblock %}

@@ -1,0 +1,128 @@
+{% extends "base_dashboard_user.html" %}
+{% load static %}
+{% block content %}
+<style>
+  #banner {
+ background:
+   url("https://i.postimg.cc/FzSHSbhQ/img-soccer.jpg") no-repeat;
+  background-size: cover;
+  height: 400px;
+  background-position: 0 0;
+}
+
+@media screen and (max-width:768px){
+  
+ #banner {
+  background-size: cover;
+  height: 300px;
+  background-position: right bottom;
+} 
+  
+#banner h1{
+  font-size: 3.2rem !important;
+}
+ 
+  #banner p{
+    padding:0.5rem;
+    text-align: center;
+  }
+  
+}
+.text-light {
+  color: #f8f9fa!important;
+}
+
+h5.card-title{
+  line-height:1.6rem;
+}
+
+
+#footer a {
+    padding: 0.8rem;
+}
+.badge-company {
+      display: inline-block;
+    padding: .25em .4em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: .25rem;
+}
+.pl-4, .px-4 {
+    padding-left: 1.5rem!important;
+}
+.mt-4, .my-4 {
+    margin-top: 1.5rem!important;
+}
+.font-italic {
+    font-style: italic!important;
+}
+.start-btn {
+    float: right;
+    margin: 100px 25px;
+    width: 150px;
+}
+.time-remaining-btn {
+    float: right;
+    margin: 100px 25px;
+    width: auto;
+
+}
+
+</style>
+<link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
+  <link href="{% static 'mdeditor/css/editormd.preview.css' %}" rel="stylesheet">
+                
+
+<main>
+  <!--banner-->
+  <article id="banner" class="jumbotron jumbotron-fluid">
+    <div class="font-italic pl-4 mt-4 text-light">
+      <h1 class="display-1 font-italic">
+        {{hunt.domain.company.name}}
+        <span class="badge-company badge-primary shadow">{{hunt.domain.name}}</span>
+      </h1>
+
+      <p class="lead mt-5">
+        Ended
+      </p>
+    </div>
+  </article>
+  <!--banner end-->
+
+</main>
+
+ <div id="content"><textarea>{{ hunt.description }}</textarea></div>
+ <div>Hunt URL : {{ hunt.domain.url }}</div>
+
+                  <script src="{% static 'mdeditor/js/jquery.min.js' %}"></script>
+  <script src="{% static 'mdeditor/js/editormd.min.js' %}"></script>
+  <script src="{% static 'mdeditor/js/lib/marked.min.js' %}"></script>
+  <script src="{% static 'mdeditor/js/lib/prettify.min.js' %}"></script>
+  <script src="{% static 'mdeditor/js/lib/raphael.min.js' %}"></script>
+  <script src="{% static 'mdeditor/js/lib/underscore.min.js' %}"></script>
+  <script src="{% static 'mdeditor/js/lib/sequence-diagram.min.js' %}"></script>
+  <script src="{% static 'mdeditor/js/lib/flowchart.min.js' %}"></script>
+  <script src="{% static 'mdeditor/js/lib/jquery.flowchart.min.js' %}"></script>
+
+  <script>
+  $(function () {
+      editormd.markdownToHTML("content", {
+          emoji           : true,
+          taskList        : true,
+          tex             : true,  
+          flowChart       : true,  
+          sequenceDiagram : true,  
+      });
+
+      $(".reference-link").each(function (i,obj) {
+        console.log(obj)
+      })
+  })
+
+</script>
+
+{% endblock %}

@@ -40,8 +40,61 @@
         {% block style %}
         {% endblock %}
     </style>
+    <style>
+        .content {
+            font-family: 'Helvetica Neue';
+            display: flex;
+            flex-flow: column nowrap;
+            justify-content: center;
+            align-items: center;
+            display: none;
+            font-size: 30px;
+            margin: 0;
+            position: absolute;
+            top: 50%;
+            -ms-transform: translateY(-50%);
+            transform: translateY(-50%);
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .title { 
+          font-weight: bold;
+          color: #e7e7e7;
+        }
+
+        .symbol {
+          -webkit-text-stroke: 13px #212121;
+          font-size: 150px;
+          color: #ff2c3c;
+        }
+
+        .text { 
+          margin-top: 15px;
+          font-size: 25px;
+          color: #e7e7e7;
+          text-align: center; 
+          font-family: 'avenir';
+          font-weight: lighter;
+        }
+    </style>
 </head>
 <body>
+
+<div class="overlay">
+             <div class="center">
+      <div class="dot-1"></div>
+      <div class="dot-2"></div>
+      <div class="dot-3"></div>
+   </div>
+</div>
+
+<div class='content'>
+  <div class='fa fa-check-circle-o symbol'></div>
+  <div class='title'>Thank you for subscribing!</div>
+  <div class='text'></div>
+</div>
+<div class="base-body">
 <nav class="navbar navbar-default navbar-fixed-top">
     <div class="container-fluid">
         <div class="navbar-header">
@@ -97,7 +150,7 @@
                                 {% else %}
                                     {% gravatar request.user.email 20 %}
                                 {% endif %}
-                                {{ request.user.username }} ({{ request.user|score|default:"0" }} Pts) <i
+                                {{ request.user.username }} ({{ request.user|score|default:"0" }} Pts)  - {{wallet.current_balance}} $<i
                                     class="fa fa-caret-down"></i>
                             </a>
                             <ul class="dropdown-menu dropdown-user">
@@ -277,6 +330,8 @@
 
             <a href="/terms">Terms of Service</a>
 
+            <a href="/join">Join ?</a>
+
         </p>
     </div>
 
@@ -329,7 +384,7 @@
         </a></p>
     </div>
 </footer> -->
-
+</div>
 <script src="{% static "vendor/bootstrap/js/bootstrap.min.js" %}"></script>
 <script src="{% static 'js/ui.js' %}"></script>
 {% block after_js %}
