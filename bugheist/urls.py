@@ -16,7 +16,7 @@ from website.views import (UserProfileDetailView, IssueCreate, UploadCreate, Ema
                            HuntCreate, DomainDetailView, StatsDetailView, InviteCreate, CreateInviteFriend,
                            ScoreboardView,get_score,CustomObtainAuthToken,create_tokens,issue_count,get_scoreboard,
                            CreateHunt, DraftHunts, UpcomingHunts, CompanySettings, OngoingHunts, PreviousHunts,
-                           DomainList, UserProfileDetailsView )
+                           DomainList, UserProfileDetailsView, JoinCompany )
 from rest_framework.authtoken import views
 
 favicon_view = RedirectView.as_view(url='/static/favicon.ico', permanent=True)
@@ -26,21 +26,29 @@ admin.autodiscover()
 urlpatterns = [
                   url(r'^$', website.views.index, name='index'),
                   url(r'^dashboard/company/$', website.views.company_dashboard, name='company_dashboar_home'),
+                  url(r'^dashboard/user/profile/addbalance$', website.views.addbalance, name='addbalance'),
+                  url(r'^dashboard/user/profile/withdraw$', website.views.withdraw, name='withdraw'),
+                  url(r'^dashboard/user/stripe/connected/(?P<username>[^/]+)/$', website.views.stripe_connected, name='stripe_connected'),
                   url(r'^dashboard/admin$', website.views.admin_dashboard, name='admin_dashboard'),
                   url(r'^dashboard/admin/company$', website.views.admin_company_dashboard, name='admin_company_dashboard'),
                   url(r'^dashboard/admin/company/addorupdate$', website.views.add_or_update_company, name='add_or_update_company'),
                   url(r'^dashboard/company/domain/addorupdate$', website.views.add_or_update_domain, name='add_or_update_domain'),
                   path('dashboard/company/domain/<int:pk>/', website.views.company_dashboard_domain_detail, name='company_dashboard_domain_detail'),
                   path('dashboard/company/hunt/<int:pk>/', website.views.company_dashboard_hunt_detail, name='company_dashboard_hunt_detail'),
+                  path('dashboard/user/hunt/<int:pk>/', website.views.view_hunt, name='view_hunt'),
+                  path('dashboard/user/hunt/<int:pk>/submittion/', website.views.submit_bug, name='submit_bug'),
+                  path('dashboard/user/hunt/<int:pk>/results/', website.views.hunt_results, name='hunt_results'),
                   path('dashboard/company/hunt/<int:pk>/edit', website.views.company_dashboard_hunt_edit, name='company_dashboard_hunt_edit'),
                   path('dashboard/admin/company/<int:pk>/', website.views.admin_company_dashboard_detail, name='admin_company_dashboard_detail'),
                   url(r'^dashboard/company/hunt/create$', CreateHunt.as_view(), name='create_hunt'),
                   url(r'^dashboard/company/hunt/drafts$', DraftHunts.as_view(), name='draft_hunts'),
                   url(r'^dashboard/company/hunt/upcoming$', UpcomingHunts.as_view(), name='upcoming_hunts'),
                   url(r'^dashboard/company/hunt/previous$', PreviousHunts.as_view(), name='previous_hunts'),
+                  path('dashboard/company/hunt/previous/<int:pk>/', website.views.company_hunt_results, name='company_hunt_results'),
                   url(r'^dashboard/company/hunt/ongoing$', OngoingHunts.as_view(), name='ongoing_hunts'),
                   url(r'^dashboard/company/domains$', DomainList.as_view(), name='domain_list'),
                   url(r'^dashboard/company/settings$', CompanySettings.as_view(), name='company-settings'),
+                  url(r'^join$', JoinCompany.as_view(), name='join'),
                   url(r'^dashboard/company/settings/role/update$', website.views.update_role, name='update-role'),
                   url(r'^dashboard/company/settings/role/add$', website.views.add_role, name='add-role'),
                   url(r'^dashboard/user/$', website.views.user_dashboard, name='user'),
@@ -100,7 +108,7 @@ urlpatterns = [
                   url(r'^api/v1/', include(router.urls)),
                   url(r'^api/v1/userscore/$', website.views.get_score),
                   url(r'^authenticate/', CustomObtainAuthToken.as_view()),
-                  url(r'^api/v1/create_tokens/$', website.views.create_tokens),
+                  url(r'^api/v1/createwallet/$', website.views.create_wallet),
                   url(r'^api/v1/count/$', website.views.issue_count),
                   url(r'^api/v1/createissues/$', csrf_exempt(IssueCreate.as_view()), name="issuecreate"),
                   url(r'^api/v1/delete_issue/(?P<id>\w+)/$', csrf_exempt(website.views.delete_issue)),   

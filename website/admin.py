@@ -4,7 +4,7 @@ from django.template.defaultfilters import truncatechars
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
-from website.models import Issue, Points, Hunt, Domain, UserProfile, Subscription, CompanyAdmin, Company
+from website.models import Winner, Payment, Transaction, Wallet, Issue, Points, Hunt, Domain, UserProfile, Subscription, CompanyAdmin, Company
 
 
 class UserResource(resources.ModelResource):
@@ -27,6 +27,33 @@ class CompanyAdminResource(resources.ModelResource):
 class CompanyResource(resources.ModelResource):
     class Meta:
         model = Company
+
+class WalletResource(resources.ModelResource):
+    class Meta:
+        model = Wallet
+
+
+class WinnerResource(resources.ModelResource):
+    class Meta:
+        model = Winner
+
+
+class PaymentResource(resources.ModelResource):
+    class Meta:
+        model = Payment
+
+
+class WinnerAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'hunt', 'winner', 'runner', 'second_runner', 'prize_distributed')
+
+class WalletAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'user', 'current_balance', 'created_at')
+
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'wallet', 'value', 'active')
 
 
 class IssueAdmin(admin.ModelAdmin):
@@ -88,3 +115,6 @@ admin.site.register(CompanyAdmin, CompanyUserAdmin)
 admin.site.register(Company, CompanyAdmins)
 
 admin.site.register(Subscription, SubscriptionAdmin)
+admin.site.register(Wallet, WalletAdmin)
+admin.site.register(Winner, WinnerAdmin)
+admin.site.register(Payment, PaymentAdmin)
