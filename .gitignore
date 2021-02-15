@@ -2,7 +2,10 @@ venv
 *.pyc
 staticfiles
 .env
+/env
 db.sqlite3
 .idea
 /media
 .vagrant
+*.env
+.vscode
