@@ -23,6 +23,7 @@ RUN pip install -r requirements.txt
 
 RUN python manage.py migrate --noinput
 RUN python manage.py loaddata website/fixtures/initial_data.json
+RUN python manage.py collectstatic
 RUN python manage.py initsuperuser
 
 CMD ["python","manage.py","runserver"]
