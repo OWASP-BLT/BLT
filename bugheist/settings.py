@@ -13,7 +13,11 @@ import sys
 import dj_database_url
 from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
+import environ
 
+env = environ.Env()
+# reading .env file
+environ.Env.read_env()
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -364,6 +368,17 @@ MDEDITOR_CONFIGS = {
         'watch' : False
         }
 }
+
+# SuperUser Details
+
+SUPERUSER_USERNAME = env('SUPERUSER', default='admin123')
+SUPERUSER_EMAIL = env('SUPERUSER_MAIL', default='admin123@gmail.com')
+SUPERUSER_PASSWORD = env('SUPERUSER_PASSWORD', default='admin@123')
+
+
+SUPERUSERS = (
+    (SUPERUSER_USERNAME, SUPERUSER_EMAIL, SUPERUSER_PASSWORD),
+)
 
 STRIPE_LIVE_PUBLIC_KEY = os.environ.get("STRIPE_LIVE_PUBLIC_KEY", "<your publishable key>")
 STRIPE_LIVE_SECRET_KEY = os.environ.get("STRIPE_LIVE_SECRET_KEY", "<your secret key>")
