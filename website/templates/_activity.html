@@ -1,9 +1,10 @@
 {% load gravatar %}
 <div class="list-group-item activity-strip">
     <div class="activity-strip-section">
-        {% if activity.user.socialaccount_set.all.0.get_avatar_url %}
-            <img src="{{ activity.user.socialaccount_set.all.0.get_avatar_url }}" width="100"
-                 class="img-responsive img-rounded">
+        {% if activity.user.userprofile.avatar %}
+            <img src="{{ activity.user.userprofile.avatar }}" width="100" class="img-responsive img-rounded">
+        {% elif activity.user.socialaccount_set.all.0.get_avatar_url %}
+            <img src="{{ activity.user.socialaccount_set.all.0.get_avatar_url }}" width="100" class="img-responsive img-rounded">
         {% else %}
             <img src="{% gravatar_url activity.user.email 100 %}" width="100" class="img-responsive img-rounded">
         {% endif %}
