@@ -25,7 +25,7 @@ pylibmc = {version = "*",sys_platform = "!= 'win32'"}
 boto = "*"
 django-cors-headers = "*"
 protobuf = {version = "*",sys_platform = "!= 'win32'"}
-django-storages = {version = "*",sys_platform = "!= 'win32'",extras = ["google"]}
+django-storages = {extras = ["google-cloud"], version = "*"}
 django-timedeltafield = "*"
 easyprocess = "*"
 "giturlparse.py" = "*"
@@ -54,7 +54,6 @@ django-star-ratings = "*"
 stripe = "*"
 django-environ = "*"
 django-humanize = "*"
-google-cloud = "*"
 
 [dev-packages]
 
