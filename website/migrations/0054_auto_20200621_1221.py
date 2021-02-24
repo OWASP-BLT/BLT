@@ -20,6 +20,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='hunt',
             name='description',
-            field=mdeditor.fields.MDTextField(),
+            field=mdeditor.fields.MDTextField(blank=True, null=True),
         ),
     ]
