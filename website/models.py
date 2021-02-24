@@ -142,7 +142,7 @@ def validate_image(fieldfile_obj):
 class Hunt(models.Model):
 	domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
 	name = models.CharField(max_length=25)
-	description = MDTextField()
+	description = MDTextField(null=True, blank=True)
 	url = models.URLField()
 	prize = models.IntegerField(null=True, blank=True)
 	prize_winner = models.DecimalField(max_digits=6, decimal_places=2, default=0)
