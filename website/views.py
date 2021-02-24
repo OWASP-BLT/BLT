@@ -80,7 +80,7 @@ def index(request, template="index.html"):
 		domain_admin = None
 	wallet = None
 	if request.user.is_authenticated:
-		wallet = Wallet.objects.get(user=request.user)
+		wallet, created = Wallet.objects.get_or_create(user=request.user)
 	context = {
 		'activities': Issue.objects.all()[0:10],
 		'domains': domains,
@@ -1490,7 +1490,7 @@ class CreateHunt(TemplateView):
 		try:
 			domain_admin = CompanyAdmin.objects.get(user=request.user)
 			if (domain_admin.role == 1 and (str(domain_admin.domain.pk) == ((request.POST['domain']).split('-'))[0].replace(" ", ""))) or domain_admin.role == 0:
-				wallet = Wallet.objects.get(user=request.user)
+				wallet, created = Wallet.objects.get_or_create(user=request.user)
 				total_amount = Decimal(request.POST['prize_winner']) + Decimal(request.POST['prize_runner']) + Decimal(request.POST['prize_second_runner'])
 				if total_amount > wallet.current_balance:
 					return HttpResponse("failed")
@@ -2002,7 +2002,7 @@ def withdraw(request):
 	print("WITHDRAWING")
 	if request.method == "POST":
 		if request.user.is_authenticated:
-			wallet = Wallet.objects.get(user=request.user)
+			wallet, created = Wallet.objects.get_or_create(user=request.user)
 			if(wallet.current_balance<Decimal(request.POST['amount'])):
 				return HttpResponse("msg : amount greater than wallet balance")
 			else:
@@ -2076,7 +2076,7 @@ def addbalance(request):
 				print('Key: %s' % (key) ) 
 				# print(f'Key: {key}') in Python >= 3.7
 				print('Value %s' % (value) )
-			wallet = Wallet.objects.get(user=request.user)
+			wallet, created = Wallet.objects.get_or_create(user=request.user)
 			from django.conf import settings
 			stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
 			charge = stripe.Charge.create(
@@ -2092,7 +2092,7 @@ def addbalance(request):
 @login_required(login_url='/accounts/login')
 def stripe_connected(request, username):
 	user = User.objects.get(username = username)
-	wallet = Wallet.objects.get(user = user)
+	wallet, created = Wallet.objects.get_or_create(user = user)
 	from django.conf import settings
 	stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
 	account = stripe.Account.retrieve(wallet.account_id)
@@ -2127,7 +2127,7 @@ class JoinCompany(TemplateView):
 	@method_decorator(login_required)
 	def get(self, request, *args, **kwargs):
 		# try:
-		wallet = Wallet.objects.get(user=request.user)
+		wallet, created = Wallet.objects.get_or_create(user=request.user)
 		context = {'wallet': wallet}
 			# return render(request, self.template_name, context)
 		return render(request, self.template_name, context)
@@ -2149,7 +2149,7 @@ class JoinCompany(TemplateView):
 			return JsonResponse({'error': 'Empty Fields'})
 		paymentType = request.POST['paymentType']
 		if paymentType == 'wallet':
-			wallet = Wallet.objects.get(user=request.user)
+			wallet, created = Wallet.objects.get_or_create(user=request.user)
 			if wallet.current_balance < sub.charge_per_month:
 				return JsonResponse({'error': 'insufficient balance in Wallet'})
 			wallet.withdraw(sub.charge_per_month)
@@ -2351,15 +2351,15 @@ def company_hunt_results(request, pk, template="company_hunt_results.html"):
 			balance = stripe.Balance.retrieve()
 			if balance.available[0].amount > total_amount*100:
 				if winner.winner:
-					wallet = Wallet.objects.get(user=winner.winner)
+					wallet, created = Wallet.objects.get_or_create(user=winner.winner)
 					wallet.deposit(hunt.prize_winner)
 					wallet.save()
 				if winner.runner:
-					wallet = Wallet.objects.get(user=winner.runner)
+					wallet, created = Wallet.objects.get_or_create(user=winner.runner)
 					wallet.deposit(hunt.prize_runner)
 					wallet.save()
 				if winner.second_runner:
-					wallet = Wallet.objects.get(user=winner.second_runner)
+					wallet, created = Wallet.objects.get_or_create(user=winner.second_runner)
 					wallet.deposit(hunt.prize_second_runner)
 					wallet.save()
 			winner.prize_distributed = True
