@@ -40,6 +40,8 @@ django-debug-toolbar==3.2
 
 django-email-obfuscator==0.1.5
 
+django-environ==0.4.5
+
 django-filter==2.4.0
 
 django-gravatar2==1.4.4
@@ -66,8 +68,6 @@ djangorestframework==3.12.2
 
 easyprocess==0.3
 
-environ==1.0
-
 et-xmlfile==1.0.1
 
 giturlparse.py==0.0.5
@@ -90,7 +90,7 @@ parse==1.19.0
 
 pillow==8.1.0
 
-protobuf==3.15.1; sys_platform != 'win32'
+protobuf==3.15.2; sys_platform != 'win32'
 
 psycopg2-binary==2.8.6
 
