@@ -239,6 +239,7 @@ if 'DATABASE_URL' in os.environ:
 
     GS_ACCESS_KEY_ID = os.environ.get('GS_ACCESS_KEY_ID', 'blank')
     GS_SECRET_ACCESS_KEY = os.environ.get('GS_SECRET_ACCESS_KEY', 'blank')
+    GOOGLE_APPLICATION_CREDENTIALS = "/app/google-credentials.json"
     GS_BUCKET_NAME = 'bhfiles'
     DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
     GS_FILE_OVERWRITE = False
