@@ -25,7 +25,7 @@ pylibmc = {version = "*",sys_platform = "!= 'win32'"}
 boto = "*"
 django-cors-headers = "*"
 protobuf = {version = "*",sys_platform = "!= 'win32'"}
-django-storages = {extras = ["google-cloud"], version = "*"}
+django-storages = {extras = ["google"], version = "*"}
 django-timedeltafield = "*"
 easyprocess = "*"
 "giturlparse.py" = "*"
