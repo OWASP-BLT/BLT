@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "3ab77a40d09ecf671d6024c9d15e8a43c81f145e77436b40a824b89389083ad9"
+            "sha256": "98f275652a85e5de785cd4fbf327837d19f8f4ee02a4b0f346ad6b122d8f2066"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -284,13 +284,13 @@
         },
         "django-storages": {
             "extras": [
-                "google"
+                "google-cloud"
             ],
             "hashes": [
                 "sha256:c823dbf56c9e35b0999a13d7e05062b837bae36c518a40255d522fbe3750fbb4",
                 "sha256:f28765826d507a0309cfaa849bd084894bc71d81bf0d09479168d44785396f80"
             ],
-            "markers": "sys_platform != 'win32'",
+            "index": "pypi",
             "version": "==1.11.1"
         },
         "django-tellme": {
@@ -343,14 +343,6 @@
             ],
             "index": "pypi",
             "version": "==0.0.5"
-        },
-        "google-cloud": {
-            "hashes": [
-                "sha256:01430187cf56df10a9ba775dd547393185d4b40741db0ea5889301f8e7a9d5d3",
-                "sha256:fb1ab7b0548fe44b3d538041f0a374505b7f990d448a935ea36649c5ccab5acf"
-            ],
-            "index": "pypi",
-            "version": "==0.34.0"
         },
         "gunicorn": {
             "hashes": [
