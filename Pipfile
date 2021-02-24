@@ -51,8 +51,8 @@ django-tz-detect = "*"
 django-tellme = "*"
 django-bootstrap-datepicker-plus = "*"
 django-star-ratings = "*"
-environ = "*"
 stripe = "*"
+django-environ = "*"
 
 [dev-packages]
 
