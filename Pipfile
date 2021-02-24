@@ -54,6 +54,7 @@ django-star-ratings = "*"
 stripe = "*"
 django-environ = "*"
 django-humanize = "*"
+google-cloud = "*"
 
 [dev-packages]
 
