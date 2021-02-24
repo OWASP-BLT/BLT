@@ -25,13 +25,11 @@
     <link href="{% static "vendor/font-awesome/css/font-awesome.min.css" %}" rel="stylesheet" type="text/css">
     <link href="{% static "css/animate.css" %}" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400" rel="stylesheet">
-    <link href="{% static "css/introjs.css" %}" rel="stylesheet" type="text/css">
     <link href="{% static "css/main.css" %}" rel="stylesheet" type="text/css">
     <link href="{% static "css/text-slider.css" %}" rel="stylesheet" type="text/css">
     <link href="{% static "css/activity.css" %}" rel="stylesheet" type="text/css">
     <script src="{% static "vendor/jquery/jquery.min.js" %}"></script>
     <script src="{% static "js/notify.js" %}"></script>
-    <script src="{% static "js/intro.js" %}"></script>
     <script src="{% static "js/text-slider.js" %}"></script>
     <script src="{% static "js/embed.js" %}"></script>
     <!--[if lt IE 9]>
@@ -42,8 +40,61 @@
         {% block style %}
         {% endblock %}
     </style>
+    <style>
+        .content {
+            font-family: 'Helvetica Neue';
+            display: flex;
+            flex-flow: column nowrap;
+            justify-content: center;
+            align-items: center;
+            display: none;
+            font-size: 30px;
+            margin: 0;
+            position: absolute;
+            top: 50%;
+            -ms-transform: translateY(-50%);
+            transform: translateY(-50%);
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .title { 
+          font-weight: bold;
+          color: #e7e7e7;
+        }
+
+        .symbol {
+          -webkit-text-stroke: 13px #212121;
+          font-size: 150px;
+          color: #ff2c3c;
+        }
+
+        .text { 
+          margin-top: 15px;
+          font-size: 25px;
+          color: #e7e7e7;
+          text-align: center; 
+          font-family: 'avenir';
+          font-weight: lighter;
+        }
+    </style>
 </head>
 <body>
+
+<div class="overlay">
+             <div class="center">
+      <div class="dot-1"></div>
+      <div class="dot-2"></div>
+      <div class="dot-3"></div>
+   </div>
+</div>
+
+<div class='content'>
+  <div class='fa fa-check-circle-o symbol'></div>
+  <div class='title'>Thank you for subscribing!</div>
+  <div class='text'></div>
+</div>
+<div class="base-body">
 <nav class="navbar navbar-default navbar-fixed-top">
     <div class="container-fluid">
         <div class="navbar-header">
@@ -56,68 +107,100 @@
             </button>
             <a class="navbar-brand" href="/">
                 <img src="{% static "img/logo-small-transparent.png" %}">
+                <div><span class="brand-slogan" style="
+                    text-align: left;
+                    font-size: 66%;
+                ">Win Prizes for reporting bugs</span></div>
+                <div><span class="brand-slogan" style="
+                    text-align: left;
+                    font-size: 66%;
+                ">We want everyone to love our website</span></div>
             </a>
         </div>
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-            <ul class="nav navbar-nav navbar-right">
-                <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Menu
-                    <span class="caret"></span></a>
-                    <ul class="dropdown-menu">
-                      <li><a href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en"
-                       target="_new">{% trans "Add to chrome" %}</a></li>
-                    <li><a href="/social">{% trans "Social" %}</a></li>
-                    <li><a href="/start">{% trans "Bug Hunt" %}</a></li>
-                    </ul>
-                </li>
-                <li><a href="#" id="startTour" class="start-tour">{% trans "Tour" %}</a></li>
+            <div>
 
-                {% if request.user.is_authenticated %}
-                    <li class="dropdown user-menu">
-                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                            {% if request.user.userprofile.avatar %}
-                                <img src="{{ request.user.userprofile.avatar }}">
-                            {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
-                                <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}">
-                            {% else %}
-                                {% gravatar request.user.email 20 %}
-                            {% endif %}
-                            {{ request.user.username }} ({{ request.user|score|default:"0" }} Pts) <i
-                                class="fa fa-caret-down"></i>
-                        </a>
-                        <ul class="dropdown-menu dropdown-user">
-                            <li>
-                                <a href="/accounts/profile/">
-                                    <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
-                                </a>
-                            </li>
-                            <li>
-                                <a href="/accounts/password/change/">
-                                    <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
-                                </a>
-                            </li>
-                            <li class="divider"></li>
-                            <li>
-                                <a href="/accounts/logout/">
-                                    <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
-                                </a>
-                            </li>
+                <ul class="nav navbar-nav navbar-right">
+                    <!-- <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Menu
+                        <span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                          <li><a href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en"
+                           target="_new">{% trans "Add to chrome" %}</a></li>
+                        <li><a href="/social">{% trans "Social" %}</a></li>
+                        <li><a href="/start">{% trans "Bug Hunt" %}</a></li>
                         </ul>
-                    </li>
-                {% else %}
-                    <li><a href="/accounts/signup">{% trans "Signup" %}</a></li>
-                    <li><a href="#login" data-toggle="modal">{% trans "Login" %}</a></li>
-                {% endif %}
-            </ul>
-            <form class="navbar-form navbar-right" action="/search" method="get">
-                <div class="form-group">
-                    <input type="text" name="query" class="form-control" placeholder="{% trans "Search" %}">
-                </div>
-                <button type="submit" class="btn btn-default">
-                    <i class="fa fa-search"></i>
-                </button>
-            </form>
-            <ul class="nav navbar-nav navbar-right">
+                    </li> -->
+                    <li><a href="/start" style="
+                        color: #d9524f;
+                    " class="sponsor-hunt">{% trans "Sponser the leaderboard" %}</a></li>
+                    <li><a href="/start" class="sponsor-hunt">{% trans "Start a Bug Bounty" %}</a></li>
+                    <li><a href="/start" class="sponsor-hunt">{% trans "Start a Heist" %}</a></li>
+                    <li><a href="/issue" class="sponsor-hunt">{% trans "Report a Bug" %}</a></li>
+
+                    {% if request.user.is_authenticated %}
+                        <li class="dropdown user-menu" style="
+                            margin-top: -10px;
+                        ">
+                            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                                {% if request.user.userprofile.avatar %}
+                                    <img src="{{ request.user.userprofile.avatar }}">
+                                {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
+                                    <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}">
+                                {% else %}
+                                    {% gravatar request.user.email 20 %}
+                                {% endif %}
+                                {{ request.user.username }} ({{ request.user|score|default:"0" }} Pts)  - {{wallet.current_balance}} $<i
+                                    class="fa fa-caret-down"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-user">
+                                <li>
+                                    <a href="/accounts/profile/">
+                                        <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="/accounts/password/change/">
+                                        <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
+                                    </a>
+                                </li>
+                                <li class="divider"></li>
+                                <li>
+                                    <a href="/accounts/logout/">
+                                        <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li><a href="/accounts/signup">{% trans "Signup" %}</a></li>
+                        <li><a href="#login" data-toggle="modal">{% trans "Login" %}</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+            <hr class="header-hr"/>
+            <div style="
+                position: absolute;
+                right: 20px;
+                line-height: 50px;
+                top: 91px;
+            ">
+                <form class="navbar-form navbar-right" action="/issue" method="get">
+                    Report a Bug
+                    <div class="form-group" style="margin:0px" >
+                        <input type="text" name="query" class="form-control" placeholder="{% trans "Enter Website" %}">
+                        <input type="text" name="query" class="form-control" placeholder="{% trans "Description" %}">
+                        <input type="file" class="required" id='${multipartFilePath}' name="screenshot"/> 
+                    </div>
+                    <button class="btn" data-intro="Upload a screenshot of the concerned page." name="test_files" type="button">
+                            <i class="fa fa-picture-o" aria-hidden="true"></i> Upload Screenshot
+                        </button>   
+                    <button type="submit" class="btn btn-danger">
+                        Submit Bug
+                    </button>
+                </form>
+            </div>
+            <!-- <ul class="nav navbar-nav navbar-right">
                 <li><p class="navbar-text">Found a bug ?</p></li>
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-intro="Click here to report any kind of bug." data-step="1"
@@ -130,11 +213,11 @@
                                         {% csrf_token %}
                                         <div class="form-group">
                                             <input class="form-control required"
-                                                   placeholder="www.testsite.com/bug-found" name="url"
+                                                   placeholder="www.testsite.com/bug-found" name="url2"
                                                    value="{{ form.url.value|default:"" }}">
                                         </div>
                                         <div class="form-group">
-                                            <textarea data-required="true" name="description" id="description"
+                                            <textarea data-required="true" name="description2" id="description2"
                                                       class="form-control required" rows="3"
                                                       placeholder="{% trans "Describe bug issue" %}">{{ form.description.value|default:"" }}</textarea>
                                         </div>
@@ -152,7 +235,7 @@
                                         <div class="form-group">
                                                         <span>
                                                             <input type="file" class="required"
-                                                                   id='${multipartFilePath}' name="screenshot"/>
+                                                                   id='${multipartFilePath}' name="screenshot2"/>
                                                             <button style="width: 100%" class="btn btn-primary"
                                                                     name="test_files" type="button">
                                                                 <i class="fa fa-upload"
@@ -172,14 +255,16 @@
                         </li>
                     </ul>
                 </li>
-            </ul>
+            </ul> -->
         </div>
     </div>
 </nav>
 <br><br><br><br>
 <div id="wrapper">
     <div id="page-wrapper">
-        <div class="container">
+        <div class="container-fluid" style="
+            margin-top: 120px;
+        ">
             {% block content %}
             {% endblock %}
         </div>
@@ -219,11 +304,43 @@
         </div>
     </div>
 </div>
-<footer id="myFooter">
-    <div class="container-footer">
+<footer class="footer-distributed">
+
+    <div class="footer-right">
+
+        <a href="http://facebook.com/bugheist"><i class="fa fa-facebook"></i></a>
+        <a href="http://twitter.com/bugheist"><i class="fa fa-twitter"></i></a>
+        <a href="http://github.com/bugheist/website"><i class="fa fa-github"></i></a>
+
+    </div>
+
+    <div class="footer-left">
+        <img src="{% static "img/logo-small-transparent-bw.png" %}">
+    </div>
+
+    <div class="footer-center">
+
+        <p class="footer-links">
+            
+            <a class="link-1" href="/about">About</a>
+
+            <a href="/stats">Stats</a>
+
+            <a href="/scoreboard">Company Scoreboard</a>
+
+            <a href="/terms">Terms of Service</a>
+
+            <a href="/join">Join ?</a>
+
+        </p>
+    </div>
+
+</footer>
+<!-- <footer id="myFooter">
+    <div class="container-footer base-footer">
         <div class="row">
             <div class="col-sm-3">
-                <center><img src="{% static "img/logo.png" %}"></center>
+                <center><img src="{% static "img/logo-small-transparent.png" %}"></center>
             </div>
             <div class="col-sm-3">
                 <ul>
@@ -262,12 +379,13 @@
         </div>
     </div>
     <div class="footer-blt">
-        <a href="https://www.owasp.org/index.php/OWASP_Bug_Logging_Tool" target="_new"><p>Powered by OWASP Bug Logging
-            Tool</p>
-        </a>
+        <p>Powered by <a href="https://www.owasp.org/index.php/OWASP_Bug_Logging_Tool" target="_new">OWASP Bug Logging
+            Tool
+        </a></p>
     </div>
-</footer>
-<script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+</footer> -->
+</div>
+<script src="{% static "vendor/bootstrap/js/bootstrap.min.js" %}"></script>
 <script src="{% static 'js/ui.js' %}"></script>
 {% block after_js %}
 {% endblock %}
@@ -288,21 +406,7 @@
     ga('send', 'pageview');
 </script>
 <script type="text/javascript">
-    $(".mbug").click(function () {
-        $(this).addClass("hidden-xs");
-        $(this).addClass("hidden-sm");
-        $(".mnav").removeClass("hidden-xs");
-        $(".mnav").removeClass("hidden-sm");
-    });
     $(function () {
-        $('button[name="test_files"]').on('click', function () {
-            $(this).parent().find('input[type=file]').click();
-        });
-        $('input[name="screenshot"]').on('change', function () {
-            var file = $(this).val().replace('C:\\fakepath\\', '');
-            $(this).parent().find('span').html(file);
-        });
-
         var message = "{{not_verified}}";
         if (message != '')
             $.notify(message, {style: "custom", className: "danger"});
@@ -313,8 +417,7 @@
         {% endif %}
     });
 </script>
-    
-    <script type="text/javascript">
+<script type="text/javascript">
   window._mfq = window._mfq || [];
   (function() {
     var mf = document.createElement("script");
