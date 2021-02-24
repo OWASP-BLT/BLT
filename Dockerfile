@@ -18,8 +18,8 @@ RUN apt-get update && apt-get install -y \
         libmemcached-dev \
         libz-dev
 
-
-RUN pip install -r requirements.txt
+RUN pip install pipenv
+RUN pipenv install
 
 RUN python manage.py migrate --noinput
 RUN python manage.py loaddata website/fixtures/initial_data.json
