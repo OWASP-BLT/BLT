@@ -53,6 +53,7 @@ django-bootstrap-datepicker-plus = "*"
 django-star-ratings = "*"
 stripe = "*"
 django-environ = "*"
+django-humanize = "*"
 
 [dev-packages]
 
