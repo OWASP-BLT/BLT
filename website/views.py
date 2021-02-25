@@ -450,11 +450,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
 			url = 'https://api.github.com/repos/%s/%s/issues' % (p.owner, p.repo)
 
-			auth = HTTPBasicAuth(os.environ.get("GITHUB_USERNAME"), os.environ.get("GITHUB_PASSWORD"))
 			issue = {'title': obj.description,
 					 'body': "![0](" + obj.screenshot.url + ") http://bugheist.com/issue/" + str(obj.id),
 					 'labels': ['bug', 'bugheist']}
-			r = requests.post(url, json.dumps(issue), auth=auth)
+			r = requests.post(url, json.dumps(issue), headers={'Authorization': 'token ' + os.environ.get("GITHUB_ACCESS_TOKEN")})
 			response = r.json()
 			obj.github_url = response['html_url']
 			obj.save()
