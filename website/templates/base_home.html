@@ -34,8 +34,6 @@
     <script src="{% static "js/intro.js" %}"></script>
     <script src="{% static "js/text-slider.js" %}"></script>
     <script src="{% static "js/embed.js" %}"></script>
-    <script src='https://www.google.com/recaptcha/api.js'></script>
-
     <!--[if lt IE 9]>
         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
@@ -163,8 +161,6 @@
                                                             <center><span style="margin-top: 10px;"
                                                                           class="badge badge-important"></span></center>
                                                         </span>
-                                        </div>
-                                        <div class="g-recaptcha" data-sitekey = {{ YOUR_RECAPTCHA_SITE_KEY }}>
                                         </div>
                                         <div class="bottom text-center">
                                             <button type="submit" class="btn btn-default">{% trans "Report Bug" %} <i
