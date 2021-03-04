@@ -14,7 +14,7 @@ import requests.exceptions
 import base64
 import six
 import uuid
-from django.conf import settings
+
 from django_cron import CronJobBase, Schedule
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from allauth.account.models import EmailAddress
@@ -96,8 +96,7 @@ def index(request, template="index.html"):
 		'user_count': user_count,
 		'wallet': wallet,
 		'hunt_count': hunt_count,
-		'domain_count': domain_count,
-		'YOUR_RECAPTCHA_SITE_KEY': settings.GOOGLE_RECAPTCHA_SITE_KEY
+		'domain_count': domain_count
 	}
 	return render(request, template, context)
 
@@ -411,20 +410,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
 			django_file = File(reopen)
 			obj.screenshot.save(self.request.POST.get('screenshot-hash') + '.png', django_file, save=True)
 		obj.user_agent = self.request.META.get('HTTP_USER_AGENT')
-		recaptcha_response = self.request.POST.get('g-recaptcha-response')
-		url = 'https://www.google.com/recaptcha/api/siteverify'
-		values = { 
-			'secret': settings.GOOGLE_RECAPTCHA_SECRET_KEY, 
-			'response': recaptcha_response 
-		}
-		data = urllib.parse.urlencode(values).encode()
-		req =  urllib.request.Request(url, data=data)
-		response = urllib.request.urlopen(req)
-		import json
-		result = json.loads(response.read().decode())
-		if not result["success"]:
-			messages.error(self.request, 'Invalid reCAPTCHA. Please try again.')
-			return HttpResponseRedirect(self.request.META.get('HTTP_REFERER'))
 		obj.save()
 
 		if self.request.user.is_authenticated:
@@ -474,9 +459,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
 			obj.save()
 
 		redirect_url = '/report'
-
 		# redirect users to login
-		if (not (self.request.user.is_authenticated or tokenauth)):
+		if not (self.request.user.is_authenticated or tokenauth):
 			# we store the issue id on the user session to assign it as soon as he login/register
 			self.request.session['issue'] = obj.id
 			self.request.session['created'] = created
@@ -967,7 +951,6 @@ class IssueView(DetailView):
 		ipdetails.user = self.request.user
 		ipdetails.address = get_client_ip(request)
 		ipdetails.issuenumber =  self.object.id
-		
 		try:
 			if self.request.user.is_authenticated:
 				try:
@@ -1303,7 +1286,7 @@ def get_score(request):
 	users = list()
 	temp_users = User.objects.annotate(total_score=Sum('points__score')).order_by(
 			'-total_score').filter(total_score__gt=0)
-	rank_user = 1
+	rank_user = 1;
 	for each in temp_users.all():
 		temp = dict()
 		temp['rank'] = rank_user
@@ -1343,7 +1326,7 @@ def issue_count(request):
 def get_scoreboard(request):
 	from PIL import Image
 	scoreboard = list()
-	temp_domain = Domain.objects.all()
+	temp_domain = Domain.objects.all();
 	for each in temp_domain:
 		temp = dict()
 		temp['name'] = each.name
