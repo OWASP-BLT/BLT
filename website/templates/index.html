@@ -4,7 +4,7 @@
 {% load socialaccount %}
 {% load humanize %}
 {% providers_media_js %}
-{% load i18n %}
+{% load i18n %}f
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <script src="{% static 'js/activity.js' %}"></script>
@@ -195,7 +195,7 @@
                     <div class="panel-body leaderboard-panel">
                         <strong>The 1st Place Hunter for {% now "F" %} will receive</strong>
                         <div class="box leaderboardbox">
-                            <strong>$25 from <a href="www.owasp.org">Owasp</a></strong>
+                            <strong>No sponsored prizes this month</strong>
                             <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post"
                                   style="display:inline;margin-bottom:10px;">
                                 <input type="hidden" name="cmd" value="_xclick">
