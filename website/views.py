@@ -873,6 +873,7 @@ class ScoreboardView(ListView):
 
 def search(request, template="search.html"):
 	query = request.GET.get('query')
+	query = query.strip()
 	stype = request.GET.get('type')
 	context = None
 	if query is None:
