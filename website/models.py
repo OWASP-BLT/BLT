@@ -299,7 +299,8 @@ def post_to_twitter(sender, instance, *args, **kwargs):
 			return False
 
 
-signals.post_save.connect(post_to_twitter, sender=Issue)
+#signals.post_save.connect(post_to_twitter, sender=Issue)
+
 
 
 class Points(models.Model):
