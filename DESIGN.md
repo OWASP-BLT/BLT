@@ -1,0 +1,1 @@
+This file is to keep track of Design Changes contributed by the community.  Add a description of your design change here with a link to your figma file.  We will then review and merge into our main figma file https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Bugheist-Full-Design
