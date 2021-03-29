@@ -48,3 +48,4 @@ The BLT code is released under [GNU Affero General Public License v3.0 (AGPL-3.0
 - Our staging server is now live at https://bugheist-staging.herokuapp.com/ - staging uses the master branch and we have review apps setup that deploy a new instance for each pull request. 
 - for each new issue, create a new branch with issue-382 or similar matching the issue number - when you commit add fixes #288 to link the issue to the pull request
 - After installing requirements run pipenv lock -r > requirements.txt to freeze them.
+- Our Figma desins are also Open Source you can see them here https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Bugheist-Full-Design to contribute to the design, add a pull request to the design changes file and we will merge them into our main figma file.
