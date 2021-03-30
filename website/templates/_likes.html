@@ -2,7 +2,9 @@
 <a class="btn btn-info btn-xs like_unlike" name="{{ object.pk }}">
     <i class="fa fa-thumbs-up"></i> {{ likes }}
 </a>
-<a href="#likedBy" class="btn btn-xs btn-default liked-by" data-toggle="modal">Liked By</a>
+{% if likes %}
+    <a href="#likedBy" class="btn btn-xs btn-default liked-by" data-toggle="modal">Liked By</a>
+{% endif %}
 
 <div id="likedBy" class="modal" role="dialog">
     <div class="modal-dialog">
