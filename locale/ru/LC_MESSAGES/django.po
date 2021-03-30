@@ -1,0 +1,231 @@
+# Russian Translations.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Sourav Badami <souravbadami@gmail.com>, 2017.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-07-11 16:18+0530\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: bugheist/settings.py:145
+msgid "English"
+msgstr "английский"
+
+#: bugheist/settings.py:146
+msgid "French"
+msgstr "французский"
+
+#: website/templates/_subscriptions.html:51
+#: website/templates/_subscriptions.html:72
+#: website/templates/_subscriptions.html:93
+msgid "Featured on Homepage"
+msgstr "На главной странице"
+
+#: website/templates/_subscriptions.html:54
+#: website/templates/_subscriptions.html:75
+#: website/templates/_subscriptions.html:97
+msgid "Start"
+msgstr "Старт"
+
+#: website/templates/_subscriptions.html:73
+#: website/templates/_subscriptions.html:94
+msgid "Featured in Newsletter"
+msgstr "В новостной рассылке"
+
+#: website/templates/_subscriptions.html:95
+msgid "Announced to Users"
+msgstr "Объявлено пользователям"
+
+#: website/templates/account/login.html:76
+msgid "Sign In"
+msgstr "подключиться"
+
+#: website/templates/account/login.html:77
+msgid "Forgot Password?"
+msgstr "Забыли пароль?"
+
+#: website/templates/account/logout.html:6
+msgid "Sign Out"
+msgstr "Выйти"
+
+#: website/templates/account/logout.html:7
+msgid "Are you sure?"
+msgstr "Вы уверены?"
+
+#: website/templates/account/logout.html:13
+msgid "Yes"
+msgstr "Да"
+
+#: website/templates/account/logout.html:14
+msgid "Cancel"
+msgstr "Отмена"
+
+#: website/templates/account/password_change.html:22
+#: website/templates/account/password_change.html:41
+#: website/templates/account/password_reset_from_key.html:26
+#: website/templates/account/password_reset_from_key.html:52
+msgid "Change Password"
+msgstr "Изменить пароль"
+
+#: website/templates/account/password_reset.html:27
+msgid "Password Reset"
+msgstr "Сброс пароля"
+
+#: website/templates/account/password_reset.html:29
+msgid "Forgotten your password? Enter your e-mail address below, and we'll send you an e-mail allowing you to reset it."
+msgstr "Забыли пароль? Введите ниже свой адрес электронной почты, и мы отправим вам электронное письмо, позволяющее сбросить его"
+
+#: website/templates/account/password_reset.html:38
+msgid "Reset My Password"
+msgstr "Сбросить мой пароль"
+
+#: website/templates/account/password_reset_from_key.html:24
+msgid "Bad Token"
+msgstr "Плохой токен"
+
+#: website/templates/account/password_reset_from_key.html:55
+msgid "Your password is now changed!"
+msgstr "Ваш пароль изменен!"
+
+#: website/templates/account/signup.html:22
+#: website/templates/account/signup.html:65
+msgid "Sign Up"
+msgstr "Зарегистрироваться"
+
+#: website/templates/account/signup.html:67
+#, python-format
+msgid "Already have an account? <a href=\"%(login_url)s\">Login</a>."
+msgstr "Уже есть учетная запись? <a href=\"%(login_url)s\"> Войти </a>."
+
+#: website/templates/index.html:13
+msgid "Find Bugs, Win Points and Prizes"
+msgstr "Найдите насекомых, заработайте очки и призы"
+
+#: website/templates/index.html:17
+msgid "Fix issues on websites, apps or hardware (+3 points)"
+msgstr "Устранение проблем с веб-сайтами, приложениями или оборудованием (+3 балла)"
+#: website/templates/index.html:18
+msgid "Verify other bug reports(+2 points)"
+msgstr "Проверить другие отчеты об ошибках (+2 балла)"
+
+#: website/templates/index.html:19
+msgid "Invite friends (when they signup , get +1 point)"
+msgstr "Пригласите друзей (когда они зарегистрируются, получите +1 балл)"
+
+#: website/templates/index.html:20
+msgid "Find a bug on a new site or app (+4 points)"
+msgstr "Найдите ошибку на новом сайте или в приложении (+4 балла)"
+
+#: website/templates/index.html:33
+msgid "Number Error"
+msgstr "Ошибка числа"
+
+#: website/templates/index.html:34
+msgid "For pages where you see a number 404, 500."
+msgstr "Для страниц, где вы видите число 404, 500."
+
+#: website/templates/index.html:48
+msgid "Functional"
+msgstr "Функциональный"
+
+#: website/templates/index.html:49
+msgid "Something doesn't work."
+msgstr "Что-то не так."
+
+#: website/templates/index.html:63
+msgid "Performance"
+msgstr "Производительность"
+
+#: website/templates/index.html:64
+msgid "Anything over 5 seconds."
+msgstr "В течение 5 секунд."
+
+#: website/templates/index.html:82
+msgid "Security"
+msgstr "Безопасность"
+
+#: website/templates/index.html:83
+msgid "Data leaks, exploits or anything smelly."
+msgstr "Утечка данных, эксплойты или что-то неприятное."
+
+#: website/templates/index.html:97
+msgid "Typo"
+msgstr "опечатка"
+
+#: website/templates/index.html:98
+msgid "Miss-spellings, miss-grammar and more."
+msgstr "Ошибки правописания, грамматические ошибки и многое другое"
+#: website/templates/index.html:112
+msgid "Design"
+msgstr "Дизайн"
+
+#: website/templates/index.html:113
+msgid "Layout, responsiveness and improvements"
+msgstr "Макет, отзывчивость и улучшения"
+
+#: website/templates/index.html:131
+msgid "Featured Websites"
+msgstr "Избранные сайты"
+
+#: website/templates/index.html:194
+msgid "Leaderboard"
+msgstr "Доска почета"
+
+msgid "Upload Screenshot"
+msgstr "Загрузить снимок экрана"
+
+msgid "Report Bug"
+msgstr "Сообщить об ошибке"
+
+msgid "Describe bug issue"
+msgstr "Опишите проблему с ошибкой"
+
+msgid "Social"
+msgstr "Соцсети"
+
+msgid "Bug Hunt"
+msgstr "Охота на насекомых"
+
+msgid "Tour"
+msgstr "Тур"
+
+msgid "User Profile"
+msgstr "Профиль пользователя"
+
+msgid "Logout"
+msgstr "Выход"
+
+msgid "Signup"
+msgstr "Регистрация"
+
+msgid "Login"
+msgstr "Войти"
+
+msgid "About"
+msgstr "О"
+
+msgid "Stats"
+msgstr "Статистика"
+
+msgid "Company Scoreboard"
+msgstr "Табло компании"
+
+msgid "Terms of Service"
+msgstr "Условия использования"
+
+msgid "Search"
+msgstr "Поиск"
+
+msgid "Add to chrome"
+msgstr "Добавить в Chrome"
