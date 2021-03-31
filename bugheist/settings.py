@@ -210,6 +210,9 @@ LANGUAGES = (
     ('fr', _('French')),
     ('zh-cn', _('Chinese')),
     ('de', _('German')),
+    ('ja', _('Japanese')),
+    ('ru', _('Russian')),
+    ('hi', _('Hindi')),
 )
 
 MEDIA_ROOT = "media"
