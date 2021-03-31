@@ -1,0 +1,233 @@
+# Hindi Translations.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Sourav Badami <souravbadami@gmail.com>, 2017.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-07-11 16:18+0530\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: bugheist/settings.py:145
+msgid "English"
+msgstr "अंग्रेज़ी"
+
+#: bugheist/settings.py:146
+msgid "French"
+msgstr "फ्रेंच"
+
+#: website/templates/_subscriptions.html:51
+#: website/templates/_subscriptions.html:72
+#: website/templates/_subscriptions.html:93
+msgid "Featured on Homepage"
+msgstr "होम पेज पर प्रदर्शित"
+
+#: website/templates/_subscriptions.html:54
+#: website/templates/_subscriptions.html:75
+#: website/templates/_subscriptions.html:97
+msgid "Start"
+msgstr "प्रारंभ"
+
+#: website/templates/_subscriptions.html:73
+#: website/templates/_subscriptions.html:94
+msgid "Featured in Newsletter"
+msgstr "न्यूज़लेटर में विशेष रुप से प्रदर्शित"
+
+#: website/templates/_subscriptions.html:95
+msgid "Announced to Users"
+msgstr "उपयोगकर्ताओं के लिए घोषित"
+
+#: website/templates/account/login.html:76
+msgid "Sign In"
+msgstr "साइन इन करें"
+
+#: website/templates/account/login.html:77
+msgid "Forgot Password?"
+msgstr "पासवर्ड भूल गए?"
+
+#: website/templates/account/logout.html:6
+msgid "Sign Out"
+msgstr "साइन आउट करें"
+
+#: website/templates/account/logout.html:7
+msgid "Are you sure?"
+msgstr "क्या आप निश्चित हैं?"
+
+#: website/templates/account/logout.html:13
+msgid "Yes"
+msgstr  "हाँ"
+
+#: website/templates/account/logout.html:14
+msgid "Cancel"
+msgstr "रद्द करें"
+
+#: website/templates/account/password_change.html:22
+#: website/templates/account/password_change.html:41
+#: website/templates/account/password_reset_from_key.html:26
+#: website/templates/account/password_reset_from_key.html:52
+msgid "Change Password"
+msgstr "पासवर्ड बदलें"
+
+#: website/templates/account/password_reset.html:27
+msgid "Password Reset"
+msgstr "पासवर्ड रीसेट करें"
+
+#: website/templates/account/password_reset.html:29
+msgid "Forgotten your password? Enter your e-mail address below, and we'll send you an e-mail allowing you to reset it."
+msgstr "अपना पासवर्ड भूल गए? नीचे अपना ई-मेल पता दर्ज करें, और हम आपको एक ई-मेल भेजेंगे जिससे आप इसे रीसेट कर सकते हैं।"
+
+#: website/templates/account/password_reset.html:38
+msgid "Reset My Password"
+msgstr "मेरा पासवर्ड रीसेट करें"
+
+#: website/templates/account/password_reset_from_key.html:24
+msgid "Bad Token"
+msgstr "खराब टोकन"
+
+#: website/templates/account/password_reset_from_key.html:55
+msgid "Your password is now changed!"
+msgstr "आपका पासवर्ड अब बदल गया है!"
+
+#: website/templates/account/signup.html:22
+#: website/templates/account/signup.html:65
+msgid "Sign Up"
+msgstr "साइन अप करें"
+
+#: website/templates/account/signup.html:67
+#: python-format
+msgid "Already have an account? <a href=\"%(login_url)s\">Login</a>."
+msgstr "पहले से ही एक खाता है? <a href=\"%(login_url)s\"> लॉगिन </a>।"
+
+#: website/templates/index.html:13
+msgid "Find Bugs, Win Points and Prizes"
+msgstr "कीड़े, जीत के अंक और पुरस्कार खोजें"
+
+#: website/templates/index.html:17
+msgid "Fix issues on websites, apps or hardware (+3 points)"
+msgstr "वेबसाइट, एप्लिकेशन या हार्डवेयर (+3 अंक) पर समस्याएँ ठीक करें"
+
+#: website/templates/index.html:18
+msgid "Verify other bug reports(+2 points)"
+msgstr "अन्य बग रिपोर्ट (+2 अंक) की जाँच करें"
+
+#: website/templates/index.html:19
+msgid "Invite friends (when they signup , get +1 point)"
+msgstr "मित्रों को आमंत्रित करें (जब वे साइनअप करते हैं, तो +1 अंक प्राप्त करें)"
+
+#: website/templates/index.html:20
+msgid "Find a bug on a new site or app (+4 points)"
+msgstr "नई साइट या ऐप (+4 अंक) पर एक बग खोजें"
+
+#: website/templates/index.html:33
+msgid "Number Error"
+msgstr "संख्या त्रुटि"
+
+#: website/templates/index.html:34
+msgid "For pages where you see a number 404, 500."
+msgstr "उन पृष्ठों के लिए जहाँ आप संख्या 404, 500 देखते हैं।"
+
+#: website/templates/index.html:48
+msgid "Functional"
+msgstr "कार्यात्मक"
+
+#: website/templates/index.html:49
+msgid "Something doesn't work."
+msgstr "कुछ काम नहीं करता है।"
+
+#: website/templates/index.html:63
+msgid "Performance"
+msgstr "प्रदर्शन"
+
+#: website/templates/index.html:64
+msgid "Anything over 5 seconds."
+msgstr "5 सेकंड से अधिक कुछ भी।"
+
+#: website/templates/index.html:82
+msgid "Security"
+msgstr "सुरक्षा"
+
+#: website/templates/index.html:83
+msgid "Data leaks, exploits or anything smelly."
+msgstr "डेटा लीक, शोषण या कुछ भी बदबूदार।"
+
+#: website/templates/index.html:97
+msgid "Typo"
+msgstr "टाइपो"
+
+#: website/templates/index.html:98
+msgid "Miss-spellings, miss-grammar and more."
+msgstr "मिस-स्पेलिंग, मिस-व्याकरण और बहुत कुछ।"
+
+#: website/templates/index.html:112
+msgid "Design"
+msgstr "डिजाइन"
+
+#: website/templates/index.html:113
+msgid "Layout, responsiveness and improvements"
+msgstr "लेआउट, जवाबदेही और सुधार"
+
+#: website/templates/index.html:131
+msgid "Featured Websites"
+msgstr "विशेष रुप से प्रदर्शित वेबसाइट"
+
+#: website/templates/index.html:194
+msgid "Leaderboard"
+msgstr "लीडरबोर्ड"
+
+msgid "Upload Screenshot"
+msgstr "स्क्रीनशॉट अपलोड करें"
+
+msgid "Report Bug"
+msgstr "रिपोर्ट"
+
+msgid "Describe bug issue"
+msgstr "बग समस्या का वर्णन करें"
+
+msgid "Social"
+msgstr "सामाजिक"
+
+msgid "Bug Hunt"
+msgstr "कीट का शिकार"
+
+msgid "Tour"
+msgstr "टूर"
+
+msgid "User Profile"
+msgstr "उपयोगकर्ता प्रोफ़ाइल"
+
+msgid "Logout"
+msgstr "लॉगआउट"
+
+msgid "Signup"
+msgstr "साइनअप"
+
+msgid "Login"
+msgstr "लॉगिन"
+
+msgid "About"
+msgstr "के बारे में"
+
+msgid "Stats"
+msgstr "आँकड़े"
+
+msgid "Company Scoreboard"
+msgstr "कंपनी स्कोरबोर्ड"
+
+msgid "Terms of Service"
+msgstr "सेवा की शर्तें"
+
+msgid "Search"
+msgstr "खोज"
+
+msgid "Add to chrome"
+msgstr "क्रोम में जोड़ें"
