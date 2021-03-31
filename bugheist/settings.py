@@ -73,6 +73,7 @@ INSTALLED_APPS = (
     'tz_detect',
     'tellme',
     'star_ratings',
+    'drf_yasg',
 )
 
 CRON_CLASSES = [
