@@ -163,6 +163,8 @@
                                                                           class="badge badge-important"></span></center>
                                                         </span>
                                         </div>
+                                        {% csrf_token %}
+                                        {{ captcha_form.captcha }}
                                         <div class="bottom text-center">
                                             <button type="submit" id="report-bug-btn" class="btn btn-default">
                                                 <i style="display: none;" id="spinner" class="fa fa-spinner fa-spin" aria-hidden="true"></i>
