@@ -74,6 +74,7 @@ INSTALLED_APPS = (
     'tellme',
     'star_ratings',
     'drf_yasg',
+    'captcha',
 )
 
 CRON_CLASSES = [
