@@ -51,7 +51,7 @@ from rest_framework.response import Response
 
 from rest_framework.authtoken.views import ObtainAuthToken
 from website.models import Winner, Payment, Wallet, Transaction, Issue, Points, Hunt, Domain, InviteFriend, UserProfile, IP, CompanyAdmin, Subscription, Company
-from .forms import FormInviteFriend, UserProfileForm, HuntForm
+from .forms import FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm
 from django.utils.timezone import make_aware
 from decimal import Decimal
 import stripe
@@ -74,6 +74,7 @@ def index(request, template="index.html"):
 	user_count = User.objects.all().count()
 	hunt_count = Hunt.objects.all().count()
 	domain_count = Domain.objects.all().count()
+	captcha_form = CaptchaForm()
 	try:
 		domain_admin = CompanyAdmin.objects.get(user=request.user)
 	except:
@@ -96,7 +97,8 @@ def index(request, template="index.html"):
 		'user_count': user_count,
 		'wallet': wallet,
 		'hunt_count': hunt_count,
-		'domain_count': domain_count
+		'domain_count': domain_count,
+		'captcha_form': captcha_form,
 	}
 	return render(request, template, context)
 

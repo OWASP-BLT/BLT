@@ -55,6 +55,7 @@ stripe = "*"
 django-environ = "*"
 django-humanize = "*"
 drf-yasg = "*"
+django-simple-captcha = "*"
 
 [dev-packages]
 
