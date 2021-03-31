@@ -18,12 +18,14 @@ class IssueViewSet(viewsets.ModelViewSet):
     serializer_class = IssueSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('url', 'description', 'user__id')
+    http_method_names = ['get', 'post', 'head']
 
 class UserIssueViewSet(viewsets.ModelViewSet):
     queryset = Issue.objects.all()
     serializer_class = IssueSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('user__username', 'user__id')
+    http_method_names = ['get', 'post', 'head']
 
 class UserProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
@@ -36,6 +38,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     queryset = UserProfile.objects.all()
     filter_backends = (filters.SearchFilter,)
     search_fields = ('id', 'user__id','user__username')
+    http_method_names = ['get', 'post', 'head']
 
 class DomainSerializer(serializers.ModelSerializer):
     class Meta:
@@ -47,6 +50,7 @@ class DomainViewSet(viewsets.ModelViewSet):
     queryset = Domain.objects.all() 
     filter_backends = (filters.SearchFilter,)
     search_fields = ('url', 'name')
+    http_method_names = ['get', 'post', 'head']
 
 
 router = routers.DefaultRouter()
