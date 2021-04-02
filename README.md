@@ -4,6 +4,7 @@
 
 Live Site: [Bugheist](http://bugheist.com/)
 
+[Code for the app is here](https://github.com/Bugheist/Flutter)
 # Usage
 
 ## Bugheist Bug Reporting Plugin
