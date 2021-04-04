@@ -135,6 +135,8 @@ urlpatterns = [
                   url(r'^tz_detect/', include('tz_detect.urls')),
                   url(r'^tellme/', include("tellme.urls")),
                   url(r'^ratings/', include('star_ratings.urls',namespace='ratings')),
+                  path("robots.txt", website.views.robots_txt),
+                  path("ads.txt", website.views.ads_txt),
 
               ] 
 
