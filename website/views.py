@@ -56,6 +56,7 @@ from django.utils.timezone import make_aware
 from decimal import Decimal
 import stripe
 import humanize
+from django.views.decorators.http import require_GET
 
 def index(request, template="index.html"):
 	try:
@@ -1464,6 +1465,24 @@ class CreateIssue(CronJobBase):
 
 def throw_error(request):
 	raise ValueError('error')
+
+	
+@require_GET
+def robots_txt(request):
+    lines = [
+        "User-Agent: *",
+        "Allow: /",
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain")
+
+@require_GET
+def ads_txt(request):
+    lines = [
+        "google.com, pub-6468204154139130, DIRECT, f08c47fec0942fa0",
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain")
+
+
 
 class CreateHunt(TemplateView):
 	model = Hunt
