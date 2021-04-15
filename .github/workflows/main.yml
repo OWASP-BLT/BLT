@@ -13,8 +13,15 @@ jobs:
     # If the acton was triggered by a new comment that starts with `/assign`
     # or a on a schedule
     if: >
-      (github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '/assign')) ||
-      github.event_name == 'schedule'
+      (github.event_name == 'issue_comment' && ( 
+      startsWith(github.event.comment.body, '/assign') || 
+      contains(github.event.comment.body, 'assign to me') || 
+      contains(github.event.comment.body, 'please assign me this')  || 
+      contains(github.event.comment.body, 'assign this to me')  || 
+      contains(github.event.comment.body, 'I can try fixing this')  || 
+      contains(github.event.comment.body, 'i am interested in doing this')  || 
+      contains(github.event.comment.body, 'I am interested in contributing')  || )) ||
+      github.event_name == 'schedule' 
     runs-on: ubuntu-latest
     steps:
       - name: Check out GitHub Action
