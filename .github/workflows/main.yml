@@ -20,7 +20,7 @@ jobs:
       - name: Check out GitHub Action
         uses: actions/checkout@v2
         with:
-          repository: JasonEtco/slash-assign-action
+          repository: Bugheist/slash-assign-action
           ref: 842404647dfd10109c8c4feb3e776807eb5e2071
           path: .github/actions/slash-assign-action
       - name: Compile the Action
