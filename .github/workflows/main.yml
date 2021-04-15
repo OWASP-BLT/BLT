@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: Bugheist/slash-assign-action
-          ref: 35d0b0656c9028de96ffaf5359d5286b78ef6797
+          ref: main
           path: .github/actions/slash-assign-action
       - name: Compile the Action
         run: |
