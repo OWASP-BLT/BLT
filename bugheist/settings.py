@@ -75,6 +75,7 @@ INSTALLED_APPS = (
     'star_ratings',
     'drf_yasg',
     'captcha',
+    'rest_auth',
 )
 
 CRON_CLASSES = [
