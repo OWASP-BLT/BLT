@@ -20,7 +20,7 @@ jobs:
       contains(github.event.comment.body, 'assign this to me')  || 
       contains(github.event.comment.body, 'I can try fixing this')  || 
       contains(github.event.comment.body, 'i am interested in doing this')  || 
-      contains(github.event.comment.body, 'I am interested in contributing')  || )) ||
+      contains(github.event.comment.body, 'I am interested in contributing')) ||
       github.event_name == 'schedule' 
     runs-on: ubuntu-latest
     steps:
