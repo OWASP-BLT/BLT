@@ -20,7 +20,7 @@ from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 from mdeditor.fields import MDTextField
 from decimal import Decimal
-
+from captcha.fields import CaptchaField
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
@@ -193,6 +193,7 @@ class Issue(models.Model):
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     url = models.URLField()
     description = models.TextField()
+    captcha = CaptchaField()
     label = models.PositiveSmallIntegerField(choices=labels, default=0)
     views = models.IntegerField(null=True, blank=True)
     verified = models.BooleanField(default=False)

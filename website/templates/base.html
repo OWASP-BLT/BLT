@@ -161,6 +161,8 @@
                                                                           class="badge badge-important"></span></center>
                                                         </span>
                                         </div>
+                                        {% csrf_token %}
+                                        {{ captcha_form.captcha }}
                                         <div class="bottom text-center">
                                             <button type="submit" class="btn btn-default">{% trans "Report Bug" %} <i
                                                     class="fa fa-trophy" aria-hidden="true">+3</i></button>
