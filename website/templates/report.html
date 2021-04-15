@@ -90,10 +90,13 @@
                 </span>
                         {% endif %}
                     </div>
+                    {% csrf_token %}
+                    {{ captcha_form.captcha }}
                     <button type="submit" name="reportbug_button" id="btn" class="btn btn-default btn-block"
                             data-intro="Click here to report the bug to BugHeist." data-step="5">
                         Report Bug <i class="fa fa-trophy" aria-hidden="true">+3</i>
                     </button>
+
             </div>
     </form>
     <script type="text/javascript">

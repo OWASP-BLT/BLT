@@ -580,6 +580,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
     def get_context_data(self, **kwargs):
         context = super(IssueCreate, self).get_context_data(**kwargs)
         context["activities"] = Issue.objects.all()[0:10]
+        context["captcha_form"] = CaptchaForm()
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
         context["hunts"] = Hunt.objects.exclude(plan="Free")[:4]
