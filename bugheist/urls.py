@@ -63,7 +63,12 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 urlpatterns = [
-    path("captcha/", include("captcha.urls")),
+    path(
+        "captcha/", include("captcha.urls")
+    ),
+    url(
+        r'^rest-auth/', include('rest_auth.urls')
+    ),
     url(
         r"^swagger(?P<format>\.json|\.yaml)$",
         schema_view.without_ui(cache_timeout=0),
