@@ -29,6 +29,8 @@ jobs:
 
     - name: Install dependencies
       run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends libmemcached-dev
         python -m pip install --upgrade pipenv wheel
         pipenv install
 
