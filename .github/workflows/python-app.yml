@@ -26,7 +26,13 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: 3.9
-
+    - uses: actions/cache@v1
+      name: Configure pip caching
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.py') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -35,6 +41,8 @@ jobs:
         pipenv install
 
     - name: Run migrations
-      run: python manage.py migrate
-    - name: Run tests
-      run: python manage.py test
+      run: pipenv run python manage.py migrate
+    - name: Run collectstatic
+      run: pipenv run python manage.py collectstatic --noinput
+    - name: Run collectstatic
+      run: pipenv run python manage.py test
