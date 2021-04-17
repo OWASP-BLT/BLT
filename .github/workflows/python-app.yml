@@ -33,10 +33,11 @@ jobs:
         key: ${{ runner.os }}-pip-${{ hashFiles('**/setup.py') }}
         restore-keys: |
           ${{ runner.os }}-pip-
+
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y --no-install-recommends libmemcached-dev
+        sudo apt-get install -y --no-install-recommends libmemcached-dev xvfb
         python -m pip install --upgrade pipenv wheel
         pipenv install
 
@@ -45,4 +46,4 @@ jobs:
     - name: Run collectstatic
       run: pipenv run python manage.py collectstatic --noinput
     - name: Run collectstatic
-      run: pipenv run python manage.py test
+      run: xvfb-run --auto-servernum pipenv run python manage.py test
