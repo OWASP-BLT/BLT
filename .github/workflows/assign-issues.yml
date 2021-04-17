@@ -25,4 +25,4 @@ jobs:
         uses: Bugheist/assign-issues-action@main
         with:
             repo-token: ${{ secrets.GITHUB_TOKEN }}
-            repository: ${GITHUB_REPOSITORY}
+            repository: ${{env.GITHUB_REPOSITORY}}
