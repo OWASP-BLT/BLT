@@ -15,7 +15,6 @@ from website.views import (
     UserProfileDetailView,
     IssueCreate,
     UploadCreate,
-    EmailDetailView,
     InboundParseWebhookView,
     LeaderboardView,
     IssueView,
@@ -219,7 +218,6 @@ urlpatterns = [
     ),
     url(r"^profile/(?P<slug>[^/]+)/$", UserProfileDetailView.as_view(), name="profile"),
     url(r"^domain/(?P<slug>[^/]+)/$", DomainDetailView.as_view(), name="domain"),
-    url(r"^email/(?P<slug>[^/]+)/$", EmailDetailView.as_view(), name="email"),
     url(
         r"^.well-known/acme-challenge/(?P<token>[^/]+)/$",
         website.views.find_key,
