@@ -3,598 +3,637 @@
 {% load gravatar %}
 {% load i18n %}
 {% block style %}
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Slab:wght@400;700&display=swap');
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Slab:wght@400;700&display=swap');
 
-html {
-  height: 100%;
-  min-height:800px;
-}
-body {
-  background: url('https://i.pinimg.com/originals/48/79/86/487986c17560a8ed1afdc55e480e5be2.png');
-  background-size:cover;
-  background-repeat:no-repeat;
-  text-align: center;
- font-family: 'Noto Sans', sans-serif;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
+  html {
+    height: 100%;
+    min-height: 800px;
+  }
 
-h1{
-  font-weight:400;
-  padding-top:0;
-  margin-top:0;
-  font-family: 'Roboto Slab', serif;
-}
+  body {
+    background: url('https://i.pinimg.com/originals/48/79/86/487986c17560a8ed1afdc55e480e5be2.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    text-align: center;
+    font-family: 'Noto Sans', sans-serif;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
 
-#svg_form_time {
-  height: 15px;
-  max-width: 80%;
-  margin: 40px auto 20px;
-  display: block;
-}
+  h1 {
+    font-weight: 400;
+    padding-top: 0;
+    margin-top: 0;
+    font-family: 'Roboto Slab', serif;
+  }
 
-#svg_form_time circle,
-#svg_form_time rect {
-  fill: white;
-}
+  #svg_form_time {
+    height: 15px;
+    max-width: 80%;
+    margin: 40px auto 20px;
+    display: block;
+  }
 
-.button {
-  background: rgb(237, 40, 70);
-  border-radius: 5px;
-  padding: 15px 25px;
-  display: inline-block;
-  margin: 10px;
-  font-weight: bold;
-  color: white;
-  cursor: pointer;
-  box-shadow:0px 2px 5px rgb(0,0,0,0.5);
-}
+  #svg_form_time circle,
+  #svg_form_time rect {
+    fill: white;
+  }
 
-.disabled {
-  display:none;
-}
+  .button {
+    background: rgb(237, 40, 70);
+    border-radius: 5px;
+    padding: 15px 25px;
+    display: inline-block;
+    margin: 10px;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0px 2px 5px rgb(0, 0, 0, 0.5);
+  }
 
-section {
-  padding: 50px ;
-  max-width: 300px;
-  margin: 30px auto;
-  background:white;
-  background:rgba(255,255,255,0.9);
-  backdrop-filter:blur(10px);
-  box-shadow:0px 2px 10px rgba(0,0,0,0.3);
-  border-radius:5px;
-  transition:transform 0.2s ease-in-out;
-}
+  .disabled {
+    display: none;
+  }
+
+  section {
+    padding: 50px;
+    max-width: 300px;
+    margin: 30px auto;
+    background: white;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+    transition: transform 0.2s ease-in-out;
+  }
 
 
-input {
-  width: 100%;
-  margin: 7px 0px;
-  display: inline-block;
-  padding: 12px 25px;
-  box-sizing: border-box;
-  border-radius: 5px;
-  border: 1px solid lightgrey;
-  font-size: 1em;
-  font-family:inherit;
-  background:white;
-}
+  input {
+    width: 100%;
+    margin: 7px 0px;
+    display: inline-block;
+    padding: 12px 25px;
+    box-sizing: border-box;
+    border-radius: 5px;
+    border: 1px solid lightgrey;
+    font-size: 1em;
+    font-family: inherit;
+    background: white;
+  }
 
-p{
-  text-align:justify;
-margin-top:0;
-}
-.subrow .col-md-6:nth-child(1) .panel {
-        background-color: #F76B78;
-    }
+  p {
+    text-align: justify;
+    margin-top: 0;
+  }
 
-    .subrow .col-md-6:nth-child(2) .panel {
-        background-color: #DC4353;
-    }
+  .subrow .col-md-6:nth-child(1) .panel {
+    background-color: #F76B78;
+  }
 
-    .subrow .col-md-6:nth-child(3) .panel {
-        background-color: #C41E2E;
-    }
+  .subrow .col-md-6:nth-child(2) .panel {
+    background-color: #DC4353;
+  }
 
-    .subrow .col-md-6:nth-child(4) .panel {
-        background-color: #9B0C1A;
-    }
+  .subrow .col-md-6:nth-child(3) .panel {
+    background-color: #C41E2E;
+  }
 
-    .subrow .col-md-6:nth-child(1) .panel button {
-        background-color: #F76B78;
-        border-color: #F76B78;
-    }
+  .subrow .col-md-6:nth-child(4) .panel {
+    background-color: #9B0C1A;
+  }
 
-    .subrow .col-md-6:nth-child(2) .panel button {
-        background-color: #DC4353;
-        border-color: #DC4353;
-    }
+  .subrow .col-md-6:nth-child(1) .panel button {
+    background-color: #F76B78;
+    border-color: #F76B78;
+  }
 
-    .subrow .col-md-6:nth-child(3) .panel button {
-        background-color: #C41E2E;
-        border-color: #C41E2E;
-    }
+  .subrow .col-md-6:nth-child(2) .panel button {
+    background-color: #DC4353;
+    border-color: #DC4353;
+  }
 
-    .subrow .col-md-6:nth-child(4) .panel button {
-        background-color: #9B0C1A;
-        border-color: #9B0C1A;
-    }
+  .subrow .col-md-6:nth-child(3) .panel button {
+    background-color: #C41E2E;
+    border-color: #C41E2E;
+  }
 
-    .image-subs {
-        margin-left: 10px;
-    }
+  .subrow .col-md-6:nth-child(4) .panel button {
+    background-color: #9B0C1A;
+    border-color: #9B0C1A;
+  }
 
-    .plan-style {
-        font-size: 24pt
-    }
+  .image-subs {
+    margin-left: 10px;
+  }
 
-    .plan-color {
-        color: white;
-    }
+  .plan-style {
+    font-size: 24pt
+  }
 
-    .newsletter {
-        font-size: 18pt;
-    }
+  .plan-color {
+    color: white;
+  }
 
-    .announce {
-        font-size: 20pt;
-    }
-    label {
+  .newsletter {
+    font-size: 18pt;
+  }
+
+  .announce {
+    font-size: 20pt;
+  }
+
+  label {
     width: 100%;
     display: block;
-}
+  }
 
-.card-input-element {
+  .card-input-element {
     display: none;
-}
+  }
 
-.card-input {
+  .card-input {
     margin: 10px;
     padding: 00px;
-}
+  }
 
-.card-input:hover {
+  .card-input:hover {
     cursor: pointer;
-}
+  }
 
-.card-input-element:checked + .card-input {
-     box-shadow: 0 0 1px 1px #dc4853;
- }
- .panel-heading {
- background-color: #DC4353;
-}
-.panel-body {
+  .card-input-element:checked+.card-input {
+    box-shadow: 0 0 1px 1px #dc4853;
+  }
+
+  .panel-heading {
+    background-color: #DC4353;
+  }
+
+  .panel-body {
     border: 1px solid #a7a7b1;
     border-top: none;
-}
+  }
 
-.simplebox, .simplebutton {
-outline: none;
-border: 1px solid #ddd !important;
--webkit-box-shadow: none !important;
--moz-box-shadow: none !important;
-box-shadow: none !important;
-font-size:12px;
-}
+  .simplebox,
+  .simplebutton {
+    outline: none;
+    border: 1px solid #ddd !important;
+    -webkit-box-shadow: none !important;
+    -moz-box-shadow: none !important;
+    box-shadow: none !important;
+    font-size: 12px;
+  }
 
-.formHolder {
-<!-- width:300px; -->
-margin:0 auto;
-<!-- background:rgba(255,255,255,1); -->
-<!-- -webkit-border-radius: 6px; -->
-border-radius: 6px;
-overflow:hidden;
-<!-- padding:30px; -->
-<!-- box-shadow: 0 4px 2px -2px rgba(0,0,0,0.2); -->
+  .formHolder {
+    < !-- width: 300px;
+    -->margin: 0 auto;
+    < !-- background: rgba(255, 255, 255, 1);
+    -->< !-- -webkit-border-radius: 6px;
+    -->border-radius: 6px;
+    overflow: hidden;
+    < !-- padding: 30px;
+    -->< !-- box-shadow: 0 4px 2px -2px rgba(0, 0, 0, 0.2);
+    -->
+  }
 
-}
+  .formHolder h3 {
+    margin: 0 0 14px 0;
+    font-size: 19px;
+    font-weight: 600;
+  }
 
-.formHolder h3 {
-margin:0 0 14px 0;
-font-size:19px;
-font-weight:600;
-}
+  .wallet {
+    display: none;
+  }
 
-.wallet {
-display:none;
-}
+  .card .cardButton {
+    margin-right: 5px;
+  }
 
-.card .cardButton {
-margin-right:5px;
-}
+  .wallet .cardButton {
+    margin-left: 5px;
+  }
 
-.wallet .cardButton {
-margin-left:5px;
-}
+  .wallet {
+    display: none;
+  }
 
-.wallet {
-display:none;
-}   
- .overlay {
-    background: #ff1d1d;  
-    display: none;        
-    position: absolute;   
-    top: 0;               
-    right: 0;             
+  .overlay {
+    background: #ff1d1d;
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 0;
     z-index: 3000;
     bottom: 0;
     left: 0;
     opacity: 0.5;
-}
-.center {
+  }
+
+  .center {
     position: absolute;
     width: 20%;
     height: 20%;
     top: 30%;
     left: 42%;
-}
+  }
 
-.dot-1 {
-  position: absolute;
-  z-index: 3;
-  width: 30px;
-  height: 30px;
-  top: 95px;
-  left: 95px;
-  background: #fff;
-  border-radius: 50%;
-  -webkit-animation-fill-mode: both;
-          animation-fill-mode: both;
-  -webkit-animation: jump-jump-1 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
-          animation: jump-jump-1 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
-}
+  .dot-1 {
+    position: absolute;
+    z-index: 3;
+    width: 30px;
+    height: 30px;
+    top: 95px;
+    left: 95px;
+    background: #fff;
+    border-radius: 50%;
+    -webkit-animation-fill-mode: both;
+    animation-fill-mode: both;
+    -webkit-animation: jump-jump-1 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
+    animation: jump-jump-1 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
+  }
 
-.dot-2 {
-  position: absolute;
-  z-index: 2;
-  width: 60px;
-  height: 60px;
-  top: 80px;
-  left: 80px;
-  background: #fff;
-  border-radius: 50%;
-  -webkit-animation-fill-mode: both;
-          animation-fill-mode: both;
-  -webkit-animation: jump-jump-2 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
-          animation: jump-jump-2 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
-}
+  .dot-2 {
+    position: absolute;
+    z-index: 2;
+    width: 60px;
+    height: 60px;
+    top: 80px;
+    left: 80px;
+    background: #fff;
+    border-radius: 50%;
+    -webkit-animation-fill-mode: both;
+    animation-fill-mode: both;
+    -webkit-animation: jump-jump-2 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
+    animation: jump-jump-2 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
+  }
 
-.dot-3 {
-  position: absolute;
-  z-index: 1;
-  width: 90px;
-  height: 90px;
-  top: 65px;
-  left: 65px;
-  background: #fff;
-  border-radius: 50%;
-  -webkit-animation-fill-mode: both;
-          animation-fill-mode: both;
-  -webkit-animation: jump-jump-3 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
-          animation: jump-jump-3 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
-}
+  .dot-3 {
+    position: absolute;
+    z-index: 1;
+    width: 90px;
+    height: 90px;
+    top: 65px;
+    left: 65px;
+    background: #fff;
+    border-radius: 50%;
+    -webkit-animation-fill-mode: both;
+    animation-fill-mode: both;
+    -webkit-animation: jump-jump-3 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
+    animation: jump-jump-3 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
+  }
 
-@-webkit-keyframes jump-jump-1 {
-  0%, 70% {
-    box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
-    -webkit-transform: scale(0);
-            transform: scale(0);
-  }
-  100% {
-    box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
-    -webkit-transform: scale(1);
-            transform: scale(1);
-  }
-}
+  @-webkit-keyframes jump-jump-1 {
 
-@keyframes jump-jump-1 {
-  0%, 70% {
-    box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
-    -webkit-transform: scale(0);
-            transform: scale(0);
-  }
-  100% {
-    box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
-    -webkit-transform: scale(1);
-            transform: scale(1);
-  }
-}
-@-webkit-keyframes jump-jump-2 {
-  0%, 40% {
-    box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
-    -webkit-transform: scale(0);
-            transform: scale(0);
-  }
-  100% {
-    box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
-    -webkit-transform: scale(1);
-            transform: scale(1);
-  }
-}
-@keyframes jump-jump-2 {
-  0%, 40% {
-    box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
-    -webkit-transform: scale(0);
-            transform: scale(0);
-  }
-  100% {
-    box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
-    -webkit-transform: scale(1);
-            transform: scale(1);
-  }
-}
-@-webkit-keyframes jump-jump-3 {
-  0%, 10% {
-    box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
-    -webkit-transform: scale(0);
-            transform: scale(0);
-  }
-  100% {
-    box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
-    -webkit-transform: scale(1);
-            transform: scale(1);
-  }
-}
-@keyframes jump-jump-3 {
-  0%, 10% {
-    box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
-    -webkit-transform: scale(0);
-            transform: scale(0);
-  }
-  100% {
-    box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
-    -webkit-transform: scale(1);
-            transform: scale(1);
-  }
-}
+    0%,
+    70% {
+      box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
+      -webkit-transform: scale(0);
+      transform: scale(0);
+    }
 
+    100% {
+      box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
+      -webkit-transform: scale(1);
+      transform: scale(1);
+    }
+  }
+
+  @keyframes jump-jump-1 {
+
+    0%,
+    70% {
+      box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
+      -webkit-transform: scale(0);
+      transform: scale(0);
+    }
+
+    100% {
+      box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
+      -webkit-transform: scale(1);
+      transform: scale(1);
+    }
+  }
+
+  @-webkit-keyframes jump-jump-2 {
+
+    0%,
+    40% {
+      box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
+      -webkit-transform: scale(0);
+      transform: scale(0);
+    }
+
+    100% {
+      box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
+      -webkit-transform: scale(1);
+      transform: scale(1);
+    }
+  }
+
+  @keyframes jump-jump-2 {
+
+    0%,
+    40% {
+      box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
+      -webkit-transform: scale(0);
+      transform: scale(0);
+    }
+
+    100% {
+      box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
+      -webkit-transform: scale(1);
+      transform: scale(1);
+    }
+  }
+
+  @-webkit-keyframes jump-jump-3 {
+
+    0%,
+    10% {
+      box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
+      -webkit-transform: scale(0);
+      transform: scale(0);
+    }
+
+    100% {
+      box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
+      -webkit-transform: scale(1);
+      transform: scale(1);
+    }
+  }
+
+  @keyframes jump-jump-3 {
+
+    0%,
+    10% {
+      box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
+      -webkit-transform: scale(0);
+      transform: scale(0);
+    }
+
+    100% {
+      box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
+      -webkit-transform: scale(1);
+      transform: scale(1);
+    }
+  }
+</style>
 {% endblock %}
 
 {% block content %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/velocity/1.2.1/velocity.min.js"></script>
 
 <div class="join-body">
-    <div id="svg_wrap"></div>
-<form class="col-md-12" style="
+  <div id="svg_wrap"></div>
+  <form class="col-md-12" style="
     left: 50%;
     transform: translateX(-50%);" id="payment-form">
     {% csrf_token %}
- <h1>Create Company</h1>
-<section>
-  <p>Company information</p>
-  <input type="text" name="company" placeholder="Company's Name" />
-  <input type="url" name="url" placeholder="Website" />
-  <input type="file" name="file" placeholder="Logo" />
-  <input type="email" name="email" placeholder="Email Address" />
-</section>
+    <h1>Create Company</h1>
+    <section>
+      <p>Company information</p>
+      <input type="text" name="company" placeholder="Company's Name" />
+      <input type="url" name="url" placeholder="Website" />
+      <input type="file" name="file" placeholder="Logo" />
+      <input type="email" name="email" placeholder="Email Address" />
+    </section>
 
-<section style="height: 460px;max-width: none;">
-  <p>Subscription</p>
-  <div class="row">
-    
-      <div class="col-md-4 col-lg-4 col-sm-4">
-        
-        <label>
-          <input type="radio" value="flea" name="product" class="card-input-element" checked />
+    <section style="height: 460px;max-width: none;">
+      <p>Subscription</p>
+      <div class="row">
+
+        <div class="col-md-4 col-lg-4 col-sm-4">
+
+          <label>
+            <input type="radio" value="flea" name="product" class="card-input-element" checked />
 
             <div class="panel panel-default card-input">
               <div class="panel-heading" style="
     background-color: #DC4353;
 ">
                 <div class="row">
-                    <div class="pull-left image-subs">
-                        <img src="{% static 'img/flea.svg' %}" width="100" height="100">
-                    </div>
-                    <div class="col-xs-6 text-right pull-right plan-color">
-                        <div class="huge">Flea</div>
-                        <span class="plan-style">$9</span> / month
-                    </div>
+                  <div class="pull-left image-subs">
+                    <img src="{% static 'img/flea.svg' %}" width="100" height="100">
+                  </div>
+                  <div class="col-xs-6 text-right pull-right plan-color">
+                    <div class="huge">Flea</div>
+                    <span class="plan-style">$9</span> / month
+                  </div>
                 </div>
               </div>
               <div class="panel-body">
-                <span class="pull-left"><i
-                        class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span>
+                <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i>
+                  {% trans "Featured on Homepage" %}</span>
                 <span class="pull-right"></span>
               </div>
             </div>
 
-        </label>
-        
-      </div>
-      <div class="col-md-4 col-lg-4 col-sm-4">
-        
-        <label>
-          <input type="radio" value="ant" name="product" class="card-input-element" />
+          </label>
+
+        </div>
+        <div class="col-md-4 col-lg-4 col-sm-4">
+
+          <label>
+            <input type="radio" value="ant" name="product" class="card-input-element" />
 
             <div class="panel panel-default card-input">
               <div class="panel-heading" style="
     background-color: #DC4353;
 ">
                 <div class="row">
-                    <div class="pull-left image-subs">
-                        <img src="{% static 'img/ant.svg' %}" width="100" height="100">
-                    </div>
-                    <div class="col-xs-6 text-right pull-right plan-color">
-                        <div class="huge">Ant</div>
-                        <span class="plan-style">$99</span> / month
-                    </div>
+                  <div class="pull-left image-subs">
+                    <img src="{% static 'img/ant.svg' %}" width="100" height="100">
+                  </div>
+                  <div class="col-xs-6 text-right pull-right plan-color">
+                    <div class="huge">Ant</div>
+                    <span class="plan-style">$99</span> / month
+                  </div>
                 </div>
-            </div>
+              </div>
               <div class="panel-body">
-                <span class="pull-left"><i
-                        class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span></br>
-                <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %} </span>
+                <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i>
+                  {% trans "Featured on Homepage" %}</span></br>
+                <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %}
+                </span>
               </div>
             </div>
-        </label>
-        
-      </div>
-      <div class="col-md-4 col-lg-4 col-sm-4">
-        
-        <label>
-          <input type="radio" value="wasp" name="product" class="card-input-element" />
+          </label>
+
+        </div>
+        <div class="col-md-4 col-lg-4 col-sm-4">
+
+          <label>
+            <input type="radio" value="wasp" name="product" class="card-input-element" />
 
             <div class="panel panel-default card-input">
               <div class="panel-heading" style="
     background-color: #DC4353;
 ">
-                 <div class="row">
-                    <div class="pull-left image-subs">
-                        <img src="{% static 'img/ant.svg' %}" width="100" height="100">
-                    </div>
-                    <div class="col-xs-6 text-right pull-right plan-color">
-                        <div class="huge">Wasp</div>
-                        <span class="plan-style">$499</span> / month
-                    </div>
+                <div class="row">
+                  <div class="pull-left image-subs">
+                    <img src="{% static 'img/ant.svg' %}" width="100" height="100">
+                  </div>
+                  <div class="col-xs-6 text-right pull-right plan-color">
+                    <div class="huge">Wasp</div>
+                    <span class="plan-style">$499</span> / month
+                  </div>
                 </div>
               </div>
               <div class="panel-body">
-                <span class="pull-left"><i
-                        class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span></br>
-                <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %} </span>
+                <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i>
+                  {% trans "Featured on Homepage" %}</span></br>
+                <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %}
+                </span>
                 <span class="pull-left announce"><i class="fa fa-globe"></i> {% trans "Announced to Users" %}</span>
               </div>
             </div>
-        </label>
-        
+          </label>
+
+        </div>
       </div>
-  </div>
-  
-</section>
 
-<section style="max-width: 500px;padding: 30px">
-    {% ifnotequal wallet.current_balance 0 %}
-  <div class="formHolder wallet">
-    <h3>Wallet</h3>
-    Current Balance : {{wallet.current_balance}}$
-    <div type="submit" class="btn btn-sm btn-link cardButton" id="showcard">Use Card </div>
-    
-  </div>
-  {% endifnotequal %}
-  <div class="formHolder card">
-    
-      <h3>Card</h3>
-         <script src="https://js.stripe.com/v3/"></script>
+    </section>
 
-      <div class="col-md-12" style="
+    <section style="max-width: 500px;padding: 30px">
+      {% ifnotequal wallet.current_balance 0 %}
+      <div class="formHolder wallet">
+        <h3>Wallet</h3>
+        Current Balance : {{wallet.current_balance}}$
+        <div type="submit" class="btn btn-sm btn-link cardButton" id="showcard">Use Card </div>
+
+      </div>
+      {% endifnotequal %}
+      <div class="formHolder card">
+
+        <h3>Card</h3>
+        <script src="https://js.stripe.com/v3/"></script>
+
+        <div class="col-md-12" style="
     left: 50%;
     transform: translateX(-50%);">
-    
-  <div class="">
-    <label for="card-element">
-      Credit or debit card
-    </label>
-    <div id="card-element">
-      <!-- A Stripe Element will be inserted here. -->
-    </div>
 
-    <!-- Used to display form errors. -->
-    <div id="card-errors" role="alert"></div>
-  </div>
+          <div class="">
+            <label for="card-element">
+              Credit or debit card
+            </label>
+            <div id="card-element">
+              <!-- A Stripe Element will be inserted here. -->
+            </div>
 
-  <button>Submit Payment</button>
-</div>
-     
-      {% ifnotequal wallet.current_balance 0 %}
-      <div type="submit" class="btn btn-sm btn-link newAccButton" id="showwallet"> Use Wallet</div>
+            <!-- Used to display form errors. -->
+            <div id="card-errors" role="alert"></div>
+          </div>
+
+          <button>Submit Payment</button>
+        </div>
+
+        {% ifnotequal wallet.current_balance 0 %}
+        <div type="submit" class="btn btn-sm btn-link newAccButton" id="showwallet"> Use Wallet</div>
         {% endifnotequal %}
-  </div>
-</section>
+      </div>
+    </section>
 
-<section>
-  <p>General condtitions</p>
-  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-</section>
+    <section>
+      <p>General condtitions</p>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
+        magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+        consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+        pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
+        laborum.</p>
+    </section>
 
-  <div class="button" id="prev">&larr; Previous</div>
-<div class="button" id="next">Next &rarr;</div>
-<button class="button" id="submit">Agree and send application</button>
-</form>
+    <div class="button" id="prev">&larr; Previous</div>
+    <div class="button" id="next">Next &rarr;</div>
+    <button class="button" id="submit">Agree and send application</button>
+  </form>
 </div>
 {% endblock %}
 
 {% block after_js %}
 <script type="text/javascript">
-    // Create a Stripe client.
-    var paymentType = 'card';
-    var showcard = document.getElementById('showcard');
-    showcard.addEventListener('click', function(event) {
-        paymentType = 'card'
-    })
-    var showwallet = document.getElementById('showwallet');
-    showwallet.addEventListener('click', function(event) {
-        paymentType = 'wallet'
-    })
-var stripe = Stripe('pk_test_51HFiXMFf0OkkOVnDkNs4opFLqM0Sx5GA6Pedf63uGzG1gHhumFYHEOLfCA7yzZwXUpjaa5j9ZhS1yciNhouYCMh400pSx5ZEx6');
+  // Create a Stripe client.
+  var paymentType = 'card';
+  var showcard = document.getElementById('showcard');
+  showcard.addEventListener('click', function (event) {
+    paymentType = 'card'
+  })
+  var showwallet = document.getElementById('showwallet');
+  showwallet.addEventListener('click', function (event) {
+    paymentType = 'wallet'
+  })
+  var stripe = Stripe(
+    'pk_test_51HFiXMFf0OkkOVnDkNs4opFLqM0Sx5GA6Pedf63uGzG1gHhumFYHEOLfCA7yzZwXUpjaa5j9ZhS1yciNhouYCMh400pSx5ZEx6');
 
-// Create an instance of Elements.
-var elements = stripe.elements();
+  // Create an instance of Elements.
+  var elements = stripe.elements();
 
-// Custom styling can be passed to options when creating an Element.
-// (Note that this demo uses a wider set of styles than the guide below.)
-var style = {
-  base: {
-    color: '#32325d',
-    fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
-    fontSmoothing: 'antialiased',
-    fontSize: '16px',
-    '::placeholder': {
-      color: '#aab7c4'
+  // Custom styling can be passed to options when creating an Element.
+  // (Note that this demo uses a wider set of styles than the guide below.)
+  var style = {
+    base: {
+      color: '#32325d',
+      fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+      fontSmoothing: 'antialiased',
+      fontSize: '16px',
+      '::placeholder': {
+        color: '#aab7c4'
+      }
+    },
+    invalid: {
+      color: '#fa755a',
+      iconColor: '#fa755a'
     }
-  },
-  invalid: {
-    color: '#fa755a',
-    iconColor: '#fa755a'
-  }
-};
+  };
 
-// Create an instance of the card Element.
-var card = elements.create('card', {style: style});
+  // Create an instance of the card Element.
+  var card = elements.create('card', {
+    style: style
+  });
 
-// Add an instance of the card Element into the `card-element` <div>.
-card.mount('#card-element');
-// Handle real-time validation errors from the card Element.
-card.on('change', function(event) {
-  var displayError = document.getElementById('card-errors');
-  if (event.error) {
-    displayError.textContent = event.error.message;
-  } else {
-    displayError.textContent = '';
-  }
-});
-
-// Handle form submission.
-var form = document.getElementById('payment-form');
-form.addEventListener('submit', function(event) {
-  event.preventDefault();
-    document.getElementsByClassName("overlay")[0].style.display="block";
-    if(paymentType=='card'){
-  stripe.createToken(card).then(function(result) {
-    if (result.error) {
-    document.getElementsByClassName("overlay")[0].style.display="none";
-      // Inform the user if there was an error.
-      var errorElement = document.getElementById('card-errors');
-      errorElement.textContent = result.error.message;
+  // Add an instance of the card Element into the `card-element` <div>.
+  card.mount('#card-element');
+  // Handle real-time validation errors from the card Element.
+  card.on('change', function (event) {
+    var displayError = document.getElementById('card-errors');
+    if (event.error) {
+      displayError.textContent = event.error.message;
     } else {
-      // Send the token to your server.
-      stripeTokenHandler(result.token);
+      displayError.textContent = '';
     }
   });
-}
-else{
-    stripeTokenHandler('',false)
-}
-});
 
-// Submit the form with the token ID.
-function stripeTokenHandler(token, flag=true) {
-  // Insert the token ID into the form so it gets submitted to the server
-  var paymentType = 'card'
-  if(flag==true){
+  // Handle form submission.
+  var form = document.getElementById('payment-form');
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    document.getElementsByClassName("overlay")[0].style.display = "block";
+    if (paymentType == 'card') {
+      stripe.createToken(card).then(function (result) {
+        if (result.error) {
+          document.getElementsByClassName("overlay")[0].style.display = "none";
+          // Inform the user if there was an error.
+          var errorElement = document.getElementById('card-errors');
+          errorElement.textContent = result.error.message;
+        } else {
+          // Send the token to your server.
+          stripeTokenHandler(result.token);
+        }
+      });
+    } else {
+      stripeTokenHandler('', false)
+    }
+  });
+
+  // Submit the form with the token ID.
+  function stripeTokenHandler(token, flag = true) {
+    // Insert the token ID into the form so it gets submitted to the server
+    var paymentType = 'card'
+    if (flag == true) {
       var form = document.getElementById('payment-form');
       var hiddenInput = document.createElement('input');
       hiddenInput.setAttribute('type', 'hidden');
@@ -606,8 +645,7 @@ function stripeTokenHandler(token, flag=true) {
       typeHiddenInput.setAttribute('value', 'wallet');
       form.appendChild(typeHiddenInput);
       form.appendChild(hiddenInput);
-    }
-  else{
+    } else {
       paymentType = 'wallet'
       var form = document.getElementById('payment-form');
       var typeHiddenInput = document.createElement('input');
@@ -615,225 +653,246 @@ function stripeTokenHandler(token, flag=true) {
       typeHiddenInput.setAttribute('name', 'paymentType');
       typeHiddenInput.setAttribute('value', 'wallet');
       form.appendChild(typeHiddenInput);
-  }
+    }
     var serializedData = $("#payment-form").serializeArray()
     console.log(serializedData)
     console.log(card)
-  $.ajax({
-        type: 'POST',
-        url: "/join",
-        data: serializedData,
-        success: function (response) {
-            document.getElementsByClassName("overlay")[0].style.display="none";
-            document.getElementsByClassName("base-body")[0].style.display="none";
-            document.getElementsByClassName("content")[0].style.display="block";
-            document.body.style.background = "#000";
-          console.log("SUCCESS")
-        },
-        error: function (response) {
-            // alert the error if any error occured
-            alert(response["responseJSON"]["error"]);
-        }
+    $.ajax({
+      type: 'POST',
+      url: "/join",
+      data: serializedData,
+      success: function (response) {
+        document.getElementsByClassName("overlay")[0].style.display = "none";
+        document.getElementsByClassName("base-body")[0].style.display = "none";
+        document.getElementsByClassName("content")[0].style.display = "block";
+        document.body.style.background = "#000";
+        console.log("SUCCESS")
+      },
+      error: function (response) {
+        // alert the error if any error occured
+        alert(response["responseJSON"]["error"]);
+      }
     })
-  // Submit the form
-  // form.submit();
-}
-</script>
-<script type="text/javascript">
-    $('document').ready(function() {
-  $('#cardButton, #walletButton').click(function() {
-    
-    setTimeout(function() {
-      
-            $(".page-transition").velocity("fadeIn", {
-          queue: false
-            });
-      
-      }, 100);
-    
-    $('.page-transition').velocity({
-      scale: "10000%",
-      translateZ:0
-    }, {duration:500, complete: function() {
-     
-    }
-       
-       })
-    
-  })
-  
-  $('#showcard').click(function() {
-    $(".wallet").velocity({ 
-        scale: "65%",
-        translateZ:0
-    }, { duration: 400, easing: "easeInOutBack", complete: function() {
-      
-      $(".card").velocity({ 
-        scale: "100%",
-        translateZ:0
-    }, { duration: 400, easing: "easeInOutBack"});
-      
-      setTimeout(function() {
-      
-            $(".card").velocity("fadeIn", {
-          queue: false,
-            duration: 150
-            });
-      
-            }, 150);
-        
-        
-    } });
-    
-    setTimeout(function() {
-      
-        $(".wallet").velocity("fadeOut", {
-            queue: false,
-        duration: 150
-        });
-      
-        }, 150);
-    
-  });
-  
-  $('#showwallet').click(function() {
-    $(".wallet").velocity({
-        scale: "65%",
-        translateZ:0
-    });
-    
-    $(".card").velocity({ 
-        scale: "65%",
-        translateZ:0
-    }, { duration: 400, easing: "easeInOutBack", complete: function() {
-      
-      $(".wallet").velocity({ 
-        scale: "100%",
-        translateZ:0
-    }, { duration: 400, easing: "easeInOutBack"});
-      
-      setTimeout(function() {
-      
-            $(".wallet").velocity("fadeIn", {
-          queue: false,
-            duration: 150
-            });
-      
-            }, 150);
-        
-        
-    } });
-    
-    setTimeout(function() {
-      
-        $(".card").velocity("fadeOut", {
-            queue: false,
-        duration: 150
-        });
-      
-        }, 150);
-    
-  });
-  
-});
-</script>
-<script type="text/javascript">
-    $( document ).ready(function() {
-var base_color = "rgb(230,230,230)";
-var active_color = "rgb(237, 40, 70)";
-
-
-
-var child = 1;
-var length = $("section").length - 1;
-$("#prev").addClass("disabled");
-$("#submit").addClass("disabled");
-
-$("section").not("section:nth-of-type(1)").hide();
-$("section").not("section:nth-of-type(1)").css('transform','translateX(100px)');
-
-var svgWidth = length * 200 + 24;
-$("#svg_wrap").html(
-  '<svg version="1.1" id="svg_form_time" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 ' +
-    svgWidth +
-    ' 24" xml:space="preserve"></svg>'
-);
-
-function makeSVG(tag, attrs) {
-  var el = document.createElementNS("http://www.w3.org/2000/svg", tag);
-  for (var k in attrs) el.setAttribute(k, attrs[k]);
-  return el;
-}
-
-for (i = 0; i < length; i++) {
-  var positionX = 12 + i * 200;
-  var rect = makeSVG("rect", { x: positionX, y: 9, width: 200, height: 6 });
-  document.getElementById("svg_form_time").appendChild(rect);
-  // <g><rect x="12" y="9" width="200" height="6"></rect></g>'
-  var circle = makeSVG("circle", {
-    cx: positionX,
-    cy: 12,
-    r: 12,
-    width: positionX,
-    height: 6
-  });
-  document.getElementById("svg_form_time").appendChild(circle);
-}
-
-var circle = makeSVG("circle", {
-  cx: positionX + 200,
-  cy: 12,
-  r: 12,
-  width: positionX,
-  height: 6
-});
-document.getElementById("svg_form_time").appendChild(circle);
-
-$('#svg_form_time rect').css('fill',base_color);
-$('#svg_form_time circle').css('fill',base_color);
-$("circle:nth-of-type(1)").css("fill", active_color);
-
- 
-$(".button").click(function () {
-  $("#svg_form_time rect").css("fill", active_color);
-  $("#svg_form_time circle").css("fill", active_color);
-  var id = $(this).attr("id");
-  if (id == "next") {
-    $("#prev").removeClass("disabled");
-    if (child >= length) {
-      $(this).addClass("disabled");
-      $('#submit').removeClass("disabled");
-    }
-    if (child <= length) {
-      child++;
-    }
-  } else if (id == "prev") {
-    $("#next").removeClass("disabled");
-    $('#submit').addClass("disabled");
-    if (child <= 2) {
-      $(this).addClass("disabled");
-    }
-    if (child > 1) {
-      child--;
-    }
+    // Submit the form
+    // form.submit();
   }
-  var circle_child = child + 1;
-  $("#svg_form_time rect:nth-of-type(n + " + child + ")").css(
-    "fill",
-    base_color
-  );
-  $("#svg_form_time circle:nth-of-type(n + " + circle_child + ")").css(
-    "fill",
-    base_color
-  );
-  var currentSection = $("section:nth-of-type(" + child + ")");
-  currentSection.fadeIn();
-  currentSection.css('transform','translateX(0)');
- currentSection.prevAll('section').css('transform','translateX(-100px)');
-  currentSection.nextAll('section').css('transform','translateX(100px)');
-  $('section').not(currentSection).hide();
-});
+</script>
+<script type="text/javascript">
+  $('document').ready(function () {
+    $('#cardButton, #walletButton').click(function () {
 
-});
+      setTimeout(function () {
+
+        $(".page-transition").velocity("fadeIn", {
+          queue: false
+        });
+
+      }, 100);
+
+      $('.page-transition').velocity({
+        scale: "10000%",
+        translateZ: 0
+      }, {
+        duration: 500,
+        complete: function () {
+
+        }
+
+      })
+
+    })
+
+    $('#showcard').click(function () {
+      $(".wallet").velocity({
+        scale: "65%",
+        translateZ: 0
+      }, {
+        duration: 400,
+        easing: "easeInOutBack",
+        complete: function () {
+
+          $(".card").velocity({
+            scale: "100%",
+            translateZ: 0
+          }, {
+            duration: 400,
+            easing: "easeInOutBack"
+          });
+
+          setTimeout(function () {
+
+            $(".card").velocity("fadeIn", {
+              queue: false,
+              duration: 150
+            });
+
+          }, 150);
+
+
+        }
+      });
+
+      setTimeout(function () {
+
+        $(".wallet").velocity("fadeOut", {
+          queue: false,
+          duration: 150
+        });
+
+      }, 150);
+
+    });
+
+    $('#showwallet').click(function () {
+      $(".wallet").velocity({
+        scale: "65%",
+        translateZ: 0
+      });
+
+      $(".card").velocity({
+        scale: "65%",
+        translateZ: 0
+      }, {
+        duration: 400,
+        easing: "easeInOutBack",
+        complete: function () {
+
+          $(".wallet").velocity({
+            scale: "100%",
+            translateZ: 0
+          }, {
+            duration: 400,
+            easing: "easeInOutBack"
+          });
+
+          setTimeout(function () {
+
+            $(".wallet").velocity("fadeIn", {
+              queue: false,
+              duration: 150
+            });
+
+          }, 150);
+
+
+        }
+      });
+
+      setTimeout(function () {
+
+        $(".card").velocity("fadeOut", {
+          queue: false,
+          duration: 150
+        });
+
+      }, 150);
+
+    });
+
+  });
+</script>
+<script type="text/javascript">
+  $(document).ready(function () {
+    var base_color = "rgb(230,230,230)";
+    var active_color = "rgb(237, 40, 70)";
+
+
+
+    var child = 1;
+    var length = $("section").length - 1;
+    $("#prev").addClass("disabled");
+    $("#submit").addClass("disabled");
+
+    $("section").not("section:nth-of-type(1)").hide();
+    $("section").not("section:nth-of-type(1)").css('transform', 'translateX(100px)');
+
+    var svgWidth = length * 200 + 24;
+    $("#svg_wrap").html(
+      '<svg version="1.1" id="svg_form_time" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 ' +
+      svgWidth +
+      ' 24" xml:space="preserve"></svg>'
+    );
+
+    function makeSVG(tag, attrs) {
+      var el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      for (var k in attrs) el.setAttribute(k, attrs[k]);
+      return el;
+    }
+
+    for (i = 0; i < length; i++) {
+      var positionX = 12 + i * 200;
+      var rect = makeSVG("rect", {
+        x: positionX,
+        y: 9,
+        width: 200,
+        height: 6
+      });
+      document.getElementById("svg_form_time").appendChild(rect);
+      // <g><rect x="12" y="9" width="200" height="6"></rect></g>'
+      var circle = makeSVG("circle", {
+        cx: positionX,
+        cy: 12,
+        r: 12,
+        width: positionX,
+        height: 6
+      });
+      document.getElementById("svg_form_time").appendChild(circle);
+    }
+
+    var circle = makeSVG("circle", {
+      cx: positionX + 200,
+      cy: 12,
+      r: 12,
+      width: positionX,
+      height: 6
+    });
+    document.getElementById("svg_form_time").appendChild(circle);
+
+    $('#svg_form_time rect').css('fill', base_color);
+    $('#svg_form_time circle').css('fill', base_color);
+    $("circle:nth-of-type(1)").css("fill", active_color);
+
+
+    $(".button").click(function () {
+      $("#svg_form_time rect").css("fill", active_color);
+      $("#svg_form_time circle").css("fill", active_color);
+      var id = $(this).attr("id");
+      if (id == "next") {
+        $("#prev").removeClass("disabled");
+        if (child >= length) {
+          $(this).addClass("disabled");
+          $('#submit').removeClass("disabled");
+        }
+        if (child <= length) {
+          child++;
+        }
+      } else if (id == "prev") {
+        $("#next").removeClass("disabled");
+        $('#submit').addClass("disabled");
+        if (child <= 2) {
+          $(this).addClass("disabled");
+        }
+        if (child > 1) {
+          child--;
+        }
+      }
+      var circle_child = child + 1;
+      $("#svg_form_time rect:nth-of-type(n + " + child + ")").css(
+        "fill",
+        base_color
+      );
+      $("#svg_form_time circle:nth-of-type(n + " + circle_child + ")").css(
+        "fill",
+        base_color
+      );
+      var currentSection = $("section:nth-of-type(" + child + ")");
+      currentSection.fadeIn();
+      currentSection.css('transform', 'translateX(0)');
+      currentSection.prevAll('section').css('transform', 'translateX(-100px)');
+      currentSection.nextAll('section').css('transform', 'translateX(100px)');
+      $('section').not(currentSection).hide();
+    });
+
+  });
 </script>
 {% endblock %}
