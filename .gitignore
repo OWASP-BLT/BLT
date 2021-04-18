@@ -9,3 +9,5 @@ db.sqlite3
 .vagrant
 *.env
 .vscode
+geckodriver.exe
+geckodriver.log

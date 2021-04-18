@@ -167,33 +167,44 @@ text-decoration: none;
         </div>
         <div class="icon-block">
             <kbd class="fa fa-cogs">
-                <a href="/label_activity?user={{ user.username }}&label=General">General {{ bug_type_0 | length }}</a>
+                <a href="/label_activity?user={{ user.username }}&label=General">
+                    General {{ bug_type_0 | length }}
+                </a>
             </kbd>
             <kbd class="fa fa-exclamation-triangle">
-                <a href="/label_activity?user={{ user.username }}&label=Number">Number {{ bug_type_1 | length }}</a>
+                <a href="/label_activity?user={{ user.username }}&label=Number">
+                    Number {{ bug_type_1 | length }}
+                </a>
             </kbd>
         </div>
         <div class="icon-block">
             <kbd class="fa fa-trophy">
-                <a href="/label_activity?user={{ user.username }}&label=Functional">Functional {{ bug_type_2 | length
-                    }}</a>
+                <a href="/label_activity?user={{ user.username }}&label=Functional">
+                    Functional {{ bug_type_2 | length }}
+                </a>
             </kbd>
             <kbd class="fa fa-flash">
-                <a href="/label_activity?user={{ user.username }}&label=Performance">Performance {{ bug_type_3 | length
-                    }}</a>
+                <a href="/label_activity?user={{ user.username }}&label=Performance">
+                    Performance {{ bug_type_3 | length }}</a>
             </kbd>
         </div>
         <div class="icon-block">
             <kbd class="fa fa-lock">
-                <a href="/label_activity?user={{ user.username }}&label=Security">Security {{ bug_type_4 | length }}</a>
+                <a href="/label_activity?user={{ user.username }}&label=Security">
+                    Security {{ bug_type_4 | length }}
+                </a>
             </kbd>
             <kbd class="fa fa-eraser">
-                <a href="/label_activity?user={{ user.username }}&label=Typo">Typo {{ bug_type_5 | length }}</a>
+                <a href="/label_activity?user={{ user.username }}&label=Typo">
+                    Typo {{ bug_type_5 | length }}
+                </a>
             </kbd>
         </div>
         <div class="icon-block">
             <kbd class="fa fa-code">
-                <a href="/label_activity?user={{ user.username }}&label=Design">Design {{ bug_type_6 | length }}</a>
+                <a href="/label_activity?user={{ user.username }}&label=Design">
+                    Design {{ bug_type_6 | length }}
+                </a>
             </kbd>
         </div>
     </div>
@@ -227,13 +238,49 @@ text-decoration: none;
                 {% endif %}
             </div>
             <div role="tabpanel" class="tab-pane" id="profile">
-                {% include '_followers.html' %}
+
+                <div class="list-group">
+                    {% for user in followers %}
+                    <div class="list-group-item">
+                        {% if user.socialaccount_set.all.0.get_avatar_url %}
+                        <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" height="50px">
+                        {% else %}
+                        <img src="{% gravatar_url user.email 50 %}">
+                        {% endif %}
+                        <a href="/profile/{{ user.username }}">{{ user.username }}</a>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
             <div role="tabpanel" class="tab-pane" id="messages">
-                {% include '_following.html' %}
+                <div class="list-group">
+                    {% for user in following %}
+                    <div class="list-group-item">
+                        {% if user.socialaccount_set.all.0.get_avatar_url %}
+                        <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" height="50px">
+                        {% else %}
+                        <img src="{% gravatar_url user.email 50 %}">
+                        {% endif %}
+                        <a href="/profile/{{ user.username }}">{{ user.username }}</a>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
             <div role="tabpanel" class="tab-pane" id="settings">
-                {% include '_bookmarks.html' %}
+                <div class="list-group">
+                    {% for i in bookmarks %}
+                    <div class="list-group-item">
+                        <button type="button" class="close" name="{{ i.pk }}" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <a href="{{ i.get_absolute_url }}" class="list-group-item-heading">
+                            <strong>{{ i.description|truncatechars:50 }}</strong>
+                        </a>
+                        <span class="badge text-capitalize">{{ i.status }}</span>
+                        <p class="list-group-item-text">{{ i.user }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>
