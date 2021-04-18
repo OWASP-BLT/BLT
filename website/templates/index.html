@@ -6,238 +6,346 @@
 {% providers_media_js %}
 {% load i18n %}f
 {% block content %}
-    <script src="{% static "js/jquery.validate.js" %}"></script>
-    <script src="{% static 'js/activity.js' %}"></script>
-    <section class="hero">
-        <div class="heading">
-            <center><span><a href="https://steemit.com/@bugheist">Check out our new blog, the Bugheist Beacon</a></span></center>
-            <h1 class="page-header">{% trans "Find Bugs, Win Points and Prizes" %}</h1>
-        </div>
-        <div class="text-slider">
-            <ul>
-                <li class="text-slider-list"><h2
-                        class="text-slider-line active-line animated fadeInUp">{% trans "Fix issues on websites, apps or hardware (+3 points)" %}</h2>
-                </li>
-                <li class="text-slider-list"><h2
-                        class="text-slider-line animated fadeInUp">{% trans "Verify other bug reports(+2 points)" %}</h2>
-                </li>
-                <li class="text-slider-list"><h2
-                        class="text-slider-line animated fadeInUp">{% trans "Invite friends (when they signup , get +1 point)" %}</h2>
-                </li>
-                <li class="text-slider-list"><h2
-                        class="text-slider-line animated fadeInUp">{% trans "Find a bug on a new site or app (+4 points)" %}</h2>
-                </li>
-            </ul>
-        </div>
-        <br>
-    </section>
-    <div class="container-footer">
-        <center>
-            <div class="row">
-                <div class="col-sm-4">
-                    <div class="cborder">
-                        <div class="card cardbox">
-                            <center><i class="fa fa-exclamation-triangle fa-3x"></i></center>
-                            <div class="card-block">
-                                <h4 class="card-title">{% trans "Number Error" %}</h4>
-                                <p class="card-text">{% trans "For pages where you see a number 404, 500." %}</p>
-                            </div>
-                        </div>
-                        <ul class="list-group list-group-flush">
-                            <a class="btn btn-default" href="/search/?query=1&type=label">Examples</a>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-sm-4">
-                    <div class="cborder">
-                        <div class="card cardbox">
-                            <center><i class="fa fa-trophy fa-3x"></i></center>
-                            <div class="card-block">
-                                <h4 class="card-title">{% trans "Functional" %}</h4>
-                                <p class="card-text">{% trans "Something doesn't work as intended" %}</p>
-                            </div>
-                        </div>
-                        <ul class="list-group list-group-flush">
-                            <a class="btn btn-default" href="/search/?query=2&type=label">Examples</a>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-sm-4">
-                    <div class="cborder">
-                        <div class="card cardbox">
-                            <center><i class="fa fa-flash fa-3x"></i></center>
-                            <div class="card-block">
-                                <h4 class="card-title">{% trans "Performance" %}</h4>
-                                <p class="card-text">{% trans "Any process that takes over 5 seconds." %}</p>
-                            </div>
-                        </div>
-                        <ul class="list-group list-group-flush">
-                            <a class="btn btn-default" href="/search/?query=3&type=label">Examples</a>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-sm-4">
-                    <div class="cborder">
-                        <div class="card cardbox">
-                            <center><i class="fa fa-lock fa-3x"></i></center>
-                            <div class="card-block">
-                                <h4 class="card-title">{% trans "Security" %}</h4>
-                                <p class="card-text">{% trans "Data leaks, exploits or anything smelly." %}</p>
-                            </div>
-                        </div>
-                        <ul class="list-group list-group-flush">
-                            <a class="btn btn-default" href="/search/?query=4&type=label">Examples</a>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-sm-4">
-                    <div class="cborder">
-                        <div class="card cardbox">
-                            <center><i class="fa fa-eraser fa-3x"></i></center>
-                            <div class="card-block">
-                                <h4 class="card-title">{% trans "Typo" %}</h4>
-                                <p class="card-text">{% trans "Miss-spellings, miss-grammar and more." %}</p>
-                            </div>
-                        </div>
-                        <ul class="list-group list-group-flush">
-                            <a class="btn btn-default" href="/search/?query=5&type=label">Examples</a>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-sm-4">
-                    <div class="cborder">
-                        <div class="card cardbox">
-                            <center><i class="fa fa-code fa-3x"></i></center>
-                            <div class="card-block">
-                                <h4 class="card-title">{% trans "Design" %}</h4>
-                                <p class="card-text">{% trans "Layout, responsiveness and improvements" %}</p>
-                            </div>
-                        </div>
-                        <ul class="list-group list-group-flush">
-                            <a class="btn btn-default" href="/search/?query=6&type=label">Examples</a>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+<script src="{% static " js/jquery.validate.js" %}"></script>
+<script src="{% static 'js/activity.js' %}"></script>
+<section class="hero">
+    <div class="heading">
+        <center><span><a href="https://steemit.com/@bugheist">Check out our new blog, the Bugheist Beacon</a></span>
         </center>
+        <h1 class="page-header">{% trans "Find Bugs, Win Points and Prizes" %}</h1>
     </div>
-    <div class="row" style="margin-left: 10px;">
-        <div class="col-lg-12">
-            <div class="row">
-                <div class="col-lg-12">
-                    <h1 class="page-sub-header">{% trans "Featured Bug Hunts" %}</h1>
-                </div>
-            </div>
-            <div class="row" data-intro="These are the lists of featured websites on BugHeist." data-step="2">
-                {% include '_featured.html' %}
-            </div>
-        </div>
+    <div class="text-slider">
+        <ul>
+            <li class="text-slider-list">
+                <h2 class="text-slider-line active-line animated fadeInUp">{% trans "Fix issues on websites, apps or
+                    hardware (+3 points)" %}</h2>
+            </li>
+            <li class="text-slider-list">
+                <h2 class="text-slider-line animated fadeInUp">{% trans "Verify other bug reports(+2 points)" %}</h2>
+            </li>
+            <li class="text-slider-list">
+                <h2 class="text-slider-line animated fadeInUp">{% trans "Invite friends (when they signup , get +1
+                    point)" %}</h2>
+            </li>
+            <li class="text-slider-list">
+                <h2 class="text-slider-line animated fadeInUp">{% trans "Find a bug on a new site or app (+4 points)" %}
+                </h2>
+            </li>
+        </ul>
     </div>
-
-    <div class="row" style="margin-left: 10px;">
-        <div class="col-lg-3 col-md-3">
-            <div class="panel panel-primary">
-                <div class="panel-heading">
-                    <div class="row">
-                        <h4 class="text-center"><i class="fa fa-bug"></i> {{ bug_count }} Bugs</h4>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-3">
-            <div class="panel panel-green">
-                <div class="panel-heading">
-                    <div class="row">
-                        <h4 class="text-center"><i class="fa fa-user"></i> {{ user_count }} Users</h4>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-3">
-            <div class="panel panel-yellow">
-                <div class="panel-heading">
-                    <div class="row">
-                        <h4 class="text-center"><i class="fa fa-bullseye"></i> {{ hunt_count }} Hunts</h4>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-3">
-            <div class="panel panel-red">
-                <div class="panel-heading">
-                    <div class="row">
-                        <h4 class="text-center"><i class="fa fa-support"></i> {{ domain_count }} Domains</h4>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row" data-intro="View latest activities here." data-step="3" style="margin-left: 10px;">
-        <div class="col-md-8">
-            <h1 class="page-sub-header">Latest activity</h1>
-            <div class="list-group">
-                {% for activity in activities %}
-                    {% include '_activity.html' %}
-                {% endfor %}
-            </div>
-            <a href="/all_activity" class="btn btn-default btn-block">View All Activity</a>
-        </div>
-        <div class="col-md-4">
-            <div class="row">
-                <div class="panel panel-default">
-                    <div class="panel-heading page-sub-header">
-                        {% now "F" %} {% trans "Leaderboard" %}
-                    </div>
-                    <br>
-                    <div class="panel-body leaderboard-panel">
-                        <strong>The 1st Place Hunter for {% now "F" %} will receive</strong>
-                        <div class="box leaderboardbox">
-                            <strong>No sponsored prizes this month</strong>
-                            <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post"
-                                  style="display:inline;margin-bottom:10px;">
-                                <input type="hidden" name="cmd" value="_xclick">
-                                <input type="hidden" name="business" value="coderbounty@gmail.com">
-                                <input type="hidden" name="item_name"
-                                       value="Sponsor a Prize for the {% now "F" %} Leaderboard on Bugheist">
-                                <input type="hidden" name="currency_code" value="USD">
-                                <button type="submit" class="btn btn-danger btn-sm prizebtn">Sponsor a Prize</button>
-                            </form>
+    <br>
+</section>
+<div class="container-footer">
+    <center>
+        <div class="row">
+            <div class="col-sm-4">
+                <div class="cborder">
+                    <div class="card cardbox">
+                        <center><i class="fa fa-exclamation-triangle fa-3x"></i></center>
+                        <div class="card-block">
+                            <h4 class="card-title">{% trans "Number Error" %}</h4>
+                            <p class="card-text">{% trans "For pages where you see a number 404, 500." %}</p>
                         </div>
                     </div>
-
-                    <div class="list-group">
-                        {% if leaderboard %}
-                            {% for leader in leaderboard %}
-                                <div class="list-group-item activity-strip"
-                                     style="height: 80px; border: 1px solid #DDDDDD">
-                                    {% if leader.socialaccount_set.all.0.get_avatar_url %}
-                                        <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class = "profileimage" width="50"
-                                             height="50">
-                                    {% else %}
-                                        <img src="{% gravatar_url leader.email 50 %}" class = "profileimage">
-                                    {% endif %}
-                                    <a href="/profile/{{ leader.username }}"
-                                       class="text-capitalize leaderboard-name">{{ leader.username|truncatechars:20 }}</a>
-                                    <span class="label label-success leaderboard-rank">{{ forloop.counter|ordinal }}</span>
-                                    <div class="badge leaderboard-points">{{ leader.total_score }} Points</div>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            </br> Leaderboard reset for {% now "F" %}. Be first to find issues!
-                        {% endif %}
+                    <ul class="list-group list-group-flush">
+                        <a class="btn btn-default" href="/search/?query=1&type=label">Examples</a>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="cborder">
+                    <div class="card cardbox">
+                        <center><i class="fa fa-trophy fa-3x"></i></center>
+                        <div class="card-block">
+                            <h4 class="card-title">{% trans "Functional" %}</h4>
+                            <p class="card-text">{% trans "Something doesn't work as intended" %}</p>
+                        </div>
                     </div>
-                    <a href="/leaderboard" class="btn btn-default btn-block submit_button">View All</a>
+                    <ul class="list-group list-group-flush">
+                        <a class="btn btn-default" href="/search/?query=2&type=label">Examples</a>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="cborder">
+                    <div class="card cardbox">
+                        <center><i class="fa fa-flash fa-3x"></i></center>
+                        <div class="card-block">
+                            <h4 class="card-title">{% trans "Performance" %}</h4>
+                            <p class="card-text">{% trans "Any process that takes over 5 seconds." %}</p>
+                        </div>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <a class="btn btn-default" href="/search/?query=3&type=label">Examples</a>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-4">
+                <div class="cborder">
+                    <div class="card cardbox">
+                        <center><i class="fa fa-lock fa-3x"></i></center>
+                        <div class="card-block">
+                            <h4 class="card-title">{% trans "Security" %}</h4>
+                            <p class="card-text">{% trans "Data leaks, exploits or anything smelly." %}</p>
+                        </div>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <a class="btn btn-default" href="/search/?query=4&type=label">Examples</a>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="cborder">
+                    <div class="card cardbox">
+                        <center><i class="fa fa-eraser fa-3x"></i></center>
+                        <div class="card-block">
+                            <h4 class="card-title">{% trans "Typo" %}</h4>
+                            <p class="card-text">{% trans "Miss-spellings, miss-grammar and more." %}</p>
+                        </div>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <a class="btn btn-default" href="/search/?query=5&type=label">Examples</a>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="cborder">
+                    <div class="card cardbox">
+                        <center><i class="fa fa-code fa-3x"></i></center>
+                        <div class="card-block">
+                            <h4 class="card-title">{% trans "Design" %}</h4>
+                            <p class="card-text">{% trans "Layout, responsiveness and improvements" %}</p>
+                        </div>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <a class="btn btn-default" href="/search/?query=6&type=label">Examples</a>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </center>
+</div>
+<div class="row" style="margin-left: 10px;">
+    <div class="col-lg-12">
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-sub-header">{% trans "Featured Bug Hunts" %}</h1>
+            </div>
+        </div>
+        <div class="row" data-intro="These are the lists of featured websites on BugHeist." data-step="2">
+            {% comment %}
+            {% for hunt in hunts %}
+            <div class="col-lg-6 col-md-6">
+                <div class="panel" id="hunt_{{domain.id}}" style="background-color:{{domain.get_color}}">
+                    <div class="panel-heading">
+                        <div class="row">
+                            <div class="col-xs-3  image_container">
+                                <img src="{{MEDIA_URL}}{{domain.logo}}" id="hunt_image{{domain.id}}"
+                                    onerror="this.onerror=null; this.style.display='none';" height="75" width="75">
+                            </div>
+                            <div class="col-xs-9 text-right">
+                                <div class="huge"><span><a
+                                            href="/domain/{{domain.name}}/">{{domain.get_name}}</a></span></div>
+                                <div>{% if domain.prize %}Grand Prize ${{domain.prize}}{% endif %}</div>
+                            </div>
+                        </div>
+                        <div class="row issue_count">
+                            <div class="col-xs-12 text-right">
+                                Issues
+                                <span>
+                                    <a href="/domain/{{domain.name}}/#open">Open {{domain.open_issues.count}}</a>
+                                </span>
+                                <span>
+                                    <a href="/domain/{{domain.name}}/#closed"> Closed {{domain.closed_issues.count}}</a>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{domain.url}}" target="_new">
+                        <div class="panel-footer">
+                            <span class="pull-left" id="hunt_link{{domain.id}}" style="color:{{domain.get_color}}">View
+                                Website</span>
+                            <span class="pull-right"><i class="fa fa-arrow-circle-right" id="hunt_icon{{domain.id}}"
+                                    style="color:{{domain.get_color}}"></i></span>
+                            <div class="clearfix"></div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+            {% endcomment %}
+
+            {% comment %}
+            <div class="col-lg-12 col-md-12">
+                <div class="panel owasp-panel">
+                    <div class="panel-heading" style="color:#fff">
+                        <div class="row">
+                            <div class="col-xs-3 image_container">
+                                <img src="https://www.owasp.org/images/thumb/2/2f/Owasp_logo_flat2_icon.jpg/100px-Owasp_logo_flat2_icon.jpg"
+                                    width="75" height="75">
+                            </div>
+                            <div class="col-xs-8 col-xs-offset-1">
+                                On OWASP.org - testing and reporting all of the salesforce integrations with webforms,
+                                and webform
+                                data on the website.
+                                Get a complete list of all of the forms in use which we can pull from the chapter
+                                (leaders)
+                                handbook, and the current site.
+                                test each one and file bug reports for them. In particular, each form should be able to
+                                do the
+                                following:
+                                Receive the post data accurately
+                                Return to the user's browser the confirmation that it was received on the screen when
+                                submitted
+                                along with an issue number.
+                                Issu8 a receipt to the user via email with complete data submitted by the form. If there
+                                is credit
+                                card info or personal info, it should be only partial but enough to verify that it was
+                                included in
+                                the submission.
+                                There should be a timeline or some kind of data that the user receives in the email to
+                                expect a
+                                resolution of their issue, and the forms should be logged in a place where the user can
+                                access the
+                                log data through their account, as well as tracked on the resolution and progress of the
+                                issue's
+                                progress.
+                            </div>
+                            <div class="col-xs-12 text-right">
+                                <strong>OWASP Grand Prize $100</strong>
+                            </div>
+                        </div>
+                        <div class="row issue_count">
+                            <div class="col-xs-12 text-right">
+                                <span>
+                                    <a href="/domain/owasp.org/#open">Open {{ open_issue_owasp }}</a>
+                                </span>
+                                <span>
+                                    <a href="/domain/owasp.org/#closed">Closed {{ closed_issue_owasp }}</a>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="https://www.owasp.org/index.php/Bug_Bounty_Projects" target="_new">
+                        <div class="panel-footer">
+                            <span class="pull-left" style="color:#234082">View Website</span>
+                            <span class="pull-right">
+                                <i class="fa fa-arrow-circle-right" style="color:#234082"></i>
+                            </span>
+                            <div class="clearfix"></div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            {% endcomment %}
+
+        </div>
+    </div>
+</div>
+
+<div class="row" style="margin-left: 10px;">
+    <div class="col-lg-3 col-md-3">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <div class="row">
+                    <h4 class="text-center"><i class="fa fa-bug"></i> {{ bug_count }} Bugs</h4>
                 </div>
             </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <h1 class="page-sub-header">Subscriptions:</h1>
+    <div class="col-lg-3 col-md-3">
+        <div class="panel panel-green">
+            <div class="panel-heading">
+                <div class="row">
+                    <h4 class="text-center"><i class="fa fa-user"></i> {{ user_count }} Users</h4>
+                </div>
+            </div>
         </div>
     </div>
-    {% include '_subscriptions.html' %}
+    <div class="col-lg-3 col-md-3">
+        <div class="panel panel-yellow">
+            <div class="panel-heading">
+                <div class="row">
+                    <h4 class="text-center"><i class="fa fa-bullseye"></i> {{ hunt_count }} Hunts</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-3">
+        <div class="panel panel-red">
+            <div class="panel-heading">
+                <div class="row">
+                    <h4 class="text-center"><i class="fa fa-support"></i> {{ domain_count }} Domains</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row" data-intro="View latest activities here." data-step="3" style="margin-left: 10px;">
+    <div class="col-md-8">
+        <h1 class="page-sub-header">Latest activity</h1>
+        <div class="list-group">
+            {% for activity in activities %}
+            {% include '_activity.html' %}
+            {% endfor %}
+        </div>
+        <a href="/all_activity" class="btn btn-default btn-block">View All Activity</a>
+    </div>
+    <div class="col-md-4">
+        <div class="row">
+            <div class="panel panel-default">
+                <div class="panel-heading page-sub-header">
+                    {% now "F" %} {% trans "Leaderboard" %}
+                </div>
+                <br>
+                <div class="panel-body leaderboard-panel">
+                    <strong>The 1st Place Hunter for {% now "F" %} will receive</strong>
+                    <div class="box leaderboardbox">
+                        <strong>No sponsored prizes this month</strong>
+                        <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post"
+                            style="display:inline;margin-bottom:10px;">
+                            <input type="hidden" name="cmd" value="_xclick">
+                            <input type="hidden" name="business" value="coderbounty@gmail.com">
+                            <input type="hidden" name="item_name" value="Sponsor a Prize for the {% now " F" %}
+                                Leaderboard on Bugheist">
+                            <input type="hidden" name="currency_code" value="USD">
+                            <button type="submit" class="btn btn-danger btn-sm prizebtn">Sponsor a Prize</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="list-group">
+                    {% if leaderboard %}
+                    {% for leader in leaderboard %}
+                    <div class="list-group-item activity-strip" style="height: 80px; border: 1px solid #DDDDDD">
+                        {% if leader.socialaccount_set.all.0.get_avatar_url %}
+                        <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class="profileimage" width="50"
+                            height="50">
+                        {% else %}
+                        <img src="{% gravatar_url leader.email 50 %}" class="profileimage">
+                        {% endif %}
+                        <a href="/profile/{{ leader.username }}" class="text-capitalize leaderboard-name">{{
+                            leader.username|truncatechars:20 }}</a>
+                        <span class="label label-success leaderboard-rank">{{ forloop.counter|ordinal }}</span>
+                        <div class="badge leaderboard-points">{{ leader.total_score }} Points</div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    </br> Leaderboard reset for {% now "F" %}. Be first to find issues!
+                    {% endif %}
+                </div>
+                <a href="/leaderboard" class="btn btn-default btn-block submit_button">View All</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="page-sub-header">Subscriptions:</h1>
+    </div>
+</div>
+{% include '_subscriptions.html' %}
 {% endblock %}
