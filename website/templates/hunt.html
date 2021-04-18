@@ -2,151 +2,158 @@
 {% load static %}
 
 {% block style %}
+<style>
     .row .col-md-6:nth-child(1) .panel {
-    background-color:#F76B78;
+        background-color: #F76B78;
     }
+
     .row .col-md-6:nth-child(2) .panel {
-    background-color:#DC4353;
+        background-color: #DC4353;
     }
+
     .row .col-md-6:nth-child(3) .panel {
-    background-color:#C41E2E;
+        background-color: #C41E2E;
     }
+
     .row .col-md-6:nth-child(4) .panel {
-    background-color:#9B0C1A;
+        background-color: #9B0C1A;
     }
+
     .row .col-md-6:nth-child(1) .panel button {
-    background-color:#F76B78;
-    border-color:#F76B78;
+        background-color: #F76B78;
+        border-color: #F76B78;
     }
+
     .row .col-md-6:nth-child(2) .panel button {
-    background-color:#DC4353;
-    border-color:#DC4353;
+        background-color: #DC4353;
+        border-color: #DC4353;
     }
+
     .row .col-md-6:nth-child(3) .panel button {
-    background-color:#C41E2E;
-    border-color:#C41E2E;
+        background-color: #C41E2E;
+        border-color: #C41E2E;
     }
+
     .row .col-md-6:nth-child(4) .panel button {
-    background-color:#9B0C1A;
-    border-color:#9B0C1A;
+        background-color: #9B0C1A;
+        border-color: #9B0C1A;
     }
+
     .text-danger {
-    margin-left:0px;
+        margin-left: 0px;
     }
+
     input[type='file'] {
-    height:auto;
-    width:auto;
-    opacity:1;
+        height: auto;
+        width: auto;
+        opacity: 1;
     }
+
     .slider {
-    width: 100% !important;
+        width: 100% !important;
     }
+
     .hunt-form .form-group {
-    margin-top: 30px;
+        margin-top: 30px;
     }
+</style>
 {% endblock %}
 
 {% block content %}
-    <script src="{% static "js/jquery.validate.js" %}"></script>
-    <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
-    <form role="form" action="/hunt/" method="post" enctype="multipart/form-data" class="hunt-form">
-        {% csrf_token %}
-        <div class="row main">
-            <div class="panel-heading">
-                <div class="panel-title text-center">
-                    <h1 class="title">Start a bug hunt!</h1>
-                    All paid plans are currently featured on the homepage under the sponsored bug hunt area.
-                    <hr/>
-                </div>
+<script src="{% static "js/jquery.validate.js" %}"></script>
+<link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
+<form role="form" action="/hunt/" method="post" enctype="multipart/form-data" class="hunt-form">
+    {% csrf_token %}
+    <div class="row main">
+        <div class="panel-heading">
+            <div class="panel-title text-center">
+                <h1 class="title">Start a bug hunt!</h1>
+                All paid plans are currently featured on the homepage under the sponsored bug hunt area.
+                <hr />
             </div>
-            <div class="main-issue-form main-center">
-                {% csrf_token %}
-                <input type="hidden" name="plan" value="Flea" id="plan">
-                <div class="form-group">
-                    <div class="input-group">
-                        <span class="input-group-addon">
-                            <i class="fa fa-link" aria-hidden="true"></i>
-                        </span>
-                        <input class="form-control required url" placeholder="http://example.com" name="url"
-                               value="{{ form.url.value|default:"" }}">
-                    </div>
-                    {% if form.url.errors %}
-                        <label id="url-error" class="error" for="url">{{ form.url.errors }}</label>
-                    {% endif %}
+        </div>
+        <div class="main-issue-form main-center">
+            {% csrf_token %}
+            <input type="hidden" name="plan" value="Flea" id="plan">
+            <div class="form-group">
+                <div class="input-group">
+                    <span class="input-group-addon">
+                        <i class="fa fa-link" aria-hidden="true"></i>
+                    </span>
+                    <input class="form-control required url" placeholder="http://example.com" name="url"
+                        value="{{ form.url.value|default:"" }}">
                 </div>
-                <div class="form-group">
-                    <div class="input-group">
-                        <span class="input-group-addon">
-                            <i class="fa fa-file-picture-o" aria-hidden="true"></i>
-                        </span>
-                        <input type="file" name="logo" class="required form-control">
-                    </div>
-                    {% if form.logo.errors %}
-                        <label id="url-error" class="error" for="url">{{ form.logo.errors }}</label>
-                    {% endif %}
-                </div>
-
-                <div class="form-group">
-                    <strong>Grand Prize:</strong>
-                    <p>(Maximum tip Amount, you are encouraged to tip the bug finders, this is the maximum amount they
-                        can expect)</p>
-                    <div>
-                        <input class="slider"
-                               type="text"
-                               name="prize"
-                               value="{{ form.prize.value|default:'100' }}"
-                               data-provide="slider"
-                               data-slider-min="100"
-                               data-slider-max="10000"
-                               data-slider-step="100"
-                               data-slider-value="{{ form.prize.value|default:'100' }}">
-                    </div>
-                    {{ form.prize.errors }}
-                </div>
-                Payments are handled through Paypal. You will be charged from Coderbounty, Inc. (Our current parent
-                company)
-                {% if not user.is_authenticated %}
-                    <br><span class="text-danger">*Login required</span>
+                {% if form.url.errors %}
+                <label id="url-error" class="error" for="url">{{ form.url.errors }}</label>
                 {% endif %}
             </div>
-        </div>
-    </form>
-    <h1 class="page-sub-header">Subscription:</h1>
-    {% include '_subscriptions.html' %}
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="free-plan-text">
-                <h2>Free Plan:</h2>
-                <p>Limited to 5 bugs per month:</p>
+            <div class="form-group">
+                <div class="input-group">
+                    <span class="input-group-addon">
+                        <i class="fa fa-file-picture-o" aria-hidden="true"></i>
+                    </span>
+                    <input type="file" name="logo" class="required form-control">
+                </div>
+                {% if form.logo.errors %}
+                <label id="url-error" class="error" for="url">{{ form.logo.errors }}</label>
+                {% endif %}
             </div>
-            <button type="submit" class="submit_button"
-                    onclick="javascript:document.getElementById('plan').value='Free'" class="btn btn-primary btn-lg">
-                Start
-            </button>
-            <br><br>
+
+            <div class="form-group">
+                <strong>Grand Prize:</strong>
+                <p>(Maximum tip Amount, you are encouraged to tip the bug finders, this is the maximum amount they
+                    can expect)</p>
+                <div>
+                    <input class="slider" type="text" name="prize" value="{{ form.prize.value|default:'100' }}"
+                        data-provide="slider" data-slider-min="100" data-slider-max="10000" data-slider-step="100"
+                        data-slider-value="{{ form.prize.value|default:'100' }}">
+                </div>
+                {{ form.prize.errors }}
+            </div>
+            Payments are handled through Paypal. You will be charged from Coderbounty, Inc. (Our current parent
+            company)
+            {% if not user.is_authenticated %}
+            <br><span class="text-danger">*Login required</span>
+            {% endif %}
         </div>
     </div>
+</form>
+<h1 class="page-sub-header">Subscription:</h1>
+{% include '_subscriptions.html' %}
+<div class="row">
+    <div class="col-lg-12">
+        <div class="free-plan-text">
+            <h2>Free Plan:</h2>
+            <p>Limited to 5 bugs per month:</p>
+        </div>
+        <button type="submit" class="submit_button" onclick="javascript:document.getElementById('plan').value='Free'"
+            class="btn btn-primary btn-lg">
+            Start
+        </button>
+        <br><br>
+    </div>
+</div>
 {% endblock %}
 
 {% block after_js %}
-    <script src="{% static "js/bootstrap-slider.js" %}"></script>
+<script src="{% static "js/bootstrap-slider.js" %}"></script>
 
-    <script>
-        $('.btn').on('click', function () {
-            $(".hunt-form").valid();
-        });
+<script>
+    $('.btn').on('click', function () {
+        $(".hunt-form").valid();
+    });
 
-        function numberWithCommas(x) {
-            var parts = x.toString().split(".");
-            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-            return parts.join(".");
+    function numberWithCommas(x) {
+        var parts = x.toString().split(".");
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return parts.join(".");
+    }
+
+    $(".slider").slider({
+        tooltip: 'always',
+        formatter: function (value) {
+            return '$' + numberWithCommas(value);
         }
-
-        $(".slider").slider({
-            tooltip: 'always',
-            formatter: function (value) {
-                return '$' + numberWithCommas(value);
-            }
-        });
-    </script>
+    });
+</script>
 {% endblock %}
