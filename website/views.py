@@ -1233,17 +1233,6 @@ def IssueEdit(request):
             return HttpResponse("Unauthorised")
 
 
-class EmailDetailView(TemplateView):
-    template_name = "email.html"
-
-    def get_context_data(self, *args, **kwargs):
-        context = super(EmailDetailView, self).get_context_data(*args, **kwargs)
-        context["emails"] = get_email_from_domain(self.kwargs["slug"])
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
-        return context
-
-
 def get_email_from_domain(domain_name):
     new_urls = deque(["http://" + domain_name])
     processed_urls = set()
