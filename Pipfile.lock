@@ -963,11 +963,11 @@
         },
         "stripe": {
             "hashes": [
-                "sha256:2ff904fb8dee0d25f135059468a876852d24dc8cbe0b45d7aff56a028045777c",
-                "sha256:6c685eeadf9e3608315b6d84b4f5f2da2909179b65633ce20f296be22ed21a98"
+                "sha256:178d15444d1364bca1a91f3d167409aedeb21a01835a5f9968a88bba3f79b606",
+                "sha256:965a7531c1e64253f0efbd4b31d028a66bb6e5b9352504fbcfdc72a7ba745aff"
             ],
             "index": "pypi",
-            "version": "==2.56.0"
+            "version": "==2.57.0"
         },
         "swapper": {
             "hashes": [
