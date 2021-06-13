@@ -40,14 +40,33 @@ from website.views import (
     DomainList,
     UserProfileDetailsView,
     JoinCompany,
+    FacebookLogin,
+    FacebookConnect,
+    GithubConnect, 
+    GithubLogin,
 )
+from bugheist import settings
 from rest_framework.authtoken import views
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from dj_rest_auth.registration.views import (
+    SocialAccountListView, SocialAccountDisconnectView
+)
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
+import urllib.parse
 
+from django.shortcuts import redirect
+from allauth.socialaccount.providers.github import views as github_views
+
+from website.views import github_callback
+from allauth.socialaccount.providers.github import views as github_views
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from django.contrib import admin
+from django.shortcuts import redirect
+from django.urls import include, path, reverse
+from dj_rest_auth.registration.views import SocialLoginView
 admin.autodiscover()
 schema_view = get_schema_view(
     openapi.Info(
@@ -61,12 +80,45 @@ schema_view = get_schema_view(
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
+
+
 urlpatterns = [
     path(
         "captcha/", include("captcha.urls")
     ),
     url(
-        r'^rest-auth/', include('rest_auth.urls')
+        r'^auth/registration/', include('dj_rest_auth.registration.urls')
+    ),
+    url(
+        r'^auth/', include('dj_rest_auth.urls')
+    ),
+    # url(
+    #     r'^auth/facebook/$', FacebookLogin.as_view(), name='fb_login'
+    # ),
+    path(
+        'auth/github/', GithubLogin.as_view(), name='github_login'
+    ),
+    path(
+        'accounts/github/login/callback/', github_callback, name='github_callback'
+    ),
+    # url(
+    #     r'^auth/facebook/connect/$', FacebookConnect.as_view(), name='fb_connect'
+    # ),
+    url(
+        r'^auth/github/connect/$', GithubConnect.as_view(), name='github_connect'
+    ),
+    path(
+        'auth/github/url/', github_views.oauth2_login
+    ),
+    path(
+        'socialaccounts/',
+        SocialAccountListView.as_view(),
+        name='social_account_list'
+    ),
+    path(
+        'socialaccounts/<int:pk>/disconnect/',
+        SocialAccountDisconnectView.as_view(),
+        name='social_account_disconnect'
     ),
     url(
         r"^swagger(?P<format>\.json|\.yaml)$",

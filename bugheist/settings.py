@@ -6,7 +6,6 @@ https://docs.djangoproject.com/en/1.8/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.8/ref/settings/
 """
-
 import os
 import sys
 
@@ -26,7 +25,6 @@ DEFAULT_FROM_EMAIL = "support@bugheist.com"
 SERVER_EMAIL = "support@bugheist.com"
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
@@ -73,8 +71,10 @@ INSTALLED_APPS = (
     "star_ratings",
     "drf_yasg",
     "captcha",
-    "rest_auth",
+    "dj_rest_auth",
+    "dj_rest_auth.registration",
 )
+
 
 CRON_CLASSES = ["website.views.CreateIssue"]
 
@@ -272,7 +272,7 @@ ACCOUNT_EMAIL_VERIFICATION = "optional"
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Allow all host headers
-ALLOWED_HOSTS = [".bugheist.com", "127.0.0.1"]
+ALLOWED_HOSTS = ["*"]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
@@ -357,6 +357,12 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 10,
 }
 
+SOCIALACCOUNT_PROVIDER = {
+    'github': {
+        'scope': ('user:email',)
+    }
+}
+
 X_FRAME_OPTIONS = "SAMEORIGIN"
 
 MDEDITOR_CONFIGS = {
@@ -422,3 +428,5 @@ STRIPE_TEST_SECRET_KEY = os.environ.get(
 STRIPE_LIVE_MODE = False  # Change to True in production
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
+CALLBACK_URL_FOR_GITHUB = os.environ.get("CALLBACK_URL_FOR_GITHUB", default="https://f3f4f1521721.ngrok.io")
