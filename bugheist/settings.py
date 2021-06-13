@@ -429,4 +429,4 @@ STRIPE_LIVE_MODE = False  # Change to True in production
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
-CALLBACK_URL_FOR_GITHUB = os.environ.get("CALLBACK_URL_FOR_GITHUB", default="https://f3f4f1521721.ngrok.io")
+CALLBACK_URL_FOR_GITHUB = os.environ.get("CALLBACK_URL_FOR_GITHUB", default="http://127.0.0.1/8000/")
