@@ -50,6 +50,7 @@ from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from dj_rest_auth.registration.views import SocialLoginView
 
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialConnectView
 from bugheist import settings
@@ -124,10 +125,37 @@ def index(request, template="index.html"):
 
 def github_callback(request):
     params = urllib.parse.urlencode(request.GET)
+    print(params)
     return redirect(f'{settings.CALLBACK_URL_FOR_GITHUB}?{params}')
+
+def google_callback(request):
+    params = urllib.parse.urlencode(request.GET)
+    print(params)
+    return redirect(f'{settings.CALLBACK_URL_FOR_GOOGLE}?{params}')
+
+def facebook_callback(request):
+    params = urllib.parse.urlencode(request.GET)
+    print(params)
+    return redirect(f'{settings.CALLBACK_URL_FOR_FACEBOOK}?{params}')
 
 class FacebookLogin(SocialLoginView):
     adapter_class = FacebookOAuth2Adapter
+    client_class = OAuth2Client
+    @property
+    def callback_url(self):
+        # use the same callback url as defined in your Facebook app, this url
+        # must be absolute:
+        return self.request.build_absolute_uri(reverse('facebook_callback'))
+
+class GoogleLogin(SocialLoginView):
+    adapter_class = GoogleOAuth2Adapter
+    client_class = OAuth2Client
+    @property
+    def callback_url(self):
+        # use the same callback url as defined in your Google app, this url
+        # must be absolute:
+        return self.request.build_absolute_uri(reverse('google_callback'))
+
 
 class GithubLogin(SocialLoginView):
     adapter_class = GitHubOAuth2Adapter
@@ -140,7 +168,12 @@ class GithubLogin(SocialLoginView):
 
 class FacebookConnect(SocialConnectView):
     adapter_class = FacebookOAuth2Adapter
-
+    client_class = OAuth2Client
+    @property
+    def callback_url(self):
+        # use the same callback url as defined in your Facebook app, this url
+        # must be absolute:
+        return self.request.build_absolute_uri(reverse('facebook_callback'))
 
 class GithubConnect(SocialConnectView):
     adapter_class = GitHubOAuth2Adapter
@@ -150,6 +183,15 @@ class GithubConnect(SocialConnectView):
         # use the same callback url as defined in your GitHub app, this url
         # must be absolute:
         return self.request.build_absolute_uri(reverse('github_callback'))
+
+class GoogleConnect(SocialConnectView):
+    adapter_class = GoogleOAuth2Adapter
+    client_class = OAuth2Client
+    @property
+    def callback_url(self):
+        # use the same callback url as defined in your Google app, this url
+        # must be absolute:
+        return self.request.build_absolute_uri(reverse('google_callback'))
 
 @login_required(login_url="/accounts/login")
 def company_dashboard(request, template="index_company.html"):

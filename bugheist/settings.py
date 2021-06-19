@@ -360,6 +360,9 @@ REST_FRAMEWORK = {
 SOCIALACCOUNT_PROVIDER = {
     'github': {
         'scope': ('user:email',)
+    },
+    'google': {
+        'scope': ('user:email',)
     }
 }
 
@@ -429,4 +432,8 @@ STRIPE_LIVE_MODE = False  # Change to True in production
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
-CALLBACK_URL_FOR_GITHUB = os.environ.get("CALLBACK_URL_FOR_GITHUB", default="http://127.0.0.1/8000/")
+CALLBACK_URL_FOR_GITHUB = os.environ.get("CALLBACK_URL_FOR_GITHUB", default="http://127.0.0.1:8000")
+
+CALLBACK_URL_FOR_GOOGLE = os.environ.get("CALLBACK_URL_FOR_GOOGLE", default="http://127.0.0.1:8000")
+
+CALLBACK_URL_FOR_FACEBOOK = os.environ.get("CALLBACK_URL_FOR_FACEBOOK", default="http://127.0.0.1:8000")

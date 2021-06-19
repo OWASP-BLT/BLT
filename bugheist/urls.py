@@ -44,6 +44,8 @@ from website.views import (
     FacebookConnect,
     GithubConnect, 
     GithubLogin,
+    GoogleLogin,
+    GoogleConnect,
 )
 from bugheist import settings
 from rest_framework.authtoken import views
@@ -58,15 +60,14 @@ favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
 import urllib.parse
 
 from django.shortcuts import redirect
-from allauth.socialaccount.providers.github import views as github_views
 
-from website.views import github_callback
+from website.views import github_callback, google_callback, facebook_callback
 from allauth.socialaccount.providers.github import views as github_views
-from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from allauth.socialaccount.providers.google import views as google_views
+from allauth.socialaccount.providers.facebook import views as facebook_views
 from django.contrib import admin
 from django.shortcuts import redirect
 from django.urls import include, path, reverse
-from dj_rest_auth.registration.views import SocialLoginView
 admin.autodiscover()
 schema_view = get_schema_view(
     openapi.Info(
@@ -92,23 +93,41 @@ urlpatterns = [
     url(
         r'^auth/', include('dj_rest_auth.urls')
     ),
-    # url(
-    #     r'^auth/facebook/$', FacebookLogin.as_view(), name='fb_login'
-    # ),
+    url(
+        'auth/facebook', FacebookLogin.as_view(), name='facebook_login'
+    ),
     path(
         'auth/github/', GithubLogin.as_view(), name='github_login'
     ),
     path(
+        'auth/google/', GoogleLogin.as_view(), name='google_login'
+    ),
+    path(
         'accounts/github/login/callback/', github_callback, name='github_callback'
     ),
-    # url(
-    #     r'^auth/facebook/connect/$', FacebookConnect.as_view(), name='fb_connect'
-    # ),
+    path(
+        'accounts/google/login/callback/', google_callback, name='google_callback'
+    ),
+    path(
+        'accounts/facebook/login/callback/', facebook_callback, name='facebook_callback'
+    ),
+    url(
+        r'^auth/facebook/connect/$', FacebookConnect.as_view(), name='facebook_connect'
+    ),
     url(
         r'^auth/github/connect/$', GithubConnect.as_view(), name='github_connect'
     ),
+    url(
+        r'^auth/google/connect/$', GoogleConnect.as_view(), name='google_connect'
+    ),
     path(
         'auth/github/url/', github_views.oauth2_login
+    ),
+    path(
+        'auth/google/url/', google_views.oauth2_login
+    ),
+    path(
+        'auth/facebook/url/', facebook_views.oauth2_callback
     ),
     path(
         'socialaccounts/',
