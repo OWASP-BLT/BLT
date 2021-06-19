@@ -319,7 +319,8 @@ if not os.path.exists(AVATAR_PATH):
     os.makedirs(AVATAR_PATH)
 
 if DEBUG == False:
-    CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+    CACHES = {"default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 else:
     os.environ["MEMCACHE_SERVERS"] = os.environ.get("MEMCACHIER_SERVERS", "").replace(
         ",", ";"
@@ -419,7 +420,8 @@ SUPERUSERS = ((SUPERUSER_USERNAME, SUPERUSER_EMAIL, SUPERUSER_PASSWORD),)
 STRIPE_LIVE_PUBLIC_KEY = os.environ.get(
     "STRIPE_LIVE_PUBLIC_KEY", "<your publishable key>"
 )
-STRIPE_LIVE_SECRET_KEY = os.environ.get("STRIPE_LIVE_SECRET_KEY", "<your secret key>")
+STRIPE_LIVE_SECRET_KEY = os.environ.get(
+    "STRIPE_LIVE_SECRET_KEY", "<your secret key>")
 STRIPE_TEST_PUBLIC_KEY = os.environ.get(
     "STRIPE_TEST_PUBLIC_KEY",
     "pk_test_51HFiXMFf0OkkOVnDkNs4opFLqM0Sx5GA6Pedf63uGzG1gHhumFYHEOLfCA7yzZwXUpjaa5j9ZhS1yciNhouYCMh400pSx5ZEx6",
@@ -432,8 +434,11 @@ STRIPE_LIVE_MODE = False  # Change to True in production
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
-CALLBACK_URL_FOR_GITHUB = os.environ.get("CALLBACK_URL_FOR_GITHUB", default="http://127.0.0.1:8000")
+CALLBACK_URL_FOR_GITHUB = os.environ.get(
+    "CALLBACK_URL_FOR_GITHUB", default="http://127.0.0.1:8000")
 
-CALLBACK_URL_FOR_GOOGLE = os.environ.get("CALLBACK_URL_FOR_GOOGLE", default="http://127.0.0.1:8000")
+CALLBACK_URL_FOR_GOOGLE = os.environ.get(
+    "CALLBACK_URL_FOR_GOOGLE", default="http://127.0.0.1:8000")
 
-CALLBACK_URL_FOR_FACEBOOK = os.environ.get("CALLBACK_URL_FOR_FACEBOOK", default="http://127.0.0.1:8000")
+CALLBACK_URL_FOR_FACEBOOK = os.environ.get(
+    "CALLBACK_URL_FOR_FACEBOOK", default="http://127.0.0.1:8000")
