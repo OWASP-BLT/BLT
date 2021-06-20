@@ -6,7 +6,6 @@ https://docs.djangoproject.com/en/1.8/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.8/ref/settings/
 """
-
 import os
 import sys
 
@@ -26,7 +25,6 @@ DEFAULT_FROM_EMAIL = "support@bugheist.com"
 SERVER_EMAIL = "support@bugheist.com"
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
@@ -73,8 +71,10 @@ INSTALLED_APPS = (
     "star_ratings",
     "drf_yasg",
     "captcha",
-    "rest_auth",
+    "dj_rest_auth",
+    "dj_rest_auth.registration",
 )
+
 
 CRON_CLASSES = ["website.views.CreateIssue"]
 
@@ -272,7 +272,7 @@ ACCOUNT_EMAIL_VERIFICATION = "optional"
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Allow all host headers
-ALLOWED_HOSTS = [".bugheist.com", "127.0.0.1"]
+ALLOWED_HOSTS = [".bugheist.com", "127.0.0.1", "localhost"]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
@@ -319,7 +319,8 @@ if not os.path.exists(AVATAR_PATH):
     os.makedirs(AVATAR_PATH)
 
 if DEBUG == False:
-    CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+    CACHES = {"default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 else:
     os.environ["MEMCACHE_SERVERS"] = os.environ.get("MEMCACHIER_SERVERS", "").replace(
         ",", ";"
@@ -355,6 +356,15 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.TokenAuthentication",
     ),
     "PAGE_SIZE": 10,
+}
+
+SOCIALACCOUNT_PROVIDER = {
+    'github': {
+        'scope': ('user:email',)
+    },
+    'google': {
+        'scope': ('user:email',)
+    }
 }
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
@@ -410,7 +420,8 @@ SUPERUSERS = ((SUPERUSER_USERNAME, SUPERUSER_EMAIL, SUPERUSER_PASSWORD),)
 STRIPE_LIVE_PUBLIC_KEY = os.environ.get(
     "STRIPE_LIVE_PUBLIC_KEY", "<your publishable key>"
 )
-STRIPE_LIVE_SECRET_KEY = os.environ.get("STRIPE_LIVE_SECRET_KEY", "<your secret key>")
+STRIPE_LIVE_SECRET_KEY = os.environ.get(
+    "STRIPE_LIVE_SECRET_KEY", "<your secret key>")
 STRIPE_TEST_PUBLIC_KEY = os.environ.get(
     "STRIPE_TEST_PUBLIC_KEY",
     "pk_test_51HFiXMFf0OkkOVnDkNs4opFLqM0Sx5GA6Pedf63uGzG1gHhumFYHEOLfCA7yzZwXUpjaa5j9ZhS1yciNhouYCMh400pSx5ZEx6",
@@ -422,3 +433,12 @@ STRIPE_TEST_SECRET_KEY = os.environ.get(
 STRIPE_LIVE_MODE = False  # Change to True in production
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
+CALLBACK_URL_FOR_GITHUB = os.environ.get(
+    "CALLBACK_URL_FOR_GITHUB", default="http://127.0.0.1:8000")
+
+CALLBACK_URL_FOR_GOOGLE = os.environ.get(
+    "CALLBACK_URL_FOR_GOOGLE", default="http://127.0.0.1:8000")
+
+CALLBACK_URL_FOR_FACEBOOK = os.environ.get(
+    "CALLBACK_URL_FOR_FACEBOOK", default="http://127.0.0.1:8000")

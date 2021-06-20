@@ -107,12 +107,12 @@
 </style>
 {% endblock %}
 {% block content %}
-<script type="text/javascript" src="{% static "js/clipboard.min.js" %}"></script>
-<script type="text/javascript" src="{% static "js/lightbox.min.js" %}"></script>
-<script type="text/javascript" src="{% static "js/issue.js" %}"></script>
-<script src="{% static "js/jquery.atwho.js" %}"></script>
-<script src="{% static "js/jquery.caret.js" %}"></script>
-<link href="{% static "css/jquery.atwho.css" %}" rel="stylesheet">
+<script type="text/javascript" src="{% static " js/clipboard.min.js" %}"></script>
+<script type="text/javascript" src="{% static " js/lightbox.min.js" %}"></script>
+<script type="text/javascript" src="{% static " js/issue.js" %}"></script>
+<script src="{% static " js/jquery.atwho.js" %}"></script>
+<script src="{% static " js/jquery.caret.js" %}"></script>
+<link href="{% static " css/jquery.atwho.css" %}" rel="stylesheet">
 
 <div class="row">
     <div class="col-lg-12">
@@ -238,7 +238,9 @@
                     <div class="row">
                         <div class="col-xs-4">
                             {% if browser_family %}
-                            {% with 'img/browser-logos/'|add:browser_family|add:'/'|add:browser_family|add:'_64x64.png'|lower as image_static %}
+                            {% with
+                            'img/browser-logos/'|add:browser_family|add:'/'|add:browser_family|add:'_64x64.png'|lower as
+                            image_static %}
                             <img src="{% static image_static %}" class="img-thumbnail" height="100" width="100">
                             {% endwith %}
                             {% endif %}
@@ -264,7 +266,8 @@
                             <div class="bug-info">
                                 <strong>Status:</strong>
                                 <span
-                                    class="label label-{% if object.status == 'open' %}success{% else %}danger{% endif %} text-capitalize status">{{ object.status }}</span>
+                                    class="label label-{% if object.status == 'open' %}success{% else %}danger{% endif %} text-capitalize status">{{
+                                    object.status }}</span>
                                 {% if request.user.is_authenticated %}
                                 <a class="btn btn-default btn-xs edit-issue-status btn_issclose" id="issue_stat">Click
                                     to
@@ -349,8 +352,8 @@
 <script type="text/javascript">
     var label = {
         {
-            object.label
-        }
+        object.label
+    }
     };
     $(document).on('click', '.edit-issue', function (e) {
         $('.form input[name=description]').val($('.issue-desc').text());
@@ -452,7 +455,7 @@
                 } else {
                     $.notify(
                         "Only the user who has submitted the bug and superuser can close/open an issue"
-                        ), {
+                    ), {
                         style: "custom",
                         className: "danger"
                     }
