@@ -508,11 +508,10 @@
         },
         "humanize": {
             "hashes": [
-                "sha256:37711ee4f10525fa94e0133353d3c20888dd3b78570ec6e53005ba04f75fc3b8",
-                "sha256:bd6e8aa313ca07ed882695f89e4bf09e05049d2d489d4e2bf34b74c0da8d1613"
+                "sha256:5eaafcd584fd01ab9a59f040e20b3daa35a24e8125d4c84788392d799be2012a",
+                "sha256:8b1463a17bf722c06712ac9d31f7e46efd048dd4e76fafeac9f3b8f972b0b8e3"
             ],
-            "markers": "python_version >= '3.6'",
-            "version": "==3.8.0"
+            "version": "==3.7.0"
         },
         "idna": {
             "hashes": [
