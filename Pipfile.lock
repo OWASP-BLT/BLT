@@ -489,10 +489,10 @@
         },
         "humanize": {
             "hashes": [
-                "sha256:6d9bee57f856418302b5d11d7229bc401882d800962a19fd6dcdd83672cb15e6",
-                "sha256:a31704cf41f023e268032c4813c6482573320150a0d986f76b245e0451bb89e1"
+                "sha256:5eaafcd584fd01ab9a59f040e20b3daa35a24e8125d4c84788392d799be2012a",
+                "sha256:8b1463a17bf722c06712ac9d31f7e46efd048dd4e76fafeac9f3b8f972b0b8e3"
             ],
-            "version": "==3.6.0"
+            "version": "==3.7.0"
         },
         "idna": {
             "hashes": [
@@ -810,11 +810,11 @@
         },
         "pyvirtualdisplay": {
             "hashes": [
-                "sha256:331649ea7853884346be5b22fab13bc02327fe8d3528202d925705dd86c680b3",
-                "sha256:9d4c6957ec2c4753b5293fb6a60a90d7c27fc01bc5de9b5aa863f7c1e3fb4efc"
+                "sha256:3dd8f63d32a134c07c2433f6931e9877172a99a33757f0e5cd146612e1c6380d",
+                "sha256:3ecda6b183b03ba65dcfdf0019809722480d7b7e10eea6e3a40bf1ba3146bab7"
             ],
             "index": "pypi",
-            "version": "==2.1"
+            "version": "==2.2"
         },
         "pyyaml": {
             "hashes": [
