@@ -10,7 +10,6 @@ from django.views.generic.base import RedirectView
 
 import comments.views
 import website.views
-from website.serializers import router
 from website.views import (
     UserProfileDetailView,
     IssueCreate,
@@ -26,11 +25,7 @@ from website.views import (
     InviteCreate,
     CreateInviteFriend,
     ScoreboardView,
-    get_score,
     CustomObtainAuthToken,
-    create_tokens,
-    issue_count,
-    get_scoreboard,
     CreateHunt,
     DraftHunts,
     UpcomingHunts,
@@ -42,14 +37,17 @@ from website.views import (
     JoinCompany,
     FacebookLogin,
     FacebookConnect,
-    GithubConnect, 
+    GithubConnect,
     GithubLogin,
     GoogleLogin,
     GoogleConnect,
+    IssueViewSet,
+    DomainViewSet,
+    UserIssueViewSet,
+    UserProfileViewSet
 )
 from bugheist import settings
-from rest_framework.authtoken import views
-from rest_framework import permissions
+from rest_framework import permissions, routers
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from dj_rest_auth.registration.views import (
@@ -57,17 +55,20 @@ from dj_rest_auth.registration.views import (
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
-import urllib.parse
 
-from django.shortcuts import redirect
+router = routers.DefaultRouter()
+router.register(r'issues', IssueViewSet, basename="issues")
+router.register(r'userissues', UserIssueViewSet, basename="userissues")
+router.register(r'profile', UserProfileViewSet, basename="profile")
+router.register(r'domain', DomainViewSet, basename="domain")
 
 from website.views import github_callback, google_callback, facebook_callback
 from allauth.socialaccount.providers.github import views as github_views
 from allauth.socialaccount.providers.google import views as google_views
 from allauth.socialaccount.providers.facebook import views as facebook_views
 from django.contrib import admin
-from django.shortcuts import redirect
-from django.urls import include, path, reverse
+from django.urls import include, path
+
 admin.autodiscover()
 schema_view = get_schema_view(
     openapi.Info(
@@ -81,7 +82,6 @@ schema_view = get_schema_view(
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
-
 
 urlpatterns = [
     path(
@@ -360,5 +360,5 @@ if settings.DEBUG:
     import debug_toolbar
 
     urlpatterns = [
-        url(r"^__debug__/", include(debug_toolbar.urls)),
-    ] + urlpatterns
+                      url(r"^__debug__/", include(debug_toolbar.urls)),
+                  ] + urlpatterns
