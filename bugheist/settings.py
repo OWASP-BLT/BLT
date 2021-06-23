@@ -272,7 +272,7 @@ ACCOUNT_EMAIL_VERIFICATION = "optional"
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Allow all host headers
-ALLOWED_HOSTS = [".bugheist.com", "127.0.0.1", "localhost"]
+ALLOWED_HOSTS = [".bugheist.com", "127.0.0.1", "localhost", "bugheist-staging.herokuapp.com"]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
