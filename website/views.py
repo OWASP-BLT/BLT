@@ -45,6 +45,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DetailView, TemplateView, ListView
 from django.views.generic import View
 from django.views.generic.edit import CreateView
+from django.core import serializers
 from rest_framework import viewsets, filters
 from user_agents import parse
 from rest_framework.authtoken.models import Token
@@ -81,7 +82,6 @@ import humanize
 from django.views.decorators.http import require_GET
 
 from .serializers import IssueSerializer, UserProfileSerializer, DomainSerializer, UserSerializer
-
 
 def index(request, template="index.html"):
     try:
@@ -1237,6 +1237,39 @@ def search(request, template="search.html"):
     if request.user.is_authenticated:
         context["wallet"] = Wallet.objects.get(user=request.user)
     return render(request, template, context)
+
+def search_issues(request):
+    query = request.GET.get("query")
+    query = query.strip()
+    stype = request.GET.get("type")
+    context = None
+    if query is None:
+        return render(request, template)
+    if query[:6] == "issue:":
+        stype = "issue"
+        query = query[6:]
+    elif query[:7] == "domain:":
+        stype = "domain"
+        query = query[7:]
+    elif query[:5] == "user:":
+        stype = "user"
+        query = query[5:]
+    elif query[:6] == "label:":
+        stype = "label"
+        query = query[6:]
+    if stype == "issue" or stype is None:
+        context = {
+            "query": query,
+            "type": stype,
+            "issues": Issue.objects.filter(Q(description__icontains=query), hunt=None)[
+                      0:20
+                      ],
+        }
+    if request.user.is_authenticated:
+        context["wallet"] = Wallet.objects.get(user=request.user)
+    issues = serializers.serialize("json", context["issues"])
+    issues = json.loads(issues)
+    return HttpResponse(json.dumps({"issues": issues}), content_type='application/json')
 
 
 class HuntCreate(CreateView):
