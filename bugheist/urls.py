@@ -345,6 +345,7 @@ urlpatterns = [
         csrf_exempt(IssueCreate.as_view()),
         name="issuecreate",
     ),
+    url(r"^api/v1/search/$", csrf_exempt(website.views.search_issues)),
     url(r"^api/v1/delete_issue/(?P<id>\w+)/$", csrf_exempt(website.views.delete_issue)),
     url(r"^api/v1/issue/update/$", csrf_exempt(website.views.UpdateIssue)),
     url(r"^api/v1/scoreboard/$", website.views.get_scoreboard),
