@@ -1,9 +1,9 @@
 from django import forms
 
-from .models import InviteFriend, UserProfile, Hunt
+from .models import InviteFriend, UserProfile
 from mdeditor.fields import MDTextFormField
-from bootstrap_datepicker_plus import DateTimePickerInput
 from captcha.fields import CaptchaField
+
 
 class FormInviteFriend(forms.ModelForm):
     class Meta:
@@ -17,10 +17,14 @@ class UserProfileForm(forms.ModelForm):
         model = UserProfile
         fields = ('user_avatar',)
 
-class HuntForm (forms.Form): 
-    content = MDTextFormField ()
-    start_date = forms.DateTimeField(widget=forms.DateTimeInput(attrs={'class': 'col-sm-6', 'readonly' : True}),label='', required=False ) 
-    end_date = forms.DateTimeField(widget=forms.DateTimeInput(attrs={'class': 'col-sm-6', 'readonly' : True}),label='', required=False)
+
+class HuntForm(forms.Form):
+    content = MDTextFormField()
+    start_date = forms.DateTimeField(widget=forms.DateTimeInput(attrs={'class': 'col-sm-6', 'readonly': True}),
+                                     label='', required=False)
+    end_date = forms.DateTimeField(widget=forms.DateTimeInput(attrs={'class': 'col-sm-6', 'readonly': True}), label='',
+                                   required=False)
+
 
 class CaptchaForm(forms.Form):
     captcha = CaptchaField()

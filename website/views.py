@@ -556,7 +556,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         decoded_file, name=complete_file_name
                     )
         except:
-            tokenauth = False
+            pass
         initial = super(IssueCreate, self).get_initial()
         if self.request.POST.get("screenshot-hash"):
             initial["screenshot"] = (
@@ -1765,7 +1765,6 @@ def get_scoreboard(request):
         else:
             temp["top"] = each.top_tester.username
         scoreboard.append(temp)
-    paginator = Paginator(scoreboard, 10)
     domain_list = list()
     for data in scoreboard:
         domain_list.append(data)
@@ -1799,7 +1798,6 @@ class CreateIssue(CronJobBase):
         import imaplib
 
         mail = imaplib.IMAP4_SSL("imap.gmail.com", 993)
-        error = False
         mail.login(settings.REPORT_EMAIL, settings.REPORT_EMAIL_PASSWORD)
         mail.list()
         # Out: list of "folders" aka labels in gmail.
@@ -1816,7 +1814,6 @@ class CreateIssue(CronJobBase):
             typ, data = mail.fetch(num, "(RFC822)")
             raw_email = (data[0][1]).decode("utf-8")
             email_message = email.message_from_string(raw_email)
-            maintype = email_message.get_content_maintype()
             error = False
             for part in email_message.walk():
                 if part.get_content_type() == "text/plain":  # ignore attachments/html
@@ -1935,7 +1932,6 @@ class CreateHunt(TemplateView):
             domain_admin = CompanyAdmin.objects.get(user=request.user)
             if not domain_admin.is_active:
                 return HttpResponseRedirect("/")
-            domain = []
             if domain_admin.role == 0:
                 domain = Domain.objects.filter(company=domain_admin.company)
             else:
@@ -2021,7 +2017,6 @@ class CreateHunt(TemplateView):
                 wallet.withdraw(total_amount)
                 wallet.save()
                 try:
-                    is_published = request.POST["publish"]
                     hunt.is_published = True
                 except:
                     hunt.is_published = False
@@ -2717,7 +2712,6 @@ def view_hunt(request, pk, template="view_hunt.html"):
 @login_required(login_url="/accounts/login")
 def submit_bug(request, pk, template="hunt_submittion.html"):
     hunt = get_object_or_404(Hunt, pk=pk)
-    time_remaining = None
     if request.method == "GET":
         if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
             return redirect("/dashboard/user/hunt/" + str(pk) + "/")

@@ -13,7 +13,6 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db import models
 from django.db.models import Count
-from django.db.models import signals
 from django.db.models.signals import post_save
 from unidecode import unidecode
 from django.dispatch import receiver
