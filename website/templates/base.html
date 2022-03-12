@@ -279,6 +279,10 @@
                         <a href="http://twitter.com/bugheist" target="_new"><i class="fa fa-twitter"></i></a>
                         <a href="http://facebook.com/bugheist" target="_new"><i class="fa fa-facebook"></i></a>
                         <a href="http://github.com/bugheist/website" target="_new"><i class="fa fa-github"></i></a>
+                        <a href="https://steemit.com/@bugheist" target="_new">blog</a>
+
+                        
+
                     </div>
                 </div>
             </div>
@@ -337,23 +341,15 @@
                 $.notify(message, {
                     style: "custom",
                     className: "danger"
-                }); {
-                %
-                if messages %
-            } {
-                %
-                for message in messages %
-            }
-            $.notify("{{ message }}", {
-                style: "custom",
-                className: "{{message.level_tag }}"
-            }); {
-                %
-                endfor %
-            } {
-                %
-                endif %
-            }
+                }); 
+                {% if messages %} 
+                    {% for message in messages %}
+                    $.notify("{{ message }}", {
+                        style: "custom",
+                        className: "{{message.level_tag }}"
+                    }); 
+                    {% endfor %} 
+                {% endif %}
         });
     </script>
 
