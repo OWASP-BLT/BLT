@@ -41,7 +41,7 @@ The BLT code is released under [GNU Affero General Public License v3.0 (AGPL-3.0
 
 ## Resources
 
-- Join the [OWASP Slack Channel](https://owasp.herokuapp.com/) and ask questions at **#project-blt** Github activity can be seen in **#blt-github**.
+- Join the [OWASP Slack Channel](https://owasp.org/slack/invite) and ask questions at **#project-blt** Github activity can be seen in **#blt-github**.
 
 ## Notes
 
