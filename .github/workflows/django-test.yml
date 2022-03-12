@@ -33,5 +33,5 @@ jobs:
       run: pipenv run python manage.py migrate
     - name: Run collectstatic
       run: pipenv run python manage.py collectstatic --noinput
-    - name: Run collectstatic
+    - name: Run tests
       run: xvfb-run --auto-servernum pipenv run python manage.py test
