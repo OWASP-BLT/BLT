@@ -58,6 +58,11 @@ class UrlsTest(test.TestCase):
                 if not skip:
                     url = reverse(fullname, kwargs=params)
                     matches = [
+                        "/socialaccounts/",
+                        "/auth/user/",
+                        "/auth/password/change/",
+                        "/auth/github/connect/",
+                        "/auth/google/connect/",
                         "/captcha/refresh/",
                         "/rest-auth/user/",
                         "/rest-auth/password/change/",
@@ -67,24 +72,17 @@ class UrlsTest(test.TestCase):
                         "/error/",
                         "/tellme/post_feedback/",
                     ]
-                    if any(x in url for x in matches):
-                        print(("SKIP " + "regex.pattern" + " " + fullname))
-
-                    else:
-                        print("testing", url)
+                    if not any(x in url for x in matches):
                         response = self.client.get(url)
-                        self.assertIn(response.status_code, allowed_http_codes)
+                        self.assertIn(response.status_code, allowed_http_codes, msg=url)
 
                         status = (
                             ""
                             if response.status_code == 200
                             else str(response.status_code) + " "
                         )
-                        print((status + url))
                         if url == logout_url and credentials:
-
                             self.client.login(**credentials)
-                else:
-                    print(("SKIP " + "regex.pattern" + " " + fullname))
+
 
         check_urls(module.urlpatterns)
