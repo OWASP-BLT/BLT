@@ -238,9 +238,7 @@
                     <div class="row">
                         <div class="col-xs-4">
                             {% if browser_family %}
-                            {% with
-                            'img/browser-logos/'|add:browser_family|add:'/'|add:browser_family|add:'_64x64.png'|lower as
-                            image_static %}
+                            {% with 'img/browser-logos/'|add:browser_family|add:'/'|add:browser_family|add:'_64x64.png'|lower as image_static %}
                             <img src="{% static image_static %}" class="img-thumbnail" height="100" width="100">
                             {% endwith %}
                             {% endif %}
