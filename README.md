@@ -1,4 +1,4 @@
-# [OWASP BLT](https://www.bugheist.com) [![Build Status](https://travis-ci.org/OWASP/BLT.svg?branch=master)](https://travis-ci.org/OWASP/BLT) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/5d899b7004cc44f1977b03bc7d664ad9)](https://www.codacy.com/project/souravbadami/BLT/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=OWASP/BLT&amp;utm_campaign=Badge_Grade_Dashboard)
+# [OWASP BLT](https://www.bugheist.com) [![Build Status](https://travis-ci.org/OWASP/BLT.svg?branch=master)](https://travis-ci.org/OWASP/BLT) 
 
 **Report issues and get points, companies are held accountable.**
 
@@ -41,7 +41,7 @@ The BLT code is released under [GNU Affero General Public License v3.0 (AGPL-3.0
 
 ## Resources
 
-- Join the [OWASP Slack Channel](https://owasp.herokuapp.com/) and ask questions at **#project-blt** Github activity can be seen in **#blt-github**.
+- Join the [OWASP Slack Channel](https://owasp.org/slack/invite) and ask questions at **#project-blt** Github activity can be seen in **#blt-github**.
 
 ## Notes
 
