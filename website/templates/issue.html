@@ -263,9 +263,7 @@
                             </div>
                             <div class="bug-info">
                                 <strong>Status:</strong>
-                                <span
-                                    class="label label-{% if object.status == 'open' %}success{% else %}danger{% endif %} text-capitalize status">{{
-                                    object.status }}</span>
+                                <span class="label label-{% if object.status == 'open' %}success{% else %}danger{% endif %} text-capitalize status">{{object.status }}</span>
                                 {% if request.user.is_authenticated %}
                                 <a class="btn btn-default btn-xs edit-issue-status btn_issclose" id="issue_stat">Click
                                     to
