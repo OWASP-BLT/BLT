@@ -18,17 +18,20 @@
  # SSH into vagrant 
  vagrant ssh
  
+ # Move to project directory
+ cd BLT
+ 
  # Create tables in the database
- python BLT/manage.py migrate
+ python manage.py migrate
  
  # Create a super user
- python BLT/manage.py createsuperuser
+ python manage.py createsuperuser
  
  # Collect static files
- python BLT/manage.py collectstatic
+ python manage.py collectstatic
 
  # Run the server 
- python BLT/manage.py runserver
+ python manage.py runserver
 ```
 
 ### Ready to go
@@ -64,19 +67,19 @@ from the host machine.
  cd BLT
  
  # Create tables in the database
- python BLT/manage.py migrate
+ python manage.py migrate
  
  # Load initial data
  python3 manage.py loaddata website/fixtures/initial_data.json
  
  # Create a super user
- python BLT/manage.py createsuperuser
+ python manage.py createsuperuser
  
  # Collect static files
- python BLT/manage.py collectstatic
+ python manage.py collectstatic
 
  # Run the server 
- python BLT/manage.py runserver
+ python manage.py runserver
 ```
 
 ### Ready to go now
