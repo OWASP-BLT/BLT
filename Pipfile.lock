@@ -328,10 +328,10 @@
         },
         "django-mdeditor": {
             "hashes": [
-                "sha256:7b44a25d46d4f37e6315e45e0836e73ff612267c5dcc28b2eda06a0f086ec436"
+                "sha256:d1f3b735b6202b8820f10e024a5aa28c5b948897ee7a8dbb84558df75339827e"
             ],
             "index": "pypi",
-            "version": "==0.1.18"
+            "version": "==0.1.20"
         },
         "django-model-utils": {
             "hashes": [
