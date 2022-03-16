@@ -84,5 +84,4 @@ class UrlsTest(test.TestCase):
                         if url == logout_url and credentials:
                             self.client.login(**credentials)
 
-
         check_urls(module.urlpatterns)
