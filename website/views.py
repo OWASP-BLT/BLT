@@ -640,7 +640,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 "body": "![0]("
                 + obj.screenshot.url
                 + ") https://www.bugheist.com/issue/"
-                + str(obj.id),
+                + str(obj.id) + " found by " + obj.user + " at url: " + obj.url,
                 "labels": ["bug", "bugheist"],
             }
             r = requests.post(
