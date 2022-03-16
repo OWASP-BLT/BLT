@@ -1066,11 +1066,11 @@
         },
         "tablib": {
             "hashes": [
-                "sha256:41aa40981cddd7ec4d1fabeae7c38d271601b306386bd05b5c3bcae13e5aeb20",
-                "sha256:f83cac08454f225a34a305daa20e2110d5e6335135d505f93bc66583a5f9c10d"
+                "sha256:12d8686454c721de88d8ca5adf07e1f419ef6dbcecedf65e8950d4a329daf3a0",
+                "sha256:1ba12da7b0b17e33f5997fb1bc8ed560aae3535f5892ae5e5c01a056c47d4d78"
             ],
             "index": "pypi",
-            "version": "==3.0.0"
+            "version": "==3.2.0"
         },
         "tweepy": {
             "hashes": [
