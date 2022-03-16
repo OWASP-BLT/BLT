@@ -339,12 +339,11 @@
         },
         "django-simple-captcha": {
             "hashes": [
-                "sha256:1bb2c842bde3ae0e23ce3c84b2f07f608b660c8d18201b0812571bccf38cf867",
-                "sha256:84b5c188e6ae50e9ecec5e5d734c5bc4d2a50fbbca7f59d2c12da9a3bbee5051",
-                "sha256:8da57aa79a7393019cb5ea4c0efaf6727911290727d39e894ce82a442198068c"
+                "sha256:9649e66dab4e71efacbfef02f48b83b91684898352a1ab56f1686ce71033b328",
+                "sha256:f9a07e5e9de264ba4039c9eaad66bc48188a21ceda5fcdc2fa13c5512141c2c9"
             ],
             "index": "pypi",
-            "version": "==0.5.14"
+            "version": "==0.5.17"
         },
         "django-star-ratings": {
             "hashes": [
