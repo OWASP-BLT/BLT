@@ -123,15 +123,17 @@
         </div>
     </center>
 </div>
+{% comment %}
 <div class="row" style="margin-left: 10px;">
     <div class="col-lg-12">
+        
         <div class="row">
             <div class="col-lg-12">
                 <h1 class="page-sub-header">{% trans "Featured Bug Hunts" %}</h1>
             </div>
         </div>
         <div class="row" data-intro="These are the lists of featured websites on BugHeist." data-step="2">
-            {% comment %}
+            
             {% for hunt in hunts %}
             <div class="col-lg-6 col-md-6">
                 <div class="panel" id="hunt_{{domain.id}}" style="background-color:{{domain.get_color}}">
@@ -235,12 +237,13 @@
                     </a>
                 </div>
             </div>
-            {% endcomment %}
+            
 
         </div>
+        
     </div>
 </div>
-
+{% endcomment %}
 <div class="row" style="margin-left: 10px;">
     <div class="col-lg-3 col-md-3">
         <div class="panel panel-primary">
@@ -300,9 +303,8 @@
                 <div class="panel-body leaderboard-panel">
                     <strong>The 1st Place Hunter for {% now "F" %} will receive</strong>
                     <div class="box leaderboardbox">
-                        <strong>No sponsored prizes this month</strong>
-                        <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post"
-                            style="display:inline;margin-bottom:10px;">
+                        <strong>No sponsored prizes this month</strong></br>
+                        <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post" style="display:inline;margin-bottom:10px;">
                             <input type="hidden" name="cmd" value="_xclick">
                             <input type="hidden" name="business" value="coderbounty@gmail.com">
                             <input type="hidden" name="item_name" value="Sponsor a Prize for the {% now " F" %}
