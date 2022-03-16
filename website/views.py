@@ -2918,10 +2918,7 @@ class IssueViewSet(viewsets.ModelViewSet):
 
 
 def handler404(request, exception):
-   context = {}
-   return render(request,'404.html', context)
+   return render(request, "404.html", {})
 
-def handler500(request, exception):
-   context = {}
-   return render(request,'500.html', context)
-
+def handler500(request, exception=None):
+   return render(request, "500.html", {})
