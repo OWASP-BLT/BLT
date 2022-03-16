@@ -1148,7 +1148,7 @@ class ScoreboardView(ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(ScoreboardView, self).get_context_data(*args, **kwargs)
-        companies = sorted(Domain.objects.all().objects.all(), key=lambda t: t.open_issues)
+        companies = sorted(Domain.objects.all(), key=lambda t: t.open_issues)
 
         #companies = Domain.objects.all().order_by("-open_issues")
         paginator = Paginator(companies, self.paginate_by)
