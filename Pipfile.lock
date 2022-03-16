@@ -281,11 +281,11 @@
         },
         "django-filter": {
             "hashes": [
-                "sha256:84e9d5bb93f237e451db814ed422a3a625751cbc9968b484ecc74964a8696b06",
-                "sha256:e00d32cebdb3d54273c48f4f878f898dced8d5dfaad009438fe61ebdf535ace1"
+                "sha256:632a251fa8f1aadb4b8cceff932bb52fe2f826dd7dfe7f3eac40e5c463d6836e",
+                "sha256:f4a6737a30104c98d2e2a5fb93043f36dd7978e0c7ddc92f5998e85433ea5063"
             ],
             "index": "pypi",
-            "version": "==2.4.0"
+            "version": "==21.1"
         },
         "django-gravatar2": {
             "hashes": [
