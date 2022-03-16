@@ -68,7 +68,7 @@
                 onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
             <img src="{% static 'img/logo-small-transparent.png' %}" class="alt-img">
             <h3>
-                <a href="http://{{ domain }}" target="/new">{{ name }}</a><br />
+                <a href="http://{{ domain.url }}" target="/new">{{ name }}</a><br />
                 {% if domain.email %}
                 <small>
                     [{{ domain.email|obfuscate_mailto }}]
@@ -184,7 +184,7 @@
     <div class="col-lg-3 col-md-3 ">
         {% if domain.webshot %}
         <div class="col-lg-12">
-            <a href="https://{{ domain }}" target="_new">
+            <a href="https://{{ domain.url }}" target="_new">
                 <img src="{{ domain.webshot.url }}">
             </a>
         </div>
