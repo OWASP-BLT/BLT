@@ -336,20 +336,15 @@
                 $(this).parent().find('span').html(file);
             });
 
-            var message = "{{not_verified}}";
-            if (message != '')
-                $.notify(message, {
+ 
+            {% if messages %} 
+                {% for message in messages %}
+                $.notify("{{ message }}", {
                     style: "custom",
-                    className: "danger"
+                    className: "{{message.level_tag }}"
                 }); 
-                {% if messages %} 
-                    {% for message in messages %}
-                    $.notify("{{ message }}", {
-                        style: "custom",
-                        className: "{{message.level_tag }}"
-                    }); 
-                    {% endfor %} 
-                {% endif %}
+                {% endfor %} 
+            {% endif %}
         });
     </script>
 
