@@ -9,10 +9,10 @@ jobs:
 
     steps:
     - uses: browser-actions/setup-geckodriver@latest
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python 3.9
       run: pipx install pipenv
-    - uses: actions/setup-python@v1
+    - uses: actions/setup-python@v2
       with:
         python-version: 3.9
         cache: 'pipenv'
