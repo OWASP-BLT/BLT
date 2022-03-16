@@ -81,7 +81,12 @@ import stripe
 import humanize
 from django.views.decorators.http import require_GET
 
-from .serializers import IssueSerializer, UserProfileSerializer, DomainSerializer, UserSerializer
+from .serializers import (
+    IssueSerializer,
+    UserProfileSerializer,
+    DomainSerializer,
+)
+
 
 def index(request, template="index.html"):
     try:
@@ -89,21 +94,17 @@ def index(request, template="index.html"):
     except:
         domains = None
     try:
-        show_message = ""
         if not EmailAddress.objects.get(email=request.user.email).verified:
-            show_message = "Please verify your email address"
+            messages.error(request, "Please verify your email address")
     except:
-        show_message = ""
+        pass
 
     bug_count = Issue.objects.all().count()
     user_count = User.objects.all().count()
     hunt_count = Hunt.objects.all().count()
     domain_count = Domain.objects.all().count()
     captcha_form = CaptchaForm()
-    try:
-        domain_admin = CompanyAdmin.objects.get(user=request.user)
-    except:
-        domain_admin = None
+
     wallet = None
     if request.user.is_authenticated:
         wallet, created = Wallet.objects.get_or_create(user=request.user)
@@ -115,10 +116,8 @@ def index(request, template="index.html"):
             points__created__month=datetime.now().month,
             points__created__year=datetime.now().year,
         )
-                           .annotate(total_score=Sum("points__score"))
-                           .order_by("-total_score")[:10],
-        "not_verified": show_message,
-        "domain_admin": domain_admin,
+        .annotate(total_score=Sum("points__score"))
+        .order_by("-total_score")[:10],
         "bug_count": bug_count,
         "user_count": user_count,
         "wallet": wallet,
@@ -132,19 +131,19 @@ def index(request, template="index.html"):
 def github_callback(request):
     params = urllib.parse.urlencode(request.GET)
     print(params)
-    return redirect(f'{settings.CALLBACK_URL_FOR_GITHUB}?{params}')
+    return redirect(f"{settings.CALLBACK_URL_FOR_GITHUB}?{params}")
 
 
 def google_callback(request):
     params = urllib.parse.urlencode(request.GET)
     print(params)
-    return redirect(f'{settings.CALLBACK_URL_FOR_GOOGLE}?{params}')
+    return redirect(f"{settings.CALLBACK_URL_FOR_GOOGLE}?{params}")
 
 
 def facebook_callback(request):
     params = urllib.parse.urlencode(request.GET)
     print(params)
-    return redirect(f'{settings.CALLBACK_URL_FOR_FACEBOOK}?{params}')
+    return redirect(f"{settings.CALLBACK_URL_FOR_FACEBOOK}?{params}")
 
 
 class FacebookLogin(SocialLoginView):
@@ -155,7 +154,7 @@ class FacebookLogin(SocialLoginView):
     def callback_url(self):
         # use the same callback url as defined in your Facebook app, this url
         # must be absolute:
-        return self.request.build_absolute_uri(reverse('facebook_callback'))
+        return self.request.build_absolute_uri(reverse("facebook_callback"))
 
 
 class GoogleLogin(SocialLoginView):
@@ -166,7 +165,7 @@ class GoogleLogin(SocialLoginView):
     def callback_url(self):
         # use the same callback url as defined in your Google app, this url
         # must be absolute:
-        return self.request.build_absolute_uri(reverse('google_callback'))
+        return self.request.build_absolute_uri(reverse("google_callback"))
 
 
 class GithubLogin(SocialLoginView):
@@ -177,7 +176,7 @@ class GithubLogin(SocialLoginView):
     def callback_url(self):
         # use the same callback url as defined in your GitHub app, this url
         # must be absolute:
-        return self.request.build_absolute_uri(reverse('github_callback'))
+        return self.request.build_absolute_uri(reverse("github_callback"))
 
 
 class FacebookConnect(SocialConnectView):
@@ -188,7 +187,7 @@ class FacebookConnect(SocialConnectView):
     def callback_url(self):
         # use the same callback url as defined in your Facebook app, this url
         # must be absolute:
-        return self.request.build_absolute_uri(reverse('facebook_callback'))
+        return self.request.build_absolute_uri(reverse("facebook_callback"))
 
 
 class GithubConnect(SocialConnectView):
@@ -199,7 +198,7 @@ class GithubConnect(SocialConnectView):
     def callback_url(self):
         # use the same callback url as defined in your GitHub app, this url
         # must be absolute:
-        return self.request.build_absolute_uri(reverse('github_callback'))
+        return self.request.build_absolute_uri(reverse("github_callback"))
 
 
 class GoogleConnect(SocialConnectView):
@@ -210,7 +209,7 @@ class GoogleConnect(SocialConnectView):
     def callback_url(self):
         # use the same callback url as defined in your Google app, this url
         # must be absolute:
-        return self.request.build_absolute_uri(reverse('google_callback'))
+        return self.request.build_absolute_uri(reverse("google_callback"))
 
 
 @login_required(login_url="/accounts/login")
@@ -219,8 +218,7 @@ def company_dashboard(request, template="index_company.html"):
         company_admin = CompanyAdmin.objects.get(user=request.user)
         if not company_admin.is_active:
             return HttpResponseRedirect("/")
-        hunts = Hunt.objects.filter(
-            is_published=True, domain=company_admin.domain)
+        hunts = Hunt.objects.filter(is_published=True, domain=company_admin.domain)
         upcoming_hunt = list()
         ongoing_hunt = list()
         previous_hunt = list()
@@ -256,7 +254,7 @@ def admin_company_dashboard(request, template="admin_dashboard_company.html"):
 
 @login_required(login_url="/accounts/login")
 def admin_company_dashboard_detail(
-        request, pk, template="admin_dashboard_company_detail.html"
+    request, pk, template="admin_dashboard_company_detail.html"
 ):
     user = request.user
     if user.is_superuser:
@@ -390,8 +388,7 @@ class IssueBaseCreate(object):
         obj.domain = domain
         if self.request.POST.get("screenshot-hash"):
             reopen = default_storage.open(
-                "uploads\/" +
-                self.request.POST.get("screenshot-hash") + ".png", "rb"
+                "uploads\/" + self.request.POST.get("screenshot-hash") + ".png", "rb"
             )
             django_file = File(reopen)
             obj.screenshot.save(
@@ -401,8 +398,7 @@ class IssueBaseCreate(object):
             )
         obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
         obj.save()
-        p = Points.objects.create(
-            user=self.request.user, issue=obj, score=score)
+        p = Points.objects.create(user=self.request.user, issue=obj, score=score)
 
     def process_issue(self, user, obj, created, domain, tokenauth=False, score=3):
         p = Points.objects.create(user=user, issue=obj, score=score)
@@ -521,10 +517,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
                     # Check if the base64 string is in the "data:" format
                     data = (
-                            "data:image/"
-                            + self.request.POST.get("type")
-                            + ";base64,"
-                            + self.request.POST.get("file")
+                        "data:image/"
+                        + self.request.POST.get("type")
+                        + ";base64,"
+                        + self.request.POST.get("file")
                     )
                     data = data.replace(" ", "")
                     data += "=" * ((4 - len(data) % 4) % 4)
@@ -540,8 +536,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
                     # Generate file name:
                     file_name = str(uuid.uuid4())[
-                                :12
-                                ]  # 12 characters are more than enough.
+                        :12
+                    ]  # 12 characters are more than enough.
                     # Get the file name extension:
                     extension = imghdr.what(file_name, decoded_file)
                     extension = "jpg" if extension == "jpeg" else extension
@@ -560,7 +556,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         initial = super(IssueCreate, self).get_initial()
         if self.request.POST.get("screenshot-hash"):
             initial["screenshot"] = (
-                    "uploads\/" + self.request.POST.get("screenshot-hash") + ".png"
+                "uploads\/" + self.request.POST.get("screenshot-hash") + ".png"
             )
         return initial
 
@@ -581,14 +577,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
         )
         obj.domain = domain
         if created and (self.request.user.is_authenticated or tokenauth):
-            p = Points.objects.create(
-                user=self.request.user, domain=domain, score=1)
+            p = Points.objects.create(user=self.request.user, domain=domain, score=1)
             messages.success(self.request, "Domain added! + 1")
 
         if self.request.POST.get("screenshot-hash"):
             reopen = default_storage.open(
-                "uploads\/" +
-                self.request.POST.get("screenshot-hash") + ".png", "rb"
+                "uploads\/" + self.request.POST.get("screenshot-hash") + ".png", "rb"
             )
             django_file = File(reopen)
             obj.screenshot.save(
@@ -617,8 +611,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             total_issues = Issue.objects.filter(
                 user=User.objects.get(id=token.user_id)
             ).count()
-            user_prof = UserProfile.objects.get(
-                user=User.objects.get(id=token.user_id))
+            user_prof = UserProfile.objects.get(user=User.objects.get(id=token.user_id))
             if total_issues <= 10:
                 user_prof.title = 1
             elif total_issues <= 50:
@@ -636,20 +629,18 @@ class IssueCreate(IssueBaseCreate, CreateView):
             import requests
 
             github_url = (
-                    domain.github.replace("https", "git").replace(
-                        "http", "git") + ".git"
+                domain.github.replace("https", "git").replace("http", "git") + ".git"
             )
             p = parse(github_url)
 
-            url = "https://api.github.com/repos/%s/%s/issues" % (
-                p.owner, p.repo)
+            url = "https://api.github.com/repos/%s/%s/issues" % (p.owner, p.repo)
 
             issue = {
                 "title": obj.description,
                 "body": "![0]("
-                        + obj.screenshot.url
-                        + ") http://bugheist.com/issue/"
-                        + str(obj.id),
+                + obj.screenshot.url
+                + ") http://bugheist.com/issue/"
+                + str(obj.id),
                 "labels": ["bug", "bugheist"],
             }
             r = requests.post(
@@ -693,8 +684,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 points__created__month=datetime.now().month,
                 points__created__year=datetime.now().year,
             )
-                .annotate(total_score=Sum("points__score"))
-                .order_by("-total_score")[:10],
+            .annotate(total_score=Sum("points__score"))
+            .order_by("-total_score")[:10],
         )
         return context
 
@@ -709,8 +700,7 @@ class UploadCreate(View):
     def post(self, request, *args, **kwargs):
         data = request.FILES.get("image")
         result = default_storage.save(
-            "uploads\/" + self.kwargs["hash"] +
-            ".png", ContentFile(data.read())
+            "uploads\/" + self.kwargs["hash"] + ".png", ContentFile(data.read())
         )
         return JsonResponse({"status": result})
 
@@ -725,8 +715,7 @@ class InviteCreate(TemplateView):
         if email:
             domain = email.split("@")[-1]
             try:
-                ret = urllib.request.urlopen(
-                    "http://" + domain + "/favicon.ico")
+                ret = urllib.request.urlopen("http://" + domain + "/favicon.ico")
                 if ret.code == 200:
                     exists = "exists"
             except:
@@ -764,16 +753,15 @@ class UserProfileDetailView(DetailView):
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
         context["my_score"] = list(
             Points.objects.filter(user=self.object)
-                .aggregate(total_score=Sum("score"))
-                .values()
+            .aggregate(total_score=Sum("score"))
+            .values()
         )[0]
         context["websites"] = (
             Domain.objects.filter(issue__user=self.object)
-                .annotate(total=Count("issue"))
-                .order_by("-total")
+            .annotate(total=Count("issue"))
+            .order_by("-total")
         )
-        context["activities"] = Issue.objects.filter(
-            user=self.object, hunt=None)[0:10]
+        context["activities"] = Issue.objects.filter(user=self.object, hunt=None)[0:10]
         context["profile_form"] = UserProfileForm()
         context["total_open"] = Issue.objects.filter(
             user=self.object, status="open"
@@ -786,14 +774,14 @@ class UserProfileDetailView(DetailView):
             context["wallet"] = Wallet.objects.get(user=self.request.user)
         context["graph"] = (
             Issue.objects.filter(user=self.object)
-                .filter(
+            .filter(
                 created__month__gte=(datetime.now().month - 6),
                 created__month__lte=datetime.now().month,
             )
-                .annotate(month=ExtractMonth("created"))
-                .values("month")
-                .annotate(c=Count("id"))
-                .order_by()
+            .annotate(month=ExtractMonth("created"))
+            .values("month")
+            .annotate(c=Count("id"))
+            .order_by()
         )
         context["total_bugs"] = Issue.objects.filter(
             user=self.object, hunt=None
@@ -849,22 +837,20 @@ class UserProfileDetailsView(DetailView):
 
     def get_context_data(self, **kwargs):
         user = self.object
-        context = super(UserProfileDetailsView,
-                        self).get_context_data(**kwargs)
+        context = super(UserProfileDetailsView, self).get_context_data(**kwargs)
         context["my_score"] = list(
             Points.objects.filter(user=self.object)
-                .aggregate(total_score=Sum("score"))
-                .values()
+            .aggregate(total_score=Sum("score"))
+            .values()
         )[0]
         context["websites"] = (
             Domain.objects.filter(issue__user=self.object)
-                .annotate(total=Count("issue"))
-                .order_by("-total")
+            .annotate(total=Count("issue"))
+            .order_by("-total")
         )
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["activities"] = Issue.objects.filter(
-            user=self.object, hunt=None)[0:10]
+        context["activities"] = Issue.objects.filter(user=self.object, hunt=None)[0:10]
         context["profile_form"] = UserProfileForm()
         context["total_open"] = Issue.objects.filter(
             user=self.object, status="open"
@@ -876,14 +862,14 @@ class UserProfileDetailsView(DetailView):
         context["current_month"] = datetime.now().month
         context["graph"] = (
             Issue.objects.filter(user=self.object, hunt=None)
-                .filter(
+            .filter(
                 created__month__gte=(datetime.now().month - 6),
                 created__month__lte=datetime.now().month,
             )
-                .annotate(month=ExtractMonth("created"))
-                .values("month")
-                .annotate(c=Count("id"))
-                .order_by()
+            .annotate(month=ExtractMonth("created"))
+            .values("month")
+            .annotate(c=Count("id"))
+            .order_by()
         )
         context["total_bugs"] = Issue.objects.filter(user=self.object).count()
         for i in range(0, 7):
@@ -942,8 +928,7 @@ class DomainDetailView(ListView):
     model = Issue
 
     def get_context_data(self, *args, **kwargs):
-        context = super(DomainDetailView, self).get_context_data(
-            *args, **kwargs)
+        context = super(DomainDetailView, self).get_context_data(*args, **kwargs)
         parsed_url = urlparse("http://" + self.kwargs["slug"])
 
         open_issue = Issue.objects.filter(
@@ -986,26 +971,26 @@ class DomainDetailView(ListView):
         context["closed"] = closeissue_paginated
         context["leaderboard"] = (
             User.objects.filter(issue__url__contains=self.kwargs["slug"])
-                .annotate(total=Count("issue"))
-                .order_by("-total")
+            .annotate(total=Count("issue"))
+            .order_by("-total")
         )
         context["current_month"] = datetime.now().month
         context["domain_graph"] = (
             Issue.objects.filter(domain=context["domain"], hunt=None)
-                .filter(
+            .filter(
                 created__month__gte=(datetime.now().month - 6),
                 created__month__lte=datetime.now().month,
             )
-                .annotate(month=ExtractMonth("created"))
-                .values("month")
-                .annotate(c=Count("id"))
-                .order_by()
+            .annotate(month=ExtractMonth("created"))
+            .values("month")
+            .annotate(c=Count("id"))
+            .order_by()
         )
         context["pie_chart"] = (
             Issue.objects.filter(domain=context["domain"], hunt=None)
-                .values("label")
-                .annotate(c=Count("label"))
-                .order_by()
+            .values("label")
+            .annotate(c=Count("label"))
+            .order_by()
         )
         return context
 
@@ -1014,8 +999,7 @@ class StatsDetailView(TemplateView):
     template_name = "stats.html"
 
     def get_context_data(self, *args, **kwargs):
-        context = super(StatsDetailView, self).get_context_data(
-            *args, **kwargs)
+        context = super(StatsDetailView, self).get_context_data(*args, **kwargs)
         response = requests.get(
             "https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en"
         )
@@ -1032,15 +1016,15 @@ class StatsDetailView(TemplateView):
         context["domain_count"] = Domain.objects.all().count()
         context["user_graph"] = (
             User.objects.annotate(month=ExtractMonth("date_joined"))
-                .values("month")
-                .annotate(c=Count("id"))
-                .order_by()
+            .values("month")
+            .annotate(c=Count("id"))
+            .order_by()
         )
         context["graph"] = (
             Issue.objects.annotate(month=ExtractMonth("created"))
-                .values("month")
-                .annotate(c=Count("id"))
-                .order_by()
+            .values("month")
+            .annotate(c=Count("id"))
+            .order_by()
         )
         context["pie_chart"] = (
             Issue.objects.values("label").annotate(c=Count("label")).order_by()
@@ -1057,8 +1041,7 @@ class AllIssuesView(ListView):
         if username is None:
             self.activities = Issue.objects.filter(hunt=None)
         else:
-            self.activities = Issue.objects.filter(
-                user__username=username, hunt=None)
+            self.activities = Issue.objects.filter(user__username=username, hunt=None)
         return self.activities
 
     def get_context_data(self, *args, **kwargs):
@@ -1122,8 +1105,7 @@ class SpecificIssuesView(ListView):
         return self.activities
 
     def get_context_data(self, *args, **kwargs):
-        context = super(SpecificIssuesView, self).get_context_data(
-            *args, **kwargs)
+        context = super(SpecificIssuesView, self).get_context_data(*args, **kwargs)
         paginator = Paginator(self.activities, self.paginate_by)
         page = self.request.GET.get("page")
 
@@ -1147,15 +1129,14 @@ class LeaderboardView(ListView):
     template_name = "leaderboard.html"
 
     def get_context_data(self, *args, **kwargs):
-        context = super(LeaderboardView, self).get_context_data(
-            *args, **kwargs)
+        context = super(LeaderboardView, self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
         context["leaderboard"] = (
             User.objects.annotate(total_score=Sum("points__score"))
-                .order_by("-total_score")
-                .filter(total_score__gt=0)
+            .order_by("-total_score")
+            .filter(total_score__gt=0)
         )
         return context
 
@@ -1208,8 +1189,8 @@ def search(request, template="search.html"):
             "query": query,
             "type": stype,
             "issues": Issue.objects.filter(Q(description__icontains=query), hunt=None)[
-                      0:20
-                      ],
+                0:20
+            ],
         }
     elif stype == "domain":
         context = {
@@ -1224,8 +1205,8 @@ def search(request, template="search.html"):
             "users": UserProfile.objects.filter(
                 Q(user__username__icontains=query), hunt=None
             )
-                         .annotate(total_score=Sum("user__points__score"))
-                         .order_by("-total_score")[0:20],
+            .annotate(total_score=Sum("user__points__score"))
+            .order_by("-total_score")[0:20],
         }
     elif stype == "label":
         context = {
@@ -1237,6 +1218,7 @@ def search(request, template="search.html"):
     if request.user.is_authenticated:
         context["wallet"] = Wallet.objects.get(user=request.user)
     return render(request, template, context)
+
 
 def search_issues(request):
     query = request.GET.get("query")
@@ -1262,14 +1244,14 @@ def search_issues(request):
             "query": query,
             "type": stype,
             "issues": Issue.objects.filter(Q(description__icontains=query), hunt=None)[
-                      0:20
-                      ],
+                0:20
+            ],
         }
     if request.user.is_authenticated:
         context["wallet"] = Wallet.objects.get(user=request.user)
     issues = serializers.serialize("json", context["issues"])
     issues = json.loads(issues)
-    return HttpResponse(json.dumps({"issues": issues}), content_type='application/json')
+    return HttpResponse(json.dumps({"issues": issues}), content_type="application/json")
 
 
 class HuntCreate(CreateView):
@@ -1340,8 +1322,8 @@ class IssueView(DetailView):
             context["os_version"] = user_agent.os.version_string
         context["users_score"] = list(
             Points.objects.filter(user=self.object.user)
-                .aggregate(total_score=Sum("score"))
-                .values()
+            .aggregate(total_score=Sum("score"))
+            .values()
         )[0]
 
         if self.request.user.is_authenticated:
@@ -1351,10 +1333,8 @@ class IssueView(DetailView):
         ).count()
         context["all_comment"] = self.object.comments.all
         context["all_users"] = User.objects.all()
-        context["likes"] = UserProfile.objects.filter(
-            issue_upvoted=self.object).count()
-        context["likers"] = UserProfile.objects.filter(
-            issue_upvoted=self.object)
+        context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
+        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
         return context
 
 
@@ -1400,8 +1380,7 @@ def get_email_from_domain(domain_name):
         except:
             continue
         new_emails = set(
-            re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+",
-                       response.text, re.I)
+            re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", response.text, re.I)
         )
         if new_emails:
             emails.update(new_emails)
@@ -1414,9 +1393,9 @@ def get_email_from_domain(domain_name):
             elif not link.startswith("http"):
                 link = path + link
             if (
-                    not link in new_urls
-                    and not link in processed_urls
-                    and link.find(domain_name) > 0
+                not link in new_urls
+                and not link in processed_urls
+                and link.find(domain_name) > 0
             ):
                 new_urls.append(link)
 
@@ -1458,9 +1437,9 @@ def UpdateIssue(request):
     except:
         tokenauth = False
     if (
-            request.method == "POST"
-            and request.user.is_superuser
-            or (issue is not None and request.user == issue.user)
+        request.method == "POST"
+        and request.user.is_superuser
+        or (issue is not None and request.user == issue.user)
     ):
         if request.POST.get("action") == "close":
             issue.status = "closed"
@@ -1478,11 +1457,11 @@ def UpdateIssue(request):
                 },
             )
             subject = (
-                    issue.domain.name
-                    + " bug # "
-                    + str(issue.id)
-                    + " closed by "
-                    + request.user.username
+                issue.domain.name
+                + " bug # "
+                + str(issue.id)
+                + " closed by "
+                + request.user.username
             )
 
         elif request.POST.get("action") == "open":
@@ -1498,20 +1477,18 @@ def UpdateIssue(request):
                 },
             )
             subject = (
-                    issue.domain.name
-                    + " bug # "
-                    + str(issue.id)
-                    + " opened by "
-                    + request.user.username
+                issue.domain.name
+                + " bug # "
+                + str(issue.id)
+                + " opened by "
+                + request.user.username
             )
 
         mailer = "Bugheist <support@bugheist.com>"
         email_to = issue.user.email
-        send_mail(subject, msg_plain, mailer, [
-            email_to], html_message=msg_html)
+        send_mail(subject, msg_plain, mailer, [email_to], html_message=msg_html)
         send_mail(
-            subject, msg_plain, mailer, [
-                issue.domain.email], html_message=msg_html
+            subject, msg_plain, mailer, [issue.domain.email], html_message=msg_html
         )
         issue.save()
         return HttpResponse("Updated")
@@ -1574,8 +1551,8 @@ class CreateInviteFriend(CreateView):
         )
 
         if (
-                mail_status
-                and InviteFriend.objects.filter(sender=self.request.user).count() == 2
+            mail_status
+            and InviteFriend.objects.filter(sender=self.request.user).count() == 2
         ):
             Points.objects.create(user=self.request.user, score=1)
             InviteFriend.objects.filter(sender=self.request.user).delete()
@@ -1599,12 +1576,10 @@ def follow_user(request, user):
         if flag != 1:
             request.user.userprofile.follows.add(userx.userprofile)
             msg_plain = render_to_string(
-                "email/follow_user.txt", {"follower": request.user,
-                                          "followed": userx}
+                "email/follow_user.txt", {"follower": request.user, "followed": userx}
             )
             msg_html = render_to_string(
-                "email/follow_user.txt", {"follower": request.user,
-                                          "followed": userx}
+                "email/follow_user.txt", {"follower": request.user, "followed": userx}
             )
 
             send_mail(
@@ -1693,8 +1668,8 @@ def get_score(request):
     users = list()
     temp_users = (
         User.objects.annotate(total_score=Sum("points__score"))
-            .order_by("-total_score")
-            .filter(total_score__gt=0)
+        .order_by("-total_score")
+        .filter(total_score__gt=0)
     )
     rank_user = 1
     for each in temp_users.all():
@@ -1724,8 +1699,7 @@ def get_score(request):
 
 class CustomObtainAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
-        response = super(CustomObtainAuthToken, self).post(
-            request, *args, **kwargs)
+        response = super(CustomObtainAuthToken, self).post(request, *args, **kwargs)
         token = Token.objects.get(key=response.data["token"])
         return Response({"token": token.key, "id": token.user_id})
 
@@ -1951,18 +1925,17 @@ class CreateHunt(TemplateView):
         try:
             domain_admin = CompanyAdmin.objects.get(user=request.user)
             if (
-                    domain_admin.role == 1
-                    and (
-                            str(domain_admin.domain.pk)
-                            == ((request.POST["domain"]).split("-"))[0].replace(" ", "")
-                    )
+                domain_admin.role == 1
+                and (
+                    str(domain_admin.domain.pk)
+                    == ((request.POST["domain"]).split("-"))[0].replace(" ", "")
+                )
             ) or domain_admin.role == 0:
-                wallet, created = Wallet.objects.get_or_create(
-                    user=request.user)
+                wallet, created = Wallet.objects.get_or_create(user=request.user)
                 total_amount = (
-                        Decimal(request.POST["prize_winner"])
-                        + Decimal(request.POST["prize_runner"])
-                        + Decimal(request.POST["prize_second_runner"])
+                    Decimal(request.POST["prize_winner"])
+                    + Decimal(request.POST["prize_runner"])
+                    + Decimal(request.POST["prize_second_runner"])
                 )
                 if total_amount > wallet.current_balance:
                     return HttpResponse("failed")
@@ -2013,8 +1986,7 @@ class CreateHunt(TemplateView):
                 hunt.starts_on = start_date
                 hunt.prize_winner = Decimal(request.POST["prize_winner"])
                 hunt.prize_runner = Decimal(request.POST["prize_runner"])
-                hunt.prize_second_runner = Decimal(
-                    request.POST["prize_second_runner"])
+                hunt.prize_second_runner = Decimal(request.POST["prize_second_runner"])
                 hunt.end_on = end_date
                 hunt.name = request.POST["name"]
                 hunt.description = request.POST["content"]
@@ -2280,8 +2252,7 @@ def add_or_update_company(request):
             user = company.admin
             if user != User.objects.get(email=request.POST["admin"]):
                 try:
-                    admin = CompanyAdmin.objects.get(
-                        user=user, company=company)
+                    admin = CompanyAdmin.objects.get(user=user, company=company)
                     admin.user = User.objects.get(email=request.POST["admin"])
                     admin.save()
                 except:
@@ -2346,8 +2317,7 @@ def add_or_update_domain(request):
     if request.method == "POST":
         company_admin = CompanyAdmin.objects.get(user=request.user)
         subscription = company_admin.company.subscription
-        count_domain = Domain.objects.filter(
-            company=company_admin.company).count()
+        count_domain = Domain.objects.filter(company=company_admin.company).count()
         try:
             try:
                 domain_pk = request.POST["id"]
@@ -2386,7 +2356,7 @@ def add_or_update_domain(request):
 
 @login_required(login_url="/accounts/login")
 def company_dashboard_domain_detail(
-        request, pk, template="company_dashboard_domain_detail.html"
+    request, pk, template="company_dashboard_domain_detail.html"
 ):
     user = request.user
     domain_admin = CompanyAdmin.objects.get(user=request.user)
@@ -2404,7 +2374,7 @@ def company_dashboard_domain_detail(
 
 @login_required(login_url="/accounts/login")
 def company_dashboard_hunt_detail(
-        request, pk, template="company_dashboard_hunt_detail.html"
+    request, pk, template="company_dashboard_hunt_detail.html"
 ):
     hunt = get_object_or_404(Hunt, pk=pk)
     return render(request, template, {"hunt": hunt})
@@ -2412,7 +2382,7 @@ def company_dashboard_hunt_detail(
 
 @login_required(login_url="/accounts/login")
 def company_dashboard_hunt_edit(
-        request, pk, template="company_dashboard_hunt_edit.html"
+    request, pk, template="company_dashboard_hunt_edit.html"
 ):
     if request.method == "GET":
         hunt = get_object_or_404(Hunt, pk=pk)
@@ -2428,8 +2398,7 @@ def company_dashboard_hunt_edit(
         else:
             domain = Domain.objects.filter(pk=domain_admin.domain.pk)
         initial = {"content": hunt.description}
-        context = {"hunt": hunt, "domains": domain,
-                   "hunt_form": HuntForm(initial)}
+        context = {"hunt": hunt, "domains": domain, "hunt_form": HuntForm(initial)}
         return render(request, template, context)
     else:
         data = {}
@@ -2465,12 +2434,10 @@ def company_dashboard_hunt_edit(
             )
         else:
             start_date = start_date - (
-                timedelta(hours=int(int(offset) / 60),
-                          minutes=int(int(offset) % 60))
+                timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
             )
             end_date = end_date - (
-                timedelta(hours=int(int(offset) / 60),
-                          minutes=int(int(offset) % 60))
+                timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
             )
         hunt.starts_on = start_date
         hunt.end_on = end_date
@@ -2536,9 +2503,9 @@ def withdraw(request):
                     account_links = stripe.AccountLink.create(
                         account=account,
                         return_url="http://127.0.0.1:8000/dashboard/user/stripe/connected/"
-                                   + request.user.username,
+                        + request.user.username,
                         refresh_url="http://127.0.0.1:8000/dashboard/user/profile/"
-                                    + request.user.username,
+                        + request.user.username,
                         type="account_onboarding",
                     )
                     return JsonResponse(
@@ -2553,9 +2520,9 @@ def withdraw(request):
                 account_links = stripe.AccountLink.create(
                     account=account,
                     return_url="http://127.0.0.1:8000/dashboard/user/stripe/connected/"
-                               + request.user.username,
+                    + request.user.username,
                     refresh_url="http://127.0.0.1:8000/dashboard/user/profile/"
-                                + request.user.username,
+                    + request.user.username,
                     type="account_onboarding",
                 )
                 return JsonResponse(
@@ -2754,10 +2721,10 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
 
                     # Check if the base64 string is in the "data:" format
                     data = (
-                            "data:image/"
-                            + request.POST.get("type")
-                            + ";base64,"
-                            + request.POST.get("file")
+                        "data:image/"
+                        + request.POST.get("type")
+                        + ";base64,"
+                        + request.POST.get("file")
                     )
                     data = data.replace(" ", "")
                     data += "=" * ((4 - len(data) % 4) % 4)
@@ -2847,9 +2814,9 @@ def company_hunt_results(request, pk, template="company_hunt_results.html"):
             winner = Winner()
             issue_with_score = (
                 Issue.objects.filter(hunt=hunt, verified=True)
-                    .values("user")
-                    .order_by("user")
-                    .annotate(total_score=Sum("score"))
+                .values("user")
+                .order_by("user")
+                .annotate(total_score=Sum("score"))
             )
             for obj in issue_with_score:
                 user = User.objects.get(pk=obj["user"])
@@ -2863,9 +2830,9 @@ def company_hunt_results(request, pk, template="company_hunt_results.html"):
                     break
                 index = index + 1
             total_amount = (
-                    Decimal(hunt.prize_winner)
-                    + Decimal(hunt.prize_runner)
-                    + Decimal(hunt.prize_second_runner)
+                Decimal(hunt.prize_winner)
+                + Decimal(hunt.prize_runner)
+                + Decimal(hunt.prize_second_runner)
             )
             from django.conf import settings
 
@@ -2873,13 +2840,11 @@ def company_hunt_results(request, pk, template="company_hunt_results.html"):
             balance = stripe.Balance.retrieve()
             if balance.available[0].amount > total_amount * 100:
                 if winner.winner:
-                    wallet, created = Wallet.objects.get_or_create(
-                        user=winner.winner)
+                    wallet, created = Wallet.objects.get_or_create(user=winner.winner)
                     wallet.deposit(hunt.prize_winner)
                     wallet.save()
                 if winner.runner:
-                    wallet, created = Wallet.objects.get_or_create(
-                        user=winner.runner)
+                    wallet, created = Wallet.objects.get_or_create(user=winner.runner)
                     wallet.deposit(hunt.prize_runner)
                     wallet.save()
                 if winner.second_runner:
@@ -2901,45 +2866,50 @@ def company_hunt_results(request, pk, template="company_hunt_results.html"):
 
 # API's
 
+
 class UserIssueViewSet(viewsets.ModelViewSet):
     """
     User Issue Model View Set
     """
+
     queryset = Issue.objects.all()
     serializer_class = IssueSerializer
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('user__username', 'user__id')
-    http_method_names = ['get', 'post', 'head']
+    search_fields = ("user__username", "user__id")
+    http_method_names = ["get", "post", "head"]
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
     """
     User Profile View Set
     """
+
     serializer_class = UserProfileSerializer
     queryset = UserProfile.objects.all()
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('id', 'user__id', 'user__username')
-    http_method_names = ['get', 'post', 'head']
+    search_fields = ("id", "user__id", "user__username")
+    http_method_names = ["get", "post", "head"]
 
 
 class DomainViewSet(viewsets.ModelViewSet):
     """
     Domain View Set
     """
+
     serializer_class = DomainSerializer
     queryset = Domain.objects.all()
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('url', 'name')
-    http_method_names = ['get', 'post', 'head']
+    search_fields = ("url", "name")
+    http_method_names = ["get", "post", "head"]
 
 
 class IssueViewSet(viewsets.ModelViewSet):
     """
     Issue View Set
     """
+
     queryset = Issue.objects.all()
     serializer_class = IssueSerializer
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('url', 'description', 'user__id')
-    http_method_names = ['get', 'post', 'head']
+    search_fields = ("url", "description", "user__id")
+    http_method_names = ["get", "post", "head"]
