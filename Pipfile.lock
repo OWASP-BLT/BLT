@@ -957,10 +957,10 @@
         },
         "rollbar": {
             "hashes": [
-                "sha256:edaa0f36c7f5f10e8205de49f71c0c335b95eb6448fbf2cd3ebe9cc8b3092c66"
+                "sha256:aa3b570062dd8dfb0e11537ba858f9e1633a604680e062a525434b8245540f87"
             ],
             "index": "pypi",
-            "version": "==0.16.1"
+            "version": "==0.16.2"
         },
         "rsa": {
             "hashes": [
