@@ -83,6 +83,9 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
+handler404 = 'website.views.handler404'
+handler500 = 'website.views.handler500'
+
 urlpatterns = [
     path(
         "captcha/", include("captcha.urls")
