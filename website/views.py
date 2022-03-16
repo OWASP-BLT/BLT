@@ -639,7 +639,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 "title": obj.description,
                 "body": "![0]("
                 + obj.screenshot.url
-                + ") http://bugheist.com/issue/"
+                + ") https://www.bugheist.com/issue/"
                 + str(obj.id),
                 "labels": ["bug", "bugheist"],
             }
