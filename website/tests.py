@@ -8,7 +8,9 @@ os.environ['DJANGO_LIVE_TEST_SERVER_ADDRESS'] = 'localhost:8082'
 
 from django.test.utils import override_settings
 from selenium.webdriver.firefox.webdriver import WebDriver
-
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ['initial_data.json']
@@ -32,7 +34,9 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element_by_name("password1").send_keys('6:}jga,6mRKNUqMQ')
         self.selenium.find_element_by_name("password2").send_keys('6:}jga,6mRKNUqMQ')
         self.selenium.find_element_by_name("signup_button").click()
-        time.sleep(8)
+        WebDriverWait(self.selenium, 30).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
         body = self.selenium.find_element_by_tag_name('body')
         self.assertIn('bugbugbug (0 Pts)', body.text)
 
@@ -42,7 +46,9 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element_by_name("login").send_keys('bugbug')
         self.selenium.find_element_by_name("password").send_keys('secret')
         self.selenium.find_element_by_name("login_button").click()
-        time.sleep(8)
+        WebDriverWait(self.selenium, 30).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
         body = self.selenium.find_element_by_tag_name('body')
         self.assertIn('bugbug (0 Pts)', body.text)
 
@@ -53,14 +59,18 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element_by_name("login").send_keys('bugbug')
         self.selenium.find_element_by_name("password").send_keys('secret')
         self.selenium.find_element_by_name("login_button").click()
-        time.sleep(8)
+        WebDriverWait(self.selenium, 30).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
         self.selenium.get('%s%s' % (self.live_server_url, '/report/'))
         self.selenium.find_element_by_name("url").send_keys('http://www.example.com/')
         self.selenium.find_element_by_id("description").send_keys('Description of bug')
         Imagepath = os.path.abspath(os.path.join(os.getcwd(), 'website/static/img/logo.jpg'))
         self.selenium.find_element_by_name("screenshot").send_keys(Imagepath)
         self.selenium.find_element_by_name("reportbug_button").click()
-        time.sleep(3)
+        WebDriverWait(self.selenium, 30).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
         self.selenium.get('%s%s' % (self.live_server_url, '/'))
         body = self.selenium.find_element_by_tag_name('body')
         self.assertIn('Description of bug', body.text)

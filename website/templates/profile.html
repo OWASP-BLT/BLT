@@ -400,23 +400,11 @@
     var months = [],
         data = [];
     var all_data = new Array(12).fill(0);
-    var current_month = {
-        {
-            current_month
-        }
-    };
+    var current_month = {{ current_month }};
 
-    {
-        %
-        for i in graph %
-    }
-    all_data['{{i.month}}' - 1] = {
-        {
-            i.c
-        }
-    }; {
-        % endfor %
-    }
+    {% for i in graph %}
+    all_data['{{i.month}}' - 1] = {{ i.c }};
+    {% endfor %}
 
     if (current_month - 6 < 0) {
         months = all_months.slice(current_month - 6);
