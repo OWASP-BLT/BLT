@@ -70,7 +70,7 @@ class UrlsTest(test.TestCase):
                         "/accounts/google/login/",
                         "/accounts/facebook/login/",
                         "/error/",
-                        "/tellme/post_feedback/",
+                        #"/tellme/post_feedback/",
                     ]
                     if not any(x in url for x in matches):
                         response = self.client.get(url)

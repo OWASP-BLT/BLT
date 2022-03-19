@@ -11,7 +11,7 @@ import sys
 
 import dj_database_url
 from django.http import Http404
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 import environ
 
 env = environ.Env()
@@ -63,11 +63,11 @@ INSTALLED_APPS = (
     "rest_framework",
     "django_filters",
     "rest_framework.authtoken",
-    "django_cron",
+    #"django_cron",
     "mdeditor",
-    "bootstrap_datepicker_plus",
+    #"bootstrap_datepicker_plus",
     "tz_detect",
-    "tellme",
+    #"tellme",
     "star_ratings",
     "drf_yasg",
     "captcha",
@@ -76,7 +76,7 @@ INSTALLED_APPS = (
 )
 
 
-CRON_CLASSES = ["website.views.CreateIssue"]
+#CRON_CLASSES = ["website.views.CreateIssue"]
 
 MIDDLEWARE = (
     "django.contrib.sessions.middleware.SessionMiddleware",

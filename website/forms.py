@@ -2,7 +2,6 @@ from django import forms
 
 from .models import InviteFriend, UserProfile, Hunt
 from mdeditor.fields import MDTextFormField
-from bootstrap_datepicker_plus import DateTimePickerInput
 from captcha.fields import CaptchaField
 
 class FormInviteFriend(forms.ModelForm):
