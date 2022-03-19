@@ -202,6 +202,7 @@
                 <div class="panel-heading">
                     <div class="row">
                         <div class="col-xs-4">
+                            {% if object.user.username %}
                             <a href="/profile/{{ object.user.username }}">
                                 {% if object.user.socialaccount_set.all.0.get_avatar_url %}
                                 <img class="img-thumbnail" height="100" width="100"
@@ -211,10 +212,16 @@
                                     width="100">
                                 {% endif %}
                             </a>
+                            {% else %}
+                            <img class="img-thumbnail" height="100" width="100"
+                            src="{% static 'images/dummy-user.png' %}" class="img-responsive img-rounded">
+                            {% endif %}
                         </div>
                         <div class="col-xs-8">
-                            <h3>Reported by {{ object.user.username }}</h3>
+                            <h3>Reported by {{ object.user.username|default:"Anonymous" }}</h3>
+                            {% if object.user.username %}
                             <h4>Total Points of {{ object.user.username }} = {{ users_score }}</h4>
+
                             <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post">
                                 <input type="hidden" name="cmd" value="_xclick">
                                 <input type="hidden" name="business" value="coderbounty@gmail.com">
@@ -225,6 +232,7 @@
                                     Send a Tip
                                 </button>
                             </form>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
