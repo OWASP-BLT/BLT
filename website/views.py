@@ -1264,6 +1264,13 @@ class HuntCreate(CreateView):
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.user = self.request.user
+
+        domain, created = Domain.objects.get_or_create(
+            name=self.request.POST.get('url').replace("www.", ""),
+            defaults={"url": "http://" + self.request.POST.get('url').replace("www.", "")},
+        )
+        self.object.domain = domain
+
         self.object.save()
         return super(HuntCreate, self).form_valid(form)
 

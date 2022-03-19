@@ -259,6 +259,9 @@ if "DATABASE_URL" in os.environ:
 
     rollbar.init(**ROLLBAR)
 
+else:
+    DEBUG=True
+
 # local dev needs to set SMTP backend or fail at startup
 if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
@@ -318,7 +321,7 @@ AVATAR_PATH = os.path.join(MEDIA_ROOT, USERS_AVATAR_PATH)
 if not os.path.exists(AVATAR_PATH):
     os.makedirs(AVATAR_PATH)
 
-if DEBUG == False:
+if DEBUG == True:
     CACHES = {"default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 else:
