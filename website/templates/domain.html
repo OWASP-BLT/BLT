@@ -198,40 +198,12 @@
         data = [];
     var all_data = new Array(12).fill(0);
     var pie = new Array(7).fill(0);
-    var current_month = {
-        {
-            current_month
-        }
-    };
+    var current_month = {{ current_month }};
 
-    {
-        %
-        for i in domain_graph %
-    }
-    all_data['{{i.month}}' - 1] = {
-        {
-            i.c
-        }
-    }; {
-        % endfor %
-    }
-
-    {
-        %
-        for i in pie_chart %
-    }
-    pie[{
-        {
-            i.label
-        }
-    }] = {
-        {
-            i.c
-        }
-    }; {
-        % endfor %
-    }
-
+    {% for i in graph %}
+    all_data['{{i.month}}' - 1] = {{ i.c }};
+    {% endfor %}
+    
     if (current_month - 6 < 0) {
         months = all_months.slice(current_month - 6);
         months = months.concat(all_months.slice(0, current_month));

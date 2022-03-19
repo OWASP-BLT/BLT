@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: browser-actions/setup-geckodriver@latest
+    - uses: nanasess/setup-chromedriver@v1
     - uses: actions/checkout@v2
     - name: Set up Python 3.9
       run: pipx install pipenv

@@ -374,7 +374,7 @@ def domain_check(request):
                 "number": 3,
             }
             return HttpResponse(json.dumps(data))
-
+    return HttpResponse("POST REQUIRED")
 
 class IssueBaseCreate(object):
     def form_valid(self, form):
@@ -1169,11 +1169,11 @@ class ScoreboardView(ListView):
 
 def search(request, template="search.html"):
     query = request.GET.get("query")
-    query = query.strip()
     stype = request.GET.get("type")
     context = None
     if query is None:
         return render(request, template)
+    query = query.strip()
     if query[:6] == "issue:":
         stype = "issue"
         query = query[6:]
@@ -1224,11 +1224,11 @@ def search(request, template="search.html"):
 
 def search_issues(request, template="search.html"):
     query = request.GET.get("query")
-    query = query.strip()
     stype = request.GET.get("type")
     context = None
     if query is None:
         return render(request, template)
+    query = query.strip()
     if query[:6] == "issue:":
         stype = "issue"
         query = query[6:]
@@ -1362,7 +1362,8 @@ def IssueEdit(request):
                 return HttpResponse("Updated")
         else:
             return HttpResponse("Unauthorised")
-
+    else:
+        return HttpResponse("POST ONLY")
 
 def get_email_from_domain(domain_name):
     new_urls = deque(["http://" + domain_name])
@@ -1427,10 +1428,9 @@ class InboundParseWebhookView(View):
 
 
 def UpdateIssue(request):
-    try:
-        issue = Issue.objects.get(id=request.POST.get("issue_pk"))
-    except Issue.DoesNoTExist:
-        raise Http404("issue not found")
+    if not request.POST.get("issue_pk"):
+        return HttpResponse("Missing issue ID")
+    issue = get_object_or_404(Issue, pk=request.POST.get("issue_pk"))
     try:
         for token in Token.objects.all():
             if request.POST["token"] == token.key:

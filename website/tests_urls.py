@@ -2,16 +2,37 @@ from django import test
 from django.urls import reverse
 from django.conf import settings
 import importlib
+import os
+
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+
+os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
+
+from selenium import webdriver
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+
+d = DesiredCapabilities.CHROME
+d["loggingPrefs"] = {"browser": "ALL"}
+driver = webdriver.Chrome(desired_capabilities=d)
 
 
-class UrlsTest(test.TestCase):
+class UrlsTest(StaticLiveServerTestCase):
     fixtures = ["initial_data.json"]
+
+    @classmethod
+    def setUpClass(cls):
+        cls.selenium = driver
+        super(UrlsTest, cls).setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.selenium.quit()
+        super(UrlsTest, cls).tearDownClass()
 
     def test_responses(
         self,
         allowed_http_codes=[200, 302, 405],
         credentials={},
-        logout_url="",
         default_kwargs={},
     ):
 
@@ -63,6 +84,14 @@ class UrlsTest(test.TestCase):
                         "/auth/password/change/",
                         "/auth/github/connect/",
                         "/auth/google/connect/",
+                        "/auth/registration/",
+                        "/auth/registration/verify-email/",
+                        "/auth/registration/resend-email/",
+                        "/auth/password/reset/",
+                        "/auth/password/reset/confirm/",
+                        "/auth/login/",
+                        "/auth/logout/",
+                        "/auth/facebook/connect/",
                         "/captcha/refresh/",
                         "/rest-auth/user/",
                         "/rest-auth/password/change/",
@@ -70,18 +99,14 @@ class UrlsTest(test.TestCase):
                         "/accounts/google/login/",
                         "/accounts/facebook/login/",
                         "/error/",
-                        #"/tellme/post_feedback/",
+                        "/tz_detect/set/",
                     ]
                     if not any(x in url for x in matches):
                         response = self.client.get(url)
                         self.assertIn(response.status_code, allowed_http_codes, msg=url)
+                        self.selenium.get("%s%s" % (self.live_server_url, url))
 
-                        status = (
-                            ""
-                            if response.status_code == 200
-                            else str(response.status_code) + " "
-                        )
-                        if url == logout_url and credentials:
-                            self.client.login(**credentials)
+                        for entry in self.selenium.get_log("browser"):
+                            self.assertNotIn("SyntaxError", str(entry), msg=url)
 
         check_urls(module.urlpatterns)
