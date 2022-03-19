@@ -75,7 +75,9 @@
         <div class="main-issue-form main-center">
             {% csrf_token %}
             <input type="hidden" name="plan" value="Flea" id="plan">
+           
             <div class="form-group">
+                Website to test: (required)
                 <div class="input-group">
                     <span class="input-group-addon">
                         <i class="fa fa-link" aria-hidden="true"></i>
@@ -88,6 +90,7 @@
                 {% endif %}
             </div>
             <div class="form-group">
+                Your Logo: (required)
                 <div class="input-group">
                     <span class="input-group-addon">
                         <i class="fa fa-file-picture-o" aria-hidden="true"></i>
@@ -101,8 +104,7 @@
 
             <div class="form-group">
                 <strong>Grand Prize:</strong>
-                <p>(Maximum tip Amount, you are encouraged to tip the bug finders, this is the maximum amount they
-                    can expect)</p>
+                <p>What is the maximum payment amount that you will give to bug hunters?</p>
                 <div>
                     <input class="slider" type="text" name="prize" value="{{ form.prize.value|default:'100' }}"
                         data-provide="slider" data-slider-min="100" data-slider-max="10000" data-slider-step="100"
@@ -110,14 +112,12 @@
                 </div>
                 {{ form.prize.errors }}
             </div>
-            Payments are handled through Paypal. You will be charged from Coderbounty, Inc. (Our current parent
-            company)
             {% if not user.is_authenticated %}
-            <br><span class="text-danger">*Login required</span>
+            <br><span class="text-danger"><a href="/accounts/login">*Login required</a></span>
             {% endif %}
         </div>
     </div>
-</form>
+
 <h1 class="page-sub-header">Subscription:</h1>
 {% include '_subscriptions.html' %}
 <div class="row">
@@ -133,15 +133,16 @@
         <br><br>
     </div>
 </div>
+</form>
 {% endblock %}
 
 {% block after_js %}
 <script src="{% static "js/bootstrap-slider.js" %}"></script>
 
 <script>
-    $('.btn').on('click', function () {
+    {% comment %} $('.btn').on('click', function () {
         $(".hunt-form").valid();
-    });
+    }); {% endcomment %}
 
     function numberWithCommas(x) {
         var parts = x.toString().split(".");
