@@ -635,12 +635,16 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             url = "https://api.github.com/repos/%s/%s/issues" % (p.owner, p.repo)
 
+            if obj.user.is_anonymous:
+                the_user = "Anonymous"
+            else:
+                the_user = obj.user
             issue = {
                 "title": obj.description,
                 "body": "![0]("
                 + obj.screenshot.url
                 + ") https://www.bugheist.com/issue/"
-                + str(obj.id) + " found by " + obj.user + " at url: " + obj.url,
+                + str(obj.id) + " found by " + the_user + " at url: " + obj.url,
                 "labels": ["bug", "bugheist"],
             }
             r = requests.post(
