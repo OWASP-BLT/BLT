@@ -19,13 +19,8 @@
                 <img src="http://www.{{ activity.domain_name }}/favicon.ico" height="25"
                      onerror="this.onerror=null; this.style.display='none';">
             </a>
-            <a href="{{ activity.get_absolute_url }}">{{ activity.description|truncatechars:30 }}</a>
-            {% if activity.status == "open" %}
-                <span class="label label-success text-capitalize">{{ activity.status }}</span>
-            {% else %}
-                <span class="label label-danger text-capitalize">{{ activity.status }}</span>
-            {% endif %}
-            <span class="label label-info bug-type">{{ activity.get_label_display }}</span>
+            <a href="{{ activity.get_absolute_url }}">{{ activity.description|truncatechars:100 }}</a>
+
             <div class="small">
                 <a href="{{ activity.user.get_absolute_url }}" data-toggle="popover"
                    data-tag="{{ activity.user.userprofile.get_title_display }}">
@@ -40,6 +35,12 @@
                     {{ activity.comments.all|length }} comments
                 {% endif %}
             </a>
+            {% if activity.status == "open" %}
+            <span class="label label-success text-capitalize">{{ activity.status }}</span>
+        {% else %}
+            <span class="label label-danger text-capitalize">{{ activity.status }}</span>
+        {% endif %}
+        <span class="label label-info bug-type">{{ activity.get_label_display }}</span>
         </div>
     </div>
     <div class="activity-screenshot">
