@@ -933,6 +933,8 @@ class DomainDetailView(ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(DomainDetailView, self).get_context_data(*args, **kwargs)
+        context["domain"] = get_object_or_404(Domain, name=self.kwargs["slug"])
+        
         parsed_url = urlparse("http://" + self.kwargs["slug"])
 
         open_issue = Issue.objects.filter(
@@ -946,10 +948,7 @@ class DomainDetailView(ListView):
 
         context["name"] = parsed_url.netloc.split(".")[-2:][0].title()
 
-        try:
-            context["domain"] = Domain.objects.get(name=self.kwargs["slug"])
-        except Domain.DoesNoTExist:
-            raise Http404("domain not found")
+        
 
         paginator = Paginator(open_issue, 10)
         page = self.request.GET.get("open")
