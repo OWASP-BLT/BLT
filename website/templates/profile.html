@@ -392,10 +392,7 @@
         });
     });
 
-    {
-        %
-        if activities %
-    }
+    {% if activities %}
     var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
     var months = [],
         data = [];
@@ -458,9 +455,7 @@
                 }]
             }
         }
-    }); {
-        % endif %
-    }
+    }); {% endif %}
 
     $('body').on('click', '.follow_unfollow', function (e) {
         e.preventDefault();
