@@ -635,7 +635,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             url = "https://api.github.com/repos/%s/%s/issues" % (p.owner, p.repo)
 
-            if obj.user.is_anonymous:
+            if not obj.user:
                 the_user = "Anonymous"
             else:
                 the_user = obj.user
@@ -934,7 +934,7 @@ class DomainDetailView(ListView):
     def get_context_data(self, *args, **kwargs):
         context = super(DomainDetailView, self).get_context_data(*args, **kwargs)
         context["domain"] = get_object_or_404(Domain, name=self.kwargs["slug"])
-        
+
         parsed_url = urlparse("http://" + self.kwargs["slug"])
 
         open_issue = Issue.objects.filter(
