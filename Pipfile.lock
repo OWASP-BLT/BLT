@@ -208,10 +208,10 @@
         },
         "dj-rest-auth": {
             "hashes": [
-                "sha256:f292f3dffb8fc896da10adf47e94a254fb8bf42e672a066e63566363d764ad42"
+                "sha256:cf15155756b60a02842c54af62a213975c4eed250a2cce5d31b80dc6cf8592f1"
             ],
             "index": "pypi",
-            "version": "==2.2.3"
+            "version": "==2.2.4"
         },
         "django": {
             "hashes": [
@@ -1121,11 +1121,11 @@
         },
         "stripe": {
             "hashes": [
-                "sha256:718b93d6a18105243bce0c9b48e518f72f1f083d27f07e07b8bdb3a541fe3835",
-                "sha256:7efaee187a0615ce9361b6009122f89488a874c3175b5262dd9741a49088db18"
+                "sha256:7e3f50e844913e036f5419d73274315ae0d72315d36d3f791fdb572b1e84660c",
+                "sha256:ed8897f68e6bac3398cc998eb5634551840630d6504c0026fcfd0ad91c9a74a4"
             ],
             "index": "pypi",
-            "version": "==2.67.0"
+            "version": "==2.70.0"
         },
         "swapper": {
             "hashes": [
