@@ -19,7 +19,7 @@ dj-rest-auth = "*"
 tweepy = "*"
 unidecode = "*"
 user-agents = "*"
-whitenoise = "==6.0.0"
+whitenoise = "==6.1.0"
 django-debug-toolbar = "*"
 selenium = "*"
 pylibmc = {version = "*",sys_platform = "!= 'win32'"}
