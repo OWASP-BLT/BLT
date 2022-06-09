@@ -130,19 +130,16 @@ def index(request, template="index.html"):
 
 def github_callback(request):
     params = urllib.parse.urlencode(request.GET)
-    print(params)
     return redirect(f"{settings.CALLBACK_URL_FOR_GITHUB}?{params}")
 
 
 def google_callback(request):
     params = urllib.parse.urlencode(request.GET)
-    print(params)
     return redirect(f"{settings.CALLBACK_URL_FOR_GOOGLE}?{params}")
 
 
 def facebook_callback(request):
     params = urllib.parse.urlencode(request.GET)
-    print(params)
     return redirect(f"{settings.CALLBACK_URL_FOR_FACEBOOK}?{params}")
 
 
@@ -188,7 +185,6 @@ class FacebookConnect(SocialConnectView):
         # use the same callback url as defined in your Facebook app, this url
         # must be absolute:
         return self.request.build_absolute_uri(reverse("facebook_callback"))
-
 
 class GithubConnect(SocialConnectView):
     adapter_class = GitHubOAuth2Adapter
