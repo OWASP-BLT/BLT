@@ -130,19 +130,16 @@ def index(request, template="index.html"):
 
 def github_callback(request):
     params = urllib.parse.urlencode(request.GET)
-    print(params)
     return redirect(f"{settings.CALLBACK_URL_FOR_GITHUB}?{params}")
 
 
 def google_callback(request):
     params = urllib.parse.urlencode(request.GET)
-    print(params)
     return redirect(f"{settings.CALLBACK_URL_FOR_GOOGLE}?{params}")
 
 
 def facebook_callback(request):
     params = urllib.parse.urlencode(request.GET)
-    print(params)
     return redirect(f"{settings.CALLBACK_URL_FOR_FACEBOOK}?{params}")
 
 
