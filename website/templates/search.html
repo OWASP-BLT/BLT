@@ -9,28 +9,29 @@
             <h1 class="text-center"><span class="search-header">Search Results for </span><span class="search-header-query">"{{query}}"</span></h1>
             <hr>
             <form method="GET" action="." style="margin-block-end: 0px;">
-                <div class="input-group search-page-bar">
+                <div style="display:flex" class="input-group search-page-bar">
 
                            <!-- <div class="search"> -->
                     <input type="text" class="form-control" name="query" style="height: 50px;width: 94.9%;border-right: none;"
                            value="{% if type != 'label' %}{{ query }}{% endif %}" placeholder="Search for issues...">
                            
-                        <button style="height: 50px;border-left: none;" class="btn btn-default" type="submit"><i class="fa fa-search" aria-hidden="true"></i>
+                           <span style="height:max-content;width: max-content;" class="input-group-btn">
+                                  <div class="selectdiv ">
+                               <select style="height:50px" class="form-control" name="type">
+                                   <option value="issue" selected="selected">Issue</option>
+                                   <option value="domain">Domain</option>
+                                   <option value="user">User</option>
+                               </select>
+                           </div>  
+                           </span>
+                           
+                        <button style="height: 50px;margin-left:2%" class="btn btn-default" type="submit"><i class="fa fa-search" aria-hidden="true"></i>
                         </button>
-                           <!-- <input type="text"placeholder="Cari Ruang">
+                           <!-- <input type="text"placeholder="Cari Ruang"> 
                            <div class="button-src">
                                <button>cari</button>
                            </div> -->
                         <!-- </div> -->
-                    <span class="input-group-btn">
-                           <div class="selectdiv ">
-                        <select class="form-control" name="type">
-                            <option value="issue" selected="selected">Issue</option>
-                            <option value="domain">Domain</option>
-                            <option value="user">User</option>
-                        </select>
-                    </div>  
-                    </span>
                 </div>
             </form>
             {% if type %}
