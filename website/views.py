@@ -1128,17 +1128,41 @@ class LeaderboardView(ListView):
     model = User
     template_name = "leaderboard.html"
 
-    def get_context_data(self, *args, **kwargs):
+    def get_context_data(self, monthly=False, *args, **kwargs):
         context = super(LeaderboardView, self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["leaderboard"] = (
-            User.objects.annotate(total_score=Sum("points__score"))
-            .order_by("-total_score")
-            .filter(total_score__gt=0)
-        )
+
+        leaderboard_data = (
+                User.objects.annotate(total_score=Sum("points__score"))
+                .order_by("-total_score")
+                .filter(
+                    total_score__gt=0                
+                )
+            )
+
+        if monthly:
+            leaderboard_data = leaderboard_data.filter(
+                    total_score__gt=0,
+                    points__created__month=datetime.now().month,
+                    points__created__year=datetime.now().year
+                )
+            
+        context["leaderboard"] = leaderboard_data
+
         return context
+
+    def get(self, request, *args, **kwargs):
+        
+        response = super().get(request, *args, **kwargs)
+        
+        if self.request.GET.get('monthly')=="true": 
+            context = self.get_context_data(monthly=True)
+            return self.render_to_response(context)
+        
+        return response
+
 
 
 class ScoreboardView(ListView):
