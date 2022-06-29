@@ -34,7 +34,7 @@ from django.urls import reverse, reverse_lazy
 from django.db.models import Sum, Count, Q
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
-from django.http import Http404
+from django.http import Http404, QueryDict
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
@@ -50,6 +50,7 @@ from rest_framework import viewsets, filters
 from user_agents import parse
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from dj_rest_auth.registration.views import SocialLoginView
 
@@ -1134,36 +1135,86 @@ class LeaderboardView(ListView):
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
 
-        leaderboard_data = (
+        context["leaderboard"] = (
                 User.objects.annotate(total_score=Sum("points__score"))
                 .order_by("-total_score")
                 .filter(
                     total_score__gt=0                
                 )
             )
-
-        if monthly:
-            leaderboard_data = leaderboard_data.filter(
-                    total_score__gt=0,
-                    points__created__month=datetime.now().month,
-                    points__created__year=datetime.now().year
-                )
             
-        context["leaderboard"] = leaderboard_data
-
         return context
 
-    def get(self, request, *args, **kwargs):
+
+class LeaderboardApiViewSet(APIView):
+
+    '''
+        get:
+            1) ?monthly=true will give list of winners for current month
+            2) ?year=2022 will give list of winner of every month from month 1-12 else None
+
+    '''
+
+    def curr_month_leaderboard(self):
+
+        '''
+            return: querydict containing list of users with points scored in current month in descending order
+        '''
+
+        return  (
+            User.objects
+            .values("username")
+            .annotate(total_score=Sum("points__score"))
+            .order_by("-total_score")
+            .filter(
+                total_score__gt=0,
+                points__created__month=datetime.now().month,
+                points__created__year=datetime.now().year              
+            )
+        )
+
+    def monthly_leaderboard(self,year) -> list:
+
+        '''
+            return: list of dict of monthly winners ordered from 1-12 for queried year 
+        '''
+
+        monthly_winner = []
+
+        # iterating over months 1-12
+        for month in range(1,13):
+            month_winner = (
+                User.objects
+                .values('username')
+                .annotate(total_score=Sum('points__score'))
+                .order_by('-total_score')
+                .filter(
+                    total_score__gt=0,
+                    points__created__month=month,
+                    points__created__year=year
+                )
+                .first()
+            )
+
+            monthly_winner.append(month_winner)
         
-        response = super().get(request, *args, **kwargs)
         
-        if self.request.GET.get('monthly')=="true": 
-            context = self.get_context_data(monthly=True)
-            return self.render_to_response(context)
+        return monthly_winner
+      
+
+    def get(self,request,format=None):
+        
+        response = []
+
+        if request.query_params.get('monthly')=="true": 
+            queryset = self.curr_month_leaderboard()
+            response = Response(queryset,status=200)
+        
+        elif request.query_params.get('year'):
+            queryset = self.monthly_leaderboard(year=request.query_params.get('year'))
+            response = Response(queryset,status=200)
         
         return response
-
-
 
 class ScoreboardView(ListView):
     model = Domain
