@@ -19,6 +19,7 @@ from website.views import (
     UploadCreate,
     InboundParseWebhookView,
     LeaderboardView,
+    LeaderboardApiViewSet,
     IssueView,
     AllIssuesView,
     SpecificIssuesView,
@@ -267,6 +268,7 @@ urlpatterns = [
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
     re_path(r"^label_activity/$", SpecificIssuesView.as_view(), name="all_activity"),
     re_path(r"^leaderboard/$", LeaderboardView.as_view(), name="leaderboard"),
+    re_path(r"^leaderboard/api/$", LeaderboardApiViewSet.as_view(), name="leaderboard_api"),
     re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
     re_path(
