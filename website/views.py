@@ -34,7 +34,7 @@ from django.urls import reverse, reverse_lazy
 from django.db.models import Sum, Count, Q
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
-from django.http import Http404
+from django.http import Http404, QueryDict
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
@@ -50,6 +50,7 @@ from rest_framework import viewsets, filters
 from user_agents import parse
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from dj_rest_auth.registration.views import SocialLoginView
 
@@ -185,7 +186,6 @@ class FacebookConnect(SocialConnectView):
         # use the same callback url as defined in your Facebook app, this url
         # must be absolute:
         return self.request.build_absolute_uri(reverse("facebook_callback"))
-
 
 class GithubConnect(SocialConnectView):
     adapter_class = GitHubOAuth2Adapter
@@ -1129,18 +1129,92 @@ class LeaderboardView(ListView):
     model = User
     template_name = "leaderboard.html"
 
-    def get_context_data(self, *args, **kwargs):
+    def get_context_data(self, monthly=False, *args, **kwargs):
         context = super(LeaderboardView, self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
+
         context["leaderboard"] = (
-            User.objects.annotate(total_score=Sum("points__score"))
-            .order_by("-total_score")
-            .filter(total_score__gt=0)
-        )
+                User.objects.annotate(total_score=Sum("points__score"))
+                .order_by("-total_score")
+                .filter(
+                    total_score__gt=0                
+                )
+            )
+            
         return context
 
+
+class LeaderboardApiViewSet(APIView):
+
+    '''
+        get:
+            1) ?monthly=true will give list of winners for current month
+            2) ?year=2022 will give list of winner of every month from month 1-12 else None
+
+    '''
+
+    def curr_month_leaderboard(self):
+
+        '''
+            return: querydict containing list of users with points scored in current month in descending order
+        '''
+
+        return  (
+            User.objects
+            .values("username")
+            .annotate(total_score=Sum("points__score"))
+            .order_by("-total_score")
+            .filter(
+                total_score__gt=0,
+                points__created__month=datetime.now().month,
+                points__created__year=datetime.now().year              
+            )
+        )
+
+    def monthly_leaderboard(self,year) -> list:
+
+        '''
+            return: list of dict of monthly winners ordered from 1-12 for queried year 
+        '''
+
+        monthly_winner = []
+
+        # iterating over months 1-12
+        for month in range(1,13):
+            month_winner = (
+                User.objects
+                .values('username')
+                .annotate(total_score=Sum('points__score'))
+                .order_by('-total_score')
+                .filter(
+                    total_score__gt=0,
+                    points__created__month=month,
+                    points__created__year=year
+                )
+                .first()
+            )
+
+            monthly_winner.append(month_winner)
+        
+        
+        return monthly_winner
+      
+
+    def get(self,request,format=None):
+        
+        response = []
+
+        if request.query_params.get('monthly')=="true": 
+            queryset = self.curr_month_leaderboard()
+            response = Response(queryset,status=200)
+        
+        elif request.query_params.get('year'):
+            queryset = self.monthly_leaderboard(year=request.query_params.get('year'))
+            response = Response(queryset,status=200)
+        
+        return response
 
 class ScoreboardView(ListView):
     model = Domain
