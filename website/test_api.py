@@ -3,14 +3,18 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from PIL import Image
+from django.core import mail
+from django.utils.encoding import force_str
 
 class APITests(APITestCase):
 
     register_url = '/auth/registration/'
     login_url = '/auth/login/'
+    password_reset_url = '/auth/password/reset/'
 
     USERNAME = 'person'
     PASS = 'Gassword123&&'
+    NEW_PASS = 'Gasswoasdfas2234'
     EMAIL = 'person1@world.com'
 
     REGISTRATION_DATA = {
@@ -19,6 +23,16 @@ class APITests(APITestCase):
         'password2': PASS,
         'email': EMAIL,
     }
+
+    def _generate_uid_and_token(self, user):
+        result = {}
+
+        from django.utils.encoding import force_bytes
+        from django.contrib.auth.tokens import default_token_generator
+        from django.utils.http import urlsafe_base64_encode
+        result['uid'] = urlsafe_base64_encode(force_bytes(user.pk))
+        result['token'] = default_token_generator.make_token(user)
+        return result
 
     def test_login_by_email(self):
         payload = {
@@ -65,3 +79,26 @@ class APITests(APITestCase):
             }
         response = self.client.post(url, data, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+    def test_password_reset(self):
+        user = get_user_model().objects.create_user(self.USERNAME, self.EMAIL, self.PASS)
+
+        mail_count = len(mail.outbox)
+        payload = {'email': self.EMAIL}
+        self.client.post(self.password_reset_url, data=payload, status_code=200)
+        self.assertEqual(len(mail.outbox), mail_count + 1)
+
+        url_kwargs = self._generate_uid_and_token(user)
+        url = reverse('rest_password_reset_confirm')
+
+
+        data = {
+            'new_password1': self.NEW_PASS,
+            'new_password2': self.NEW_PASS,
+            'uid': force_str(url_kwargs['uid']),
+            'token': url_kwargs['token'],
+        }
+        url = reverse('rest_password_reset_confirm')
+        self.client.post(url, data=data, status_code=200)
+
