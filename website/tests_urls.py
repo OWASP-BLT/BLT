@@ -5,7 +5,10 @@ import importlib
 import os
 
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+# todo
+#from webdriver_manager.chrome import ChromeDriverManager
 
+# can uncomment with chromedrivermanager
 os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 
 from selenium import webdriver
@@ -13,7 +16,11 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 d = DesiredCapabilities.CHROME
 d["loggingPrefs"] = {"browser": "ALL"}
+
+# switch these
 driver = webdriver.Chrome(desired_capabilities=d)
+#driver = webdriver.Chrome(ChromeDriverManager().install(), desired_capabilities=d)
+
 
 
 class UrlsTest(StaticLiveServerTestCase):
@@ -100,6 +107,7 @@ class UrlsTest(StaticLiveServerTestCase):
                         "/accounts/facebook/login/",
                         "/error/",
                         "/tz_detect/set/",
+                        "/leaderboard/api/"
                     ]
                     if not any(x in url for x in matches):
                         response = self.client.get(url)
