@@ -143,7 +143,10 @@ class Domain(models.Model):
 
 
 def validate_image(fieldfile_obj):
-    filesize = fieldfile_obj.file.size
+    try:
+        filesize = fieldfile_obj.file.size
+    except:
+        filesize = fieldfile_obj.size
     megabyte_limit = 3.0
     if filesize > megabyte_limit * 1024 * 1024:
         raise ValidationError("Max file size is %sMB" % str(megabyte_limit))
