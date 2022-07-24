@@ -10,6 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
+from dj_rest_auth.views import PasswordResetConfirmView
 
 import comments.views
 import website.views
@@ -94,6 +95,8 @@ handler500 = "website.views.handler500"
 urlpatterns = [
     path("captcha/", include("captcha.urls")),
     re_path(r"^auth/registration/", include("dj_rest_auth.registration.urls")),
+    path('rest-auth/password/reset/confirm/<str:uidb64>/<str:token>', PasswordResetConfirmView.as_view(),
+           name='password_reset_confirm'),
     re_path(r"^auth/", include("dj_rest_auth.urls")),
     re_path("auth/facebook", FacebookLogin.as_view(), name="facebook_login"),
     path("auth/github/", GithubLogin.as_view(), name="github_login"),
