@@ -325,7 +325,7 @@ urlpatterns = [
     ),
     re_path(r"^social/$", TemplateView.as_view(template_name="social.html")),
     re_path(r"^search/$", website.views.search),
-    re_path(r"^report/$", IssueCreate.as_view()),
+    re_path(r"^report/$", TemplateView.as_view(template_name="report.html")),
     re_path(r"^i18n/", include("django.conf.urls.i18n")),
     re_path(r"^domain_check/$", website.views.domain_check, name="domain_check"),
     re_path(r"^api/v1/", include(router.urls)),
