@@ -19,11 +19,11 @@ jobs:
 
     - name: sudo apt-get install -y --no-install-recommends libmemcached-dev xvfb
       run: sudo apt-get install -y --no-install-recommends libmemcached-dev xvfb
-    - name: pipenv install
-      run: pipenv install
-    - name: pipenv run python manage.py migrate
-      run: pipenv run python manage.py migrate
-    - name: pipenv run python manage.py collectstatic --noinput
-      run: pipenv run python manage.py collectstatic --noinput
-    - name: xvfb-run --auto-servernum pipenv run python manage.py test
-      run: xvfb-run --auto-servernum pipenv run python manage.py test
+    - name: poetry install
+      run: poetry install
+    - name: poetry run python manage.py migrate
+      run: poetry run python manage.py migrate
+    - name: poetry run python manage.py collectstatic --noinput
+      run: poetry run python manage.py collectstatic --noinput
+    - name: xvfb-run --auto-servernum poetry run python manage.py test
+      run: xvfb-run --auto-servernum poetry run python manage.py test
