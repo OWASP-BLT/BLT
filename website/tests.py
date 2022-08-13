@@ -37,7 +37,7 @@ class MySeleniumTests(LiveServerTestCase):
         WebDriverWait(self.selenium, 30).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-        body = self.selenium.find_element('tag_name', 'body')
+        body = self.selenium.find_element('tag name', 'body')
         self.assertIn('bugbugbug (0 Pts)', body.text)
 
     @override_settings(DEBUG=True)
@@ -49,7 +49,7 @@ class MySeleniumTests(LiveServerTestCase):
         WebDriverWait(self.selenium, 30).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-        body = self.selenium.find_element('tag_name', 'body')
+        body = self.selenium.find_element('tag name', 'body')
         self.assertIn('bugbug (0 Pts)', body.text)
 
     @override_settings(DEBUG=True)
@@ -72,5 +72,5 @@ class MySeleniumTests(LiveServerTestCase):
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
         self.selenium.get('%s%s' % (self.live_server_url, '/'))
-        body = self.selenium.find_element('tag_name', 'body')
+        body = self.selenium.find_element('tag name', 'body')
         self.assertIn('Description of bug', body.text)
