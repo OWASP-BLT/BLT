@@ -13,7 +13,7 @@ import dj_database_url
 from django.http import Http404
 from django.utils.translation import gettext_lazy as _
 import environ
-from google.oauth2 import service_account
+#from google.oauth2 import service_account
 
 env = environ.Env()
 # reading .env file
@@ -245,9 +245,9 @@ if "DATABASE_URL" in os.environ:
     GS_SECRET_ACCESS_KEY = os.environ.get("GS_SECRET_ACCESS_KEY", "blank")
     GOOGLE_APPLICATION_CREDENTIALS = "/app/google-credentials.json"
 
-    GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
-    "/app/google-credentials.json"
-    )
+    # GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
+    # "/app/google-credentials.json"
+    # )
 
     GS_BUCKET_NAME = "bhfiles"
     DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
