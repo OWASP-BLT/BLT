@@ -10,15 +10,13 @@ jobs:
     steps:
     - uses: nanasess/setup-chromedriver@v1
     - uses: actions/checkout@v2
-    - name: Set up Python 3.9
-      run: pipx install pipenv
+    - name: Set up Python 3.10.6
+      run: pipx install poetry
     - uses: actions/setup-python@v2
       with:
-        python-version: 3.9
-        cache: 'pipenv'
+        python-version: 3.10.6
+        cache: 'poetry'
 
-#     - name: sudo apt-get update
-#       run: sudo apt-get update
     - name: sudo apt-get install -y --no-install-recommends libmemcached-dev xvfb
       run: sudo apt-get install -y --no-install-recommends libmemcached-dev xvfb
     - name: pipenv install
