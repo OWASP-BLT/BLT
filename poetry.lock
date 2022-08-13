@@ -453,22 +453,22 @@ swapper = "*"
 
 [[package]]
 name = "django-storages"
-version = "1.12.3"
+version = "1.13.1"
 description = "Support for many storage backends in Django"
 category = "main"
 optional = false
-python-versions = ">=3.5"
+python-versions = ">=3.7"
 
 [package.dependencies]
-Django = ">=2.2"
+Django = ">=3.2"
 
 [package.extras]
-azure = ["azure-storage-blob (>=12.0.0)"]
-boto3 = ["boto3 (>=1.4.4)"]
-dropbox = ["dropbox (>=7.2.1)"]
-google = ["google-cloud-storage (>=1.27.0)"]
-libcloud = ["apache-libcloud"]
 sftp = ["paramiko"]
+libcloud = ["apache-libcloud"]
+google = ["google-cloud-storage (>=1.27.0)"]
+dropbox = ["dropbox (>=7.2.1)"]
+boto3 = ["boto3 (>=1.4.4)"]
+azure = ["azure-storage-blob (>=12.0.0)"]
 
 [[package]]
 name = "django-tellme"
@@ -1269,7 +1269,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "3.10.6"
-content-hash = "1d850cb30aa0f3c7c20182f298fdfb152f496a3a4a3ce1db4ab338ed413cc6f1"
+content-hash = "84da6faa0b38795c5ecbd9b5d2447a5777a97bcf7bc4c2412cbc8f25f356e903"
 
 [metadata.files]
 asgiref = [
@@ -1388,10 +1388,7 @@ django-ranged-response = []
 django-rest-auth = []
 django-simple-captcha = []
 django-star-ratings = []
-django-storages = [
-    {file = "django-storages-1.12.3.tar.gz", hash = "sha256:a475edb2f0f04c4f7e548919a751ecd50117270833956ed5bd585c0575d2a5e7"},
-    {file = "django_storages-1.12.3-py3-none-any.whl", hash = "sha256:204a99f218b747c46edbfeeb1310d357f83f90fa6a6024d8d0a3f422570cee84"},
-]
+django-storages = []
 django-tellme = []
 django-timedeltafield = []
 django-tz-detect = []
