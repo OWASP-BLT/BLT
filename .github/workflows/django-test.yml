@@ -10,22 +10,20 @@ jobs:
     steps:
     - uses: nanasess/setup-chromedriver@v1
     - uses: actions/checkout@v2
-    - name: Set up Python 3.9
-      run: pipx install pipenv
-    - uses: actions/setup-python@v2
+    - name: Set up Python 3.10.6
+      run: pipx install poetry
+    - uses: actions/setup-python@v4
       with:
-        python-version: 3.9
-        cache: 'pipenv'
+        python-version: 3.10.6
+        cache: 'poetry'
 
-#     - name: sudo apt-get update
-#       run: sudo apt-get update
     - name: sudo apt-get install -y --no-install-recommends libmemcached-dev xvfb
       run: sudo apt-get install -y --no-install-recommends libmemcached-dev xvfb
-    - name: pipenv install
-      run: pipenv install
-    - name: pipenv run python manage.py migrate
-      run: pipenv run python manage.py migrate
-    - name: pipenv run python manage.py collectstatic --noinput
-      run: pipenv run python manage.py collectstatic --noinput
-    - name: xvfb-run --auto-servernum pipenv run python manage.py test
-      run: xvfb-run --auto-servernum pipenv run python manage.py test
+    - name: poetry install
+      run: poetry install
+    - name: poetry run python manage.py migrate
+      run: poetry run python manage.py migrate
+    - name: poetry run python manage.py collectstatic --noinput
+      run: poetry run python manage.py collectstatic --noinput
+    - name: xvfb-run --auto-servernum poetry run python manage.py test
+      run: xvfb-run --auto-servernum poetry run python manage.py test
