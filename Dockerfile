@@ -1,9 +1,9 @@
-FROM python:3.8
+FROM python:3.10.6
 
 ENV PYTHONUNBUFFERED 1
 RUN mkdir /bugheist
 WORKDIR /bugheist
-ADD . /bugheist
+COPY . /bugheist
 
 
 # Install PostgreSQL dependencies
@@ -18,12 +18,13 @@ RUN apt-get update && apt-get install -y \
         libmemcached-dev \
         libz-dev
 
-RUN pip install pipenv
-RUN pipenv install
 
-RUN python manage.py migrate --noinput
+RUN pip install poetry 
+RUN poetry config virtualenvs.create false
+RUN poetry install
+
+RUN python manage.py migrate 
 RUN python manage.py loaddata website/fixtures/initial_data.json
-RUN python manage.py collectstatic
+# RUN python manage.py collectstatic
 RUN python manage.py initsuperuser
 
-CMD ["python","manage.py","runserver"]
