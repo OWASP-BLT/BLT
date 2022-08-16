@@ -558,6 +558,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return initial
 
     def form_valid(self, form):
+        
         tokenauth = False
         obj = form.save(commit=False)
         if self.request.user.is_authenticated:
@@ -567,6 +568,11 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 if self.request.POST.get("token") == token.key:
                     obj.user = User.objects.get(id=token.user_id)
                     tokenauth = True
+
+        captcha_form = CaptchaForm(self.request.POST)
+        if not captcha_form.is_valid():
+            messages.error(self.request, "Invalid Captcha!")
+            return HttpResponseRedirect("/issue/")
 
         domain, created = Domain.objects.get_or_create(
             name=obj.domain_name.replace("www.", ""),
