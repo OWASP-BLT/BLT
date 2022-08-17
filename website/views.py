@@ -1200,21 +1200,49 @@ class LeaderboardView(ListView):
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
 
+        context["leaderboard"] = (
+                    User.objects
+                    .annotate(total_score=Sum('points__score'))
+                    .order_by('-total_score')
+                    .filter(
+                        total_score__gt=0,
+                    )
+                )
+        return context
+
+
+class MonthlyLeaderboardView(LeaderboardView,ListView):
+    model = User
+    template_name = "leaderboard_monthly.html"
+
+    def get_context_data(self, *args, **kwargs):
+        # monthly = self.request.query_params.get("monthly")
+        
+        context = super(LeaderboardView, self).get_context_data(*args, **kwargs)
+
+        if self.request.user.is_authenticated:
+            context["wallet"] = Wallet.objects.get(user=self.request.user)
+
         month = self.request.GET.get("month")
-        if not month:
-            month = datetime.now().month
+        year = self.request.GET.get("year")
+
+        if not month: month = datetime.now().month
+        if not year: year = datetime.now().year
+
         if isinstance(month,str) and not month.isdigit():
             raise Http404(f"Invalid query passed | Month:{month}")
+        if isinstance(year,str) and not year.isdigit():
+            raise Http404(f"Invalid query passed | Year:{year}")
         
         month = int(month)
+        year = int(year)
 
         if not (month>=1 and month<=12):
             raise Http404(f"Invalid query passed | Month:{month}")
 
 
-        context["leaderboard"] = self.month_leaderboard(month,datetime.now().year,api=False)
+        context["leaderboard"] = self.month_leaderboard(month,year,api=False)
         return context
-
 
 class LeaderboardApiViewSet(LeaderboardView,APIView):
 
