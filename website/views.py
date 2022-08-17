@@ -1135,25 +1135,6 @@ class LeaderboardView(ListView):
     model = User
     template_name = "leaderboard.html"
 
-    def get_context_data(self, monthly=False, *args, **kwargs):
-        context = super(LeaderboardView, self).get_context_data(*args, **kwargs)
-
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
-
-        context["leaderboard"] = (
-                User.objects.annotate(total_score=Sum("points__score"))
-                .order_by("-total_score")
-                .filter(
-                    total_score__gt=0                
-                )
-            )
-            
-        return context
-
-
-class LeaderboardApiViewSet(APIView):
-
     '''
         get:
             1) ?monthly=true will give list of winners for current month
@@ -1178,6 +1159,21 @@ class LeaderboardApiViewSet(APIView):
                 points__created__year=datetime.now().year              
             )
         )
+    def month_leaderboard(self,month,year,api=True):
+        data = (
+                    User.objects
+                    .annotate(total_score=Sum('points__score'))
+                    .order_by('-total_score')
+                    .filter(
+                        total_score__gt=0,
+                        points__created__month=month,
+                        points__created__year=year
+                    )
+                )
+        if api:
+            return data.values('username')
+
+        return data
 
     def monthly_leaderboard(self,year) -> list:
 
@@ -1189,28 +1185,42 @@ class LeaderboardApiViewSet(APIView):
 
         # iterating over months 1-12
         for month in range(1,13):
-            month_winner = (
-                User.objects
-                .values('username')
-                .annotate(total_score=Sum('points__score'))
-                .order_by('-total_score')
-                .filter(
-                    total_score__gt=0,
-                    points__created__month=month,
-                    points__created__year=year
-                )
-                .first()
-            )
-
+            month_winner = self.month_leaderboard(month,year)
             monthly_winner.append(month_winner)
         
         
         return monthly_winner
       
 
+    def get_context_data(self, *args, **kwargs):
+        # monthly = self.request.query_params.get("monthly")
+        
+        context = super(LeaderboardView, self).get_context_data(*args, **kwargs)
+
+        if self.request.user.is_authenticated:
+            context["wallet"] = Wallet.objects.get(user=self.request.user)
+
+        month = self.request.GET.get("month")
+        if not month:
+            month = datetime.now().month
+        if isinstance(month,str) and not month.isdigit():
+            raise Http404(f"Invalid query passed | Month:{month}")
+        
+        month = int(month)
+
+        if not (month>=1 and month<=12):
+            raise Http404(f"Invalid query passed | Month:{month}")
+
+
+        context["leaderboard"] = self.month_leaderboard(month,datetime.now().year,api=False)
+        return context
+
+
+class LeaderboardApiViewSet(LeaderboardView,APIView):
+
     def get(self,request,format=None):
         
-        response = []
+        response = Response({"params":"no params passed [(monthly,bool),(year,int)]"})
 
         if request.query_params.get('monthly')=="true": 
             queryset = self.curr_month_leaderboard()
@@ -1221,6 +1231,7 @@ class LeaderboardApiViewSet(APIView):
             response = Response(queryset,status=200)
         
         return response
+
 
 class ScoreboardView(ListView):
     model = Domain
