@@ -393,6 +393,7 @@ class UserProfile(models.Model):
         max_digits=10, decimal_places=2, null=True, blank=True
     )
     issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
+    issue_spamed = models.ManyToManyField(Issue,blank=True,related_name="spamed") 
     issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
 
     def avatar(self, size=36):

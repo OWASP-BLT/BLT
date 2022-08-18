@@ -1464,6 +1464,9 @@ class IssueView(DetailView):
         context["all_users"] = User.objects.all()
         context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
         context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
+
+        context["spams"] = UserProfile.objects.filter(issue_spamed=self.object).count()
+        context["spamers"] = UserProfile.objects.filter(issue_spamed=self.object)
         return context
 
 
@@ -1764,6 +1767,24 @@ def like_issue(request, issue_pk):
     context["object"] = issue
     context["likes"] = total_votes
     return render(request, "_likes.html", context)
+
+@login_required(login_url="/accounts/login")
+def spam_issue(request, issue_pk):
+    context = {}
+    issue_pk = int(issue_pk)
+    issue = Issue.objects.get(pk=issue_pk)
+    userprof = UserProfile.objects.get(user=request.user)
+    if userprof in UserProfile.objects.filter(issue_spamed=issue):
+        userprof.issue_spamed.remove(issue)
+    else:
+        userprof.issue_spamed.add(issue)
+        issue_pk = issue.pk
+
+    userprof.save()
+    total_spam_votes = UserProfile.objects.filter(issue_spamed=issue).count()
+    context["object"] = issue
+    context["spams"] = total_spam_votes
+    return render(request, "_spams.html", context)
 
 
 @login_required(login_url="/accounts/login")

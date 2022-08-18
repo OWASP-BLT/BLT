@@ -258,6 +258,9 @@ urlpatterns = [
         r"^like_issue/(?P<issue_pk>\d+)/$", website.views.like_issue, name="like_issue"
     ),
     re_path(
+        r"^spam_issue/(?P<issue_pk>\d+)/$", website.views.spam_issue, name="spam_issue"
+    ),
+    re_path(
         r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"
     ),
     re_path(

@@ -1,0 +1,25 @@
+{% load gravatar %}
+<a class="btn btn-info btn-xs spam_unspam" name="{{ object.pk }}">
+    <i class="fa fa-thumbs-down"></i> Spam {{ spams }}
+</a>
+
+
+<div id="spamedBy" class="modal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+                <h3>Spamed by:</h3>
+                {% for usr in spamers %}
+                    <div class="list-group-item">
+                        {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
+                            <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}" height="50px">
+                        {% else %}
+                            <img src="{% gravatar_url usr.user.email 50 %}">
+                        {% endif %}
+                        <a href="/profile/{{ usr.user.username }}">{{ usr.user.username }}</a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
