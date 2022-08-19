@@ -1,5 +1,27 @@
 # Setting up Development server
 
+## Setting Up Development Server using Docker-compose
+
+### Install [Docker](https://docs.docker.com/get-docker/)
+
+```sh
+ # Move to project directory
+ cd BLT
+
+ # build the docker container
+ docker-compose build
+ 
+ # Run the docker container
+ docker-compose up
+
+ # for staticfiles collection (Optional)
+ docker exec -it <container id> /bin/bash
+
+ # collect staticfiles
+ python manage.py collectstatic
+ 
+```
+
 ## Setting Up Development Server using Vagrant
 
 ### Install [Vagrant](https://www.vagrantup.com/)
@@ -11,26 +33,26 @@
 ```sh
  # Move to project directory
  cd BLT
- 
+
  # Start vagrant - It takes time during the first run, so go get a coffee!
  vagrant up
- 
- # SSH into vagrant 
+
+ # SSH into vagrant
  vagrant ssh
- 
+
  # Move to project directory
  cd BLT
- 
+
  # Create tables in the database
  python manage.py migrate
- 
+
  # Create a super user
  python manage.py createsuperuser
- 
+
  # Collect static files
  python manage.py collectstatic
 
- # Run the server 
+ # Run the server
  python manage.py runserver
 ```
 
@@ -50,35 +72,35 @@ from the host machine.
 
  # Install postgres on mac using brew
  brew install postgresql
- 
- # Install postgres on ubuntu 
+
+ # Install postgres on ubuntu
  sudo apt-get install postgresql
- 
+
  # Install pipenv on ubuntu
  sudo apt-get install pipenv
- 
+
  # Install pipenv on mac
  pip install pipenv
- 
+
  # Start virtual env
  pipenv install | pipenv shell
- 
+
  # Move to project directory
  cd BLT
- 
+
  # Create tables in the database
  python manage.py migrate
- 
+
  # Load initial data
  python3 manage.py loaddata website/fixtures/initial_data.json
- 
+
  # Create a super user
  python manage.py createsuperuser
- 
+
  # Collect static files
  python manage.py collectstatic
 
- # Run the server 
+ # Run the server
  python manage.py runserver
 ```
 
