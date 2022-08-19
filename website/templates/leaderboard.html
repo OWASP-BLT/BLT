@@ -55,7 +55,7 @@
         <div class="list-group">
             {%if not leaderboard%}
                 <p style="color: red;">No data for this month</p>
-            {%else%}
+            {% else %}
                 {% for leader in leaderboard %}
                 <div class="list-group-item">
                     {% if leader.userprofile.avatar %}
