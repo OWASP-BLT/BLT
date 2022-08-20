@@ -394,6 +394,7 @@ class UserProfile(models.Model):
     )
     issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
     issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
+    issue_flaged = models.ManyToManyField(Issue,blank=True,related_name="flaged") 
 
     def avatar(self, size=36):
         if self.user_avatar:

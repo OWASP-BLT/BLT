@@ -68,8 +68,10 @@
     }
 
     .like_btn,
+    .flag_btn,
     .bookmark,
     .copy-btn,
+    .flag_btn a.flaged-by,
     .like_btn a.liked-by {
         vertical-align: top;
     }
@@ -151,6 +153,9 @@
             {% if request.user.is_authenticated %}
             <span class="like_btn">
                 {% include '_likes.html' %}
+            </span>
+            <span class="flag_btn">
+                {% include '_flags.html' %}
             </span>
             <a class="bookmark btn btn-success btn-xs" name="{{ object.pk }}">
                 <i class="fa fa-bookmark-o"></i> Bookmark
@@ -354,11 +359,8 @@
 </div>
 
 <script type="text/javascript">
-    var label = {
-        {
-        object.label
-    }
-    };
+   var label = "{{object.label}}";
+
     $(document).on('click', '.edit-issue', function (e) {
         $('.form input[name=description]').val($('.issue-desc').text());
         $('.form input[name=domain]').val($('.issue-domain').text());
@@ -483,6 +485,19 @@
             data: {},
             success: function (data) {
                 $('.like_btn').html(data);
+            },
+        });
+    });
+
+    $('body').on('click', '.flag_unflag', function (e) {
+        e.preventDefault();
+        var issue_pk = $(this).attr('name');
+        $.ajax({
+            type: 'GET',
+            url: '/flag_issue/' + issue_pk + '/',
+            data: {},
+            success: function (data) {
+                $('.flag_btn').html(data);
             },
         });
     });
