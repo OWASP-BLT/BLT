@@ -46,6 +46,9 @@ from django.views.generic import DetailView, TemplateView, ListView
 from django.views.generic import View
 from django.views.generic.edit import CreateView
 from django.core import serializers
+from django.views.decorators.http import require_GET
+from django.conf import settings
+
 from rest_framework import viewsets, filters
 from user_agents import parse
 from rest_framework.authtoken.models import Token
@@ -61,6 +64,7 @@ from dj_rest_auth.registration.views import SocialConnectView
 from bugheist import settings
 from rest_framework.authtoken.views import ObtainAuthToken
 from website.models import (
+
     Winner,
     Payment,
     Wallet,
@@ -80,7 +84,6 @@ from .forms import FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm
 from decimal import Decimal
 import stripe
 import humanize
-from django.views.decorators.http import require_GET
 
 from .serializers import (
     IssueSerializer,
@@ -2652,9 +2655,9 @@ def withdraw(request):
                     wallet.save()
                     account_links = stripe.AccountLink.create(
                         account=account,
-                        return_url="http://127.0.0.1:8000/dashboard/user/stripe/connected/"
+                        return_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/stripe/connected/"
                         + request.user.username,
-                        refresh_url="http://127.0.0.1:8000/dashboard/user/profile/"
+                        refresh_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/profile/"
                         + request.user.username,
                         type="account_onboarding",
                     )
@@ -2669,9 +2672,9 @@ def withdraw(request):
                 wallet.save()
                 account_links = stripe.AccountLink.create(
                     account=account,
-                    return_url="http://127.0.0.1:8000/dashboard/user/stripe/connected/"
+                    return_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/stripe/connected/"
                     + request.user.username,
-                    refresh_url="http://127.0.0.1:8000/dashboard/user/profile/"
+                    refresh_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/profile/"
                     + request.user.username,
                     type="account_onboarding",
                 )
