@@ -46,32 +46,36 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-lg-6">
-        <h1 class="page-header">Global Leaderboard</h1>
+    <div class="col-lg-6" style="display: flex; justify-content: center; align-items: center;">
+        <h1 class="page-header">Global Leaderboard</h1>         
     </div>
 </div>
 <div class="row">
     <div class="col-lg-9">
         <div class="list-group">
-            {% for leader in leaderboard %}
-            <div class="list-group-item">
-                {% if leader.userprofile.avatar %}
-                <img src="{{ leader.userprofile.avatar }}" class="img-responsive img-thumbnail profileimage">
-                {% elif leader.socialaccount_set.all.0.get_avatar_url %}
-                <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class="profileimage">
-                {% else %}
-                <img src="{% gravatar_url leader.email 50 %}" class="profileimage">
-                {% endif %}
-                <a href="/profile/{{ leader.username }}">{{ leader.username }}</a>
-                <span class="pull-right badge">{{ leader.total_score }} Points</span>
-                {% if leader.userprofile.winnings %}
-                <span class="pull-right badge">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
-                {% endif %}
+            {%if not leaderboard%}
+                <p style="color: red;">No data for this month</p>
+            {% else %}
+                {% for leader in leaderboard %}
+                <div class="list-group-item">
+                    {% if leader.userprofile.avatar %}
+                    <img src="{{ leader.userprofile.avatar }}" class="img-responsive img-thumbnail profileimage">
+                    {% elif leader.socialaccount_set.all.0.get_avatar_url %}
+                    <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class="profileimage">
+                    {% else %}
+                    <img src="{% gravatar_url leader.email 50 %}" class="profileimage">
+                    {% endif %}
+                    <a href="/profile/{{ leader.username }}">{{ leader.username }}</a>
+                    <span class="pull-right badge">{{ leader.total_score }} Points</span>
+                    {% if leader.userprofile.winnings %}
+                    <span class="pull-right badge">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
+                    {% endif %}
 
-                <span><kbd
-                        class="{{ leader.userprofile.get_title_display }} titleuser">{{ leader.userprofile.get_title_display }}</kbd></span>
-            </div>
-            {% endfor %}
+                    <span><kbd
+                            class="{{ leader.userprofile.get_title_display }} titleuser">{{ leader.userprofile.get_title_display }}</kbd></span>
+                </div>
+                {% endfor %}
+            {%endif%}
         </div>
     </div>
 </div>
