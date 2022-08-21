@@ -576,7 +576,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     tokenauth = True
 
         captcha_form = CaptchaForm(self.request.POST)
-        if not captcha_form.is_valid():
+        if not captcha_form.is_valid() and not settings.TESTING:
             messages.error(self.request, "Invalid Captcha!")
             return HttpResponseRedirect("/issue/")
 
