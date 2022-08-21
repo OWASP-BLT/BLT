@@ -51,9 +51,12 @@ from user_agents import parse
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
+
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from dj_rest_auth.registration.views import SocialLoginView
-
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
@@ -3070,3 +3073,82 @@ def handler404(request, exception):
 
 def handler500(request, exception=None):
    return render(request, "500.html", {}, status=500)
+
+class LikeIssueApiView(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request,id,format=None,*args, **kwargs):
+        return Response({
+            "likes":UserProfile.objects.filter(issue_upvoted__id=id).count(),
+        })
+    
+    def post(self,request,id,format=None,*args,**kwargs):
+
+        issue = Issue.objects.get(id=id)
+        userprof = UserProfile.objects.get(user=request.user)
+        if userprof in UserProfile.objects.filter(issue_upvoted=issue):
+            userprof.issue_upvoted.remove(issue)
+            userprof.save()
+            return Response({"issue":"unliked"})
+        else:
+            userprof.issue_upvoted.add(issue)
+            userprof.save()
+            
+            liked_user = issue.user
+            liker_user = request.user
+            issue_pk = issue.pk
+            msg_plain = render_to_string(
+                "email/issue_liked.txt",
+                {
+                    "liker_user": liker_user.username,
+                    "liked_user": liked_user.username,
+                    "issue_pk": issue_pk,
+                },
+            )
+            msg_html = render_to_string(
+                "email/issue_liked.txt",
+                {
+                    "liker_user": liker_user.username,
+                    "liked_user": liked_user.username,
+                    "issue_pk": issue_pk,
+                },
+            )
+
+            send_mail(
+                "Your issue got an upvote!!",
+                msg_plain,
+                "Bugheist <support@bugheist.com>",
+                [liked_user.email],
+                html_message=msg_html,
+            )
+
+            return Response({"issue":"liked"})
+
+class FlagIssueApiView(APIView):
+    '''
+        api for Issue like,flag and bookmark
+    '''
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request,id,format=None,*args, **kwargs):
+        return Response({
+            "flags":UserProfile.objects.filter(issue_flaged__id=id).count(),
+        })
+    
+    def post(self,request,id,format=None,*args,**kwargs):
+
+        
+        issue = Issue.objects.get(id=id)
+        userprof = UserProfile.objects.get(user=request.user)
+        if userprof in UserProfile.objects.filter(issue_flaged=issue):
+            userprof.issue_flaged.remove(issue)
+            userprof.save()
+            return Response({"issue":"unflagged"})
+        else:
+            userprof.issue_flaged.add(issue)
+            userprof.save()
+            return Response({"issue":"flagged"})
