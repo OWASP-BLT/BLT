@@ -1425,8 +1425,29 @@ class IssueView(DetailView):
         context["all_users"] = User.objects.all()
         context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
         context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
+
+        context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
+        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
         return context
 
+
+@login_required(login_url="/accounts/login")
+def flag_issue(request, issue_pk):
+    context = {}
+    issue_pk = int(issue_pk)
+    issue = Issue.objects.get(pk=issue_pk)
+    userprof = UserProfile.objects.get(user=request.user)
+    if userprof in UserProfile.objects.filter(issue_flaged=issue):
+        userprof.issue_flaged.remove(issue)
+    else:
+        userprof.issue_flaged.add(issue)
+        issue_pk = issue.pk
+
+    userprof.save()
+    total_flag_votes = UserProfile.objects.filter(issue_flaged=issue).count()
+    context["object"] = issue
+    context["flags"] = total_flag_votes
+    return render(request, "_flags.html", context)
 
 def IssueEdit(request):
     if request.method == "POST":
