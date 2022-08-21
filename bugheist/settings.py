@@ -22,6 +22,8 @@ environ.Env.read_env()
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 ADMIN_URL = os.environ.get("ADMIN_URL", "admin")
+DOMAIN_NAME = os.environ.get("DOMAIN_NAME","127.0.0.1")
+PORT = os.environ.get("PORT","8000")
 DEFAULT_FROM_EMAIL = "support@bugheist.com"
 SERVER_EMAIL = "support@bugheist.com"
 
