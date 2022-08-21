@@ -1,3 +1,4 @@
+from posixpath import basename
 from django.conf import settings
 from django.urls import path
 from django.conf.urls import include
@@ -21,6 +22,8 @@ from website.views import (
     InboundParseWebhookView,
     LeaderboardView,
     LeaderboardApiViewSet,
+    LikeIssueApiView,
+    FlagIssueApiView,
     MonthlyLeaderboardView,
     IssueView,
     AllIssuesView,
@@ -277,6 +280,8 @@ urlpatterns = [
     re_path(r"^leaderboard/$", LeaderboardView.as_view(), name="leaderboard"),
     re_path(r"^leaderboard/monthly/$", MonthlyLeaderboardView.as_view(), name="leaderboard_monthly"),
     re_path(r"^leaderboard/api/$", LeaderboardApiViewSet.as_view(), name="leaderboard_api"),
+    re_path(r"^api/v1/issue/like/(?P<id>\w+)/$", LikeIssueApiView.as_view(), name="like_issue"),
+    re_path(r"^api/v1/issue/flag/(?P<id>\w+)/$", FlagIssueApiView.as_view(), name="flag_issue"),
     re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
     re_path(
