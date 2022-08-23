@@ -1211,8 +1211,8 @@ class LeaderboardView(ListView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-
-        context["leaderboard"] = self.monthly_leaderboard()
+        year = int(datetime.now().year)
+        context["leaderboard"] = self.monthly_leaderboard(year)
         return context
 
 
