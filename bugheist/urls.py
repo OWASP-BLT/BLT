@@ -16,6 +16,7 @@ from dj_rest_auth.views import PasswordResetConfirmView
 import comments.views
 import website.views
 from website.views import (
+    EachmonthLeaderboardView,
     UserProfileDetailView,
     IssueCreate,
     UploadCreate,
@@ -279,6 +280,7 @@ urlpatterns = [
     re_path(r"^label_activity/$", SpecificIssuesView.as_view(), name="all_activity"),
     re_path(r"^leaderboard/$", LeaderboardView.as_view(), name="leaderboard"),
     re_path(r"^leaderboard/monthly/$", MonthlyLeaderboardView.as_view(), name="leaderboard_monthly"),
+    re_path(r"^leaderboard/each-month/$", EachmonthLeaderboardView.as_view(), name="leaderboard_eachmonth"),
     re_path(r"^leaderboard/api/$", LeaderboardApiViewSet.as_view(), name="leaderboard_api"),
     re_path(r"^api/v1/issue/like/(?P<id>\w+)/$", LikeIssueApiView.as_view(), name="like_issue"),
     re_path(r"^api/v1/issue/flag/(?P<id>\w+)/$", FlagIssueApiView.as_view(), name="flag_issue"),
