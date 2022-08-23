@@ -1165,7 +1165,13 @@ class LeaderboardView(ListView):
                 points__created__year=datetime.now().year              
             )
         )
+
+
+
     def month_leaderboard(self,month,year,api=True):
+        '''
+            return: list of dict of current/specified month users leaderboard 
+        '''
         data = (
                     User.objects
                     .annotate(total_score=Sum('points__score'))
@@ -1181,7 +1187,7 @@ class LeaderboardView(ListView):
 
         return data
 
-    def monthly_leaderboard(self,year) -> list:
+    def monthly_leaderboard(self,year,api=False) -> list:
 
         '''
             return: list of dict of monthly winners ordered from 1-12 for queried year 
@@ -1191,7 +1197,7 @@ class LeaderboardView(ListView):
 
         # iterating over months 1-12
         for month in range(1,13):
-            month_winner = self.month_leaderboard(month,year)
+            month_winner = self.month_leaderboard(month,year,api)
             monthly_winner.append(month_winner)
         
         
@@ -1206,16 +1212,43 @@ class LeaderboardView(ListView):
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
 
-        context["leaderboard"] = (
-                    User.objects
-                    .annotate(total_score=Sum('points__score'))
-                    .order_by('-total_score')
-                    .filter(
-                        total_score__gt=0,
-                    )
-                )
+        context["leaderboard"] = self.monthly_leaderboard()
         return context
 
+
+class EachmonthLeaderboardView(LeaderboardView,ListView):
+    model = User
+    template_name = "leaderboard_eachmonth.html"
+
+    def get_context_data(self, *args, **kwargs):
+        
+        context = super(LeaderboardView, self).get_context_data(*args, **kwargs)
+
+        if self.request.user.is_authenticated:
+            context["wallet"] = Wallet.objects.get(user=self.request.user)
+
+        year = self.request.GET.get("year")
+
+        if not year: year = datetime.now().year
+
+        if isinstance(year,str) and not year.isdigit():
+            raise Http404(f"Invalid query passed | Year:{year}")
+        
+        year = int(year)
+
+        leaderboard = self.monthly_leaderboard(year)
+        month_winners = []
+
+        months = ["January","February","March","April","May","June","July","August","September","October","Novermber","December"]
+
+        for indx,month in enumerate(leaderboard):
+            
+            month = {"user":month.first(),"month":months[indx]}
+            month_winners.append(month)
+
+        context["leaderboard"] = month_winners
+
+        return context
 
 class MonthlyLeaderboardView(LeaderboardView,ListView):
     model = User
