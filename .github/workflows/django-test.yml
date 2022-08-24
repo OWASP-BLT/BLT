@@ -1,6 +1,7 @@
 name: Django Test
 
-on: [push]
+on:
+  push:
 
 jobs:
   build:
