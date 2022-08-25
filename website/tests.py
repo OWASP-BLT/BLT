@@ -7,9 +7,10 @@ from django.test import LiveServerTestCase
 os.environ['DJANGO_LIVE_TEST_SERVER_ADDRESS'] = 'localhost:8082'
 
 from django.test.utils import override_settings
-from selenium.webdriver.firefox.webdriver import WebDriver
+from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.common.by import By
 
 class MySeleniumTests(LiveServerTestCase):
@@ -18,7 +19,7 @@ class MySeleniumTests(LiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         print (sys.path)
-        cls.selenium = WebDriver()
+        cls.selenium = webdriver.Firefox(executable_path=GeckoDriverManager(cache_valid_range=1).install())
         super(MySeleniumTests, cls).setUpClass()
 
     @classmethod

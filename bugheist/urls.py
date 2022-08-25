@@ -24,8 +24,6 @@ from website.views import (
     GloalLeaderboardView,
     SpecificMonthLeaderboardView,
     LeaderboardApiViewSet,
-    LikeIssueApiView,
-    FlagIssueApiView,
     IssueView,
     AllIssuesView,
     SpecificIssuesView,
@@ -51,11 +49,16 @@ from website.views import (
     GithubLogin,
     GoogleLogin,
     GoogleConnect,
+)
+from website.api.views import (
     IssueViewSet,
     DomainViewSet,
     UserIssueViewSet,
     UserProfileViewSet,
+    LikeIssueApiView,
+    FlagIssueApiView,
 )
+
 from bugheist import settings
 from rest_framework import permissions, routers
 from drf_yasg.views import get_schema_view
