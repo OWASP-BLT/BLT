@@ -1,8 +1,6 @@
-import requests.exceptions
-
-
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
+from django.db.models import Sum
 
 from rest_framework import viewsets, filters
 from rest_framework.response import Response
@@ -20,7 +18,11 @@ from website.serializers import (
     DomainSerializer,
 )
 
-from website.models import UserProfile
+from website.models import (
+    UserProfile,
+    User,
+    Points
+)
 
 
 # API's
@@ -48,7 +50,6 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ("id", "user__id", "user__username")
     http_method_names = ["get", "post", "head"]
-
 
 class DomainViewSet(viewsets.ModelViewSet):
     """
@@ -153,3 +154,15 @@ class FlagIssueApiView(APIView):
             userprof.issue_flaged.add(issue)
             userprof.save()
             return Response({"issue":"flagged"})
+
+
+
+class UserScoreApiView(APIView):
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request,id,format=None,*args, **kwargs):
+        total_score = Points.objects.filter(user__id=id).annotate(total_score=Sum('score'))
+
+        return Response({"total_score":total_score})
