@@ -1202,7 +1202,6 @@ class GloalLeaderboardView(LeaderboardBase,ListView):
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
         context["leaderboard"] = self.get_leaderboard(year=int(datetime.now().year))
-        admin = context["leaderboard"][0]
         return context
 
 
