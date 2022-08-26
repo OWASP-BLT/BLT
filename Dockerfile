@@ -27,4 +27,5 @@ RUN python manage.py migrate
 RUN python manage.py loaddata website/fixtures/initial_data.json
 # RUN python manage.py collectstatic
 RUN python manage.py initsuperuser
+RUN poetry export --without-hashes --format=requirements.txt > requirements.txt
 
