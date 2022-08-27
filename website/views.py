@@ -1139,12 +1139,13 @@ class LeaderboardBase():
             all user scores for specified month and year
         '''
         
+        data = User.objects
 
         if year and not month:
-            data = User.objects.filter(points__created__year=year)
+            data = data.filter(points__created__year=year)
 
         if year and month:
-            data = User.objects.filter(
+            data = data.filter(
                 Q(points__created__year=year) &
                 Q(points__created__month=month)
                 )
@@ -1201,7 +1202,7 @@ class GloalLeaderboardView(LeaderboardBase,ListView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["leaderboard"] = self.get_leaderboard(year=int(datetime.now().year))
+        context["leaderboard"] = self.get_leaderboard()
         return context
 
 
