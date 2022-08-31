@@ -20,7 +20,6 @@ import uuid
 #from django_cron import CronJobBase, Schedule
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
-from allauth.account.views import LoginView,_ajax_response
 from bs4 import BeautifulSoup
 from django.contrib import messages
 from django.contrib.auth import get_user_model
