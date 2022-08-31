@@ -555,8 +555,16 @@ class IssueCreate(IssueBaseCreate, CreateView):
             )
         return initial
 
-    def form_valid(self, form):
+    def post(self, request, *args, **kwargs):
         
+        if len(request.FILES['screenshot'].name)>99:
+            filename = request.FILES['screenshot'].name
+            extension = filename.split(".")[-1] 
+            request.FILES['screenshot'].name = filename[:88] + "." + extension
+
+        return super().post(request, *args, **kwargs)
+
+    def form_valid(self, form):
         tokenauth = False
         obj = form.save(commit=False)
         if self.request.user.is_authenticated:
