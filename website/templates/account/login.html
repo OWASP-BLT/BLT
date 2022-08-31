@@ -102,7 +102,15 @@
         </div>
         <span class="btn"><a href="{% url 'account_reset_password' %}">{% trans "Forgot Password?" %}</a> | Not yet a
             member? <a href="{% url 'account_signup' %}">Join</a></span>
+            {% if form.errors %}
+                    <div>
+                        {% for _, error in form.errors.items %}
+                        <strong style="color: red;">{{ error }}</strong>
+                        {% endfor %}
+                    </div>
+            {% endif %}
     </div>
+
 </div>
 
 {% endblock %}

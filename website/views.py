@@ -3058,17 +3058,3 @@ def handler500(request, exception=None):
 #                     headers=headers,
 #                 )
 #         mail.logout()
-
-class CustomLoginView(LoginView):
-
-    def post(self, request, *args, **kwargs):
-        form_class = self.get_form_class()
-        form = self.get_form(form_class)
-        if form.is_valid():
-            response = self.form_valid(form)
-        else:
-            response = self.form_invalid(form)
-            messages.error(request,"Invalid Credentials")
-        return _ajax_response(
-            self.request, response, form=form, data=self._get_ajax_data_if()
-        )
