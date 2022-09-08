@@ -223,7 +223,7 @@
                             {% endif %}
                         </div>
                         <div class="col-xs-8">
-                            <h3>Reported by {{ object.user.username|default:"Anonymous" }}</h3>
+                            <h3>Reported by {{ object.user.username|default_if_none:"Anonymous" }}</h3>
                             {% if object.user.username %}
                             <h4>Total Points of {{ object.user.username }} = {{ users_score }}</h4>
 
