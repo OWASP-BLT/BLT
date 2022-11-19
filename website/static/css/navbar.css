@@ -58,10 +58,15 @@
     padding: 8px 25px 8px 25px;
     font-size: 1.4rem;
     font-weight: 700;
-    color: white;
+    color: white !important;
     text-decoration: none !important;
     cursor: pointer;
 }
+
+.nav-report-bug:hover{
+    background-color: rgb(196, 0, 0);
+}
+
 .nav{
     align-items: center !important;
     justify-content: center !important;
