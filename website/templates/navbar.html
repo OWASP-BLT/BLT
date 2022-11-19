@@ -5,33 +5,16 @@
 {% providers_media_js %}
 {% load i18n %}
 <nav class="navbar navbar-default navbar-fixed-top">
-    <div class="container-fluid">
+    <div class="container-fluid" id="nav-container">
         <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
-                data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
             <a class="navbar-brand" href="/">
                 <img src="{% static "img/logo-small-transparent.png" %}">
             </a>
+            <p>Report Issues, Win Prizes</p>
         </div>
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav navbar-right">
-                <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Menu
-                        <span class="caret"></span></a>
-                    <ul class="dropdown-menu">
-                        <li><a href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en"
-                                target="_new">{% trans "Add to chrome" %}</a></li>
-                        <li><a href="/social">{% trans "Social" %}</a></li>
-                        <li><a href="/start">{% trans "Bug Hunt" %}</a></li>
-                    </ul>
-                </li>
-                <li><a href="/start" class="sponsor-hunt">{% trans "Start a Bug Hunt" %}</a></li>
-
+                
                 {% if request.user.is_authenticated %}
                 <li class="dropdown user-menu">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">
@@ -49,6 +32,30 @@
                         <li>
                             <a href="/accounts/profile/">
                                 <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en"
+                            target="_new">
+                                <i class="fa fa-chrome fa-fw"></i>
+                                {% trans "Add to chrome" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/start">
+                                <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/social">
+                                <i class="fa fa-share fa-fw"></i>
+                                {% trans "Social" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/start">
+                                <i class="fa fa-bug fa-fw"></i>
+                                {% trans "Bug Hunt" %}
                             </a>
                         </li>
                         <li>
@@ -70,21 +77,18 @@
                     </ul>
                 </li>
                 {% else %}
-                <li><a href="/accounts/signup">{% trans "Signup" %}</a></li>
-                <li><a href="/accounts/login" data-toggle="modal">{% trans "Login" %}</a></li>
+                <div class="login-menu">
+                    <li><a href="/accounts/signup">{% trans "Signup" %}</a></li>
+                    <li><a href="/accounts/login" data-toggle="modal">{% trans "Login" %}</a></li>
+                </div>
                 {% endif %}
             </ul>
 
             <form class="navbar-form navbar-right" action="/search" method="get">
-                <div class="form-group">
-                    <a href="/report/" class="btn btn-primary ">Report a Bug</a>
+                <div id="nav-search">
+                    <input type="text" name="query" placeholder="{% trans "Search" %}" aria-label="Small" aria-describedby="inputGroup-sizing-sm">
+                    <a href="/report/" class="nav-report-bug">Report a Bug</a>
                 </div>
-                <div class="form-group">
-                    <input type="text" name="query" class="form-control" placeholder="{% trans "Search" %}">
-                </div>
-                <button type="submit" class="btn btn-default">
-                    <i class="fa fa-search"></i>
-                </button>
             </form>
 
 
