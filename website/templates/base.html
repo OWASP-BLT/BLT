@@ -20,6 +20,7 @@
     <meta property="og:description"
         content="{% block og_description %}Bugheist allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on Bugheist and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and companies can get involved and help out.{% endblock %}" />
     <meta property="og:type" content="website" />
+    
     <link href="{% static "vendor/bootstrap/css/bootstrap.css" %}" rel="stylesheet">
     <link href="{% static "css/style.css" %}" rel="stylesheet">
     <link href="{% static "css/lightbox.min.css" %}" rel="stylesheet">
@@ -29,14 +30,20 @@
     <link href="{% static "css/main.css" %}" rel="stylesheet" type="text/css">
     <link href="{% static "css/text-slider.css" %}" rel="stylesheet" type="text/css">
     <link href="{% static "css/activity.css" %}" rel="stylesheet" type="text/css">
+    <link href="{% static "css/navbar.css" %}" rel="stylesheet" type="text/css">
+    
     <script src="{% static "vendor/jquery/jquery.min.js" %}"></script>
     <script src="{% static "js/notify.js" %}"></script>
     <script src="{% static "js/text-slider.js" %}"></script>
     <script src="{% static "js/embed.js" %}"></script>
+    
     <!--[if lt IE 9]>
         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
         <![endif]-->
+    
+    {% block head %}
+    {% endblock %}
 
     {% block style %}
     {% endblock %}
