@@ -54,8 +54,95 @@
     }
 
     .hunt-form .form-group {
-        margin-top: 30px;
+        margin-top: 10px;
+        align-items: center !important;
     }
+    #start-hunt-root{
+        width: 100%;
+        display: flex;
+        justify-content: center; align-items: center;
+        padding: 30px;
+
+    }
+    .main{
+        width: 60%;
+        height: max-content;
+        padding: 20px;
+        background-color: white;
+        box-shadow:  0px 0px 10px rgb(174, 174, 174);
+    }
+    .title{
+        display: flex;
+        width: 100%;
+        justify-content: center;
+        align-items: center;
+    }
+    .title p{
+        font-size: 5rem;
+        font-weight:900;
+        margin: 10px;
+    }
+
+    .input-container {
+    display: flex;
+    width: 100%;
+    margin-bottom: 15px;
+    }
+
+    /* Style the form icons */
+    .icon {
+    padding: 10px;
+    background: rgb(255, 30, 30);
+    color: white;
+    min-width: 50px;
+    text-align: center;
+    }
+
+    /* Style the input fields */
+    .input-field {
+    width: 100%;
+    padding: 10px;
+    outline: none;
+    }
+
+    .input-field:focus {
+    border: 1px solid rgb(255, 30, 30);
+    }
+
+    #bughunt-submit{
+        display: flex;
+        width: 100%;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: 10px;
+    }
+    #bughunt-submit button {
+        background-color: rgb(255, 30, 30);
+        color: white;
+        padding: 10px 10px;
+        border: none;
+        cursor: pointer;
+        width: 200px;
+        opacity: 0.9;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+
+    #bughunt-submit button:hover {
+        background-color: rgb(203, 0, 0);
+    }
+
+    #bughunt-select-plan{
+        padding: 10px 10px 10px 10px;
+        width: 100%;
+        border-radius: 0;
+        border: none;
+        background-color: rgba(255, 0, 0, 0.784);
+        color: white;
+        font-size: 1.4rem;
+        font-weight: bold;
+    }
+
 </style>
 {% endblock %}
 
@@ -64,57 +151,84 @@
 <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
 <form role="form" action="/hunt/" method="post" enctype="multipart/form-data" class="hunt-form">
     {% csrf_token %}
-    <div class="row main">
-        <div class="panel-heading">
-            <div class="panel-title text-center">
-                <h1 class="title">Start a bug hunt!</h1>
-                All paid plans are currently featured on the homepage under the sponsored bug hunt area.
-                <hr />
-            </div>
-        </div>
-        <div class="main-issue-form main-center">
-            {% csrf_token %}
-            <input type="hidden" name="plan" value="Flea" id="plan">
-           
-            <div class="form-group">
-                Website to test: (required)
-                <div class="input-group">
-                    <span class="input-group-addon">
-                        <i class="fa fa-link" aria-hidden="true"></i>
-                    </span>
-                    <input class="form-control required url" placeholder="http://example.com" name="url"
-                        value="{{ form.url.value|default:"" }}">
+    <div id="start-hunt-root">
+        <div class="row main">
+            <div class="panel-heading">
+                <div class="panel-title text-center">
+                    <div class="title">
+                        <p >START A </p>  
+                        <p style="color: red;">BUGHUNT</p> 
+                    </div>
+                    <p style="font-weight: bold;">Enter URL, APP name or GPS location of issue</p>
+                    <hr />
                 </div>
-                {% if form.url.errors %}
-                <label id="url-error" class="error" for="url">{{ form.url.errors }}</label>
-                {% endif %}
             </div>
-            <div class="form-group">
-                Your Logo: (required)
-                <div class="input-group">
-                    <span class="input-group-addon">
-                        <i class="fa fa-file-picture-o" aria-hidden="true"></i>
-                    </span>
-                    <input type="file" name="logo" class="required form-control">
-                </div>
-                {% if form.logo.errors %}
-                <label id="url-error" class="error" for="url">{{ form.logo.errors }}</label>
-                {% endif %}
-            </div>
+                {% csrf_token %}
+                <div class="form-group">
 
-            <div class="form-group">
-                <strong>Grand Prize:</strong>
-                <p>What is the maximum payment amount that you will give to bug hunters?</p>
-                <div>
-                    <input class="slider" type="text" name="prize" value="{{ form.prize.value|default:'100' }}"
-                        data-provide="slider" data-slider-min="100" data-slider-max="10000" data-slider-step="100"
-                        data-slider-value="{{ form.prize.value|default:'100' }}">
+                    <div class="input-container">
+                        <i class="fa fa-bug icon" aria-hidden="true"></i>
+                        <input class="input-field url required" type="text" placeholder="Name of the bughunt" name="name">
+                    </div>
+                    {% if form.url.errors %}
+                    <label id="url-error" class="error" for="url">{{ form.url.errors }}</label>
+                    {% endif %}
                 </div>
-                {{ form.prize.errors }}
-            </div>
-            {% if not user.is_authenticated %}
-            <br><span class="text-danger"><a href="/accounts/login">*Login required</a></span>
-            {% endif %}
+                <div class="form-group">
+
+                    <div class="input-container">
+                        <i class="fa fa-link icon" aria-hidden="true"></i>
+                        <input class="input-field url required" type="text" placeholder="http://example.com" name="url" 
+                            value="{{ form.url.value|default:"" }}">
+                    </div>
+                    {% if form.url.errors %}
+                    <label id="url-error" class="error" for="url">{{ form.url.errors }}</label>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <div class="input-container">
+                        <i class="fa fa-file-picture-o icon" aria-hidden="true"></i>
+                        <input class="input-field url required" type="file" name="logo" style="width: 100%; border:1px solid #1f1f1f77">
+                    </div>
+                    {% if form.logo.errors %}
+                    <label id="url-error" class="error" for="url">{{ form.logo.errors }}</label>
+                    {% endif %}
+                </div>
+                <div class="input-group">
+                    <div class="input-container">
+                        <i class="fa fa-pencil-square-o icon" aria-hidden="true"></i>
+                        <textarea data-required="true" name="description" id="description"
+                            data-intro="Description of Issue" data-step="2" class="input-field url required"
+                            rows="3" cols="100%" placeholder="Describe bug issue">
+                        </textarea>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <select name="plan" value="Flea" id="bughunt-select-plan">
+                        <option value="Flea">Flea Plan $9.00 / Month</option>
+                        <option value="Ant">Ant Plan $99.00 / Month</option>
+                        <option value="Wasp">Wasp Plan $499.00 / Month</option>
+                        <option value="Scorpion">Scorpion Plan $1499.00 / Month</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <strong>Grand Prize:</strong>
+                    <p>Max amout awarded to winner</p>
+                    <div>
+                        <input class="slider" type="text" name="prize" value="{{ form.prize.value|default:'100' }}"
+                            data-provide="slider" data-slider-min="100" data-slider-max="10000" data-slider-step="100"
+                            data-slider-value="{{ form.prize.value|default:'100' }}">
+                    </div>
+                    {{ form.prize.errors }}
+                </div>
+
+                {% if not user.is_authenticated %}
+                <br><span class="text-danger"><a href="/accounts/login">*Login required</a></span>
+                {% else %}
+                <div class="form-group" id="bughunt-submit">
+                    <button type="submit">START BUGHUNT!</button>
+                </div>
+                {% endif %}
         </div>
     </div>
 
