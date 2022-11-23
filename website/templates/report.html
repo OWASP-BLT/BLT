@@ -17,13 +17,31 @@
 <script src="{% static "js/jquery.validate.js" %}"></script>
 <script src="{% static 'js/activity.js' %}"></script>
 
+<style>
+    .text-center {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 30px;
+    }
+    .text-center div{
+        width: 44%;
+        background-color: rgb(220, 0, 0);
+    }
+    .title{
+        color: white; font-weight: 700; font-size: 3rem;
+    }
+</style>
+
 <form action="/issue/" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="row main">
         <div class="panel-heading">
             <div class="panel-title text-center">
-                <h1 class="title">Report a bug</h1>
-                <hr />
+                <div>
+                    <h1 class="title">REPORT A BUG</h1>
+                </div>
             </div>
         </div>
         <div class="main-issue-form main-center">
@@ -40,7 +58,7 @@
                             data-intro="Enter the website's complete url where you found the bug." data-step="1"
                             placeholder="www.testsite.com/bug-found" name="url" value="{{ form.url.value|default:"" }}">
                         {% endif %}
-                        <a class="btn btn-info form-control duplicates">Check for Duplicates</a>
+                        <a class="btn btn-info form-control duplicates" style="background-color: rgb(255, 0, 0); border:none;">Check for Duplicates</a>
                     </div>
                     <span class="message"></span>
                     <span class="help-block">{{ form.url.errors }}</span>
@@ -79,7 +97,7 @@
                         <input type="file" class="required" id='${multipartFilePath}' name="screenshot" />
                         <button class="btn btn-primary btn-block"
                             data-intro="Upload a screenshot of the concerned page." data-step="4" name="test_files"
-                            type="button">
+                            type="button" style="background-color: rgb(255, 0, 0); border:none;">
                             <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot
                         </button>
                         <span
