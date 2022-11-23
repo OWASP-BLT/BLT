@@ -1433,7 +1433,7 @@ def search_issues(request, template="search.html"):
 
 class HuntCreate(CreateView):
     model = Hunt
-    fields = ["url", "logo", "prize", "plan"]
+    fields = ["url", "logo", "name", "description","prize", "plan"]
     template_name = "hunt.html"
 
     def form_valid(self, form):

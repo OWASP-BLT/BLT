@@ -215,14 +215,6 @@ a:hover {
 
 }
 
-.user-menu {
-    float: right;
-}
-
-.user-menu img {
-    height: 25px;
-    width: 25px;
-}
 
 @media only screen and (max-width: 1200px) {
     .panel-footer li {
