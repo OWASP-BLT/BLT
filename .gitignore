@@ -11,3 +11,6 @@ db.sqlite3
 .vscode
 geckodriver.exe
 geckodriver.log
+geckodriver
+chromedriver
+requirements.txt
