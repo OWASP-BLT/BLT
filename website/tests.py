@@ -81,5 +81,4 @@ class MySeleniumTests(LiveServerTestCase):
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
         body = self.selenium.find_element('tag name', 'body')
-        print(body,"===========")
-        # self.assertIn('Description of bug', body.text)
+        self.assertIn('Description of bug', body.text)
