@@ -10,8 +10,9 @@ from django.test.utils import override_settings
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ['initial_data.json']
@@ -19,7 +20,11 @@ class MySeleniumTests(LiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         print (sys.path)
-        cls.selenium = webdriver.Firefox(executable_path=GeckoDriverManager(cache_valid_range=1).install())
+        d = DesiredCapabilities.CHROME
+        d["loggingPrefs"] = {"browser": "ALL"}
+
+        # switch these
+        cls.selenium = webdriver.Chrome(ChromeDriverManager().install(), desired_capabilities=d)
         super(MySeleniumTests, cls).setUpClass()
 
     @classmethod
@@ -64,14 +69,16 @@ class MySeleniumTests(LiveServerTestCase):
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
         self.selenium.get('%s%s' % (self.live_server_url, '/report/'))
-        self.selenium.find_element("name", "url").send_keys('http://www.example.com/')
+        self.selenium.find_element("name", "url").send_keys('http://www.google.com/')
         self.selenium.find_element("id", "description").send_keys('Description of bug')
-        Imagepath = os.path.abspath(os.path.join(os.getcwd(), 'website/static/img/logo.jpg'))
+        Imagepath = os.path.abspath(os.path.join(os.getcwd(), 'website/static/img/background.jpg'))
         self.selenium.find_element("name", "screenshot").send_keys(Imagepath)
+        # pass captacha if in test mode
+        self.selenium.find_element("name","captcha_1").send_keys('PASSED')
         self.selenium.find_element("name", "reportbug_button").click()
+        self.selenium.get('%s%s' % (self.live_server_url, '/all_activity/'))
         WebDriverWait(self.selenium, 30).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-        self.selenium.get('%s%s' % (self.live_server_url, '/'))
         body = self.selenium.find_element('tag name', 'body')
         self.assertIn('Description of bug', body.text)
