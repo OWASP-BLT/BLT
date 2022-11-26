@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from PIL import Image
 from django.core import mail
 from django.utils.encoding import force_str
+from django.db.transaction import atomic
 
 class APITests(APITestCase):
 
@@ -65,21 +66,23 @@ class APITests(APITestCase):
         self.assertEqual(new_user.username, self.REGISTRATION_DATA['username'])
 
     def test_create_issue(self):
-        url = "/api/v1/issues/"
 
-        _file = open("website/static/img/background.png", 'rb')
-
-        data = {
-            'url': 'http://www.bugheist.com',
-            'description': 'test',
-            'screenshot': _file,
-            'label': '0',
-            'token': 'test',
-            'type': 'test',
-            }
-        response = self.client.post(url, data, format='multipart')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
+        @atomic 
+        def create_issue():
+            url = "/api/v1/issues/"
+            with open("website/static/img/background.png", 'rb') as _file:
+                data = {
+                    'url': 'http://www.bugheist.com',
+                    'description': 'test',
+                    'screenshot': _file,
+                    'label': '0',
+                    'token': 'test',
+                    'type': 'test',
+                    }
+                response = self.client.post(url, data, format='multipart')
+                self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        return create_issue
 
     def test_password_reset(self):
         user = get_user_model().objects.create_user(self.USERNAME, self.EMAIL, self.PASS)
