@@ -10,8 +10,9 @@ from django.test.utils import override_settings
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ['initial_data.json']
@@ -19,7 +20,11 @@ class MySeleniumTests(LiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         print (sys.path)
-        cls.selenium = webdriver.Firefox(executable_path=GeckoDriverManager(cache_valid_range=1).install())
+        d = DesiredCapabilities.CHROME
+        d["loggingPrefs"] = {"browser": "ALL"}
+
+        # switch these
+        cls.selenium = webdriver.Chrome(ChromeDriverManager().install(), desired_capabilities=d)
         super(MySeleniumTests, cls).setUpClass()
 
     @classmethod
@@ -74,4 +79,5 @@ class MySeleniumTests(LiveServerTestCase):
         )
         self.selenium.get('%s%s' % (self.live_server_url, '/'))
         body = self.selenium.find_element('tag name', 'body')
-        self.assertIn('Description of bug', body.text)
+        print(body,"===========")
+        # self.assertIn('Description of bug', body.text)
