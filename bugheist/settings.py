@@ -458,3 +458,10 @@ CALLBACK_URL_FOR_GOOGLE = os.environ.get(
 
 CALLBACK_URL_FOR_FACEBOOK = os.environ.get(
     "CALLBACK_URL_FOR_FACEBOOK", default="http://127.0.0.1:8000")
+
+
+# allow captcha bypass during test
+IS_TEST = False
+if 'test' in sys.argv:
+    CAPTCHA_TEST_MODE = True
+    IS_TEST = True
