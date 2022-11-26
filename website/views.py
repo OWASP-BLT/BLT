@@ -558,7 +558,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
     def post(self, request, *args, **kwargs):
         
         # resolve domain
-        url = request.POST.get("url").replace("www.","https://")
+        url = request.POST.get("url")
+
+        if "www.bugheist.com" in url:
+            url = "https://" + url 
 
         # disable domain search on testing
         if not settings.IS_TEST:

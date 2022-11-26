@@ -52,11 +52,11 @@
                         {% if request.GET.url %}
                         <input class="form-control required"
                             data-intro="Enter the website's complete url where you found the bug." data-step="1"
-                            placeholder="www.testsite.com/bug-found" name="url" value="{{ request.GET.url }}">
+                            placeholder="https://testsite.com/bug-found" name="url" value="{{ request.GET.url }}">
                         {% else %}
                         <input class="form-control required"
                             data-intro="Enter the website's complete url where you found the bug." data-step="1"
-                            placeholder="www.testsite.com/bug-found" name="url" value="{{ form.url.value|default:"" }}">
+                            placeholder="https://testsite.com/bug-found" name="url" value="{{ form.url.value|default:"" }}">
                         {% endif %}
                         <a class="btn btn-info form-control duplicates" style="background-color: rgb(255, 0, 0); border:none;">Check for Duplicates</a>
                     </div>
