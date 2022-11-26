@@ -83,6 +83,7 @@ from .forms import FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm
 from decimal import Decimal
 import stripe
 import humanize
+from django.conf import settings
 
 
 
@@ -558,15 +559,18 @@ class IssueCreate(IssueBaseCreate, CreateView):
         
         # resolve domain
         url = request.POST.get("url").replace("www.","https://")
-        try:
-            response = requests.get(url,timeout=2)
-            if response.status_code == 200:
-                print('Web site exists')
-            else:
-                raise Exception
-        except:
-            messages.error(request,"Domain does not exist")
-            return HttpResponseRedirect("/issue/")
+
+        # disable domain search on testing
+        if not settings.IS_TEST:
+            try:
+                response = requests.get(url,timeout=2)
+                if response.status_code == 200:
+                    print('Web site exists')
+                else:
+                    raise Exception
+            except:
+                messages.error(request,"Domain does not exist")
+                return HttpResponseRedirect("/issue/")
 
         if len(request.FILES['screenshot'].name)>99:
             filename = request.FILES['screenshot'].name
