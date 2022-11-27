@@ -558,16 +558,15 @@ class IssueCreate(IssueBaseCreate, CreateView):
     def post(self, request, *args, **kwargs):
         
         # resolve domain
-        url = request.POST.get("url")
-
-        if "www.bugheist.com" in url:
-            url = "https://" + url 
+        url = request.POST.get("url").replace("www.","https://")
 
         # disable domain search on testing
         if not settings.IS_TEST:
             try:
-                response = requests.get(url,timeout=2)
-                if response.status_code == 200:
+                if "bugheist.com" in url:
+                    print('Web site exists')
+                elif response.status_code == 200:
+                    response = requests.get(url,timeout=2)
                     print('Web site exists')
                 else:
                     raise Exception
