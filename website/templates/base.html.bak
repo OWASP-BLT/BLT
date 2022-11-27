@@ -129,7 +129,7 @@
                                         {% csrf_token %}
                                         <div class="form-group">
                                             <input class="form-control required"
-                                                   placeholder="www.testsite.com/bug-found" name="url2"
+                                                   placeholder="https://testsite.com/bug-found" name="url2"
                                                    value="{{ form.url.value|default:"" }}">
                                         </div>
                                         <div class="form-group">
