@@ -567,13 +567,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
         # disable domain search on testing
         if not settings.IS_TEST:
             try:
-                response = requests.get( "https://" + url ,timeout=2)
                 if "bugheist.com" in url:
                     print('Web site exists')
-                elif response.status_code == 200:
-                    print('Web site exists')
                 else:
-                    raise Exception
+                    response = requests.get( "https://" + url ,timeout=2)
+                    if response.status_code == 200:
+                        print('Web site exists')
+                    else:
+                        raise Exception
             except:
                 messages.error(request,"Domain does not exist")
                 return HttpResponseRedirect("/issue/")
