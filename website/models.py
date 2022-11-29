@@ -190,6 +190,7 @@ class Issue(models.Model):
         (4, "Security"),
         (5, "Typo"),
         (6, "Design"),
+        (7, "Server Down"),
     )
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     hunt = models.ForeignKey(Hunt, null=True, blank=True, on_delete=models.CASCADE)
