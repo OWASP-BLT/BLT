@@ -65,7 +65,7 @@
 
     }
     .main{
-        width: 60%;
+        width: 500px;
         height: max-content;
         padding: 20px;
         background-color: white;
@@ -76,6 +76,7 @@
         width: 100%;
         justify-content: center;
         align-items: center;
+        white-space: nowrap;
     }
     .title p{
         font-size: 5rem;
@@ -141,6 +142,24 @@
         color: white;
         font-size: 1.4rem;
         font-weight: bold;
+    }
+
+    @media (max-width:1222px) {
+        .title p{
+            font-size: 4rem ;
+        }
+    }
+
+    @media (max-width:498px) {
+        .main{
+            width: 95vw;
+        }
+        .panel-title p{
+            font-size: 1rem;
+        }
+        .title p{
+            font-size: 3rem;
+        }
     }
 
 </style>
