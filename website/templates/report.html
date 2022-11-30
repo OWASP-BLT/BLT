@@ -10,14 +10,7 @@
     .duplicates {
         border-radius: 0px;
     }
-</style>
-{% endblock %}
 
-{% block content %}
-<script src="{% static "js/jquery.validate.js" %}"></script>
-<script src="{% static 'js/activity.js' %}"></script>
-
-<style>
     .text-center {
         width: 100%;
         display: flex;
@@ -27,21 +20,28 @@
     }
     .text-center div{
         width: 44%;
+        width: 500px;
         background-color: rgb(220, 0, 0);
     }
     .title{
-        color: white; font-weight: 700; font-size: 3rem;
+        color: white; 
+        font-weight: 700;
+        font-size: 3rem;
     }
+
 </style>
+{% endblock %}
+
+{% block content %}
+<script src="{% static "js/jquery.validate.js" %}"></script>
+<script src="{% static 'js/activity.js' %}"></script>
 
 <form action="/issue/" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="row main">
-        <div class="panel-heading">
-            <div class="panel-title text-center">
-                <div>
-                    <h1 class="title">REPORT A BUG</h1>
-                </div>
+        <div class="panel-title text-center">
+            <div >
+                <h1 class="title">REPORT A BUG</h1>
             </div>
         </div>
         <div class="main-issue-form main-center">

@@ -4,16 +4,27 @@
 {% load user_score %}
 {% providers_media_js %}
 {% load i18n %}
+
+
 <nav class="navbar navbar-default navbar-fixed-top">
-    <div class="container-fluid" id="nav-container">
+    <div id="nav-container">
         <div class="navbar-header">
             <a class="navbar-brand" href="/">
-                <img src="{% static "img/logo-small-transparent.png" %}">
+                <img src="{% static 'img/logo-small-transparent.png' %}">
             </a>
             <p>Report Issues, Win Prizes</p>
         </div>
-        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-            <ul class="nav navbar-nav navbar-right">
+        <!-- <div class="nav-right-root"> -->
+
+            <form class="navbar-form navbar-right inline-nav" action="/search" method="get">
+                <div id="nav-search">
+                    <input type="text" name="query" placeholder="{% trans "Search" %}" aria-label="Small" aria-describedby="inputGroup-sizing-sm">
+                    <a href="/report/" class="nav-report-bug">Report a Bug</a>
+                </div>
+            </form>
+
+
+            <ul class="nav navbar-nav navbar-left">
                 
                 {% if request.user.is_authenticated %}
                 <li class="dropdown user-menu">
@@ -84,12 +95,6 @@
                 {% endif %}
             </ul>
 
-            <form class="navbar-form navbar-right" action="/search" method="get">
-                <div id="nav-search">
-                    <input type="text" name="query" placeholder="{% trans "Search" %}" aria-label="Small" aria-describedby="inputGroup-sizing-sm">
-                    <a href="/report/" class="nav-report-bug">Report a Bug</a>
-                </div>
-            </form>
 
 
 
@@ -157,6 +162,16 @@
                     </ul>
                 </li>
             </ul> {% endcomment %}
-        </div>
+        <!-- </div> -->
     </div>
+    <form class="navbar-form navbar-right outline-nav" action="/search" method="get">
+        <div id="nav-search">
+            <input type="text" name="query" placeholder="{% trans "Search" %}" aria-label="Small" aria-describedby="inputGroup-sizing-sm">
+            <a href="/report/" class="nav-report-bug">Report a Bug</a>
+        </div>
+    </form>
 </nav>
+
+<div id="margin-cont">
+
+</div>
