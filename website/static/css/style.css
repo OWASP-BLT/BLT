@@ -408,11 +408,6 @@ textarea {
     resize: vertical;
 }
 
-input[type='file'] {
-    opacity: 0;
-    width: 1px;
-    height: 1px;
-}
 
 .submit_button {
     width: 100%;
