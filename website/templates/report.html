@@ -95,7 +95,7 @@
                     {% else %}
                     <br>
                     <span>
-                        <input type="file" required class="required" id='${multipartFilePath}' name="screenshot" />
+                        <input type="file" required class="required" id='screenshot' name="screenshot" />
                        <!-- <button class="btn btn-primary btn-block"
                             data-intro="Upload a screenshot of the concerned page." data-step="4" name="test_files"
                             type="button" style="background-color: rgb(255, 0, 0); border:none;">
@@ -118,13 +118,13 @@
 </form>
 <script type="text/javascript">
     $(function () {
-        $('button[name="test_files"]').on('click', function () {
-            $(this).parent().find('input[type=file]').click();
-        });
-        $('input[name="screenshot"]').on('change', function () {
-            var file = $(this).val().replace('C:\\fakepath\\', '');
-            $(this).parent().find('.badge').html(file);
-        });
+        //$('button[name="test_files"]').on('click', function () {
+        //    $(this).parent().find('input[type=file]').click();
+        //});
+        //$('input[name="screenshot"]').on('change', function () {
+        //    var file = $(this).val().replace('C:\\fakepath\\', '');
+        //    $(this).parent().find('.badge').html(file);
+        //});
         $(".duplicates").click(function () {
             var uri = $("input[name='url']").val();
             $.ajax({
