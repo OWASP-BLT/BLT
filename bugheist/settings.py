@@ -454,7 +454,7 @@ CALLBACK_URL_FOR_GITHUB = os.environ.get(
     "CALLBACK_URL_FOR_GITHUB", default="https://www.bugheist.com/")
 
 CALLBACK_URL_FOR_GOOGLE = os.environ.get(
-    "CALLBACK_URL_FOR_GOOGLE", default="https://www.bugheist.com/")
+    "CALLBACK_URL_FOR_GOOGLE", default="http://127.0.0.1:8000/")
 
 CALLBACK_URL_FOR_FACEBOOK = os.environ.get(
     "CALLBACK_URL_FOR_FACEBOOK", default="https://www.bugheist.com/")
