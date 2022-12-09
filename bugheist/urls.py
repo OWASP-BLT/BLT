@@ -76,7 +76,6 @@ router.register(r"userissues", UserIssueViewSet, basename="userissues")
 router.register(r"profile", UserProfileViewSet, basename="profile")
 router.register(r"domain", DomainViewSet, basename="domain")
 
-from website.views import github_callback, google_callback, facebook_callback
 from allauth.socialaccount.providers.github import views as github_views
 from allauth.socialaccount.providers.google import views as google_views
 from allauth.socialaccount.providers.facebook import views as facebook_views
@@ -107,13 +106,14 @@ urlpatterns = [
            name='password_reset_confirm'),
     re_path(r"^auth/", include("dj_rest_auth.urls")),
     re_path("auth/facebook", FacebookLogin.as_view(), name="facebook_login"),
+    path('accounts/', include('allauth.urls')),
     path("auth/github/", GithubLogin.as_view(), name="github_login"),
     path("auth/google/", GoogleLogin.as_view(), name="google_login"),
-    path("accounts/github/login/callback/", github_callback, name="github_callback"),
-    path("accounts/google/login/callback/", google_callback, name="google_callback"),
-    path(
-        "accounts/facebook/login/callback/", facebook_callback, name="facebook_callback"
-    ),
+    # path("accounts/github/login/callback/", github_callback, name="github_callback"),
+    # path("accounts/google/login/callback/", google_callback, name="google_callback"),
+    # path(
+    #     "accounts/facebook/login/callback/", facebook_callback, name="facebook_callback"
+    # ),
     re_path(
         r"^auth/facebook/connect/$", FacebookConnect.as_view(), name="facebook_connect"
     ),
