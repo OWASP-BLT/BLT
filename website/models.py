@@ -272,6 +272,9 @@ class Issue(models.Model):
     class Meta:
         ordering = ["-created"]
 
+class IssueScreenshot(models.Model):
+    image = models.ImageField(upload_to="screenshots", validators=[validate_image])
+    issue = models.ForeignKey(Issue,on_delete=models.CASCADE)
 
 TWITTER_MAXLENGTH = getattr(settings, "TWITTER_MAXLENGTH", 140)
 

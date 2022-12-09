@@ -4,7 +4,7 @@ from django.template.defaultfilters import truncatechars
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
-from website.models import Winner, Payment, Transaction, Wallet, Issue, Points, Hunt, Domain, UserProfile, Subscription, CompanyAdmin, Company
+from website.models import Winner, Payment, Transaction, Wallet, Issue, Points, Hunt, Domain, UserProfile, Subscription, CompanyAdmin, Company,IssueScreenshot
 
 
 class UserResource(resources.ModelResource):
@@ -118,3 +118,4 @@ admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Wallet, WalletAdmin)
 admin.site.register(Winner, WinnerAdmin)
 admin.site.register(Payment, PaymentAdmin)
+admin.site.register(IssueScreenshot)

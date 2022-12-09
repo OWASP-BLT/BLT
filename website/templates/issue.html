@@ -5,7 +5,6 @@
 {% providers_media_js %}
 {% block title %}Bug on {{ object.domain_title }} - {{ object.description }}{% endblock %}
 {% block og_title %}Bug on {{ object.domain_title }}{% endblock %}
-{% block og_image %}{{ object.screenshot.url }}{% endblock %}
 {% block og_description %}{{ object.description }}{% endblock %}
 {% block description %}{{ object.description }}{% endblock %}
 {% block style %}
@@ -295,8 +294,8 @@
                                 on Github</a>
                             {% else %}
                             {% if request.user.is_superuser or request.user == object.user %}
-                            <a href="{{ object.domain.github }}/issues/new?title={{ object.description|urlencode }}&body=![0]({{ object.screenshot.url }})%20http://bugheist.com/issue/{{ object.id }}"
-                                target="_new" class="btn btn-warning btn-xs">Add to Github</a>
+                            {% comment %} <a href="{{ object.domain.github }}/issues/new?title={{ object.description|urlencode }}&body=![0]({{ object.screenshot.url }})%20http://bugheist.com/issue/{{ object.id }}"
+                                target="_new" class="btn btn-warning btn-xs">Add to Github</a> {% endcomment %}
                             {% endif %}
                             {% endif %}
                             {% endif %}
@@ -318,9 +317,16 @@
     <div class="col-md-6">
         <h4>Screenshot:</h4>
         <hr>
-        <a href="{{ object.screenshot.url }}" data-lightbox="image">
-            <img src="{{ object.screenshot.url }}" class="img-thumbnail">
-        </a>
+        {% for screenshot in screenshots%}
+            <a href="{{ screenshot.image.url }}" data-lightbox="image">
+                <img src="{{ screenshot.image.url }}" class="img-thumbnail" style="margin-bottom: 10px !important; border: 2px solid black">
+            </a>
+        {%endfor%}
+        {% if object.screenshot%}
+            <a href="{{ object.screenshot.url }}" data-lightbox="image">
+                <img src="{{ object.screenshot.url }}" class="img-thumbnail">
+            </a>
+        {%endif%}
         <hr>
     </div>
     {% if object.get_ocr %}

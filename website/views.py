@@ -77,6 +77,7 @@ from website.models import (
     CompanyAdmin,
     Subscription,
     Company,
+    IssueScreenshot
 )
 from .forms import FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm
 
@@ -107,6 +108,11 @@ def index(request, template="index.html"):
     wallet = None
     if request.user.is_authenticated:
         wallet, created = Wallet.objects.get_or_create(user=request.user)
+
+    activity_screenshots = {}
+    for activity in Issue.objects.all():
+        activity_screenshots[activity] = IssueScreenshot.objects.filter(issue=activity).first()
+
     context = {
         "activities": Issue.objects.all()[0:10],
         "domains": domains,
@@ -123,6 +129,7 @@ def index(request, template="index.html"):
         "hunt_count": hunt_count,
         "domain_count": domain_count,
         "captcha_form": captcha_form,
+        "activity_screenshots":activity_screenshots
     }
     return render(request, template, context)
 
@@ -381,16 +388,18 @@ class IssueBaseCreate(object):
             defaults={"url": "http://" + obj.domain_name.replace("www.", "")},
         )
         obj.domain = domain
-        if self.request.POST.get("screenshot-hash"):
-            reopen = default_storage.open(
-                "uploads\/" + self.request.POST.get("screenshot-hash") + ".png", "rb"
-            )
-            django_file = File(reopen)
-            obj.screenshot.save(
-                self.request.POST.get("screenshot-hash") + ".png",
-                django_file,
-                save=True,
-            )
+        # if self.request.POST.get("screenshot-hash"):
+        #     reopen = default_storage.open(
+        #         "uploads\/" + self.request.POST.get("screenshot-hash") + ".png", "rb"
+        #     )
+        #     django_file = File(reopen)
+        #     obj.screenshot.save(
+        #         self.request.POST.get("screenshot-hash") + ".png",
+        #         django_file,
+        #         save=True,
+        #     )
+
+
         obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
         obj.save()
         p = Points.objects.create(user=self.request.user, issue=obj, score=score)
@@ -492,7 +501,7 @@ class IssueBaseCreate(object):
 
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
-    fields = ["url", "description", "screenshot", "domain", "label"]
+    fields = ["url", "description","domain", "label"]
     template_name = "report.html"
 
     def get_initial(self):
@@ -585,11 +594,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             except:
                 messages.error(request,"Domain does not exist")
                 return HttpResponseRedirect("/issue/")
-
-        if len(request.FILES['screenshot'].name)>99:
-            filename = request.FILES['screenshot'].name
-            extension = filename.split(".")[-1] 
-            request.FILES['screenshot'].name = filename[:88] + "." + extension
 
         return super().post(request, *args, **kwargs)
 
@@ -698,6 +702,16 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
         redirect_url = "/report"
 
+        if len(self.request.FILES.getlist("screenshots")) > 5:
+            messages.error(self.request, "Max limit of 5 images!")
+            return HttpResponseRedirect("/issue/")
+        for screenshot in self.request.FILES.getlist("screenshots"):
+            filename = screenshot.name
+            extension = filename.split(".")[-1] 
+            screenshot.name = filename[:99] + str(uuid.uuid4()) + "." + extension
+            default_storage.save(f"screenshots/{screenshot.name}",screenshot)
+            IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}",issue=obj)
+
         if not (self.request.user.is_authenticated or tokenauth):
             self.request.session["issue"] = obj.id
             self.request.session["created"] = created
@@ -714,6 +728,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
         else:
             self.process_issue(self.request.user, obj, created, domain)
             return HttpResponseRedirect(self.request.META.get("HTTP_REFERER"))
+        
+        
 
     def get_context_data(self, **kwargs):
         context = super(IssueCreate, self).get_context_data(**kwargs)
@@ -1102,6 +1118,9 @@ class AllIssuesView(ListView):
 
         context["activities"] = activities_paginated
         context["user"] = self.request.GET.get("user")
+        context["activity_screenshots"] = {}
+        for activity in self.activities:
+           context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity).first()
         return context
 
 
@@ -1540,6 +1559,9 @@ class IssueView(DetailView):
 
         context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
         context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
+
+        context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
+
         return context
 
 
