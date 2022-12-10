@@ -5,7 +5,18 @@
 {% providers_media_js %}
 {% block title %}Bug on {{ object.domain_title }} - {{ object.description }}{% endblock %}
 {% block og_title %}Bug on {{ object.domain_title }}{% endblock %}
-{% block og_image %}{{ object.screenshot.url }}{% endblock %}
+
+{% block og_image %}
+
+    {% if object.screenshot %}
+        {{ object.screenshot.url }}
+
+    {% else %}
+        {{ screenshots.0.image.url }}
+    {% endif %}
+
+{% endblock %}
+
 {% block og_description %}{{ object.description }}{% endblock %}
 {% block description %}{{ object.description }}{% endblock %}
 {% block style %}
@@ -282,7 +293,7 @@
                                         {% if object.screenshot%}
                                             <a href="{{ object.domain.github }}/issues/new?title={{ object.description|urlencode }}&body=![0]({{ object.screenshot.url }})%20http://bugheist.com/issue/{{ object.id }}"
                                         
-                                        {% elif %}
+                                        {% else %}
                                             {% if screenshots %}
                                                 <a href="{{ object.domain.github }}/issues/new?title={{ object.description|urlencode }}&body=![0]({{ screenshots.0.image.url }})%20http://bugheist.com/issue/{{ object.id }}"
                                             {% endif %}
@@ -312,7 +323,7 @@
             <a href="{{ object.screenshot.url }}" data-lightbox="image">
                 <img src="{{ object.screenshot.url }}" class="img-thumbnail">
             </a>
-        {% elif %}
+        {% else %}
             {% for screenshot in screenshots%}
                 <a href="{{ screenshot.image.url }}" data-lightbox="image">
                     <img src="{{ screenshot.image.url }}" class="img-thumbnail" style="margin-bottom: 10px !important; border: 2px solid black">

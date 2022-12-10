@@ -388,16 +388,20 @@ class IssueBaseCreate(object):
             defaults={"url": "http://" + obj.domain_name.replace("www.", "")},
         )
         obj.domain = domain
-        # if self.request.POST.get("screenshot-hash"):
-        #     reopen = default_storage.open(
-        #         "uploads\/" + self.request.POST.get("screenshot-hash") + ".png", "rb"
-        #     )
-        #     django_file = File(reopen)
-        #     obj.screenshot.save(
-        #         self.request.POST.get("screenshot-hash") + ".png",
-        #         django_file,
-        #         save=True,
-        #     )
+        if self.request.POST.get("screenshot-hash"):
+            filename = self.request.POST.get("screenshot-hash")
+            extension = filename.split(".")[-1] 
+            self.request.POST["screenshot-hash"] = filename[:99] + str(uuid.uuid4()) + "." + extension
+
+            reopen = default_storage.open(
+                "uploads\/" + self.request.POST.get("screenshot-hash") + ".png", "rb"
+            )
+            django_file = File(reopen)
+            obj.screenshot.save(
+                self.request.POST.get("screenshot-hash") + ".png",
+                django_file,
+                save=True,
+            )
 
 
         obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
@@ -501,7 +505,7 @@ class IssueBaseCreate(object):
 
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
-    fields = ["url", "description","domain", "label"]
+    fields = ["url", "description", "screenshot", "domain", "label"]
     template_name = "report.html"
 
     def get_initial(self):
