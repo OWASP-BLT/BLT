@@ -45,7 +45,7 @@
     </div>
     <div class="activity-screenshot">
 
-        {% for screenshot_activity,screenshot in activity_screenshots.items%}
+        {% for screenshot_activity,screenshot in activity_screenshots.items %}
             {% if activity == screenshot_activity %}
                 <a href="{{ activity.get_absolute_url }}">
                     <img src="{{ screenshot.image.url }}">
