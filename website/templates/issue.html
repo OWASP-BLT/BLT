@@ -307,7 +307,7 @@
                                         on Github</a>
                                 {% else %}
                                     {% if request.user.is_superuser or request.user == object.user %}
-                                        {% if object.screenshot%}
+                                        {% if object.screenshot %}
                                             <a href="{{ object.domain.github }}/issues/new?title={{ object.description|urlencode }}&body=![0]({{ object.screenshot.url }})%20http://bugheist.com/issue/{{ object.id }}"
                                         
                                         {% else %}
