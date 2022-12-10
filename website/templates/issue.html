@@ -136,6 +136,23 @@
                     <i class="fa fa-eye"></i> {{ object.views }}
                 </span>
             </span>
+            <div class="form form-inline" style="display:none">
+                {% csrf_token %}
+                <input type="text" name="domain" placeholder="Domain" class="form-control" value="" required>
+                <input type="text" name="description" placeholder="Bug Description" class="form-control" value=""
+                    required>
+                <select name="label" class="form-control" required>
+                    <option value="0">General</option>
+                    <option value="1">Number error</option>
+                    <option value="2">Functional</option>
+                    <option value="3">Performance</option>
+                    <option value="4">Security</option>
+                    <option value="5">Typo</option>
+                    <option value="6">Design</option>
+                </select>
+                <button class="btn btn-success save-issue">Save</button>
+                <button class="btn btn-default cancel-edit">Cancel</button>
+            </div>
             
         </h3>
         <strong>Domain:</strong>
