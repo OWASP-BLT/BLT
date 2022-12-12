@@ -1,11 +1,11 @@
 # [OWASP BLT](https://www.bugheist.com) [![Build Status](https://travis-ci.org/OWASP/BLT.svg?branch=master)](https://travis-ci.org/OWASP/BLT) 
 
-<p><img src="https://avatars.githubusercontent.com/u/20373732?s=200&v=4" alt="logo" width="20%" /></p>
+<p><img src="https://avatars.githubusercontent.com/u/20373732?s=200&v=4" alt="logo" width="10%" /></p>
 
-**Report issues and get points, companies are held accountable.**
-OWASP BLT is a bug logging tool to report issues and get points, companies are held accountable. 
-Users will get rewards/points for reporting bugs on Organizations / Companies.
-Organizations / Companies can launch their bughunt programs with prize pools.
+**Report issues and get points, companies are held accountable.** <br>
+OWASP BLT is a bug logging tool to report issues and get points, companies are held accountable. <br>
+Users will get rewards/points for reporting bugs on Organizations / Companies.<br>
+Organizations / Companies can launch their bughunt programs with prize pools. <br>
 
 
 ## Bugheist Bug Reporting Plugin
