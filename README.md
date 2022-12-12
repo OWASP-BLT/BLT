@@ -7,9 +7,9 @@
 
 
 **Report issues and get points, companies are held accountable.** <br>
-OWASP BLT is a bug logging tool to report issues and get points, companies are held accountable. <br>
-Users will get rewards/points for reporting bugs on Organizations / Companies.<br>
-Organizations / Companies can launch their bughunt programs with prize pools. <br>
+- OWASP BLT is a bug logging tool to report issues and get points, companies are held accountable. <br>
+- Users will get rewards/points for reporting bugs on Organizations / Companies.<br>
+- Organizations / Companies can launch their bughunt programs with prize pools. <br>
 
 
 ## Bugheist Bug Reporting Plugin
