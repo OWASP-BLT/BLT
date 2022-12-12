@@ -1,11 +1,12 @@
 # [OWASP BLT](https://www.bugheist.com) [![Build Status](https://travis-ci.org/OWASP/BLT.svg?branch=master)](https://travis-ci.org/OWASP/BLT) 
 
+<p><img src="https://avatars.githubusercontent.com/u/20373732?s=200&v=4" alt="logo" width="20%" /></p>
+
 **Report issues and get points, companies are held accountable.**
+OWASP BLT is a bug logging tool to report issues and get points, companies are held accountable. 
+Users will get rewards/points for reporting bugs on Organizations / Companies.
+Organizations / Companies can launch their bughunt programs with prize pools.
 
-Live Site: [Bugheist](http://bugheist.com/)
-
-[Code for the app is here](https://github.com/Bugheist/Flutter)
-# Usage
 
 ## Bugheist Bug Reporting Plugin
 
@@ -26,22 +27,36 @@ A floating bug reporting button for your website which redirects back to Bugheis
   ```
 
 # Development
+### Setting Up Development Server
 
-## Setting Up Development Server
+Please follow the development server setup procedure [here](https://github.com/OWASP/BLT/blob/main/Setup.md). Currently, development server can be installed using docker or vagrant. You can also use virtualenv or pipenv install, pipenv shell and then continue with the remaining instructions.
 
-Please follow the development server setup procedure [here](https://github.com/OWASP/BLT/blob/main/Setup.md). Currently, development server can be installed using virtualenv or vagrant. You can also use pipenv install, pipenv shell and then continue with the remaining instructions.
+### Documentation
 
-## Coding style guide
+- use the [Installation Docs ](https://github.com/OWASP/BLT/blob/main/Setup.md) to get started.
+- Postman API Documentations are available [Here](https://github.com/OWASP/BLT/blob/main/Setup.md).
+
+### Resources
+
+- Join the [OWASP Slack Channel](https://owasp.org/slack/invite) and ask questions at **#project-blt** 
+- Github activity can be seen in Slack **#blt-github**.
+- Figma designs for web and flutter app are available [here](https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Bugheist-Full-Design)
+- Live Site: [Bugheist.com](https://www.bugheist.com/)
+- Project: [Bugheist Org](https://github.com/Bugheist)
+
+
+### Coding style guide
 
 Please follow the [black](https://github.com/psf/black) code style for the project. It helps us in keeping the codebase consistent and improves readibility for other developers.
 
-## License
+### License
 
 The BLT code is released under [GNU Affero General Public License v3.0 (AGPL-3.0)](https://github.com/OWASP/BLT/blob/master/LICENSE.md).
 
-## Resources
 
-- Join the [OWASP Slack Channel](https://owasp.org/slack/invite) and ask questions at **#project-blt** Github activity can be seen in **#blt-github**.
+## Mobile App
+BLT mobile version codebase which is built in Flutter is available at [BLT Flutter](https://github.com/Bugheist/Flutter).
+
 
 ## Notes
 
