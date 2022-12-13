@@ -1,6 +1,6 @@
 # Setting up Development server
 
-## Setting Up Development Server using Docker-compose
+## Setting Up Development Server using Docker-compose (Recomended)
 
 ### Install [Docker](https://docs.docker.com/get-docker/)
 
@@ -14,10 +14,14 @@
  # Run the docker container
  docker-compose up
 
- # for staticfiles collection (Optional)
+ # Collect static files
+ ### get container id
+ docker ps
+
+ ### open container bash terminal
  docker exec -it <container id> /bin/bash
 
- # collect staticfiles
+ ### collect staticfiles
  python manage.py collectstatic
  
 ```
