@@ -274,7 +274,7 @@ class Issue(models.Model):
 
 class IssueScreenshot(models.Model):
     image = models.ImageField(upload_to="screenshots", validators=[validate_image])
-    issue = models.ForeignKey(Issue,on_delete=models.CASCADE)
+    issue = models.ForeignKey(Issue,on_delete=models.CASCADE,related_name="screenshots")
 
 TWITTER_MAXLENGTH = getattr(settings, "TWITTER_MAXLENGTH", 140)
 

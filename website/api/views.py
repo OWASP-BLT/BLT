@@ -1,6 +1,7 @@
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.db.models import Sum
+from django.contrib.auth.models import AnonymousUser
 
 from rest_framework import viewsets, filters
 from rest_framework.response import Response
@@ -21,7 +22,8 @@ from website.serializers import (
 from website.models import (
     UserProfile,
     User,
-    Points
+    Points,
+    IssueScreenshot
 )
 
 
@@ -74,6 +76,59 @@ class IssueViewSet(viewsets.ModelViewSet):
     search_fields = ("url", "description", "user__id")
     http_method_names = ["get", "post", "head"]
 
+    def list(self, request, *args, **kwargs):
+
+        issues = []
+
+        for issue in self.queryset:
+            
+            screenshot = None
+            if issue.screenshot: 
+                screenshot = issue.screenshot.url
+            elif issue.screenshots.first(): 
+                screenshot = issue.screenshots.first().image.url
+
+            issues.append({
+                **Issue.objects.values().filter(id=issue.id).first(),
+                "screenshot":screenshot
+            })
+
+        return Response(issues)
+
+
+    def retrieve(self, request, pk,*args, **kwargs):
+        issue = self.queryset.filter(id=pk).values().first()
+        issue_obj = Issue.objects.filter(id=pk).first()
+        
+        screenshots = [
+            # replacing space with url space notation
+            screenshot["image"].replace(" ","%20")
+            for screenshot in 
+            issue_obj.screenshots.values("image").all()
+        ] + ( [issue_obj.screenshot.url] if issue_obj.screenshot else [] )
+
+        if issue == None:
+            return Response({})
+
+        upvotes = issue_obj.upvoted.all().__len__()
+        flags = issue_obj.flaged.all().__len__()
+        upvotted = False
+        flagged = False
+
+        if type(request.user) != AnonymousUser:
+
+            upvotted = bool(request.user.userprofile.issue_upvoted.filter(id=pk).first())
+            flagged = bool(request.user.userprofile.issue_flaged.filter(id=pk).first())
+        
+            
+        return Response({
+            **issue,
+            "upvotes": upvotes,
+            "flags": flags,
+            "upvotted": upvotted,
+            "flagged": flagged,
+            "screenshots": screenshots
+        })
 
 
 class LikeIssueApiView(APIView):
