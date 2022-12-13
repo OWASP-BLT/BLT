@@ -1,7 +1,5 @@
-<div align="right">
-    <img src="https://avatars.githubusercontent.com/u/20373732?s=200&v=4" alt="logo" width="100px" />
-</div>
-<hr><br>
+
+<img align="right" src="https://avatars.githubusercontent.com/u/20373732?s=200&v=4" alt="logo" width="100px" />
 
 # [OWASP BLT](https://www.bugheist.com) [![Build Status](https://travis-ci.org/OWASP/BLT.svg?branch=master)](https://travis-ci.org/OWASP/BLT) 
 
