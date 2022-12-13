@@ -1,8 +1,8 @@
-
-<div style="display:flex;">
-	<img align="right" src="https://avatars.githubusercontent.com/u/20373732?s=200&v=4" alt="logo" width="80px" />
-	<a href="https://www.bugheist.com"><h1>OWASP BLT</h1></a>
+<div>
+    <img align="left" src="https://avatars.githubusercontent.com/u/20373732?s=200&v=4" alt="logo" height=40 />
+    <a href="https://www.bugheist.com"><h1>OWASP BLT</h1></a>
 </div>
+
 [![Build Status](https://travis-ci.org/OWASP/BLT.svg?branch=master)](https://travis-ci.org/OWASP/BLT) 
 <hr>
 
