@@ -76,65 +76,58 @@ class IssueViewSet(viewsets.ModelViewSet):
     search_fields = ("url", "description", "user__id")
     http_method_names = ["get", "post", "head"]
 
-    def list(self, request, *args, **kwargs):
-
-        queryset = self.filter_queryset(self.get_queryset())
-
-        page = self.paginate_queryset(queryset)
-        issues = []
-        if page is None:
-            return Response(issues)
-            
-        for issue in page:
+    def get_issue_info(self,request,issue):
         
-            screenshot = None
-            if issue.screenshot: 
-                screenshot = issue.screenshot.url
-            elif issue.screenshots.first(): 
-                screenshot = issue.screenshots.first().image.url
+        if issue == None:
+            return {}
 
-            issues.append({
-                **Issue.objects.values().filter(id=issue.id).first(),
-                "screenshot":screenshot
-            })
-
-        return self.get_paginated_response(issues)
-
-
-    def retrieve(self, request, pk,*args, **kwargs):
-        issue = self.queryset.filter(id=pk).values().first()
-        issue_obj = Issue.objects.filter(id=pk).first()
-        
         screenshots = [
             # replacing space with url space notation
             screenshot["image"].replace(" ","%20")
             for screenshot in 
-            issue_obj.screenshots.values("image").all()
-        ] + ( [issue_obj.screenshot.url] if issue_obj.screenshot else [] )
+            issue.screenshots.values("image").all()
+        ] + ( [issue.screenshot.url] if issue.screenshot else [] )
 
-        if issue == None:
-            return Response({})
 
-        upvotes = issue_obj.upvoted.all().__len__()
-        flags = issue_obj.flaged.all().__len__()
+        upvotes = issue.upvoted.all().__len__()
+        flags = issue.flaged.all().__len__()
         upvotted = False
         flagged = False
 
         if type(request.user) != AnonymousUser:
 
-            upvotted = bool(request.user.userprofile.issue_upvoted.filter(id=pk).first())
-            flagged = bool(request.user.userprofile.issue_flaged.filter(id=pk).first())
-        
-            
-        return Response({
-            **issue,
+            upvotted = bool(request.user.userprofile.issue_upvoted.filter(id=issue.id).first())
+            flagged = bool(request.user.userprofile.issue_flaged.filter(id=issue.id).first())          
+
+        return {
+            **Issue.objects.values().filter(id=issue.id).first(),
             "upvotes": upvotes,
             "flags": flags,
             "upvotted": upvotted,
             "flagged": flagged,
             "screenshots": screenshots
-        })
+        }
 
+
+    def list(self, request, *args, **kwargs):
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is None:
+            return Response(issues)
+            
+        issues = []
+        for issue in page:
+            issues.append(self.get_issue_info(request,issue))
+
+        return self.get_paginated_response(issues)
+
+
+    def retrieve(self, request, pk,*args, **kwargs):
+
+        issue = Issue.objects.filter(id=pk).first()
+        return Response(self.get_issue_info(request,issue))
 
 class LikeIssueApiView(APIView):
 
