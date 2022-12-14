@@ -78,10 +78,15 @@ class IssueViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
 
-        issues = []
+        queryset = self.filter_queryset(self.get_queryset())
 
-        for issue in self.queryset:
+        page = self.paginate_queryset(queryset)
+        issues = []
+        if page is None:
+            return Response(issues)
             
+        for issue in page:
+        
             screenshot = None
             if issue.screenshot: 
                 screenshot = issue.screenshot.url
@@ -93,7 +98,7 @@ class IssueViewSet(viewsets.ModelViewSet):
                 "screenshot":screenshot
             })
 
-        return Response(issues)
+        return self.get_paginated_response(issues)
 
 
     def retrieve(self, request, pk,*args, **kwargs):
