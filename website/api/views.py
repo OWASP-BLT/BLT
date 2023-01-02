@@ -46,12 +46,21 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     """
     User Profile View Set
     """
-
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     serializer_class = UserProfileSerializer
     queryset = UserProfile.objects.all()
     filter_backends = (filters.SearchFilter,)
     search_fields = ("id", "user__id", "user__username")
-    http_method_names = ["get", "post", "head"]
+    http_method_names = ["get", "post", "head","put"]
+
+    def update(self, request, pk,*args, **kwargs):
+
+        if UserProfile.objects.filter(id=pk).first().user != request.user:
+            return Response("NOT AUTHORIZED",401)
+        
+        return super().update(request, *args, **kwargs)
+
 
 class DomainViewSet(viewsets.ModelViewSet):
     """
