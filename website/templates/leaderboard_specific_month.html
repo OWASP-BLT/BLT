@@ -1,316 +1,314 @@
-{% extends "base.html" %} {% load gravatar %} {%load static%} {% block style %}
+{% extends "base.html" %}
+{% load gravatar %}
+{%load static%}
+
+{% block style %}
 <style>
-  .container-min-width {
-    min-height: 50vh;
-  }
-  .list-group-item img {
-    width: 50px;
-    height: 50px;
-  }
 
-  .list-group-item .badge {
-    margin-top: 15px;
-  }
+    .container-min-height{
+      min-height: 50vh;
+    }
 
-  .list-group-item a {
-    text-decoration: none;
-    margin-left: 10px;
-  }
+    .list-group-item img {
+        width: 50px;
+        height: 50px;
+    }
 
-  .silver {
-    background-color: lightblue;
-    color: #333;
-  }
+    .list-group-item .badge {
+        margin-top: 15px;
+    }
 
-  .gold {
-    background-color: #d4af37;
-    color: #333;
-  }
+    .list-group-item a {
+        text-decoration: none;
+        margin-left: 10px;
+    }
 
-  .bronze {
-    background-color: #c9ae5d;
-    color: #333;
-  }
+    .silver {
+        background-color: lightblue;
+        color: #333;
+    }
 
-  .profileimage {
-    border-radius: 50%;
-  }
+    .gold {
+        background-color: #D4AF37;
+        color: #333;
+    }
 
-  .titleuser {
-    position: absolute;
-    margin-top: 12px;
-    margin-left: 5px;
-  }
-  input,
-  select,
-  button {
-    font-family: inherit;
-    font-size: inherit;
-    padding: 8px;
-  }
-  select {
-    padding: 8px;
-  }
+    .bronze {
+        background-color: #C9AE5D;
+        color: #333;
+    }
 
-  .monthly-wrp {
-    padding: 1em;
-    top: 6px;
-    z-index: 1000;
-    border-radius: 3px;
-    background-color: #2c3e50;
-  }
+    .profileimage {
+        border-radius: 50%;
+    }
 
-  .monthly-wrp:before {
-    content: "";
-    border-bottom: 6px solid #2c3e50;
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
-    position: absolute;
-    top: -6px;
-    left: 6px;
-    z-index: 1002;
-  }
+    .titleuser {
+        position: absolute;
+        margin-top: 12px;
+        margin-left: 5px;
+    }
+    input,
+select,
+button {
+  font-family: inherit;
+  font-size: inherit;
+  padding: 8px;
+}
+select {
+  padding: 8px;
+}
 
-  .monthly-wrp .years {
-    margin-bottom: 0.8em;
-    text-align: center;
-  }
+.monthly-wrp {
+  padding: 1em;
+  top: 6px;
+  z-index: 1000;
+  border-radius: 3px;
+  background-color: #2C3E50;
+}
 
-  .monthly-wrp .years select {
-    border: 0;
-    border-radius: 3px;
-    width: 100%;
-  }
+.monthly-wrp:before {
+  content: "";
+  border-bottom: 6px solid #2C3E50;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  position: absolute;
+  top: -6px;
+  left: 6px;
+  z-index: 1002;
+}
 
-  .monthly-wrp .years select:focus {
-    outline: none;
-  }
 
-  .monthly-wrp table {
-    border-collapse: collapse;
-    table-layout: fixed;
-  }
+.monthly-wrp .years {
+  margin-bottom: 0.8em;
+  text-align: center;
+}
 
-  .monthly-wrp td {
-    padding: 1px;
-  }
+.monthly-wrp .years select {
+  border: 0;
+  border-radius: 3px;
+  width: 100%;
+}
 
-  .monthly-wrp table button {
-    width: 100%;
-    border: none;
-    background-color: #bc1a1a;
-    color: #ffffff;
-    font-size: 14px;
-    padding: 0.6em;
-    cursor: pointer;
-    border-radius: 3px;
-  }
+.monthly-wrp .years select:focus {
+  outline: none;
+}
 
-  .monthly-wrp table button:hover {
-    background-color: #a01616;
-  }
+.monthly-wrp table {
+  border-collapse: collapse;
+  table-layout: fixed;
+}
 
-  .monthly-wrp table button:focus {
-    outline: none;
-  }
+.monthly-wrp td {
+  padding: 1px;
+}
+
+.monthly-wrp table button {
+  width: 100%;
+  border: none;
+  background-color: #bc1a1a;
+  color: #FFFFFF;
+  font-size: 14px;
+  padding: 0.6em;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.monthly-wrp table button:hover {
+  background-color: #a01616;
+}
+
+.monthly-wrp table button:focus {
+  outline: none;
+}
+
 </style>
 
-{% endblock %} {%block before_js%}
-<script
-  async
-  type="text/javascript"
-  src="//cdn.carbonads.com/carbon.js?serve=CESDK2J7&placement=getbutterflycom"
-  id="_carbonads_js"
-></script>
-{%endblock%} {% block content %}
-<div class="row container-min-width">
-  <div
-    class="col-lg-10"
-    style="display: flex; justify-content: center; align-items: center"
-  >
-    <h1 class="page-header">Monthly Leaderboard</h1>
-    <p>
-      <input type="text" id="selection" value="" />
-    </p>
-  </div>
-</div>
-<div class="row">
-  <div class="col-lg-9">
-    <div class="list-group">
-      {%if not leaderboard%}
-      <p style="color: red">No data for this month</p>
-      {%else%} {% for leader in leaderboard %}
-      <div class="list-group-item">
-        {% if leader.userprofile.avatar %}
-        <img
-          src="{{ leader.userprofile.avatar }}"
-          class="img-responsive img-thumbnail profileimage"
-        />
-        {% elif leader.socialaccount_set.all.0.get_avatar_url %}
-        <img
-          src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
-          class="profileimage"
-        />
-        {% else %}
-        <img src="{% gravatar_url leader.email 50 %}" class="profileimage" />
-        {% endif %}
-        <a href="/profile/{{ leader.username }}">{{ leader.username }}</a>
-        <span class="pull-right badge">{{ leader.total_score }} Points</span>
-        {% if leader.userprofile.winnings %}
-        <span class="pull-right badge"
-          >${{ leader.userprofile.winnings|default:""|floatformat }}</span
-        >
-        {% endif %}
+{% endblock %}
 
-        <span
-          ><kbd class="{{ leader.userprofile.get_title_display }} titleuser"
-            >{{ leader.userprofile.get_title_display }}</kbd
-          ></span
-        >
-      </div>
-      {% endfor %} {%endif%}
+{%block before_js%}
+<script async type="text/javascript" src="//cdn.carbonads.com/carbon.js?serve=CESDK2J7&placement=getbutterflycom" id="_carbonads_js"></script>
+{%endblock%}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10" style="display: flex; justify-content: center; align-items: center;">
+        <h1 class="page-header">Monthly Leaderboard</h1> 
+        <p>
+        <input type="text" id="selection" value="">
+        </p>
     </div>
-  </div>
 </div>
-{% endblock %} {% block after_js %}
+<div class="row container-min-height">
+    <div class="col-lg-9">
+        <div class="list-group">
+            {%if not leaderboard%}
+                <p style="color: red;">No data for this month</p>
+            {%else%}
+                {% for leader in leaderboard %}
+                <div class="list-group-item">
+                    {% if leader.userprofile.avatar %}
+                    <img src="{{ leader.userprofile.avatar }}" class="img-responsive img-thumbnail profileimage">
+                    {% elif leader.socialaccount_set.all.0.get_avatar_url %}
+                    <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class="profileimage">
+                    {% else %}
+                    <img src="{% gravatar_url leader.email 50 %}" class="profileimage">
+                    {% endif %}
+                    <a href="/profile/{{ leader.username }}">{{ leader.username }}</a>
+                    <span class="pull-right badge">{{ leader.total_score }} Points</span>
+                    {% if leader.userprofile.winnings %}
+                    <span class="pull-right badge">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
+                    {% endif %}
+
+                    <span><kbd
+                            class="{{ leader.userprofile.get_title_display }} titleuser">{{ leader.userprofile.get_title_display }}</kbd></span>
+                </div>
+                {% endfor %}
+            {%endif%}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block after_js %}
 <script>
-  function padToTwo(number) {
+    function padToTwo(number) {
     if (number <= 9999) {
-      number = ("0" + number).slice(-2);
+        number = ("0" + number).slice(-2);
     }
     return number;
-  }
-
-  (function ($) {
-    $.fn.monthly = function (options) {
-      var months = options.months || [
-          "January",
-          "February",
-          "March",
-          "April",
-          "May",
-          "June",
-          "July",
-          "August",
-          "September",
-          "October",
-          "November",
-          "December",
-        ],
-        Monthly = function (el) {
-          this._el = $(el);
-          this._init();
-          this._render();
-          this._renderYears();
-          this._renderMonths();
-          this._bind();
-        };
-
-      Monthly.prototype = {
-        _init: function () {
-          this._el.html(months[0] + " " + options.years[0]);
-        },
-
-        _render: function () {
-          var linkPosition = this._el.offset(),
-            cssOptions = {
-              display: "none",
-              position: "absolute",
-              top:
-                linkPosition.top + this._el.height() + (options.topOffset || 0),
-              left: linkPosition.left,
-            };
-          this._container = $('<div class="monthly-wrp">')
-            .css(cssOptions)
-            .appendTo($("body"));
-        },
-
-        _bind: function () {
-          var self = this;
-          this._el.on("click", $.proxy(this._show, this));
-          $(document).on("click", $.proxy(this._hide, this));
-          this._yearsSelect.on("click", function (e) {
-            e.stopPropagation();
-          });
-          this._container.on(
-            "click",
-            "button",
-            $.proxy(this._selectMonth, this)
-          );
-        },
-
-        _show: function (e) {
-          e.preventDefault();
-          e.stopPropagation();
-          this._container.css("display", "inline-block");
-        },
-
-        _hide: function () {
-          this._container.css("display", "none");
-        },
-
-        _selectMonth: function (e) {
-          var monthIndex = $(e.target).data("value"),
-            month = months[monthIndex],
-            year = this._yearsSelect.val();
-          this._el.html(month + " " + year);
-          if (options.onMonthSelect) {
-            options.onMonthSelect(monthIndex + 1, month, year);
-          }
-        },
-
-        _renderYears: function () {
-          var markup = $.map(options.years, function (year) {
-            return "<option>" + year + "</option>";
-          });
-          var yearsWrap = $('<div class="years">').appendTo(this._container);
-          this._yearsSelect = $("<select>")
-            .html(markup.join(""))
-            .appendTo(yearsWrap);
-        },
-
-        _renderMonths: function () {
-          var markup = ["<table>", "<tr>"];
-          $.each(months, function (i, month) {
-            if (i > 0 && i % 4 === 0) {
-              markup.push("</tr>");
-              markup.push("<tr>");
-            }
-            markup.push(
-              '<td><button data-value="' + i + '">' + month + "</button></td>"
-            );
-          });
-          markup.push("</tr>");
-          markup.push("</table>");
-          this._container.append(markup.join(""));
-        },
-      };
-
-      return this.each(function () {
-        return new Monthly(this);
-      });
-    };
-  })(jQuery);
-
-  $(function () {
-    let current_year = new Date().getFullYear();
-    let years = [];
-    for (let year = current_year; year >= 2000; year -= 1) {
-      years.push(year);
     }
 
-    $("#selection").monthly({
-      years: years,
-      topOffset: 28,
-      onMonthSelect: function (mi, m, y) {
-        mi = padToTwo(mi);
-        $("#selection").val(m + " " + y);
-        $("#monthly").val(y + "-" + mi);
+    (function($) {
+        $.fn.monthly = function(options) {
+        var months = options.months || [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+      ],
+      Monthly = function(el) {
+        this._el = $(el);
+        this._init();
+        this._render();
+        this._renderYears();
+        this._renderMonths();
+        this._bind();
+      };
 
-        window.location = `?month=${mi}&year=${y}`;
+    Monthly.prototype = {
+      _init: function() {
+        this._el.html(months[0] + " " + options.years[0]);
       },
+
+      _render: function() {
+        var linkPosition = this._el.offset(),
+          cssOptions = {
+            display: "none",
+            position: "absolute",
+            top:
+              linkPosition.top + this._el.height() + (options.topOffset || 0),
+            left: linkPosition.left
+          };
+        this._container = $('<div class="monthly-wrp">')
+          .css(cssOptions)
+          .appendTo($("body"));
+      },
+
+      _bind: function() {
+        var self = this;
+        this._el.on("click", $.proxy(this._show, this));
+        $(document).on("click", $.proxy(this._hide, this));
+        this._yearsSelect.on("click", function(e) {
+          e.stopPropagation();
+        });
+        this._container.on("click", "button", $.proxy(this._selectMonth, this));
+      },
+
+      _show: function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this._container.css("display", "inline-block");
+      },
+
+      _hide: function() {
+        this._container.css("display", "none");
+      },
+
+      _selectMonth: function(e) {
+        var monthIndex = $(e.target).data("value"),
+          month = months[monthIndex],
+          year = this._yearsSelect.val();
+        this._el.html(month + " " + year);
+        if (options.onMonthSelect) {
+          options.onMonthSelect(monthIndex+1, month, year);
+        }
+      },
+
+      _renderYears: function() {
+        var markup = $.map(options.years, function(year) {
+          return "<option>" + year + "</option>";
+        });
+        var yearsWrap = $('<div class="years">').appendTo(this._container);
+        this._yearsSelect = $("<select>")
+          .html(markup.join(""))
+          .appendTo(yearsWrap);
+      },
+
+      _renderMonths: function() {
+        var markup = ["<table>", "<tr>"];
+        $.each(months, function(i, month) {
+          if (i > 0 && i % 4 === 0) {
+            markup.push("</tr>");
+            markup.push("<tr>");
+          }
+          markup.push(
+            '<td><button data-value="' + i + '">' + month + "</button></td>"
+          );
+        });
+        markup.push("</tr>");
+        markup.push("</table>");
+        this._container.append(markup.join(""));
+      }
+    };
+
+    return this.each(function() {
+      return new Monthly(this);
     });
+  };
+})(jQuery);
+
+$(function() {
+
+   let current_year = new Date().getFullYear();
+   let years = [];
+   for(let year=current_year;year>=2000;year-=1){
+        years.push(year);
+   }
+
+  $("#selection").monthly({
+    years: years,
+    topOffset: 28,
+    onMonthSelect: function(mi, m, y) {
+      mi = padToTwo(mi);
+      $("#selection").val(m + " " + y);
+      $("#monthly").val(y + "-" + mi);
+
+      window.location = `?month=${mi}&year=${y}`;
+    }
   });
-</script>
+
+
+});
+
+    </script>
 
 {%endblock%}
