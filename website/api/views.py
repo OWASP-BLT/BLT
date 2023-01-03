@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.db.models import Sum
@@ -8,6 +10,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import action
 
 from website.models import (
     Issue,
@@ -26,6 +30,13 @@ from website.models import (
     IssueScreenshot
 )
 
+from website.views import (
+    GlobalLeaderboardView,
+    EachmonthLeaderboardView,
+    SpecificMonthLeaderboardView,
+    LeaderboardBase
+
+)
 
 # API's
 
@@ -122,11 +133,11 @@ class IssueViewSet(viewsets.ModelViewSet):
 
         queryset = self.filter_queryset(self.get_queryset())
 
+        issues = []
         page = self.paginate_queryset(queryset)
         if page is None:
             return Response(issues)
             
-        issues = []
         for issue in page:
             issues.append(self.get_issue_info(request,issue))
 
@@ -231,3 +242,94 @@ class UserScoreApiView(APIView):
         total_score = Points.objects.filter(user__id=id).annotate(total_score=Sum('score'))
 
         return Response({"total_score":total_score})
+
+
+class LeaderboardApiViewSet(APIView):
+
+
+    def get_queryset(self):
+        return User.objects.all()
+    
+    def filter(self,request,*args,**kwargs):
+
+        paginator = PageNumberPagination()
+        global_leaderboard = LeaderboardBase()
+
+        month = self.request.query_params.get("month")
+        year = self.request.query_params.get("year")
+
+        if not year:
+            return Response("Year not passed",status=400)
+        
+        elif isinstance(year,str) and not year.isdigit():
+            return Response("Invalid year passed",status=400)
+
+        if month:
+
+            if not month.isdigit():
+                return Response("Invalid month passed",status=400)
+
+            try:
+                date = datetime(int(year),int(month),1)
+            except:
+                return Response(f"Invalid month or year passed",status=400) 
+        
+        queryset = global_leaderboard.get_leaderboard(month,year,api=True)
+        
+        page = paginator.paginate_queryset(queryset,request)
+        return paginator.get_paginated_response(page)
+
+
+    
+    def group_by_month(self,request,*args,**kwargs):
+        
+
+        global_leaderboard = LeaderboardBase()
+
+        year = self.request.query_params.get("year")
+
+        if not year: year = datetime.now().year
+
+        if isinstance(year,str) and not year.isdigit():
+            return Response(f"Invalid query passed | Year:{year}",status=400)
+        
+        year = int(year)
+
+        leaderboard = global_leaderboard.monthly_year_leaderboard(year,api=True)
+        month_winners = []
+
+        months = ["January","February","March","April","May","June","July","August","September","October","Novermber","December"]
+
+        for month_indx,usr in enumerate(leaderboard):
+            
+            
+            month_winner = {"user":usr,"month":months[month_indx]}
+            month_winners.append(month_winner)
+            
+        return Response(month_winners)
+
+
+
+    def global_leaderboard(self,request,*args,**kwargs):
+        
+        paginator = PageNumberPagination()
+        global_leaderboard = LeaderboardBase()
+
+        queryset = global_leaderboard.get_leaderboard(api=True)
+        page = paginator.paginate_queryset(queryset,request)
+
+        return paginator.get_paginated_response(page)
+
+    def get(self,request,format=None,*args,**kwargs):
+        
+        filter = request.query_params.get("filter")
+        group_by_month = request.query_params.get("group_by_month")
+
+        if filter:
+            return self.filter(request,*args,**kwargs)
+        
+        elif group_by_month:
+            return self.group_by_month(request,*args,**kwargs)
+        
+        else:
+            return self.global_leaderboard(request,*args,**kwargs)
