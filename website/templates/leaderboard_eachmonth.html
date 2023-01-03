@@ -1,105 +1,88 @@
-{% extends "base.html" %} {% load gravatar %} {% block style %}
+{% extends "base.html" %}
+{% load gravatar %}
+
+{% block style %}
 <style>
-  .container-min-width {
-    min-width: 50vh;
-  }
-  .list-group-item img {
-    width: 50px;
-    height: 50px;
-  }
+    .list-group-item img {
+        width: 50px;
+        height: 50px;
+    }
 
-  .list-group-item .badge {
-    margin-top: 15px;
-  }
+    .list-group-item .badge {
+        margin-top: 15px;
+    }
 
-  .list-group-item a {
-    text-decoration: none;
-    margin-left: 10px;
-  }
+    .list-group-item a {
+        text-decoration: none;
+        margin-left: 10px;
+    }
 
-  .silver {
-    background-color: lightblue;
-    color: #333;
-  }
+    .silver {
+        background-color: lightblue;
+        color: #333;
+    }
 
-  .gold {
-    background-color: #d4af37;
-    color: #333;
-  }
+    .gold {
+        background-color: #D4AF37;
+        color: #333;
+    }
 
-  .bronze {
-    background-color: #c9ae5d;
-    color: #333;
-  }
+    .bronze {
+        background-color: #C9AE5D;
+        color: #333;
+    }
 
-  .profileimage {
-    border-radius: 50%;
-  }
+    .profileimage {
+        border-radius: 50%;
+    }
 
-  .titleuser {
-    position: absolute;
-    margin-top: 12px;
-    margin-left: 5px;
-  }
+    .titleuser {
+        position: absolute;
+        margin-top: 12px;
+        margin-left: 5px;
+    }
 </style>
-{% endblock %} {% block content %}
-<div class="row container-min-width">
-  <div
-    class="col-lg-6"
-    style="display: flex; justify-content: center; align-items: center"
-  >
-    <h1 class="page-header">Monthly Leaderboard</h1>
-  </div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-6" style="display: flex; justify-content: center; align-items: center;">
+        <h1 class="page-header">Monthly Leaderboard</h1>         
+    </div>
 </div>
 <div class="row">
-  <div class="col-lg-9">
-    <div class="list-group">
-      {%if not leaderboard%}
-      <p style="color: red">No data for this month</p>
-      {% else %} {% for month in leaderboard %}
-      <div class="list-group-item" style="margin-top: 30px">
-        <button disabled class="btn btn-primary">{{month.month}}</button>
-      </div>
-      <div class="list-group-item">
-        {% if not month.user %}
-        <p style="color: red">no bugs found this month</p>
-        {% else %} {% if month.user.userprofile.avatar %}
-        <img
-          src="{{ month.user.userprofile.avatar }}"
-          class="img-responsive img-thumbnail profileimage"
-        />
-        {% elif user.socialaccount_set.all.0.get_avatar_url %}
-        <img
-          src="{{ month.user.socialaccount_set.all.0.get_avatar_url }}"
-          class="profileimage"
-        />
-        {% else %}
-        <img
-          src="{% gravatar_url month.user.email 50 %}"
-          class="profileimage"
-        />
-        {% endif %}
-        <a href="/profile/{{ month.user.username }}"
-          >{{ month.user.username }}</a
-        >
-        <span class="pull-right badge"
-          >{{ month.user.total_score }} Points</span
-        >
-        {% if month.user.userprofile.winnings %}
-        <span class="pull-right badge"
-          >${{ month.user.userprofile.winnings|default:""|floatformat }}</span
-        >
-        {% endif %}
-
-        <span
-          ><kbd class="{{ month.user.userprofile.get_title_display }} titleuser"
-            >{{ month.user.userprofile.get_title_display }}</kbd
-          ></span
-        >
-        {% endif %}
-      </div>
-      {% endfor %} {%endif%}
+    <div class="col-lg-9">
+        <div class="list-group">
+            {%if not leaderboard%}
+                <p style="color: red;">No data for this month</p>
+            {% else %}
+                {% for month in leaderboard %}
+                    <div class="list-group-item" style="margin-top: 30px;">
+                        <button disabled class="btn btn-primary">{{month.month}}</button>
+                    </div>
+                    <div class="list-group-item">
+                        {% if not month.user %}
+                            <p style="color: red;">no bugs found this month</p>
+                        {% else %}
+                            {% if month.user.userprofile.avatar %}
+                            <img src="{{ month.user.userprofile.avatar }}" class="img-responsive img-thumbnail profileimage">
+                            {% elif user.socialaccount_set.all.0.get_avatar_url %}
+                            <img src="{{ month.user.socialaccount_set.all.0.get_avatar_url }}" class="profileimage">
+                            {% else %}
+                            <img src="{% gravatar_url month.user.email 50 %}" class="profileimage">
+                            {% endif %}
+                            <a href="/profile/{{ month.user.username }}">{{ month.user.username }}</a>
+                            <span class="pull-right badge">{{ month.user.total_score }} Points</span>
+                            {% if month.user.userprofile.winnings %}
+                            <span class="pull-right badge">${{ month.user.userprofile.winnings|default:""|floatformat }}</span>
+                            {% endif %}
+                            
+                            <span><kbd
+                                class="{{ month.user.userprofile.get_title_display }} titleuser">{{ month.user.userprofile.get_title_display }}</kbd></span>                        {% endif %}        
+                    </div>
+                {% endfor %}
+            {%endif%}
+        </div>
     </div>
-  </div>
 </div>
 {% endblock %}
