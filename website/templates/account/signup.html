@@ -1,88 +1,125 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% load i18n %} {% block style %}
+<style>
+  .container-min-height {
+    min-height: 80vh;
+  }
+  .inner-addon {
+    position: relative;
+  }
 
-{% load i18n %}
+  .inner-addon .glyphicon {
+    position: absolute;
+    padding: 10px;
+    pointer-events: none;
+  }
 
-{% block style %}
-    <style>
-        .inner-addon {
-            position: relative;
-        }
+  .left-addon .glyphicon {
+    left: 0px;
+  }
 
-        .inner-addon .glyphicon {
-            position: absolute;
-            padding: 10px;
-            pointer-events: none;
-        }
+  .right-addon .glyphicon {
+    right: 0px;
+  }
 
-        .left-addon .glyphicon {
-            left: 0px;
-        }
+  .left-addon input {
+    padding-left: 30px;
+  }
 
-        .right-addon .glyphicon {
-            right: 0px;
-        }
+  .right-addon input {
+    padding-right: 30px;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="row container-min-height">
+  <h3 class="text-center">{% trans "Sign Up" %}</h3>
+  <div class="col-md-6 col-md-offset-3">
+    <form
+      class="signup"
+      id="signup_form"
+      method="post"
+      action="{% url 'account_signup' %}"
+    >
+      {% csrf_token %} {% if request.GET.next %}
+      <input type="hidden" name="next" value="{{ request.GET.next }}" />
+      {% endif %} {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        <ul>
+          {% for error in form.non_field_errors %}
+          <li>{{ error | lower }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
 
-        .left-addon input {
-            padding-left: 30px;
-        }
+      <div
+        class="form-group inner-addon left-addon {% if form.email.errors %}has-error{% endif %}"
+      >
+        <i class="glyphicon glyphicon-user"></i>
+        <input
+          class="form-control"
+          type="text"
+          id="id_username"
+          name="username"
+          placeholder="Username"
+        />
+        <span class="help-block">{{ form.username.errors }}</span>
+      </div>
+      <div
+        class="form-group inner-addon left-addon {% if form.email.errors %}has-error{% endif %}"
+      >
+        <i class="glyphicon glyphicon-envelope"></i>
+        <input
+          class="form-control login-field"
+          type="email"
+          id="id_email"
+          name="email"
+          placeholder="Email"
+        />
+        <span class="help-block">{{ form.email.errors }}</span>
+      </div>
+      <div
+        class="form-group inner-addon left-addon {% if form.password1.errors %}has-error{% endif %}"
+      >
+        <i class="glyphicon glyphicon-lock"></i>
+        <input
+          class="form-control login-field"
+          type="password"
+          id="id_password1"
+          name="password1"
+          placeholder="Password"
+        />
+        <span class="help-block">{{ form.password1.errors }}</span>
+      </div>
 
-        .right-addon input {
-            padding-right: 30px;
-        }
-    </style>
-{% endblock %}
+      <div
+        class="form-group inner-addon left-addon {% if form.password2.errors %}has-error{% endif %}"
+      >
+        <i class="glyphicon glyphicon-lock"></i>
+        <input
+          class="form-control login-field"
+          type="password"
+          id="id_password2"
+          name="password2"
+          placeholder="Confirm Password"
+        />
+        <span class="help-block">{{ form.password2.errors }}</span>
+      </div>
 
-{% block content %}
-    <div class="row">
-        <h3 class="text-center">{% trans "Sign Up" %}</h3>
-        <div class="col-md-6 col-md-offset-3">
-            <form class="signup" id="signup_form" method="post" action="{% url 'account_signup' %}">
-                {% csrf_token %}
-                {% if request.GET.next %}
-                    <input type="hidden" name="next" value="{{ request.GET.next }}">
-                {% endif %}
-
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        <ul>
-                            {% for error in form.non_field_errors %}
-                                <li>{{ error | lower }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                {% endif %}
-
-                <div class="form-group inner-addon left-addon {% if form.email.errors %}has-error{% endif %}">
-                    <i class="glyphicon glyphicon-user"></i>
-                    <input class="form-control" type="text" id="id_username" name="username" placeholder="Username">
-                    <span class="help-block">{{ form.username.errors }}</span>
-                </div>
-                <div class="form-group inner-addon left-addon {% if form.email.errors %}has-error{% endif %}">
-                    <i class="glyphicon glyphicon-envelope"></i>
-                    <input class="form-control login-field" type="email" id="id_email" name="email" placeholder="Email">
-                    <span class="help-block">{{ form.email.errors }}</span>
-                </div>
-                <div class="form-group inner-addon left-addon {% if form.password1.errors %}has-error{% endif %}">
-                    <i class="glyphicon glyphicon-lock"></i>
-                    <input class="form-control login-field" type="password" id="id_password1" name="password1"
-                           placeholder="Password">
-                    <span class="help-block">{{ form.password1.errors }}</span>
-                </div>
-
-                <div class="form-group inner-addon left-addon {% if form.password2.errors %}has-error{% endif %}">
-                    <i class="glyphicon glyphicon-lock"></i>
-                    <input class="form-control login-field" type="password" id="id_password2" name="password2"
-                           placeholder="Confirm Password">
-                    <span class="help-block">{{ form.password2.errors }}</span>
-                </div>
-
-                {% if redirect_field_value %}
-                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
-                {% endif %}
-                <button type="submit" name="signup_button" class="btn btn-success">{% trans "Sign Up" %} &raquo;
-                </button>
-            </form>
-            <p>{% blocktrans %}Already have an account? <a href="{{ login_url }}">Login</a>.{% endblocktrans %}</p>
-        </div>
-    </div>
+      {% if redirect_field_value %}
+      <input
+        type="hidden"
+        name="{{ redirect_field_name }}"
+        value="{{ redirect_field_value }}"
+      />
+      {% endif %}
+      <button type="submit" name="signup_button" class="btn btn-success">
+        {% trans "Sign Up" %} &raquo;
+      </button>
+    </form>
+    <p>
+      {% blocktrans %}Already have an account?
+      <a href="{{ login_url }}">Login</a>.{% endblocktrans %}
+    </p>
+  </div>
+</div>
 {% endblock %}
