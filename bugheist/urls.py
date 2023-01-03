@@ -21,9 +21,8 @@ from website.views import (
     UploadCreate,
     InboundParseWebhookView,
     EachmonthLeaderboardView,
-    GloalLeaderboardView,
+    GlobalLeaderboardView,
     SpecificMonthLeaderboardView,
-    LeaderboardApiViewSet,
     IssueView,
     AllIssuesView,
     SpecificIssuesView,
@@ -57,6 +56,7 @@ from website.api.views import (
     UserProfileViewSet,
     LikeIssueApiView,
     FlagIssueApiView,
+    LeaderboardApiViewSet
 )
 
 from bugheist import settings
@@ -281,12 +281,13 @@ urlpatterns = [
     re_path(r"^follow/(?P<user>[^/]+)/", website.views.follow_user, name="follow_user"),
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
     re_path(r"^label_activity/$", SpecificIssuesView.as_view(), name="all_activity"),
-    re_path(r"^leaderboard/$", GloalLeaderboardView.as_view(), name="leaderboard_global"),
+    re_path(r"^leaderboard/$", GlobalLeaderboardView.as_view(), name="leaderboard_global"),
     re_path(r"^leaderboard/monthly/$", SpecificMonthLeaderboardView.as_view(), name="leaderboard_specific_month"),
     re_path(r"^leaderboard/each-month/$", EachmonthLeaderboardView.as_view(), name="leaderboard_eachmonth"),
-    re_path(r"^leaderboard/api/$", LeaderboardApiViewSet.as_view(), name="leaderboard_api"),
     re_path(r"^api/v1/issue/like/(?P<id>\w+)/$", LikeIssueApiView.as_view(), name="like_issue"),
     re_path(r"^api/v1/issue/flag/(?P<id>\w+)/$", FlagIssueApiView.as_view(), name="flag_issue"),
+    re_path(r"^api/v1/leaderboard/$",LeaderboardApiViewSet.as_view(),name="leaderboard"),
+
     re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
     re_path(
