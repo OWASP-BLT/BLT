@@ -4,6 +4,10 @@
 
 {% block style %}
     <style>
+
+        .container-min-height{
+          min-height: 70vh;
+        }
         .inner-addon {
             position: relative;
         }
@@ -33,7 +37,7 @@
 {% endblock %}
 
 {% block content %}
-    <div class="row">
+    <div class="row container-min-height">
         <h3 class="text-center">{% trans "Sign Up" %}</h3>
         <div class="col-md-6 col-md-offset-3">
             <form class="signup" id="signup_form" method="post" action="{% url 'account_signup' %}">

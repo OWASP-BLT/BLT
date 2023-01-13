@@ -1220,9 +1220,8 @@ class LeaderboardBase():
                         total_score__gt=0,
                     )
                 )
-
         if api:
-            return data.values('username')
+            return data.values('username','total_score')
 
         return data
     
@@ -1254,12 +1253,18 @@ class LeaderboardBase():
         
         return monthly_winner
 
-class GloalLeaderboardView(LeaderboardBase,ListView):
+class GlobalLeaderboardView(LeaderboardBase,ListView):
+
+    '''
+        Returns: All users:score data in descending order 
+    '''
+
+    
     model = User
     template_name = "leaderboard_global.html"
 
     def get_context_data(self, *args, **kwargs):      
-        context = super(GloalLeaderboardView, self).get_context_data(*args, **kwargs)
+        context = super(GlobalLeaderboardView, self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -1270,7 +1275,7 @@ class GloalLeaderboardView(LeaderboardBase,ListView):
 class EachmonthLeaderboardView(LeaderboardBase,ListView):
 
     '''
-        gives top user from each month for current year
+        Returns: Grouped user:score data in months for current year
     '''
 
     model = User
@@ -1308,6 +1313,11 @@ class EachmonthLeaderboardView(LeaderboardBase,ListView):
         return context
 
 class SpecificMonthLeaderboardView(LeaderboardBase,ListView):
+
+    '''
+        Returns: leaderboard for filtered month and year requested in the query 
+    '''
+
     model = User
     template_name = "leaderboard_specific_month.html"
 
@@ -1335,26 +1345,8 @@ class SpecificMonthLeaderboardView(LeaderboardBase,ListView):
         if not (month>=1 and month<=12):
             raise Http404(f"Invalid query passed | Month:{month}")
 
-        
-
         context["leaderboard"] = self.get_leaderboard(month,year,api=False)
         return context
-
-class LeaderboardApiViewSet(LeaderboardBase,APIView):
-
-    def get(self,request,format=None):
-        
-        response = Response({"params":"no params passed [(monthly,bool),(year,int)]"})
-
-        if request.query_params.get('monthly')=="true": 
-            queryset = self.current_month_leaderboard()
-            response = Response(queryset,status=200)
-        
-        elif request.query_params.get('year'):
-            queryset = self.monthly_year_leaderboard(year=request.query_params.get('year'))
-            response = Response(queryset,status=200)
-        
-        return response
 
 
 class ScoreboardView(ListView):

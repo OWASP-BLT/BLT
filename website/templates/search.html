@@ -4,7 +4,15 @@
 {% load humanize %}
 
 {% block content %}
-    <div class="row">
+
+
+<style>
+  .container-min-height{
+    min-height: 50vh;
+  }
+</style>
+
+    <div class="row container-min-height">
         <div class="col-md-8 col-md-offset-2">
             <h1 class="text-center"><span class="search-header">Search Results for </span><span class="search-header-query">"{{query}}"</span></h1>
             <hr>
