@@ -1066,7 +1066,8 @@ class StatsDetailView(TemplateView):
             "https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en"
         )
         soup = BeautifulSoup(response.text)
-
+        
+        stats = ""
         for item in soup.findAll("span", {"class": "e-f-ih"}):
             stats = item.attrs["title"]
         if self.request.user.is_authenticated:
