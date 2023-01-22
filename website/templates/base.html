@@ -74,15 +74,24 @@
                 <div class="col-sm-3">
                     <img style="width: 200px; height: 50px;" src="{% static 'img/logo_white.png' %}">
                 </div>
-                <div class="col-sm-3">
+                <div class="col-sm-1">
                     <ul>
                         <li><a href="/about" target="_new">{% trans "About" %}</a></li>
+                    </ul>
+                </div>
+                <div class="col-sm-1">
+                    <ul>
                         <li><a href="/stats">{% trans "Stats" %}</a></li>
                     </ul>
                 </div>
-                <div class="col-sm-3">
+                <div class="col-sm-2">
                     <ul>
                         <li><a href="/scoreboard" target="_new">{% trans "Company Scoreboard" %}</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-sm-2">
+                    <ul>
                         <li><a href="/terms">{% trans "Terms of Service" %}</a></li>
                         <form action="{% url 'set_language' %}" method="post">
                             {% csrf_token %}
@@ -111,9 +120,6 @@
                         <a href="http://facebook.com/bugheist" target="_new"><i class="fa fa-facebook"></i></a>
                         <a href="http://github.com/bugheist/website" target="_new"><i class="fa fa-github"></i></a>
                         <a href="https://steemit.com/@bugheist" target="_new">blog</a>
-
-                        
-
                     </div>
                 </div>
             </div>

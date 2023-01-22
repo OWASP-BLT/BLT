@@ -578,13 +578,16 @@ textarea {
 }
 
 #myFooter .social-networks a {
-    font-size: 32px;
+    font-size: 20px;
     color: #f9f9f9;
-    padding: 10px;
+    padding: 5px;
     transition: 0.2s;
 }
 
 #myFooter .fa-facebook:hover {
+    color: #0077e2;
+}
+#myFooter .change-hover:hover {
     color: #0077e2;
 }
 
@@ -593,7 +596,7 @@ textarea {
 }
 
 #myFooter .fa-github:hover {
-    color: black;
+    color: rgb(205, 131, 232);
 }
 
 .cardbox {
