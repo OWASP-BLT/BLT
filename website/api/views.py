@@ -103,11 +103,10 @@ class IssueViewSet(viewsets.ModelViewSet):
 
         screenshots = [
             # replacing space with url space notation
-            screenshot["image"].replace(" ","%20")
+            request.build_absolute_uri(screenshot.image.url)
             for screenshot in 
-            issue.screenshots.values("image").all()
-        ] + ( [issue.screenshot.url] if issue.screenshot else [] )
-
+            issue.screenshots.all()
+        ] + ( [request.build_absolute_uri(issue.screenshot.url)] if issue.screenshot else [] )
 
         upvotes = issue.upvoted.all().__len__()
         flags = issue.flaged.all().__len__()
@@ -119,13 +118,19 @@ class IssueViewSet(viewsets.ModelViewSet):
             upvotted = bool(request.user.userprofile.issue_upvoted.filter(id=issue.id).first())
             flagged = bool(request.user.userprofile.issue_flaged.filter(id=issue.id).first())          
 
+        issue = Issue.objects.filter(id=issue.id)
+        issue_obj = issue.first()
+
+        issue_data = IssueSerializer(issue_obj)
+
         return {
-            **Issue.objects.values().filter(id=issue.id).first(),
+            **issue_data.data,
+            "closed_by": issue_obj.closed_by.username if issue_obj.closed_by else None,
             "upvotes": upvotes,
             "flags": flags,
             "upvotted": upvotted,
             "flagged": flagged,
-            "screenshots": screenshots
+            "screenshots":screenshots
         }
 
 
