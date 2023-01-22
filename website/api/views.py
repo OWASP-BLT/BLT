@@ -66,7 +66,10 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "head","put"]
 
     def update(self, request, pk,*args, **kwargs):
-
+        
+        user = UserProfile.objects.filter(id=pk).first()
+        if user==None:
+            return Response({"detail": "Not found."},status=404)
         if UserProfile.objects.filter(id=pk).first().user != request.user:
             return Response("NOT AUTHORIZED",401)
         
