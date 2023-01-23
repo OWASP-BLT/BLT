@@ -11,7 +11,6 @@ from rest_framework.views import APIView
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.decorators import action
 
 from website.models import (
     Issue,
@@ -27,13 +26,9 @@ from website.models import (
     UserProfile,
     User,
     Points,
-    IssueScreenshot
 )
 
 from website.views import (
-    GlobalLeaderboardView,
-    EachmonthLeaderboardView,
-    SpecificMonthLeaderboardView,
     LeaderboardBase
 
 )
@@ -65,11 +60,23 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     search_fields = ("id", "user__id", "user__username")
     http_method_names = ["get", "post", "head","put"]
 
+    def retrieve(self, request,pk,*args, **kwargs):
+        
+        user_profile = UserProfile.objects.filter(user__id=pk).first()
+
+        if user_profile == None:
+            return Response({"detail": "Not found."},status=404)
+        
+        serializer = self.get_serializer(user_profile)
+        return Response(serializer.data)
+
     def update(self, request, pk,*args, **kwargs):
         
-        user = UserProfile.objects.filter(id=pk).first()
-        if user==None:
+        user_profile = UserProfile.objects.filter(user__id=pk).first()
+        
+        if user_profile==None:
             return Response({"detail": "Not found."},status=404)
+
         if UserProfile.objects.filter(id=pk).first().user != request.user:
             return Response("NOT AUTHORIZED",401)
         
