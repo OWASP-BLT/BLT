@@ -89,10 +89,14 @@
                         <li><a href="/scoreboard" target="_new">{% trans "Company Scoreboard" %}</a></li>
                     </ul>
                 </div>
-                
                 <div class="col-sm-2">
                     <ul>
                         <li><a href="/terms">{% trans "Terms of Service" %}</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-sm-2">
+                    <ul>
                         <form action="{% url 'set_language' %}" method="post">
                             {% csrf_token %}
                             <input name="next" type="hidden" value="{{ redirect_to }}" />
@@ -119,7 +123,7 @@
                         <a href="http://twitter.com/bugheist" target="_new"><i class="fa fa-twitter"></i></a>
                         <a href="http://facebook.com/bugheist" target="_new"><i class="fa fa-facebook"></i></a>
                         <a href="http://github.com/bugheist/website" target="_new"><i class="fa fa-github"></i></a>
-                        <a href="https://steemit.com/@bugheist" target="_new">blog</a>
+                        <a href="https://steemit.com/@bugheist" target="_new"><i class="fa fa-pencil-square-o"></i></a>
                     </div>
                 </div>
             </div>
