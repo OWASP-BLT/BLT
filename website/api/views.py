@@ -26,6 +26,7 @@ from website.models import (
     UserProfile,
     User,
     Points,
+    Hunt
 )
 
 from website.views import (
@@ -72,15 +73,22 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
     def update(self, request, pk,*args, **kwargs):
         
-        user_profile = UserProfile.objects.filter(user__id=pk).first()
+        user_profile = request.user.userprofile
         
         if user_profile==None:
             return Response({"detail": "Not found."},status=404)
-
-        if UserProfile.objects.filter(id=pk).first().user != request.user:
-            return Response("NOT AUTHORIZED",401)
         
-        return super().update(request, *args, **kwargs)
+        instance = user_profile
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
 
 
 class DomainViewSet(viewsets.ModelViewSet):
@@ -348,3 +356,21 @@ class LeaderboardApiViewSet(APIView):
         
         else:
             return self.global_leaderboard(request,*args,**kwargs)
+
+
+class StatsApiViewset(APIView):
+
+    def get(self,request,*args,**kwargs):
+
+        bug_count =  Issue.objects.all().count()
+        user_count = User.objects.all().count()
+        hunt_count = Hunt.objects.all().count()
+        domain_count = Domain.objects.all().count()
+
+
+        return Response({
+            "bugs":bug_count,
+            "users":user_count,
+            "hunts":hunt_count,
+            "domains":domain_count
+        }) 
