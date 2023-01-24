@@ -14,4 +14,3 @@ jobs:
         with:
           project-url: https://github.com/orgs/OWASP/projects/3
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          labeled: project
