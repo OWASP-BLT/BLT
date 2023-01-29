@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% load static %}
+{% load gravatar %}
+{% load socialaccount %}
+{% load humanize %}
+{% providers_media_js %}
+{% load i18n %}f
+{% block content %}
+<script src="{% static "js/jquery.validate.js" %}"></script>
+<script src="{% static 'js/activity.js' %}"></script>
+
+
+<div class="w-full h-[30rem] flex flex-col  space-y-14 items-center">
+    <a href="https://google.com" class="component border-b-2 text-blue-500 border-blue-300 hover:border-blue-500 mt-10 hover:text-blue-600">Check out our new blog, the Bugheist Beacon</a>
+    <p class="text-5xl text-center mt-20 font-sans sm:text-6xl lg:text-7xl">Find Bugs, Win Points and Prizes</p>
+
+    <hr class="w-full bg-black"/>
+
+    <section class="hero">
+        <div class="text-slider">
+            <ul>
+                <li class="text-slider-list">
+                    <h2 class="text-slider-line active-line animated fadeInUp text-4xl">{% trans "Fix issues on websites, apps or hardware (+3 points)" %}</h2>
+                </li>
+                <li class="text-slider-list">
+                    <h2 class="text-slider-line animated fadeInUp text-4xl">{% trans "Verify other bug reports(+2 points)" %}</h2>
+                </li>
+                <li class="text-slider-list">
+                    <h2 class="text-slider-line animated fadeInUp text-4xl">{% trans "Invite friends (when they signup , get +1 point)" %}</h2>
+                </li>
+                <li class="text-slider-list">
+                    <h2 class="text-slider-line animated fadeInUp text-4xl">{% trans "Find a bug on a new site or app (+4 points)" %}
+                    </h2>
+                </li>
+            </ul>
+        </div>
+    </section>
+</div>
+
+<div class="w-full m-0 p-0 flex flex-wrap justify-center">
+
+
+    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+        <i class="fa fa-exclamation-triangle fa-3x mt-5"></i>
+        <p class="text-3xl font-bold">{% trans "Number Error" %}</p>
+        <p class="w-1/2 text-center">{% trans "For pages where you see a number 404, 500." %}</p>
+        <button onclick="example('/search/?query=1&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
+    </div>
+
+    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+        <i class="fa fa-trophy fa-3x mt-5"></i>
+        <p class="text-3xl font-bold">{% trans "Functional" %}</p>
+        <p class="w-1/2 text-center">{% trans "Something doesn't work as intended" %}</p>
+        <button onclick="example('/search/?query=2&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
+    </div>
+
+    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+        <i class="fa fa-flash fa-3x mt-5"></i>
+        <p class="text-3xl font-bold">{% trans "Performance" %}</p>
+        <p class="w-1/2 text-center">{% trans "Any process that takes over 5 seconds." %}</p>
+        <button onclick="example('/search/?query=3&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
+    </div>
+
+    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+        <i class="fa fa-flash fa-3x mt-5"></i>
+        <p class="text-3xl font-bold">{% trans "Security" %}</p>
+        <p class="w-1/2 text-center">{% trans "Data leaks, exploits or anything smelly." %}</p>
+        <button onclick="example('/search/?query=4&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
+    </div>
+
+    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+        <i class="fa fa-flash fa-3x mt-5"></i>
+        <p class="text-3xl font-bold">{% trans "Typo" %}</p>
+        <p class="w-1/2 text-center">{% trans "Miss-spellings, miss-grammar and more." %}</p>
+        <button onclick="example('/search/?query=5&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
+    </div>
+
+    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+        <i class="fa fa-flash fa-3x mt-5"></i>
+        <p class="text-3xl font-bold">{% trans "Design" %}</p>
+        <p class="w-1/2 text-center">{% trans "Layout, responsiveness and improvements" %}</p>
+        <button onclick="example('/search/?query=6&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
+    </div>
+
+    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+        <i class="fa fa-flash fa-3x mt-5"></i>
+        <p class="text-3xl font-bold">{% trans "Server Down" %}</p>
+        <p class="w-1/2 text-center">{% trans "500 Server Error and Downtime" %}</p>
+        <button onclick="example('/search/?query=7&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
+    </div>
+
+</div>
+
+<div class="w-full min-h-[200px] mt-[60px] flex justify-center">
+    <div class="w-[80%] h-full">
+        <div class="w-full mt-5 flex flex-wrap items-center justify-around">
+            <div class="w-full lg:w-[200px] h-[55px] bg-blue-600 flex justify-center items-center rounded-md m-4">
+                <p class="text-white text-3xl"> <i class="fa fa-bug"></i> 760 Bugs</p>
+            </div>
+            <div class="w-full lg:w-[200px] h-[55px] bg-green-600 flex justify-center items-center rounded-md m-4">
+                <p class="text-white text-3xl"> <i class="fa fa-user"></i> 760 Users</p>
+            </div>
+            <div class="w-full lg:w-[200px] h-[55px] bg-yellow-600 flex justify-center items-center rounded-md m-4">
+                <p class="text-white text-3xl"> <i class="fa fa-bullseye"></i> 760 Hunts</p>
+            </div>
+            <div class="w-full lg:w-[200px] h-[55px] bg-red-600 flex justify-center items-center rounded-md m-4">
+                <p class="text-white text-3xl"> <i class="fa fa-support"></i> 760 Domains</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<p class="text-7xl text-center mb-[100px] font-sans text-[#B1B1B1]">LEADER BOARDS</p>
+<div class="w-full flex flex-wrap justify-around">
+
+    <div class="w-[500px] h-full border-[1px] border-gray-400 rounded-sm bg-white mx-2 mb-10">
+        <div class="w-full h-[80px]  flex justify-center items-center">
+            <p class="text-5xl font-bold">TOP COMPANY</p>
+        </div>
+        <div class="w-full">
+            {% for i in '1234567'|make_list %}
+                <div class="w-full h-[75px] border-y-[1.1px] px-6 border-gray-300 flex justify-between items-center cursor-pointer shadow-sm transform hover:-translate-y-1 hover:shadow-lg">
+                    <p class="text-3xl font-bold">{{i}}</p>
+                    <div>
+                        <p class="font-bold text-3xl">codehunter.com</p>
+                        <p class="text-2xl">2,789</p>
+                    </div>
+                    <button class="bg-red-500 text-white font-bold text-2xl px-9 py-4">SUBMIT BUG</button>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="w-[500px] h-full border-[1px] border-gray-400 rounded-sm bg-white mx-2 mb-10">
+        <div class="w-full h-[80px]  flex justify-center items-center">
+            <p class="text-5xl font-bold">TOP TESTER</p>
+        </div>
+        <div class="w-full">
+            {% for i in '1234567'|make_list %}
+                <div class="w-full h-[75px] border-y-[1.1px] px-6 border-gray-300 flex justify-between items-center cursor-pointer shadow-sm transform hover:-translate-y-1 hover:shadow-lg">
+                    <p class="text-3xl font-bold">{{i}}</p>
+                    <div>
+                        <p class="font-bold text-3xl">codehunter.com</p>
+                        <p class="text-2xl">2,789</p>
+                    </div>
+                    <button class="bg-red-500 text-white font-bold text-2xl px-9 py-4">SUBMIT BUG</button>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+
+
+<div class="row" data-intro="View latest activities here." data-step="3" style="margin-left: 10px; margin-top: 60px;">
+    <div class="col-md-8">
+        <h1 class="page-sub-header">Latest activity</h1>
+        <div class="list-group">
+            {% for activity in activities %}
+            {% include '_activity.html' %}
+            {% endfor %}
+        </div>
+        <a href="/all_activity" class="btn btn-default btn-block">View All Activity</a>
+    </div>
+    <div class="col-md-4">
+        <div class="row">
+            <div class="panel panel-default">
+                <div class="panel-heading page-sub-header">
+                    {% now "F" %} {% trans "Leaderboard" %}
+                </div>
+                <br>
+                <div class="panel-body leaderboard-panel">
+                    <strong>The 1st Place Hunter for {% now "F" %} will receive</strong>
+                    <div class="box leaderboardbox">
+                        <strong>No sponsored prizes this month</strong></br>
+                        <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post" style="display:inline;margin-bottom:10px;">
+                            <input type="hidden" name="cmd" value="_xclick">
+                            <input type="hidden" name="business" value="coderbounty@gmail.com">
+                            <input type="hidden" name="item_name" value="Sponsor a Prize for the {% now " F" %}
+                                Leaderboard on Bugheist">
+                            <input type="hidden" name="currency_code" value="USD">
+                            <button type="submit" class="btn btn-danger btn-sm prizebtn">Sponsor a Prize</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="list-group">
+                    {% if leaderboard %}
+                    {% for leader in leaderboard %}
+                    <div class="list-group-item activity-strip" style="height: 80px; border: 1px solid #DDDDDD">
+                        {% if leader.socialaccount_set.all.0.get_avatar_url %}
+                        <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class="profileimage" width="50"
+                            height="50">
+                        {% else %}
+                        <img src="{% gravatar_url leader.email 50 %}" class="profileimage">
+                        {% endif %}
+                        <a href="/profile/{{ leader.username }}" class="text-capitalize leaderboard-name">{{leader.username|truncatechars:20 }}</a>
+                        <span class="label label-success leaderboard-rank">{{ forloop.counter|ordinal }}</span>
+                        <div class="badge leaderboard-points">{{ leader.total_score }} Points</div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    </br> Leaderboard reset for {% now "F" %}. Be first to find issues!
+                    {% endif %}
+                </div>
+                <a href="/leaderboard" class="btn btn-default btn-block submit_button">View All</a>
+                <a href="/leaderboard/monthly" class="btn btn-default btn-block submit_button">Filter Monthly</a>
+                <a href="/leaderboard/each-month" class="btn btn-default btn-block submit_button">View Monthly</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-12">
+        <h1 class="page-sub-header">Subscriptions:</h1>
+    </div>
+</div>
+{% include '_subscriptions.html' %}
+
+<script>
+    function example(relative_path){
+        window.location.href = relative_path;
+    }
+</script>
+
+{% endblock %}
+
