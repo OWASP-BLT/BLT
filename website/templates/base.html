@@ -36,11 +36,7 @@
     <script src="{% static "js/notify.js" %}"></script>
     <script src="{% static "js/text-slider.js" %}"></script>
     <script src="{% static "js/embed.js" %}"></script>
-    
-    <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-        <![endif]-->
+    <script src="https://cdn.tailwindcss.com"></script>
     
     {% block head %}
     {% endblock %}
@@ -55,7 +51,7 @@
 <body>
     
     {% comment %} navbar {% endcomment %}
-        {% include "navbar.html" %}
+        {% include "includes/navbar.html" %}
     {% comment %} navbar {% endcomment %}
 
     <br><br><br><br>
@@ -68,128 +64,73 @@
         </div>
         
     </div>
-    <footer id="myFooter" style="background: #010102; ">
-        <div class="container-footer">
-            <div class="row">
-                <div class="col-sm-3">
-                    <img style="width: 200px; height: 50px;" src="{% static 'img/logo_white.png' %}">
-                </div>
-                <div class="col-sm-3">
-                    <ul>
-                        <li><a href="/about" target="_new">{% trans "About" %}</a></li>
-                        <li><a href="/stats">{% trans "Stats" %}</a></li>
-                    </ul>
-                </div>
-                <div class="col-sm-3">
-                    <ul>
-                        <li><a href="/scoreboard" target="_new">{% trans "Company Scoreboard" %}</a></li>
-                        <li><a href="/terms">{% trans "Terms of Service" %}</a></li>
-                        <form action="{% url 'set_language' %}" method="post">
-                            {% csrf_token %}
-                            <input name="next" type="hidden" value="{{ redirect_to }}" />
-                            <select name="language" class="change-language"
-                                onchange='if(this.value != 0) { this.form.submit(); }'>
-                                {% get_current_language as LANGUAGE_CODE %}
-                                {% get_available_languages as LANGUAGES %}
-                                {% for lang in LANGUAGES %}
+    
+    {% include "includes/footer.html" %}
 
-                                {% if lang.0 == LANGUAGE_CODE %}
-                                <option value="{{ lang.0 }}" selected="selected">{{ lang.1 }} ({{ lang.0 }}) </option>
-                                {% else %}
-                                <option value="{{ lang.0 }}">{{ lang.1 }} ({{ lang.0 }}) </option>
-                                {% endif %}
-
-
-                                {% endfor %}
-                            </select>
-                        </form>
-                    </ul>
-                </div>
-                <div class="col-sm-3">
-                    <div class="social-networks">
-                        <a href="http://twitter.com/bugheist" target="_new"><i class="fa fa-twitter"></i></a>
-                        <a href="http://facebook.com/bugheist" target="_new"><i class="fa fa-facebook"></i></a>
-                        <a href="http://github.com/bugheist/website" target="_new"><i class="fa fa-github"></i></a>
-                        <a href="https://steemit.com/@bugheist" target="_new">blog</a>
-
-                        
-
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="footer-blt"   style="background: #010102; ">
-            <p>Powered by <a href="https://www.owasp.org/index.php/OWASP_Bug_Logging_Tool" target="_new">OWASP Bug
-                    Logging
-                    Tool
-                </a></p>
-        </div>
-        
-    </footer>
-
-    <script src="{% static "vendor/bootstrap/js/bootstrap.min.js" %}"></script>
-    <script src="{% static 'js/ui.js' %}"></script>
-    {% block after_js %}
-    {% endblock %}
-
-    <script>
-        $("#report-bug-btn").click(function () {
-            $("#spinner").show()
-        });
-    </script>
-    <script>
-        (function (i, s, o, g, r, a, m) {
-            i['GoogleAnalyticsObject'] = r;
-            i[r] = i[r] || function () {
-                (i[r].q = i[r].q || []).push(arguments)
-            }, i[r].l = 1 * new Date();
-            a = s.createElement(o),
-                m = s.getElementsByTagName(o)[0];
-            a.async = 1;
-            a.src = g;
-            m.parentNode.insertBefore(a, m)
-        })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
-        ga('create', 'UA-66634107-1', 'auto');
-        ga('send', 'pageview');
-    </script>
-    <script type="text/javascript">
-        $(".mbug").click(function () {
-            $(this).addClass("hidden-xs");
-            $(this).addClass("hidden-sm");
-            $(".mnav").removeClass("hidden-xs");
-            $(".mnav").removeClass("hidden-sm");
-        });
-        $(function () {
-            $('button[name="test_files"]').on('click', function () {
-                $(this).parent().find('input[type=file]').click();
-            });
-            $('input[name="screenshot"]').on('change', function () {
-                var file = $(this).val().replace('C:\\fakepath\\', '');
-                $(this).parent().find('span').html(file);
-            });
-
- 
-            {% if messages %} 
-                {% for message in messages %}
-                $.notify("{{ message }}", {
-                    style: "custom",
-                    className: "{{message.level_tag }}"
-                }); 
-                {% endfor %} 
-            {% endif %}
-        });
-    </script>
-
-    <script type="text/javascript">
-        window._mfq = window._mfq || [];
-        (function () {
-            var mf = document.createElement("script");
-            mf.type = "text/javascript";
-            mf.async = true;
-            mf.src = "//cdn.mouseflow.com/projects/efbbebea-436f-4b6f-9290-14ab36c8f636.js";
-            document.getElementsByTagName("head")[0].appendChild(mf);
-        })();
-    </script>
 </body>
+
+<script src="{% static "vendor/bootstrap/js/bootstrap.min.js" %}"></script>
+<script src="{% static 'js/ui.js' %}"></script>
+{% block after_js %}
+{% endblock %}
+
+<script>
+    $("#report-bug-btn").click(function () {
+        $("#spinner").show()
+    });
+</script>
+<script>
+    (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function () {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-66634107-1', 'auto');
+    ga('send', 'pageview');
+</script>
+<script type="text/javascript">
+    $(".mbug").click(function () {
+        $(this).addClass("hidden-xs");
+        $(this).addClass("hidden-sm");
+        $(".mnav").removeClass("hidden-xs");
+        $(".mnav").removeClass("hidden-sm");
+    });
+    $(function () {
+        $('button[name="test_files"]').on('click', function () {
+            $(this).parent().find('input[type=file]').click();
+        });
+        $('input[name="screenshot"]').on('change', function () {
+            var file = $(this).val().replace('C:\\fakepath\\', '');
+            $(this).parent().find('span').html(file);
+        });
+
+
+        {% if messages %} 
+            {% for message in messages %}
+            $.notify("{{ message }}", {
+                style: "custom",
+                className: "{{message.level_tag }}"
+            }); 
+            {% endfor %} 
+        {% endif %}
+    });
+</script>
+
+<script type="text/javascript">
+    window._mfq = window._mfq || [];
+    (function () {
+        var mf = document.createElement("script");
+        mf.type = "text/javascript";
+        mf.async = true;
+        mf.src = "//cdn.mouseflow.com/projects/efbbebea-436f-4b6f-9290-14ab36c8f636.js";
+        document.getElementsByTagName("head")[0].appendChild(mf);
+    })();
+</script>
 
 </html>

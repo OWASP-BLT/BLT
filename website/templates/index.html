@@ -8,296 +8,153 @@
 {% block content %}
 <script src="{% static "js/jquery.validate.js" %}"></script>
 <script src="{% static 'js/activity.js' %}"></script>
-<section class="hero">
-    <div class="heading">
-        <h1 class="page-header">{% trans "Find Bugs, Win Points and Prizes" %}</h1>
-    </div>
-    <div class="text-slider">
-        <ul>
-            <li class="text-slider-list">
-                <h2 class="text-slider-line active-line animated fadeInUp">{% trans "Fix issues on websites, apps or hardware (+3 points)" %}</h2>
-            </li>
-            <li class="text-slider-list">
-                <h2 class="text-slider-line animated fadeInUp">{% trans "Verify other bug reports(+2 points)" %}</h2>
-            </li>
-            <li class="text-slider-list">
-                <h2 class="text-slider-line animated fadeInUp">{% trans "Invite friends (when they signup , get +1 point)" %}</h2>
-            </li>
-            <li class="text-slider-list">
-                <h2 class="text-slider-line animated fadeInUp">{% trans "Find a bug on a new site or app (+4 points)" %}
-                </h2>
-            </li>
-        </ul>
-    </div>
-    <br>
-</section>
-<div class="container-footer">
-    <center>
-        <div class="row">
-            <div class="col-sm-4">
-                <div class="cborder">
-                    <div class="card cardbox">
-                        <center><i class="fa fa-exclamation-triangle fa-3x"></i></center>
-                        <div class="card-block">
-                            <h4 class="card-title">{% trans "Number Error" %}</h4>
-                            <p class="card-text">{% trans "For pages where you see a number 404, 500." %}</p>
-                        </div>
-                    </div>
-                    <ul class="list-group list-group-flush">
-                        <a class="btn btn-default" href="/search/?query=1&type=label">Examples</a>
-                    </ul>
-                </div>
-            </div>
-            <div class="col-sm-4">
-                <div class="cborder">
-                    <div class="card cardbox">
-                        <center><i class="fa fa-trophy fa-3x"></i></center>
-                        <div class="card-block">
-                            <h4 class="card-title">{% trans "Functional" %}</h4>
-                            <p class="card-text">{% trans "Something doesn't work as intended" %}</p>
-                        </div>
-                    </div>
-                    <ul class="list-group list-group-flush">
-                        <a class="btn btn-default" href="/search/?query=2&type=label">Examples</a>
-                    </ul>
-                </div>
-            </div>
-            <div class="col-sm-4">
-                <div class="cborder">
-                    <div class="card cardbox">
-                        <center><i class="fa fa-flash fa-3x"></i></center>
-                        <div class="card-block">
-                            <h4 class="card-title">{% trans "Performance" %}</h4>
-                            <p class="card-text">{% trans "Any process that takes over 5 seconds." %}</p>
-                        </div>
-                    </div>
-                    <ul class="list-group list-group-flush">
-                        <a class="btn btn-default" href="/search/?query=3&type=label">Examples</a>
-                    </ul>
-                </div>
-            </div>
+
+
+<div class="w-full h-[30rem] flex flex-col  space-y-14 items-center">
+    <a href="https://google.com" class="component border-b-2 text-blue-500 border-blue-300 hover:border-blue-500 mt-10 hover:text-blue-600">Check out our new blog, the Bugheist Beacon</a>
+    <p class="text-5xl text-center mt-20 font-sans sm:text-6xl lg:text-7xl">Find Bugs, Win Points and Prizes</p>
+
+    <hr class="w-full bg-black"/>
+
+    <section class="hero">
+        <div class="text-slider">
+            <ul>
+                <li class="text-slider-list">
+                    <h2 class="text-slider-line active-line animated fadeInUp text-4xl">{% trans "Fix issues on websites, apps or hardware (+3 points)" %}</h2>
+                </li>
+                <li class="text-slider-list">
+                    <h2 class="text-slider-line animated fadeInUp text-4xl">{% trans "Verify other bug reports(+2 points)" %}</h2>
+                </li>
+                <li class="text-slider-list">
+                    <h2 class="text-slider-line animated fadeInUp text-4xl">{% trans "Invite friends (when they signup , get +1 point)" %}</h2>
+                </li>
+                <li class="text-slider-list">
+                    <h2 class="text-slider-line animated fadeInUp text-4xl">{% trans "Find a bug on a new site or app (+4 points)" %}
+                    </h2>
+                </li>
+            </ul>
         </div>
-        <div class="row">
-            <div class="col-sm-4">
-                <div class="cborder">
-                    <div class="card cardbox">
-                        <center><i class="fa fa-lock fa-3x"></i></center>
-                        <div class="card-block">
-                            <h4 class="card-title">{% trans "Security" %}</h4>
-                            <p class="card-text">{% trans "Data leaks, exploits or anything smelly." %}</p>
-                        </div>
-                    </div>
-                    <ul class="list-group list-group-flush">
-                        <a class="btn btn-default" href="/search/?query=4&type=label">Examples</a>
-                    </ul>
-                </div>
-            </div>
-            <div class="col-sm-4">
-                <div class="cborder">
-                    <div class="card cardbox">
-                        <center><i class="fa fa-eraser fa-3x"></i></center>
-                        <div class="card-block">
-                            <h4 class="card-title">{% trans "Typo" %}</h4>
-                            <p class="card-text">{% trans "Miss-spellings, miss-grammar and more." %}</p>
-                        </div>
-                    </div>
-                    <ul class="list-group list-group-flush">
-                        <a class="btn btn-default" href="/search/?query=5&type=label">Examples</a>
-                    </ul>
-                </div>
-            </div>
-            <div class="col-sm-4">
-                <div class="cborder">
-                    <div class="card cardbox">
-                        <center><i class="fa fa-code fa-3x"></i></center>
-                        <div class="card-block">
-                            <h4 class="card-title">{% trans "Design" %}</h4>
-                            <p class="card-text">{% trans "Layout, responsiveness and improvements" %}</p>
-                        </div>
-                    </div>
-                    <ul class="list-group list-group-flush">
-                        <a class="btn btn-default" href="/search/?query=6&type=label">Examples</a>
-                    </ul>
-                </div>
-            </div>
-            <div class="col-sm-4">
-                <div class="cborder">
-                    <div class="card cardbox">
-                        <center><i class="fa fa-code fa-3x"></i></center>
-                        <div class="card-block">
-                            <h4 class="card-title">{% trans "Server Down" %}</h4>
-                            <p class="card-text">{% trans "500 Server Error and Downtime" %}</p>
-                        </div>
-                    </div>
-                    <ul class="list-group list-group-flush">
-                        <a class="btn btn-default" href="/search/?query=7&type=label">Examples</a>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </center>
+    </section>
 </div>
-{% comment %}
-<div class="row" style="margin-left: 10px;">
-    <div class="col-lg-12">
-        
-        <div class="row">
-            <div class="col-lg-12">
-                <h1 class="page-sub-header">{% trans "Featured Bug Hunts" %}</h1>
+
+<div class="w-full m-0 p-0 flex flex-wrap justify-center">
+
+
+    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+        <i class="fa fa-exclamation-triangle fa-3x mt-5"></i>
+        <p class="text-3xl font-bold">{% trans "Number Error" %}</p>
+        <p class="w-1/2 text-center">{% trans "For pages where you see a number 404, 500." %}</p>
+        <button onclick="example('/search/?query=1&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
+    </div>
+
+    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+        <i class="fa fa-trophy fa-3x mt-5"></i>
+        <p class="text-3xl font-bold">{% trans "Functional" %}</p>
+        <p class="w-1/2 text-center">{% trans "Something doesn't work as intended" %}</p>
+        <button onclick="example('/search/?query=2&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
+    </div>
+
+    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+        <i class="fa fa-flash fa-3x mt-5"></i>
+        <p class="text-3xl font-bold">{% trans "Performance" %}</p>
+        <p class="w-1/2 text-center">{% trans "Any process that takes over 5 seconds." %}</p>
+        <button onclick="example('/search/?query=3&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
+    </div>
+
+    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+        <i class="fa fa-flash fa-3x mt-5"></i>
+        <p class="text-3xl font-bold">{% trans "Security" %}</p>
+        <p class="w-1/2 text-center">{% trans "Data leaks, exploits or anything smelly." %}</p>
+        <button onclick="example('/search/?query=4&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
+    </div>
+
+    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+        <i class="fa fa-flash fa-3x mt-5"></i>
+        <p class="text-3xl font-bold">{% trans "Typo" %}</p>
+        <p class="w-1/2 text-center">{% trans "Miss-spellings, miss-grammar and more." %}</p>
+        <button onclick="example('/search/?query=5&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
+    </div>
+
+    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+        <i class="fa fa-flash fa-3x mt-5"></i>
+        <p class="text-3xl font-bold">{% trans "Design" %}</p>
+        <p class="w-1/2 text-center">{% trans "Layout, responsiveness and improvements" %}</p>
+        <button onclick="example('/search/?query=6&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
+    </div>
+
+    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+        <i class="fa fa-flash fa-3x mt-5"></i>
+        <p class="text-3xl font-bold">{% trans "Server Down" %}</p>
+        <p class="w-1/2 text-center">{% trans "500 Server Error and Downtime" %}</p>
+        <button onclick="example('/search/?query=7&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
+    </div>
+
+</div>
+
+<div class="w-full min-h-[200px] mt-[60px] flex justify-center">
+    <div class="w-[80%] h-full">
+        <div class="w-full mt-5 flex flex-wrap items-center justify-around">
+            <div class="w-full lg:w-[200px] h-[55px] bg-blue-600 flex justify-center items-center rounded-md m-4">
+                <p class="text-white text-3xl"> <i class="fa fa-bug"></i> 760 Bugs</p>
+            </div>
+            <div class="w-full lg:w-[200px] h-[55px] bg-green-600 flex justify-center items-center rounded-md m-4">
+                <p class="text-white text-3xl"> <i class="fa fa-user"></i> 760 Users</p>
+            </div>
+            <div class="w-full lg:w-[200px] h-[55px] bg-yellow-600 flex justify-center items-center rounded-md m-4">
+                <p class="text-white text-3xl"> <i class="fa fa-bullseye"></i> 760 Hunts</p>
+            </div>
+            <div class="w-full lg:w-[200px] h-[55px] bg-red-600 flex justify-center items-center rounded-md m-4">
+                <p class="text-white text-3xl"> <i class="fa fa-support"></i> 760 Domains</p>
             </div>
         </div>
-        <div class="row" data-intro="These are the lists of featured websites on BugHeist." data-step="2">
-            
-            {% for hunt in hunts %}
-            <div class="col-lg-6 col-md-6">
-                <div class="panel" id="hunt_{{domain.id}}" style="background-color:{{domain.get_color}}">
-                    <div class="panel-heading">
-                        <div class="row">
-                            <div class="col-xs-3  image_container">
-                                <img src="{{MEDIA_URL}}{{domain.logo}}" id="hunt_image{{domain.id}}"
-                                    onerror="this.onerror=null; this.style.display='none';" height="75" width="75">
-                            </div>
-                            <div class="col-xs-9 text-right">
-                                <div class="huge"><span><a
-                                            href="/domain/{{domain.name}}/">{{domain.get_name}}</a></span></div>
-                                <div>{% if domain.prize %}Grand Prize ${{domain.prize}}{% endif %}</div>
-                            </div>
-                        </div>
-                        <div class="row issue_count">
-                            <div class="col-xs-12 text-right">
-                                Issues
-                                <span>
-                                    <a href="/domain/{{domain.name}}/#open">Open {{domain.open_issues.count}}</a>
-                                </span>
-                                <span>
-                                    <a href="/domain/{{domain.name}}/#closed"> Closed {{domain.closed_issues.count}}</a>
-                                </span>
-                            </div>
-                        </div>
+    </div>
+</div>
+
+
+<p class="text-7xl text-center mb-[100px] font-sans text-[#B1B1B1]">LEADER BOARDS</p>
+<div class="w-full flex flex-wrap justify-around">
+
+    <div class="w-[500px] h-full border-[1px] border-gray-400 rounded-sm bg-white mx-2 mb-10">
+        <div class="w-full h-[80px]  flex justify-center items-center">
+            <p class="text-5xl font-bold">TOP COMPANY</p>
+        </div>
+        <div class="w-full">
+            {% for i in '1234567'|make_list %}
+                <div class="w-full h-[75px] border-y-[1.1px] px-6 border-gray-300 flex justify-between items-center cursor-pointer shadow-sm transform hover:-translate-y-1 hover:shadow-lg">
+                    <p class="text-3xl font-bold">{{i}}</p>
+                    <div>
+                        <p class="font-bold text-3xl">codehunter.com</p>
+                        <p class="text-2xl">2,789</p>
                     </div>
-                    <a href="{{domain.url}}" target="_new">
-                        <div class="panel-footer">
-                            <span class="pull-left" id="hunt_link{{domain.id}}" style="color:{{domain.get_color}}">View
-                                Website</span>
-                            <span class="pull-right"><i class="fa fa-arrow-circle-right" id="hunt_icon{{domain.id}}"
-                                    style="color:{{domain.get_color}}"></i></span>
-                            <div class="clearfix"></div>
-                        </div>
-                    </a>
+                    <button class="bg-red-500 text-white font-bold text-2xl px-9 py-4">SUBMIT BUG</button>
                 </div>
-            </div>
             {% endfor %}
-            {% endcomment %}
+        </div>
+    </div>
 
-            {% comment %}
-            <div class="col-lg-12 col-md-12">
-                <div class="panel owasp-panel">
-                    <div class="panel-heading" style="color:#fff">
-                        <div class="row">
-                            <div class="col-xs-3 image_container">
-                                <img src="https://www.owasp.org/images/thumb/2/2f/Owasp_logo_flat2_icon.jpg/100px-Owasp_logo_flat2_icon.jpg"
-                                    width="75" height="75">
-                            </div>
-                            <div class="col-xs-8 col-xs-offset-1">
-                                On OWASP.org - testing and reporting all of the salesforce integrations with webforms,
-                                and webform
-                                data on the website.
-                                Get a complete list of all of the forms in use which we can pull from the chapter
-                                (leaders)
-                                handbook, and the current site.
-                                test each one and file bug reports for them. In particular, each form should be able to
-                                do the
-                                following:
-                                Receive the post data accurately
-                                Return to the user's browser the confirmation that it was received on the screen when
-                                submitted
-                                along with an issue number.
-                                Issu8 a receipt to the user via email with complete data submitted by the form. If there
-                                is credit
-                                card info or personal info, it should be only partial but enough to verify that it was
-                                included in
-                                the submission.
-                                There should be a timeline or some kind of data that the user receives in the email to
-                                expect a
-                                resolution of their issue, and the forms should be logged in a place where the user can
-                                access the
-                                log data through their account, as well as tracked on the resolution and progress of the
-                                issue's
-                                progress.
-                            </div>
-                            <div class="col-xs-12 text-right">
-                                <strong>OWASP Grand Prize $100</strong>
-                            </div>
-                        </div>
-                        <div class="row issue_count">
-                            <div class="col-xs-12 text-right">
-                                <span>
-                                    <a href="/domain/owasp.org/#open">Open {{ open_issue_owasp }}</a>
-                                </span>
-                                <span>
-                                    <a href="/domain/owasp.org/#closed">Closed {{ closed_issue_owasp }}</a>
-                                </span>
-                            </div>
-                        </div>
+    <div class="w-[500px] h-full border-[1px] border-gray-400 rounded-sm bg-white mx-2 mb-10">
+        <div class="w-full h-[80px]  flex justify-center items-center">
+            <p class="text-5xl font-bold">TOP TESTER</p>
+        </div>
+        <div class="w-full">
+            {% for i in '1234567'|make_list %}
+                <div class="w-full h-[75px] border-y-[1.1px] px-6 border-gray-300 flex justify-between items-center cursor-pointer shadow-sm transform hover:-translate-y-1 hover:shadow-lg">
+                    <p class="text-3xl font-bold">{{i}}</p>
+                    <div>
+                        <p class="font-bold text-3xl">codehunter.com</p>
+                        <p class="text-2xl">2,789</p>
                     </div>
-                    <a href="https://www.owasp.org/index.php/Bug_Bounty_Projects" target="_new">
-                        <div class="panel-footer">
-                            <span class="pull-left" style="color:#234082">View Website</span>
-                            <span class="pull-right">
-                                <i class="fa fa-arrow-circle-right" style="color:#234082"></i>
-                            </span>
-                            <div class="clearfix"></div>
-                        </div>
-                    </a>
+                    <button class="bg-red-500 text-white font-bold text-2xl px-9 py-4">SUBMIT BUG</button>
                 </div>
-            </div>
-            
+            {% endfor %}
+        </div>
+    </div>
 
-        </div>
-        
-    </div>
-</div>
-{% endcomment %}
-<div class="row" style="margin-top: 27px;margin-left: 10px;">
-    <div class="col-lg-3 col-md-3">
-        <div class="panel panel-primary">
-            <div class="panel-heading">
-                <div class="row">
-                    <h4 class="text-center"><i class="fa fa-bug"></i> {{ bug_count }} Bugs</h4>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-3">
-        <div class="panel panel-green">
-            <div class="panel-heading">
-                <div class="row">
-                    <h4 class="text-center"><i class="fa fa-user"></i> {{ user_count }} Users</h4>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-3">
-        <div class="panel panel-yellow">
-            <div class="panel-heading">
-                <div class="row">
-                    <h4 class="text-center"><i class="fa fa-bullseye"></i> {{ hunt_count }} Hunts</h4>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-3">
-        <div class="panel panel-red">
-            <div class="panel-heading">
-                <div class="row">
-                    <h4 class="text-center"><i class="fa fa-support"></i> {{ domain_count }} Domains</h4>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
-<div class="row" data-intro="View latest activities here." data-step="3" style="margin-left: 10px;">
+
+
+<div class="row" data-intro="View latest activities here." data-step="3" style="margin-left: 10px; margin-top: 60px;">
     <div class="col-md-8">
         <h1 class="page-sub-header">Latest activity</h1>
         <div class="list-group">
@@ -355,10 +212,19 @@
         </div>
     </div>
 </div>
+
 <div class="row">
     <div class="col-lg-12">
         <h1 class="page-sub-header">Subscriptions:</h1>
     </div>
 </div>
 {% include '_subscriptions.html' %}
+
+<script>
+    function example(relative_path){
+        window.location.href = relative_path;
+    }
+</script>
+
 {% endblock %}
+
