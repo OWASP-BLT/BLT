@@ -3,44 +3,114 @@
 {% load i18n %}
 {% load account socialaccount %}
 
+{% block style %}
+<style>
+    .inner-addon {
+        position: relative;
+    }
+
+    .inner-addon .glyphicon {
+        position: absolute;
+        padding: 10px;
+        pointer-events: none;
+    }
+
+    .left-addon .glyphicon {
+        left: 0px;
+    }
+
+    .right-addon .glyphicon {
+        right: 0px;
+    }
+
+    .left-addon input {
+        padding-left: 30px;
+    }
+
+    .right-addon input {
+        padding-right: 30px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 {% get_providers as socialaccount_providers %}
+<div class="row">
+    <div class="panel-heading">
+        <div class="panel-title text-center">
+            <h1 class="text-center">Login</h1>
+            <hr />
+        </div>
+        {% if socialaccount_providers %}
+        <div class="row">
+            <div class="col-md-4 col-md-offset-4">
+                <div class="socialaccount_ballot text-center">
+                    <ul class="socialaccount_providers list-unstyled list-inline">
+                        {% for provider in socialaccount_providers %}
+                        {% if provider.id == "openid" %}
+                        {% for brand in provider.get_brands %}
+                        <li>
+                            <a title="{{ brand.name }}"
+                                class="socialaccount_provider {{ provider.id }} {{ brand.id }} btn btn-default"
+                                href="{% provider_login_url provider.id openid=brand.openid_url process=process %}">{{ brand.name }}</a>
+                        </li>
+                        {% endfor %}
+                        {% endif %}
+                        <li>
+                            <a title="{{ provider.name }}"
+                                class="socialaccount_provider {{ provider.id }} btn btn-default"
+                                href="{% provider_login_url provider.id process=process scope=scope auth_params=auth_params %}">{{ provider.name }}</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% include "socialaccount/snippets/login_extra.html" %}
+        {% endif %}
+    </div>
+    <div class="col-md-4 col-md-offset-4 col-lg-4 col-lg-offset-4">
+        <div class="row main">
+            <div class="main-issue-form main-center">
+                <form class="login" method="POST" action="{% url 'account_login' %}">
+                    {% csrf_token %}
+                    {% if redirect_field_value %}
+                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                    {% endif %}
+                    <div class="form-group inner-addon left-addon {% if form.login.errors %}has-error{% endif %}">
+                        <i class="glyphicon glyphicon-user"></i>
+                        <input class="form-control" type="text" id="id_login" name="login" placeholder="Username">
+                        <span class="help-block">{{ form.login.errors }}</span>
+                    </div>
+                    <div class="form-group inner-addon left-addon {% if form.password.errors %}has-error{% endif %}">
+                        <i class="glyphicon glyphicon-lock"></i>
+                        <input class="form-control login-field" type="password" id="id_password" name="password"
+                            placeholder="Password">
+                        <span class="help-block">{{ form.password.errors }}</span>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" id="id_remember" name="remember"> Remember Me
+                        </label>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-primary pull-right" name="login_button"
+                            type="submit">{% trans "Sign In" %}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <span class="btn"><a href="{% url 'account_reset_password' %}">{% trans "Forgot Password?" %}</a> | Not yet a
+            member? <a href="{% url 'account_signup' %}">Join</a></span>
+            {% if form.errors %}
+                    <div>
+                        {% for _, error in form.errors.items %}
+                        <strong style="color: red;">{{ error }}</strong>
+                        {% endfor %}
+                    </div>
+            {% endif %}
+    </div>
 
-<div class="max-w-md mx-auto bg-white shadow-xl rounded my-8 ">
-    <div class="text-center text-gray-600 py-4">Sign in with</div>
-    <div class="flex justify-center mb-10">
-      <button class="flex items-center bg-gray-100 shadow-md border border-gray-200 rounded px-4 py-2 mr-2">
-        <svg class="fill-current text-gray-600 w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M10 20a10 10 0 1 1 0-20 10 10 0 0 1 0 20zM7 6v2a3 3 0 1 0 6 0V6a3 3 0 1 0-6 0zm-3.65 8.44a8 8 0 0 0 13.3 0 15.94 15.94 0 0 0-13.3 0z"/></svg>
-        <div class="text-indigo-700">Facebook</div>
-      </button>
-      <button class="flex items-center bg-gray-100 shadow-md border border-gray-200 rounded px-4 py-2 mr-2">
-        <svg class="fill-current text-gray-600 w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M10 20a10 10 0 1 1 0-20 10 10 0 0 1 0 20zM7 6v2a3 3 0 1 0 6 0V6a3 3 0 1 0-6 0zm-3.65 8.44a8 8 0 0 0 13.3 0 15.94 15.94 0 0 0-13.3 0z"/></svg>
-        <div class="text-indigo-700">GitHub</div>
-      </button>
-    </div>
-    <div class="bg-gray-200 pt-8 pb-16">
-      <div class="text-center text-gray-600 mb-6">Or sign in with Email & Password</div>
-      <div class="w-4/5 mx-auto">
-        <div class="flex items-center bg-white rounded shadow-md mb-4">
-          <span class="px-3">
-            <svg class="fill-current text-gray-500 w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M18 2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4c0-1.1.9-2 2-2h16zm-4.37 9.1L20 16v-2l-5.12-3.9L20 6V4l-10 8L0 4v2l5.12 4.1L0 14v2l6.37-4.9L10 14l3.63-2.9z"/></svg>
-          </span>
-          <input class="w-full h-12 focus:outline-none" type="email" name="email" placeholder="Email">
-        </div>
-        <div class="flex items-center bg-white rounded shadow-md mb-4">
-          <span class="px-3">
-            <svg class="fill-current text-gray-500 w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M4 8V6a6 6 0 1 1 12 0h-3v2h4a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-8c0-1.1.9-2 2-2h1zm5 6.73V17h2v-2.27a2 2 0 1 0-2 0zM7 6v2h6V6a3 3 0 0 0-6 0z"/></svg>
-          </span>
-          <input class="w-full h-12 focus:outline-none" type="password" name="password" placeholder="Password">
-        </div>
-        <div class="mb-4">
-          <input type="checkbox" name="remember" class="mr-1">
-          <label for="remember" class="text-sm text-gray-600">Remember me</label>
-        </div>
-        <button class="bg-indigo-600 block mx-auto text-white text-sm uppercase rounded shadow-md px-6 py-2">Sign in</button>
-      </div>
-    </div>
-  </div>
-  
+</div>
 
 {% endblock %}
