@@ -1,3 +1,4 @@
+/*
 $(document).ready(function () {
     var button = document.createElement("Button");
     button.style = "bottom:15px;left:15px;position:fixed;z-index: 12;border-radius:100%;background-color:white; background: white url('https://www.bugheist.com/static/img/logo.png') no-repeat center; height: 50px; width: 50px; outline: none;background-size: 30px 30px;"
@@ -9,4 +10,5 @@ $(document).ready(function () {
         redirectWindow.location;
     }
 });
+*/
 	
