@@ -121,6 +121,7 @@
         <div class="w-full">
             {% for company in top_companies %}
                 <div class="w-full h-[75px] border-y-[1.1px] px-6 border-gray-300 flex justify-between items-center cursor-pointer shadow-sm transform hover:-translate-y-1 hover:shadow-lg">
+                    <p class="text-3xl font-bold">{{ forloop.counter }}</p>
                     <div class="w-[50%] h-[100%] flex flex-col justify-center">
                         <p class="font-bold text-3xl text-left">{{company.domain__name}}</p>
                         <p class="text-2xl mt-2">{{ company.count }}</p>
