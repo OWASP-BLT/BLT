@@ -158,6 +158,9 @@ def index2(request, template="index2.html"):
     for activity in Issue.objects.all():
         activity_screenshots[activity] = IssueScreenshot.objects.filter(issue=activity).first()
 
+    top_companies = Issue.objects.values("domain__name").annotate(count=Count('domain__name')).order_by("-count")[:10]
+    top_testers = Issue.objects.values("user__id","user__username").filter(user__isnull=False).annotate(count=Count('user__username')).order_by("-count")[:10]
+
     context = {
         "activities": Issue.objects.all()[0:10],
         "domains": domains,
@@ -174,7 +177,9 @@ def index2(request, template="index2.html"):
         "hunt_count": hunt_count,
         "domain_count": domain_count,
         "captcha_form": captcha_form,
-        "activity_screenshots":activity_screenshots
+        "activity_screenshots":activity_screenshots,
+        "top_companies":top_companies,
+        "top_testers":top_testers
     }
     return render(request, template, context)
 
