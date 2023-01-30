@@ -119,14 +119,14 @@
             <p class="text-5xl font-bold">TOP COMPANY</p>
         </div>
         <div class="w-full">
-            {% for i in '1234567'|make_list %}
+            {% for company in top_companies %}
                 <div class="w-full h-[75px] border-y-[1.1px] px-6 border-gray-300 flex justify-between items-center cursor-pointer shadow-sm transform hover:-translate-y-1 hover:shadow-lg">
-                    <p class="text-3xl font-bold">{{i}}</p>
-                    <div>
-                        <p class="font-bold text-3xl">codehunter.com</p>
-                        <p class="text-2xl">2,789</p>
+                    <p class="text-3xl font-bold">{{ forloop.counter }}</p>
+                    <div class="w-[50%] h-[100%] flex flex-col justify-center">
+                        <p class="font-bold text-3xl text-left">{{company.domain__name}}</p>
+                        <p class="text-2xl mt-2">{{ company.count }}</p>
                     </div>
-                    <button class="bg-red-500 text-white font-bold text-2xl px-9 py-4">SUBMIT BUG</button>
+                    <a class="bg-red-500 text-white font-bold text-2xl px-9 py-4 hover:no-underline hover:text-white" href="{% url 'domain' slug=company.domain__name %}" >SUBMIT A BUG</a>
                 </div>
             {% endfor %}
         </div>
@@ -137,16 +137,17 @@
             <p class="text-5xl font-bold">TOP TESTER</p>
         </div>
         <div class="w-full">
-            {% for i in '1234567'|make_list %}
+            {% for tester in top_testers %}
                 <div class="w-full h-[75px] border-y-[1.1px] px-6 border-gray-300 flex justify-between items-center cursor-pointer shadow-sm transform hover:-translate-y-1 hover:shadow-lg">
-                    <p class="text-3xl font-bold">{{i}}</p>
-                    <div>
-                        <p class="font-bold text-3xl">codehunter.com</p>
-                        <p class="text-2xl">2,789</p>
+                    <p class="text-3xl font-bold">{{ forloop.counter }}</p>
+                    <div class="w-[50%] h-[100%] flex flex-col justify-center">
+                        <p class="font-bold text-3xl text-left">{{tester.user__username}}</p>
+                        <p class="text-2xl mt-2">{{ tester.count }}</p>
                     </div>
-                    <button class="bg-red-500 text-white font-bold text-2xl px-9 py-4">SUBMIT BUG</button>
+                    <a class="bg-red-500 text-white font-bold text-2xl px-9 py-4 hover:no-underline hover:text-white" href="{% url 'profile' slug=tester.user__username %}" >VIEW PROFILE</a>
                 </div>
             {% endfor %}
+        </div>
         </div>
     </div>
 
@@ -221,6 +222,9 @@
 {% include '_subscriptions.html' %}
 
 <script>
+    function company(domain){
+        window.location.href = `{% url 'company_dashboar_home' %}`
+    }
     function example(relative_path){
         window.location.href = relative_path;
     }
