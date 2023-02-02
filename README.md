@@ -12,7 +12,7 @@
 - Organizations / Companies can launch their bughunt programs with prize pools. <br>
 
 
-## Bugheist Bug Reporting Plugin
+## BLT Bug Reporting Plugin
 
 A floating bug reporting button for your website which redirects back to Bugheist and help's users to report bug for that specific page. Just embed this script within body tag of your page to enable this plugin.
 
@@ -66,7 +66,6 @@ BLT mobile version codebase which is built in Flutter is available at [BLT Flutt
 ## Notes
 
 - If you find a bug or have an improvement, use BLT to report it!
-- Our staging server is at https://bugheist-staging.herokuapp.com/ - staging uses the master branch and we have review apps setup that deploy a new instance for each pull request. 
 - for each new issue, create a new branch with issue-382 or similar matching the issue number - when you commit add fixes #288 to link the issue to the pull request
 - Our Figma desins are also Open Source you can see them here https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Bugheist-Full-Design to contribute to the design, add a pull request to the design changes file and we will merge them into our main figma file.
-- to take a github issue type a comment that says "assign to me" and it will assign it to you.
+- to take a github issue type a comment that says "assign to me" or /assign and it will assign it to you.
