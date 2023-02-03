@@ -11,7 +11,6 @@ from rest_framework.views import APIView
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.decorators import action
 
 from website.models import (
     Issue,
@@ -27,13 +26,10 @@ from website.models import (
     UserProfile,
     User,
     Points,
-    IssueScreenshot
+    Hunt
 )
 
 from website.views import (
-    GlobalLeaderboardView,
-    EachmonthLeaderboardView,
-    SpecificMonthLeaderboardView,
     LeaderboardBase
 
 )
@@ -65,12 +61,34 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     search_fields = ("id", "user__id", "user__username")
     http_method_names = ["get", "post", "head","put"]
 
-    def update(self, request, pk,*args, **kwargs):
-
-        if UserProfile.objects.filter(id=pk).first().user != request.user:
-            return Response("NOT AUTHORIZED",401)
+    def retrieve(self, request,pk,*args, **kwargs):
         
-        return super().update(request, *args, **kwargs)
+        user_profile = UserProfile.objects.filter(user__id=pk).first()
+
+        if user_profile == None:
+            return Response({"detail": "Not found."},status=404)
+        
+        serializer = self.get_serializer(user_profile)
+        return Response(serializer.data)
+
+    def update(self, request, pk,*args, **kwargs):
+        
+        user_profile = request.user.userprofile
+        
+        if user_profile==None:
+            return Response({"detail": "Not found."},status=404)
+        
+        instance = user_profile
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
 
 
 class DomainViewSet(viewsets.ModelViewSet):
@@ -103,11 +121,10 @@ class IssueViewSet(viewsets.ModelViewSet):
 
         screenshots = [
             # replacing space with url space notation
-            screenshot["image"].replace(" ","%20")
+            request.build_absolute_uri(screenshot.image.url)
             for screenshot in 
-            issue.screenshots.values("image").all()
-        ] + ( [issue.screenshot.url] if issue.screenshot else [] )
-
+            issue.screenshots.all()
+        ] + ( [request.build_absolute_uri(issue.screenshot.url)] if issue.screenshot else [] )
 
         upvotes = issue.upvoted.all().__len__()
         flags = issue.flaged.all().__len__()
@@ -119,13 +136,19 @@ class IssueViewSet(viewsets.ModelViewSet):
             upvotted = bool(request.user.userprofile.issue_upvoted.filter(id=issue.id).first())
             flagged = bool(request.user.userprofile.issue_flaged.filter(id=issue.id).first())          
 
+        issue = Issue.objects.filter(id=issue.id)
+        issue_obj = issue.first()
+
+        issue_data = IssueSerializer(issue_obj)
+
         return {
-            **Issue.objects.values().filter(id=issue.id).first(),
+            **issue_data.data,
+            "closed_by": issue_obj.closed_by.username if issue_obj.closed_by else None,
             "upvotes": upvotes,
             "flags": flags,
             "upvotted": upvotted,
             "flagged": flagged,
-            "screenshots": screenshots
+            "screenshots":screenshots
         }
 
 
@@ -333,3 +356,21 @@ class LeaderboardApiViewSet(APIView):
         
         else:
             return self.global_leaderboard(request,*args,**kwargs)
+
+
+class StatsApiViewset(APIView):
+
+    def get(self,request,*args,**kwargs):
+
+        bug_count =  Issue.objects.all().count()
+        user_count = User.objects.all().count()
+        hunt_count = Hunt.objects.all().count()
+        domain_count = Domain.objects.all().count()
+
+
+        return Response({
+            "bugs":bug_count,
+            "users":user_count,
+            "hunts":hunt_count,
+            "domains":domain_count
+        }) 

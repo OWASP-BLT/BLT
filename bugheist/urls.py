@@ -56,7 +56,8 @@ from website.api.views import (
     UserProfileViewSet,
     LikeIssueApiView,
     FlagIssueApiView,
-    LeaderboardApiViewSet
+    LeaderboardApiViewSet,
+    StatsApiViewset
 )
 
 from bugheist import settings
@@ -144,6 +145,7 @@ urlpatterns = [
         r"^redoc/$", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"
     ),
     re_path(r"^$", website.views.index, name="index"),
+    path("index2/", website.views.index2, name="index2"),
     re_path(
         r"^dashboard/company/$",
         website.views.company_dashboard,
@@ -274,7 +276,7 @@ urlpatterns = [
         r"^unsave_issue/(?P<issue_pk>\d+)/$",
         website.views.unsave_issue,
         name="unsave_issue",
-    ),
+    ), 
     re_path(r"^issue/edit/$", website.views.IssueEdit, name="edit_issue"),
     re_path(r"^issue/update/$", website.views.UpdateIssue, name="update_issue"),
     re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
@@ -348,6 +350,7 @@ urlpatterns = [
     re_path(r"^i18n/", include("django.conf.urls.i18n")),
     re_path(r"^domain_check/$", website.views.domain_check, name="domain_check"),
     re_path(r"^api/v1/", include(router.urls)),
+    re_path(r"^api/v1/stats/$", StatsApiViewset.as_view(), name="get_score"),
     re_path(r"^api/v1/userscore/$", website.views.get_score, name="get_score"),
     re_path(r"^authenticate/", CustomObtainAuthToken.as_view()),
     re_path(r"^api/v1/createwallet/$", website.views.create_wallet, name="create_wallet"),

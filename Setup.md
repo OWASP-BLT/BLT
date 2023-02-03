@@ -21,6 +21,9 @@
  ### open container bash terminal
  docker exec -it <container id> /bin/bash
 
+ ### migrate SQL commands in the database file
+ python manage.py migrate
+
  ### collect staticfiles
  python manage.py collectstatic
  
