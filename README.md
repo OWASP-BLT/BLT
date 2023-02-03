@@ -18,7 +18,7 @@ Please follow the development server setup procedure [here](https://github.com/O
 ### Documentation
 
 - use the [Installation Docs ](https://github.com/OWASP/BLT/blob/main/Setup.md) to get started.
-- Swagger API Documentations: [Swagger Docs](https://www.bugheist.com/swagger/)
+- Swagger API Documentations: localhost/swagger/
 - Postman API Documentations:  [Postman Docs](https://documenter.getpostman.com/view/19782933/VUqpscyV).
 
 ### Resources
@@ -33,16 +33,10 @@ Please follow the development server setup procedure [here](https://github.com/O
 Please follow the [black](https://github.com/psf/black) code style for the project. It helps us in keeping the codebase consistent and improves readibility for other developers.
 
 ### License
-The BLT code is released under [GNU Affero General Public License v3.0 (AGPL-3.0)](https://github.com/OWASP/BLT/blob/master/LICENSE.md).
-
-
-## Mobile App
-BLT mobile version codebase which is built in Flutter is available at [BLT Flutter](https://github.com/Bugheist/Flutter).
-
+The BLT code is released under [GNU Affero General Public License v3.0 (AGPL-3.0)](https://github.com/OWASP/BLT/blob/master/LICENSE.
 
 ## Notes
 
 - If you find a bug or have an improvement, use BLT to report it!
 - for each new issue, create a new branch with issue-382 or similar matching the issue number - when you commit add fixes #288 to link the issue to the pull request
-- Our Figma desins are also Open Source you can see them here https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Bugheist-Full-Design to contribute to the design, add a pull request to the design changes file and we will merge them into our main figma file.
 - to take a github issue type a comment that says "assign to me" or /assign and it will assign it to you.
