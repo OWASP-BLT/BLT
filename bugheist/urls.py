@@ -48,6 +48,9 @@ from website.views import (
     GithubLogin,
     GoogleLogin,
     GoogleConnect,
+    github_callback,
+    google_callback,
+    facebook_callback
 )
 from website.api.views import (
     IssueViewSet,
@@ -110,11 +113,11 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path("auth/github/", GithubLogin.as_view(), name="github_login"),
     path("auth/google/", GoogleLogin.as_view(), name="google_login"),
-    # path("accounts/github/login/callback/", github_callback, name="github_callback"),
-    # path("accounts/google/login/callback/", google_callback, name="google_callback"),
-    # path(
-    #     "accounts/facebook/login/callback/", facebook_callback, name="facebook_callback"
-    # ),
+    path("accounts/github/login/callback/", github_callback, name="github_callback"),
+    path("accounts/google/login/callback/", google_callback, name="google_callback"),
+    path(
+        "accounts/facebook/login/callback/", facebook_callback, name="facebook_callback"
+    ),
     re_path(
         r"^auth/facebook/connect/$", FacebookConnect.as_view(), name="facebook_connect"
     ),
@@ -317,7 +320,7 @@ urlpatterns = [
         login_required(CreateInviteFriend.as_view()),
         name="invite_friend",
     ),
-    re_path(r"^terms/$", TemplateView.as_view(template_name="terms.html")),
+    re_path(r"^terms/$", TemplateView.as_view(template_name="terms.html"),name="terms"),
     re_path(r"^about/$", TemplateView.as_view(template_name="about.html")),
     re_path(r"^privacypolicy/$", TemplateView.as_view(template_name="privacy.html")),
     re_path(r"^stats/$", StatsDetailView.as_view(), name="stats"),
