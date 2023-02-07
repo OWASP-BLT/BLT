@@ -6,6 +6,7 @@
     justify-content: center;
     align-items: center;
     gap: 3rem;
+    margin-bottom: 100px;
   }
 
   .subscription img {
@@ -18,13 +19,26 @@
     flex-direction: column;
     gap: 1rem;
     background: #f76b78;
-    width: 26rem;
+    width: 30rem;
     color: #fff;
     justify-content: center;
     align-items: center;
     transition: 0.3s ease-in-out;
     position: relative;
     cursor: pointer;
+    height: 120px;
+
+    
+  }
+
+   .subscription__plan:hover {
+    background: #99000f;
+    transition: 0.3s ease-in-out;
+    transform: scale(1.1);
+  }
+
+  .subscription__plan:hover .subscription__started {
+    display: block;
   }
 
   .plan__main {
@@ -52,15 +66,6 @@
     margin-top: 0;
     font-size: 1.7rem;
     font-weight: 800;
-  }
-
-  .subscription__plan:hover {
-    background: #ff122a;
-    transition: 0.3s ease-in-out;
-  }
-
-  .subscription__plan:hover .subscription__started {
-    display: block;
   }
 
   .subscription__started {
@@ -102,7 +107,7 @@
       <img src="{% static 'img/ant.svg' %}" alt="ant-plan-img" />
       <div class="plan__desc">
         <h3>Ant</h3>
-        <p>$9.00 <span>/month</span></p>
+        <p>$99.00 <span>/month</span></p>
       </div>
     </div>
     <p class="plan__info">$25 Leaderboard | $50 Bug Bounty</p>
@@ -119,10 +124,10 @@
       <img src="{% static 'img/wasp.svg' %}" alt="wasp-plan-img" />
       <div class="plan__desc">
         <h3>Wasp</h3>
-        <p>$9.00 <span>/month</span></p>
+        <p>$499 <span>/month</span></p>
       </div>
     </div>
-    <p class="plan__info">$25 Leaderboard | $50 Bug Bounty</p>
+    <p class="plan__info">$100 Leaderboard | $300 Bug Bounty</p>
 
     <button
       type="submit"
@@ -137,10 +142,10 @@
       <img src="{% static 'img/scorpion.svg' %}" alt="scorpion-plan-img" />
       <div class="plan__desc">
         <h3>Scorpion</h3>
-        <p>$9.00 <span>/month</span></p>
+        <p>$1,499 <span>/month</span></p>
       </div>
     </div>
-    <p class="plan__info">$25 Leaderboard | $50 Bug Bounty</p>
+    <p class="plan__info">$1,499 Leaderboard | $100 Bug Bounty</p>
     <button
       type="submit"
       onclick="window.location.href='/hunt';"
