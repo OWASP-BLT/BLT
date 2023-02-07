@@ -1,142 +1,152 @@
-{% load static %}
-{% load gravatar %}
-{% load i18n %}
+{% load static %} {% load gravatar %} {% load i18n %}
 <style>
-    .subrow .col-md-6:nth-child(1) .panel {
-        background-color: #F76B78;
-    }
+  .subscription {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 3rem;
+  }
 
-    .subrow .col-md-6:nth-child(2) .panel {
-        background-color: #DC4353;
-    }
+  .subscription img {
+    max-width: 6rem;
+  }
 
-    .subrow .col-md-6:nth-child(3) .panel {
-        background-color: #C41E2E;
-    }
+  .subscription__plan {
+    display: flex;
+    padding: 1.5rem;
+    flex-direction: column;
+    gap: 1rem;
+    background: #f76b78;
+    width: 26rem;
+    color: #fff;
+    justify-content: center;
+    align-items: center;
+    transition: 0.3s ease-in-out;
+    position: relative;
+    cursor: pointer;
+  }
 
-    .subrow .col-md-6:nth-child(4) .panel {
-        background-color: #9B0C1A;
-    }
+  .plan__main {
+    font-size: 3rem;
+    font-weight: 700;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+  }
+  .plan__desc {
+    display: flex;
+    flex-direction: column;
+  }
+  .plan__desc p {
+    display: flex;
+    margin: 0;
+  }
+  .plan__desc p span {
+    font-size: 1.5rem;
+    margin-top: 2rem;
+  }
+  .plan__desc h3 {
+    margin-bottom: -0.5rem;
+    margin-top: 0;
+    font-size: 1.7rem;
+    font-weight: 800;
+  }
 
-    .subrow .col-md-6:nth-child(1) .panel button {
-        background-color: #F76B78;
-        border-color: #F76B78;
-    }
+  .subscription__plan:hover {
+    background: #ff122a;
+    transition: 0.3s ease-in-out;
+  }
 
-    .subrow .col-md-6:nth-child(2) .panel button {
-        background-color: #DC4353;
-        border-color: #DC4353;
-    }
+  .subscription__plan:hover .subscription__started {
+    display: block;
+  }
 
-    .subrow .col-md-6:nth-child(3) .panel button {
-        background-color: #C41E2E;
-        border-color: #C41E2E;
-    }
-
-    .subrow .col-md-6:nth-child(4) .panel button {
-        background-color: #9B0C1A;
-        border-color: #9B0C1A;
-    }
-
-    .image-subs {
-        margin-left: 10px;
-    }
-
-    .plan-style {
-        font-size: 24pt
-    }
-
-    .plan-color {
-        color: white;
-    }
-
-    .newsletter {
-        font-size: 18pt;
-    }
-
-    .announce {
-        font-size: 20pt;
-    }
+  .subscription__started {
+    padding: 1rem;
+    background: #f76b78;
+    display: none;
+    transition: 0.3s ease-in-out;
+    position: absolute;
+    bottom: -2rem;
+    left: 50%;
+    transform: translate(-50%, 0);
+    border: none;
+  }
+  .plan__info {
+    text-align: center;
+    margin-top: -0.5rem;
+  }
 </style>
 
-<div class="subrow">
-    <div class="col-lg-4 col-md-6">
-        <div class="panel">
-            <div class="panel-heading">
-                <div class="row">
-                    <div class="pull-left image-subs">
-                        <img src="{% static 'img/flea.svg' %}" width="100" height="100">
-                    </div>
-                    <div class="col-xs-6 text-right pull-right plan-color">
-                        <div class="huge">Flea</div>
-                        <span class="plan-style">$9</span> / month
-                    </div>
-                </div>
-            </div>
-            <div class="panel-footer">
-                <span class="pull-left"><i
-                        class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span>
-                <span class="pull-right"></span>
-                <div class="clearfix"></div>
-                </br>
-                <center>
-                    <button type="submit" onclick="window.location.href='/hunt';" class="btn btn-primary btn-lg"
-                            id="btn">{% trans "Start" %}</button>
-                </center>
-            </div>
-        </div>
+<div class="subscription">
+  <div class="subscription__plan">
+    <div class="plan__main">
+      <img src="{% static 'img/flea.svg' %}" alt="flea-plan-img" />
+      <div class="plan__desc">
+        <h3>Flea</h3>
+        <p>$9.00 <span>/month</span></p>
+      </div>
     </div>
-    <div class="col-lg-4 col-md-6">
-        <div class="panel">
-            <div class="panel-heading">
-                <div class="row">
-                    <div class="pull-left image-subs">
-                        <img src="{% static 'img/ant.svg' %}" width="100" height="100">
-                    </div>
-                    <div class="col-xs-6 text-right pull-right plan-color">
-                        <div class="huge">Ant</div>
-                        <span class="plan-style">$99</span> / month
-                    </div>
-                </div>
-            </div>
-            <div class="panel-footer">
-                <span class="pull-left"><i
-                        class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span></br>
-                <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %} </span>
-                <div class="clearfix"></div>
-                </br>
-                <center>
-                    <button type="submit" onclick="window.location.href='/hunt';" onclick="changeValue(this)"
-                            class="btn btn-primary btn-lg ">{% trans "Start" %} </button>
-                </center>
-            </div>
-        </div>
+    <button
+      type="submit"
+      onclick="window.location.href='/hunt';"
+      class="subscription__started"
+    >
+      {% trans "Get Started" %}
+    </button>
+  </div>
+  <div class="subscription__plan">
+    <div class="plan__main">
+      <img src="{% static 'img/ant.svg' %}" alt="ant-plan-img" />
+      <div class="plan__desc">
+        <h3>Ant</h3>
+        <p>$9.00 <span>/month</span></p>
+      </div>
     </div>
-    <div class="col-lg-4 col-md-6">
-        <div class="panel">
-            <div class="panel-heading">
-                <div class="row">
-                    <div class="pull-left image-subs">
-                        <img src="{% static 'img/wasp.svg' %}" width="100" height="100">
-                    </div>
-                    <div class="col-xs-6 text-right pull-right plan-color">
-                        <div class="huge">Wasp</div>
-                        <span class="plan-style">$499</span> / month
-                    </div>
-                </div>
-            </div>
-            <div class="panel-footer">
-                <span class="pull-left"><i
-                        class="fa fa-balance-scale fa-1x"></i> {% trans "Featured on Homepage" %}</span></br>
-                <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %} </span>
-                <span class="pull-left announce"><i class="fa fa-globe"></i> {% trans "Announced to Users" %}</span>
-                <div class="clearfix"></div>
-                </br>
-                <center>
-                    <button type="submit" onclick="window.location.href='/hunt';"
-                            class="btn btn-primary btn-lg">{% trans "Start" %} </button>
-                </center>
-            </div>
-        </div>
+    <p class="plan__info">$25 Leaderboard | $50 Bug Bounty</p>
+    <button
+      type="submit"
+      onclick="window.location.href='/hunt';"
+      class="subscription__started"
+    >
+      {% trans "Get Started" %}
+    </button>
+  </div>
+  <div class="subscription__plan">
+    <div class="plan__main">
+      <img src="{% static 'img/wasp.svg' %}" alt="wasp-plan-img" />
+      <div class="plan__desc">
+        <h3>Wasp</h3>
+        <p>$9.00 <span>/month</span></p>
+      </div>
     </div>
+    <p class="plan__info">$25 Leaderboard | $50 Bug Bounty</p>
+
+    <button
+      type="submit"
+      onclick="window.location.href='/hunt';"
+      class="subscription__started"
+    >
+      {% trans "Get Started" %}
+    </button>
+  </div>
+  <div class="subscription__plan">
+    <div class="plan__main">
+      <img src="{% static 'img/scorpion.svg' %}" alt="scorpion-plan-img" />
+      <div class="plan__desc">
+        <h3>Scorpion</h3>
+        <p>$9.00 <span>/month</span></p>
+      </div>
+    </div>
+    <p class="plan__info">$25 Leaderboard | $50 Bug Bounty</p>
+    <button
+      type="submit"
+      onclick="window.location.href='/hunt';"
+      class="subscription__started"
+    >
+      {% trans "Get Started" %}
+    </button>
+  </div>
 </div>
