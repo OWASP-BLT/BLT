@@ -184,19 +184,19 @@ def index2(request, template="index2.html"):
     return render(request, template, context)
 
 
-# def github_callback(request):
-#     params = urllib.parse.urlencode(request.GET)
-#     return redirect(f"{settings.CALLBACK_URL_FOR_GITHUB}?{params}")
+def github_callback(request):
+    params = urllib.parse.urlencode(request.GET)
+    return redirect(f"{settings.CALLBACK_URL_FOR_GITHUB}?{params}")
 
 
-# def google_callback(request):
-#     params = urllib.parse.urlencode(request.GET)
-#     return redirect(f"{settings.CALLBACK_URL_FOR_GOOGLE}?{params}")
+def google_callback(request):
+    params = urllib.parse.urlencode(request.GET)
+    return redirect(f"{settings.CALLBACK_URL_FOR_GOOGLE}?{params}")
 
 
-# def facebook_callback(request):
-#     params = urllib.parse.urlencode(request.GET)
-#     return redirect(f"{settings.CALLBACK_URL_FOR_FACEBOOK}?{params}")
+def facebook_callback(request):
+    params = urllib.parse.urlencode(request.GET)
+    return redirect(f"{settings.CALLBACK_URL_FOR_FACEBOOK}?{params}")
 
 
 class FacebookLogin(SocialLoginView):
