@@ -3,22 +3,22 @@
 {% load i18n %}
 
 {% block content %}
-<div class="flex items-center min-h-screen p-4 bg-gray-100 lg:justify-center">
+<div class="flex items-center w-[100%] min-h-screen p-4 bg-gray-100 lg:justify-center">
     <div
-      class="flex flex-col  lg:scale-150 overflow-hidden bg-white rounded-md shadow-lg max md:flex-row md:flex-1 lg:max-w-screen-md"
+      class="flex flex-col  lg:scale-150 overflow-hidden bg-white rounded-md shadow-lg max md:flex-row md:flex-1 lg:max-w-screen-sm"
     >
       <div
         class="p-4 py-6 text-white bg-red-500 md:w-80 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly"
       >
         <div class="my-3 text-4xl font-bold tracking-wider text-center">
-          <a href="#">BUGHEIST</a>
+          <a href="{% url 'index' %}" class="hover:no-underline text-white hover:text-white">BUGHEIST</a>
         </div>
         <p class="mt-6 font-normal text-center text-white text-xl md:mt-0">
             OWASP BLT is a bug logging tool to report issues and get points, companies are held accountable.
         </p>
         <p class="flex flex-col items-center justify-center text-sm mt-10 text-center">
           <span>Already have an account?</span>
-          <a href="{% url 'account_login' %}" class="underline">Login!</a>
+          <a href="{% url 'account_login' %}" class="underline text-white">Login!</a>
         </p>
         <p class="mt-6 text-sm text-center text-white">
           Read our <a href="{% url 'terms' %}" class="underline">terms</a> and <a href="{% url 'terms' %}" class="underline">conditions</a>
@@ -35,7 +35,7 @@
               type="text"
               id="id_username"
               name="username"
-              class="px-4 py-2 transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200"
+              class="px-4 py-2 w-[100%] h-[28px]  transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200"
               />
               <span class="help-block">{{ form.username.errors }}</span>
           </div>
@@ -45,7 +45,7 @@
               type="email"
               id="id_email"
               name="email"
-              class="px-4 py-2 transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200"
+              class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200"
               />
             <span class="help-block">{{ form.email.errors }}</span>
           </div>
@@ -57,7 +57,7 @@
               type="password"
               id="id_password"
               name="password1"
-              class="px-4 py-2 transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200"
+              class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200"
             />
             <span class="help-block">{{ form.password1.errors }}</span>
           </div>
@@ -69,7 +69,7 @@
               type="password"
               id="id_password2"
               name="password2"
-              class="px-4 py-2 transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200"
+              class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200"
             />
             <span class="help-block">{{ form.password2.errors }}</span>
           </div>
@@ -80,7 +80,7 @@
             <button
               type="submit"
               name="signup_button"
-              class="w-full px-4 py-2 text-lg font-semibold text-white transition-colors duration-300 bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4"
+              class="px-4 py-2 w-[30%] h-[28px] text-lg font-semibold text-white transition-colors duration-300 bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4"
             >
               Sign Up
             </button>
