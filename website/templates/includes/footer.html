@@ -20,7 +20,7 @@
                         {% for lang in LANGUAGES %}
 
                         {% if lang.0 == LANGUAGE_CODE %}
-                        <option value="{{ lang.0 }}" class="" selected="selected">{{ lang.1 }} ({{ lang.0 }})</option>
+                        <option value="{{ lang.0 }}" selected="selected">{{ lang.1 }} ({{ lang.0 }})</option>
                         {% else %}
                         <option value="{{ lang.0 }}">{{ lang.1 }} ({{ lang.0 }})</option>
                         {% endif %}

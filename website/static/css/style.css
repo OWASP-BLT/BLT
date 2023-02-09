@@ -531,7 +531,7 @@ textarea {
 }
 
 /* Footer */
-/* color: #d2d1d1; <-- color for pageFooter a color*/
+/* color: #d2d1d1; <-- old pageFooter <a> color*/
 
 #pageFooter a:hover,
 #pageFooter a:focus {
