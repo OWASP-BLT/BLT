@@ -4,16 +4,15 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('website', '0055_auto_20200621_1227'),
+        ("website", "0055_auto_20200621_1227"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='hunt',
-            name='description_html',
-            field=models.CharField(default='', max_length=512),
+            model_name="hunt",
+            name="description_html",
+            field=models.CharField(default="", max_length=512),
             preserve_default=False,
         ),
     ]

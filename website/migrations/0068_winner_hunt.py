@@ -5,15 +5,19 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('website', '0067_auto_20200827_1738'),
+        ("website", "0067_auto_20200827_1738"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='winner',
-            name='hunt',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='website.Hunt'),
+            model_name="winner",
+            name="hunt",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="website.Hunt",
+            ),
         ),
     ]

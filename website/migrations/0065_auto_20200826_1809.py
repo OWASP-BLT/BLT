@@ -4,20 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('website', '0064_issue_hunt'),
+        ("website", "0064_issue_hunt"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='issue',
-            name='score',
+            model_name="issue",
+            name="score",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='issue',
-            name='verified',
+            model_name="issue",
+            name="verified",
             field=models.BooleanField(default=False),
         ),
     ]

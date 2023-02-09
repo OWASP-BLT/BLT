@@ -7,14 +7,22 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('website', '0028_auto_20170705_2359'),
+        ("website", "0028_auto_20170705_2359"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='userprofile',
-            name='title',
+            model_name="userprofile",
+            name="title",
             field=models.IntegerField(
-                choices=[(0, b'Unrated'), (1, b'Bronze'), (2, b'Silver'), (3, b'Gold'), (4, b'Platinum')], default=0),
+                choices=[
+                    (0, b"Unrated"),
+                    (1, b"Bronze"),
+                    (2, b"Silver"),
+                    (3, b"Gold"),
+                    (4, b"Platinum"),
+                ],
+                default=0,
+            ),
         ),
     ]

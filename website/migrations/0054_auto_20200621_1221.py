@@ -5,21 +5,20 @@ import mdeditor.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('website', '0053_auto_20200619_0551'),
+        ("website", "0053_auto_20200619_0551"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='hunt',
-            name='name',
-            field=models.CharField(default='1', max_length=25),
+            model_name="hunt",
+            name="name",
+            field=models.CharField(default="1", max_length=25),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='hunt',
-            name='description',
+            model_name="hunt",
+            name="description",
             field=mdeditor.fields.MDTextField(blank=True, null=True),
         ),
     ]

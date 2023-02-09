@@ -8,14 +8,19 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('website', '0041_auto_20170817_0202'),
+        ("website", "0041_auto_20170817_0202"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='userprofile',
-            name='issue_saved',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
-                                    related_name='saved', to='website.Issue'),
+            model_name="userprofile",
+            name="issue_saved",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="saved",
+                to="website.Issue",
+            ),
         ),
     ]
