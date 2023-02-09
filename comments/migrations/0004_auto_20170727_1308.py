@@ -8,18 +8,14 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("comments", "0003_auto_20170726_1348"),
+        ('comments', '0003_auto_20170726_1348'),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name="comment",
-            name="parent",
-            field=models.ForeignKey(
-                default=-1,
-                null=True,
-                on_delete=django.db.models.deletion.CASCADE,
-                to="comments.Comment",
-            ),
+            model_name='comment',
+            name='parent',
+            field=models.ForeignKey(default=-1, null=True, on_delete=django.db.models.deletion.CASCADE,
+                                    to='comments.Comment'),
         ),
     ]

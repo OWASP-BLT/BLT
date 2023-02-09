@@ -7,15 +7,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0034_auto_20170722_1832"),
+        ('website', '0034_auto_20170722_1832'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="userprofile",
-            name="follows",
-            field=models.ManyToManyField(
-                related_name="follower", to="website.UserProfile"
-            ),
+            model_name='userprofile',
+            name='follows',
+            field=models.ManyToManyField(related_name='follower', to='website.UserProfile'),
         ),
     ]
