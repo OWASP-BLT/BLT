@@ -6,52 +6,35 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
+
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("website", "0066_auto_20200827_1733"),
+        ('website', '0066_auto_20200827_1733'),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name="winner",
-            name="user",
+            model_name='winner',
+            name='user',
         ),
         migrations.AddField(
-            model_name="winner",
-            name="prize_distributed",
+            model_name='winner',
+            name='prize_distributed',
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name="winner",
-            name="runner",
-            field=models.ForeignKey(
-                blank=True,
-                null=True,
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="runner",
-                to=settings.AUTH_USER_MODEL,
-            ),
+            model_name='winner',
+            name='runner',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='runner', to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
-            model_name="winner",
-            name="second_runner",
-            field=models.ForeignKey(
-                blank=True,
-                null=True,
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="second_runner",
-                to=settings.AUTH_USER_MODEL,
-            ),
+            model_name='winner',
+            name='second_runner',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='second_runner', to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
-            model_name="winner",
-            name="winner",
-            field=models.ForeignKey(
-                blank=True,
-                null=True,
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="winner",
-                to=settings.AUTH_USER_MODEL,
-            ),
+            model_name='winner',
+            name='winner',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='winner', to=settings.AUTH_USER_MODEL),
         ),
     ]

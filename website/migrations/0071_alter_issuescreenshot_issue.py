@@ -5,6 +5,7 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
+
     dependencies = [
         ("website", "0070_alter_issue_label_issuescreenshot"),
     ]
