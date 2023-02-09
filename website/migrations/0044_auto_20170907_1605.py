@@ -7,17 +7,19 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('website', '0043_auto_20170903_0650'),
+        ("website", "0043_auto_20170903_0650"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='userprofile',
-            name='issue_upvoted',
+            model_name="userprofile",
+            name="issue_upvoted",
         ),
         migrations.AddField(
-            model_name='userprofile',
-            name='issue_upvoted',
-            field=models.ManyToManyField(blank=True, null=True, related_name='upvoted', to='website.Issue'),
+            model_name="userprofile",
+            name="issue_upvoted",
+            field=models.ManyToManyField(
+                blank=True, null=True, related_name="upvoted", to="website.Issue"
+            ),
         ),
     ]

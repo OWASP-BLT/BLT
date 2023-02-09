@@ -7,13 +7,13 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('comments', '0002_comment_parentid'),
+        ("comments", "0002_comment_parentid"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='comment',
-            old_name='parentId',
-            new_name='parent',
+            model_name="comment",
+            old_name="parentId",
+            new_name="parent",
         ),
     ]

@@ -5,7 +5,7 @@ from website.models import UserProfile, Issue
 
 
 class Command(BaseCommand):
-    help = 'Update user based on number of bugs'
+    help = "Update user based on number of bugs"
 
     def handle(self, *args, **options):
         all_user_prof = UserProfile.objects.all()

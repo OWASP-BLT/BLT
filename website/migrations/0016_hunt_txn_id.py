@@ -7,13 +7,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('website', '0015_domain_github'),
+        ("website", "0015_domain_github"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='hunt',
-            name='txn_id',
+            model_name="hunt",
+            name="txn_id",
             field=models.CharField(blank=True, max_length=50, null=True),
         ),
     ]
