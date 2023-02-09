@@ -7,19 +7,19 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('website', '0010_auto_20160930_0317'),
+        ("website", "0010_auto_20160930_0317"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='domain',
-            name='name',
+            model_name="domain",
+            name="name",
             field=models.CharField(blank=True, max_length=255, null=True, unique=True),
         ),
         migrations.AlterField(
-            model_name='issue',
-            name='screenshot',
-            field=models.ImageField(default='', upload_to=b'screenshots'),
+            model_name="issue",
+            name="screenshot",
+            field=models.ImageField(default="", upload_to=b"screenshots"),
             preserve_default=False,
         ),
     ]

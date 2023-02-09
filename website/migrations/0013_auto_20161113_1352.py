@@ -7,14 +7,14 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('website', '0012_auto_20161105_1430'),
+        ("website", "0012_auto_20161105_1430"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='domain',
-            name='name',
-            field=models.CharField(default='domain', max_length=255, unique=True),
+            model_name="domain",
+            name="name",
+            field=models.CharField(default="domain", max_length=255, unique=True),
             preserve_default=False,
         ),
     ]

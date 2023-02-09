@@ -17,7 +17,7 @@ import base64
 import six
 import uuid
 
-#from django_cron import CronJobBase, Schedule
+# from django_cron import CronJobBase, Schedule
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
 from bs4 import BeautifulSoup
@@ -63,7 +63,6 @@ from dj_rest_auth.registration.views import SocialConnectView
 from bugheist import settings
 from rest_framework.authtoken.views import ObtainAuthToken
 from website.models import (
-
     Winner,
     Payment,
     Wallet,
@@ -77,7 +76,7 @@ from website.models import (
     CompanyAdmin,
     Subscription,
     Company,
-    IssueScreenshot
+    IssueScreenshot,
 )
 from .forms import FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm
 
@@ -85,7 +84,6 @@ from decimal import Decimal
 import stripe
 import humanize
 from django.conf import settings
-
 
 
 def index(request, template="index.html"):
@@ -111,7 +109,9 @@ def index(request, template="index.html"):
 
     activity_screenshots = {}
     for activity in Issue.objects.all():
-        activity_screenshots[activity] = IssueScreenshot.objects.filter(issue=activity).first()
+        activity_screenshots[activity] = IssueScreenshot.objects.filter(
+            issue=activity
+        ).first()
 
     context = {
         "activities": Issue.objects.all()[0:10],
@@ -129,9 +129,10 @@ def index(request, template="index.html"):
         "hunt_count": hunt_count,
         "domain_count": domain_count,
         "captcha_form": captcha_form,
-        "activity_screenshots":activity_screenshots
+        "activity_screenshots": activity_screenshots,
     }
     return render(request, template, context)
+
 
 def index2(request, template="index2.html"):
     try:
@@ -156,10 +157,21 @@ def index2(request, template="index2.html"):
 
     activity_screenshots = {}
     for activity in Issue.objects.all():
-        activity_screenshots[activity] = IssueScreenshot.objects.filter(issue=activity).first()
+        activity_screenshots[activity] = IssueScreenshot.objects.filter(
+            issue=activity
+        ).first()
 
-    top_companies = Issue.objects.values("domain__name").annotate(count=Count('domain__name')).order_by("-count")[:10]
-    top_testers = Issue.objects.values("user__id","user__username").filter(user__isnull=False).annotate(count=Count('user__username')).order_by("-count")[:10]
+    top_companies = (
+        Issue.objects.values("domain__name")
+        .annotate(count=Count("domain__name"))
+        .order_by("-count")[:10]
+    )
+    top_testers = (
+        Issue.objects.values("user__id", "user__username")
+        .filter(user__isnull=False)
+        .annotate(count=Count("user__username"))
+        .order_by("-count")[:10]
+    )
 
     context = {
         "activities": Issue.objects.all()[0:10],
@@ -177,9 +189,9 @@ def index2(request, template="index2.html"):
         "hunt_count": hunt_count,
         "domain_count": domain_count,
         "captcha_form": captcha_form,
-        "activity_screenshots":activity_screenshots,
-        "top_companies":top_companies,
-        "top_testers":top_testers
+        "activity_screenshots": activity_screenshots,
+        "top_companies": top_companies,
+        "top_testers": top_testers,
     }
     return render(request, template, context)
 
@@ -241,6 +253,7 @@ class FacebookConnect(SocialConnectView):
         # use the same callback url as defined in your Facebook app, this url
         # must be absolute:
         return self.request.build_absolute_uri(reverse("facebook_callback"))
+
 
 class GithubConnect(SocialConnectView):
     adapter_class = GitHubOAuth2Adapter
@@ -428,6 +441,7 @@ def domain_check(request):
             return HttpResponse(json.dumps(data))
     return HttpResponse("POST REQUIRED")
 
+
 class IssueBaseCreate(object):
     def form_valid(self, form):
         score = 3
@@ -440,8 +454,10 @@ class IssueBaseCreate(object):
         obj.domain = domain
         if self.request.POST.get("screenshot-hash"):
             filename = self.request.POST.get("screenshot-hash")
-            extension = filename.split(".")[-1] 
-            self.request.POST["screenshot-hash"] = filename[:99] + str(uuid.uuid4()) + "." + extension
+            extension = filename.split(".")[-1]
+            self.request.POST["screenshot-hash"] = (
+                filename[:99] + str(uuid.uuid4()) + "." + extension
+            )
 
             reopen = default_storage.open(
                 "uploads\/" + self.request.POST.get("screenshot-hash") + ".png", "rb"
@@ -452,7 +468,6 @@ class IssueBaseCreate(object):
                 django_file,
                 save=True,
             )
-
 
         obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
         obj.save()
@@ -619,34 +634,31 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return initial
 
     def post(self, request, *args, **kwargs):
-
         # resolve domain
-        url = request.POST.get("url").replace("www.","").replace("https://","")
-        
-        request.POST._mutable = True
-        request.POST.update(url=url) # only domain.com will be stored in db
-        request.POST._mutable = False
+        url = request.POST.get("url").replace("www.", "").replace("https://", "")
 
+        request.POST._mutable = True
+        request.POST.update(url=url)  # only domain.com will be stored in db
+        request.POST._mutable = False
 
         # disable domain search on testing
         if not settings.IS_TEST:
             try:
-
                 if "bugheist.com" in url:
-                    print('Web site exists')
+                    print("Web site exists")
 
-                # skip domain validation check if bugreport server down 
+                # skip domain validation check if bugreport server down
                 elif request.POST["label"] == "7":
                     pass
 
                 else:
-                    response = requests.get( "https://" + url ,timeout=2)
+                    response = requests.get("https://" + url, timeout=2)
                     if response.status_code == 200:
-                        print('Web site exists')
+                        print("Web site exists")
                     else:
                         raise Exception
             except:
-                messages.error(request,"Domain does not exist")
+                messages.error(request, "Domain does not exist")
                 return HttpResponseRedirect("/issue/")
 
         return super().post(request, *args, **kwargs)
@@ -740,7 +752,11 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 "body": "![0]("
                 + obj.screenshot.url
                 + ") https://www.bugheist.com/issue/"
-                + str(obj.id) + " found by " + the_user + " at url: " + obj.url,
+                + str(obj.id)
+                + " found by "
+                + the_user
+                + " at url: "
+                + obj.url,
                 "labels": ["bug", "bugheist"],
             }
             r = requests.post(
@@ -761,10 +777,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
             return HttpResponseRedirect("/issue/")
         for screenshot in self.request.FILES.getlist("screenshots"):
             filename = screenshot.name
-            extension = filename.split(".")[-1] 
+            extension = filename.split(".")[-1]
             screenshot.name = filename[:99] + str(uuid.uuid4()) + "." + extension
-            default_storage.save(f"screenshots/{screenshot.name}",screenshot)
-            IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}",issue=obj)
+            default_storage.save(f"screenshots/{screenshot.name}", screenshot)
+            IssueScreenshot.objects.create(
+                image=f"screenshots/{screenshot.name}", issue=obj
+            )
 
         if not (self.request.user.is_authenticated or tokenauth):
             self.request.session["issue"] = obj.id
@@ -782,8 +800,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
         else:
             self.process_issue(self.request.user, obj, created, domain)
             return HttpResponseRedirect(self.request.META.get("HTTP_REFERER"))
-        
-        
 
     def get_context_data(self, **kwargs):
         context = super(IssueCreate, self).get_context_data(**kwargs)
@@ -1057,8 +1073,6 @@ class DomainDetailView(ListView):
 
         context["name"] = parsed_url.netloc.split(".")[-2:][0].title()
 
-        
-
         paginator = Paginator(open_issue, 10)
         page = self.request.GET.get("open")
         try:
@@ -1116,7 +1130,7 @@ class StatsDetailView(TemplateView):
             "https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en"
         )
         soup = BeautifulSoup(response.text)
-        
+
         stats = ""
         for item in soup.findAll("span", {"class": "e-f-ih"}):
             stats = item.attrs["title"]
@@ -1175,7 +1189,9 @@ class AllIssuesView(ListView):
         context["user"] = self.request.GET.get("user")
         context["activity_screenshots"] = {}
         for activity in self.activities:
-           context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity).first()
+            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(
+                issue=activity
+            ).first()
         return context
 
 
@@ -1239,18 +1255,20 @@ class SpecificIssuesView(ListView):
         context["label"] = self.request.GET.get("label")
         return context
 
-class LeaderboardBase():
-    '''
-        get:
-            1) ?monthly=true will give list of winners for current month
-            2) ?year=2022 will give list of winner of every month from month 1-12 else None
 
-    '''      
-    def get_leaderboard(self,month=None,year=None,api=False):
-        '''
-            all user scores for specified month and year
-        '''
-        
+class LeaderboardBase:
+    """
+    get:
+        1) ?monthly=true will give list of winners for current month
+        2) ?year=2022 will give list of winner of every month from month 1-12 else None
+
+    """
+
+    def get_leaderboard(self, month=None, year=None, api=False):
+        """
+        all user scores for specified month and year
+        """
+
         data = User.objects
 
         if year and not month:
@@ -1258,63 +1276,54 @@ class LeaderboardBase():
 
         if year and month:
             data = data.filter(
-                Q(points__created__year=year) &
-                Q(points__created__month=month)
-                )
+                Q(points__created__year=year) & Q(points__created__month=month)
+            )
 
-        
         data = (
-                    data
-                    .annotate(total_score=Sum('points__score'))
-                    .order_by('-total_score')
-                    .filter(
-                        total_score__gt=0,
-                    )
-                )
-        if api:
-            return data.values('username','total_score')
-
-        return data
-    
-
-    def current_month_leaderboard(self,api=False):
-        '''
-            leaderboard which includes current month users scores
-        '''
-        return (
-            self.get_leaderboard(
-                month=int(datetime.now().month),
-                year=int(datetime.now().year),
-                api=api
+            data.annotate(total_score=Sum("points__score"))
+            .order_by("-total_score")
+            .filter(
+                total_score__gt=0,
             )
         )
+        if api:
+            return data.values("username", "total_score")
 
-    def monthly_year_leaderboard(self,year,api=False):
+        return data
 
-        '''
-            leaderboard which includes current year top user from each month
-        '''
+    def current_month_leaderboard(self, api=False):
+        """
+        leaderboard which includes current month users scores
+        """
+        return self.get_leaderboard(
+            month=int(datetime.now().month), year=int(datetime.now().year), api=api
+        )
+
+    def monthly_year_leaderboard(self, year, api=False):
+        """
+        leaderboard which includes current year top user from each month
+        """
 
         monthly_winner = []
 
         # iterating over months 1-12
-        for month in range(1,13):
-            month_winner = self.get_leaderboard(month,year,api).first()
+        for month in range(1, 13):
+            month_winner = self.get_leaderboard(month, year, api).first()
             monthly_winner.append(month_winner)
-        
+
         return monthly_winner
 
-class GlobalLeaderboardView(LeaderboardBase,ListView):
 
-    '''
-        Returns: All users:score data in descending order 
-    '''
+class GlobalLeaderboardView(LeaderboardBase, ListView):
 
-    
+    """
+    Returns: All users:score data in descending order
+    """
+
     model = User
     template_name = "leaderboard_global.html"
 
-    def get_context_data(self, *args, **kwargs):      
+    def get_context_data(self, *args, **kwargs):
         context = super(GlobalLeaderboardView, self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
@@ -1323,58 +1332,73 @@ class GlobalLeaderboardView(LeaderboardBase,ListView):
         return context
 
 
-class EachmonthLeaderboardView(LeaderboardBase,ListView):
+class EachmonthLeaderboardView(LeaderboardBase, ListView):
 
-    '''
-        Returns: Grouped user:score data in months for current year
-    '''
+    """
+    Returns: Grouped user:score data in months for current year
+    """
 
     model = User
     template_name = "leaderboard_eachmonth.html"
 
     def get_context_data(self, *args, **kwargs):
-        
-        context = super(EachmonthLeaderboardView, self).get_context_data(*args, **kwargs)
+        context = super(EachmonthLeaderboardView, self).get_context_data(
+            *args, **kwargs
+        )
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
 
         year = self.request.GET.get("year")
 
-        if not year: year = datetime.now().year
+        if not year:
+            year = datetime.now().year
 
-        if isinstance(year,str) and not year.isdigit():
+        if isinstance(year, str) and not year.isdigit():
             raise Http404(f"Invalid query passed | Year:{year}")
-        
+
         year = int(year)
 
         leaderboard = self.monthly_year_leaderboard(year)
         month_winners = []
 
-        months = ["January","February","March","April","May","June","July","August","September","October","Novermber","December"]
+        months = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "Novermber",
+            "December",
+        ]
 
-        for month_indx,usr in enumerate(leaderboard):
-            
-            
-            month_winner = {"user":usr,"month":months[month_indx]}
+        for month_indx, usr in enumerate(leaderboard):
+            month_winner = {"user": usr, "month": months[month_indx]}
             month_winners.append(month_winner)
 
         context["leaderboard"] = month_winners
 
         return context
 
-class SpecificMonthLeaderboardView(LeaderboardBase,ListView):
 
-    '''
-        Returns: leaderboard for filtered month and year requested in the query 
-    '''
+class SpecificMonthLeaderboardView(LeaderboardBase, ListView):
+
+    """
+    Returns: leaderboard for filtered month and year requested in the query
+    """
 
     model = User
     template_name = "leaderboard_specific_month.html"
 
     def get_context_data(self, *args, **kwargs):
-       
-        context = super(SpecificMonthLeaderboardView, self).get_context_data(*args, **kwargs)
+        context = super(SpecificMonthLeaderboardView, self).get_context_data(
+            *args, **kwargs
+        )
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -1382,21 +1406,23 @@ class SpecificMonthLeaderboardView(LeaderboardBase,ListView):
         month = self.request.GET.get("month")
         year = self.request.GET.get("year")
 
-        if not month: month = datetime.now().month
-        if not year: year = datetime.now().year
+        if not month:
+            month = datetime.now().month
+        if not year:
+            year = datetime.now().year
 
-        if isinstance(month,str) and not month.isdigit():
+        if isinstance(month, str) and not month.isdigit():
             raise Http404(f"Invalid query passed | Month:{month}")
-        if isinstance(year,str) and not year.isdigit():
+        if isinstance(year, str) and not year.isdigit():
             raise Http404(f"Invalid query passed | Year:{year}")
-        
+
         month = int(month)
         year = int(year)
 
-        if not (month>=1 and month<=12):
+        if not (month >= 1 and month <= 12):
             raise Http404(f"Invalid query passed | Month:{month}")
 
-        context["leaderboard"] = self.get_leaderboard(month,year,api=False)
+        context["leaderboard"] = self.get_leaderboard(month, year, api=False)
         return context
 
 
@@ -1407,9 +1433,11 @@ class ScoreboardView(ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(ScoreboardView, self).get_context_data(*args, **kwargs)
-        companies = sorted(Domain.objects.all(), key=lambda t: t.open_issues.count(), reverse = True)
+        companies = sorted(
+            Domain.objects.all(), key=lambda t: t.open_issues.count(), reverse=True
+        )
 
-        #companies = Domain.objects.all().order_by("-open_issues")
+        # companies = Domain.objects.all().order_by("-open_issues")
         paginator = Paginator(companies, self.paginate_by)
         page = self.request.GET.get("page")
 
@@ -1517,7 +1545,7 @@ def search_issues(request, template="search.html"):
 
 class HuntCreate(CreateView):
     model = Hunt
-    fields = ["url", "logo", "name", "description","prize", "plan"]
+    fields = ["url", "logo", "name", "description", "prize", "plan"]
     template_name = "hunt.html"
 
     def form_valid(self, form):
@@ -1525,8 +1553,10 @@ class HuntCreate(CreateView):
         self.object.user = self.request.user
 
         domain, created = Domain.objects.get_or_create(
-            name=self.request.POST.get('url').replace("www.", ""),
-            defaults={"url": "http://" + self.request.POST.get('url').replace("www.", "")},
+            name=self.request.POST.get("url").replace("www.", ""),
+            defaults={
+                "url": "http://" + self.request.POST.get("url").replace("www.", "")
+            },
         )
         self.object.domain = domain
 
@@ -1630,6 +1660,7 @@ def flag_issue(request, issue_pk):
     context["flags"] = total_flag_votes
     return render(request, "_flags.html", context)
 
+
 def IssueEdit(request):
     if request.method == "POST":
         issue = Issue.objects.get(pk=request.POST.get("issue_pk"))
@@ -1654,6 +1685,7 @@ def IssueEdit(request):
             return HttpResponse("Unauthorised")
     else:
         return HttpResponse("POST ONLY")
+
 
 def get_email_from_domain(domain_name):
     new_urls = deque(["http://" + domain_name])
@@ -1795,7 +1827,6 @@ def assign_issue_to_user(request, user, **kwargs):
     created = request.session.get("created")
     domain_id = request.session.get("domain")
     if issue_id and domain_id:
-
         try:
             del request.session["issue"]
             del request.session["domain"]
@@ -2052,8 +2083,6 @@ def get_scoreboard(request):
     return HttpResponse(
         json.dumps(domain.object_list, default=str), content_type="application/json"
     )
-
-
 
 
 def throw_error(request):
@@ -2425,7 +2454,6 @@ def add_or_update_company(request):
         if not user.is_active:
             return HttpResponseRedirect("/")
         if request.method == "POST":
-
             domain_pk = request.POST["id"]
             company = Company.objects.get(pk=domain_pk)
             user = company.admin
@@ -2765,7 +2793,6 @@ class JoinCompany(TemplateView):
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
-
         wallet, created = Wallet.objects.get_or_create(user=request.user)
         context = {"wallet": wallet}
         return render(request, self.template_name, context)
@@ -3044,11 +3071,11 @@ def company_hunt_results(request, pk, template="company_hunt_results.html"):
 
 
 def handler404(request, exception):
-   return render(request, "404.html", {}, status=404)
+    return render(request, "404.html", {}, status=404)
+
 
 def handler500(request, exception=None):
-   return render(request, "500.html", {}, status=500)
-
+    return render(request, "500.html", {}, status=500)
 
 
 # class CreateIssue(CronJobBase):

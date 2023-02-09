@@ -7,13 +7,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('website', '0032_userprofile_winnings'),
+        ("website", "0032_userprofile_winnings"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='issue',
-            name='github_url',
-            field=models.URLField(default=b''),
+            model_name="issue",
+            name="github_url",
+            field=models.URLField(default=b""),
         ),
     ]

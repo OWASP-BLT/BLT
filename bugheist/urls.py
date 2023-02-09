@@ -50,7 +50,7 @@ from website.views import (
     GoogleConnect,
     github_callback,
     google_callback,
-    facebook_callback
+    facebook_callback,
 )
 from website.api.views import (
     IssueViewSet,
@@ -60,7 +60,7 @@ from website.api.views import (
     LikeIssueApiView,
     FlagIssueApiView,
     LeaderboardApiViewSet,
-    StatsApiViewset
+    StatsApiViewset,
 )
 
 from bugheist import settings
@@ -106,11 +106,14 @@ handler500 = "website.views.handler500"
 urlpatterns = [
     path("captcha/", include("captcha.urls")),
     re_path(r"^auth/registration/", include("dj_rest_auth.registration.urls")),
-    path('rest-auth/password/reset/confirm/<str:uidb64>/<str:token>', PasswordResetConfirmView.as_view(),
-           name='password_reset_confirm'),
+    path(
+        "rest-auth/password/reset/confirm/<str:uidb64>/<str:token>",
+        PasswordResetConfirmView.as_view(),
+        name="password_reset_confirm",
+    ),
     re_path(r"^auth/", include("dj_rest_auth.urls")),
     re_path("auth/facebook", FacebookLogin.as_view(), name="facebook_login"),
-    path('accounts/', include('allauth.urls')),
+    path("accounts/", include("allauth.urls")),
     path("auth/github/", GithubLogin.as_view(), name="github_login"),
     path("auth/google/", GoogleLogin.as_view(), name="google_login"),
     path("accounts/github/login/callback/", github_callback, name="github_callback"),
@@ -279,20 +282,39 @@ urlpatterns = [
         r"^unsave_issue/(?P<issue_pk>\d+)/$",
         website.views.unsave_issue,
         name="unsave_issue",
-    ), 
+    ),
     re_path(r"^issue/edit/$", website.views.IssueEdit, name="edit_issue"),
     re_path(r"^issue/update/$", website.views.UpdateIssue, name="update_issue"),
     re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
     re_path(r"^follow/(?P<user>[^/]+)/", website.views.follow_user, name="follow_user"),
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
     re_path(r"^label_activity/$", SpecificIssuesView.as_view(), name="all_activity"),
-    re_path(r"^leaderboard/$", GlobalLeaderboardView.as_view(), name="leaderboard_global"),
-    re_path(r"^leaderboard/monthly/$", SpecificMonthLeaderboardView.as_view(), name="leaderboard_specific_month"),
-    re_path(r"^leaderboard/each-month/$", EachmonthLeaderboardView.as_view(), name="leaderboard_eachmonth"),
-    re_path(r"^api/v1/issue/like/(?P<id>\w+)/$", LikeIssueApiView.as_view(), name="like_issue"),
-    re_path(r"^api/v1/issue/flag/(?P<id>\w+)/$", FlagIssueApiView.as_view(), name="flag_issue"),
-    re_path(r"^api/v1/leaderboard/$",LeaderboardApiViewSet.as_view(),name="leaderboard"),
-
+    re_path(
+        r"^leaderboard/$", GlobalLeaderboardView.as_view(), name="leaderboard_global"
+    ),
+    re_path(
+        r"^leaderboard/monthly/$",
+        SpecificMonthLeaderboardView.as_view(),
+        name="leaderboard_specific_month",
+    ),
+    re_path(
+        r"^leaderboard/each-month/$",
+        EachmonthLeaderboardView.as_view(),
+        name="leaderboard_eachmonth",
+    ),
+    re_path(
+        r"^api/v1/issue/like/(?P<id>\w+)/$",
+        LikeIssueApiView.as_view(),
+        name="like_issue",
+    ),
+    re_path(
+        r"^api/v1/issue/flag/(?P<id>\w+)/$",
+        FlagIssueApiView.as_view(),
+        name="flag_issue",
+    ),
+    re_path(
+        r"^api/v1/leaderboard/$", LeaderboardApiViewSet.as_view(), name="leaderboard"
+    ),
     re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
     re_path(
@@ -310,7 +332,9 @@ urlpatterns = [
         name="find_key",
     ),
     re_path(r"^accounts/profile/", website.views.profile, name="account_profile"),
-    re_path(r"^delete_issue/(?P<id>\w+)/$", website.views.delete_issue, name="delete_issue"),
+    re_path(
+        r"^delete_issue/(?P<id>\w+)/$", website.views.delete_issue, name="delete_issue"
+    ),
     re_path(r"^accounts/", include("allauth.urls")),
     re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html")),
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
@@ -320,7 +344,9 @@ urlpatterns = [
         login_required(CreateInviteFriend.as_view()),
         name="invite_friend",
     ),
-    re_path(r"^terms/$", TemplateView.as_view(template_name="terms.html"),name="terms"),
+    re_path(
+        r"^terms/$", TemplateView.as_view(template_name="terms.html"), name="terms"
+    ),
     re_path(r"^about/$", TemplateView.as_view(template_name="about.html")),
     re_path(r"^privacypolicy/$", TemplateView.as_view(template_name="privacy.html")),
     re_path(r"^stats/$", StatsDetailView.as_view(), name="stats"),
@@ -356,19 +382,33 @@ urlpatterns = [
     re_path(r"^api/v1/stats/$", StatsApiViewset.as_view(), name="get_score"),
     re_path(r"^api/v1/userscore/$", website.views.get_score, name="get_score"),
     re_path(r"^authenticate/", CustomObtainAuthToken.as_view()),
-    re_path(r"^api/v1/createwallet/$", website.views.create_wallet, name="create_wallet"),
+    re_path(
+        r"^api/v1/createwallet/$", website.views.create_wallet, name="create_wallet"
+    ),
     re_path(r"^api/v1/count/$", website.views.issue_count, name="api_count"),
     re_path(
         r"^api/v1/createissues/$",
         csrf_exempt(IssueCreate.as_view()),
         name="issuecreate",
     ),
-    re_path(r"^api/v1/search/$", csrf_exempt(website.views.search_issues), name="search_issues"),
     re_path(
-        r"^api/v1/delete_issue/(?P<id>\w+)/$", csrf_exempt(website.views.delete_issue), name="delete_api_issue"
+        r"^api/v1/search/$",
+        csrf_exempt(website.views.search_issues),
+        name="search_issues",
     ),
-    re_path(r"^api/v1/issue/update/$", csrf_exempt(website.views.UpdateIssue), name="update_api_issue"),
-    re_path(r"^api/v1/scoreboard/$", website.views.get_scoreboard, name="api_scoreboard"),
+    re_path(
+        r"^api/v1/delete_issue/(?P<id>\w+)/$",
+        csrf_exempt(website.views.delete_issue),
+        name="delete_api_issue",
+    ),
+    re_path(
+        r"^api/v1/issue/update/$",
+        csrf_exempt(website.views.UpdateIssue),
+        name="update_api_issue",
+    ),
+    re_path(
+        r"^api/v1/scoreboard/$", website.views.get_scoreboard, name="api_scoreboard"
+    ),
     re_path(
         r"^api/v1/terms/$",
         csrf_exempt(TemplateView.as_view(template_name="mobile_terms.html")),

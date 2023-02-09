@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    help = 'Monthly Email'
+    help = "Monthly Email"
 
     def handle(self, *args, **options):
         today = datetime.date.today()

@@ -7,13 +7,15 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('website', '0018_domain_email_event'),
+        ("website", "0018_domain_email_event"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='issue',
-            name='status',
-            field=models.CharField(blank=True, default=b'open', max_length=10, null=True),
+            model_name="issue",
+            name="status",
+            field=models.CharField(
+                blank=True, default=b"open", max_length=10, null=True
+            ),
         ),
     ]
