@@ -5,7 +5,6 @@ import importlib
 import os
 
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
-
 # todo
 from webdriver_manager.chrome import ChromeDriverManager
 
@@ -20,6 +19,7 @@ d["loggingPrefs"] = {"browser": "ALL"}
 
 # switch these
 driver = webdriver.Chrome(ChromeDriverManager().install(), desired_capabilities=d)
+
 
 
 class UrlsTest(StaticLiveServerTestCase):
@@ -41,13 +41,17 @@ class UrlsTest(StaticLiveServerTestCase):
         credentials={},
         default_kwargs={},
     ):
+
         module = importlib.import_module(settings.ROOT_URLCONF)
         if credentials:
             self.client.login(**credentials)
 
         def check_urls(urlpatterns, prefix=""):
+
             for pattern in urlpatterns:
+
                 if hasattr(pattern, "url_patterns"):
+
                     new_prefix = prefix
                     if pattern.namespace:
                         new_prefix = (
@@ -59,9 +63,11 @@ class UrlsTest(StaticLiveServerTestCase):
 
                 regex = pattern.pattern.regex
                 if regex.groups > 0:
+
                     if regex.groups > len(list(regex.groupindex.keys())) or set(
                         regex.groupindex.keys()
                     ) - set(default_kwargs.keys()):
+
                         skip = True
                     else:
                         for key in set(default_kwargs.keys()) & set(
@@ -71,6 +77,7 @@ class UrlsTest(StaticLiveServerTestCase):
                 if hasattr(pattern, "name") and pattern.name:
                     name = pattern.name
                 else:
+
                     skip = True
                     name = ""
                 fullname = (prefix + ":" + name) if prefix else name
@@ -99,7 +106,7 @@ class UrlsTest(StaticLiveServerTestCase):
                         "/accounts/facebook/login/",
                         "/error/",
                         "/tz_detect/set/",
-                        "/leaderboard/api/",
+                        "/leaderboard/api/"
                     ]
                     if not any(x in url for x in matches):
                         response = self.client.get(url)

@@ -7,15 +7,15 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0025_auto_20170605_1909"),
+        ('website', '0025_auto_20170605_1909'),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name="comment",
-            name="post",
+            model_name='comment',
+            name='post',
         ),
         migrations.DeleteModel(
-            name="Comment",
+            name='Comment',
         ),
     ]
