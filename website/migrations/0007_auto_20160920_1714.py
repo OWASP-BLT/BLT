@@ -7,13 +7,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0006_auto_20160920_1713"),
+        ('website', '0006_auto_20160920_1713'),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name="domain",
-            name="name",
+            model_name='domain',
+            name='name',
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
     ]

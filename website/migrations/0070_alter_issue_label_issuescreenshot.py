@@ -6,6 +6,7 @@ import website.models
 
 
 class Migration(migrations.Migration):
+
     dependencies = [
         ("website", "0069_userprofile_issue_flaged"),
     ]

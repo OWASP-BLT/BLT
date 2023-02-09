@@ -10,17 +10,14 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0035_userprofile_follows"),
+        ('website', '0035_userprofile_follows'),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name="userprofile",
-            name="user",
-            field=annoying.fields.AutoOneToOneField(
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="userprofile",
-                to=settings.AUTH_USER_MODEL,
-            ),
+            model_name='userprofile',
+            name='user',
+            field=annoying.fields.AutoOneToOneField(on_delete=django.db.models.deletion.CASCADE,
+                                                    related_name='userprofile', to=settings.AUTH_USER_MODEL),
         ),
     ]

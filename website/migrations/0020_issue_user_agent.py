@@ -7,13 +7,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0019_issue_status"),
+        ('website', '0019_issue_status'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="issue",
-            name="user_agent",
-            field=models.CharField(blank=True, default=b"", max_length=255, null=True),
+            model_name='issue',
+            name='user_agent',
+            field=models.CharField(blank=True, default=b'', max_length=255, null=True),
         ),
     ]

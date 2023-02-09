@@ -22,7 +22,6 @@ from mdeditor.fields import MDTextField
 from decimal import Decimal
 from captcha.fields import CaptchaField
 
-
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
@@ -273,13 +272,9 @@ class Issue(models.Model):
     class Meta:
         ordering = ["-created"]
 
-
 class IssueScreenshot(models.Model):
     image = models.ImageField(upload_to="screenshots", validators=[validate_image])
-    issue = models.ForeignKey(
-        Issue, on_delete=models.CASCADE, related_name="screenshots"
-    )
-
+    issue = models.ForeignKey(Issue,on_delete=models.CASCADE,related_name="screenshots")
 
 TWITTER_MAXLENGTH = getattr(settings, "TWITTER_MAXLENGTH", 140)
 
@@ -403,7 +398,7 @@ class UserProfile(models.Model):
     )
     issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
     issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
-    issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
+    issue_flaged = models.ManyToManyField(Issue,blank=True,related_name="flaged") 
 
     def avatar(self, size=36):
         if self.user_avatar:
