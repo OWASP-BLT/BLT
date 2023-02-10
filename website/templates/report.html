@@ -28,12 +28,15 @@
         font-weight: 700;
         font-size: 3rem;
     }
+    .captcha-form input{
+        border: 1px solid rgb(64, 64, 64);
+    }
 
 </style>
 {% endblock %}
 
 {% block content %}
-<script src="{% static "js/jquery.validate.js" %}"></script>
+<script src="{% static 'js/jquery.validate.js' %}"></script>
 <script src="{% static 'js/activity.js' %}"></script>
 
 <form action="/issue/" method="post" enctype="multipart/form-data">
@@ -108,7 +111,9 @@
                     {% endif %}
                 </div>
                 {% csrf_token %}
-                {{ captcha_form.captcha }}
+                <div class="captcha-form">
+                    {{ captcha_form.captcha }}
+                </div>
                 <button type="submit" name="reportbug_button" id="btn" class="btn btn-default btn-block"
                     data-intro="Click here to report the bug to BugHeist." data-step="5">
                     Report Bug <i class="fa fa-trophy" aria-hidden="true">+3</i>
