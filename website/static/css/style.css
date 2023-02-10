@@ -536,16 +536,21 @@ textarea {
 #pageFooter a:hover,
 #pageFooter a:focus {
     text-decoration: none;
-    color: blue;
+    color: white;
 }
 
-#pageFooter .hello {
-    max-width: 500px;
+#pageFooter .open .dropdown-menu {
+    min-width:0;
+    padding:0;
+    margin-left: -2px;
 }
-
-.open > .dropdown-menu {
-    min-width:200px;
-} 
+#pageFooter .open .dropdown-menu > li > a {
+    padding: 0.2rem 0.1rem
+}
+#pageFooter .open .dropdown-menu > li > a:hover {
+    border-radius: 0.25rem;
+    cursor:pointer;
+}
 
 #pageFooter .fa-facebook:hover {
     color: #0077e2;
@@ -571,7 +576,7 @@ textarea {
 .flag-de {
     background-image: url(../img/flags/de.svg)
 }
-.flag-jp {
+.flag-ja {
     background-image: url(../img/flags/jp.svg)
 }
 .flag-ru {
