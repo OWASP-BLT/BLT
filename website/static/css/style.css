@@ -531,69 +531,59 @@ textarea {
 }
 
 /* Footer */
-#myFooter {
-    width: 100%;
-    background-color: #3c3d41;
-    color: white;
-    margin-top: 30px;
-    padding-top: 30px;
-    clear: both;
-}
+/* color: #d2d1d1; <-- old pageFooter <a> color*/
 
-#myFooter .row {
-    margin-bottom: 10px;
-}
-
-#myFooter img {
-    margin-top: -3px;
-}
-
-#myFooter .footer-blt {
-    background-color: #333333;
-    padding-top: 3px;
-    padding-bottom: 3px;
-    text-align: center;
-}
-
-#myFooter .footer-blt p {
-    margin: 10px;
-    color: #ccc
-}
-
-#myFooter ul {
-    list-style-type: none;
-    padding-left: 0;
-    line-height: 1.7;
-}
-
-#myFooter a {
-    color: #d2d1d1;
-    text-decoration: none;
-}
-
-#myFooter a:hover,
-#myFooter a:focus {
+#pageFooter a:hover,
+#pageFooter a:focus {
     text-decoration: none;
     color: white;
 }
 
-#myFooter .social-networks a {
-    font-size: 32px;
-    color: #f9f9f9;
-    padding: 10px;
-    transition: 0.2s;
+#pageFooter .open .dropdown-menu {
+    min-width:0;
+    padding:0;
+    margin-left: -2px;
+}
+#pageFooter .open .dropdown-menu > li > a {
+    padding: 0.2rem 0.1rem
+}
+#pageFooter .open .dropdown-menu > li > a:hover {
+    border-radius: 0.25rem;
+    cursor:pointer;
 }
 
-#myFooter .fa-facebook:hover {
+#pageFooter .fa-facebook:hover {
     color: #0077e2;
 }
 
-#myFooter .fa-twitter:hover {
+#pageFooter .fa-twitter:hover {
     color: #00aced;
 }
 
-#myFooter .fa-github:hover {
-    color: black;
+#pageFooter .fa-github:hover {
+    color: grey;
+}
+
+.flag-en {
+    background-image: url(../img/flags/gb.svg)
+}
+.flag-fr {
+    background-image: url(../img/flags/fr.svg)
+}
+.flag-zh-cn {
+    background-image: url(../img/flags/cn.svg)
+}
+.flag-de {
+    background-image: url(../img/flags/de.svg)
+}
+.flag-ja {
+    background-image: url(../img/flags/jp.svg)
+}
+.flag-ru {
+    background-image: url(../img/flags/ru.svg)
+}
+.flag-hi {
+    background-image: url(../img/flags/in.svg)
 }
 
 .cardbox {
