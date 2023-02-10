@@ -13,6 +13,23 @@
                 <form action="{% url 'set_language' %}" method="post">
                     {% csrf_token %}
                     <input name="next" type="hidden" value="{{ redirect_to }}" />
+                    <ul >
+                        <li class="dropup">
+                            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                                <div class="flag-en w-8 rounded h-6"></div>
+                                <i class="fa fa-caret-down"></i>
+                            </a>
+                            <ul id="flag-drop" class="flags dropdown-menu">
+                                <li> <a href=""><div class="flag-en w-4 rounded h-3"></div>
+                                        </a> </li>
+                                <li> <a href=""><div class="flag-en w-4 rounded h-3"></div>
+                                        </a> </li>
+                                <li> <a href=""><div class="flag-en w-4 rounded h-3"></div>
+                                        </a> </li>
+                            </ul>
+                        </li>
+                        <div class="clearfix"> </div>
+                    </ul>
                     <select name="language" class="bg-transparent"
                         onchange='if(this.value != 0) { this.form.submit(); }'>
                         {% get_current_language as LANGUAGE_CODE %}

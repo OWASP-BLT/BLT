@@ -536,8 +536,16 @@ textarea {
 #pageFooter a:hover,
 #pageFooter a:focus {
     text-decoration: none;
-    color: white;
+    color: blue;
 }
+
+#pageFooter .hello {
+    max-width: 500px;
+}
+
+.open > .dropdown-menu {
+    min-width:200px;
+} 
 
 #pageFooter .fa-facebook:hover {
     color: #0077e2;
