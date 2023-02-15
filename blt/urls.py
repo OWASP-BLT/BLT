@@ -50,7 +50,8 @@ from website.views import (
     GoogleConnect,
     github_callback,
     google_callback,
-    facebook_callback
+    facebook_callback,
+    CompanySignupView
 )
 from website.api.views import (
     IssueViewSet,
@@ -111,6 +112,7 @@ urlpatterns = [
     re_path(r"^auth/", include("dj_rest_auth.urls")),
     re_path("auth/facebook", FacebookLogin.as_view(), name="facebook_login"),
     path('accounts/', include('allauth.urls')),
+    path("accounts/signup/company",CompanySignupView.as_view(),name="company_signup"),
     path("auth/github/", GithubLogin.as_view(), name="github_login"),
     path("auth/google/", GoogleLogin.as_view(), name="google_login"),
     path("accounts/github/login/callback/", github_callback, name="github_callback"),

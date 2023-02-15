@@ -33,6 +33,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.urls import reverse, reverse_lazy
 from django.db.models import Sum, Count, Q
 from django.db.models.functions import ExtractMonth
+from django.db.transaction import atomic
 from django.dispatch import receiver
 from django.http import Http404
 from django.http import HttpResponse
@@ -48,16 +49,15 @@ from django.views.generic.edit import CreateView
 from django.core import serializers
 from django.views.decorators.http import require_GET
 from django.conf import settings
-
 from user_agents import parse
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.account.forms import SignupForm
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialConnectView
 from blt import settings
@@ -79,7 +79,7 @@ from website.models import (
     Company,
     IssueScreenshot
 )
-from .forms import FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm
+from .forms import (FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm, CompanySignupForm)
 
 from decimal import Decimal
 import stripe
@@ -1143,7 +1143,6 @@ class StatsDetailView(TemplateView):
             Issue.objects.values("label").annotate(c=Count("label")).order_by()
         )
         return context
-
 
 class AllIssuesView(ListView):
     paginate_by = 20
@@ -3164,3 +3163,45 @@ def handler500(request, exception=None):
 #                     headers=headers,
 #                 )
 #         mail.logout()
+
+
+class CompanySignupView(TemplateView):
+    template_name = "account/company_signup.html"  
+
+    def post(self,request,*args,**kwargs):
+
+        @atomic
+        def post_data(request):
+            
+            print(request.FILES)
+            user_form = SignupForm(request.POST)
+
+            if not user_form.is_valid():
+
+                context = {"errors":user_form.errors}
+                return render(request, self.template_name,context=context)
+                
+            
+            company_form = CompanySignupForm({
+                "name":request.POST.get("company_name"),
+                "email":request.POST.get("company_email"),
+                "url":request.POST.get("company_url"),
+                "twitter":request.POST.get("twitter_url"),
+                "facebook":request.POST.get("facebook_url"),
+                "logo":request.FILES.get("logo")
+            })
+            
+            if not company_form.is_valid():
+                for error in company_form.errors:
+                    messages.error(request,f"Invalid field Company {error.__str__()} ")
+                return render(request, self.template_name)
+
+            company = company_form.save()
+            user = user_form.save(request)
+            company.admin = user
+            company.save()
+
+            messages.success(request,"company created successfully")
+            return render(request, self.template_name)
+
+        return post_data(request)

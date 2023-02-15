@@ -20,12 +20,16 @@
           <span>Already have an account?</span>
           <a href="{% url 'account_login' %}" class="underline text-white">Login!</a>
         </p>
+        <p class="flex flex-col items-center justify-center text-sm mt-10 text-center">
+          <span>Register as company</span>
+          <a href="{% url 'company_signup' %}" class="underline text-white">Register!</a>
+        </p>
         <p class="mt-6 text-sm text-center text-white">
           Read our <a href="{% url 'terms' %}" class="underline">terms</a> and <a href="{% url 'terms' %}" class="underline">conditions</a>
         </p>
       </div>
       <div class="p-5 bg-white md:flex-1">
-        <h3 class="my-4 text-2xl font-semibold text-gray-700">Account SignUp</h3>
+        <h3 class="my-4 text-2xl font-semibold text-gray-700">Account Signup</h3>
         <form class="flex flex-col space-y-5 login" method="POST" action="{% url 'account_signup' %}">
             {% csrf_token %}
           <div class="flex flex-col space-y-1">

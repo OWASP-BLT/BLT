@@ -38,7 +38,7 @@ class Subscription(models.Model):
 
 
 class Company(models.Model):
-    admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    admin = models.ForeignKey(User, null=True, blank=True, related_name="user_company",on_delete=models.CASCADE)
     name = models.CharField(max_length=255, unique=True)
     url = models.URLField()
     email = models.EmailField(null=True, blank=True)
@@ -50,6 +50,7 @@ class Company(models.Model):
         Subscription, null=True, blank=True, on_delete=models.CASCADE
     )
     is_active = models.BooleanField(default=False)
+    logo = models.ImageField(upload_to="company_logos",null=True,blank=True)
 
 
 class Domain(models.Model):
