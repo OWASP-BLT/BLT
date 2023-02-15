@@ -1,3 +1,8 @@
+@media (max-width:410px) {
+    .xs-hidden {
+        display:none !important;
+    }
+}
 .user-menu {
     height: 80px !important;
     display: flex !important;
