@@ -32,7 +32,7 @@
       </div>
       <div class="p-5 bg-white md:flex-1">
         <h3 class="my-4 text-2xl font-semibold text-gray-700">Company Signup</h3>
-        <form class="flex px-3 flex-col space-y-5 login" method="POST" action="{% url 'company_signup' %}">
+        <form class="flex px-3 flex-col space-y-5 login" enctype="multipart/form-data" method="POST" action="{% url 'company_signup' %}">
             {% csrf_token %}
             <div class="flex overflow-y-scroll h-[40vh] p-3 flex-col space-y-5">
                 <div class="flex flex-col space-y-1">

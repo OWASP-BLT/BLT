@@ -3170,38 +3170,33 @@ class CompanySignupView(TemplateView):
 
     def post(self,request,*args,**kwargs):
 
-        @atomic
-        def post_data(request):
+        
+        user_form = SignupForm(request.POST)
+
+        if not user_form.is_valid():
+
+            context = {"errors":user_form.errors}
+            return render(request, self.template_name,context=context)
             
-            print(request.FILES)
-            user_form = SignupForm(request.POST)
-
-            if not user_form.is_valid():
-
-                context = {"errors":user_form.errors}
-                return render(request, self.template_name,context=context)
-                
-            
-            company_form = CompanySignupForm({
-                "name":request.POST.get("company_name"),
-                "email":request.POST.get("company_email"),
-                "url":request.POST.get("company_url"),
-                "twitter":request.POST.get("twitter_url"),
-                "facebook":request.POST.get("facebook_url"),
-                "logo":request.FILES.get("logo")
-            })
-            
-            if not company_form.is_valid():
-                for error in company_form.errors:
-                    messages.error(request,f"Invalid field Company {error.__str__()} ")
-                return render(request, self.template_name)
-
-            company = company_form.save()
-            user = user_form.save(request)
-            company.admin = user
-            company.save()
-
-            messages.success(request,"company created successfully")
+        
+        company_form = CompanySignupForm({
+            "name":request.POST.get("company_name"),
+            "email":request.POST.get("company_email"),
+            "url":request.POST.get("company_url"),
+            "twitter":request.POST.get("twitter_url"),
+            "facebook":request.POST.get("facebook_url")
+        },request.FILES)
+        
+        if not company_form.is_valid():
+            for error in company_form.errors:
+                messages.error(request,f"Invalid or already taken field Company {error.__str__()} ")
             return render(request, self.template_name)
 
-        return post_data(request)
+        company = company_form.save()
+        user = user_form.save(request)
+        company.admin = user
+        company.save()
+
+        messages.success(request,"company created successfully")
+        return render(request, self.template_name)
+
