@@ -18,19 +18,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: bugheist/settings.py:143
+#: blt/settings.py:143
 msgid "English"
 msgstr "Englisch"
 
-#: bugheist/settings.py:144
+#: blt/settings.py:144
 msgid "French"
 msgstr "Französisch"
 
-#: bugheist/settings.py:145
+#: blt/settings.py:145
 msgid "Chinese"
 msgstr "Chinesisch"
 
-#: bugheist/settings.py:146
+#: blt/settings.py:146
 msgid "German"
 msgstr "Deutsche"
 

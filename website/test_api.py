@@ -72,7 +72,7 @@ class APITests(APITestCase):
             url = "/api/v1/issues/"
             with open("website/static/img/background.png", 'rb') as _file:
                 data = {
-                    'url': 'http://www.bugheist.com',
+                    'url': 'http://www.google.com',
                     'description': 'test',
                     'screenshot': _file,
                     'label': '0',
@@ -104,4 +104,6 @@ class APITests(APITestCase):
         }
         url = reverse('rest_password_reset_confirm')
         self.client.post(url, data=data, status_code=200)
+        for item in mail.outbox:
+            print(item.__dict__)
 

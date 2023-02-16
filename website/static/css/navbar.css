@@ -1,6 +1,18 @@
-.user-menu, .login-menu {
+@media (max-width:420px) {
+    .xs-hidden {
+        display:none !important;
+    }
+}
+.user-menu {
     height: 80px !important;
     display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin-right: 30px;
+}
+.login-menu {
+    height: 80px !important;
+    display: flex;
     justify-content: center !important;
     align-items: center !important;
     margin-right: 30px;
@@ -107,7 +119,7 @@
     width: 60%;
     justify-content: space-between;    
 }
-
+/* 
 @media (max-width:953px) {
     
     .inline-nav{
@@ -126,7 +138,7 @@
         display: block;
         height: 100px;
     }
-}
+} */
 
 
 @media (max-width:769px){
@@ -134,9 +146,9 @@
         display: flex;
     }
     .dropdown-menu{
-        background-color: white  !important;
-        margin-top: 300px !important;
-        position: absolute;
+        /* background-color: white  !important; */
+        /* margin-top: 300px !important; */
+        /* position: absolute; */
     }
 }
 
