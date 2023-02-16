@@ -121,7 +121,7 @@ if DEBUG and not TESTING:
 
     MIDDLEWARE += ("debug_toolbar.middleware.DebugToolbarMiddleware",)
 
-ROOT_URLCONF = "bugheist.urls"
+ROOT_URLCONF = "blt.urls"
 
 TEMPLATES = [
     {
@@ -167,7 +167,7 @@ AUTHENTICATION_BACKENDS = (
 
 CONN_MAX_AGE = None
 
-WSGI_APPLICATION = "bugheist.wsgi.application"
+WSGI_APPLICATION = "blt.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases

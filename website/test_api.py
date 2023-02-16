@@ -104,4 +104,6 @@ class APITests(APITestCase):
         }
         url = reverse('rest_password_reset_confirm')
         self.client.post(url, data=data, status_code=200)
+        for item in mail.outbox:
+            print(item.__dict__)
 
