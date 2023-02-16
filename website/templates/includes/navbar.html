@@ -76,11 +76,11 @@
             <!-- Search Icon -->
             <a href="/search/" class="xs-hidden lg:hidden mr-[30px]">
                 <i class="fa fa-search text-5xl text-red-500"></i>
-            </a>
+            </a> 
             <!-- User Avatar -->   
             {% if request.user.is_authenticated %}
             <li class="dropdown h-[80px] flex justify-center items-center">
-                <a class="dropdown-toggle flex items-center gap-3 mr-[30px]" data-toggle="dropdown" href="#">
+                <a class="dropdown-toggle relative flex items-center sm:gap-3 mr-[30px]" data-toggle="dropdown" href="#">
                     {% if request.user.userprofile.avatar %}
                     <img src="{{ request.user.userprofile.avatar }}" class="h-[30px] w-[30px] rounded-full">
                     {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
@@ -88,8 +88,9 @@
                     {% else %}
                     {% gravatar request.user.email 30 '' 'gravatar rounded-full' %}
                     {% endif %}
-                    <span class="hidden sm:!inline">{{ request.user.username }} ({{ request.user|score|default:"0" }} Pts)</span> <i
-                        class="fa fa-caret-down text-red-500"></i>
+                    <span class="absolute -right-[25px] -bottom-[25px] sm:static whitespace-nowrap">{{ request.user.username }} ({{ request.user|score|default:"0" }} Pts)
+                        <i class="fa fa-caret-down text-red-500"></i>
+                    </span> 
                 </a>
                 <!-- Dropdown for User Avatar -->
                 <ul class="dropdown-menu left-auto right-0">
