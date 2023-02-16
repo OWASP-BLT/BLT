@@ -21,11 +21,16 @@ environ.Env.read_env()
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+PROJECT_NAME = os.environ.get("PROJECT_NAME", "BLT")
+PROJECT_NAME_LOWER = PROJECT_NAME.lower()
+
 ADMIN_URL = os.environ.get("ADMIN_URL", "admin")
-DOMAIN_NAME = os.environ.get("DOMAIN_NAME","127.0.0.1")
+DOMAIN_NAME = os.environ.get("DOMAIN_NAME", "127.0.0.1") #domain.com (without www)
 PORT = os.environ.get("PORT","8000")
-DEFAULT_FROM_EMAIL = "support@bugheist.com"
-SERVER_EMAIL = "support@bugheist.com"
+DEFAULT_FROM_EMAIL = "support@" + DOMAIN_NAME
+SERVER_EMAIL = "support@" + DOMAIN_NAME
+FQDN = "www." + DOMAIN_NAME
+EMAIL_TO_STRING = PROJECT_NAME + " <"+ SERVER_EMAIL +">"
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 
@@ -121,7 +126,7 @@ if DEBUG and not TESTING:
 
     MIDDLEWARE += ("debug_toolbar.middleware.DebugToolbarMiddleware",)
 
-ROOT_URLCONF = "bugheist.urls"
+ROOT_URLCONF = "blt.urls"
 
 TEMPLATES = [
     {
@@ -167,7 +172,7 @@ AUTHENTICATION_BACKENDS = (
 
 CONN_MAX_AGE = None
 
-WSGI_APPLICATION = "bugheist.wsgi.application"
+WSGI_APPLICATION = "blt.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
@@ -284,7 +289,7 @@ ACCOUNT_EMAIL_VERIFICATION = "optional"
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Allow all host headers
-ALLOWED_HOSTS = [".bugheist.com", "127.0.0.1", "localhost", "bugheist-staging.herokuapp.com","0.0.0.0"]
+ALLOWED_HOSTS = ["." + DOMAIN_NAME, "127.0.0.1", "localhost", "0.0.0.0"]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
@@ -451,13 +456,13 @@ STRIPE_LIVE_MODE = False  # Change to True in production
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # CALLBACK_URL_FOR_GITHUB = os.environ.get(
-#     "CALLBACK_URL_FOR_GITHUB", default="https://www.bugheist.com/")
+#     "CALLBACK_URL_FOR_GITHUB", default="https://www." + DOMAIN_NAME +"/")
 
 # CALLBACK_URL_FOR_GOOGLE = os.environ.get(
-#     "CALLBACK_URL_FOR_GOOGLE", default="https://www.bugheist.com/")
+#     "CALLBACK_URL_FOR_GOOGLE", default="https://www." + DOMAIN_NAME +"/")
 
 # CALLBACK_URL_FOR_FACEBOOK = os.environ.get(
-#     "CALLBACK_URL_FOR_FACEBOOK", default="https://www.bugheist.com/")
+#     "CALLBACK_URL_FOR_FACEBOOK", default="https://www." + DOMAIN_NAME +"/")
 
 
 # allow captcha bypass during test

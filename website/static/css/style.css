@@ -530,39 +530,7 @@ textarea {
     top: 35px;
 }
 
-/* Footer */
-/* color: #d2d1d1; <-- old pageFooter <a> color*/
-
-#pageFooter a:hover,
-#pageFooter a:focus {
-    text-decoration: none;
-    color: white;
-}
-
-#pageFooter .open .dropdown-menu {
-    min-width:0;
-    padding:0;
-    margin-left: -2px;
-}
-#pageFooter .open .dropdown-menu > li > a {
-    padding: 0.2rem 0.1rem
-}
-#pageFooter .open .dropdown-menu > li > a:hover {
-    border-radius: 0.25rem;
-    cursor:pointer;
-}
-
-#pageFooter .fa-facebook:hover {
-    color: #0077e2;
-}
-
-#pageFooter .fa-twitter:hover {
-    color: #00aced;
-}
-
-#pageFooter .fa-github:hover {
-    color: grey;
-}
+/* Footer Flag Dropdown */
 
 .flag-en {
     background-image: url(../img/flags/gb.svg)

@@ -22,9 +22,11 @@ class MySeleniumTests(LiveServerTestCase):
         print (sys.path)
         d = DesiredCapabilities.CHROME
         d["loggingPrefs"] = {"browser": "ALL"}
+        option = webdriver.ChromeOptions()
+        option.add_argument("window-size=1920,1080")
 
         # switch these
-        cls.selenium = webdriver.Chrome(ChromeDriverManager().install(), desired_capabilities=d)
+        cls.selenium = webdriver.Chrome(ChromeDriverManager().install(), desired_capabilities=d, options=option)
         super(MySeleniumTests, cls).setUpClass()
 
     @classmethod
