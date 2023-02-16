@@ -481,9 +481,9 @@ class IssueBaseCreate(object):
             )
 
             send_mail(
-                domain.name + " added to Bugheist",
+                domain.name + " added to " + settings.PROJECT_NAME,
                 msg_plain,
-                "Bugheist <support@bugheist.com>",
+                settings.EMAIL_TO_STRING,
                 [email_to],
                 html_message=msg_html,
             )
@@ -545,7 +545,7 @@ class IssueBaseCreate(object):
             send_mail(
                 "Bug found on " + domain.name,
                 msg_plain,
-                "Bugheist <support@bugheist.com>",
+                settings.EMAIL_TO_STRING,
                 [email_to],
                 html_message=msg_html,
             )
@@ -632,7 +632,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         if not settings.IS_TEST:
             try:
 
-                if "bugheist.com" in url:
+                if settings.DOMAIN_NAME in url:
                     print('Web site exists')
 
                 # skip domain validation check if bugreport server down 
@@ -739,9 +739,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 "title": obj.description,
                 "body": "![0]("
                 + obj.screenshot.url
-                + ") https://www.bugheist.com/issue/"
+                + ") https://" + settings.FQDN + "/issue/"
                 + str(obj.id) + " found by " + the_user + " at url: " + obj.url,
-                "labels": ["bug", "bugheist"],
+                "labels": ["bug", settings.PROJECT_NAME_LOWER],
             }
             r = requests.post(
                 url,
@@ -1776,7 +1776,7 @@ def UpdateIssue(request):
                 + request.user.username
             )
 
-        mailer = "Bugheist <support@bugheist.com>"
+        mailer = settings.EMAIL_TO_STRING
         email_to = issue.user.email
         send_mail(subject, msg_plain, mailer, [email_to], html_message=msg_html)
         send_mail(
@@ -1877,7 +1877,7 @@ def follow_user(request, user):
             send_mail(
                 "You got a new follower!!",
                 msg_plain,
-                "Bugheist <support@bugheist.com>",
+                settings.EMAIL_TO_STRING,
                 [userx.email],
                 html_message=msg_html,
             )
@@ -1917,7 +1917,7 @@ def like_issue(request, issue_pk):
         send_mail(
             "Your issue got an upvote!!",
             msg_plain,
-            "Bugheist <support@bugheist.com>",
+            settings.EMAIL_TO_STRING
             [liked_user.email],
             html_message=msg_html,
         )
@@ -3055,7 +3055,7 @@ def handler500(request, exception=None):
 #     RUN_EVERY_MINS = 1
 
 #     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
-#     code = "bugheist.create_issue"  # a unique code
+#     code = "blt.create_issue"  # a unique code
 
 #     def do(self):
 #         from django.conf import settings
@@ -3136,15 +3136,15 @@ def handler500(request, exception=None):
 #                 send_mail(
 #                     "Error In Your Report",
 #                     "There was something wrong with the mail you sent regarding the issue to be created. Please check the content and try again later !",
-#                     "Bugheist <support@bugheist.com>",
+#                     settings.EMAIL_TO_STRING,
 #                     [address],
 #                     fail_silently=False,
 #                 )
 #             elif error == "TokenTrue":
 #                 send_mail(
-#                     "You are not a user of Bugheist",
-#                     "You are not a Registered user at Bugheist .Please first Signup at Bugheist and Try Again Later ! .",
-#                     "Bugheist <support@bugheist.com>",
+#                     "You are not a user of " + settings.PROJECT_NAME,
+#                     "You are not a Registered user at " + settings.PROJECT_NAME + " .Please first Signup at " + settings.PROJECT_NAME + " and Try Again Later ! .",
+#                     settings.EMAIL_TO_STRING,
 #                     [address],
 #                     fail_silently=False,
 #                 )
@@ -3159,7 +3159,7 @@ def handler500(request, exception=None):
 #                 }
 #                 headers = {"Content-Type": "application/x-www-form-urlencoded"}
 #                 requests.post(
-#                     "https://www.bugheist.com/api/v1/createissues/",
+#                     "https://" + settings.FQDN + "/api/v1/createissues/",
 #                     data=json.dumps(data),
 #                     headers=headers,
 #                 )

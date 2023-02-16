@@ -8,6 +8,7 @@ from django.shortcuts import HttpResponse
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.utils.html import escape
+from django.conf import settings
 
 from website.models import Issue
 from .models import Comment
@@ -50,7 +51,7 @@ def add_comment(request):
 
             send_mail('You have been mentioned in a comment',
                       msg_plain,
-                      'Bugheist <support@bugheist.com>',
+                      settings.EMAIL_TO_STRING
                       [obj.email],
                       html_message=msg_html)
 

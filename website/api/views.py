@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
+from django.conf import settings
 
 from website.models import (
     Issue,
@@ -220,7 +221,7 @@ class LikeIssueApiView(APIView):
                 send_mail(
                     "Your issue got an upvote!!",
                     msg_plain,
-                    "Bugheist <support@bugheist.com>",
+                    settings.EMAIL_TO_STRING,
                     [liked_user.email],
                     html_message=msg_html,
                 )
