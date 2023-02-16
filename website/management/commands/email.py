@@ -15,7 +15,7 @@ class Command(BaseCommand):
         #     first = today.replace(day=1)
         #     lastMonth = first - datetime.timedelta(days=1)
 
-        #     subject = 'Bugheist ' + lastMonth.strftime("%B") + ' summary'
+        #     subject = settings.PROJECT_NAME + ' ' + lastMonth.strftime("%B") + ' summary'
         #     msg_plain = msg_html = render_to_string('email/bug_summary.txt', {
         #         'month': lastMonth.strftime("%B"),
         #         'leaderboard': User.objects.filter(points__created__month=lastMonth.strftime("%m")).annotate(
@@ -40,7 +40,7 @@ class Command(BaseCommand):
         #             send_mail(
         #                 subject,
         #                 msg_plain,
-        #                 'Bugheist <support@bugheist.com>',
+        #                 settings.EMAIL_TO_STRING,
         #                 [user.email],
         #                 html_message=msg_html,
         #             )
