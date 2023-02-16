@@ -60,7 +60,7 @@ from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialConnectView
-from bugheist import settings
+from blt import settings
 from rest_framework.authtoken.views import ObtainAuthToken
 from website.models import (
 
