@@ -72,7 +72,7 @@ class APITests(APITestCase):
             url = "/api/v1/issues/"
             with open("website/static/img/background.png", 'rb') as _file:
                 data = {
-                    'url': 'http://www.bugheist.com',
+                    'url': 'http://www.google.com',
                     'description': 'test',
                     'screenshot': _file,
                     'label': '0',

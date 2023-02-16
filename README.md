@@ -25,7 +25,7 @@ Please follow the development server setup procedure [here](https://github.com/O
 
 - Join the [OWASP Slack Channel](https://owasp.org/slack/invite) and ask questions at **#project-blt** 
 - Github activity can be seen in Slack **#blt-github**.
-- Figma designs for web and flutter app are available [here](https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Bugheist-Full-Design)
+- Figma designs for web and flutter app are available [here](https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design)
 
 
 ### Coding style guide
