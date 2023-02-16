@@ -25,24 +25,6 @@ class CaptchaForm(forms.Form):
     captcha = CaptchaField()
 
 
-# class UserSignupForm(SignupForm):
-
-#     username = forms.CharField(max_length=50,label='username')
-#     email = forms.EmailField(label='email')
-#     password = forms.PasswordInput()
-
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.errors = []
-
-#     def is_valid(self,request):
-#         if request.POST.get("password1") != request.POST.get("password2"):
-#             self.errors.append("confirm password doesn't match")
-        
-#             self.validate_unique_email(self.email)
-#             self.
-
-
 class CompanySignupForm (forms.ModelForm): 
    
    class Meta:
@@ -55,5 +37,6 @@ class CompanySignupForm (forms.ModelForm):
         "twitter",
         "facebook",
         "subscription",
+        "is_active",
         "logo"
     )

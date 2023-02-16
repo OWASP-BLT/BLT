@@ -3139,7 +3139,8 @@ class CompanySignupView(TemplateView):
             "email":request.POST.get("company_email"),
             "url":request.POST.get("company_url"),
             "twitter":request.POST.get("twitter_url"),
-            "facebook":request.POST.get("facebook_url")
+            "facebook":request.POST.get("facebook_url"),
+            "is_active":True
         },request.FILES)
         
         if not company_form.is_valid():
