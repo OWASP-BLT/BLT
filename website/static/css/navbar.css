@@ -1,4 +1,4 @@
-@media (max-width:410px) {
+@media (max-width:420px) {
     .xs-hidden {
         display:none !important;
     }
@@ -146,9 +146,9 @@
         display: flex;
     }
     .dropdown-menu{
-        background-color: white  !important;
-        margin-top: 300px !important;
-        position: absolute;
+        /* background-color: white  !important; */
+        /* margin-top: 300px !important; */
+        /* position: absolute; */
     }
 }
 
