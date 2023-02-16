@@ -12,6 +12,6 @@ currently being supported with security updates.
 
 ## Reporting a Vulnerability
 
-Report any issues at www.bugheist.com
+Report any issues using the live website.
 
 
