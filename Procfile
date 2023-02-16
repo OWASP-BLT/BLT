@@ -1,2 +1,2 @@
 release: python manage.py migrate  --noinput
-web: gunicorn bugheist.wsgi --log-file -
+web: gunicorn blt.wsgi --log-file -
