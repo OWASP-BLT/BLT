@@ -1,3 +1,4 @@
+
 #page-wrapper {
     height: auto;
 }
@@ -5,6 +6,19 @@
 @media screen and (max-width: 720px) {
     #page-wrapper {
         height: auto;
+    }
+}
+
+@media (min-width:922px) {
+    #base-container {
+        max-width:970px;
+        /* width:970px !important; */
+    }
+}
+@media (min-width:1200px) {
+    #base-container {
+        max-width:1170px;
+        /* width:970px !important; */
     }
 }
 
