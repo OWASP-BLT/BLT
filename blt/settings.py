@@ -382,10 +382,10 @@ REST_FRAMEWORK = {
 SOCIALACCOUNT_PROVIDER = {
     'github': {
         'scope': ('user:email',)
-    },
+        },
     'google': {
         'scope': ('user:email',)
-    }
+        }
 }
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
