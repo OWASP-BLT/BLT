@@ -367,7 +367,7 @@ else:
         }
     else:
         CACHES = {"default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache"}} 
 
 
 REST_FRAMEWORK = {
@@ -380,11 +380,11 @@ REST_FRAMEWORK = {
 }
 
 SOCIALACCOUNT_PROVIDER = {
-    "github": {
-        "scope": ("user:email",)
+    'github': {
+        'scope': ('user:email',)
         },
-    "google": {
-        "scope": ("user:email",)
+    'google': {
+        'scope': ('user:email',)
         }
 }
 
