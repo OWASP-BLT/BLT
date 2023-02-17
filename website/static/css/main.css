@@ -8,6 +8,19 @@
     }
 }
 
+@media (min-width:922px) {
+    #base-container {
+        max-width:970px;
+        /* width:970px !important; */
+    }
+}
+@media (min-width:1200px) {
+    #base-container {
+        max-width:1170px;
+        /* width:970px !important; */
+    }
+}
+
 .round-icon {
     margin: 0 auto;
     height: 50px;

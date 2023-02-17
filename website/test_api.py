@@ -106,4 +106,3 @@ class APITests(APITestCase):
         self.client.post(url, data=data, status_code=200)
         for item in mail.outbox:
             print(item.__dict__)
-
