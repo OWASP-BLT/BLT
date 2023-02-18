@@ -9,9 +9,9 @@ from django.db.transaction import atomic
 
 class APITests(APITestCase):
 
-    register_url = '/auth/registration/'
-    login_url = '/auth/login/'
-    password_reset_url = '/auth/password/reset/'
+    register_url = "/auth/registration/"
+    login_url = "/auth/login/"
+    password_reset_url = "/auth/password/reset/"
 
     USERNAME = 'person'
     PASS = 'Gassword123&&'
@@ -31,8 +31,8 @@ class APITests(APITestCase):
         from django.utils.encoding import force_bytes
         from django.contrib.auth.tokens import default_token_generator
         from django.utils.http import urlsafe_base64_encode
-        result['uid'] = urlsafe_base64_encode(force_bytes(user.pk))
-        result['token'] = default_token_generator.make_token(user)
+        result["uid"] = urlsafe_base64_encode(force_bytes(user.pk))
+        result["token"] = default_token_generator.make_token(user)
         return result
 
     def test_login_by_email(self):
@@ -52,14 +52,14 @@ class APITests(APITestCase):
             'password': self.PASS,
         }
         response = self.client.post(self.login_url, data=payload)
-        self.assertEqual('key' in response.json().keys(), True)
-        self.token = response.json()['key']
+        self.assertEqual("key" in response.json().keys(), True)
+        self.token = response.json()["key"]
 
 
     def test_registration(self):
         user_count = get_user_model().objects.all().count()
         result = self.client.post(self.register_url, data=self.REGISTRATION_DATA, status_code=201)
-        self.assertIn('key', result.data)
+        self.assertIn("key", result.data)
         self.assertEqual(get_user_model().objects.all().count(), user_count + 1)
 
         new_user = get_user_model().objects.latest('id')
@@ -67,7 +67,7 @@ class APITests(APITestCase):
 
     def test_create_issue(self):
 
-        @atomic 
+        @atomic
         def create_issue():
             url = "/api/v1/issues/"
             with open("website/static/img/background.png", 'rb') as _file:
