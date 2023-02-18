@@ -1,4 +1,4 @@
-simport json
+import json
 import os
 import random
 import re
