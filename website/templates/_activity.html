@@ -1,6 +1,6 @@
 {% load gravatar %}
 {% load static %}
-<div class="list-group-item activity-strip">
+<div class="list-group-item activity-strip overflow-auto">
     <div class="activity-strip-section">
         {% if activity.user.userprofile.avatar %}
             <img src="{{ activity.user.userprofile.avatar }}" width="100" class="img-responsive img-rounded">
@@ -30,17 +30,17 @@
                     href="/domain/{{ activity.domain_name }}">{{ activity.domain_title }}</a> {{ activity.created|timesince }}
                 ago
             </div>
-            <a class="comment_link" href="{{ activity.get_absolute_url }}#comments">
+            <a class="whitespace-nowrap" href="{{ activity.get_absolute_url }}#comments">
                 {% if activity.comments.all|length > 0 %}
                     {{ activity.comments.all|length }} comments
                 {% endif %}
             </a>
             {% if activity.status == "open" %}
-            <span class="label label-success text-capitalize">{{ activity.status }}</span>
+            <span class="label label-success text-capitalize !leading-loose">{{ activity.status }}</span>
         {% else %}
-            <span class="label label-danger text-capitalize">{{ activity.status }}</span>
+            <span class="label label-danger text-capitalize !leading-loose">{{ activity.status }}</span>
         {% endif %}
-        <span class="label label-info bug-type">{{ activity.get_label_display }}</span>
+        <span class="label label-info !leading-loose">{{ activity.get_label_display }}</span>
         </div>
     </div>
     <div class="activity-screenshot">

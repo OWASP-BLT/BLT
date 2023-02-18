@@ -13,7 +13,7 @@ import dj_database_url
 from django.http import Http404
 from django.utils.translation import gettext_lazy as _
 import environ
-#from google.oauth2 import service_account
+# from google.oauth2 import service_account
 
 env = environ.Env()
 # reading .env file
@@ -71,11 +71,11 @@ INSTALLED_APPS = (
     "rest_framework",
     "django_filters",
     "rest_framework.authtoken",
-    #"django_cron",
+    # "django_cron",
     "mdeditor",
-    #"bootstrap_datepicker_plus",
+    # "bootstrap_datepicker_plus",
     "tz_detect",
-    #"tellme",
+    # "tellme",
     "star_ratings",
     "drf_yasg",
     "captcha",
@@ -84,7 +84,7 @@ INSTALLED_APPS = (
 )
 
 
-#CRON_CLASSES = ["website.views.CreateIssue"]
+# CRON_CLASSES = ["website.views.CreateIssue"]
 
 MIDDLEWARE = (
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -274,7 +274,7 @@ if "DATABASE_URL" in os.environ:
 
 else:
     if not TESTING:
-        DEBUG=True
+        DEBUG = True
 
 # local dev needs to set SMTP backend or fail at startup
 if DEBUG:
@@ -336,13 +336,12 @@ if not os.path.exists(AVATAR_PATH):
     os.makedirs(AVATAR_PATH)
 
 if DEBUG == True or TESTING:
-    CACHES = {"default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+    CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 else:
     if os.environ.get("MEMCACHIER_SERVERS", ""):
-        os.environ["MEMCACHE_SERVERS"] = os.environ.get("MEMCACHIER_SERVERS", "").replace(
-            ",", ";"
-        )
+        os.environ["MEMCACHE_SERVERS"] = os.environ.get(
+            "MEMCACHIER_SERVERS", ""
+        ).replace(",", ";")
         os.environ["MEMCACHE_USERNAME"] = os.environ.get("MEMCACHIER_USERNAME", "")
         os.environ["MEMCACHE_PASSWORD"] = os.environ.get("MEMCACHIER_PASSWORD", "")
 
@@ -366,8 +365,9 @@ else:
             }
         }
     else:
-        CACHES = {"default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache"}} 
+        CACHES = {
+            "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+        }
 
 
 REST_FRAMEWORK = {
@@ -382,10 +382,10 @@ REST_FRAMEWORK = {
 SOCIALACCOUNT_PROVIDER = {
     'github': {
         'scope': ('user:email',)
-    },
+        },
     'google': {
         'scope': ('user:email',)
-    }
+        }
 }
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
@@ -441,8 +441,7 @@ SUPERUSERS = ((SUPERUSER_USERNAME, SUPERUSER_EMAIL, SUPERUSER_PASSWORD),)
 STRIPE_LIVE_PUBLIC_KEY = os.environ.get(
     "STRIPE_LIVE_PUBLIC_KEY", "<your publishable key>"
 )
-STRIPE_LIVE_SECRET_KEY = os.environ.get(
-    "STRIPE_LIVE_SECRET_KEY", "<your secret key>")
+STRIPE_LIVE_SECRET_KEY = os.environ.get("STRIPE_LIVE_SECRET_KEY", "<your secret key>")
 STRIPE_TEST_PUBLIC_KEY = os.environ.get(
     "STRIPE_TEST_PUBLIC_KEY",
     "pk_test_51HFiXMFf0OkkOVnDkNs4opFLqM0Sx5GA6Pedf63uGzG1gHhumFYHEOLfCA7yzZwXUpjaa5j9ZhS1yciNhouYCMh400pSx5ZEx6",
@@ -467,6 +466,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # allow captcha bypass during test
 IS_TEST = False
-if 'test' in sys.argv:
+if "test" in sys.argv:
     CAPTCHA_TEST_MODE = True
     IS_TEST = True

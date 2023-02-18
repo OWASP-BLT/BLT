@@ -3,6 +3,11 @@
         display:none !important;
     }
 }
+.nav-hidden {
+    display:none;
+}
+
+
 .user-menu {
     height: 80px !important;
     display: flex !important;
