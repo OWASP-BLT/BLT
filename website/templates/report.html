@@ -11,17 +11,17 @@
         border-radius: 0px;
     }
 
-    .text-center {
+    .panel-text {
         width: 100%;
         display: flex;
         justify-content: center;
         align-items: center;
         margin-top: 30px;
+        text-align:center;
     }
-    .text-center div{
+    .panel-text div{
         width: 44%;
         width: 500px;
-        background-color: rgb(220, 0, 0);
     }
     .title{
         color: white; 
@@ -42,8 +42,8 @@
 <form action="/issue/" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="row main">
-        <div class="panel-title text-center">
-            <div >
+        <div class="panel-title panel-text">
+            <div class="bg-red-500">
                 <h1 class="title">REPORT A BUG</h1>
             </div>
         </div>
@@ -61,7 +61,7 @@
                             data-intro="Enter the website's complete url where you found the bug." data-step="1"
                             placeholder="https://testsite.com/bug-found" name="url" value="{{ form.url.value|default:"" }}">
                         {% endif %}
-                        <a class="btn btn-info form-control duplicates" style="background-color: rgb(255, 0, 0); border:none;">Check for Duplicates</a>
+                        <a class="btn btn-info form-control duplicates bg-red-500 border-0">Check for Duplicates</a>
                     </div>
                     <span class="message"></span>
                     <span class="help-block">{{ form.url.errors }}</span>
