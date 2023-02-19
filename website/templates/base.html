@@ -48,23 +48,20 @@
         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
 </head>
 
-<body>
+<body class="relative min-h-[100vh] flex flex-col">
     
     {% comment %} navbar {% endcomment %}
         {% include "includes/navbar.html" %}
     {% comment %} navbar {% endcomment %}
 
-    <br><br><br><br>
-    <div id="wrapper">
-        <div id="page-wrapper">
+    <div id="wrapper" class="grow">
+        <div id="page-wrapper" class="relative">
             <div id="base-container" class="container">
                 {% block content %}
                 {% endblock %}
             </div>
         </div>
-        
     </div>
-    
     {% include "includes/footer.html" %}
 
 </body>
