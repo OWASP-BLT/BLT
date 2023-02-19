@@ -89,6 +89,7 @@ from django.conf import settings
 
 
 def index(request, template="index.html"):
+    
     try:
         domains = random.sample(Domain.objects.all(), 3)
     except:
