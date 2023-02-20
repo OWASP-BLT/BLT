@@ -3,6 +3,7 @@
 {% load gravatar %}
 {% load socialaccount %}
 {% providers_media_js %}
+{% load custom_tags %}
 {% block title %}Bug on {{ object.domain_title }} - {{ object.description }}{% endblock %}
 {% block og_title %}Bug on {{ object.domain_title }}{% endblock %}
 
@@ -243,7 +244,7 @@
                                 <input type="hidden" name="cmd" value="_xclick">
                                 <input type="hidden" name="business" value="coderbounty@gmail.com">
                                 <input type="hidden" name="item_name"
-                                    value="tip for {{ object.user.username }} on bugheist.com bug # {{ object.id }}">
+                                    value="tip for {{ object.user.username }} on {% env 'DOMAIN_NAME' %} bug # {{ object.id }}">
                                 <input type="hidden" name="currency_code" value="USD">
                                 <button type="submit" class="btn btn-primary btn-xs pull-right">
                                     Send a Tip
@@ -308,11 +309,11 @@
                                 {% else %}
                                     {% if request.user.is_superuser or request.user == object.user %}
                                         {% if object.screenshot %}
-                                            <a href="{{ object.domain.github }}/issues/new?title={{ object.description|urlencode }}&body=![0]({{ object.screenshot.url }})%20http://bugheist.com/issue/{{ object.id }}"
+                                            <a href="{{ object.domain.github }}/issues/new?title={{ object.description|urlencode }}&body=![0]({{ object.screenshot.url }})%20http://{% env 'FQDN' %}/issue/{{ object.id }}"
                                         
                                         {% else %}
                                             {% if screenshots %}
-                                                <a href="{{ object.domain.github }}/issues/new?title={{ object.description|urlencode }}&body=![0]({{ screenshots.0.image.url }})%20http://bugheist.com/issue/{{ object.id }}"
+                                                <a href="{{ object.domain.github }}/issues/new?title={{ object.description|urlencode }}&body=![0]({{ screenshots.0.image.url }})%20http://{% env 'FQDN' %}/issue/{{ object.id }}"
                                             {% endif %}
                                         {%endif%}
                                     {% endif %}

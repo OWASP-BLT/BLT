@@ -1,5 +1,6 @@
 {% extends "base_dashboard_user.html" %}
 {% load static %}
+{% load custom_tags %}
 {% load gravatar %}
 {% load socialaccount %}
 {% load humanize %}
@@ -220,12 +221,12 @@
           if (trint.number == 3) {
             $('.message').html("<br>Sweet! We haven't got any bug from this domain till now");
           } else if (trint.number == 2) {
-            var link = "www.bugheist.com/domain/" + trint.domain;
+            var link = "{% env 'FQDN' %}/domain/" + trint.domain;
             $('.message').html(
               "<br>Multiple bugs already exist on this domain, ensure you are not submitting a duplicate bug by going here:<br> " +
               link);
           } else if (trint.number == 1) {
-            var link = "www.bugheist.com/issue/" + trint.id;
+            var link = "{% env 'FQDN' %}/issue/" + trint.id;
             $('.message').html(
               "<br><div class='row'>A bug with same URL already exists <br>Description: " + trint
               .description + "<br>Created on: " + trint.date + "/" + trint.month + "/" + trint.year +
