@@ -89,51 +89,7 @@ from django.conf import settings
 
 
 def index(request, template="index.html"):
-    try:
-        domains = random.sample(Domain.objects.all(), 3)
-    except:
-        domains = None
-    try:
-        if not EmailAddress.objects.get(email=request.user.email).verified:
-            messages.error(request, "Please verify your email address")
-    except:
-        pass
-
-    bug_count = Issue.objects.all().count()
-    user_count = User.objects.all().count()
-    hunt_count = Hunt.objects.all().count()
-    domain_count = Domain.objects.all().count()
-    captcha_form = CaptchaForm()
-
-    wallet = None
-    if request.user.is_authenticated:
-        wallet, created = Wallet.objects.get_or_create(user=request.user)
-
-    activity_screenshots = {}
-    for activity in Issue.objects.all():
-        activity_screenshots[activity] = IssueScreenshot.objects.filter(issue=activity).first()
-
-    context = {
-        "activities": Issue.objects.all()[0:10],
-        "domains": domains,
-        "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
-        "leaderboard": User.objects.filter(
-            points__created__month=datetime.now().month,
-            points__created__year=datetime.now().year,
-        )
-        .annotate(total_score=Sum("points__score"))
-        .order_by("-total_score")[:10],
-        "bug_count": bug_count,
-        "user_count": user_count,
-        "wallet": wallet,
-        "hunt_count": hunt_count,
-        "domain_count": domain_count,
-        "captcha_form": captcha_form,
-        "activity_screenshots":activity_screenshots
-    }
-    return render(request, template, context)
-
-def index2(request, template="index2.html"):
+    
     try:
         domains = random.sample(Domain.objects.all(), 3)
     except:
