@@ -23,8 +23,6 @@ jobs:
       run: sudo apt-get install -y --no-install-recommends libmemcached-dev xvfb
     - name: poetry install
       run: poetry install
-    - name: poetry run python manage.py migrate
-      run: poetry run python manage.py migrate
     - name: poetry run python manage.py collectstatic --noinput
       run: poetry run python manage.py collectstatic --noinput
     - name: xvfb-run --auto-servernum poetry run python manage.py test 
