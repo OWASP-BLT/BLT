@@ -694,7 +694,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             issue = {
                 "title": obj.description,
                 "body": "![0]("
-                + obj.screenshot.url
+                + obj.screenshots.url
                 + ") https://" + settings.FQDN + "/issue/"
                 + str(obj.id) + " found by " + the_user + " at url: " + obj.url,
                 "labels": ["bug", settings.PROJECT_NAME_LOWER],
