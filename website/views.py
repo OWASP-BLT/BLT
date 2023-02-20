@@ -88,7 +88,7 @@ from django.conf import settings
 
 from django.views.decorators.cache import cache_page
 
-@cache_page(60 * 60 * 24)
+#@cache_page(60 * 60 * 24)
 def index(request, template="index.html"):
     
     try:
