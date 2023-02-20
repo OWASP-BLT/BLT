@@ -27,5 +27,5 @@ jobs:
       run: poetry run python manage.py migrate
     - name: poetry run python manage.py collectstatic --noinput
       run: poetry run python manage.py collectstatic --noinput
-    - name: xvfb-run --auto-servernum poetry run python manage.py test
-      run: xvfb-run --auto-servernum poetry run python manage.py test
+    - name: xvfb-run --auto-servernum poetry run python manage.py test 
+      run: xvfb-run --auto-servernum poetry run python manage.py test -v 3 --failfast  
