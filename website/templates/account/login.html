@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load custom_tags %}
 {% load i18n %}
 {% load account socialaccount %}
 
@@ -18,7 +17,7 @@
           <a href="{% url 'index' %}" class="hover:no-underline text-white hover:text-white">BUGHEIST</a>
         </div>
         <p class="mt-6 font-normal text-center text-white text-xl md:mt-0">
-            OWASP {% env 'PROJECT_NAME' %} is a bug logging tool to report issues and get points, companies are held accountable.
+            OWASP BLT is a bug logging tool to report issues and get points, companies are held accountable.
         </p>
         <p class="flex flex-col items-center justify-center text-sm mt-10 text-center">
           <span>Don't have an account?</span>
