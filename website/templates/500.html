@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load custom_tags %}
 {% block content %}
     <div style="font-family: 'Arial';">
         <center>
@@ -14,7 +15,7 @@
         $(document).ready(function () {
             $(document).on('click', '.errors', function () {
                 var url = window.location.href;
-                var bugheist = 'https://www.bugheist.com/report/?url=' + url;
+                var bugheist = 'https://{% env "FQDN" %}/report/?url=' + url;
                 var redirectWindow = window.open(bugheist, '_blank');
                 redirectWindow.location;
             });
