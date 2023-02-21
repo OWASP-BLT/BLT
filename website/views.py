@@ -676,6 +676,20 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             user_prof.save()
 
+        redirect_url = "/report"
+        
+        screenshot_text = ''
+        if len(self.request.FILES.getlist("screenshots")) > 5:
+            messages.error(self.request, "Max limit of 5 images!")
+            return HttpResponseRedirect("/issue/")
+        for screenshot in self.request.FILES.getlist("screenshots"):
+            filename = screenshot.name
+            extension = filename.split(".")[-1] 
+            screenshot.name = filename[:99] + str(uuid.uuid4()) + "." + extension
+            default_storage.save(f"screenshots/{screenshot.name}",screenshot)
+            IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}",issue=obj)
+            screenshot_text += "![0](" + IssueScreenshot.image.url + ") "
+
         if domain.github and os.environ.get("GITHUB_PASSWORD"):
             from giturlparse import parse
             import json
@@ -694,9 +708,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 the_user = obj.user
             issue = {
                 "title": obj.description,
-                "body": "![0]("
-                + obj.screenshots.url
-                + ") https://" + settings.FQDN + "/issue/"
+                "body": screenshot_text
+                + "https://" + settings.FQDN + "/issue/"
                 + str(obj.id) + " found by " + the_user + " at url: " + obj.url,
                 "labels": ["bug", settings.PROJECT_NAME_LOWER],
             }
@@ -710,18 +723,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             response = r.json()
             obj.github_url = response["html_url"]
             obj.save()
-
-        redirect_url = "/report"
-
-        if len(self.request.FILES.getlist("screenshots")) > 5:
-            messages.error(self.request, "Max limit of 5 images!")
-            return HttpResponseRedirect("/issue/")
-        for screenshot in self.request.FILES.getlist("screenshots"):
-            filename = screenshot.name
-            extension = filename.split(".")[-1] 
-            screenshot.name = filename[:99] + str(uuid.uuid4()) + "." + extension
-            default_storage.save(f"screenshots/{screenshot.name}",screenshot)
-            IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}",issue=obj)
 
         if not (self.request.user.is_authenticated or tokenauth):
             self.request.session["issue"] = obj.id
