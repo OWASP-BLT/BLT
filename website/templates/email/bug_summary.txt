@@ -65,17 +65,17 @@
          							<table border="0" cellpadding="0" cellspacing="0">
           							<tr border="0" align="center">
           								<td>
-            								<a href="https://twitter.com/{% env 'BLOG_URL' %}">
+            								<a href="{% env 'TWITTER_URL' %}">
             								Twitter</a>
             							</td>
             							<td style="font-size: 0; line-height: 0;" width="20">&nbsp;</td>
             							<td>
-            								<a href="https://www.facebook.com/{% env 'BLOG_URL' %}">
+            								<a href="{% env 'FACEBOOK_URL' %}">
             								Facebook</a>
             							</td>
             							<td style="font-size: 0; line-height: 0;" width="20">&nbsp;</td>
           								<td>
-          									<a href="https://github.com/OWASP/BLT">
+          									<a href="{% env 'GITHUB_URL' %}">
           									GitHub</a>
           								</td>
          								</tr>
