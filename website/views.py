@@ -643,8 +643,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 django_file,
                 save=True,
             )
-        obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
-        obj.screenshot=self.request.FILES.getlist("screenshots")[0]        
+        obj.user_agent = self.request.META.get("HTTP_USER_AGENT")      
         obj.save()
 
         if self.request.user.is_authenticated:
@@ -678,6 +677,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             user_prof.save()
 
         redirect_url = "/report"
+        screenshot_text = ''
 
         if len(self.request.FILES.getlist("screenshots")) > 5:
             messages.error(self.request, "Max limit of 5 images!")
@@ -688,11 +688,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             screenshot.name = filename[:99] + str(uuid.uuid4()) + "." + extension            
             default_storage.save(f"screenshots/{screenshot.name}",screenshot)
             IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}",issue=obj)
-
-        obj_screenshots = IssueScreenshot.objects.filter(issue_id=obj.id)
-        screenshot_text = ''
-        for screenshot in obj_screenshots:
-            screenshot_text += "![0](" + screenshot.image.url + ") "
+            screenshot_text += "![0](" + "media/screenshots/"+screenshot.name + ") "
 
         if domain.github and os.environ.get("GITHUB_PASSWORD"):
             from giturlparse import parse
@@ -700,7 +696,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             import requests
 
             github_url = (
-                domain.github.replace("https", "git").replace("http", "git") + ".git"
+                domain.github.replace("https://", "git@").replace("http://", "git@") + ".git"
             )
             p = parse(github_url)
 
