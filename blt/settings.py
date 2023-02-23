@@ -31,6 +31,7 @@ DEFAULT_FROM_EMAIL = "support@" + DOMAIN_NAME
 SERVER_EMAIL = "support@" + DOMAIN_NAME
 FQDN = "www." + DOMAIN_NAME
 EMAIL_TO_STRING = PROJECT_NAME + " <"+ SERVER_EMAIL +">"
+BLOG_URL = os.environ.get("BLOG_URL","bugheist")
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 
