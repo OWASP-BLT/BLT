@@ -1,3 +1,4 @@
+{% load custom_tags %}
 <div class="row">
     <div class="col-lg-6">
         <h1 class="page-header">Terms and Conditions</h1>
@@ -21,7 +22,7 @@
                 Service, including the release of new tools and resources, shall be subject to the Terms of Service.
                 Continued use of the Service after any such changes shall constitute your consent to such changes.
                 You can review the most current version of the Terms of Service at any time at: <a
-                    href="https://www.bugheist.com/terms" target="_blank">http://www.bugheist.com/terms</a></p>
+                    href="https://{% env 'FQDN' %}/terms" target="_blank">http://{% env "FQDN" %}/terms</a></p>
             <p>Violation of any of the terms below will result in the termination of your Account. While Bugheist
                 prohibits such conduct and Content on the Service, you understand and agree that Bugheist cannot be
                 responsible for the Content posted on the Service and you nonetheless may be exposed to such
@@ -236,8 +237,8 @@
                         governed under California law.</p>
                 </li>
                 <li>
-                    <p>Questions about the Terms of Service should be sent to <a href="mailto:support@bugheist.com"
-                            target="_blank">support@bugheist.com</a>.
+                    <p>Questions about the Terms of Service should be sent to <a href="mailto:support@{% env 'DOMAIN_NAME' %}"
+                            target="_blank">support@{% env "DOMAIN_NAME" %}</a>.
                     </p>
                 </li>
             </ol>
