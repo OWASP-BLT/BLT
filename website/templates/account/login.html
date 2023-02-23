@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load custom_tags %}
 {% load account socialaccount %}
 
 
@@ -14,7 +15,7 @@
         class="p-4 py-6 text-white bg-red-500 md:w-80 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly"
       >
         <div class="my-3 text-4xl font-bold tracking-wider text-center">
-          <a href="{% url 'index' %}" class="hover:no-underline text-white hover:text-white">BUGHEIST</a>
+          <a href="{% url 'index' %}" class="hover:no-underline text-white hover:text-white">{% env 'PROJECT_NAME' %}</a>
         </div>
         <p class="mt-6 font-normal text-center text-white text-xl md:mt-0">
             OWASP BLT is a bug logging tool to report issues and get points, companies are held accountable.

@@ -1,3 +1,4 @@
+{% load custom_tags %}
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
  <head>
@@ -11,22 +12,22 @@
     		<table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border: 1px solid #cccccc;">
     			<tr>
   					<td align="center" style="padding: 40px 0 30px 0;">
- 							<img src="https://www.bugheist.com/static/img/logo-large-transparent.png" alt="Bugheist" width="300" height="73" style="display: block;"/>
+ 							<img src="https://{% env 'FQDN' %}static/img/logo-large-transparent.png" alt="{% env 'PROJECT_NAME' %}" width="300" height="73" style="display: block;"/>
 						</td>
      			</tr>
     			<tr>
   					<td align="left">
   					{% load humanize %}
-  	 				Bugheist {{month}} Summary<br>
+  	 				{% env 'PROJECT_NAME' %} {{month}} Summary<br>
   					<br>
   					The leaderboard has been reset, go forth and find bugs!<br>
 	   				<br>
 	 	 				{{month}}'s Top 5 Bug Hunters<br>
 						{% for leader in leaderboard %}
-						{{forloop.counter|ordinal}} Place - <a href="https://www.bugheist.com/profile/{{leader.username}}">{{leader.username}}</a> ({{leader.total_score}} points)<br>{% endfor %}
+						{{forloop.counter|ordinal}} Place - <a href="https://{% env 'FQDN' %}/profile/{{leader.username}}">{{leader.username}}</a> ({{leader.total_score}} points)<br>{% endfor %}
 						<br>
 						<br>
-						<a href="http://bugheist.com/">[[[ Sponsor the Leaderboard ]]]</a><br>
+						<a href="http://{% env 'DOMAIN_NAME' %}/">[[[ Sponsor the Leaderboard ]]]</a><br>
 						 (click "Sponsor a Prize" on the leaderboard)<br>
 						<br>
 						--- {{month}} Stats ---<br>
@@ -52,8 +53,8 @@
 						{{ issue.domain }} - {{issue.description|truncatewords:20}} (viewed {{issue.views|default:"0"}} times)<br>{% endfor %}
 						<br>
 						Keep your website bug free<br>
-						<a href="http://bugheist.com/hunt">[[[ Sponsor a Bug Hunt Today ]]]</a><br>
-						http://bugheist.com/hunt<br>
+						<a href="http://{% env 'DOMAIN_NAME' %}/hunt">[[[ Sponsor a Bug Hunt Today ]]]</a><br>
+						http://{% env 'DOMAIN_NAME' %}/hunt<br>
   					</td>
     			</tr>
     			<tr>

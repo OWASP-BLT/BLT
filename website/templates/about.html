@@ -2,7 +2,7 @@
 {% load gravatar %}
 {% load static %}
 {% load humanize %}
-
+{% load custom_tags %}
 
 
 {% block content %}
@@ -19,9 +19,9 @@
 
     <div class="row">
         <div class="col-lg-12">
-            <h3>Want to kick the tires before you make a purchase? BugHeist shares up to 5 software bugs fee-free
+            <h3>Want to kick the tires before you make a purchase? {% env 'PROJECT_NAME' %} shares up to 5 software bugs fee-free
                 through a Trial Bug Hunt.</h3>
-            Test-drive BugHeist here <a href="/hunt" class="btn btn-primary submit_button">Start</a>
+            Test-drive {% env 'PROJECT_NAME' %} here <a href="/hunt" class="btn btn-primary submit_button">Start</a>
         </div>
     </div>
 {% endblock %}
