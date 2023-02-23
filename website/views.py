@@ -699,7 +699,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
             import requests
 
             github_url = (
-                domain.github.replace("https://", "git@").replace("http://", "git@") + ".git"
+                #domain.github.replace("https://", "git@").replace("http://", "git@") + ".git"
+                domain.github.replace("https", "git").replace("http", "git") + ".git"
             )
             p = parse(github_url)
 
