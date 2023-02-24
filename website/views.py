@@ -105,6 +105,7 @@ def index(request, template="index.html"):
     user_count = User.objects.all().count()
     hunt_count = Hunt.objects.all().count()
     domain_count = Domain.objects.all().count()
+
     captcha_form = CaptchaForm()
 
     wallet = None
@@ -117,8 +118,10 @@ def index(request, template="index.html"):
 
     top_companies = Issue.objects.values("domain__name").annotate(count=Count('domain__name')).order_by("-count")[:10]
     top_testers = Issue.objects.values("user__id","user__username").filter(user__isnull=False).annotate(count=Count('user__username')).order_by("-count")[:10]
+    top_hunts = Hunt.objects.values('id','name','url','prize','logo').filter(is_published=True).order_by("-prize")[:3]
 
     context = {
+        "server_url": request.build_absolute_uri('/'),
         "activities": Issue.objects.all()[0:10],
         "domains": domains,
         "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
@@ -136,7 +139,8 @@ def index(request, template="index.html"):
         "captcha_form": captcha_form,
         "activity_screenshots":activity_screenshots,
         "top_companies":top_companies,
-        "top_testers":top_testers
+        "top_testers":top_testers,
+        "top_hunts": top_hunts 
     }
     return render(request, template, context)
 
@@ -1496,6 +1500,9 @@ class HuntCreate(CreateView):
         return super(HuntCreate, self).form_valid(form)
 
     def get_success_url(self):
+        
+        # return reverse('start_hunt')
+
         if self.request.POST.get("plan") == "Ant":
             return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TSZ84RQZ8RKKC"
         if self.request.POST.get("plan") == "Wasp":
