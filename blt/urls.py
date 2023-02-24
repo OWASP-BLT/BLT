@@ -311,7 +311,7 @@ urlpatterns = [
     re_path(r"^accounts/profile/", website.views.profile, name="account_profile"),
     re_path(r"^delete_issue/(?P<id>\w+)/$", website.views.delete_issue, name="delete_issue"),
     re_path(r"^accounts/", include("allauth.urls")),
-    re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html")),
+    re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html"),name="start_hunt"),
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
     re_path(r"^invite/$", InviteCreate.as_view(template_name="invite.html")),
     re_path(

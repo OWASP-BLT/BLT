@@ -153,6 +153,10 @@ def validate_image(fieldfile_obj):
 
 
 class Hunt(models.Model):
+    
+    class Meta:
+        ordering = ["-id"]
+
     domain = models.ForeignKey(Domain, on_delete=models.CASCADE)
     name = models.CharField(max_length=25)
     description = MDTextField(null=True, blank=True)
@@ -177,8 +181,9 @@ class Hunt(models.Model):
         parsed_url = urlparse(self.url)
         return parsed_url.netloc.split(".")[-2:][0].title()
 
-    class Meta:
-        ordering = ["-id"]
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Issue(models.Model):
