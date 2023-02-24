@@ -39,49 +39,49 @@
 <div class="w-full m-0 p-0 flex flex-wrap justify-center">
 
 
-    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+    <div class="border-2 w-[350px] m-5 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
         <i class="fa fa-exclamation-triangle fa-3x mt-5"></i>
         <p class="text-3xl font-bold">{% trans "Number Error" %}</p>
         <p class="w-1/2 text-center">{% trans "For pages where you see a number 404, 500." %}</p>
         <button onclick="example('/search/?query=1&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
     </div>
 
-    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+    <div class="border-2 w-[350px] m-5 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
         <i class="fa fa-trophy fa-3x mt-5"></i>
         <p class="text-3xl font-bold">{% trans "Functional" %}</p>
         <p class="w-1/2 text-center">{% trans "Something doesn't work as intended" %}</p>
         <button onclick="example('/search/?query=2&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
     </div>
 
-    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+    <div class="border-2 w-[350px] m-5 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
         <i class="fa fa-flash fa-3x mt-5"></i>
         <p class="text-3xl font-bold">{% trans "Performance" %}</p>
         <p class="w-1/2 text-center">{% trans "Any process that takes over 5 seconds." %}</p>
         <button onclick="example('/search/?query=3&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
     </div>
 
-    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+    <div class="border-2 w-[350px] m-5 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
         <i class="fa fa-flash fa-3x mt-5"></i>
         <p class="text-3xl font-bold">{% trans "Security" %}</p>
         <p class="w-1/2 text-center">{% trans "Data leaks, exploits or anything smelly." %}</p>
         <button onclick="example('/search/?query=4&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
     </div>
 
-    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+    <div class="border-2 w-[350px] m-5 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
         <i class="fa fa-flash fa-3x mt-5"></i>
         <p class="text-3xl font-bold">{% trans "Typo" %}</p>
         <p class="w-1/2 text-center">{% trans "Miss-spellings, miss-grammar and more." %}</p>
         <button onclick="example('/search/?query=5&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
     </div>
 
-    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+    <div class="border-2 w-[350px] m-5 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
         <i class="fa fa-flash fa-3x mt-5"></i>
         <p class="text-3xl font-bold">{% trans "Design" %}</p>
         <p class="w-1/2 text-center">{% trans "Layout, responsiveness and improvements" %}</p>
         <button onclick="example('/search/?query=6&type=label')" class="border-2 border-gray-400 px-14 py-2 transform hover:translate-y-0.5 hover:shadow-lg">Examples</button>
     </div>
 
-    <div class="border-2 w-[350px] m-8 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
+    <div class="border-2 w-[350px] m-5 py-5 h-[250px] rounded-lg flex flex-col items-center justify-around">
         <i class="fa fa-flash fa-3x mt-5"></i>
         <p class="text-3xl font-bold">{% trans "Server Down" %}</p>
         <p class="w-1/2 text-center">{% trans "500 Server Error and Downtime" %}</p>
@@ -108,6 +108,36 @@
         </div>
     </div>
 </div>
+
+
+<p class="text-7xl text-center mb-10 font-sans text-[#B1B1B1]">TOP HUNTS</p>
+
+<div class="flex items-center flex-wrap items-center w-full  justify-between mb-[100px] mt-20 sm:justify-center">
+
+    {% for hunt in top_hunts %}
+
+        <div class="flex w-[350px] h-[110px] border-2 border-gray-300 p-1 cursor-pointer shadow-sm hover:scale-110 hover:shadow-lg transition-all m-5 sm:mt-5">
+
+            <div class="flex justify-center items-center w-[40%]">
+                <img class="w-32 h-32 rounded-lg" src="{{server_url}}/media/{{hunt.logo}}" alt="">
+            </div>
+
+            <div class="flex flex-col ml-5 w-[60%]">
+                <p class="text-3xl font-extrabold mt-6">{{hunt.name}}</p>
+                <p class="tw-font-extralight text-gray-500 text-xl mt-1">{{hunt.url}}</p>
+                <div class="flex mt-5 justify-between items-center w-[90%]">
+                    <p class="font-bold">${{hunt.prize}}</p>
+                    <button class="bg-red-600 text-white w-[100px] h-[25px] font-bold">SUBMIT BUG</button>
+                </div>
+            </div>
+        </div>
+
+    {% endfor %}
+
+</div>
+
+    
+    
 
 
 <p class="text-7xl text-center mb-[100px] font-sans text-[#B1B1B1]">LEADER BOARDS</p>
