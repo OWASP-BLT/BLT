@@ -218,6 +218,8 @@ class Issue(models.Model):
     github_url = models.URLField(default="", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
+    is_hidden = models.BooleanField(default=False)
+
 
     def __unicode__(self):
         return self.description
@@ -404,6 +406,7 @@ class UserProfile(models.Model):
     issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
     issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
     issue_flaged = models.ManyToManyField(Issue,blank=True,related_name="flaged") 
+    issues_hidden = models.BooleanField(default=False)
 
     def avatar(self, size=36):
         if self.user_avatar:
