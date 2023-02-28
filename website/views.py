@@ -105,6 +105,7 @@ def index(request, template="index.html"):
     user_count = User.objects.all().count()
     hunt_count = Hunt.objects.all().count()
     domain_count = Domain.objects.all().count()
+
     captcha_form = CaptchaForm()
 
     wallet = None
@@ -117,8 +118,10 @@ def index(request, template="index.html"):
 
     top_companies = Issue.objects.values("domain__name").annotate(count=Count('domain__name')).order_by("-count")[:10]
     top_testers = Issue.objects.values("user__id","user__username").filter(user__isnull=False).annotate(count=Count('user__username')).order_by("-count")[:10]
+    top_hunts = Hunt.objects.values('id','name','url','prize','logo').filter(is_published=True).order_by("-prize")[:3]
 
     context = {
+        "server_url": request.build_absolute_uri('/'),
         "activities": Issue.objects.all()[0:10],
         "domains": domains,
         "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
@@ -136,7 +139,8 @@ def index(request, template="index.html"):
         "captcha_form": captcha_form,
         "activity_screenshots":activity_screenshots,
         "top_companies":top_companies,
-        "top_testers":top_testers
+        "top_testers":top_testers,
+        "top_hunts": top_hunts 
     }
     return render(request, template, context)
 
@@ -643,7 +647,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 django_file,
                 save=True,
             )
-        obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
+        obj.user_agent = self.request.META.get("HTTP_USER_AGENT")       
         obj.save()
 
         if self.request.user.is_authenticated:
@@ -676,12 +680,30 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             user_prof.save()
 
+        redirect_url = "/report"
+
+        if len(self.request.FILES.getlist("screenshots")) > 5:
+            messages.error(self.request, "Max limit of 5 images!")
+            return HttpResponseRedirect("/issue/")
+        for screenshot in self.request.FILES.getlist("screenshots"):
+            filename = screenshot.name
+            extension = filename.split(".")[-1] 
+            screenshot.name = filename[:99] + str(uuid.uuid4()) + "." + extension            
+            default_storage.save(f"screenshots/{screenshot.name}",screenshot)
+            IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}",issue=obj)
+
+        obj_screenshots = IssueScreenshot.objects.filter(issue_id=obj.id)
+        screenshot_text = ''
+        for screenshot in obj_screenshots:
+            screenshot_text += "![0](" + screenshot.image.url + ") "
+
         if domain.github and os.environ.get("GITHUB_PASSWORD"):
             from giturlparse import parse
             import json
             import requests
 
             github_url = (
+                #domain.github.replace("https://", "git@").replace("http://", "git@") + ".git"
                 domain.github.replace("https", "git").replace("http", "git") + ".git"
             )
             p = parse(github_url)
@@ -694,10 +716,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 the_user = obj.user
             issue = {
                 "title": obj.description,
-                "body": "![0]("
-                + obj.screenshots.url
-                + ") https://" + settings.FQDN + "/issue/"
-                + str(obj.id) + " found by " + the_user + " at url: " + obj.url,
+                "body": screenshot_text +
+                 "https://" + settings.FQDN + "/issue/"
+                + str(obj.id) + " found by " + str(the_user) + " at url: " + obj.url,
                 "labels": ["bug", settings.PROJECT_NAME_LOWER],
             }
             r = requests.post(
@@ -710,18 +731,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             response = r.json()
             obj.github_url = response["html_url"]
             obj.save()
-
-        redirect_url = "/report"
-
-        if len(self.request.FILES.getlist("screenshots")) > 5:
-            messages.error(self.request, "Max limit of 5 images!")
-            return HttpResponseRedirect("/issue/")
-        for screenshot in self.request.FILES.getlist("screenshots"):
-            filename = screenshot.name
-            extension = filename.split(".")[-1] 
-            screenshot.name = filename[:99] + str(uuid.uuid4()) + "." + extension
-            default_storage.save(f"screenshots/{screenshot.name}",screenshot)
-            IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}",issue=obj)
 
         if not (self.request.user.is_authenticated or tokenauth):
             self.request.session["issue"] = obj.id
@@ -1491,6 +1500,9 @@ class HuntCreate(CreateView):
         return super(HuntCreate, self).form_valid(form)
 
     def get_success_url(self):
+        
+        # return reverse('start_hunt')
+
         if self.request.POST.get("plan") == "Ant":
             return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TSZ84RQZ8RKKC"
         if self.request.POST.get("plan") == "Wasp":
