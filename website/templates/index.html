@@ -94,16 +94,16 @@
     <div class="w-[80%] h-full">
         <div class="w-full mt-5 flex flex-wrap items-center justify-around">
             <div class="w-full lg:w-[200px] h-[55px] bg-blue-600 flex justify-center items-center rounded-md m-4">
-                <p class="text-white text-3xl"> <i class="fa fa-bug"></i> 760 Bugs</p>
+                <p class="text-white text-3xl"> <i class="fa fa-bug"></i> {{bug_count}} Bugs</p>
             </div>
             <div class="w-full lg:w-[200px] h-[55px] bg-green-600 flex justify-center items-center rounded-md m-4">
-                <p class="text-white text-3xl"> <i class="fa fa-user"></i> 760 Users</p>
+                <p class="text-white text-3xl"> <i class="fa fa-user"></i> {{user_count}} Users</p>
             </div>
             <div class="w-full lg:w-[200px] h-[55px] bg-yellow-600 flex justify-center items-center rounded-md m-4">
-                <p class="text-white text-3xl"> <i class="fa fa-bullseye"></i> 760 Hunts</p>
+                <p class="text-white text-3xl"> <i class="fa fa-bullseye"></i> {{hunt_count}} Hunts</p>
             </div>
             <div class="w-full lg:w-[200px] h-[55px] bg-red-600 flex justify-center items-center rounded-md m-4">
-                <p class="text-white text-3xl"> <i class="fa fa-support"></i> 760 Domains</p>
+                <p class="text-white text-3xl"> <i class="fa fa-support"></i> {{domain_count}} Domains</p>
             </div>
         </div>
     </div>
@@ -114,25 +114,31 @@
 
 <div class="flex items-center flex-wrap items-center w-full  justify-between mb-[100px] mt-20 sm:justify-center">
 
-    {% for hunt in top_hunts %}
+    {% if top_hunts %}
 
-        <div class="flex w-[350px] h-[110px] border-2 border-gray-300 p-1 cursor-pointer shadow-sm hover:scale-110 hover:shadow-lg transition-all m-5 sm:mt-5">
+        {% for hunt in top_hunts %}
 
-            <div class="flex justify-center items-center w-[40%]">
-                <img class="w-32 h-32 rounded-lg" src="{{server_url}}/media/{{hunt.logo}}" alt="">
-            </div>
+            <div class="flex w-[350px] h-[110px] border-2 border-gray-300 p-1 cursor-pointer shadow-sm hover:scale-110 hover:shadow-lg transition-all m-5 sm:mt-5">
 
-            <div class="flex flex-col ml-5 w-[60%]">
-                <p class="text-3xl font-extrabold mt-6">{{hunt.name}}</p>
-                <p class="tw-font-extralight text-gray-500 text-xl mt-1">{{hunt.url}}</p>
-                <div class="flex mt-5 justify-between items-center w-[90%]">
-                    <p class="font-bold">${{hunt.prize}}</p>
-                    <button class="bg-red-600 text-white w-[100px] h-[25px] font-bold">SUBMIT BUG</button>
+                <div class="flex justify-center items-center w-[40%]">
+                    <img class="w-32 h-32 rounded-lg" src="{{server_url}}/media/{{hunt.logo}}" alt="">
+                </div>
+
+                <div class="flex flex-col ml-5 w-[60%]">
+                    <p class="text-3xl font-extrabold mt-6">{{hunt.name}}</p>
+                    <p class="tw-font-extralight text-gray-500 text-xl mt-1">{{hunt.url}}</p>
+                    <div class="flex mt-5 justify-between items-center w-[90%]">
+                        <p class="font-bold">${{hunt.prize}}</p>
+                        <button class="bg-red-600 text-white w-[100px] h-[25px] font-bold">SUBMIT BUG</button>
+                    </div>
                 </div>
             </div>
-        </div>
 
-    {% endfor %}
+        {% endfor %}
+    
+        {% else %}
+            <p class="text-red-500">No ongoing hunt's found.</p>
+        {% endif %}
 
 </div>
 
