@@ -1,4 +1,5 @@
 {% load static %}
+{% load custom_tags %}
 {% load gravatar %}
 {% load socialaccount %}
 {% load user_score %}
@@ -8,17 +9,17 @@
 <html lang="en">
 
 <head>
-    <title>{% block title %}Bugheist{% endblock %}</title>
+    <title>{% block title %}{% env 'PROJECT_NAME' %}{% endblock %}</title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description"
-        content="{% block description %}Bugheist allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on Bugheist and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and companies can get involved and help out.{% endblock %}">
+        content="{% block description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and companies can get involved and help out.{% endblock %}">
     <meta name="author" content="">
-    <meta property="og:title" content="{% block og_title %}Bugheist{% endblock %}" />
+    <meta property="og:title" content="{% block og_title %}{% env 'PROJECT_NAME' %}{% endblock %}" />
     <meta property="og:image" content="{% block og_image %}{% static "img/screenshot.png" %}{% endblock %}" />
     <meta property="og:description"
-        content="{% block og_description %}Bugheist allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on Bugheist and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and companies can get involved and help out.{% endblock %}" />
+        content="{% block og_description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and companies can get involved and help out.{% endblock %}" />
     <meta property="og:type" content="website" />
     <link href="{% static "vendor/bootstrap/css/bootstrap.css" %}" rel="stylesheet">
     <link href="{% static "css/style-dashboard.css" %}" rel="stylesheet">
