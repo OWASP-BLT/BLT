@@ -145,6 +145,23 @@
         color: inherit;
         text-decoration: none;
     }
+
+    .issue-hide-btn {
+        background-color: rgb(245, 220, 79);
+        position: relative;
+        bottom: 2.5px;
+        left: 10px;
+        height: 30px;
+        font-weight: 700;
+    }
+    .issue-hide-btn:hover {
+        color:black;
+        background-color: rgb(98, 207, 88);
+    }
+
+    .hide-issue-form {
+        padding-top: 10px;
+    }
 </style>
 {% endblock %}
 
@@ -171,6 +188,16 @@
         <kbd class="{{ user.userprofile.get_title_display }} text-uppercase title">
             {{ user.userprofile.get_title_display }}
         </kbd>
+        {% if request.user == user %}
+        <div class="hide-issue-form">
+            <form action="." method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="checkbox" id="hide_user_issues" name="issues_hidden" {{ issues_hidden }}>
+                <label for="hide_user_issues">Hide all issues</label>
+                <button type="submit" class="btn issue-hide-btn">OK</button>
+            </form>
+        </div>
+        {% endif %}
         <div id="target_div">
             {% if request.user != user and request.user.is_authenticated %}
             {% if request.user.email in followers_list %}
