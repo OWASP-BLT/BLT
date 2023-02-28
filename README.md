@@ -18,7 +18,7 @@ Please follow the development server setup procedure [here](https://github.com/O
 ### Documentation
 
 - use the [Installation Docs ](https://github.com/OWASP/BLT/blob/main/Setup.md) to get started.
-- Swagger API Documentations: localhost/swagger/
+- Swagger API Documentations can be found at the root domain /swagger/
 - Postman API Documentations:  [Postman Docs](https://documenter.getpostman.com/view/19782933/VUqpscyV).
 
 ### Resources
