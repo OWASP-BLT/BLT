@@ -21,7 +21,7 @@ environ.Env.read_env()
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-PROJECT_NAME = os.environ.get("PROJECT_NAME", "BugHeist")
+PROJECT_NAME = os.environ.get("PROJECT_NAME", "BLT")
 PROJECT_NAME_LOWER = PROJECT_NAME.lower()
 
 ADMIN_URL = os.environ.get("ADMIN_URL", "admin")
@@ -31,10 +31,11 @@ DEFAULT_FROM_EMAIL = "support@" + DOMAIN_NAME
 SERVER_EMAIL = "support@" + DOMAIN_NAME
 FQDN = "www." + DOMAIN_NAME
 EMAIL_TO_STRING = PROJECT_NAME + " <"+ SERVER_EMAIL +">"
-STEEMIT_URL = os.environ.get("BLOG_URL","https://steemit.com/@bugheist")
+BLOG_URL = os.environ.get("BLOG_URL","https://steemit.com/@bugheist")
 FACEBOOK_URL = os.environ.get("FACEBOOK_URL","https://www.facebook.com/bugheist")
 TWITTER_URL = os.environ.get("TWITTER_URL","https://twitter.com/bugheist")
 GITHUB_URL = os.environ.get("GITHUB_URL","https://github.com/bugheist/website")
+EXTENSION_URL = os.environ.get("EXTENSION_URL","https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en")
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 

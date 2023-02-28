@@ -7,7 +7,7 @@
 <div class="row">
     <div class="col-lg-9">
         <div>
-            <p>By using the {% env 'PROJECT_NAME' %}.com web site ("Service"), or any services of {% env 'PROJECT_NAME' %} ("{% env 'PROJECT_NAME' %}"), you are
+            <p>By using the {% env 'FQDN' %} web site ("Service"), or any services of {% env 'PROJECT_NAME' %} ("{% env 'PROJECT_NAME' %}"), you are
                 agreeing to be bound by the following terms and conditions ("Terms of Service"). IF YOU ARE ENTERING
                 INTO THIS AGREEMENT ON BEHALF OF A COMPANY OR OTHER LEGAL ENTITY, YOU REPRESENT THAT YOU HAVE THE
                 AUTHORITY TO BIND SUCH ENTITY, ITS AFFILIATES AND ALL USERS WHO ACCESS OUR SERVICES THROUGH YOUR
@@ -237,8 +237,8 @@
                         governed under California law.</p>
                 </li>
                 <li>
-                    <p>Questions about the Terms of Service should be sent to <a href="mailto:support@{% env 'DOMAIN_NAME' %}"
-                            target="_blank">support@{% env "DOMAIN_NAME" %}</a>.
+                    <p>Questions about the Terms of Service should be sent to <a href="mailto:{% env 'SERVER_EMAIL' %}"
+                            target="_blank">{% env "SERVER_EMAIL" %}</a>.
                     </p>
                 </li>
             </ol>

@@ -52,7 +52,6 @@
                     {% endif %}
                 </ul>
             </div>
-            <!-- {% env 'PROJECT_NAME' %} Logo -->
             <div class="flex flex-col items-center h-full">
                 <a class="" href="/">
                     <img src="{% static 'img/logo-large-transparent.png' %}" class="max-w-[200px]">
@@ -101,7 +100,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="https://chrome.google.com/webstore/detail/{% env 'PROJECT_NAME_LOWER' %}/bififchikfckcnblimmncopjinfgccme?hl=en"
+                        <a href="{% env 'EXTENSION_URL' %}"
                         target="_new">
                             <i class="fa fa-chrome fa-fw"></i>
                             {% trans "Add to chrome" %}
