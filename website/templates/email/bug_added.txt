@@ -1,3 +1,4 @@
+{% load custom_tags %}
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
  <head>
@@ -11,30 +12,30 @@
     		<table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border: 1px solid #cccccc;">
     			<tr>
     				<td align="center" style="padding: 40px 0 30px 0;">
- 							<img src="https://www.bugheist.com/static/img/logo-large-transparent.png" alt="Bugheist" width="300" height="73" style="display: block;"/>
+ 							<img src="https://{% env 'FQDN' %}/static/img/logo-large-transparent.png" alt="{% env 'PROJECT_NAME' %}" width="300" height="73" style="display: block;"/>
 						</td>
      			</tr>
     			<tr>
       			<td align="left">
 						Dear {{name}},<br>
 						<br>
-						A bug has been found on <a href="https://www.bugheist.com/domain/{{domain}}">{{domain}}</a> by <a href="https://www.bugheist.com/profile/{{username}}">{{username}}</a><br>
+						A bug has been found on <a href="https://{% env 'FQDN' %}/domain/{{domain}}">{{domain}}</a> by <a href="https://{% env 'FQDN' %}/profile/{{username}}">{{username}}</a><br>
 						The bug was labelled as "{{label}}" and desribed as <b>"{{description}}"</b>.
             <br>
-            <br>You can find all bugs listed for <a href="https://www.bugheist.com/domain/{{domain}}">{{domain}}</a> by clicking on the link.
+            <br>You can find all bugs listed for <a href="https://{% env 'FQDN' %}/domain/{{domain}}">{{domain}}</a> by clicking on the link.
             <br>
             <br>
             You can see more info here:
-						https://www.bugheist.com/issue/{{id}}
+						https://{% env 'FQDN' %}/issue/{{id}}
             <br>
 						<br>
 						Feel free to signup to one of our plans:<br>
 						<br>
-						https://www.bugheist.com/start/<br>
+						https://{% env 'FQDN' %}/start/<br>
 						<br>
 						Best,<br>
 						<br>
-						The Bugheist Team<br>
+						The {% env 'PROJECT_NAME' %} Team<br>
     				</td>
     			</tr>
     			<tr>
@@ -45,17 +46,17 @@
         							<table border="0" cellpadding="0" cellspacing="0">
           							<tr border="0" align="center">
           								<td>
-            								<a href="https://twitter.com/bugheist">
+            								<a href="{% env 'TWITTER_URL' %}">
             								Twitter</a>
             							</td>
             							<td style="font-size: 0; line-height: 0;" width="20">&nbsp;</td>
             							<td>
-            								<a href="https://www.facebook.com/bugheist">
+            								<a href="{% env 'FACEBOOK_URL' %}">
             								Facebook</a>
             							</td>
             							<td style="font-size: 0; line-height: 0;" width="20">&nbsp;</td>
           								<td>
-          									<a href="https://github.com/OWASP/BLT">
+          									<a href="{% env 'GITHUB_URL' %}">
           									GitHub</a>
           								</td>
          								</tr>

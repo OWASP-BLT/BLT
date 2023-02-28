@@ -4,6 +4,7 @@
 {% load user_score %}
 {% providers_media_js %}
 {% load i18n %}
+{% load custom_tags %}
 
 
 <nav class="navbar-default relative top-0 border-b h-[80px] w-screen flex flex-col justify-center items-center">
@@ -51,7 +52,6 @@
                     {% endif %}
                 </ul>
             </div>
-            <!-- Bugheist Logo -->
             <div class="flex flex-col items-center h-full">
                 <a class="" href="/">
                     <img src="{% static 'img/logo-large-transparent.png' %}" class="max-w-[200px]">
@@ -100,7 +100,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en"
+                        <a href="{% env 'EXTENSION_URL' %}"
                         target="_new">
                             <i class="fa fa-chrome fa-fw"></i>
                             {% trans "Add to chrome" %}

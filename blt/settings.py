@@ -31,6 +31,11 @@ DEFAULT_FROM_EMAIL = "support@" + DOMAIN_NAME
 SERVER_EMAIL = "support@" + DOMAIN_NAME
 FQDN = "www." + DOMAIN_NAME
 EMAIL_TO_STRING = PROJECT_NAME + " <"+ SERVER_EMAIL +">"
+BLOG_URL = os.environ.get("BLOG_URL","https://steemit.com/@bugheist")
+FACEBOOK_URL = os.environ.get("FACEBOOK_URL","https://www.facebook.com/bugheist")
+TWITTER_URL = os.environ.get("TWITTER_URL","https://twitter.com/bugheist")
+GITHUB_URL = os.environ.get("GITHUB_URL","https://github.com/bugheist/website")
+EXTENSION_URL = os.environ.get("EXTENSION_URL","https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en")
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 

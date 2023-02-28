@@ -1,3 +1,4 @@
+{% load custom_tags %}
 <div class="row">
     <div class="col-lg-6">
         <h1 class="page-header">Terms and Conditions</h1>
@@ -6,7 +7,7 @@
 <div class="row">
     <div class="col-lg-9">
         <div>
-            <p>By using the Bugheist.com web site ("Service"), or any services of Bugheist ("Bugheist"), you are
+            <p>By using the {% env 'FQDN' %} web site ("Service"), or any services of {% env 'PROJECT_NAME' %} ("{% env 'PROJECT_NAME' %}"), you are
                 agreeing to be bound by the following terms and conditions ("Terms of Service"). IF YOU ARE ENTERING
                 INTO THIS AGREEMENT ON BEHALF OF A COMPANY OR OTHER LEGAL ENTITY, YOU REPRESENT THAT YOU HAVE THE
                 AUTHORITY TO BIND SUCH ENTITY, ITS AFFILIATES AND ALL USERS WHO ACCESS OUR SERVICES THROUGH YOUR
@@ -14,16 +15,16 @@
                 ENTITY, ITS AFFILIATES AND USERS ASSOCIATED WITH IT. IF YOU DO NOT HAVE SUCH AUTHORITY, OR IF YOU DO
                 NOT AGREE WITH THESE TERMS AND CONDITIONS, YOU MUST NOT ACCEPT THIS AGREEMENT AND MAY NOT USE THE
                 SERVICES. </p>
-            <p>Please note that if you are accessing any Bugheist service in your capacity as a government entity,
+            <p>Please note that if you are accessing any {% env 'PROJECT_NAME' %} service in your capacity as a government entity,
                 there are special terms that may apply to you.</p>
-            <p>If Bugheist makes material changes to these Terms, we will notify you by email or by posting a notice
+            <p>If {% env 'PROJECT_NAME' %} makes material changes to these Terms, we will notify you by email or by posting a notice
                 on our site before the changes are effective. Any new features that augment or enhance the current
                 Service, including the release of new tools and resources, shall be subject to the Terms of Service.
                 Continued use of the Service after any such changes shall constitute your consent to such changes.
                 You can review the most current version of the Terms of Service at any time at: <a
-                    href="https://www.bugheist.com/terms" target="_blank">http://www.bugheist.com/terms</a></p>
-            <p>Violation of any of the terms below will result in the termination of your Account. While Bugheist
-                prohibits such conduct and Content on the Service, you understand and agree that Bugheist cannot be
+                    href="https://{% env 'FQDN' %}/terms" target="_blank">http://{% env "FQDN" %}/terms</a></p>
+            <p>Violation of any of the terms below will result in the termination of your Account. While {% env 'PROJECT_NAME' %}
+                prohibits such conduct and Content on the Service, you understand and agree that {% env 'PROJECT_NAME' %} cannot be
                 responsible for the Content posted on the Service and you nonetheless may be exposed to such
                 materials. You agree to use the Service at your own risk.</p>
             <ol>
@@ -43,7 +44,7 @@
                         permitted. You may create separate logins for as many people as your plan allows.</p>
                 </li>
                 <li>
-                    <p>You are responsible for maintaining the security of your account and password. Bugheist
+                    <p>You are responsible for maintaining the security of your account and password. {% env 'PROJECT_NAME' %}
                         cannot and will not be liable for any loss or damage from your failure to comply with this
                         security obligation.</p>
                 </li>
@@ -61,25 +62,25 @@
                 </li>
             </ol>
             <br>
-            <p>Customers may access their Bugheist account data via an API (Application Program Interface). Any use
-                of the API, including use of the API through a third-party product that accesses Bugheist, is bound
+            <p>Customers may access their {% env 'PROJECT_NAME' %} account data via an API (Application Program Interface). Any use
+                of the API, including use of the API through a third-party product that accesses {% env 'PROJECT_NAME' %}, is bound
                 by these Terms of Service plus the following specific terms:</p>
             <ol>
                 <li>
-                    <p>You expressly understand and agree that Bugheist shall not be liable for any direct,
+                    <p>You expressly understand and agree that {% env 'PROJECT_NAME' %} shall not be liable for any direct,
                         indirect, incidental, special, consequential or exemplary damages, including but not limited to,
-                        damages for loss of profits, goodwill, use, data or other intangible losses (even if Bugheist
+                        damages for loss of profits, goodwill, use, data or other intangible losses (even if {% env 'PROJECT_NAME' %}
                         has been advised of the possibility of such damages), resulting from your use of the API or
                         third-party products that access data via the API.</p>
                 </li>
                 <li>
-                    <p>Abuse or excessively frequent requests to Bugheist via the API may result in the temporary or
-                        permanent suspension of your account's access to the API. Bugheist, in its sole discretion, will
-                        determine abuse or excessive usage of the API. Bugheist will make a reasonable attempt via email
+                    <p>Abuse or excessively frequent requests to {% env 'PROJECT_NAME' %} via the API may result in the temporary or
+                        permanent suspension of your account's access to the API. {% env 'PROJECT_NAME' %}, in its sole discretion, will
+                        determine abuse or excessive usage of the API. {% env 'PROJECT_NAME' %} will make a reasonable attempt via email
                         to warn the account owner prior to suspension.</p>
                 </li>
                 <li>
-                    <p>Bugheist reserves the right at any time to modify or discontinue, temporarily or permanently,
+                    <p>{% env 'PROJECT_NAME' %} reserves the right at any time to modify or discontinue, temporarily or permanently,
                         your access to the API (or any part thereof) with or without notice.</p>
                 </li>
             </ol>
@@ -106,12 +107,12 @@
                 <li>
                     <p>For any upgrade or downgrade in plan level while on a monthly billing cycle, the credit card
                         that you provided will automatically be charged the new rate on your next billing cycle.<br> For
-                        upgrades or downgrades while on a yearly plan, Bugheist will immediately charge or refund the
+                        upgrades or downgrades while on a yearly plan, {% env 'PROJECT_NAME' %} will immediately charge or refund the
                         difference in plan cost, prorated for the remaining time in your yearly billing cycle.</p>
                 </li>
                 <li>
                     <p>Downgrading your Service may cause the loss of Content, features, or capacity of your
-                        Account. Bugheist does not accept any liability for such loss.</p>
+                        Account. {% env 'PROJECT_NAME' %} does not accept any liability for such loss.</p>
                 </li>
             </ol>
             <br><br>
@@ -129,11 +130,11 @@
                         will take effect immediately and you will not be charged again.</p>
                 </li>
                 <li>
-                    <p>Bugheist, in its sole discretion, has the right to suspend or terminate your account and
-                        refuse any and all current or future use of the Service, or any other Bugheist service, for any
+                    <p>{% env 'PROJECT_NAME' %}, in its sole discretion, has the right to suspend or terminate your account and
+                        refuse any and all current or future use of the Service, or any other {% env 'PROJECT_NAME' %} service, for any
                         reason at any time. Such termination of the Service will result in the deactivation or deletion
                         of your Account or your access to your Account, and the forfeiture and relinquishment of all
-                        Content in your Account. Bugheist reserves the right to refuse service to anyone for any reason
+                        Content in your Account. {% env 'PROJECT_NAME' %} reserves the right to refuse service to anyone for any reason
                         at any time.</p>
                 </li>
             </ol>
@@ -146,20 +147,20 @@
                         viewed publicly, you agree to allow others to view and fork your repositories.</p>
                 </li>
                 <li>
-                    <p>Bugheist does not pre-screen Content, but Bugheist and its designee have the right (but not
+                    <p>{% env 'PROJECT_NAME' %} does not pre-screen Content, but {% env 'PROJECT_NAME' %} and its designee have the right (but not
                         the obligation) in their sole discretion to refuse or remove any Content that is available via
                         the Service.</p>
                 </li>
                 <li>
-                    <p>You shall defend Bugheist against any claim, demand, suit or proceeding made or brought
-                        against Bugheist by a third party alleging that Your Content, or Your use of the Service in
+                    <p>You shall defend {% env 'PROJECT_NAME' %} against any claim, demand, suit or proceeding made or brought
+                        against {% env 'PROJECT_NAME' %} by a third party alleging that Your Content, or Your use of the Service in
                         violation of this Agreement, infringes or misappropriates the intellectual property rights of a
-                        third party or violates applicable law, and shall indemnify Bugheist for any damages finally
-                        awarded against, and for reasonable attorney’s fees incurred by, Bugheist in connection with any
-                        such claim, demand, suit or proceeding; provided, that Bugheist (a) promptly gives You written
+                        third party or violates applicable law, and shall indemnify {% env 'PROJECT_NAME' %} for any damages finally
+                        awarded against, and for reasonable attorney’s fees incurred by, {% env 'PROJECT_NAME' %} in connection with any
+                        such claim, demand, suit or proceeding; provided, that {% env 'PROJECT_NAME' %} (a) promptly gives You written
                         notice of the claim, demand, suit or proceeding; (b) gives You sole control of the defense and
                         settlement of the claim, demand, suit or proceeding (provided that You may not settle any claim,
-                        demand, suit or proceeding unless the settlement unconditionally releases Bugheist of all
+                        demand, suit or proceeding unless the settlement unconditionally releases {% env 'PROJECT_NAME' %} of all
                         liability); and (c) provides to You all reasonable assistance, at Your expense.</p>
                 </li>
             </ol>
@@ -170,16 +171,16 @@
                         available" basis.</p>
                 </li>
                 <li>
-                    <p>Support for Bugheist services is only available in English, via email.</p>
+                    <p>Support for {% env 'PROJECT_NAME' %} services is only available in English, via email.</p>
                 </li>
                 <li>
-                    <p>You understand that Bugheist uses third party vendors and hosting partners to provide the
+                    <p>You understand that {% env 'PROJECT_NAME' %} uses third party vendors and hosting partners to provide the
                         necessary hardware, software, networking, storage, and related technology required to run the
                         Service.</p>
                 </li>
                 <li>
                     <p>You must not modify, adapt or hack the Service or modify another website so as to falsely
-                        imply that it is associated with the Service, Bugheist, or any other Bugheist service.</p>
+                        imply that it is associated with the Service, {% env 'PROJECT_NAME' %}, or any other {% env 'PROJECT_NAME' %} service.</p>
                 </li>
                 <li>
                     <p>We may, but have no obligation to, remove Content and Accounts containing Content that we
@@ -189,7 +190,7 @@
                 </li>
                 <li>
                     <p>Verbal, physical, written or other abuse (including threats of abuse or retribution) of any
-                        Bugheist customer, employee, member, or officer will result in immediate account
+                        {% env 'PROJECT_NAME' %} customer, employee, member, or officer will result in immediate account
                         termination.</p>
                 </li>
                 <li>
@@ -206,20 +207,20 @@
                 </li>
                 <li>
                     <p>If your bandwidth usage significantly exceeds the average bandwidth usage (as determined
-                        solely by Bugheist) of other Bugheist customers, we reserve the right to immediately disable
+                        solely by {% env 'PROJECT_NAME' %}) of other {% env 'PROJECT_NAME' %} customers, we reserve the right to immediately disable
                         your account or throttle your file hosting until you can reduce your bandwidth consumption.</p>
                 </li>
                 <li>
-                    <p>Bugheist does not warrant that (i) the service will meet your specific requirements, (ii) the
+                    <p>{% env 'PROJECT_NAME' %} does not warrant that (i) the service will meet your specific requirements, (ii) the
                         service will be uninterrupted, timely, secure, or error-free, (iii) the results that may be
                         obtained from the use of the service will be accurate or reliable, (iv) the quality of any
                         products, services, information, or other material purchased or obtained by you through the
                         service will meet your expectations, and (v) any errors in the Service will be corrected.</p>
                 </li>
                 <li>
-                    <p>You expressly understand and agree that Bugheist shall not be liable for any direct,
+                    <p>You expressly understand and agree that {% env 'PROJECT_NAME' %} shall not be liable for any direct,
                         indirect, incidental, special, consequential or exemplary damages, including but not limited to,
-                        damages for loss of profits, goodwill, use, data or other intangible losses (even if Bugheist
+                        damages for loss of profits, goodwill, use, data or other intangible losses (even if {% env 'PROJECT_NAME' %}
                         has been advised of the possibility of such damages), resulting from: (i) the use or the
                         inability to use the service; (ii) the cost of procurement of substitute goods and services
                         resulting from any goods, data, information or services purchased or obtained or messages
@@ -228,16 +229,16 @@
                         the service; (v) or any other matter relating to the service.</p>
                 </li>
                 <li>
-                    <p>The failure of Bugheist to exercise or enforce any right or provision of the Terms of Service
+                    <p>The failure of {% env 'PROJECT_NAME' %} to exercise or enforce any right or provision of the Terms of Service
                         shall not constitute a waiver of such right or provision. The Terms of Service constitutes the
-                        entire agreement between you and Bugheist and govern your use of the Service, superseding any
-                        prior agreements between you and Bugheist (including, but not limited to, any prior versions of
+                        entire agreement between you and {% env 'PROJECT_NAME' %} and govern your use of the Service, superseding any
+                        prior agreements between you and {% env 'PROJECT_NAME' %} (including, but not limited to, any prior versions of
                         the Terms of Service). You agree that these Terms of Service and Your use of the Service are
                         governed under California law.</p>
                 </li>
                 <li>
-                    <p>Questions about the Terms of Service should be sent to <a href="mailto:support@bugheist.com"
-                            target="_blank">support@bugheist.com</a>.
+                    <p>Questions about the Terms of Service should be sent to <a href="mailto:{% env 'SERVER_EMAIL' %}"
+                            target="_blank">{% env "SERVER_EMAIL" %}</a>.
                     </p>
                 </li>
             </ol>
