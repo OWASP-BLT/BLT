@@ -118,11 +118,13 @@ def index(request, template="index.html"):
 
     top_companies = Issue.objects.values("domain__name").annotate(count=Count('domain__name')).order_by("-count")[:10]
     top_testers = Issue.objects.values("user__id","user__username").filter(user__isnull=False).annotate(count=Count('user__username')).order_by("-count")[:10]
+    activities = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:10]
+    
     top_hunts = Hunt.objects.values('id','name','url','prize','logo').filter(is_published=True).order_by("-prize")[:3]
 
     context = {
         "server_url": request.build_absolute_uri('/'),
-        "activities": Issue.objects.all()[0:10],
+        "activities": activities,
         "domains": domains,
         "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
         "leaderboard": User.objects.filter(
@@ -753,7 +755,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(IssueCreate, self).get_context_data(**kwargs)
-        context["activities"] = Issue.objects.all()[0:10]
+        context["activities"] = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
         context["captcha_form"] = CaptchaForm()
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -840,7 +842,8 @@ class UserProfileDetailView(DetailView):
             .annotate(total=Count("issue"))
             .order_by("-total")
         )
-        context["activities"] = Issue.objects.filter(user=self.object, hunt=None)[0:10]
+        context["activities"] = Issue.objects.filter(user=self.object, hunt=None).exclude(
+            Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
         context["profile_form"] = UserProfileForm()
         context["total_open"] = Issue.objects.filter(
             user=self.object, status="open"
@@ -867,8 +870,7 @@ class UserProfileDetailView(DetailView):
         ).count()
         for i in range(0, 7):
             context["bug_type_" + str(i)] = Issue.objects.filter(
-                user=self.object, hunt=None, label=str(i)
-            )
+                user=self.object, hunt=None, label=str(i))
 
         arr = []
         allFollowers = user.userprofile.follower.all()
@@ -886,6 +888,7 @@ class UserProfileDetailView(DetailView):
             str(prof.user.email) for prof in user.userprofile.follower.all()
         ]
         context["bookmarks"] = user.userprofile.issue_saved.all()
+        context['issues_hidden'] = "checked" if user.userprofile.issues_hidden else "!checked"
         return context
 
     @method_decorator(login_required)
@@ -893,8 +896,14 @@ class UserProfileDetailView(DetailView):
         form = UserProfileForm(
             request.POST, request.FILES, instance=request.user.userprofile
         )
-        if form.is_valid():
+        if request.FILES.get("user_avatar") and form.is_valid():
             form.save()
+        else:
+            hide = True if request.POST.get('issues_hidden')=='on' else False
+            user_issues = Issue.objects.filter(user=request.user)
+            user_issues.update(is_hidden=hide)
+            request.user.userprofile.issues_hidden=hide
+            request.user.userprofile.save()
         return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
 
 
@@ -929,7 +938,8 @@ class UserProfileDetailsView(DetailView):
         )
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["activities"] = Issue.objects.filter(user=self.object, hunt=None)[0:10]
+        context["activities"] = Issue.objects.filter(user=self.object, hunt=None).exclude(
+            Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
         context["profile_form"] = UserProfileForm()
         context["total_open"] = Issue.objects.filter(
             user=self.object, status="open"
@@ -954,7 +964,8 @@ class UserProfileDetailsView(DetailView):
         for i in range(0, 7):
             context["bug_type_" + str(i)] = Issue.objects.filter(
                 user=self.object, hunt=None, label=str(i)
-            )
+            ).exclude(
+            Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
 
         arr = []
         allFollowers = user.userprofile.follower.all()
@@ -1014,10 +1025,12 @@ class DomainDetailView(ListView):
 
         open_issue = Issue.objects.filter(
             domain__name__contains=self.kwargs["slug"]
-        ).filter(status="open", hunt=None)
+        ).filter(status="open", hunt=None).exclude(
+            Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
         close_issue = Issue.objects.filter(
             domain__name__contains=self.kwargs["slug"]
-        ).filter(status="closed", hunt=None)
+        ).filter(status="closed", hunt=None).exclude(
+            Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
 
@@ -1118,9 +1131,11 @@ class AllIssuesView(ListView):
     def get_queryset(self):
         username = self.request.GET.get("user")
         if username is None:
-            self.activities = Issue.objects.filter(hunt=None)
+            self.activities = Issue.objects.filter(hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
         else:
-            self.activities = Issue.objects.filter(user__username=username, hunt=None)
+            self.activities = Issue.objects.filter(user__username=username,
+            hunt=None).exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
         return self.activities
 
     def get_context_data(self, *args, **kwargs):
@@ -1175,15 +1190,17 @@ class SpecificIssuesView(ListView):
             statu = "closed"
 
         if username is None:
-            self.activities = Issue.objects.filter(hunt=None)
+            self.activities = Issue.objects.filter(hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id = self.request.user.id))
         elif statu != "none":
             self.activities = Issue.objects.filter(
                 user__username=username, status=statu, hunt=None
-            )
+            ).exclude(Q(is_hidden=True) & ~Q(
+                user_id = self.request.user.id))
         else:
             self.activities = Issue.objects.filter(
                 user__username=username, label=query, hunt=None
-            )
+            ).exclude(Q(is_hidden=True) & ~Q(user_id = self.request.user.id))
         return self.activities
 
     def get_context_data(self, *args, **kwargs):
@@ -1415,7 +1432,8 @@ def search(request, template="search.html"):
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(Q(description__icontains=query), hunt=None)[
+            "issues": Issue.objects.filter(Q(description__icontains=query),
+             hunt=None).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[
                 0:20
             ],
         }
@@ -1439,7 +1457,8 @@ def search(request, template="search.html"):
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(Q(label__icontains=query), hunt=None)[0:20],
+            "issues": Issue.objects.filter(Q(label__icontains=query),
+            hunt=None).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20],
         }
 
     if request.user.is_authenticated:
@@ -1470,7 +1489,8 @@ def search_issues(request, template="search.html"):
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(Q(description__icontains=query), hunt=None)[
+            "issues": Issue.objects.filter(Q(description__icontains=query),
+            hunt=None).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[
                 0:20
             ],
         }
@@ -2849,7 +2869,8 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
             url = request.POST["url"]
             description = request.POST["description"]
             if url == "" or description == "":
-                issue_list = Issue.objects.filter(user=request.user, hunt=hunt)
+                issue_list = Issue.objects.filter(user=request.user, hunt=hunt).exclude(
+                    Q(is_hidden=True) & ~Q(user_id=request.user.id))
                 return render(
                     request, template, {"hunt": hunt, "issue_list": issue_list}
                 )
@@ -2858,7 +2879,8 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
                 url = "https://" + url
             parsed_url = urlparse(url)
             if parsed_url.netloc == "":
-                issue_list = Issue.objects.filter(user=request.user, hunt=hunt)
+                issue_list = Issue.objects.filter(user=request.user, hunt=hunt).exclude(
+                    Q(is_hidden=True) & ~Q(user_id=request.user.id))
                 return render(
                     request, template, {"hunt": hunt, "issue_list": issue_list}
                 )
@@ -2905,13 +2927,15 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
             try:
                 issue.screenshot = request.FILES["screenshot"]
             except:
-                issue_list = Issue.objects.filter(user=request.user, hunt=hunt)
+                issue_list = Issue.objects.filter(user=request.user, hunt=hunt).exclude(
+                    Q(is_hidden=True) & ~Q(user_id=request.user.id))
                 return render(
                     request, template, {"hunt": hunt, "issue_list": issue_list}
                 )
             issue.hunt = hunt
             issue.save()
-            issue_list = Issue.objects.filter(user=request.user, hunt=hunt)
+            issue_list = Issue.objects.filter(user=request.user, hunt=hunt).exclude(
+                Q(is_hidden=True) & ~Q(user_id=request.user.id))
             return render(request, template, {"hunt": hunt, "issue_list": issue_list})
 
 
@@ -2924,11 +2948,12 @@ def hunt_results(request, pk, template="hunt_results.html"):
 @login_required(login_url="/accounts/login")
 def company_hunt_results(request, pk, template="company_hunt_results.html"):
     hunt = get_object_or_404(Hunt, pk=pk)
-    issues = Issue.objects.filter(hunt=hunt)
+    issues = Issue.objects.filter(hunt=hunt).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
     context = {}
     if request.method == "GET":
         context["hunt"] = get_object_or_404(Hunt, pk=pk)
-        context["issues"] = Issue.objects.filter(hunt=hunt)
+        context["issues"] = Issue.objects.filter(hunt=hunt).exclude(
+            Q(is_hidden=True) & ~Q(user_id=request.user.id))
         if hunt.result_published:
             context["winner"] = Winner.objects.get(hunt=hunt)
         return render(request, template, context)
@@ -3008,7 +3033,8 @@ def company_hunt_results(request, pk, template="company_hunt_results.html"):
             hunt.save()
             context["winner"] = winner
         context["hunt"] = get_object_or_404(Hunt, pk=pk)
-        context["issues"] = Issue.objects.filter(hunt=hunt)
+        context["issues"] = Issue.objects.filter(hunt=hunt).exclude(
+            Q(is_hidden=True) & ~Q(user_id=request.user.id))
         return render(request, template, context)
 
 
