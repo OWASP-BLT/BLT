@@ -1091,9 +1091,8 @@ class StatsDetailView(TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(StatsDetailView, self).get_context_data(*args, **kwargs)
-        response = requests.get(
-            "https://chrome.google.com/webstore/detail/bugheist/bififchikfckcnblimmncopjinfgccme?hl=en"
-        )
+        
+        response = requests.get(settings.EXTENSION_URL)
         soup = BeautifulSoup(response.text)
         
         stats = ""
