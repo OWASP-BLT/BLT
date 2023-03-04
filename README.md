@@ -35,6 +35,18 @@ Please follow the [black](https://github.com/psf/black) code style for the proje
 ### License
 The BLT code is released under [GNU Affero General Public License v3.0 (AGPL-3.0)](https://github.com/OWASP/BLT/blob/master/LICENSE).
 
+Why we chose AGPLv3 instead of MIT:
+
+The main difference between the MIT license and the AGPLv3 (GNU Affero General Public License version 3) is their approach to the distribution of the source code and derivative works.
+
+The MIT license is a permissive open-source license that allows anyone to use, modify, and distribute the software under certain conditions. The license allows the software to be used for commercial purposes, and it does not require the distribution of the source code or derivative works. Essentially, users can do whatever they want with the software as long as they include the original copyright and license notice in their derivative works.
+
+On the other hand, the AGPLv3 is a copyleft open-source license that requires any user who modifies or distributes the software to distribute the source code of their modified version or derivative work under the same license terms. This license is designed to ensure that any user who modifies or distributes the software in a network environment (such as a web server) is required to share their changes with the community.
+
+In summary, the main difference between the MIT license and the AGPLv3 is that the MIT license is permissive and allows users to use, modify, and distribute the software without distributing the source code or derivative works, while the AGPLv3 is a copyleft license that requires any user who modifies or distributes the software to distribute the source code of their modified version or derivative work under the same license terms.
+
+
+
 ## Notes
 
 - If you find a bug or have an improvement, use BLT to report it!
