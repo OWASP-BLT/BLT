@@ -379,26 +379,12 @@ class StatsApiViewset(APIView):
 class UrlCheckApiViewset(APIView):
     def post(self, request, *args, **kwargs):
         domain_url = request.data["dom_url"]
-        if "http://" not in domain_url:
-            if "https://" not in domain_url:
-                domain_url = "http://" + domain_url
+        if "http://" not in domain_url and "https://" not in domain_url:
+            domain_url = "http://" + domain_url
 
         if Issue.objects.filter(url=domain_url).exists():
-            isu = Issue.objects.filter(url=domain_url)
-            try:
-                a = isu[0]
-            except:
-                a = None
-            data = {
-                "number": 1,
-                "id": a.id,
-                "description": a.description,
-                "date": a.created.day,
-                "month": a.created.month,
-                "year": a.created.year,
-            }
-            data = IssueSerializer(a).data
-            
+            matches = Issue.objects.filter(url=domain_url)
+            data = IssueSerializer(matches[0]).data
             return Response({"found": True, "issue": data})
 
         else:
