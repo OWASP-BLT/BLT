@@ -375,3 +375,17 @@ class StatsApiViewset(APIView):
             "hunts":hunt_count,
             "domains":domain_count
         }) 
+
+class UrlCheckApiViewset(APIView):
+    def post(self, request, *args, **kwargs):
+        domain_url = request.data["dom_url"]
+        if "http://" not in domain_url and "https://" not in domain_url:
+            domain_url = "http://" + domain_url
+
+        if Issue.objects.filter(url=domain_url).exists():
+            matches = Issue.objects.filter(url=domain_url)
+            data = IssueSerializer(matches[0]).data
+            return Response({"found": True, "issue": data})
+
+        else:
+            return Response({"found": False})
