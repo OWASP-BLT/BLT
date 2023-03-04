@@ -60,7 +60,8 @@ from website.api.views import (
     LikeIssueApiView,
     FlagIssueApiView,
     LeaderboardApiViewSet,
-    StatsApiViewset
+    StatsApiViewset,
+    UrlCheckApiViewset
 )
 
 from blt import settings
@@ -353,6 +354,7 @@ urlpatterns = [
     re_path(r"^domain_check/$", website.views.domain_check, name="domain_check"),
     re_path(r"^api/v1/", include(router.urls)),
     re_path(r"^api/v1/stats/$", StatsApiViewset.as_view(), name="get_score"),
+    re_path(r"^api/v1/urlcheck/$", UrlCheckApiViewset.as_view(), name="url_check"),
     re_path(r"^api/v1/userscore/$", website.views.get_score, name="get_score"),
     re_path(r"^authenticate/", CustomObtainAuthToken.as_view()),
     re_path(r"^api/v1/createwallet/$", website.views.create_wallet, name="create_wallet"),
