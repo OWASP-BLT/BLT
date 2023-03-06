@@ -148,18 +148,18 @@
                             "<br>Sweet! We haven't got any bug from this domain till now"
                             );
                     } else if (trint.number == 2) {
-                        var link = "/domain/" + trint.domain;
+                        var link = "{% env 'FQDN' %}/domain/" + trint.domain;
                         $('.message').html(
                             "<br>Multiple bugs already exist on this domain, ensure you are not submitting a duplicate bug by going here:<br> " +
-                            `<a href=${link} target="_blank">{% env 'FQDN' %}${link}</a>`);
+                            link);
                     } else if (trint.number == 1) {
-                        var link = "/issue/" + trint.id;
+                        var link = "{% env 'FQDN' %}/issue/" + trint.id;
                         $('.message').html(
                             "<br><div class='row'>A bug with same URL already exists <br>Description: " +
                             trint.description + "<br>Created on: " + trint.date + "/" +
                             trint.month + "/" + trint.year +
                             "<br>Ensure you are not submitting a duplicate bug by checking here</div>: " +
-                            `<a href=${link} target="_blank">{% env 'FQDN' %}${link}</a>`);
+                            link);
                     }
                 },
                 error: function (response) {
