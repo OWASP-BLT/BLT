@@ -1,8 +1,7 @@
 <h1 align="center"> OWASP BLT </h1>
 
-<p align="center"> 
 
-[![Build Status](https://github.com/OWASP/BLT/actions/workflows/auto-merge.yml/badge.svg)](https://github.com/OWASP/BLT/actions) <a href="https://github.com/OWASP/BLT/blob/main/LICENSE.md"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue"></a>
+<p align="center"><a href="https://github.com/OWASP/BLT/actions" target="__blank"><img alt="Build" src="https://github.com/OWASP/BLT/actions/workflows/auto-merge.yml/badge.svg"></a><a href="https://github.com/OWASP/BLT/blob/main/LICENSE.md"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue"></a>
 <a href="https://github.com/OWASP/BLT" target="__blank"><img alt="GitHub stars" src="https://img.shields.io/github/stars/OWASP/BLT?style=social"></a></p>
 ---
 
