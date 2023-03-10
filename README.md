@@ -2,7 +2,7 @@
 
 <p align="center">
 
-<a href="https://github.com/OWASP/BLT/blob/main/LICENSE.md"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue"></a>  <a href="https://github.com/OWASP/BLT" target="__blank"><img alt="GitHub stars" src="https://img.shields.io/github/stars/OWASP/BLT?style=social"></a>  [![Build Status](https://github.com/OWASP/BLT/actions/workflows/auto-merge.yml/badge.svg)](https://github.com/OWASP/BLT/actions)
+<a href="https://github.com/OWASP/BLT/blob/main/LICENSE.md"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue"></a>      <a href="https://github.com/OWASP/BLT" target="__blank"><img alt="GitHub stars" src="https://img.shields.io/github/stars/OWASP/BLT?style=social"></a>       [![Build Status](https://github.com/OWASP/BLT/actions/workflows/auto-merge.yml/badge.svg)](https://github.com/OWASP/BLT/actions)
 
 </p>
  
