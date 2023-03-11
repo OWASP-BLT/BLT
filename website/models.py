@@ -23,6 +23,9 @@ from decimal import Decimal
 from captcha.fields import CaptchaField
 from django.core.files.storage import default_storage
 import uuid
+from google.cloud import storage
+
+
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
@@ -30,6 +33,16 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
         Wallet.objects.create(user=instance)
 
 
+def delete_blob(bucket_name, blob_name):
+    """Deletes a blob from the bucket."""
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    generation_match_precondition = None
+    blob.reload() 
+    generation_match_precondition = blob.generation
+
+    blob.delete(if_generation_match=generation_match_precondition)
 
 
 class Subscription(models.Model):
@@ -293,21 +306,27 @@ class IssueScreenshot(models.Model):
 def update_issue_image_access(sender, instance, **kwargs):
     print(sender,instance)
     
+    blob = go
+
     if instance.is_hidden :
         issue_screenshot_list=IssueScreenshot.objects.filter(issue=instance.id)
         for screenshot in issue_screenshot_list:
+                old_name=screenshot.image.name
                 if not screenshot.hide:
                     filename = screenshot.image.name
                     extension = filename.split(".")[-1] 
                     name = filename[12:99]+"hidden" + str(uuid.uuid4()) + "." + extension
-                    default_storage.save(f"screenshots/{name}",screenshot.image)
-                    
+                    default_storage.save(f"screenshots/{name}",screenshot.image)                  
                     screenshot.image=f"screenshots/{name}"
                     screenshot.hide=True
                     screenshot.image.name=f"screenshots/{name}"
-                    screenshot.save()   
+                    screenshot.save()  
+                    blob.make_private()
 
-                    print(screenshot,name)
+                    if not settings.DEBUG:
+                        delete_blob(settings.GS_BUCKET_NAME,old_name)
+                        
+                        
 
 
 TWITTER_MAXLENGTH = getattr(settings, "TWITTER_MAXLENGTH", 140)
