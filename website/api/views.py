@@ -172,6 +172,13 @@ class IssueViewSet(viewsets.ModelViewSet):
 
         issue = Issue.objects.filter(id=pk).first()
         return Response(self.get_issue_info(request,issue))
+    
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        data = response.data
+        issue = Issue.objects.filter(id=data["id"]).first()
+        return Response(self.get_issue_info(request,issue))
+
 
 class LikeIssueApiView(APIView):
 
