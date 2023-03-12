@@ -282,6 +282,8 @@ class LeaderboardApiViewSet(APIView):
         return User.objects.all()
     
     def filter(self,request,*args,**kwargs):
+
+        paginator = PageNumberPagination()
         global_leaderboard = LeaderboardBase()
 
         month = self.request.query_params.get("month")
@@ -303,7 +305,7 @@ class LeaderboardApiViewSet(APIView):
             except:
                 return Response(f"Invalid month or year passed",status=400) 
         
-        queryset = global_leaderboard.get_leaderboard(month,year,api=True)
+        queryset = global_leaderboard.get_leaderboard(month,year,api=True)    
         users= list()
         rank_user =1 
         for each in queryset :
@@ -329,7 +331,8 @@ class LeaderboardApiViewSet(APIView):
             rank_user = rank_user+1
             users.append(temp)
 
-        return Response(users)
+        page = paginator.paginate_queryset(users,request)
+        return paginator.get_paginated_response(page)
     
 
     def group_by_month(self,request,*args,**kwargs):
