@@ -1254,7 +1254,7 @@ class LeaderboardBase():
                     )
                 )
         if api:
-            return data.values('username','total_score')
+            return data.values('id','username','total_score')
 
         return data
     
