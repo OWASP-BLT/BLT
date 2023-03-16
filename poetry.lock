@@ -601,20 +601,20 @@ humanize = ">=0.5.1"
 
 [[package]]
 name = "django-import-export"
-version = "2.8.0"
+version = "3.1.0"
 description = "Django application and library for importing and exporting data with included admin integration."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "django-import-export-2.8.0.tar.gz", hash = "sha256:33c37b2921ef84e2cd9aa0eb76d04a7c2b538c9d04cb1ed97ac32600876cab30"},
-    {file = "django_import_export-2.8.0-py3-none-any.whl", hash = "sha256:31d7dcfba22251e3ef93accb7da844f58c4d78585db9dd7dae37bb76f939da2c"},
+    {file = "django-import-export-3.1.0.tar.gz", hash = "sha256:0760414c125142f5db02382f661b091f7597dbbebf82c8797c7830cc140a6a1a"},
+    {file = "django_import_export-3.1.0-py3-none-any.whl", hash = "sha256:5f72cb49ad92f4393f0bdb8396f344232445555e77fc501dd294bcd3d1788606"},
 ]
 
 [package.dependencies]
 diff-match-patch = "*"
 Django = ">=3.2"
-tablib = {version = ">=3.0.0", extras = ["html", "ods", "xls", "xlsx", "yaml"]}
+tablib = {version = ">=3.2.1", extras = ["html", "ods", "xls", "xlsx", "yaml"]}
 
 [[package]]
 name = "django-mdeditor"
@@ -2324,4 +2324,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.10"
-content-hash = "e1d44e9e4579910bb3b36e138ccb2f0ddb8062cb03927ffe122b5293633788ba"
+content-hash = "07f8c8afd90ba8f2ba9219dd531b703ab10aebf8359fc99449ccc79751861075"
