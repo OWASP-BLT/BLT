@@ -397,13 +397,13 @@ Django = ">3.2"
 
 [[package]]
 name = "dj-rest-auth"
-version = "2.2.5"
+version = "3.0.0"
 description = "Authentication and Registration in Django Rest Framework"
 category = "main"
 optional = false
 python-versions = ">=3.5"
 files = [
-    {file = "dj-rest-auth-2.2.5.tar.gz", hash = "sha256:c9a0dd9c79c33a2d4c723d1e4c1a60ab4657b6333aa2539b6781fe25a01c41b6"},
+    {file = "dj-rest-auth-3.0.0.tar.gz", hash = "sha256:ee792c6b380dac20ecacb79769681cc30896f56ddf8212d370f7c220a5c6a0cf"},
 ]
 
 [package.dependencies]
@@ -411,7 +411,7 @@ Django = ">=2.0"
 djangorestframework = ">=3.7.0"
 
 [package.extras]
-with-social = ["django-allauth (>=0.40.0,<0.51.0)"]
+with-social = ["django-allauth (>=0.40.0,<0.53.0)"]
 
 [[package]]
 name = "django"
@@ -2324,4 +2324,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.10"
-content-hash = "e1d44e9e4579910bb3b36e138ccb2f0ddb8062cb03927ffe122b5293633788ba"
+content-hash = "e0a009d25a313d0d88a4676e4b5c97073717cc8f722de6fd4ac90554e358ab8f"
