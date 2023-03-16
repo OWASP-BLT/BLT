@@ -62,7 +62,6 @@ drf-yasg = "^1.20.0"
 django-simple-captcha = "^0.5.17"
 django-filter = "^22.1"
 webdriver-manager = "^3.8.2"
-google = "^3.0.0"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"

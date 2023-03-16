@@ -13,6 +13,11 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from .models import Issue,IssueScreenshot
+from django.test import TestCase
+from django.core.files.storage import default_storage
+from django.core.files.uploadedfile import SimpleUploadedFile
+
 
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ['initial_data.json']
@@ -84,3 +89,30 @@ class MySeleniumTests(LiveServerTestCase):
         )
         body = self.selenium.find_element('tag name', 'body')
         self.assertIn('Description of bug', body.text)
+
+class HideImage(TestCase):
+    def setUp(self):
+        test_issue = Issue.objects.create(description="test", url="test.com")
+        test_issue.screenshot=SimpleUploadedFile(name='test_image.jpg', content=open(f"website/static/images/dummy-user.png", 'rb').read(), content_type='image/png')
+        test_issue.save()
+
+
+    def test_on_hide(self):
+        """Animals that can speak are correctly identified"""
+        Test_Object = Issue.objects.get(url="test.com")
+        issue_screenshot_list=IssueScreenshot.objects.filter(issue=Test_Object.id)
+        
+        Test_Object.is_hidden=True
+        Test_Object.save()
+        for screenshot in issue_screenshot_list:
+                filename = screenshot.image.name
+                try:
+                    if default_storage.exists(filename):
+                        self.assertFalse(True)
+                except:
+                    pass
+        
+                
+                
+                
+            

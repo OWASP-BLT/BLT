@@ -23,7 +23,7 @@ from decimal import Decimal
 from captcha.fields import CaptchaField
 from django.core.files.storage import default_storage
 import uuid
-from google.cloud import storage
+# from google.cloud import storage
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -41,7 +41,6 @@ def delete_blob(bucket_name, blob_name):
     generation_match_precondition = None
     blob.reload() 
     generation_match_precondition = blob.generation
-
     blob.delete(if_generation_match=generation_match_precondition)
 
 
@@ -306,7 +305,7 @@ class IssueScreenshot(models.Model):
 def update_issue_image_access(sender, instance, **kwargs):
     print(sender,instance)
     
-    blob = go
+    # blob = go
 
     if instance.is_hidden :
         issue_screenshot_list=IssueScreenshot.objects.filter(issue=instance.id)
@@ -316,15 +315,16 @@ def update_issue_image_access(sender, instance, **kwargs):
                     filename = screenshot.image.name
                     extension = filename.split(".")[-1] 
                     name = filename[12:99]+"hidden" + str(uuid.uuid4()) + "." + extension
-                    default_storage.save(f"screenshots/{name}",screenshot.image)                  
+                    default_storage.save(f"screenshots/{name}",screenshot.image)   
+                    default_storage.delete(old_name)
                     screenshot.image=f"screenshots/{name}"
                     screenshot.hide=True
                     screenshot.image.name=f"screenshots/{name}"
                     screenshot.save()  
-                    blob.make_private()
+                    
 
-                    if not settings.DEBUG:
-                        delete_blob(settings.GS_BUCKET_NAME,old_name)
+                    # if not settings.DEBUG:
+                    #     delete_blob(settings.GS_BUCKET_NAME,old_name)
                         
                         
 
@@ -382,6 +382,7 @@ def post_to_twitter(sender, instance, *args, **kwargs):
             auth.set_access_token(access_key, access_secret)
             api = tweepy.API(auth)
             file = default_storage.open(instance.screenshot.file.name, "rb")
+            
             media_ids = api.media_upload(
                 filename=unidecode(instance.screenshot.file.name), file=file
             )
