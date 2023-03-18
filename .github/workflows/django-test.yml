@@ -10,11 +10,11 @@ jobs:
     steps:
     - uses: nanasess/setup-chromedriver@v1
     - uses: actions/checkout@v2
-    - name: Set up Python 3.10.6
+    - name: Set up Python 3.11.2
       run: pipx install poetry
     - uses: actions/setup-python@v4
       with:
-        python-version: 3.10.6
+        python-version: 3.11.2
         cache: 'poetry'
     - name: Install dependencies
       run: poetry install
