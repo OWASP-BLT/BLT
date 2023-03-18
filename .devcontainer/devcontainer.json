@@ -2,7 +2,7 @@
   "name": "BLT dev container",
   "dockerComposeFile": "../docker-compose.yml",
   "service": "app",
-  "workspaceFolder": "/BLT",
+  "workspaceFolder": "/blt",
   "customizations": {
     "vscode": {
       "extensions": [
