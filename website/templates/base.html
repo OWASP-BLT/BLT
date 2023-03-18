@@ -63,6 +63,10 @@
             </div>
         </div>
     </div>
+    {% comment %} block with no bootstrap wrappers {% endcomment %}
+    {% block natural_content %}
+    {% endblock %}
+
     {% include "includes/footer.html" %}
 
 </body>

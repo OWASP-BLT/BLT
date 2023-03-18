@@ -48,9 +48,10 @@ from website.views import (
     GithubLogin,
     GoogleLogin,
     GoogleConnect,
+    contributors_view,
     github_callback,
     google_callback,
-    facebook_callback
+    facebook_callback,
 )
 from website.api.views import (
     IssueViewSet,
@@ -388,6 +389,7 @@ urlpatterns = [
     re_path(r"^ratings/", include("star_ratings.urls", namespace="ratings")),
     path("robots.txt", website.views.robots_txt),
     path("ads.txt", website.views.ads_txt),
+    re_path(r"^contributors/$",contributors_view,name="contributors"),
 ]
 
 if settings.DEBUG:
