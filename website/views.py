@@ -34,19 +34,15 @@ from django.urls import reverse, reverse_lazy
 from django.db.models import Sum, Count, Q
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
-from django.http import Http404
-from django.http import HttpResponse
-from django.http import HttpResponseRedirect
-from django.http import JsonResponse
+from django.http import Http404,JsonResponse,HttpResponseRedirect,HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import DetailView, TemplateView, ListView
-from django.views.generic import View
+from django.views.decorators.http import require_GET
+from django.views.generic import DetailView, TemplateView, ListView, View
 from django.views.generic.edit import CreateView
 from django.core import serializers
-from django.views.decorators.http import require_GET
 from django.conf import settings
 
 from user_agents import parse
@@ -3043,6 +3039,20 @@ def handler404(request, exception):
 def handler500(request, exception=None):
    return render(request, "500.html", {}, status=500)
 
+def contributors_view(request,*args,**kwargs):
+
+    contributors_file_path = os.path.join(settings.BASE_DIR,"contributors.json")
+
+    with open(contributors_file_path,'r') as file:
+        content = file.read()
+    
+    contributors = json.loads(content)
+
+    context = {
+        "contributors":contributors
+    }
+
+    return render(request,"contributors.html",context=context)
 
 
 # class CreateIssue(CronJobBase):
