@@ -419,3 +419,33 @@ class UrlCheckApiViewset(APIView):
 
         else:
             return Response({"found": False})
+
+class BugHuntApiViewset(APIView):
+
+    def get_active_hunts(self,request,*args,**kwargs):
+
+        hunts = Hunt.objects.values('id','name','url','prize','logo',"starts_on","end_on").filter(is_published=True,starts_on__lte=datetime.now(),end_on__gte=datetime.now()).order_by("-prize")
+        return Response(hunts)
+
+    def get_previous_hunts(self,request,*args,**kwargs):
+        hunts = Hunt.objects.values('id','name','url','prize','logo',"starts_on","end_on").filter(is_published=True,end_on__lte=datetime.now()).order_by("-end_on")
+        return Response(hunts)
+    
+    def get_upcoming_hunts(self,request,*args,**kwargs):
+        hunts = Hunt.objects.values('id','name','url','prize','logo',"starts_on","end_on").filter(is_published=True,starts_on__gte=datetime.now()).order_by("-starts_on")
+        return Response(hunts)
+
+    def get(self,request,*args,**kwargs):
+        activeHunt = request.query_params.get("activeHunt")
+        previousHunt = request.query_params.get("previousHunt")
+        upcomingHunt = request.query_params.get("upcomingHunt")
+        print(activeHunt)
+        if activeHunt:
+            return self.get_active_hunts(request,*args,**kwargs)
+        elif previousHunt:
+            return self.get_previous_hunts(request,*args,**kwargs)
+        elif upcomingHunt:
+            return self.get_upcoming_hunts(request,*args,**kwargs)
+    
+    def post(self,request,*args,**kwargs):
+        pass
