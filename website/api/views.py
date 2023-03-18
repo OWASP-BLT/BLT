@@ -432,7 +432,7 @@ class BugHuntApiViewset(APIView):
         return Response(hunts)
     
     def get_upcoming_hunts(self,request,*args,**kwargs):
-        hunts = Hunt.objects.values('id','name','url','prize','logo',"starts_on","end_on").filter(is_published=True,starts_on__gte=datetime.now()).order_by("-starts_on")
+        hunts = Hunt.objects.values('id','name','url','prize','logo',"starts_on","end_on").filter(is_published=True,starts_on__gte=datetime.now()).order_by("starts_on")
         return Response(hunts)
 
     def get(self,request,*args,**kwargs):
@@ -446,5 +446,3 @@ class BugHuntApiViewset(APIView):
         elif upcomingHunt:
             return self.get_upcoming_hunts(request,*args,**kwargs)
     
-    def post(self,request,*args,**kwargs):
-        pass
