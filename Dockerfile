@@ -1,4 +1,4 @@
-FROM python:3.10.6
+FROM python:3.11.2
 
 ENV PYTHONUNBUFFERED 1
 RUN mkdir /blt
