@@ -1905,7 +1905,7 @@ def like_issue(request, issue_pk):
         send_mail(
             "Your issue got an upvote!!",
             msg_plain,
-            settings.EMAIL_TO_STRING
+            settings.EMAIL_TO_STRING,
             [liked_user.email],
             html_message=msg_html,
         )
