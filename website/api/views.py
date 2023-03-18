@@ -439,7 +439,6 @@ class BugHuntApiViewset(APIView):
         activeHunt = request.query_params.get("activeHunt")
         previousHunt = request.query_params.get("previousHunt")
         upcomingHunt = request.query_params.get("upcomingHunt")
-        print(activeHunt)
         if activeHunt:
             return self.get_active_hunts(request,*args,**kwargs)
         elif previousHunt:
