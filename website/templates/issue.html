@@ -1,3 +1,28 @@
+<div class="pull-right">
+    <button class="btn btn-primary btn-xs copy-btn" data-clipboard-text="{{ object.description }}">
+        <i class="glyphicon glyphicon-copy"></i> Copy Title
+    </button>
+    {% if request.user.is_authenticated %}
+    <span class="like_btn">
+        {% include '_likes.html' %}
+    </span>
+    <span class="flag_btn">
+        {% include '_flags.html' %}
+    </span>
+    <a class="bookmark btn btn-success btn-xs" name="{{ object.pk }}">
+        <i class="fa fa-bookmark-o"></i> Bookmark
+    </a>
+    {% endif %}
+    <a class="tweet-btn fa fa-twitter btn btn-xs tweet-btn"
+        href="https://twitter.com/intent/tweet?text=Bug on @{{ object.domain_title }} - {{ object.description }}"
+        data-size="small"> Tweet</a>
+    <span class="fb-share-button"
+        data-layout="button_count" data-size="small" data-mobile-iframe="true">
+        <a href="https://www.facebook.com/sharer/sharer.php?u=https://{% env 'FQDN' %}/issue/{{ object.id }}" class="fb-xfbml-parse-ignore btn btn-primary btn-xs fb-btn" target="_blank">
+            <i class="fa fa-facebook fa-white"></i> Share
+        </a>
+    </span>
+</div>
 {% extends "base.html" %}
 {% load static %}
 {% load gravatar %}
@@ -119,6 +144,7 @@
         margin-left: 5%;
     }
 </style>
+
 {% endblock %}
 {% block content %}
 <script type="text/javascript" src="{% static "js/clipboard.min.js" %}"></script>
@@ -137,6 +163,7 @@
                     <i class="fa fa-eye"></i> {{ object.views }}
                 </span>
             </span>
+            
             <div class="form form-inline" style="display:none">
                 {% csrf_token %}
                 <input type="text" name="domain" placeholder="Domain" class="form-control" value="" required>
@@ -154,36 +181,12 @@
                 <button class="btn btn-success save-issue">Save</button>
                 <button class="btn btn-default cancel-edit">Cancel</button>
             </div>
-            
         </h3>
+        
         <strong>Domain:</strong>
 
         <a href="{{ object.url }}" target="_new" class="issue-domain">{{ object.url }}</a>
-        <div class="pull-right">
-            <button class="btn btn-primary btn-xs copy-btn" data-clipboard-text="{{ object.description }}">
-                <i class="glyphicon glyphicon-copy"></i> Copy Title
-            </button>
-            {% if request.user.is_authenticated %}
-            <span class="like_btn">
-                {% include '_likes.html' %}
-            </span>
-            <span class="flag_btn">
-                {% include '_flags.html' %}
-            </span>
-            <a class="bookmark btn btn-success btn-xs" name="{{ object.pk }}">
-                <i class="fa fa-bookmark-o"></i> Bookmark
-            </a>
-            {% endif %}
-            <a class="tweet-btn fa fa-twitter btn btn-xs tweet-btn"
-                href="https://twitter.com/intent/tweet?text=Bug on @{{ object.domain_title }} - {{ object.description }}"
-                data-size="small"> Tweet</a>
-            <span class="fb-share-button"
-                data-layout="button_count" data-size="small" data-mobile-iframe="true">
-                <a href="https://www.facebook.com/sharer/sharer.php?u=https://{% env 'FQDN' %}/issue/{{ object.id }}" class="fb-xfbml-parse-ignore btn btn-primary btn-xs fb-btn" target="_blank">
-                    <i class="fa fa-facebook fa-white"></i> Share
-                </a>
-            </span>
-        </div>
+        
         <hr>
     </div>
 </div>
