@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Assign Issues
-        uses: Bugheist/assign-issues-action@main
+        uses: BLT-Action/assign-issues-action@main
         with:
             repo-token: ${{ secrets.GITHUB_TOKEN }}
             repository: ${{ github.repository }}
