@@ -9,9 +9,10 @@ jobs:
   slash_assign:
     if: >
       (github.event_name == 'issue_comment' && (
-      startsWith(github.event.comment.body, '/assign') || 
+      contains(github.event.comment.body, '/assign') || 
       startsWith(github.event.comment.body, '/unassign') || 
       contains(github.event.comment.body, 'assign to me') || 
+      contains(github.event.comment.body, 'assign this to me') || 
       contains(github.event.comment.body, 'please assign me this')  || 
       contains(github.event.comment.body, 'assign this to me')  || 
       contains(github.event.comment.body, 'I can try fixing this')  || 
