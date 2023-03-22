@@ -1,0 +1,75 @@
+[
+    {
+        "img":"https://avatars.githubusercontent.com/u/7475382?v=4",
+        "name":"Fredfalcon",
+        "repository":"BLT",
+        "short_description":"Maintatiner of BLT Project",
+        "long_description":"",
+        "location":"Anyon",
+        "twitter":"",
+        "linkedin":"",
+        "website":"",
+        "bch_addr":""
+    },
+    {
+        "img":"https://avatars.githubusercontent.com/u/76696648?v=4",
+        "name":"Aryan Ranjan",
+        "repository":"BLT Flutter",
+        "short_description":"Mentor & Contributor @OWASP in GSoC'23 & GSoC'22, Prefinal-Year Student at IIT Roorkee",
+        "long_description":"",
+        "location":"Anyon",
+        "twitter":"",
+        "linkedin":"",
+        "website":"",
+        "bch_addr":""
+
+    },
+    {
+        "img":"https://avatars.githubusercontent.com/u/18749480?v=4",
+        "name":"Raghav Jajodia",
+        "repository":"BLT Core",
+        "short_description":"Women in Tech Advocate :: Diversity Mentor",
+        "long_description":"",
+        "location":"Anyon",
+        "twitter":"",
+        "linkedin":"",
+        "website":"",
+        "bch_addr":""
+    },
+    {
+        "img":"https://avatars.githubusercontent.com/u/68425016?v=4",
+        "name":"Swapnil Shinde",
+        "repository":"BLT Core | BLT Bacon",
+        "short_description":"reincarnating",
+        "long_description":"",
+        "location":"Maharashtra, India",
+        "twitter":"https://twitter.com/a_kraken_head",
+        "linkedin":"https://www.linkedin.com/in/swapnil-shinde-5ba45118b/",
+        "website":"https://swapnilshinde.com",
+        "bch_addr":"qq62zrxxeyqlvhunl2zeq7xqf2xu3pv39q6wyz7ckk"
+    },
+    {
+        "img":"https://avatars.githubusercontent.com/u/37345795?v=4",
+        "name":"Harshit Seksaria",
+        "repository":"BLT Flutter",
+        "short_description":"More or less an Android Dev",
+        "long_description":"",
+        "location":"Anyon",
+        "twitter":"",
+        "linkedin":"",
+        "website":"",
+        "bch_addr":""
+    },
+    {
+        "img":"https://avatars.githubusercontent.com/u/65587505?v=4",
+        "name":"Amrit Prakash",
+        "repository":"BLT Flutter",
+        "short_description":"IMG || IIT ROORKEE || Web Developer",
+        "long_description":"",
+        "location":"Anyon",
+        "twitter":"",
+        "linkedin":"",
+        "website":"",
+        "bch_addr":""
+    }
+]

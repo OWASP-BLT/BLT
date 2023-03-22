@@ -1,0 +1,74 @@
+{% extends "base.html" %} 
+
+{% block natural_content %}
+
+  <style type="text/tailwindcss">
+    @layer components {
+      .card {
+        @apply flex items-center justify-center flex-col gap-2 p-5 w-full sm:w-72 h-full bg-gray-100 border rounded-2xl;
+      }
+    }
+  </style>
+  <!--Tailwind CSS-->
+
+  <!--Font-Awesome-->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
+    integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+
+  <div class="container my-20  py-8 w-[100vw] min-h-[100vh]">
+
+    <div class="flex flex-col text-center gap-4 mb-10 p-4">
+      <div class="w-[full] h-max flex flex-col items-center">
+        <p class="text-7xl mb-5 font-bold">Meet our Community Members</p>
+        <p class="text-4xl bg-red-600 text-white w-max px-5 py-2 rounded-lg">A warm and welcoming collection of open sourcers</p>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-center flex-wrap gap-4 p-4">
+
+      {%for contributor in contributors%}
+        <div class="group card w-[400px] h-[400px] m-10 flex flex-col items-center hover:bg-red-600 transition duration-200">
+          <img
+            src="{{contributor.img}}"
+            class="w-[160px] h-[160px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
+          />
+
+          <div class="transition duration-200 group-hover:text-white text-gray-900 text-5xl font-bold">{{contributor.name}}</div>
+
+          <div class="transition duration-200 group-hover:text-purple-800  text-purple-600 text-2xl">{{contributor.location}}</div>
+
+          <p class="transition duration-200 group-hover:text-white text-gray-600 text-center px-10">
+            {{contributor.short_description}}
+          </p>
+
+          <div
+            class="group-hover:text-white flex items-center justify-center gap-3 mt-2 w-auto h-5 text-gray-600 mt-7"
+          >
+            <a href="{{contributor.twitter}}" target="_blank">
+              <i
+                class="group-hover:text-white scale-150 m-3 fa-brands fa-twitter fa-lg cursor-pointer transition duration-200 hover:text-gray-400"
+              ></i>
+            </a>
+            <a href="{{contributor.linkedin}}" target="_blank">
+              <i
+                class="group-hover:text-white scale-150 m-3 fa-brands fa-linkedin fa-lg cursor-pointer transition duration-200 hover:text-gray-400"
+              ></i>
+            </a>
+            <a href="{{contributor.website}}" target="_blank">
+              <i
+                class="group-hover:text-white scale-150 m-3 fa-brands fa-dribbble fa-lg cursor-pointer transition duration-200 hover:text-gray-400"
+              ></i>
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+
+      
+    </div>
+  </div>
+{% endblock %}
