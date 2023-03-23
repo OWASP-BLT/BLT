@@ -34,7 +34,7 @@ from django.urls import reverse, reverse_lazy
 from django.db.models import Sum, Count, Q
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
-from django.http import Http404,JsonResponse,HttpResponseRedirect,HttpResponse
+from django.http import Http404,JsonResponse,HttpResponseRedirect,HttpResponse,HttpResponseNotFound
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
@@ -3041,12 +3041,29 @@ def handler500(request, exception=None):
 
 def contributors_view(request,*args,**kwargs):
 
+        
+
     contributors_file_path = os.path.join(settings.BASE_DIR,"contributors.json")
 
     with open(contributors_file_path,'r') as file:
         content = file.read()
     
     contributors = json.loads(content)
+
+    contributor_id = request.GET.get("contributor",None)
+
+    if contributor_id:
+        
+        contributor=None
+        for i in contributors:
+            if str(i["id"])==contributor_id:
+                contributor = i
+        
+        if contributor==None:
+            return HttpResponseNotFound("Contributor not found")
+        
+        return render(request,"contributors_detail.html",context={"contributor":contributor})
+
 
     context = {
         "contributors":contributors
