@@ -290,26 +290,24 @@ class Issue(models.Model):
 class IssueScreenshot(models.Model):
     image = models.ImageField(upload_to="screenshots", validators=[validate_image])
     issue = models.ForeignKey(Issue,on_delete=models.CASCADE,related_name="screenshots")
-    hide = models.BooleanField(default=False)
+
 
 @receiver(post_save, sender=Issue)
 def update_issue_image_access(sender, instance, **kwargs):
-    print(sender,instance)
-    
-    # blob = go
+   
+
 
     if instance.is_hidden :
         issue_screenshot_list=IssueScreenshot.objects.filter(issue=instance.id)
         for screenshot in issue_screenshot_list:
                 old_name=screenshot.image.name
-                if not screenshot.hide:
+                if "hidden" not in old_name:
                     filename = screenshot.image.name
                     extension = filename.split(".")[-1] 
                     name = filename[12:99]+"hidden" + str(uuid.uuid4()) + "." + extension
                     default_storage.save(f"screenshots/{name}",screenshot.image)   
                     default_storage.delete(old_name)
                     screenshot.image=f"screenshots/{name}"
-                    screenshot.hide=True
                     screenshot.image.name=f"screenshots/{name}"
                     screenshot.save()  
                     
