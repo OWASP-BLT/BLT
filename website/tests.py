@@ -115,8 +115,5 @@ class HideImage(TestCase):
         for screenshot in issue_screenshot_list_orignal:
             filename = screenshot.image.name
 
-            try:
-                if default_storage.exists(filename):
-                    self.assertTrue(False, "files exist")
-            except:
-                pass
+            if default_storage.exists(filename):
+                self.assertTrue(False, "files exist")
