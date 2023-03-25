@@ -1,6 +1,5 @@
 import os
 from urllib.parse import urlparse
-
 import requests
 import tweepy
 from PIL import Image
@@ -25,15 +24,11 @@ from django.core.files.storage import default_storage
 import uuid
 
 
-
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
         Wallet.objects.create(user=instance)
-
-
-
 
 class Subscription(models.Model):
     name = models.CharField(max_length=25, null=False, blank=True)
@@ -295,8 +290,6 @@ class IssueScreenshot(models.Model):
 @receiver(post_save, sender=Issue)
 def update_issue_image_access(sender, instance, **kwargs):
    
-
-
     if instance.is_hidden :
         issue_screenshot_list=IssueScreenshot.objects.filter(issue=instance.id)
         for screenshot in issue_screenshot_list:
@@ -310,13 +303,6 @@ def update_issue_image_access(sender, instance, **kwargs):
                     screenshot.image=f"screenshots/{name}"
                     screenshot.image.name=f"screenshots/{name}"
                     screenshot.save()  
-                    
-
-                    # if not settings.DEBUG:
-                    #     delete_blob(settings.GS_BUCKET_NAME,old_name)
-                        
-                        
-
 
 TWITTER_MAXLENGTH = getattr(settings, "TWITTER_MAXLENGTH", 140)
 
@@ -383,9 +369,6 @@ def post_to_twitter(sender, instance, *args, **kwargs):
             return False
 
 
-# signals.post_save.connect(post_to_twitter, sender=Issue)
-
-
 class Points(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     issue = models.ForeignKey(Issue, null=True, blank=True, on_delete=models.CASCADE)
@@ -393,12 +376,6 @@ class Points(models.Model):
     score = models.IntegerField()
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
-
-
-# @receiver(user_logged_in, dispatch_uid="some.unique.string.id.for.allauth.user_logged_in")
-# def user_logged_in_(request, user, **kwargs):
-#    if not settings.TESTING:
-#      action.send(user, verb='logged in')
 
 
 class InviteFriend(models.Model):
