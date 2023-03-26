@@ -32,13 +32,13 @@
     <div class="flex items-center justify-center flex-wrap gap-4 p-4">
 
       {%for contributor in contributors%}
-        <div class="group card w-[400px] h-[400px] m-10 flex flex-col items-center hover:bg-red-600 transition duration-200">
+        <div class="group card w-[250px] h-[400px] m-5 flex flex-col items-center justify-between hover:bg-red-600 transition duration-200">
           <img
             src="{{contributor.img}}"
-            class="w-[160px] h-[160px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
+            class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
           />
 
-          <div class="transition duration-200 group-hover:text-white text-gray-900 text-5xl font-bold">{{contributor.name}}</div>
+          <div class="transition duration-200 group-hover:text-white text-gray-900 text-4xl font-bold">{{contributor.name}}</div>
 
           <div class="transition duration-200 group-hover:text-purple-800  text-purple-600 text-2xl">{{contributor.location}}</div>
 
