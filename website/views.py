@@ -1534,7 +1534,7 @@ class IssueView(DetailView):
 
     def get(self, request, *args, **kwargs):
         ipdetails = IP()
-        self.object = get_object_or_404(Issue, **self.kwargs)
+        self.object = get_object_or_404(Issue, id=self.kwargs["id"])
         ipdetails.user = self.request.user
         ipdetails.address = get_client_ip(request)
         ipdetails.issuenumber = self.object.id
