@@ -58,6 +58,7 @@ from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialConnectView
 from blt import settings
 from rest_framework.authtoken.views import ObtainAuthToken
+
 from website.models import (
 
     Winner,
@@ -1534,7 +1535,12 @@ class IssueView(DetailView):
 
     def get(self, request, *args, **kwargs):
         ipdetails = IP()
-        self.object = self.get_object()
+        try:
+            id = int(self.kwargs["slug"])
+        except ValueError:
+            return HttpResponseNotFound("Invalid ID: ID must be an integer")
+
+        self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
         ipdetails.user = self.request.user
         ipdetails.address = get_client_ip(request)
         ipdetails.issuenumber = self.object.id
