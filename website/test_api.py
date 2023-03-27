@@ -6,6 +6,7 @@ from PIL import Image
 from django.core import mail
 from django.utils.encoding import force_str
 from django.db.transaction import atomic
+import datetime
 
 class APITests(APITestCase):
 
@@ -106,3 +107,20 @@ class APITests(APITestCase):
         self.client.post(url, data=data, status_code=200)
         for item in mail.outbox:
             print(item.__dict__)
+    
+    def test_get_bug_hunt(self):
+        url = "api/v1/hunt/?"
+        response = self.client.get(''.join([url,"activeHunt=1/"]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        if len(response.data):
+            self.assertTrue(
+                response.data[0]["starts_on"] < datetime.datetime.now() and response.data[0]["end_on"] > datetime.datetime.now(), 
+                            "Invalid Response")
+        response = self.client.get(''.join([url,"previousHunt=1/"]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        if len(response.data):
+            self.assertLess(response.data[0]["end_on"], datetime.datetime.now(), "Invalid Response")
+        response = self.client.get(''.join([url,"upcomingHunt=1/"]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        if len(response.data):
+            self.assertGreater(response.data[0]["starts_on"], datetime.datetime.now(), "Invalid Response")
