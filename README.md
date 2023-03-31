@@ -26,7 +26,8 @@
 
 - Read more about [BLT](https://owasp.org/www-project-bug-logging-tool/)
 
-  
+
+- Watch this [Video](https://www.youtube.com/watch?v=jNp3J6HLpqc) to get detailed motives and features of project BLT.
   
 
 # Development
