@@ -109,7 +109,7 @@ class APITests(APITestCase):
             print(item.__dict__)
     
     def test_get_bug_hunt(self):
-        url = "api/v1/hunt/?"
+        url = "/api/v1/hunt/?"
         response = self.client.get(''.join([url,"activeHunt=1/"]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         if len(response.data):
