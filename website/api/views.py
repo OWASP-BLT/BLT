@@ -445,4 +445,6 @@ class BugHuntApiViewset(APIView):
             return self.get_previous_hunts(request,*args,**kwargs)
         elif upcomingHunt:
             return self.get_upcoming_hunts(request,*args,**kwargs)
+        hunts = Hunt.objects.values('id','name','url','prize','logo',"starts_on","end_on").filter(is_published=True).order_by("-end_on")
+        return Response(hunts)
     
