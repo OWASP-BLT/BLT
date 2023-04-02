@@ -2003,6 +2003,15 @@ def issue_count(request):
     close_issue = Issue.objects.filter(status="closed").count()
     return JsonResponse({"open": open_issue, "closed": close_issue}, safe=False)
 
+def contributors(request):
+    contributors_file_path = os.path.join(settings.BASE_DIR,"contributors.json")
+
+    with open(contributors_file_path,'r') as file:
+        content = file.read()
+    
+    contributors_data = json.loads(content)
+    return JsonResponse({"contributors": contributors_data})
+
 
 def get_scoreboard(request):
     from PIL import Image
