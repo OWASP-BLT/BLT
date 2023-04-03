@@ -15,4 +15,4 @@ def env(key):
 
 @register.simple_tag
 def logo(logo_type):    
-    return static(F"img/{settings.PROJECT_NAME}_{logo_type}.png")
+    return static(F"img/{settings.PROJECT_NAME_UPPER}_{logo_type}.png")
