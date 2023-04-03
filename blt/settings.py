@@ -23,6 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 PROJECT_NAME = os.environ.get("PROJECT_NAME", "BLT")
 PROJECT_NAME_LOWER = PROJECT_NAME.lower()
+PROJECT_NAME_UPPER = PROJECT_NAME.upper()
 
 ADMIN_URL = os.environ.get("ADMIN_URL", "admin")
 DOMAIN_NAME = os.environ.get("DOMAIN_NAME", "127.0.0.1") #domain.com (without www)
