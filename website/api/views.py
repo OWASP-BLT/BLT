@@ -8,7 +8,7 @@ from django.template.loader import render_to_string
 from django.db.models import Sum
 from django.contrib.auth.models import AnonymousUser
 
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authentication import TokenAuthentication
@@ -179,10 +179,10 @@ class IssueViewSet(viewsets.ModelViewSet):
     
     def create(self, request, *args, **kwargs):
         if len(self.request.FILES.getlist("screenshots")) > 5:
-            raise ValidationError({"error": "Max limit of 5 images!"})
+            return Response({"error": "Max limit of 5 images!"}, status=status.HTTP_400_BAD_REQUEST)
         
         if len(self.request.FILES.getlist("screenshots")) == 0:
-            raise ValidationError({"error": "Upload atleast one image!"})
+            return Response({"error": "Upload atleast one image!"}, status=status.HTTP_400_BAD_REQUEST)
         
         response = super().create(request, *args, **kwargs)
         data = response.data
