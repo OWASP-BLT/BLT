@@ -211,7 +211,7 @@ class Issue(models.Model):
     status = models.CharField(max_length=10, default="open", null=True, blank=True)
     user_agent = models.CharField(max_length=255, default="", null=True, blank=True)
     ocr = models.TextField(default="", null=True, blank=True)
-    screenshot = models.ImageField(upload_to="screenshots", validators=[validate_image])
+    screenshot = models.ImageField(upload_to="screenshots", null=True, blank=True, validators=[validate_image])
     closed_by = models.ForeignKey(
         User, null=True, blank=True, related_name="closed_by", on_delete=models.CASCADE
     )
