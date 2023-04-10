@@ -7,12 +7,13 @@ from django.forms import ValidationError
 from django.template.loader import render_to_string
 from django.db.models import Sum
 from django.contrib.auth.models import AnonymousUser
+from django.db.models import Q
 
 from rest_framework import viewsets, filters, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.pagination import PageNumberPagination
 from django.conf import settings
 
@@ -426,18 +427,27 @@ class StatsApiViewset(APIView):
         }) 
 
 class UrlCheckApiViewset(APIView):
+
+    permission_classes = [AllowAny]
+
     def post(self, request, *args, **kwargs):
-        domain_url = request.data["dom_url"]
-        if "http://" not in domain_url and "https://" not in domain_url:
-            domain_url = "http://" + domain_url
+        
+        domain_url = request.data.get("domain_url",None)
 
-        if Issue.objects.filter(url=domain_url).exists():
-            matches = Issue.objects.filter(url=domain_url)
-            data = IssueSerializer(matches[0]).data
-            return Response({"found": True, "issue": data})
+        if domain_url == None or domain_url.strip() == "": 
+            return Response([])
 
-        else:
-            return Response({"found": False})
+        domain = domain_url.replace("https://","").replace("http://","").replace("www.","")
+
+        issues = Issue.objects.filter(
+            Q(
+                Q(domain__name=domain) |
+                Q(domain__url__icontains=domain)
+            ) &
+            Q(is_hidden=False)
+        ).values("id","description","created__day","created__month","created__year","domain__url","user__userprofile__user_avatar").all()
+
+        return Response(issues[:10])
 
 class BugHuntApiViewset(APIView):
 

@@ -18,27 +18,65 @@
         justify-content: center;
         align-items: center;
         margin-top: 30px;
-        text-align:center;
+        text-align: center;
     }
-    .panel-text div{
+
+    .panel-text div {
         width: 44%;
         width: 500px;
     }
-    .title{
-        color: white; 
+
+    .title {
+        color: white;
         font-weight: 700;
         font-size: 3rem;
     }
-    .captcha-form input{
+
+    .captcha-form input {
         border: 1px solid rgb(64, 64, 64);
     }
-
 </style>
 {% endblock %}
 
 {% block content %}
 <script src="{% static 'js/jquery.validate.js' %}"></script>
 <script src="{% static 'js/activity.js' %}"></script>
+
+<div id="duplicate-container" class="fixed w-full h-full top-0 left-0 overflow-y-auto z-10" hidden>
+    <div class="flex flex-col w-full h-full bg-white items-center">
+        <div class="w-full h-[60px] flex bg-red-500 items-center">
+            <button id="close-duplicate-container"
+                class="flex top-[100px] w-[30px] h-[30px] bg-white justify-center item-center rounded-[50px] hover:bg-red-100 hover:shadow-md no-underline ml-5">
+                <i
+                    class="text-red-500 scale-150 m-3 fa-sharp fa-solid fa-xmark cursor-pointer transition duration-200"></i>
+            </button>
+            <div class="w-[90%] flex items-center justify-center">
+                <p class="text-5xl font-extrabold text-white">DUPLICATE ISSUES</p>
+            </div>
+        </div>
+
+        <!-- component -->
+        <!-- This is an example component -->
+        <div class="w-[100%] flex justify-center mx-auto">
+
+            <div class="p-4 w-[50%] mt-10 bg-white rounded-lg border shadow-md sm:p-8 bg-gray-400 border-gray-700">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold leading-none text-red-500">Latest Issues</h3>
+                    <a href="" id="view_all"
+                        class="text-xl font-medium text-blue-600 hover:underline dark:text-blue-500">
+                        View all
+                    </a>
+                </div>
+                <div class="flow-root">
+                    <ul role="list" id="duplicate-list" class="max-h-[70vh] overflow-y-scroll">
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
 
 <form action="/issue/" method="post" enctype="multipart/form-data">
     {% csrf_token %}
@@ -49,124 +87,140 @@
             </div>
         </div>
         <div class="main-issue-form main-center">
-            
-                <div class="form-group{% if form.url.errors %} has-error{% endif %}">
-                    <div class="input-group">
-                        <span class="input-group-addon"><i class="fa fa-external-link" aria-hidden="true"></i></span>
-                        {% if request.GET.url %}
-                        <input class="form-control required"
-                            data-intro="Enter the website's complete url where you found the bug." data-step="1"
-                            placeholder="https://testsite.com/bug-found" name="url" value="{{ request.GET.url }}">
-                        {% else %}
-                        <input class="form-control required" required
-                            data-intro="Enter the website's complete url where you found the bug." data-step="1"
-                            placeholder="https://testsite.com/bug-found" name="url" value="{{ form.url.value|default:"" }}">
-                        {% endif %}
-                        <a class="btn btn-info form-control duplicates bg-red-500 border-0">Check for Duplicates</a>
-                    </div>
-                    <span class="message"></span>
-                    <span class="help-block">{{ form.url.errors }}</span>
-                </div>
-                <div class="form-group{% if form.description.errors %} has-error{% endif %}">
-                    <div class="input-group">
-                        <span class="input-group-addon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span>
-                        <textarea data-required="true" name="description" id="description" required
-                            data-intro="Describe the nature of bug." data-step="2" class="form-control required"
-                            rows="3" placeholder="Describe bug issue">{{ form.description.value|default:"" }}</textarea>
-                    </div>
-                    <span class="help-block">{{ form.description.errors }}</span>
-                </div>
+
+            <div class="form-group{% if form.url.errors %} has-error{% endif %}">
                 <div class="input-group">
-                    <span class="input-group-addon">
-                        <i class="fa fa-list" aria-hidden="true"></i>
-                    </span>
-                    <select required data-intro="Categorize the bug." data-step="3" name="label" class="form-control">
-                        <option value="0" selected="selected">General</option>
-                        <option value="1">Number error</option>
-                        <option value="2">Functional</option>
-                        <option value="3">Performance</option>
-                        <option value="4">Security</option>
-                        <option value="5">Typo</option>
-                        <option value="6">Design</option>
-                        <option value="7">Server down</option>
-                    </select>
-                </div>
-                <div class="form-group{% if form.screenshot.errors %} has-error{% endif %}">
-                    {% if request.GET.hash %}</br>
-                    <img src="{{ MEDIA_URL }}uploads/{{ request.GET.hash }}.png"
-                        class="img-responsive img-thumbnail screenshot-hash">
-                    <input type="hidden" required class="required" name="screenshot-hash" value="{{ request.GET.hash }}">
+                    <span class="input-group-addon"><i class="fa fa-external-link" aria-hidden="true"></i></span>
+                    {% if request.GET.url %}
+                    <input class="form-control required"
+                        data-intro="Enter the website's complete url where you found the bug." data-step="1"
+                        placeholder="https://testsite.com/bug-found" name="url" value="{{ request.GET.url }}">
                     {% else %}
-                    <br>
-                    <span>
-                        <input type="file" required class="required" id='screenshot' multiple name="screenshots" />
-                       <!-- <button class="btn btn-primary btn-block"
+                    <input class="form-control required" required
+                        data-intro="Enter the website's complete url where you found the bug." data-step="1"
+                        placeholder="https://testsite.com/bug-found" name="url" value="{{ form.url.value|default:"" }}">
+                    {% endif %}
+                    <a class="btn btn-info form-control duplicates bg-red-500 border-0">Check for Duplicates</a>
+                </div>
+                <span class="message"></span>
+                <span class="help-block">{{ form.url.errors }}</span>
+            </div>
+            <div class="form-group{% if form.description.errors %} has-error{% endif %}">
+                <div class="input-group">
+                    <span class="input-group-addon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span>
+                    <textarea data-required="true" name="description" id="description" required
+                        data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3"
+                        placeholder="Describe bug issue">{{ form.description.value|default:"" }}</textarea>
+                </div>
+                <span class="help-block">{{ form.description.errors }}</span>
+            </div>
+            <div class="input-group">
+                <span class="input-group-addon">
+                    <i class="fa fa-list" aria-hidden="true"></i>
+                </span>
+                <select required data-intro="Categorize the bug." data-step="3" name="label" class="form-control">
+                    <option value="0" selected="selected">General</option>
+                    <option value="1">Number error</option>
+                    <option value="2">Functional</option>
+                    <option value="3">Performance</option>
+                    <option value="4">Security</option>
+                    <option value="5">Typo</option>
+                    <option value="6">Design</option>
+                    <option value="7">Server down</option>
+                </select>
+            </div>
+            <div class="form-group{% if form.screenshot.errors %} has-error{% endif %}">
+                {% if request.GET.hash %}</br>
+                <img src="{{ MEDIA_URL }}uploads/{{ request.GET.hash }}.png"
+                    class="img-responsive img-thumbnail screenshot-hash">
+                <input type="hidden" required class="required" name="screenshot-hash" value="{{ request.GET.hash }}">
+                {% else %}
+                <br>
+                <span>
+                    <input type="file" required class="required" id='screenshot' multiple name="screenshots" />
+                    <!-- <button class="btn btn-primary btn-block"
                             data-intro="Upload a screenshot of the concerned page." data-step="4" name="test_files"
                             type="button" style="background-color: rgb(255, 0, 0); border:none;">
                             <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot
                         </button> -->
-                        <span
-                            class="help-block{% if form.screenshot.errors %} has-error{% endif %}">{{ form.screenshot.errors }}</span>
-                        <span class="badge badge-important"></span>
-                    </span>
-                    {% endif %}
-                </div>
-                {% csrf_token %}
-                <div class="captcha-form">
-                    {{ captcha_form.captcha }}
-                </div>
-                <button type="submit" name="reportbug_button" id="btn" class="btn btn-default btn-block"
-                    data-intro="Click here to report the bug." data-step="5">
-                    Report Bug <i class="fa fa-trophy" aria-hidden="true">+3</i>
-                </button>
+                    <span class="help-block{% if form.screenshot.errors %} has-error{% endif %}">{{
+                        form.screenshot.errors }}</span>
+                    <span class="badge badge-important"></span>
+                </span>
+                {% endif %}
+            </div>
+            {% csrf_token %}
+            <div class="captcha-form">
+                {{ captcha_form.captcha }}
+            </div>
+            <button type="submit" name="reportbug_button" id="btn" class="btn btn-default btn-block"
+                data-intro="Click here to report the bug." data-step="5">
+                Report Bug <i class="fa fa-trophy" aria-hidden="true">+3</i>
+            </button>
 
         </div>
     </div>
 </form>
+
+
 <script type="text/javascript">
     $(function () {
-        //$('button[name="test_files"]').on('click', function () {
-        //    $(this).parent().find('input[type=file]').click();
-        //});
-        //$('input[name="screenshot"]').on('change', function () {
-        //    var file = $(this).val().replace('C:\\fakepath\\', '');
-        //    $(this).parent().find('.badge').html(file);
-        //});
-        $(".duplicates").click(function () {
+        $(".duplicates").click(async () => {
             var uri = $("input[name='url']").val();
-            $.ajax({
-                type: "POST",
-                data: {
-                    dom_url: uri
+
+            $("#view_all").attr("href", `/search/?query=${uri}`);
+
+            let resp = await fetch("/api/v1/urlcheck/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
                 },
-                url: "/domain_check/",
-                dataType: 'json',
-                success: function (response) {
-                    var trint = response;
-                    if (trint.number == 3) {
-                        $('.message').html(
-                            "<br>Sweet! We haven't got any bug from this domain till now"
-                            );
-                    } else if (trint.number == 2) {
-                        var link = "{% env 'FQDN' %}/domain/" + trint.domain;
-                        $('.message').html(
-                            "<br>Multiple bugs already exist on this domain, ensure you are not submitting a duplicate bug by going here:<br> " +
-                            link);
-                    } else if (trint.number == 1) {
-                        var link = "{% env 'FQDN' %}/issue/" + trint.id;
-                        $('.message').html(
-                            "<br><div class='row'>A bug with same URL already exists <br>Description: " +
-                            trint.description + "<br>Created on: " + trint.date + "/" +
-                            trint.month + "/" + trint.year +
-                            "<br>Ensure you are not submitting a duplicate bug by checking here</div>: " +
-                            link);
-                    }
-                },
-                error: function (response) {
-                    $('.message').text('Something went wrong!');
-                },
+                body: JSON.stringify({
+                    "domain_url": uri
+                })
             });
+
+            let resp_json = await resp.json()
+
+            resp_json.map(issue => add_duplicates(issue));
+
+            $("#duplicate-container").show()
+
         });
+
+        $("#close-duplicate-container").click(() => {
+            $("#duplicate-container").hide()
+        })
+
+
+        let add_duplicates = (issue) => {
+            $("#duplicate-list").append(
+                `
+                    <li class="py-3 sm:py-4 border-x-gray-500 border-t-2 cursor-pointer hover:shadow-lg transition-all">
+                        <div class="flex items-center space-x-4 p-2">
+                            <div class="flex-shrink-0">
+                                <img class="w-10 h-10 rounded-full"
+                                    src="https://flowbite.com/docs/images/people/profile-picture-1.jpg"
+                                    alt="Neil image">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-3xl font-medium text-gray-900 text-black">
+                                    ${issue.description.substring(0, 50)}...
+                                </p>
+                                <a href="/issue/${issue.id}" class="text-2xl text-gray-500 truncate dark:text-gray-400">
+                                    /issue/${issue.id}
+                                </a>
+                            </div>
+                            <div
+                                class="inline-flex items-center text-base text-xl font-semibold text-gray-900 dark:text-white">
+                                    ${issue.created__day}/${issue.created__month}/${issue.created__year}
+                                </div>
+                        </div>
+                    </li>
+                `
+            )
+        }
+
     });
 </script>
 {% endblock %}
