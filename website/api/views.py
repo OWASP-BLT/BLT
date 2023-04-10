@@ -447,7 +447,7 @@ class UrlCheckApiViewset(APIView):
             Q(is_hidden=False)
         ).values("id","description","created__day","created__month","created__year","domain__url","user__userprofile__user_avatar").all()
 
-        return Response(issues)
+        return Response(issues[:10])
 
 class BugHuntApiViewset(APIView):
 
