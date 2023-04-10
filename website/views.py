@@ -320,74 +320,6 @@ def find_key(request, token):
     raise Http404("Token or key does not exist")
 
 
-@csrf_exempt
-def domain_check(request):
-    if request.method == "POST":
-        domain_url = request.POST.get("dom_url")
-        if "http://" not in domain_url:
-            if "https://" not in domain_url:
-                domain_url = "http://" + domain_url
-
-        if Issue.objects.filter(url=domain_url).exists():
-            isu = Issue.objects.filter(url=domain_url)
-            if isu.count() > 1:
-                str1 = "www."
-                if "www." in domain_url:
-                    k = domain_url.index(str1)
-                    k = k + 4
-                    t = k
-                    while k < len(domain_url):
-                        if domain_url[k] != "/":
-                            k = k + 1
-                        elif domain_url[k] == "/":
-                            break
-
-                elif "http://" in domain_url:
-                    k = 7
-                    t = k
-                    while k < len(domain_url):
-                        if domain_url[k] != "/":
-                            k = k + 1
-                        elif domain_url[k] == "/":
-                            break
-
-                elif "https://" in domain_url:
-                    k = 8
-                    t = k
-                    while k < len(domain_url):
-                        if domain_url[k] != "/":
-                            k = k + 1
-                        elif domain_url[k] == "/":
-                            break
-                else:
-                    return HttpResponse("Nothing passed")
-
-                url_parsed = domain_url[t:k]
-                data = {"number": 2, "domain": url_parsed}
-                return HttpResponse(json.dumps(data))
-
-            else:
-                try:
-                    a = Issue.objects.get(url=domain_url)
-                except:
-                    a = None
-                data = {
-                    "number": 1,
-                    "id": a.id,
-                    "description": a.description,
-                    "date": a.created.day,
-                    "month": a.created.month,
-                    "year": a.created.year,
-                }
-                return HttpResponse(json.dumps(data))
-
-        else:
-            data = {
-                "number": 3,
-            }
-            return HttpResponse(json.dumps(data))
-    return HttpResponse("POST REQUIRED")
-
 class IssueBaseCreate(object):
     def form_valid(self, form):
         score = 3
@@ -626,12 +558,25 @@ class IssueCreate(IssueBaseCreate, CreateView):
         if not captcha_form.is_valid() and not settings.TESTING:
             messages.error(self.request, "Invalid Captcha!")
             return HttpResponseRedirect("/issue/")
+        
+        clean_domain = obj.domain_name.replace("www.", "").replace("https://","").replace("http://","")
+        domain = Domain.objects.filter(
+            Q(name=clean_domain) |
+            Q(url__icontains=clean_domain)
+        ).first()
+        
+        created = False if domain==None else True 
 
-        domain, created = Domain.objects.get_or_create(
-            name=obj.domain_name.replace("www.", ""),
-            defaults={"url": "http://" + obj.domain_name.replace("www.", "")},
-        )
+        if not created:
+            domain = Domain.objects.create(
+                name=clean_domain,
+                url=clean_domain
+            )
+            domain.save()
+        
+
         obj.domain = domain
+
         if created and (self.request.user.is_authenticated or tokenauth):
             p = Points.objects.create(user=self.request.user, domain=domain, score=1)
             messages.success(self.request, "Domain added! + 1")
@@ -696,13 +641,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
         for screenshot in obj_screenshots:
             screenshot_text += "![0](" + screenshot.image.url + ") "
 
-        if domain.github and os.environ.get("GITHUB_PASSWORD"):
+        if domain.github and os.environ.get("GITHUB_ACCESS_TOKEN"):
             from giturlparse import parse
             import json
             import requests
 
             github_url = (
-                #domain.github.replace("https://", "git@").replace("http://", "git@") + ".git"
                 domain.github.replace("https", "git").replace("http", "git") + ".git"
             )
             p = parse(github_url)

@@ -353,7 +353,6 @@ urlpatterns = [
     re_path(r"^search/$", website.views.search),
     re_path(r"^report/$", IssueCreate.as_view()),
     re_path(r"^i18n/", include("django.conf.urls.i18n")),
-    re_path(r"^domain_check/$", website.views.domain_check, name="domain_check"),
     re_path(r"^api/v1/", include(router.urls)),
     re_path(r"^api/v1/stats/$", StatsApiViewset.as_view(), name="get_score"),
     re_path(r"^api/v1/urlcheck/$", UrlCheckApiViewset.as_view(), name="url_check"),
