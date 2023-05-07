@@ -19,7 +19,6 @@ from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 from mdeditor.fields import MDTextField
 from decimal import Decimal
-from captcha.fields import CaptchaField
 from django.core.files.storage import default_storage
 import uuid
 
@@ -203,7 +202,6 @@ class Issue(models.Model):
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     url = models.URLField()
     description = models.TextField()
-    captcha = CaptchaField()
     label = models.PositiveSmallIntegerField(choices=labels, default=0)
     views = models.IntegerField(null=True, blank=True)
     verified = models.BooleanField(default=False)
@@ -238,8 +236,8 @@ class Issue(models.Model):
     @property
     def domain_name(self):
         parsed_url = urlparse(self.url)
-        domain = parsed_url.hostname
-        temp = domain.rsplit(".")
+        domain = parsed_url.path
+        temp = domain.split(".")
         if len(temp) == 3:
             domain = temp[1] + "." + temp[2]
         return domain

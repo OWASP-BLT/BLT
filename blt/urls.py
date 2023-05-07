@@ -53,6 +53,11 @@ from website.views import (
     google_callback,
     facebook_callback,
 )
+
+from website.alternative_views import (
+    IssueCreate2,
+) 
+
 from website.api.views import (
     IssueViewSet,
     DomainViewSet,
@@ -107,7 +112,7 @@ handler404 = "website.views.handler404"
 handler500 = "website.views.handler500"
 
 urlpatterns = [
-    path("captcha/", include("captcha.urls")),
+    # path("captcha/", include("captcha.urls")),
     re_path(r"^auth/registration/", include("dj_rest_auth.registration.urls")),
     path('rest-auth/password/reset/confirm/<str:uidb64>/<str:token>', PasswordResetConfirmView.as_view(),
            name='password_reset_confirm'),
@@ -296,7 +301,8 @@ urlpatterns = [
     re_path(r"^api/v1/leaderboard/$",LeaderboardApiViewSet.as_view(),name="leaderboard"),
 
     re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
-    re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
+    re_path(r"^report/$", IssueCreate.as_view(), name="report"),
+    re_path(r"^report2/$", IssueCreate2.as_view(), name="report2"),
     re_path(
         r"^upload/(?P<time>[^/]+)/(?P<hash>[^/]+)/",
         UploadCreate.as_view(),
@@ -351,7 +357,6 @@ urlpatterns = [
     ),
     re_path(r"^social/$", TemplateView.as_view(template_name="social.html")),
     re_path(r"^search/$", website.views.search),
-    re_path(r"^report/$", IssueCreate.as_view()),
     re_path(r"^i18n/", include("django.conf.urls.i18n")),
     re_path(r"^api/v1/", include(router.urls)),
     re_path(r"^api/v1/stats/$", StatsApiViewset.as_view(), name="get_score"),

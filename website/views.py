@@ -3,6 +3,7 @@ import os
 import random
 import re
 import time
+from typing import Any
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -10,6 +11,7 @@ from collections import deque
 from datetime import datetime, timezone, timedelta
 from urllib.parse import urlparse
 from urllib.parse import urlsplit
+from django import http
 
 import requests
 import requests.exceptions
@@ -539,7 +541,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         raise Exception
             except:
                 messages.error(request,"Domain does not exist")
-                return HttpResponseRedirect("/issue/")
+                return HttpResponseRedirect("/report/")
 
         return super().post(request, *args, **kwargs)
 
@@ -557,9 +559,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
         captcha_form = CaptchaForm(self.request.POST)
         if not captcha_form.is_valid() and not settings.TESTING:
             messages.error(self.request, "Invalid Captcha!")
-            return HttpResponseRedirect("/issue/")
+            return HttpResponseRedirect("/report/")
         
-        clean_domain = obj.domain_name.replace("www.", "").replace("https://","").replace("http://","")
+        clean_domain = self.request.POST["url"].replace("www.", "").replace("https://","").replace("http://","")
         domain = Domain.objects.filter(
             Q(name=clean_domain) |
             Q(url__icontains=clean_domain)

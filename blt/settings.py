@@ -84,7 +84,7 @@ INSTALLED_APPS = (
     # "tellme",
     "star_ratings",
     "drf_yasg",
-    "captcha",
+    'captcha',
     "dj_rest_auth",
     "dj_rest_auth.registration",
 )
@@ -481,3 +481,8 @@ IS_TEST = False
 if "test" in sys.argv:
     CAPTCHA_TEST_MODE = True
     IS_TEST = True
+
+
+RECAPTCHA_PUBLIC_KEY = '6Ldvs-0lAAAAADAl2l1MC3dnR30CGosdvwoSdG5a'
+RECAPTCHA_PRIVATE_KEY = '6Ldvs-0lAAAAANCqYMUOlYA8z9_Q1JY7m75sB5K_'
+RECAPTCHA_REQUIRED_SCORE = 0.85

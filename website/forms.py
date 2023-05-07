@@ -2,7 +2,7 @@ from django import forms
 
 from .models import InviteFriend, UserProfile, Hunt
 from mdeditor.fields import MDTextFormField
-from captcha.fields import CaptchaField
+from captcha.fields import ReCaptchaField
 
 class FormInviteFriend(forms.ModelForm):
     class Meta:
@@ -22,4 +22,4 @@ class HuntForm (forms.Form):
     end_date = forms.DateTimeField(widget=forms.DateTimeInput(attrs={'class': 'col-sm-6', 'readonly' : True}),label='', required=False)
 
 class CaptchaForm(forms.Form):
-    captcha = CaptchaField()
+    captcha = ReCaptchaField()

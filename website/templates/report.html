@@ -78,7 +78,7 @@
     </div>
 </div>
 
-<form action="/issue/" method="post" enctype="multipart/form-data">
+<form action="/report/" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="row main">
         <div class="panel-title panel-text">
@@ -138,13 +138,12 @@
                 <br>
                 <span>
                     <input type="file" required class="required" id='screenshot' multiple name="screenshots" />
-                    <!-- <button class="btn btn-primary btn-block"
+                    {% comment %} <button class="btn btn-primary btn-block"
                             data-intro="Upload a screenshot of the concerned page." data-step="4" name="test_files"
                             type="button" style="background-color: rgb(255, 0, 0); border:none;">
                             <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot
-                        </button> -->
-                    <span class="help-block{% if form.screenshot.errors %} has-error{% endif %}">{{
-                        form.screenshot.errors }}</span>
+                        </button>  {% endcomment %}
+                    <span class="help-block{% if form.screenshot.errors %} has-error{% endif %}">{{form.screenshot.errors }}</span>
                     <span class="badge badge-important"></span>
                 </span>
                 {% endif %}
