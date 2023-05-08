@@ -22,11 +22,10 @@
             </div>
         </div>
 
-        <!-- component -->
-        <!-- This is an example component -->
+        
         <div class="w-[100%] flex justify-center mx-auto">
 
-            <div class="p-4 w-[50%] mt-10 bg-white rounded-lg border shadow-md sm:p-8 bg-gray-400 border-gray-700">
+            <div class="p-4 w-[50%] mt-10 bg-white rounded-lg border shadow-md sm:p-8 border-gray-700">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-bold leading-none text-red-500">Latest Issues</h3>
                     <a href="" id="view_all"
@@ -61,12 +60,12 @@
                     </label>
                     <div
                         class="flex items-center w-full rounded-md border border-[#e0e0e0] bg-white text-3xl font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
-                        <i class="fa-solid fa-link pl-5"></i>
+                        <i class="fa-solid fa-link px-5"></i>
                         <input data-intro="Enter the website's complete url where you found the bug." data-step="1"
                             placeholder="https://bugheist.com/search" name="url" value="{{ request.GET.url }}" required
-                            class="w-full rounded-md bg-white py-7 px-6 text-3xl font-medium text-[#6B7280] outline-none" />
+                            class="placeholder w-full rounded-md bg-white py-7 px-6 text-3xl font-medium text-[#6B7280] outline-none" />
                         <a
-                            class="duplicates hover:text-white cursor-pointer hover:no-underline hover:shadow-form w-[20%] rounded-md bg-red-600 hover:bg-red-700 text-center py-7 text-2xl font-semibold text-white outline-none">
+                            class="duplicates hover:text-white cursor-pointer hover:no-underline hover:shadow-form w-[20%] py-7 bg-red-600 hover:bg-red-700 text-center py- text-2xl font-semibold text-white outline-none">
                             Check for Duplicates
                         </a>
                     </div>

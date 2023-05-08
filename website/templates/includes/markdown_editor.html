@@ -67,14 +67,14 @@
                     }, 1);
 
                     codeMirrorEditor.on('change', () => content = codeMirrorEditor.getValue())
-                " class="relative" x-cloak>
-        <div class="bg-gray-50 border border-b-0 border-gray-300 top-0 left-0 right-0 block rounded-t-md">
-            <button type="button" class="py-2 px-4 inline-block text-gray-400 font-semibold"
-                :class="{ 'text-red-600': tab === 'write' }"
-                x-on:click.prevent="tab = 'write'; showConvertedMarkdown = false">Write</button>
-            <button type="button" class="py-2 px-4 inline-block text-gray-400 font-semibold"
-                :class="{ 'text-red-600': tab === 'preview' && showConvertedMarkdown === true }"
-                x-on:click.prevent="tab = 'preview'; convertedMarkdown()">Preview</button>
+                " class="relative shadow-md" x-cloak>
+        <div class="bg-red-500 py-5 border border-b-0 border-red-300 top-0 left-0 right-0 block rounded-t-md">
+            <button type="button" class="py-2 px-4 inline-block text-black font-semibold"
+                :class="{ 'text-white': tab === 'write' }"
+                x-on:click.prevent="tab = 'write'; showConvertedMarkdown = false">WRITE</button>
+            <button type="button" class="py-2 px-4 inline-block text-black font-semibold"
+                :class="{ 'text-white': tab === 'preview' && showConvertedMarkdown === true }"
+                x-on:click.prevent="tab = 'preview'; convertedMarkdown()">PREVIEW</button>
         </div>
 
         <div x-show="! showConvertedMarkdown">
