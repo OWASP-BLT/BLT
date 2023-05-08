@@ -73,7 +73,7 @@ class MySeleniumTests(LiveServerTestCase):
         Imagepath = os.path.abspath(os.path.join(os.getcwd(), 'website/static/img/background.jpg'))
         self.selenium.find_element("name", "screenshots").send_keys(Imagepath)
         # pass captacha if in test mode
-        self.selenium.find_element("name", "captcha_1").send_keys('PASSED')
+        # self.selenium.find_element("name", "captcha_1").send_keys('PASSED')
         self.selenium.find_element("name", "reportbug_button").click()
         self.selenium.get('%s%s' % (self.live_server_url, '/all_activity/'))
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
