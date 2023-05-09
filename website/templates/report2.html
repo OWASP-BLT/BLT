@@ -6,7 +6,8 @@
 {% providers_media_js %}
 {% load custom_tags %}
 
-{% block content %}
+{% block natural_content %}
+
 
 
 <div id="duplicate-container" class="fixed w-full h-full top-0 left-0 overflow-y-auto z-10" hidden>
@@ -22,7 +23,7 @@
             </div>
         </div>
 
-        
+
         <div class="w-[100%] flex justify-center mx-auto">
 
             <div class="p-4 w-[50%] mt-10 bg-white rounded-lg border shadow-md sm:p-8 border-gray-700">
@@ -44,141 +45,151 @@
     </div>
 </div>
 
-<div class="h-max font-sans">
+<form action="/report2/" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="w-[100vw] flex justify-center items-center flex-wrap flex-row px-12">
 
-    <div class="flex items-center justify-center p-12">
 
-        <div class="mx-auto w-full max-w-[70vw] bg-white">
+        <div class="h-[100vh] font-sans w-1/2">
 
-            <form class="py-6 px-9" action="/report2/" method="post" enctype="multipart/form-data">
+            <div class="flex items-center justify-center py-12">
 
-                {% csrf_token %}
+                <div class="mx-auto w-full max-w-[70vw] bg-white py-6 px-9">
 
-                <div class="mb-5">
-                    <label for="email" class="mb-3 block text-2xl font-bold text-[#07074D]">
-                        DOMAIN URL:
-                    </label>
-                    <div
-                        class="flex items-center w-full rounded-md border border-[#e0e0e0] bg-white text-3xl font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
-                        <i class="fa-solid fa-link px-5"></i>
-                        <input data-intro="Enter the website's complete url where you found the bug." data-step="1"
-                            placeholder="https://bugheist.com/search" name="url" value="{{ request.GET.url }}" required
-                            class="placeholder w-full rounded-md bg-white py-7 px-6 text-3xl font-medium text-[#6B7280] outline-none" />
-                        <a
-                            class="duplicates hover:text-white cursor-pointer hover:no-underline hover:shadow-form w-[20%] py-7 bg-red-600 hover:bg-red-700 text-center py- text-2xl font-semibold text-white outline-none">
-                            Check for Duplicates
-                        </a>
-                    </div>
-                </div>
-
-                <div class="mb-5">
-
-                    <label class="block text-2xl font-bold text-[#07074D]">BUG TYPE:</label>
-                    <select
-                        class="bg-red-50 border border-gray-300 text-gray-900 text-3xl rounded-lg focus:ring-red-500 focus:border-red-500 block w-full px-5 py-5 text-3xl font-medium text-[#6B7280] outline-none"
-                        required data-intro="Categorize the bug." data-step="3" name="label">
-                        <option value="0" selected="selected">General</option>
-                        <option value="1">Number error</option>
-                        <option value="2">Functional</option>
-                        <option value="3">Performance</option>
-                        <option value="4">Security</option>
-                        <option value="5">Typo</option>
-                        <option value="6">Design</option>
-                        <option value="7">Server down</option>
-                    </select>
-                </div>
-
-                <div class="max-w-full mx-auto py-12 text-3xl">
-
-                    <div class="flex mb-2">
-                        <label for="email" class="mb-3 block text-2xl font-bold text-[#07074D]">
-                            BUG REPORT:
-                        </label>
-                    </div>
-                    {% include "includes/markdown_editor.html" %}
-                </div>
-
-                <div class="mb-6 pt-4">
-                    <label class="mb-5 block text-2xl font-semibold text-[#07074D]">
-                        Upload File
-                    </label>
-
-                    {% if request.GET.hash %}</br>
-                        <img src="{{ MEDIA_URL }}uploads/{{ request.GET.hash }}.png"
-                            class="img-responsive img-thumbnail screenshot-hash">
-                        <input type="hidden" required class="required" name="screenshot-hash"
-                            value="{{ request.GET.hash }}">
-                    {% else %}
-
-                        <div class="mb-8">
-                            <input type="file" required multiple name="file" id="file" class="hidden" />
-                            <label for="file"
-                                class="relative flex min-h-[200px] items-center justify-center rounded-md border border-dashed border-[#e0e0e0] p-12 text-center">
-                                <div>
-                                    <span class="mb-2 block text-2xl font-semibold text-[#07074D]">
-                                        Drop files here
-                                    </span>
-                                    <span class="mb-2 block text-2xl font-medium text-[#6B7280]">
-                                        Or
-                                    </span>
-                                    <span
-                                        class="inline-flex rounded border border-[#e0e0e0] py-4 px-10 text-3xl font-medium text-[#07074D]">
-                                        Browse
-                                    </span>
-                                </div>
+                        <div class="mb-5">
+                            <label for="email" class="mb-3 block text-2xl font-bold text-[#07074D]">
+                                DOMAIN URL:
                             </label>
+                            <div
+                                class="flex items-center w-full rounded-md border border-[#e0e0e0] bg-white text-3xl font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+                                <i class="fa-solid fa-link px-5"></i>
+                                <input data-intro="Enter the website's complete url where you found the bug."
+                                    data-step="1" placeholder="https://bugheist.com/search" name="url"
+                                    value="{{ request.GET.url }}" required
+                                    class="placeholder w-full rounded-md bg-white py-3 px-6 text-3xl font-medium text-[#6B7280] outline-none" />
+                                <a
+                                    class="duplicates hover:text-white cursor-pointer hover:no-underline hover:shadow-form w-[20%] py-3 bg-red-600 hover:bg-red-700 text-center py- text-2xl font-semibold text-white outline-none">
+                                    Check for Duplicates
+                                </a>
+                            </div>
                         </div>
 
-                    {% endif %}
+                        <div class="mb-5">
 
-                    <div class="w-full h-max" id="files_manage">
+                            <label class="block text-2xl font-bold text-[#07074D]">BUG TYPE:</label>
+                            <select
+                                class="bg-red-50 border border-gray-300 text-gray-900 text-3xl rounded-lg focus:ring-red-500 focus:border-red-500 block w-full px-5 py-3 text-3xl font-medium text-[#6B7280] outline-none"
+                                required data-intro="Categorize the bug." data-step="3" name="label">
+                                <option value="0" selected="selected">General</option>
+                                <option value="1">Number error</option>
+                                <option value="2">Functional</option>
+                                <option value="3">Performance</option>
+                                <option value="4">Security</option>
+                                <option value="5">Typo</option>
+                                <option value="6">Design</option>
+                                <option value="7">Server down</option>
+                            </select>
+                        </div>
 
-                    </div>
+                        <div class="mb-6 pt-4">
+                            <label class="mb-5 block text-2xl font-semibold text-[#07074D]">
+                                Upload File
+                            </label>
+
+                            {% if request.GET.hash %}</br>
+                            <img src="{{ MEDIA_URL }}uploads/{{ request.GET.hash }}.png"
+                                class="img-responsive img-thumbnail screenshot-hash">
+                            <input type="hidden" required class="required" name="screenshot-hash"
+                                value="{{ request.GET.hash }}">
+                            {% else %}
+
+                            <div class="mb-8">
+                                <input type="file" required multiple name="file" id="file" class="hidden" />
+                                <label for="file"
+                                    class="relative flex min-h-[200px] items-center justify-center rounded-md border border-dashed border-[#e0e0e0] p-12 text-center">
+                                    <div>
+                                        <span class="mb-2 block text-2xl font-semibold text-[#07074D]">
+                                            Drop files here
+                                        </span>
+                                        <span class="mb-2 block text-2xl font-medium text-[#6B7280]">
+                                            Or
+                                        </span>
+                                        <span
+                                            class="inline-flex rounded border border-[#e0e0e0] py-4 px-10 text-3xl font-medium text-[#07074D]">
+                                            Browse
+                                        </span>
+                                    </div>
+                                </label>
+                            </div>
+
+                            {% endif %}
+
+                            <div class="w-full h-max" id="files_manage">
+
+                            </div>
+
+
+                        </div>
 
 
                 </div>
-
-                <div class="mt-5">
-                    <label class="mb-5 block text-2xl font-semibold text-[#07074D]">
-                        BUG VISIBILITY
-                    </label>
-
-
-                    <div class="mt-2 text-3xl flex flex-col">
-                        <label class="inline-flex items-center">
-                            <input id="default-checkbox" type="checkbox" name="private" value="private" class="w-7 h-7 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                            <label for="default-checkbox" class="ml-4 mt-6 text-3xl  font-medium text-gray-900">Report Privately</label>
-                        </label>
-                        <label class="inline-flex items-center">
-                            <input id="default-checkbox" type="checkbox" name="anonymous" value="anonymous" class="w-7 h-7 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                            <label for="default-checkbox" class="ml-4 mt-6 text-3xl font-medium text-gray-900">Report Anonymously</label>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="captcha-form mt-10">
-                    {{ captcha_form.captcha }}
-                </div>
-
-                <div class="flex w-full mt-10">
-                    <button
-                        class="hover:shadow-form w-[20%] rounded-md bg-red-600 w-full py-8 text-center text-4xl font-semibold text-white outline-none">
-                        SUBMIT BUG REPORT
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
+
+        <div class="max-w-[50%] h-[100vh] mx-auto py-12 text-3xl">
+
+            <div class="flex mb-2">
+                <label for="email" class="mb-3 block text-2xl font-bold text-[#07074D]">
+                    BUG REPORT:
+                </label>
+            </div>
+            {% include "includes/markdown_editor.html" %}
+
+            <div class="mt-5">
+                <label class="mb-5 block text-2xl font-semibold text-[#07074D]">
+                    BUG VISIBILITY
+                </label>
+
+
+                <div class="mt-2 text-3xl flex">
+                    <label class="inline-flex items-center">
+                        <input id="default-checkbox" type="checkbox" name="private" value="private"
+                            class="w-7 h-7 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="default-checkbox"
+                            class="ml-4 mt-6 text-3xl  font-medium text-gray-900">Report Privately</label>
+                    </label>
+                    <label class="inline-flex items-center ml-1">
+                        <input id="default-checkbox" type="checkbox" name="anonymous" value="anonymous"
+                            class="w-7 h-7 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="default-checkbox"
+                            class="ml-4 mt-6 text-3xl font-medium text-gray-900">Report Anonymously</label>
+                    </label>
+                </div>
+            </div>
+
+            <div class="captcha-form mt-10">
+                {{ captcha_form.captcha }}
+            </div>
+
+            <div class="flex w-full mt-10">
+                <button
+                    class="hover:shadow-form w-[20%] rounded-md bg-red-600 w-full py-8 text-center text-4xl font-semibold text-white outline-none">
+                    SUBMIT BUG REPORT
+                </button>
+            </div>
+        </div>
+
     </div>
-</div>
+</form>
 
 <script type="text/javascript">
 
     const screenshots = document.getElementById('file');
     let manage_div = document.getElementById("files_manage");
 
-    function removeFile(fileName){
+    function removeFile(fileName) {
         event.preventDefault();
-        
+
         // let dataTransfer = []; 
         // let fileListArr = Array.from(screenshots.files)
         // let fileList = new FileList();
@@ -194,9 +205,9 @@
 
         // print(screenshots.files)
     }
-    
+
     screenshots.addEventListener('change', (event) => {
-        
+
         const fileList = Array.from(event.target.files);
 
         fileList.map(file => {
