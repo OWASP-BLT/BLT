@@ -6,8 +6,35 @@
 {% providers_media_js %}
 {% load custom_tags %}
 
-{% block natural_content %}
+{% block style %}
 
+    <style>
+
+        @media screen and (max-width:900px) {
+            
+            #report-bug-container{
+                flex-direction: column;    
+            }
+            #report-bug-wrapper1{
+                width: 90vw;
+                padding-left: 0;
+                height: max-content;
+            }
+            #report-bug-wrapper1 div{
+                padding-left: 0;
+            }
+
+            #report-bug-wrapper2{
+                width: 90vw;
+                padding-left: 0;
+                height: max-content;
+            }
+        }   
+    </style>
+
+{% endblock %}
+
+{% block natural_content %}
 
 
 <div id="duplicate-container" class="fixed w-full h-full top-0 left-0 overflow-y-auto z-10" hidden>
@@ -47,14 +74,14 @@
 
 <form action="/report2/" method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    <div class="w-[100vw] flex justify-center items-center flex-wrap flex-row px-12">
+    <div class="w-[100vw] flex justify-center items-center px-12" id="report-bug-container">
 
 
-        <div class="h-[100vh] font-sans w-1/2">
+        <div class="h-[100vh] font-sans w-1/2" id="report-bug-wrapper1">
 
             <div class="flex items-center justify-center py-12">
 
-                <div class="mx-auto w-full max-w-[70vw] bg-white py-6 px-9">
+                <div class=" w-full w-[70vw] bg-white py-6 px-9">
 
                         <div class="mb-5">
                             <label for="email" class="mb-3 block text-2xl font-bold text-[#07074D]">
@@ -136,7 +163,7 @@
             </div>
         </div>
 
-        <div class="max-w-[50%] h-[100vh] mx-auto py-12 text-3xl">
+        <div class="w-[50%] h-[100vh] mx-auto py-12 text-3xl" id="report-bug-wrapper2">
 
             <div class="flex mb-2">
                 <label for="email" class="mb-3 block text-2xl font-bold text-[#07074D]">
@@ -158,7 +185,7 @@
                         <label for="default-checkbox"
                             class="ml-4 mt-6 text-3xl  font-medium text-gray-900">Report Privately</label>
                     </label>
-                    <label class="inline-flex items-center ml-1">
+                    <label class="inline-flex items-center ml-10">
                         <input id="default-checkbox" type="checkbox" name="anonymous" value="anonymous"
                             class="w-7 h-7 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
                         <label for="default-checkbox"
