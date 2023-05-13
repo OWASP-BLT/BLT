@@ -77,7 +77,7 @@
 
 <form action="/report2/" method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    <div class="w-[100vw] flex justify-center items-center px-12" id="report-bug-container">
+    <div class="w-[100vw] flex justify-center items-center px-12 mb-20" id="report-bug-container">
 
 
         <div class="h-[100vh] font-sans w-1/2" id="report-bug-wrapper1">
@@ -244,7 +244,7 @@
             $("#files_manage").append(`
                     <div class="mb-5 rounded-md bg-[#FAEAEA] py-9 px-8">
                         <div class="flex items-center justify-between">
-                            <span class="truncate pr-3 text-2xl font-medium text-[#07074D]">
+                            <span class="truncate pr-3 text-2xl font-medium text-[#07074D] px-5">
                                 ${file.name}
                             </span>
                             <button class="text-[#07074D]" onclick="removeFile('${file.name}')">
