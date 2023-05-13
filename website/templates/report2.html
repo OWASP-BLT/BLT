@@ -75,6 +75,13 @@
     </div>
 </div>
 
+<div id="image-preview-wrapper" class="justify-center items-center w-[100vw] h-[100vh] z-30 fixed bg-gray-500 bg-opacity-50" hidden>
+    <div class="bg-red-500 fixed w-[60%] h-[60%]">
+        <img src="" alt="" class="w-full h-full" id="image-preview">
+    </div>
+
+</div>
+
 <form action="/report2/" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="w-[100vw] flex justify-center items-center px-12 mb-20" id="report-bug-container">
@@ -217,6 +224,23 @@
     const screenshots = document.getElementById('file');
     let manage_div = document.getElementById("files_manage");
 
+    function previewFile(file_name){
+        event.preventDefault();
+        
+        Array.from(screenshots.files).map(file=>{
+            if (file.name == file_name){
+                let src = URL.createObjectURL(file);
+                $("#image-preview").attr("src",src);
+                $("#image-preview-wrapper").css("display","flex");
+            }
+        })
+    }
+
+    $("#image-preview-wrapper").on("click",()=>{
+        event.preventDefault();
+        $("#image-preview-wrapper").hide();
+    })
+
     function removeFile(fileName) {
         event.preventDefault();
 
@@ -245,7 +269,7 @@
                     <div class="mb-5 rounded-md bg-[#FAEAEA] py-9 px-8">
                         <div class="flex items-center justify-between">
                             <span class="truncate pr-3 text-2xl font-medium text-[#07074D] px-5">
-                                ${file.name}
+                               <button onclick="previewFile('${file.name}')"> ${file.name} </button>
                             </span>
                             <button class="text-[#07074D]" onclick="removeFile('${file.name}')">
                                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
