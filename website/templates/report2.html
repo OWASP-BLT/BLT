@@ -29,6 +29,9 @@
                 padding-left: 0;
                 height: max-content;
             }
+            #report-options label{
+                font-size: 1rem; 
+            }
         }   
     </style>
 
@@ -83,7 +86,7 @@
 
                 <div class=" w-full w-[70vw] bg-white py-6 px-9">
 
-                        <div class="mb-5">
+                        <div class="mb-10">
                             <label for="email" class="mb-3 block text-2xl font-bold text-[#07074D]">
                                 DOMAIN URL:
                             </label>
@@ -93,15 +96,15 @@
                                 <input data-intro="Enter the website's complete url where you found the bug."
                                     data-step="1" placeholder="https://bugheist.com/search" name="url"
                                     value="{{ request.GET.url }}" required
-                                    class="placeholder w-full rounded-md bg-white py-3 px-6 text-3xl font-medium text-[#6B7280] outline-none" />
+                                    class="placeholder w-full rounded-md bg-white py-4 px-6 text-3xl font-medium text-[#6B7280] outline-none" />
                                 <a
-                                    class="duplicates hover:text-white cursor-pointer hover:no-underline hover:shadow-form w-[20%] py-3 bg-red-600 hover:bg-red-700 text-center py- text-2xl font-semibold text-white outline-none">
+                                    class="duplicates hover:text-white cursor-pointer hover:no-underline hover:shadow-form w-[200px] py-4 bg-red-600 hover:bg-red-700 text-center text-2xl font-semibold text-white outline-none">
                                     Check for Duplicates
                                 </a>
                             </div>
                         </div>
 
-                        <div class="mb-5">
+                        <div class="mb-10">
 
                             <label class="block text-2xl font-bold text-[#07074D]">BUG TYPE:</label>
                             <select
@@ -118,7 +121,7 @@
                             </select>
                         </div>
 
-                        <div class="mb-6 pt-4">
+                        <div class="mb-10 pt-4">
                             <label class="mb-5 block text-2xl font-semibold text-[#07074D]">
                                 Upload File
                             </label>
@@ -163,7 +166,7 @@
             </div>
         </div>
 
-        <div class="w-[50%] h-[100vh] mx-auto py-12 text-3xl" id="report-bug-wrapper2">
+        <div class="w-[50%] h-[100vh] mx-5 py-12 text-3xl" id="report-bug-wrapper2">
 
             <div class="flex mb-2">
                 <label for="email" class="mb-3 block text-2xl font-bold text-[#07074D]">
@@ -172,13 +175,13 @@
             </div>
             {% include "includes/markdown_editor.html" %}
 
-            <div class="mt-5">
+            <div class="mt-10">
                 <label class="mb-5 block text-2xl font-semibold text-[#07074D]">
                     BUG VISIBILITY
                 </label>
 
 
-                <div class="mt-2 text-3xl flex">
+                <div class="mt-2 text-3xl flex" id="report-options">
                     <label class="inline-flex items-center">
                         <input id="default-checkbox" type="checkbox" name="private" value="private"
                             class="w-7 h-7 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
