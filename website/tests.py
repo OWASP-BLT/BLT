@@ -67,7 +67,7 @@ class MySeleniumTests(LiveServerTestCase):
         WebDriverWait(self.selenium, 30).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-        self.selenium.get('%s%s' % (self.live_server_url, '/report/'))
+        self.selenium.get('%s%s' % (self.live_server_url, '/issue/'))
         self.selenium.find_element("name", "url").send_keys('http://www.google.com/')
         self.selenium.find_element("id", "description").send_keys('Description of bug')
         Imagepath = os.path.abspath(os.path.join(os.getcwd(), 'website/static/img/background.jpg'))
