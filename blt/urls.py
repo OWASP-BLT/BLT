@@ -301,8 +301,8 @@ urlpatterns = [
     re_path(r"^api/v1/leaderboard/$",LeaderboardApiViewSet.as_view(),name="leaderboard"),
 
     re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
-    re_path(r"^report/$", IssueCreate.as_view(), name="report"),
-    re_path(r"^report2/$", IssueCreate2.as_view(), name="report2"),
+    re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
+    re_path(r"^issue2/$", IssueCreate2.as_view(), name="issue2"),
     re_path(
         r"^upload/(?P<time>[^/]+)/(?P<hash>[^/]+)/",
         UploadCreate.as_view(),

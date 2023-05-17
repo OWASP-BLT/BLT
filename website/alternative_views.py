@@ -123,13 +123,13 @@ class IssueCreate2(View):
                         raise Exception
             except Exception as e:
                 messages.error(request,"Domain does not exist")
-                return HttpResponseRedirect("/report2/")
+                return HttpResponseRedirect("/issue2/")
             
         
         captcha_form = CaptchaForm(self.request.POST)
         if not captcha_form.is_valid() and not settings.TESTING:
             messages.error(self.request, "Invalid Captcha!")
-            return HttpResponseRedirect("/report2/")
+            return HttpResponseRedirect("/issue2/")
         
         domain = Domain.objects.filter(
             Q(name=data["url"]) |
@@ -169,11 +169,11 @@ class IssueCreate2(View):
 
             user_prof.save()
 
-        redirect_url = "/report2"
+        redirect_url = "/issue2"
 
         if len(self.request.FILES.getlist("file")) > 5:
             messages.error(self.request, "Max limit of 5 images!")
-            return HttpResponseRedirect("/report2/")
+            return HttpResponseRedirect("/issue2/")
         for screenshot in self.request.FILES.getlist("file"):
             filename = screenshot.name
             extension = filename.split(".")[-1] 
@@ -201,8 +201,8 @@ class IssueCreate2(View):
                 the_user = data["user"]
                 
             gh_issue = {
-                "title": issue.description,
-                "body": screenshot_text +
+                "title": data["description"],
+                "body": data["markdown_description"] + "\n\n" + screenshot_text +
                  "https://" + settings.FQDN + "/issue/"
                 + str(issue.id) + " found by " + str(the_user) + " at url: " + issue.url,
                 "labels": ["bug", settings.PROJECT_NAME_LOWER],
