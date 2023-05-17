@@ -68,7 +68,7 @@
 
                     codeMirrorEditor.on('change', () => content = codeMirrorEditor.getValue())
                 " class="relative shadow-md" x-cloak>
-        <div class="bg-red-500 py-5 border border-b-0 border-red-300 top-0 left-0 right-0 block rounded-t-md">
+        <div class="bg-[#A5A5A5] py-5 border border-b-0 border-[#A5A5A5] top-0 left-0 right-0 block rounded-t-md">
             <button type="button" class="py-2 px-4 inline-block text-black font-semibold"
                 :class="{ 'text-white': tab === 'write' }"
                 x-on:click.prevent="tab = 'write'; showConvertedMarkdown = false">WRITE</button>
@@ -112,7 +112,7 @@
     <script>
         function markdown() {
             return {
-                height: '500px',
+                height: '400px',
                 tab: 'write',
                 content: '',
                 showConvertedMarkdown: false,

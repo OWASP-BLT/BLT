@@ -26,7 +26,7 @@ from bs4 import BeautifulSoup
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AnonymousUser
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -46,7 +46,6 @@ from django.views.generic import DetailView, TemplateView, ListView, View
 from django.views.generic.edit import CreateView
 from django.core import serializers
 from django.conf import settings
-
 from rest_framework.authtoken.models import Token
 
 
@@ -92,18 +91,18 @@ class IssueCreate2(View):
         url = request.POST.get("url").replace("www.","").replace("https://","")
         
         data = {
-            "user": request.user,
+            "user": None if type(request.user) == AnonymousUser else request.user,
             "url": url,
             "description": stream.get("description",None),
             "label": stream.get("label",None),
             "domain":None,
             "user_agent": self.request.META.get("HTTP_USER_AGENT"),
         }
-
+        print(data["user"],request.user,"=======")
         is_authenticated = self.request.user.is_authenticated
-        if stream.get("anonymous"):
-            is_authenticated = False
-            data["user"] = None
+
+        
+
         if stream.get("private"):
             data["is_hidden"] = True
 
