@@ -18,6 +18,7 @@ from unidecode import unidecode
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 from mdeditor.fields import MDTextField
+from captcha.fields import CaptchaField
 from decimal import Decimal
 from django.core.files.storage import default_storage
 import uuid
@@ -203,6 +204,7 @@ class Issue(models.Model):
     url = models.URLField()
     description = models.TextField()
     markdown_description = models.TextField(null=True,blank=True)
+    captcha = CaptchaField()
     label = models.PositiveSmallIntegerField(choices=labels, default=0)
     views = models.IntegerField(null=True, blank=True)
     verified = models.BooleanField(default=False)
