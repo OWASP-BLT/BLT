@@ -705,15 +705,14 @@ files = [
 Django = ">=3.2"
 
 [[package]]
-name = "django-recaptcha"
-version = "3.0.0"
-description = "Django recaptcha form field/widget app."
+name = "django-ranged-response"
+version = "0.2.0"
+description = "Modified Django FileResponse that adds Content-Range headers."
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "django-recaptcha-3.0.0.tar.gz", hash = "sha256:253197051288923cae675d7eff91b619e3775311292a5dbaf27a8a55ffebc670"},
-    {file = "django_recaptcha-3.0.0-py3-none-any.whl", hash = "sha256:1aed69fd6ac8fd9e99e52665392ae6748f8b6339ace656fad779fe0c6c915a52"},
+    {file = "django-ranged-response-0.2.0.tar.gz", hash = "sha256:f71fff352a37316b9bead717fc76e4ddd6c9b99c4680cdf4783b9755af1cf985"},
 ]
 
 [package.dependencies]
@@ -737,6 +736,26 @@ six = ">=1.9.0"
 
 [package.extras]
 with-social = ["django-allauth (>=0.25.0)"]
+
+[[package]]
+name = "django-simple-captcha"
+version = "0.5.17"
+description = "A very simple, yet powerful, Django captcha application"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "django-simple-captcha-0.5.17.tar.gz", hash = "sha256:9649e66dab4e71efacbfef02f48b83b91684898352a1ab56f1686ce71033b328"},
+    {file = "django_simple_captcha-0.5.17-py2.py3-none-any.whl", hash = "sha256:f9a07e5e9de264ba4039c9eaad66bc48188a21ceda5fcdc2fa13c5512141c2c9"},
+]
+
+[package.dependencies]
+Django = ">=2.2"
+django-ranged-response = "0.2.0"
+Pillow = ">=6.2.0"
+
+[package.extras]
+test = ["testfixtures"]
 
 [[package]]
 name = "django-star-ratings"
@@ -2408,4 +2427,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "360a6f0805718262c140898666c1c1d9b9401e456b330d5a78351b050052aa8c"
+content-hash = "6b665bec1bf5e9a6e4130164a67afac78f25b1f404814c13ec096dbfdc840780"
