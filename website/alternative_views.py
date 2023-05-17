@@ -89,16 +89,15 @@ class IssueCreate2(View):
 
         stream = request.POST
         url = request.POST.get("url").replace("www.","").replace("https://","")
-        
         data = {
             "user": None if type(request.user) == AnonymousUser else request.user,
             "url": url,
             "description": stream.get("description",None),
+            "markdown_description": stream.get("markdown_description",None),
             "label": stream.get("label",None),
             "domain":None,
             "user_agent": self.request.META.get("HTTP_USER_AGENT"),
         }
-        print(data["user"],request.user,"=======")
         is_authenticated = self.request.user.is_authenticated
 
         
