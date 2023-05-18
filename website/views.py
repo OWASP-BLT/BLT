@@ -328,8 +328,8 @@ class IssueBaseCreate(object):
         obj = form.save(commit=False)
         obj.user = self.request.user
         domain, created = Domain.objects.get_or_create(
-            name=obj.domain_name.replace("www.", ""),
-            defaults={"url": "http://" + obj.domain_name.replace("www.", "")},
+            name=self.request.POST["url"].replace("www.", ""),
+            defaults={"url": "http://" + self.request.POST["url"].replace("www.", "")},
         )
         obj.domain = domain
         if self.request.POST.get("screenshot-hash"):
@@ -566,9 +566,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
             Q(name=clean_domain) |
             Q(url__icontains=clean_domain)
         ).first()
-        
         created = False if domain==None else True 
-
+        
         if not created:
             domain = Domain.objects.create(
                 name=clean_domain,
@@ -626,7 +625,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             user_prof.save()
 
-        redirect_url = "/issue"
+        redirect_url = "/report"
 
         if len(self.request.FILES.getlist("screenshots")) > 5:
             messages.error(self.request, "Max limit of 5 images!")

@@ -15,7 +15,7 @@
         $(document).ready(function () {
             $(document).on('click', '.errors', function () {
                 var url = window.location.href;
-                var redirect_url = 'https://{% env "FQDN" %}/issue/?url=' + url;
+                var redirect_url = 'https://{% env "FQDN" %}/report/?url=' + url;
                 var redirectWindow = window.open(redirect_url, '_blank');
                 redirectWindow.location;
             });

@@ -124,6 +124,7 @@
                             class="flex items-center w-full rounded-md border border-[#e0e0e0] bg-white text-3xl font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
                             <i class="fa-solid fa-bug px-5"></i>
                             <input data-intro="Enter Bug report title" data-step="1"
+                                id="description"
                                 placeholder="Xss Vulnerability in bug editor" name="description" value="{{ request.GET.description }}"
                                 required
                                 class="placeholder w-full rounded-md bg-white py-7 px-6 text-3xl font-medium text-[#6B7280] outline-none" />
@@ -221,6 +222,7 @@
 
             <div class="flex w-full mt-10">
                 <button
+                    name="reportbug_button"
                     class="hover:shadow-form w-[100%] rounded-md bg-red-600 w-full py-8 text-center text-4xl font-semibold text-white outline-none">
                     SUBMIT BUG REPORT
                 </button>

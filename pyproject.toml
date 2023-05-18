@@ -59,9 +59,9 @@ stripe = "^5.2.0"
 django-environ = "^0.9.0"
 django-humanize = "^0.1.2"
 drf-yasg = "^1.20.0"
+django-simple-captcha = "^0.5.17"
 django-filter = "^22.1"
 webdriver-manager = "^3.8.2"
-django-simple-captcha = "^0.5.17"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"

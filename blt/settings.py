@@ -84,7 +84,7 @@ INSTALLED_APPS = (
     # "tellme",
     "star_ratings",
     "drf_yasg",
-    'captcha',
+    "captcha",
     "dj_rest_auth",
     "dj_rest_auth.registration",
 )

@@ -138,11 +138,11 @@
                 <br>
                 <span>
                     <input type="file" required class="required" id='screenshot' multiple name="screenshots" />
-                    {% comment %} <button class="btn btn-primary btn-block"
+                    <button class="btn btn-primary btn-block"
                             data-intro="Upload a screenshot of the concerned page." data-step="4" name="test_files"
                             type="button" style="background-color: rgb(255, 0, 0); border:none;">
                             <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot
-                        </button>  {% endcomment %}
+                        </button> 
                     <span class="help-block{% if form.screenshot.errors %} has-error{% endif %}">{{form.screenshot.errors }}</span>
                     <span class="badge badge-important"></span>
                 </span>
