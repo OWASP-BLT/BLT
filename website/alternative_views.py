@@ -143,7 +143,7 @@ class IssueCreate2(IssueBaseCreate, CreateView):
                         raise Exception
             except:
                 messages.error(request,"Domain does not exist")
-                return HttpResponseRedirect("/issue/")
+                return HttpResponseRedirect("/issue2/")
 
         return super().post(request, *args, **kwargs)
 
@@ -161,7 +161,7 @@ class IssueCreate2(IssueBaseCreate, CreateView):
         captcha_form = CaptchaForm(self.request.POST)
         if not captcha_form.is_valid() and not settings.TESTING:
             messages.error(self.request, "Invalid Captcha!")
-            return HttpResponseRedirect("/issue/")
+            return HttpResponseRedirect("/issue2/")
         
         clean_domain = obj.domain_name.replace("www.", "").replace("https://","").replace("http://","")
         domain = Domain.objects.filter(
@@ -228,11 +228,11 @@ class IssueCreate2(IssueBaseCreate, CreateView):
 
             user_prof.save()
 
-        redirect_url = "/report"
+        redirect_url = "/issue2"
 
         if len(self.request.FILES.getlist("screenshots")) > 5:
             messages.error(self.request, "Max limit of 5 images!")
-            return HttpResponseRedirect("/issue/")
+            return HttpResponseRedirect("/issue2/")
         for screenshot in self.request.FILES.getlist("screenshots"):
             filename = screenshot.name
             extension = filename.split(".")[-1] 
