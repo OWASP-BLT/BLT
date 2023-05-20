@@ -120,7 +120,7 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element("name","markdown_description").send_keys("Test markdown description")
         self.selenium.find_element("id", "description").send_keys('Description of bug')
         Imagepath = os.path.abspath(os.path.join(os.getcwd(), 'website/static/img/background.jpg'))
-        self.selenium.find_element("name", "file").send_keys(Imagepath)
+        self.selenium.find_element("name", "screenshots").send_keys(Imagepath)
         # pass captacha if in test mode
         self.selenium.find_element("name", "captcha_1").send_keys('PASSED')
         self.selenium.find_element("name", "reportbug_button").click()
