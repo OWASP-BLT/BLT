@@ -481,8 +481,3 @@ IS_TEST = False
 if "test" in sys.argv:
     CAPTCHA_TEST_MODE = True
     IS_TEST = True
-
-
-RECAPTCHA_PUBLIC_KEY =  os.environ.get("RECAPTCHA_PUBLIC_KEY", "test")
-RECAPTCHA_PRIVATE_KEY = os.environ.get("RECAPTCHA_PRIVATE_KEY", "test")
-RECAPTCHA_REQUIRED_SCORE = 0.85
