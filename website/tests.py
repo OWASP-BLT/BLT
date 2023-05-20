@@ -80,6 +80,54 @@ class MySeleniumTests(LiveServerTestCase):
         body = self.selenium.find_element('tag name', 'body')
         self.assertIn('Description of bug', body.text)
 
+    @override_settings(DEBUG=True)
+    def test_post_bug_full_url(self):
+        # test to check for full url https://www.bugheist.com/report/
+        self.selenium.set_page_load_timeout(70)
+        self.selenium.get('%s%s' % (self.live_server_url, '/accounts/login/'))
+        self.selenium.find_element("name", "login").send_keys('bugbug')
+        self.selenium.find_element("name", "password").send_keys('secret')
+        self.selenium.find_element("name", "login_button").click()
+        WebDriverWait(self.selenium, 30).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
+        self.selenium.get('%s%s' % (self.live_server_url, '/report/'))
+        self.selenium.find_element("name", "url").send_keys('https://www.bugheist.com/report/')
+        self.selenium.find_element("id", "description").send_keys('Description of bug')
+        Imagepath = os.path.abspath(os.path.join(os.getcwd(), 'website/static/img/background.jpg'))
+        self.selenium.find_element("name", "screenshots").send_keys(Imagepath)
+        # pass captacha if in test mode
+        self.selenium.find_element("name", "captcha_1").send_keys('PASSED')
+        self.selenium.find_element("name", "reportbug_button").click()
+        self.selenium.get('%s%s' % (self.live_server_url, '/all_activity/'))
+        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        body = self.selenium.find_element('tag name', 'body')
+        self.assertIn('Description of bug', body.text)
+
+
+    @override_settings(DEBUG=True)
+    def test_report2(self):
+        self.selenium.set_page_load_timeout(70)
+        self.selenium.get('%s%s' % (self.live_server_url, '/accounts/login/'))
+        self.selenium.find_element("name", "login").send_keys('bugbug')
+        self.selenium.find_element("name", "password").send_keys('secret')
+        self.selenium.find_element("name", "login_button").click()
+        WebDriverWait(self.selenium, 30).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
+        self.selenium.get('%s%s' % (self.live_server_url, '/issue2/'))
+        self.selenium.find_element("name", "url").send_keys('https://www.bugheist.com/report/')
+        self.selenium.find_element("name","markdown_description").send_keys("Test markdown description")
+        self.selenium.find_element("id", "description").send_keys('Description of bug')
+        Imagepath = os.path.abspath(os.path.join(os.getcwd(), 'website/static/img/background.jpg'))
+        self.selenium.find_element("name", "file").send_keys(Imagepath)
+        # pass captacha if in test mode
+        self.selenium.find_element("name", "captcha_1").send_keys('PASSED')
+        self.selenium.find_element("name", "reportbug_button").click()
+        self.selenium.get('%s%s' % (self.live_server_url, '/all_activity/'))
+        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        body = self.selenium.find_element('tag name', 'body')
+        self.assertIn('Description of bug', body.text)
 
 class HideImage(TestCase):
     def setUp(self):
