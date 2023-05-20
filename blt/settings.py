@@ -382,6 +382,14 @@ CACHES = {
     }
 }
 
+if DEBUG or TESTING:
+    anon_throttle = 100000
+    user_throttle = 100000
+
+else:
+    anon_throttle = 5000
+    user_throttle = 10000
+
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
@@ -389,6 +397,10 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.TokenAuthentication",
     ),
     "PAGE_SIZE": 10,
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': f'{anon_throttle}/day',
+        'user': f'{user_throttle}/day'
+    }
 }
 
 SOCIALACCOUNT_PROVIDER = {
