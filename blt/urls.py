@@ -65,6 +65,9 @@ from website.api.views import (
     UrlCheckApiViewset,
     BugHuntApiViewset,
 )
+from website.alternative_views import (
+    IssueCreate2
+)
 
 from blt import settings
 from rest_framework import permissions, routers
@@ -297,6 +300,8 @@ urlpatterns = [
 
     re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
+    re_path(r"^issue2/$", IssueCreate2.as_view(), name="issue2"),
+
     re_path(
         r"^upload/(?P<time>[^/]+)/(?P<hash>[^/]+)/",
         UploadCreate.as_view(),
