@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+{% load static %}
+{% load gravatar %}
+{% load socialaccount %}
+{% load humanize %}
+{% providers_media_js %}
+{% load custom_tags %}
+
+{% block style %}
+
+<style>
+    @media screen and (max-width:900px) {
+
+        #report-bug-container {
+            flex-direction: column;
+            align-self: flex-start;
+        }
+
+        #report-bug-wrapper1 {
+            width: 90vw;
+            padding-left: 0;
+            height: max-content;
+        }
+
+        #report-bug-wrapper1 div {
+            padding-left: 0;
+        }
+
+        #report-bug-wrapper2 {
+            width: 90vw;
+            padding-left: 0;
+            height: max-content;
+        }
+    }
+</style>
+
+{% endblock %}
+
+{% block natural_content %}
+
+
+
+<p class="text-7xl text-center font-bold mt-20">REPORT A <span class="text-red-500">BUG</span></p>
+
+<div id="duplicate-container" class="fixed w-full h-full top-0 left-0 overflow-y-auto z-10" hidden>
+
+
+    <div class="flex flex-col w-full h-full bg-white items-center">
+        <div class="w-full h-[60px] flex bg-red-500 items-center">
+            <button id="close-duplicate-container"
+                class="flex top-[100px] w-[30px] h-[30px] bg-white justify-center item-center rounded-[50px] hover:bg-red-100 hover:shadow-md no-underline ml-5">
+                <i
+                    class="text-red-500 scale-150 m-3 fa-sharp fa-solid fa-xmark cursor-pointer transition duration-200"></i>
+            </button>
+            <div class="w-[90%] flex items-center justify-center">
+                <p class="text-5xl font-extrabold text-white">DUPLICATE ISSUES</p>
+            </div>
+        </div>
+
+
+        <div class="w-[100%] flex justify-center mx-auto">
+
+            <div class="p-4 w-[50%] mt-10 bg-white rounded-lg border shadow-md sm:p-8 border-gray-700">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold leading-none text-red-500">Latest Issues</h3>
+                    <a href="" id="view_all"
+                        class="text-xl font-medium text-blue-600 hover:underline dark:text-blue-500">
+                        View all
+                    </a>
+                </div>
+                <div class="flow-root">
+                    <ul role="list" id="duplicate-list" class="max-h-[70vh] overflow-y-scroll">
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="image-preview-wrapper"
+    class="justify-center items-center w-[100vw] h-[100vh] z-30 fixed bg-gray-500 bg-opacity-50" hidden>
+    <div class="bg-red-500 fixed w-[60%] h-[60%]">
+        <img src="" alt="" class="w-full h-full" id="image-preview">
+    </div>
+
+</div>
+
+<form action="/issue2/" method="post" enctype="multipart/form-data" class="flex flex-col items-center justify-center">
+    {% csrf_token %}
+    <div class="w-[80vw] flex justify-center px-12 my-20" id="report-bug-container">
+
+
+        <div class="font-sans w-1/2" id="report-bug-wrapper1">
+
+            <div class="flex items-center justify-center">
+
+                <div class=" w-full w-[70vw] bg-white py-6 px-9">
+
+                    <div class="mb-10">
+                        <label for="email" class="mb-3 block text-2xl font-bold text-[#07074D]">
+                            DOMAIN URL:
+                        </label>
+                        <div
+                            class="flex items-center w-full rounded-md border border-[#e0e0e0] bg-white text-3xl font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+                            <i class="fa-solid fa-link px-5"></i>
+                            <input data-intro="Enter the website's complete url where you found the bug." data-step="1"
+                                placeholder="https://bugheist.com/search" name="url" value="{{ request.GET.url }}"
+                                required
+                                class="placeholder w-full rounded-md bg-white py-4 px-6 text-3xl font-medium text-[#6B7280] outline-none" />
+                            <a
+                                class="duplicates hover:text-white cursor-pointer hover:no-underline hover:shadow-form w-[200px] py-4 bg-[#A5A5A5] hover:bg-red-700 text-center text-2xl font-semibold text-white outline-none">
+                                Check for Duplicates
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="mb-10">
+                        <label for="email" class="mb-3 block text-2xl font-bold text-[#07074D]">
+                            Bug Title:
+                        </label>
+                        <div
+                            class="flex items-center w-full rounded-md border border-[#e0e0e0] bg-white text-3xl font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md">
+                            <i class="fa-solid fa-bug px-5"></i>
+                            <input data-intro="Enter Bug report title" data-step="1"
+                                id="description"
+                                placeholder="Xss Vulnerability in bug editor" name="description" value="{{ request.GET.description }}"
+                                required
+                                class="placeholder w-full rounded-md bg-white py-7 px-6 text-3xl font-medium text-[#6B7280] outline-none" />
+                        </div>
+                    </div>
+
+                    <div class="mb-5 flex justify-between items-center">
+
+                        <div class="w-[300px]">
+                            <label class="block text-2xl font-bold text-[#07074D]">BUG TYPE:</label>
+                            <select
+                                class="bg-[#E7E7E7] border border-gray-300 text-gray-900 text-3xl rounded-lg focus:ring-[#A5A5A5] focus:border-[#A5A5A5] block w-full px-5 py-3 text-3xl font-medium text-[#6B7280] outline-none"
+                                required data-intro="Categorize the bug." data-step="3" name="label">
+                                <option value="0" selected="selected">General</option>
+                                <option value="1">Number error</option>
+                                <option value="2">Functional</option>
+                                <option value="3">Performance</option>
+                                <option value="4">Security</option>
+                                <option value="5">Typo</option>
+                                <option value="6">Design</option>
+                                <option value="7">Server down</option>
+                            </select>
+                        </div>
+
+
+                        <label class="mt-16 ml-5 inline-flex items-center text-3xl flex">
+                            <input id="default-checkbox" type="checkbox" name="private" value="private"
+                                class="w-7 h-7 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                            <label for="default-checkbox" class="ml-4 mt-6 text-3xl  font-medium text-gray-900">Report
+                                Privately</label>
+                        </label>
+
+                    </div>
+
+                    <div class="mb-2 pt-4 flex justify-between">
+
+                        <div>
+                            <label class="mb-5 block text-2xl font-semibold text-[#07074D]">
+                                Upload File
+                            </label>
+
+                            {% if request.GET.hash %}</br>
+                            <img src="{{ MEDIA_URL }}uploads/{{ request.GET.hash }}.png"
+                                class="img-responsive img-thumbnail screenshot-hash">
+                            <input type="hidden" required class="required" name="screenshot-hash"
+                                value="{{ request.GET.hash }}">
+                            {% else %}
+
+                            <div class="w-[220px]">
+                                <input type="file" required multiple name="file" id="file" class="hidden" />
+                                <label for="file"
+                                    class="relative flex min-h-[200px] items-center justify-center rounded-md border border-dashed border-[#e0e0e0] p-12 text-center">
+                                    <div>
+                                        <span class="mb-2 block text-2xl font-semibold text-[#07074D]">
+                                            Drop files here
+                                        </span>
+                                        <span class="mb-2 block text-2xl font-medium text-[#6B7280]">
+                                            Or
+                                        </span>
+                                        <span
+                                            class="inline-flex rounded border border-[#A5A5A5] py-4 px-10 text-3xl font-medium text-[#07074D]">
+                                            Browse
+                                        </span>
+                                    </div>
+                                </label>
+                            </div>
+
+                            {% endif %}
+                        </div>
+
+                        <div class="w-[98%] ml-5 mt-5 flex flex-wrap items-center" id="files_manage">
+                            
+                        </div>
+
+
+                    </div>
+
+                    <div class="captcha-form">
+                        {{ captcha_form.captcha }}
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+
+        <div class="w-[50%] mx-5 text-3xl" id="report-bug-wrapper2">
+
+            <div class="flex flex-col mb-2">
+                <label for="email" class="mb-3 block text-2xl font-bold text-[#07074D]">
+                    Description (Markdown Supported):
+                </label>
+                {% include "includes/markdown_editor.html" %}
+            </div>
+
+            <div class="flex w-full mt-10">
+                <button
+                    name="reportbug_button"
+                    class="hover:shadow-form w-[100%] rounded-md bg-red-600 w-full py-8 text-center text-4xl font-semibold text-white outline-none">
+                    SUBMIT BUG REPORT
+                </button>
+            </div>
+        </div>
+
+    </div>
+</form>
+
+<script type="text/javascript">
+
+    const screenshots = document.getElementById('file');
+    let manage_div = document.getElementById("files_manage");
+
+    function previewFile(file_name) {
+        event.preventDefault();
+
+        Array.from(screenshots.files).map(file => {
+            if (file.name == file_name) {
+                let src = URL.createObjectURL(file);
+                $("#image-preview").attr("src", src);
+                $("#image-preview-wrapper").css("display", "flex");
+            }
+        })
+    }
+
+    $("#image-preview-wrapper").on("click", () => {
+        event.preventDefault();
+        $("#image-preview-wrapper").hide();
+    })
+
+    function removeFile(fileName) {
+        event.preventDefault();
+
+        // let dataTransfer = []; 
+        // let fileListArr = Array.from(screenshots.files)
+        // let fileList = new FileList();
+
+        // fileListArr.map(file => {
+        //     if (fileName !== file.name){
+        //         dataTransfer.push(file);
+        //         fileList.
+        //     }
+        // })
+
+        // screenshots.files = new FileList();
+
+        // print(screenshots.files)
+    }
+
+    screenshots.addEventListener('change', (event) => {
+
+        const fileList = Array.from(event.target.files);
+
+        fileList.map(file => {
+            let src = URL.createObjectURL(file);
+            $("#files_manage").append(`
+                                <div class="flex flex-col w-[100px] rounded-md h-[120px] mr-5 text-white" onclick="previewFile('${file.name}')">
+                                    <div class="bg-[#A5A5A5] pl-3 py-1">
+                                        <p> ${file.name.slice(0,7)}... </p>
+                                    </div>
+                                    <img src="${src}" alt="screenshots" class="object-fill">
+                                </div>
+            `)
+        })
+
+    });
+
+
+    $(function () {
+        $(".duplicates").click(async () => {
+            var uri = $("input[name='url']").val();
+
+            $("#view_all").attr("href", `/search/?query=${uri}`);
+
+            let resp = await fetch("/api/v1/urlcheck/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    "domain_url": uri
+                })
+            });
+
+            let resp_json = await resp.json()
+
+            $("#duplicate-list").html("")
+            resp_json.map(issue => add_duplicates(issue));
+
+            $("#duplicate-container").show()
+
+        });
+
+        $("#close-duplicate-container").click(() => {
+            $("#duplicate-container").hide()
+        })
+
+
+        let add_duplicates = (issue) => {
+            $("#duplicate-list").append(
+                `
+                    <li class="py-3 sm:py-4 border-x-gray-500 border-t-2 cursor-pointer hover:shadow-lg transition-all">
+                        <div class="flex items-center space-x-4 p-2">
+                            <div class="flex-shrink-0">
+                                <img class="w-[60px] h-[60px] rounded-full"
+                                    src="{% media_url %}${issue.user__userprofile__user_avatar}"
+                                    alt="Neil image">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-3xl font-medium text-gray-900 text-black">
+                                    ${issue.description.substring(0, 50)}...
+                                </p>
+                                <a href="/issue/${issue.id}" class="text-2xl text-gray-500 truncate dark:text-gray-400">
+                                    /issue/${issue.id}
+                                </a>
+                            </div>
+                            <div
+                                class="inline-flex items-center text-base text-xl font-semibold text-gray-900 dark:text-white">
+                                    ${issue.created__day}/${issue.created__month}/${issue.created__year}
+                                </div>
+                        </div>
+                    </li>
+                `
+            )
+        }
+
+    });
+</script>
+{% endblock %}
