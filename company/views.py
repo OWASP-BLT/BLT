@@ -5,8 +5,21 @@ from django.views.generic import DetailView, TemplateView, ListView, View
 
 
 
-class CompanyDashboard(View):
+class CompanyDashboardAnalyticsView(View):
 
     def get(self,request,*args,**kwargs):
 
-        return render(request,"company/company_index.html")
+        return render(request,"company/company_analytics.html")
+
+class CompanyDashboardManageBugsView(View):
+    
+    def get(self,request,*args,**kwargs):
+
+        return render(request,"company/company_manage_bugs.html")
+    
+
+class CompanyDashboardManageDomainsView(View):
+    
+    def get(self,request,*args,**kwargs):
+
+        return render(request,"company/company_manage_domains.html")
