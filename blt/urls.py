@@ -66,7 +66,8 @@ from website.api.views import (
     BugHuntApiViewset,
 )
 from website.alternative_views import (
-    IssueCreate2
+    IssueCreate2,
+    CreateHunt2,
 )
 
 from blt import settings
@@ -321,6 +322,7 @@ urlpatterns = [
     re_path(r"^accounts/", include("allauth.urls")),
     re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html"),name="start_hunt"),
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
+    re_path(r"^hunt2/$", login_required(CreateHunt2.as_view()), name="hunt2"),
     re_path(r"^invite/$", InviteCreate.as_view(template_name="invite.html")),
     re_path(
         r"^invite-friend/$",
@@ -399,6 +401,7 @@ urlpatterns = [
     path("robots.txt", website.views.robots_txt),
     path("ads.txt", website.views.ads_txt),
     re_path(r"^contributors/$",contributors_view,name="contributors"),
+    path("company/",include("company.urls"))
 ]
 
 if settings.DEBUG:
