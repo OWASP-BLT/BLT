@@ -23,3 +23,12 @@ class CompanyDashboardManageDomainsView(View):
     def get(self,request,*args,**kwargs):
 
         return render(request,"company/company_manage_domains.html")
+    
+
+class AddDomainView(View):
+    
+    def get(self,request,*args,**kwargs):
+
+        return render(request,"company/add_domain.html")
+    
+
