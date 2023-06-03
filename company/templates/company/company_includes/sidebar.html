@@ -16,21 +16,21 @@
         </div>
         <ul class="side-nav">
             <span class="side-nav__header">Main Menu</span>
-            <a href="{% url 'company_analytics'%}">
+            <a href="{% url 'company_analytics' company %}">
                 <li id="analytics" class="side-nav__item">
                     <i class="fa-sharp fa-solid fa-chart-simple fa-lg"></i>   
                     <span>Analytics</span>
                 </li>
             </a>
 
-            <a href="{% url 'company_manage_bugs'%}">
+            <a href="{% url 'company_manage_bugs' company %}">
                 <li id="bugs" class="side-nav__item">
                     <i class="fa-sharp fa-solid fa-bug fa-lg"></i>   
                     <span>Bugs</span>
                 </li>
             </a>
 
-            <a href="{% url 'company_manage_domains'%}">
+            <a href="{% url 'company_manage_domains' company %}">
                 <li id="domains" class="side-nav__item">
                     <i class="fa-sharp fa-solid fa-globe fa-lg"></i>                         
                     <span>Domains</span>

@@ -37,10 +37,17 @@ class Subscription(models.Model):
     number_of_domains = models.IntegerField(null=False, blank=True)
     feature = models.BooleanField(default=True)
 
+def generate_uuid_for_company(apps, schema_editor):
+    company_model = apps.get_model('website', 'Company')
+    for obj in company_model.objects.all():
+        obj.company_id = uuid.uuid4()  # Replace with your desired UUID generation logic
+        obj.save()
 
 class Company(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    name = models.CharField(max_length=255, unique=True)
+    managers = models.ManyToManyField(User,related_name="user_companies")
+    name = models.CharField(max_length=255)
+    company_id = models.CharField(max_length=255, unique=True, editable=False, default=uuid.uuid4()) # uuid
     url = models.URLField()
     email = models.EmailField(null=True, blank=True)
     twitter = models.CharField(max_length=30, null=True, blank=True)
@@ -52,11 +59,14 @@ class Company(models.Model):
     )
     is_active = models.BooleanField(default=False)
 
+    def __str__(self):
+        return self.name
 
 class Domain(models.Model):
     company = models.ForeignKey(
         Company, null=True, blank=True, on_delete=models.CASCADE
     )
+    managers = models.ManyToManyField(User,related_name="user_domains")
     name = models.CharField(max_length=255, unique=True)
     url = models.URLField()
     logo = models.ImageField(upload_to="logos", null=True, blank=True)
@@ -72,6 +82,9 @@ class Domain(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
+        return self.name
+
+    def __str__(self):
         return self.name
 
     @property
