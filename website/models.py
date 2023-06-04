@@ -234,6 +234,7 @@ class Issue(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     is_hidden = models.BooleanField(default=False)
+    rewarded = models.PositiveIntegerField(default=0) # money rewarded by the company
 
 
     def __unicode__(self):
