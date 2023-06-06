@@ -26,7 +26,6 @@ def validate_company_user(func):
         ).filter(company_id=company).first()
 
         if company == None:
-            print(request)
             return redirect("company_view")
 
         return func(self,request,company.company_id,*args,**kwargs)
@@ -81,12 +80,24 @@ def company_view(request,*args,**kwargs):
 
 class CompanyDashboardAnalyticsView(View):
 
+    labels = {
+            0: "General",
+            1: "Number Error",
+            2: "Functional",
+            3: "Performance",
+            4: "Security",
+            5: "Typo",
+            6: "Design",
+            7: "Server Down",
+        }
+    months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+
     def get_general_info(self,company):
 
         total_company_bugs = Issue.objects.filter(domain__company__company_id=company).count()
         total_bug_hunts = Hunt.objects.filter(domain__company__company_id=company).count()
         total_domains = Domain.objects.filter(company__company_id=company).count()
-        total_money_distributed = Hunt.objects.filter(domain__company__company_id=company,result_published=True).aggregate(total_money=Sum('prize'))["total_money"]
+        total_money_distributed = Issue.objects.filter(domain__company__company_id=company).aggregate(total_money=Sum('rewarded'))["total_money"]
         total_money_distributed = 0 if total_money_distributed==None else total_money_distributed
 
         return {
@@ -101,19 +112,9 @@ class CompanyDashboardAnalyticsView(View):
         bug_report_type = Issue.objects.values('label').filter(domain__company__company_id=company).annotate(count=Count('label'))
         bug_report_type_labels = []
         bug_report_type_data = []
-        labels = {
-            0: "General",
-            1: "Number Error",
-            2: "Functional",
-            3: "Performance",
-            4: "Security",
-            5: "Typo",
-            6: "Design",
-            7: "Server Down",
-        }
        
         for issue_count in bug_report_type:
-            bug_report_type_labels.append(labels[issue_count['label']])
+            bug_report_type_labels.append(self.labels[issue_count['label']])
             bug_report_type_data.append(issue_count['count'])
 
         return {
@@ -152,14 +153,14 @@ class CompanyDashboardAnalyticsView(View):
                 count=Count('id')
             ).order_by('month')  
         
-        months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+    
         data = [0,0,0,0,0,0,0,0,0,0,0,0] #count
 
         for data_month in data_monthly:
             data[data_month["month"]] = data_month["count"]
 
         return {
-            "bug_monthly_report_labels": json.dumps(months),
+            "bug_monthly_report_labels": json.dumps(self.months),
             "bug_monthly_report_data": json.dumps(data),
             "max_count": max(data)
         }       
@@ -214,6 +215,20 @@ class CompanyDashboardAnalyticsView(View):
             "this_week_issue_count":this_week_issue_count
         }
     
+    def get_spent_on_bugtypes(self,company):
+
+        spent_on_bugtypes = Issue.objects.values('label').filter(domain__company__company_id=company).annotate(spent=Sum('rewarded'))
+        labels = list(self.labels.values())
+        data = [0 for label in labels] # make all labels spent 0 / init with 0
+
+        for bugtype in spent_on_bugtypes:
+            data[bugtype["label"]] = bugtype["spent"]
+
+        return {
+            "labels": json.dumps(labels),
+            "data": json.dumps(data),
+            "zipped_data": zip(labels,data)
+        }
 
     @validate_company_user
     def get(self,request,company,*args,**kwargs):
@@ -226,8 +241,10 @@ class CompanyDashboardAnalyticsView(View):
             "reports_on_domain_piechart_data": self.get_reports_on_domain_piechart_data(company),
             "get_current_year_monthly_reported_bar_data":self.get_current_year_monthly_reported_bar_data(company),
             "bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(company),
-            "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(company,True)
+            "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(company,True),
+            "spent_on_bugtypes": self.get_spent_on_bugtypes(company)
         }
+        self.get_spent_on_bugtypes(company)
         return render(request,"company/company_analytics.html",context=context)
 
 class CompanyDashboardManageBugsView(View):
