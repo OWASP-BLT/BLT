@@ -28,22 +28,23 @@
            <div class="flow-root h-full overflow-y-scroll">
                 <ul role="list" class="divide-y divide-gray-200 px-5">
                     
-                    {% for i in '12345234234234' %}
+                    {% for domain in domains %}
                         <li class="py-3 sm:py-4">
                             <div class="flex items-center space-x-4">
                                 <div class="flex-shrink-0">
-                                    <img class="w-8 h-8 rounded-full" src="https://w7.pngwing.com/pngs/249/19/png-transparent-google-logo-g-suite-google-guava-google-plus-company-text-logo.png" alt="Domain Logo">
+                                    <img class="w-8 h-8 rounded-full" src="{{MEDIA_URL}}{{ domain.logo }}" alt="Domain Logo">
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-gray-900 truncate">
-                                        google
+                                        {{ domain.name | capfirst }}
                                     </p>
                                     <p class="text-sm text-gray-500 truncate dark:text-gray-400">
-                                        www.google.com
+                                        {{ domain.url }}
                                     </p>
                                 </div>
                                 <div class="inline-flex items-center text-base font-semibold text-gray-900 ">
-                                   $320
+                                   <a href="">View</a>
+                                   <a href="" class="ml-2">Edit</a>
                                 </div>
                             </div>
                         </li>

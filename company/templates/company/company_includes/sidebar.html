@@ -117,7 +117,9 @@
         let routeName = path.split("/")[3];
 
         let navElem = document.getElementById(routeName);
-        navElem.classList.add("side-nav__item-active")
+        if (navElem!==null){
+            navElem.classList.add("side-nav__item-active")
+        }
 
 
     </script>

@@ -1,5 +1,9 @@
 import uuid
 import json 
+import requests
+from urllib.parse import urlparse
+from datetime import timedelta
+
 from django.shortcuts import render, redirect
 from django.views.generic import DetailView, TemplateView, ListView, View
 from website.models import Company, Domain, Issue, Hunt
@@ -8,7 +12,8 @@ from django.contrib import messages
 from django.db.models import Q, Sum, Count
 from django.utils import timezone
 from django.db.models.functions import ExtractMonth
-from datetime import timedelta
+from django.core.files.storage import default_storage
+from django.contrib.auth.models import User
 
 # Create your views here.
 
@@ -263,22 +268,122 @@ class CompanyDashboardManageDomainsView(View):
     @validate_company_user
     def get(self,request,company,*args,**kwargs):
 
+        domains = Domain.objects.values("name","url","logo").filter(company__company_id=company).order_by("modified")
+
         context = {
-            'company': company
+            'company': company,
+            'domains':domains
         }
 
         return render(request,"company/company_manage_domains.html",context=context)
-    
+
 
 class AddDomainView(View):
-    
+
     @validate_company_user
     def get(self,request,company,*args,**kwargs):
-
+    
+        companies = Company.objects.values("name","company_id").filter(
+            Q(managers__in=[request.user]) | 
+            Q(admin=request.user)
+        )
+        
         context = {
-            'company': company
+            'company': company,
+            'companies': companies
         }
 
         return render(request,"company/add_domain.html",context=context)
     
 
+    @validate_company_user
+    def post(self,request,company,*args,**kwargs):
+        
+        
+        domain_data = {
+            "name": request.POST.get("domain_name",None),
+            "url": request.POST.get("domain_url",None),
+            "github": request.POST.get("github_url",None),
+            "twitter": request.POST.get("twitter_url",None),
+            "facebook": request.POST.get("facebook_url",None),
+        }
+
+        if domain_data["name"] == None:
+            messages.error(request,"Enter domain name")
+            return redirect("add_domain",company) 
+        
+        if domain_data["url"] == None:
+            messages.error(request,"Enter domain url")
+            return redirect("add_domain",company)
+        
+        parsed_url = urlparse(domain_data["url"])
+        domain = parsed_url.hostname
+
+        domain_data["url"] = f"{parsed_url.scheme}://{domain}" # clean the domain eg https://mail.google.com/mail1# -> https://mail.google.com  
+        domain_data["name"] = domain_data["name"].lower()
+
+
+        managers_list = request.POST.getlist("email")
+        company_obj = Company.objects.get(company_id=company)
+
+
+        domain_exist = Domain.objects.filter(
+            Q(name=domain_data["name"]) |
+            Q(url=domain)
+        ).exists()
+        print(domain_exist)
+        if domain_exist:
+            messages.error(request,"Domain name or url already exist.")
+            return redirect("add_domain",company)
+
+        # validate domain url
+        try:
+            response = requests.get(domain_data["url"] ,timeout=2)
+            if response.status_code != 200:
+                raise Exception
+        except:
+            messages.error(request,"Domain does not exist.")
+            return redirect("add_domain",company)
+        
+        # validate domain email 
+        user_email_domain = request.user.email.split("@")[-1]
+
+        if domain != user_email_domain:
+            messages.error(request,"your email does not match domain email. Action Denied!")
+            return redirect("add_domain",company)
+        
+        for domain_manager_email in managers_list:
+
+            user_email_domain = domain_manager_email.split("@")[-1]
+            if domain != user_email_domain:
+                messages.error(request,f"Manager: {domain_manager_email} does not match domain email.")
+                return redirect("add_domain",company)
+
+
+
+        domain_logo = request.FILES.get("logo")
+        domain_logo_file = domain_logo.name.split(".")[0]
+        extension = domain_logo.name.split(".")[-1] 
+        domain_logo.name = domain_logo_file[:99] + str(uuid.uuid4()) + "." + extension            
+        default_storage.save(f"logos/{domain_logo.name}",domain_logo)
+
+        webshot_logo = request.FILES.get("webshot") 
+        webshot_logo_file = webshot_logo.name.split(".")[0]
+        extension = webshot_logo.name.split(".")[-1] 
+        webshot_logo.name = webshot_logo_file[:99] + str(uuid.uuid4()) + "." + extension            
+        default_storage.save(f"webshots/{webshot_logo.name}",webshot_logo)
+        
+        domain_managers = User.objects.filter(email__in=managers_list)
+        
+        domain = Domain.objects.create(
+            **domain_data,
+            company=company_obj,
+            logo=f"logos/{domain_logo.name}",
+            webshot=f"webshots/{webshot_logo.name}",
+        )
+
+        domain.managers.set(domain_managers)
+        domain.save()
+
+        return redirect("company_manage_domains",company)
+    
