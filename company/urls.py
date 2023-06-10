@@ -4,7 +4,8 @@ from company.views import (
     CompanyDashboardManageBugsView,
     CompanyDashboardManageDomainsView,
     AddDomainView,
-    company_view
+    DomainView,
+    company_view,
 )
 
 
@@ -14,4 +15,5 @@ urlpatterns = [
     path("dashboard/bugs/<str:company>",CompanyDashboardManageBugsView.as_view(),name="company_manage_bugs"),
     path("dashboard/domains/<str:company>",CompanyDashboardManageDomainsView.as_view(),name="company_manage_domains"),
     path("dashboard/add_domain/<str:company>",AddDomainView.as_view(),name="add_domain"),
+    path("domain/<int:pk>",DomainView.as_view(),name="view_domain"),
 ]

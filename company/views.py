@@ -6,7 +6,6 @@ from datetime import timedelta
 
 from django.shortcuts import render, redirect
 from django.views.generic import DetailView, TemplateView, ListView, View
-from website.models import Company, Domain, Issue, Hunt
 from django.contrib.auth.models import AnonymousUser
 from django.contrib import messages
 from django.db.models import Q, Sum, Count
@@ -14,6 +13,9 @@ from django.utils import timezone
 from django.db.models.functions import ExtractMonth
 from django.core.files.storage import default_storage
 from django.contrib.auth.models import User
+from django.http import Http404
+
+from website.models import Company, Domain, Issue, Hunt, UserProfile
 
 # Create your views here.
 
@@ -268,7 +270,7 @@ class CompanyDashboardManageDomainsView(View):
     @validate_company_user
     def get(self,request,company,*args,**kwargs):
 
-        domains = Domain.objects.values("name","url","logo").filter(company__company_id=company).order_by("modified")
+        domains = Domain.objects.values("id","name","url","logo").filter(company__company_id=company).order_by("modified")
 
         context = {
             'company': company,
@@ -282,7 +284,7 @@ class AddDomainView(View):
 
     @validate_company_user
     def get(self,request,company,*args,**kwargs):
-    
+            
         companies = Company.objects.values("name","company_id").filter(
             Q(managers__in=[request.user]) | 
             Q(admin=request.user)
@@ -331,7 +333,7 @@ class AddDomainView(View):
             Q(name=domain_data["name"]) |
             Q(url=domain)
         ).exists()
-        print(domain_exist)
+
         if domain_exist:
             messages.error(request,"Domain name or url already exist.")
             return redirect("add_domain",company)
@@ -387,3 +389,76 @@ class AddDomainView(View):
 
         return redirect("company_manage_domains",company)
     
+
+
+class DomainView(View):
+
+
+
+    def get_current_year_monthly_reported_bar_data(self,domain_id):
+        # returns chart data on no of bugs reported monthly on this company for current year
+        
+        current_year = timezone.now().year
+        data_monthly = Issue.objects.filter(
+                domain__id=domain_id,
+                created__year=current_year
+            ).annotate(
+                month=ExtractMonth('created')
+            ).values(
+                'month'
+            ).annotate(
+                count=Count('id')
+            ).order_by('month')  
+        
+    
+        data = [0,0,0,0,0,0,0,0,0,0,0,0] #count
+
+        for data_month in data_monthly:
+            data[data_month["month"]] = data_month["count"]
+
+        return json.dumps(data)     
+
+    def get(self,request,pk,*args,**kwargs):
+
+        domain = Domain.objects.values("id","name","url","company__name","company__company_id","created__day","created__month","created__year","twitter","facebook","github","logo","webshot").filter(id=pk).first()
+
+        if domain == {}:
+            raise Http404("Domain not found")
+
+        total_money_distributed = Issue.objects.filter(pk=domain["id"]).aggregate(total_money=Sum('rewarded'))["total_money"]
+        total_money_distributed = 0 if total_money_distributed==None else total_money_distributed
+
+        total_bug_reported = Issue.objects.filter(pk=domain["id"]).count()
+        total_bug_accepted = Issue.objects.filter(pk=domain["id"], verified=True).count()
+
+        # get latest reported public issues
+        latest_issues = (
+            Issue.objects
+            .values("id","domain__name","url","description","user__id","user__username","user__userprofile__user_avatar","label","status","verified","rewarded","created__day","created__month","created__year")
+            .filter(domain__id=domain["id"],is_hidden=False).order_by("-created")
+            [:11]
+        )
+        issue_labels = [label[-1] for label in Issue.labels]
+        cleaned_issues = []
+        for issue in latest_issues:
+            cleaned_issues.append({
+                **issue,
+                "label": issue_labels[issue["label"]]
+            })
+
+        
+
+        # get top testers
+        top_testers = Issue.objects.values("user__id","user__username","user__userprofile__user_avatar").filter(user__isnull=False).annotate(count=Count('user__username')).order_by("-count")[:16]
+
+        context = {
+            **domain,
+            "total_money_distributed":total_money_distributed,
+            "total_bug_reported": total_bug_reported,
+            "total_bug_accepted": total_bug_accepted,
+            "latest_issues": cleaned_issues,
+            "monthly_activity_chart":self.get_current_year_monthly_reported_bar_data(domain["id"]),
+            "top_testers":top_testers,
+        }
+
+        return render(request, "company/view_domain.html", context)
