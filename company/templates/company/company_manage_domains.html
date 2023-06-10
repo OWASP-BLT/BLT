@@ -44,7 +44,11 @@
                                 </div>
                                 <div class="inline-flex items-center text-base font-semibold text-gray-900 ">
                                    <a href="{% url 'view_domain' domain.id %}">View</a>
-                                   <a href="" class="ml-2">Edit</a>
+                                    <form id="deleteForm" action="{% url 'add_domain' company %}?domain={{ domain.id }}" method="post" style="display: inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="_method" value="delete">
+                                    </form>
+                                    <button type="button" onclick="deleteDomain()" class="ml-2">Delete</button>
                                 </div>
                             </div>
                         </li>
@@ -55,4 +59,16 @@
 
     </div>
 
+{% endblock %}
+
+{% block js %}
+    <script>
+        function deleteDomain(){
+            let deleteForm = document.getElementById("deleteForm");
+            let confirmDelete = confirm("this will delete the domain and hunts associated with it.");
+            if (confirmDelete === true){
+                deleteForm.submit();
+            }
+        }
+    </script>
 {% endblock %}

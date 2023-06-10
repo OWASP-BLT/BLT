@@ -1,10 +1,12 @@
+from typing import Any
 import uuid
-import json 
+import json
+from django import http 
 import requests
 from urllib.parse import urlparse
 from datetime import timedelta
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import DetailView, TemplateView, ListView, View
 from django.contrib.auth.models import AnonymousUser
 from django.contrib import messages
@@ -282,9 +284,18 @@ class CompanyDashboardManageDomainsView(View):
 
 class AddDomainView(View):
 
+    def dispatch(self, request, *args, **kwargs):
+        
+        method = self.request.POST.get('_method', '').lower()
+        
+        if method == 'delete':
+            return self.delete(request,*args,**kwargs)
+        
+        return super().dispatch(request, *args, **kwargs)
+
     @validate_company_user
     def get(self,request,company,*args,**kwargs):
-            
+
         companies = Company.objects.values("name","company_id").filter(
             Q(managers__in=[request.user]) | 
             Q(admin=request.user)
@@ -389,6 +400,39 @@ class AddDomainView(View):
 
         return redirect("company_manage_domains",company)
     
+    @validate_company_user
+    def delete(self,request,company,*args,**kwargs):
+        
+        domain_id = request.GET.get("domain")
+        domain = get_object_or_404(Domain,id=domain_id)
+        domain.delete()
+        messages.success(request,"Domain deleted successfully")
+        return redirect("company_manage_domains",company)
+
+    # @validate_company_user
+    # def put(self,request,company,*args,**kwargs):
+
+    #     domain_id = kwargs.get("domain",None)
+    #     companies = Company.objects.values("name","company_id").filter(
+    #         Q(managers__in=[request.user]) | 
+    #         Q(admin=request.user)
+    #     )
+    #     domain_info = (
+    #         Domain.objects
+    #         .values("id","name","url","company__name","github","twitter","facebook","logo","webshot")
+    #         .filter(id=domain_id).first()
+    #     )
+    #     managers_email = User.objects.values("email").filter(user_domains__id=domain_id)
+
+    #     if domain_info == {}:
+    #         return Http404("Domain not found")
+        
+    #     context = {
+    #         'company': company,
+    #         'companies': companies,
+    #         'domain_info': managers_email
+    #     }
+    #     return render(request,"company/edit_domain.html", context)
 
 
 class DomainView(View):
