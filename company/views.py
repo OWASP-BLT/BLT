@@ -437,8 +437,6 @@ class AddDomainView(View):
 
 class DomainView(View):
 
-
-
     def get_current_year_monthly_reported_bar_data(self,domain_id):
         # returns chart data on no of bugs reported monthly on this company for current year
         
@@ -506,3 +504,72 @@ class DomainView(View):
         }
 
         return render(request, "company/view_domain.html", context)
+
+
+class CompanyDashboardManageRolesView(View):
+
+    @validate_company_user
+    def get(self,request,company,*args,**kwargs):
+        
+        companies = Company.objects.values("name","company_id").filter(
+            Q(managers__in=[request.user]) | 
+            Q(admin=request.user)
+        )
+        
+        domains = Domain.objects.filter(
+            Q(company__company_id=company) &
+            ( Q(company__managers__in=[request.user]) | Q(company__admin=request.user) )
+            
+        )
+        domains_data = []
+        for domain in domains:
+            _id = domain.id
+            name = domain.name
+            managers = domain.managers.values("username","userprofile__user_avatar").all()
+            domains_data.append({
+                "id":_id,
+                "name":name,
+                "managers":managers
+            })
+
+        context = {
+            'company': company,
+            'companies': companies,
+            'domains': domains_data,
+        }
+
+        return render(request,"company/company_dashboard_roles.html",context)
+    
+
+    def post(self,request,company,*args,**kwargs):
+
+        domain = Domain.objects.filter(
+            Q(company__company_id=company) &
+            Q(id=request.POST.get('domain',None)) &
+            ( Q(company__admin=request.user) | Q(managers__in=[request.user]) )   
+        ).first()
+        
+        if domain == None:
+            messages.error("you are not manager of this domain.")
+            return redirect('company_manage_roles',company)
+        
+        domain_name = domain.name
+        managers_list = request.POST.getlist("email",[])
+
+        # validate emails for domain
+        for domain_manager_email in managers_list:
+
+            user_email_domain = domain_manager_email.split("@")[-1]
+            if domain_name != user_email_domain:
+                messages.error(request,f"Manager: {domain_manager_email} does not match domain email.")
+                return redirect("company_manage_roles",company)
+        
+        domain_managers = User.objects.filter(email__in=managers_list)
+        
+        for manager in domain_managers:
+            domain.managers.add(manager.id)
+
+        domain.save()
+
+        messages.success(request,"successfully added the managers")
+        return redirect('company_manage_roles',company)

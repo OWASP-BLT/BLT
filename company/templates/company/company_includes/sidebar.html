@@ -37,10 +37,12 @@
                 </li>
             </a>
 
-            <li class="side-nav__item">
-                <i class="fa-sharp fa-solid fa-users fa-lg"></i>                        
-                <span>Roles</span>
-            </li>
+            <a href="{% url 'company_manage_roles' company %}">
+                <li id="domains" class="side-nav__item">
+                    <i class="fa-sharp fa-solid fa-users fa-lg"></i>                    
+                    <span>Roles</span>
+                </li>
+            </a>
             <li class="side-nav__item">
                 <i class="fa-sharp fa-solid fa-ranking-star fa-lg"></i>    
                 <span>Leaderboard</span>
