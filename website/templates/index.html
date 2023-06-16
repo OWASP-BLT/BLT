@@ -8,7 +8,6 @@
 {% block content %}
 <script src="{% static "js/jquery.validate.js" %}"></script>
 <script src="{% static 'js/activity.js' %}"></script>
-<link rel="stylesheet" type="text/css" href="style.css" />
 <div class="w-full h-[30rem] flex flex-col  space-y-14 items-center">
     <p class="text-5xl text-center mt-20 font-sans sm:text-6xl lg:text-7xl">Find Bugs, Win Points and Prizes</p>
 
@@ -111,7 +110,7 @@
 
 <p class="text-7xl text-center mb-10 font-sans text-[#B1B1B1]">TOP HUNTS</p>
 
-<div class="flex items-center flex-wrap items-center w-full  justify-between mb-[100px] mt-20 sm:justify-center react">
+<div class="flex items-center flex-wrap items-center w-full  justify-between mb-[100px] mt-20 sm:justify-center ">
 
     {% if top_hunts %}
 
@@ -136,7 +135,9 @@
         {% endfor %}
     
         {% else %}
-            <p class="text-red-500 justify-content:center">No ongoing hunt's found.</p>
+        <div class="w-full flex justify-center">
+            <p class="text-red-500">No ongoing hunt's found.</p>
+       </div>
         {% endif %}
 
 </div>
