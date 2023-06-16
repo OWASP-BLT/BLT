@@ -572,11 +572,3 @@ i.fa-5x {
 .profileimage{
     border-radius:50%;
     }
-
-
-    @media (max-width: 640px){
-        .react{
-            color: red !important;
-          justify-content: center !important;
-        }
-      }
