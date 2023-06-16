@@ -71,8 +71,7 @@ Please follow the development server setup procedure [here](https://github.com/O
   
 
   
-
-- Join the [OWASP Slack Channel](https://owasp.org/slack/invite) and ask questions at **#project-blt**
+- Communicate with us on slack [Join OWASP Slack Channel](https://owasp.org/slack/invite)
 
   
 
@@ -80,7 +79,10 @@ Please follow the development server setup procedure [here](https://github.com/O
 
   
 
-- Figma designs for web and flutter app are available [here](https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design)
+- #### Figma designs: 
+  - [New Tailwind Website Designs](https://www.figma.com/file/JE0QlQ95FVpk0wG9HyFw4D/BLT-Website?type=design&node-id=0%3A1&t=9aPMxdjUDBIUirAz-1)
+  - [New Mobile Designs](https://www.figma.com/file/NYD5WZzJywnO338lchnece/Bug-Logging-Tool?type=design&node-id=0%3A1&t=k0Hx6qW4Ue9iZvbH-1)
+  - [Old Website and Mobile Designs](https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design)
 
   
 
