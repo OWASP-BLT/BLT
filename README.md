@@ -71,7 +71,7 @@ Please follow the development server setup procedure [here](https://github.com/O
   
 
   
-- Communicate with us on slack [Join OWASP Slack Channel](https://owasp.org/slack/invite)
+- Communicate with us on slack #project-blt [Join OWASP Slack Channel](https://owasp.org/slack/invite)
 
   
 
