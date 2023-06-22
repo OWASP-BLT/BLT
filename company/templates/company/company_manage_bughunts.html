@@ -9,7 +9,7 @@
 
     <div class="bg-[#F3F5F7] w-full h-full flex flex-col items-center">
         <div class="flex justify-between w-full mt-5">
-            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Domains</p>
+            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Bughunts</p>
 
             <div class="w-[15%] flex justify-center">
                 <a href="{% url 'add_domain' company %}" class="flex items-center justify-center px-16 bg-[#DC4654] rounded-xl hover:bg-red-600 transition-all">
@@ -62,13 +62,5 @@
 {% endblock %}
 
 {% block js %}
-    <script>
-        function deleteDomain(){
-            let deleteForm = document.getElementById("deleteForm");
-            let confirmDelete = confirm("this will delete the domain and hunts associated with it.");
-            if (confirmDelete === true){
-                deleteForm.submit();
-            }
-        }
-    </script>
+
 {% endblock %}

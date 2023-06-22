@@ -36,7 +36,13 @@
                     <span>Domains</span>
                 </li>
             </a>
-
+            <a href="{% url 'company_manage_bughunts' company %}">
+                <li id="bughunts" class="side-nav__item">
+                    <i class="fa-sharp fa-solid fa-globe fa-lg"></i>                         
+                    <span>Bug Hunts</span>
+                </li>
+            </a>
+            
             <a href="{% url 'company_manage_roles' company %}">
                 <li id="domains" class="side-nav__item">
                     <i class="fa-sharp fa-solid fa-users fa-lg"></i>                    

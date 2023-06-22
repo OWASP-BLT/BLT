@@ -386,7 +386,7 @@ class AddDomainView(View):
         webshot_logo.name = webshot_logo_file[:99] + str(uuid.uuid4()) + "." + extension            
         default_storage.save(f"webshots/{webshot_logo.name}",webshot_logo)
         
-        domain_managers = User.objects.filter(email__in=managers_list)
+        domain_managers = User.objects.filter(email__in=managers_list,is_active=True)
         
         domain = Domain.objects.create(
             **domain_data,
@@ -538,7 +538,7 @@ class CompanyDashboardManageRolesView(View):
             'domains': domains_data,
         }
 
-        return render(request,"company/company_dashboard_roles.html",context)
+        return render(request,"company/company_manage_roles.html.html",context)
     
 
     def post(self,request,company,*args,**kwargs):
@@ -564,7 +564,7 @@ class CompanyDashboardManageRolesView(View):
                 messages.error(request,f"Manager: {domain_manager_email} does not match domain email.")
                 return redirect("company_manage_roles",company)
         
-        domain_managers = User.objects.filter(email__in=managers_list)
+        domain_managers = User.objects.filter(email__in=managers_list,is_active=True)
         
         for manager in domain_managers:
             domain.managers.add(manager.id)
@@ -573,3 +573,21 @@ class CompanyDashboardManageRolesView(View):
 
         messages.success(request,"successfully added the managers")
         return redirect('company_manage_roles',company)
+
+
+class CompanyDashboardManageBughuntView(View):
+
+    @validate_company_user
+    def get(self,request,company,*args,**kwargs):
+
+        companies = Company.objects.values("name","company_id").filter(
+            Q(managers__in=[request.user]) | 
+            Q(admin=request.user)
+        )
+         
+        context = {
+            'company': company,
+            'companies': companies
+        }
+
+        return render(request,"company/company_manage_bughunts.html",context) 

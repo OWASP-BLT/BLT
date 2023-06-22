@@ -181,7 +181,6 @@ body {
 /* -------------- BOTTOM CONTAINER -------------- */
 .bottom-container {
     display: flex;
-    gap: 24px;
     padding: 32px;
     background-color: #F3F5F7;
 }

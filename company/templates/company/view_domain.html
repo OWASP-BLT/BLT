@@ -248,69 +248,75 @@
             </div>
         </div>
 
-        <div class="flex flex-col w-full h-[80vh] bg-white rounded-xl p-5 overflow-x-hidden overflow-y-scroll">
-            
-          <div class="w-full flex justify-between">
-              <h4 class="text-xl text-gray-900 font-bold mb-5">Latest Bugs Reported</h4>
-              <a href="" class="text-md text-blue-600">View all</a>
-          </div>
-          {% if latest_issues|length > 0 %}
-
-            {% for issue in latest_issues %}
-                <div class="w-full px-5 my-2 py-6 bg-white rounded-lg shadow-md hover:shadow-xl transition-all">
-                    <div class="flex justify-between items-center">
-
-                        <span class="font-light text-gray-600">Reported to {{ issue.domain__name }} on {{ issue.created__day }}/{{ issue.created__month }}/{{ issue.created__year }}</span>
+        <div class="w-full flex justify-between h-[80vh]">
+            <div class="flex flex-col w-[80%] mr-5 items-start bg-white rounded-xl p-5 overflow-x-hidden overflow-y-scroll">
+                
+              <div class="w-full flex justify-between">
+                  <h4 class="text-xl text-gray-900 font-bold mb-5">Latest Bugs Reported</h4>
+                  <a href="" class="text-md text-blue-600">View all</a>
+              </div>
+              {% if latest_issues|length > 0 %}
+    
+                {% for issue in latest_issues %}
+                <div class="w-full h-[400px] flex px-5 my-2 py-6 bg-white rounded-lg shadow-md hover:shadow-xl transition-all">
+                    <div class="w-[10%] mr-5 h-full flex items-center">
+                        <img src="https://m.media-amazon.com/images/I/613zc8WKCNL.jpg" alt="">
+                    </div>
+                    <div class="w-full h-full">
+                        <div class="flex justify-between items-center">
+                            <span class="font-light text-gray-600">Reported to {{ issue.domain__name }} on {{ issue.created__day }}/{{ issue.created__month }}/{{ issue.created__year }}</span>
+                            <div>
+                            <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#{{ issue.label }}</a>
+                            <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#{{ issue.status }}</a>
+                            {% if issue.verified %}
+                                <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#Accepted</a>
+                                <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#{{ issue.rewarded }}</a>
+                            {% endif %}
+    
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <a class="text-xl text-black font-bold hover:text-gray-700" href="{% url 'issue_view' issue.id %}">{{ issue.description }}</a>
+                        </div>
+                        <div class="flex justify-between items-center mt-4">
                         <div>
-                        <a class="px-2 py-1 bg-red-600 text-gray-100 font-bold rounded hover:bg-red-500">{{ issue.label }}</a>
-                        <a class="px-2 py-1 bg-red-600 text-gray-100 font-bold rounded hover:bg-red-500">{{ issue.status }}</a>
-                        {% if issue.verified %}
-                            <a class="px-2 py-1 bg-red-600 text-gray-100 font-bold rounded hover:bg-red-500">Accepted</a>
-                            <a class="px-2 py-1 bg-red-600 text-gray-100 font-bold rounded hover:bg-red-500">{{ issue.rewarded }}</a>
-                        {% endif %}
-
+                            <a class="flex items-center" href="{% url 'profile' issue.user__username %}">
+                                <img class="mr-3 w-10 h-10 object-cover rounded-full hidden sm:block" src="{{ MEDIA_URL }}{{ issue.user__userprofile__user_avatar }}" alt="avatar">
+                                <h1 class="text-gray-700 font-bold">{{ issue.user__username }}</h1>
+                            </a>
+                        </div>
+                            <a class="text-blue-600 hover:underline" href="{% url 'issue_view' issue.id %}">Read more</a>
                         </div>
                     </div>
-                    <div class="mt-2">
-                        <a class="text-xl text-gray-700 font-bold hover:text-gray-600" href="{% url 'issue_view' issue.id %}">{{ issue.description }}</a>
-                    </div>
-                    <div class="flex justify-between items-center mt-4">
-                    <div>
-                        <a class="flex items-center" href="{% url 'profile' issue.user__username %}">
-                            <img class="mr-3 w-10 h-10 object-cover rounded-full hidden sm:block" src="{{ MEDIA_URL }}{{ issue.user__userprofile__user_avatar }}" alt="avatar">
-                            <h1 class="text-gray-700 font-bold">{{ issue.user__username }}</h1>
-                        </a>
-                    </div>
-                        <a class="text-blue-600 hover:underline" href="{% url 'issue_view' issue.id %}">Read more</a>
-                    </div>
                 </div>
                 {% endfor %}
-
-            {% else %}
-                <div class="w-full h-full flex items-center justify-center">
-                    <p class="text-xl text-red-500">No bugs reported</p>
-                </div>
-            {% endif %}
-        </div>
-
-        <div class="bg-white rounded-lg shadow-xl p-8 mt-10">
-            <div class="flex items-center justify-between">
-                <h4 class="text-xl text-gray-900 font-bold">Top Testers ({{ top_testers | length }})</h4>
-                <a href="#" title="View All">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500 hover:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
-                    </svg>
-                </a>
+    
+                {% else %}
+                    <div class="w-full h-full flex items-center justify-center">
+                        <p class="text-xl text-red-500">No bugs reported</p>
+                    </div>
+                {% endif %}
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-8 mt-8">
-                
-                {% for tester in top_testers %}
-                    <a href="{% url 'profile' tester.user__username %}" class="flex flex-col items-center justify-center text-gray-800 hover:text-red-600" title="View Profile">
-                        <img src="{{MEDIA_URL}}{{ tester.user__userprofile__user_avatar }}" class="w-16 rounded-full">
-                        <p class="text-center font-bold text-sm mt-1">{{ tester.user__username }}</p>
-                        <p class="text-xs text-gray-500 text-center">Reported {{ tester.count }} Bugs</p>
+    
+            <div class="bg-white rounded-lg shadow-xl p-8 w-[20%] overflow-y-scroll">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-xl text-gray-900 font-bold">Top Testers ({{ top_testers | length }})</h4>
+                    <a href="#" title="View All">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500 hover:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
+                        </svg>
                     </a>
-                {% endfor %}
+                </div>
+                <div class="flex flex-wrap justify-between mt-10">
+                    
+                        {% for tester in top_testers %}
+                            <a href="{% url 'profile' tester.user__username %}" class="flex flex-col items-center m-5 justify-center text-gray-800 hover:text-red-600" title="View Profile">
+                                <img src="{{MEDIA_URL}}{{ tester.user__userprofile__user_avatar }}" class="w-[100px] rounded-full">
+                                <p class="text-center font-bold text-sm mt-1">{{ tester.user__username }}</p>
+                                <p class="text-xs text-gray-500 text-center">Reported {{ tester.count }} Bugs</p>
+                            </a>
+                        {% endfor %}
+                </div>
             </div>
         </div>
     </div>

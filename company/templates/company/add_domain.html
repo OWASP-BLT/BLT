@@ -6,16 +6,16 @@
 
     <div class="bg-[#F3F5F7] flex flex-col items-center">
         <div class="w-full mt-5">
-            <p class="text-[#464255] font-satoshi font-bold text-[35px] px-5">
+            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">
             Add Domain
             </p>
         </div>
 
-        <form method='POST' action="#" enctype="multipart/form-data" class="w-[95%] bg-white rounded-2xl p-10 my-10 shadow-md">
+        <form method='POST' action="#" enctype="multipart/form-data" class="w-[96%] bg-white rounded-2xl p-10 my-10 shadow-md">
             {% csrf_token %}
             <div class="pb-12">
                 <h2 class="text-base font-semibold leading-7 text-gray-900">
-                Domain Information
+                    Domain Information
                 </h2>
                 <p class="mt-1 text-sm leading-6 text-gray-600">
                 Use a permanent address where you can receive mail.
@@ -36,7 +36,7 @@
                             autocomplete="domain_name"
                             placeholder="domain.xyz"
                             required
-                            class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                            class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
                         />
                         </div>
                     </div>
@@ -55,7 +55,7 @@
                             autocomplete="domain_url"
                             placeholder="https://domain.xyz"
                             required
-                            class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                            class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
                         />
                         </div>
                     </div>
@@ -71,7 +71,7 @@
                             id="company"
                             name="company"
                             autocomplete="company-name"
-                            class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:max-w-xs sm:text-sm sm:leading-6"
+                            class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:max-w-xs sm:text-sm sm:leading-6"
                         >
                             {% for company in companies %}
                                 <option value="{{ company.company_id }}">{{ company.name }}</option>
@@ -94,7 +94,7 @@
                         id="github_url"
                         autocomplete="github"
                         placeholder="https://github.com/repo"
-                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
                     />
                     </div>
                 </div>
@@ -112,7 +112,7 @@
                         id="twitter_url"
                         autocomplete="twitter"
                         placeholder="https://twitter.com/handle"
-                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
                     />
                     </div>
                 </div>
@@ -130,7 +130,7 @@
                         id="facebook_url"
                         autocomplete="facebook"
                         placeholder="https://facebook.com/handle"
-                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
                     />
                     </div>
                 </div>
@@ -147,7 +147,7 @@
                     >Domain Logo</label
                     >
                     <div class="mt-2 flex items-center gap-x-3" id="previewLogo">
-                        <div id="previewLogoDiv" class="h-16 w-16 text-gray-300 overflow-hidden rounded-2xl">
+                        <div id="previewLogoDiv" class="h-16 w-16 text-gray-300 overflow-hidden rounded-2xl text-red-500">
                             <svg
                                 viewBox="0 0 24 24"
                                 fill="currentColor"
@@ -162,9 +162,9 @@
                         </div>
                         <label
                                 for="logo"
-                                class="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500"
+                                class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500"
                             >
-                            <span>Upload logo</span>
+                            <span class="text-red-600">Upload logo</span>
                             <input
                             id="logo"
                             name="logo"
@@ -183,11 +183,11 @@
                     >Webshot</label
                     >
                     <div
-                    class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10"
+                    class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 text-red-500"
                     >
                     <div class="text-center">
                         <svg
-                        class="mx-auto h-12 w-12 text-gray-300"
+                        class="mx-auto h-12 w-12"
                         viewBox="0 0 24 24"
                         fill="currentColor"
                         aria-hidden="true"
@@ -201,9 +201,9 @@
                         <div class="mt-4 flex text-sm leading-6 text-gray-600">
                         <label
                             for="webshot"
-                            class="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500"
+                            class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500"
                         >
-                            <span>Upload a webshot</span>
+                            <span class="text-red-600">Upload a webshot</span>
                             <input
                             id="webshot"
                             name="webshot"
@@ -262,7 +262,7 @@
                                 id="comments"
                                 name="comments"
                                 type="checkbox"
-                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                                class="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-600"
                             />
                             </div>
                             <div class="text-sm leading-6">
@@ -280,7 +280,7 @@
                                 id="candidates"
                                 name="candidates"
                                 type="checkbox"
-                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                                class="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-600"
                             />
                             </div>
                             <div class="text-sm leading-6">
@@ -300,13 +300,14 @@
                 <div class="mt-6 flex items-center justify-end gap-x-6">
                     <button
                         type="button"
-                        class="text-sm font-semibold leading-6 text-gray-900"
+                        onclick="cancelForm()"
+                        class="text-md font-semibold leading-6 text-gray-900"
                     >
                     Cancel
                     </button>
                     <button
                         type="submit"
-                        class="rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+                        class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
                     >
                     Save
                     </button>
@@ -329,13 +330,13 @@
         function add_email_container(){
             const email_container_child_html = document.createElement('div');
             email_container_child_html.innerHTML = `
-                <div class="mt-2 flex flex-row items-center">
+                <div class="mt-2 flex flex-row items-center w-[50%]">
                     <input
                     name="email"
                     type="email"
                     autocomplete="email"
                     required
-                    class="w-[90%] block rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    class="w-[90%] block rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
                     />
                     <button type="button" onclick="remove_email_container()">
                         <i class="fa-sharp fa-solid fa-trash fa-lg text-[#596780] ml-4 hover:text-black"></i>   
@@ -350,6 +351,15 @@
     </script>
 
     <script>
+
+        function cancelForm(){
+            let deleteForm = document.getElementById("deleteForm");
+            let confirmDelete = confirm("Are you sure you want to cancel, your progress would be lost.");
+            if (confirmDelete === true){
+                deleteForm.submit();
+            }
+        }
+
 
         function displayLogoPreview() {
             var fileInput = document.getElementById("logo");
