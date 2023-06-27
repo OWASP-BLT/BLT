@@ -1,0 +1,74 @@
+{% extends 'company/company_dashboard_base.html' %}
+
+{% block title %}
+    Manage Bugs
+{% endblock title %}
+
+
+{% block body %}
+
+    <div class="bg-[#F3F5F7] w-full h-full flex flex-col items-center">
+        <div class="flex justify-between w-full mt-5">
+            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Domains</p>
+
+            <div class="w-[15%] flex justify-center">
+                <a href="{% url 'add_domain' company %}" class="flex items-center justify-center px-16 bg-[#DC4654] rounded-xl hover:bg-red-600 transition-all">
+                    <i class="fa-sharp fa-solid fa-plus fa-xl text-white"></i>   
+                </a>
+            </div>
+        </div>
+
+        <div class="w-[96%] max-h-[70vh] p-4 mt-10 bg-white border border-gray-200 rounded-lg shadow-md sm:p-8">
+            <div class="flex items-center justify-between mb-4 ">
+                <h5 class="text-xl font-bold leading-none text-gray-900">All Domains</h5>
+                <a href="#" class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-500">
+                    View all
+                </a>
+           </div>
+           <div class="flow-root h-full mt-5">
+                <ul role="list" class="divide-y divide-gray-200 px-5 overflow-y-scroll">
+                    
+                    {% for domain in domains %}
+                        <li class="py-3 sm:py-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="flex-shrink-0">
+                                    <img class="w-8 h-8 rounded-full" src="{{MEDIA_URL}}{{ domain.logo }}" alt="Domain Logo">
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 truncate">
+                                        {{ domain.name | capfirst }}
+                                    </p>
+                                    <p class="text-sm text-gray-500 truncate dark:text-gray-400">
+                                        {{ domain.url }}
+                                    </p>
+                                </div>
+                                <div class="inline-flex items-center text-base font-semibold text-gray-900 ">
+                                   <a href="{% url 'view_domain' domain.id %}">View</a>
+                                    <form id="deleteForm" action="{% url 'add_domain' company %}?domain={{ domain.id }}" method="post" style="display: inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="_method" value="delete">
+                                    </form>
+                                    <button type="button" onclick="deleteDomain()" class="ml-2">Delete</button>
+                                </div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+           </div>
+        </div>
+
+    </div>
+
+{% endblock %}
+
+{% block js %}
+    <script>
+        function deleteDomain(){
+            let deleteForm = document.getElementById("deleteForm");
+            let confirmDelete = confirm("this will delete the domain and hunts associated with it.");
+            if (confirmDelete === true){
+                deleteForm.submit();
+            }
+        }
+    </script>
+{% endblock %}
