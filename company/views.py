@@ -19,7 +19,8 @@ from django.http import Http404
 
 from website.models import Company, Domain, Issue, Hunt, UserProfile
 
-# Create your views here.
+restricted_domain = ["gmail.com","hotmail.com","outlook.com","yahoo.com","proton.com"]
+
 
 def get_email_domain(email):
     domain = email.split("@")[-1]
@@ -43,8 +44,6 @@ def validate_company_user(func):
 
 def company_view(request,*args,**kwargs):
 
-    
-    restricted_domain = ["gmail.com","hotmail.com","outlook.com","yahoo.com","proton.com"]
     user = request.user
     
     if (not user.is_active):
@@ -69,14 +68,8 @@ def company_view(request,*args,**kwargs):
     )
     if (user_companies.first()==None):
 
-        company = Company.objects.create(
-            admin=user,
-            name=domain,
-            company_id=uuid.uuid4()
-        )
-
-        company.managers.add([user.id])
-        company.save()        
+        messages.error(request,"You do not have a company, create one.")
+        return redirect("register_company")        
 
     company = Company.objects.filter(
         Q(admin=user) | 
@@ -86,6 +79,73 @@ def company_view(request,*args,**kwargs):
     return redirect('company_analytics',company=company.company_id) 
 
 
+class RegisterCompanyView(View):
+
+    def get(self,request,*args,**kwargs):
+        
+        return render(request,'company/register_company.html')
+    
+    def post(self,request,*args,**kwargs):
+
+        user = request.user
+        data = request.POST
+
+        if (not user.is_active):
+            messages.info(request,"Email not verified.")
+            return redirect("/")
+
+        if (user==None or isinstance(user,AnonymousUser)):
+            messages.error(request,"Login to create company")
+            return redirect("/accounts/login/")
+        
+
+        user_domain = get_email_domain(user.email)
+        company_name = data.get("company_name","").strip().lower()
+        
+        if user_domain in  restricted_domain:
+            messages.error(request,"Login with company email in order to create the company.")
+            return redirect("/")
+        
+        print(data)
+        if user_domain != company_name:
+            messages.error(request,"Company name doesn't match your email domain.")
+            return redirect("register_company")
+        
+
+        managers = User.objects.values("id").filter(email__in=data["email"])
+
+        company = Company.objects.filter(name=data["company_name"]).first()
+
+        if (company!=None):
+            messages.error(request,"Company already exist.")
+            return redirect("register_company")
+
+        company_logo = request.FILES.get("logo")
+        company_logo_file = company_logo.name.split(".")[0]
+        extension = company_logo.name.split(".")[-1] 
+        company_logo.name = company_logo_file[:99] + str(uuid.uuid4()) + "." + extension            
+        default_storage.save(f"company_logos/{company_logo.name}",company_logo)
+        company = Company.objects.create(
+            admin=user,
+            name=data["company_name"],
+            url=data["company_url"],
+            email=data["support_email"],
+            twitter=data["twitter_url"],
+            facebook=data["facebook_url"],
+            logo=f"logos/{company_logo.name}",
+            is_active=True,
+            company_id=uuid.uuid4()
+        )
+
+        company.managers.set([manager["id"] for manager in managers])
+        company.save()        
+
+        company = Company.objects.filter(
+            Q(admin=user) | 
+            Q(managers__in=[user])
+        ).first()
+
+        return redirect('company_analytics',company=company.company_id) 
 
 class CompanyDashboardAnalyticsView(View):
 

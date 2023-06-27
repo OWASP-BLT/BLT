@@ -7,11 +7,13 @@ from company.views import (
     DomainView,
     CompanyDashboardManageRolesView,
     CompanyDashboardManageBughuntView,
+    RegisterCompanyView,
     company_view,
 )
 
 
 urlpatterns = [
+    path("",RegisterCompanyView.as_view(),name="register_company"),
     path("dashboard/",company_view,name="company_view"),
     path("dashboard/analytics/<str:company>/",CompanyDashboardAnalyticsView.as_view(),name="company_analytics"),
     path("dashboard/bugs/<str:company>/",CompanyDashboardManageBugsView.as_view(),name="company_manage_bugs"),
