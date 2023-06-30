@@ -447,7 +447,7 @@ class IssueBaseCreate(object):
 
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
-    fields = ["url", "description", "domain", "label"]
+    fields = ["url", "description", "domain", "label","markdown_description"]
     template_name = "report.html"
 
     def get_initial(self):
@@ -457,10 +457,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 self.request.POST._mutable = True
             self.request.POST["url"] = json_data["url"]
             self.request.POST["description"] = json_data["description"]
+            self.request.POST["markdown_description"] = json_data["markdown_description"]
             self.request.POST["file"] = json_data["file"]
             self.request.POST["label"] = json_data["label"]
             self.request.POST["token"] = json_data["token"]
             self.request.POST["type"] = json_data["type"]
+
             if self.request.POST.get("file"):
                 if isinstance(self.request.POST.get("file"), six.string_types):
                     import imghdr
@@ -511,7 +513,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return initial
 
     def post(self, request, *args, **kwargs):
-
+        
         # resolve domain
         url = request.POST.get("url").replace("www.","").replace("https://","")
         
@@ -539,11 +541,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         raise Exception
             except:
                 messages.error(request,"Domain does not exist")
-                return HttpResponseRedirect("/issue/")
+                return HttpResponseRedirect("/issue2/")
 
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
+
         tokenauth = False
         obj = form.save(commit=False)
         if self.request.user.is_authenticated:
@@ -557,14 +560,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
         captcha_form = CaptchaForm(self.request.POST)
         if not captcha_form.is_valid() and not settings.TESTING:
             messages.error(self.request, "Invalid Captcha!")
-            return HttpResponseRedirect("/issue/")
+            return HttpResponseRedirect("/issue2/")
         
         clean_domain = obj.domain_name.replace("www.", "").replace("https://","").replace("http://","")
         domain = Domain.objects.filter(
             Q(name=clean_domain) |
             Q(url__icontains=clean_domain)
         ).first()
-        
+    
         created = False if domain==None else True 
 
         if not created:
@@ -576,6 +579,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
         
 
         obj.domain = domain
+        obj.is_hidden = bool(self.request.POST.get("private",False))
+
 
         if created and (self.request.user.is_authenticated or tokenauth):
             p = Points.objects.create(user=self.request.user, domain=domain, score=1)
@@ -624,22 +629,26 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             user_prof.save()
 
-        redirect_url = "/report"
+        redirect_url = "/issue2"
 
         if len(self.request.FILES.getlist("screenshots")) > 5:
             messages.error(self.request, "Max limit of 5 images!")
-            return HttpResponseRedirect("/issue/")
+            return HttpResponseRedirect("/issue2/")
         for screenshot in self.request.FILES.getlist("screenshots"):
             filename = screenshot.name
             extension = filename.split(".")[-1] 
             screenshot.name = filename[:99] + str(uuid.uuid4()) + "." + extension            
             default_storage.save(f"screenshots/{screenshot.name}",screenshot)
             IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}",issue=obj)
+            
 
         obj_screenshots = IssueScreenshot.objects.filter(issue_id=obj.id)
         screenshot_text = ''
         for screenshot in obj_screenshots:
             screenshot_text += "![0](" + screenshot.image.url + ") "
+
+        team_members_id = [member["id"] for member in User.objects.values("id").filter(email__in=self.request.POST.getlist("team_members"))] + [self.request.user.id]
+        obj.team_members.set(team_members_id)
 
         if domain.github and os.environ.get("GITHUB_ACCESS_TOKEN"):
             from giturlparse import parse
@@ -659,7 +668,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 the_user = obj.user
             issue = {
                 "title": obj.description,
-                "body": screenshot_text +
+                "body": obj.markdown_description + "\n\n" + screenshot_text +
                  "https://" + settings.FQDN + "/issue/"
                 + str(obj.id) + " found by " + str(the_user) + " at url: " + obj.url,
                 "labels": ["bug", settings.PROJECT_NAME_LOWER],
@@ -691,25 +700,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
         else:
             self.process_issue(self.request.user, obj, created, domain)
             return HttpResponseRedirect(self.request.META.get("HTTP_REFERER"))
-        
-        
-
-    def get_context_data(self, **kwargs):
-        context = super(IssueCreate, self).get_context_data(**kwargs)
-        context["activities"] = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
-        context["captcha_form"] = CaptchaForm()
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["hunts"] = Hunt.objects.exclude(plan="Free")[:4]
-        context["leaderboard"] = (
-            User.objects.filter(
-                points__created__month=datetime.now().month,
-                points__created__year=datetime.now().year,
-            )
-            .annotate(total_score=Sum("points__score"))
-            .order_by("-total_score")[:10],
-        )
-        return context
 
 
 class UploadCreate(View):
