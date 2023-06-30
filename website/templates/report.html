@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends 'base.html' %} 
 {% load static %}
 {% load gravatar %}
 {% load socialaccount %}
@@ -7,42 +7,17 @@
 {% load custom_tags %}
 
 {% block style %}
-<style>
-    .duplicates {
-        border-radius: 0px;
-    }
 
-    .panel-text {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-top: 30px;
-        text-align: center;
-    }
-
-    .panel-text div {
-        width: 44%;
-        width: 500px;
-    }
-
-    .title {
-        color: white;
-        font-weight: 700;
-        font-size: 3rem;
-    }
-
-    .captcha-form input {
-        border: 1px solid rgb(64, 64, 64);
-    }
-</style>
 {% endblock %}
 
-{% block content %}
-<script src="{% static 'js/jquery.validate.js' %}"></script>
-<script src="{% static 'js/activity.js' %}"></script>
+{% block title %} Add Domain {% endblock title %}
+
+{% block natural_content %}
+
 
 <div id="duplicate-container" class="fixed w-full h-full top-0 left-0 overflow-y-auto z-10" hidden>
+
+
     <div class="flex flex-col w-full h-full bg-white items-center">
         <div class="w-full h-[60px] flex bg-red-500 items-center">
             <button id="close-duplicate-container"
@@ -55,11 +30,10 @@
             </div>
         </div>
 
-        <!-- component -->
-        <!-- This is an example component -->
+
         <div class="w-[100%] flex justify-center mx-auto">
 
-            <div class="p-4 w-[50%] mt-10 bg-white rounded-lg border shadow-md sm:p-8 bg-gray-400 border-gray-700">
+            <div class="p-4 w-[50%] mt-10 bg-white rounded-lg border shadow-md sm:p-8 border-gray-700">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-bold leading-none text-red-500">Latest Issues</h3>
                     <a href="" id="view_all"
@@ -78,92 +52,310 @@
     </div>
 </div>
 
-<form action="/issue/" method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <div class="row main">
-        <div class="panel-title panel-text">
-            <div class="bg-red-500">
-                <h1 class="title">REPORT A BUG</h1>
-            </div>
-        </div>
-        <div class="main-issue-form main-center">
 
-            <div class="form-group{% if form.url.errors %} has-error{% endif %}">
-                <div class="input-group">
-                    <span class="input-group-addon"><i class="fa fa-external-link" aria-hidden="true"></i></span>
-                    {% if request.GET.url %}
-                    <input class="form-control required"
-                        data-intro="Enter the website's complete url where you found the bug." data-step="1"
-                        placeholder="https://testsite.com/bug-found" name="url" value="{{ request.GET.url }}">
-                    {% else %}
-                    <input class="form-control required" required
-                        data-intro="Enter the website's complete url where you found the bug." data-step="1"
-                        placeholder="https://testsite.com/bug-found" name="url" value="{{ form.url.value|default:"" }}">
-                    {% endif %}
-                    <a class="btn btn-info form-control duplicates bg-red-500 border-0">Check for Duplicates</a>
-                </div>
-                <span class="message"></span>
-                <span class="help-block">{{ form.url.errors }}</span>
-            </div>
-            <div class="form-group{% if form.description.errors %} has-error{% endif %}">
-                <div class="input-group">
-                    <span class="input-group-addon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span>
-                    <textarea data-required="true" name="description" id="description" required
-                        data-intro="Describe the nature of bug." data-step="2" class="form-control required" rows="3"
-                        placeholder="Describe bug issue">{{ form.description.value|default:"" }}</textarea>
-                </div>
-                <span class="help-block">{{ form.description.errors }}</span>
-            </div>
-            <div class="input-group">
-                <span class="input-group-addon">
-                    <i class="fa fa-list" aria-hidden="true"></i>
-                </span>
-                <select required data-intro="Categorize the bug." data-step="3" name="label" class="form-control">
-                    <option value="0" selected="selected">General</option>
-                    <option value="1">Number error</option>
-                    <option value="2">Functional</option>
-                    <option value="3">Performance</option>
-                    <option value="4">Security</option>
-                    <option value="5">Typo</option>
-                    <option value="6">Design</option>
-                    <option value="7">Server down</option>
-                </select>
-            </div>
-            <div class="form-group{% if form.screenshot.errors %} has-error{% endif %}">
-                {% if request.GET.hash %}</br>
-                <img src="{{ MEDIA_URL }}uploads/{{ request.GET.hash }}.png"
-                    class="img-responsive img-thumbnail screenshot-hash">
-                <input type="hidden" required class="required" name="screenshot-hash" value="{{ request.GET.hash }}">
-                {% else %}
-                <br>
-                <span>
-                    <input type="file" required class="required" id='screenshot' multiple name="screenshots" />
-                    <!-- <button class="btn btn-primary btn-block"
-                            data-intro="Upload a screenshot of the concerned page." data-step="4" name="test_files"
-                            type="button" style="background-color: rgb(255, 0, 0); border:none;">
-                            <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot
-                        </button> -->
-                    <span class="help-block{% if form.screenshot.errors %} has-error{% endif %}">{{
-                        form.screenshot.errors }}</span>
-                    <span class="badge badge-important"></span>
-                </span>
-                {% endif %}
-            </div>
+    <div class="bg-[#F3F5F7] flex flex-col items-center">
+        
+        <form method='POST' action="#" enctype="multipart/form-data" class="w-[96%] bg-white rounded-2xl p-10 my-10 shadow-md">
             {% csrf_token %}
-            <div class="captcha-form">
-                {{ captcha_form.captcha }}
-            </div>
-            <button type="submit" name="reportbug_button" id="btn" class="btn btn-default btn-block"
-                data-intro="Click here to report the bug." data-step="5">
-                Report Bug <i class="fa fa-trophy" aria-hidden="true">+3</i>
-            </button>
+            <div class="w-full pb-12">
+                <p class="text-5xl font-semibold leading-7 text-gray-900">
+                    REPORT A BUG
+                </p>
 
+                <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                    <div class="sm:col-span-5">
+                        <label
+                        for="url"
+                        class="block text-2xl font-semibold leading-6 text-gray-900"
+                        >DOMAIN URL</label
+                        >
+                        <div class="mt-2">
+                        <input
+                            type="text"
+                            name="url" 
+                            value="{{ request.GET.url }}"
+                            autocomplete="domain_name"
+                            placeholder="https://bugheist.com/search"
+                            required
+                            data-intro="Enter the website's complete url where you found the bug." data-step="1"
+                            class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300  sm:leading-6"
+                        />
+                        </div>
+                    </div>
+                    <div class="h-full flex items-end w-full min-w-[150px]">
+                        <a
+                            class="duplicates w-full h-[60%] min-h-[40px] rounded-md hover:text-white cursor-pointer hover:no-underline hover:shadow-form bg-red-500 hover:bg-red-700 items-center justify-center flex text-2xl font-semibold text-white outline-none">
+                            Check for Duplicates
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                    
+                    <div class="sm:col-span-5">
+                        <label
+                        for="description"
+                        class="block text-2xl font-semibold leading-6 text-gray-900"
+                        >BUG TITLE</label
+                        >
+                        <div class="mt-2">
+                            <input
+                                type="text"
+                                name="description" 
+                                value="{{ request.GET.description }}"
+                                id="description"
+                                autocomplete="domain_url"
+                                placeholder="Xss Vulnerability in bug editor"
+                                required
+                                data-intro="Enter Bug report title" data-step="1"
+                                class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300  sm:leading-6"
+                            />
+                        </div>
+                    </div>
+
+                        <div class="sm:col-span-1 w-full min-w-[150px]">
+                            <label
+                            for="label"
+                            class="block text-2xl font-semibold leading-6 text-gray-900"
+                            >BUG TYPE</label
+                            >
+                            <div class="mt-2">
+                                <select
+                                    name="label"
+                                    required data-intro="Categorize the bug." data-step="3"
+                                    class="flex w-full placeholder:text-xl rounded-md border-0 py-4 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset"
+                                >
+                                    <option value="0" selected="selected">General</option>
+                                    <option value="1">Number error</option>
+                                    <option value="2">Functional</option>
+                                    <option value="3">Performance</option>
+                                    <option value="4">Security</option>
+                                    <option value="5">Typo</option>
+                                    <option value="6">Design</option>
+                                    <option value="7">Server down</option>
+                                </select>
+                            </div>
+                        </div>
+                </div>
+            
+            <div class="space-y-12 mt-10">
+           
+                <div class="w-full max-h-max flex justify-between flex-wrap border-b border-gray-900/10 pb-[50px]">
+                    
+                    {% if request.GET.hash %}</br>
+                            <img src="{{ MEDIA_URL }}uploads/{{ request.GET.hash }}.png"
+                                class="img-responsive img-thumbnail screenshot-hash">
+                            <input type="hidden" required class="required" name="screenshot-hash"
+                                value="{{ request.GET.hash }}">
+                    {% else %}
+                        <div class="col-span-full">
+                            <label
+                            for="file"
+                            class="block text-2xl font-medium leading-6 text-gray-900"
+                            >SCREENSHOTS</label
+                            >
+                            <div
+                            class="mt-2 flex w-[350px] h-full items-center justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 text-red-500"
+                            >
+                            <div class="text-center">
+                                <svg
+                                class="mx-auto h-12 w-12"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                aria-hidden="true"
+                                >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z"
+                                    clip-rule="evenodd"
+                                />
+                                </svg>
+                                <div class="mt-4 flex text-2xl leading-6 text-gray-600">
+                                <label
+                                    for="screenshots"
+                                    class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500"
+                                >
+                                    <span class="text-red-600">Upload screenshots</span>
+                                    <input
+                                    id="screenshots"
+                                    name="screenshots"
+                                    type="file"
+                                    class="sr-only"
+                                    multiple
+                                    required
+                                    max="4"
+                                    />
+                                </label>
+                                <p class="pl-1">or drag and drop</p>
+                                </div>
+                                <p class="text-lg leading-5 text-gray-600">
+                                    PNG, JPG, GIF up to 5 images
+                                </p>
+                            </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <div id="files_manage" multiple class="w-[75%] flex items-end mt-6 flex-wrap min-h-[180px]">
+                        
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="w-[100%] flex justify-between pr-10 flex-wrap border-b border-gray-900/10 pb-10 my-10">
+                
+                <div class="w-1/2 min-w-400px">
+                    {% include "includes/md_editor.html" %}
+                </div>
+
+                <div class="w-1/2 pl-10 mt-5 min-w-400px">
+                    <div class="flex w-full items-center justify-between">
+                        <h2 class="text-2xl font-semibold leading-7 text-gray-900">
+                        ADD TEAM MEMBERS
+                        </h2>
+
+                        <button onclick="add_email_container()" type="button" class="w-[120px] h-[40px] bg-red-500 text-white font-bold rounded-md mt-10 hover:bg-red-600 transition-all">
+                            Add Email
+                        </button>
+
+                    </div>
+                    <p class="mt-4 text-xl leading-6 text-gray-600">
+                        Team members should be bughunts users.
+                    </p>
+    
+    
+                    <div class="mt-10 overflow-y-scroll" id="email-container">
+                        <label
+                            for="team_members"
+                            class="block text-2l font-medium leading-6 text-gray-900"
+                            >Email address
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+
+
+                <div class="mt-6 flex items-center justify-between gap-x-6 ">
+                    <div class="flex h-full justify-between items-center">
+    
+                        <label class="ml-5 items-center text-2xl flex border-2 border-gray-200 rounded px-10 ">
+                            <input id="default-checkbox" type="checkbox" name="private" value="true"
+                                class="w-7 h-7 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                            <label for="default-checkbox" class="ml-4 mt-6 text-3xl  font-medium text-gray-900">Report
+                                Privately</label>
+                        </label>
+
+                        <style>
+                            .captcha-form img{
+                                width: 100px;
+                                margin-right: 10px;
+                            }
+                            .captcha-form input{
+                                width: 70%;
+                                border-width: 1px;
+                                border-color: black;
+                                padding: 10px;
+                                font-size: 1.4rem;
+                            }
+                        </style>
+                        <div class="captcha-form flex ml-10">
+                            {{ captcha_form.captcha }}
+                        </div>
+
+                    </div>
+                    <div>
+                        <button
+                            type="button"
+                            onclick="cancelForm()"
+                            class="text-md font-semibold leading-6 mr-10 text-gray-900"
+                        >
+                        Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            name="reportbug_button"
+                            class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500"
+                        >
+                        Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <div id="image-preview-wrapper"
+    class="justify-center items-center w-[100vw] h-[100vh] z-30 fixed bg-gray-500 bg-opacity-50" hidden>
+        <div class="bg-red-500 fixed w-[60%] h-[60%]">
+            <img src="" alt="" class="w-full h-full" id="image-preview">
         </div>
     </div>
-</form>
+{% endblock %}
 
-
+{% block after_js %}
+    
 <script type="text/javascript">
+
+    const screenshots = document.getElementById('screenshots');
+    let manage_div = document.getElementById("files_manage");
+
+    function previewFile(file_name) {
+        event.preventDefault();
+        Array.from(screenshots.files).map(file => {
+            if (file.name == file_name) {
+                let src = URL.createObjectURL(file);
+                $("#image-preview").attr("src", src);
+                $("#image-preview-wrapper").css("display", "flex");
+            }
+        })
+    }
+
+    $("#image-preview-wrapper").on("click", () => {
+        event.preventDefault();
+        $("#image-preview-wrapper").hide();
+    })
+
+    function removeFile(fileName) {
+        event.preventDefault();
+
+        // let dataTransfer = []; 
+        // let fileListArr = Array.from(screenshots.files)
+        // let fileList = new FileList();
+
+        // fileListArr.map(file => {
+        //     if (fileName !== file.name){
+        //         dataTransfer.push(file);
+        //         fileList.
+        //     }
+        // })
+
+        // screenshots.files = new FileList();
+
+        // print(screenshots.files)
+    }
+
+    screenshots.addEventListener('change', (event) => {
+
+        const fileList = Array.from(event.target.files);
+
+        fileList.map(file => {
+            let src = URL.createObjectURL(file);
+            $("#files_manage").append(`
+                <div class="w-[300px] h-[180px] overflow-hidden mr-10 rounded-lg" onclick="previewFile('${file.name}')">
+                    <div class="w-full h-10 flex justify-center rounded-t-lg p-2 bg-gray-500">
+                        <p class="text-xl text-white font-bold">${file.name.slice(0,20)}...</p>
+                    </div>
+                    <img class="object-cover" src="${src}" alt="">
+                </div>
+            `)
+        })
+
+    });
+
+
     $(function () {
         $(".duplicates").click(async () => {
             var uri = $("input[name='url']").val();
@@ -182,6 +374,7 @@
 
             let resp_json = await resp.json()
 
+            $("#duplicate-list").html("")
             resp_json.map(issue => add_duplicates(issue));
 
             $("#duplicate-container").show()
@@ -222,5 +415,46 @@
         }
 
     });
+
+
+    function removeErrors(){
+        var errors = document.getElementsByClassName('popup-errors');
+        var errorsArray = Array.from(errors);
+
+        // Remove each element from the DOM
+        errorsArray.forEach(function(error) {
+            error.remove();
+        });
+    }
+
+
+    function remove_email_container(){
+        let email_container = document.getElementById("email-container");
+        let lst_child = email_container.lastElementChild;
+        email_container.removeChild(lst_child);
+    }
+
+    function add_email_container(){
+        const email_container_child_html = document.createElement('div');
+        email_container_child_html.innerHTML = `
+            <div class="mt-2 flex flex-row items-center w-[70%]">
+                <input
+                name="team_members"
+                type="email"
+                autocomplete="email"
+                required
+                class="w-[90%] mt-2 text-xl block rounded-md border-0 py-3 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600"
+                />
+                <button type="button" onclick="remove_email_container()">
+                    <i class="fa-sharp fa-solid fa-trash fa-lg text-[#596780] ml-4 hover:text-black"></i>   
+                </button>
+            </div>
+        `;
+
+        let email_container = document.getElementById("email-container");
+        email_container.appendChild(email_container_child_html)
+    }
+
+
 </script>
 {% endblock %}
