@@ -444,7 +444,6 @@ class IssueBaseCreate(object):
 
         return HttpResponseRedirect("/")
 
-
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
     fields = ["url", "description", "domain", "label","markdown_description"]
@@ -700,6 +699,25 @@ class IssueCreate(IssueBaseCreate, CreateView):
         else:
             self.process_issue(self.request.user, obj, created, domain)
             return HttpResponseRedirect(self.request.META.get("HTTP_REFERER"))
+        
+        
+
+    def get_context_data(self, **kwargs):
+        context = super(IssueCreate, self).get_context_data(**kwargs)
+        context["activities"] = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
+        context["captcha_form"] = CaptchaForm()
+        if self.request.user.is_authenticated:
+            context["wallet"] = Wallet.objects.get(user=self.request.user)
+        context["hunts"] = Hunt.objects.exclude(plan="Free")[:4]
+        context["leaderboard"] = (
+            User.objects.filter(
+                points__created__month=datetime.now().month,
+                points__created__year=datetime.now().year,
+            )
+            .annotate(total_score=Sum("points__score"))
+            .order_by("-total_score")[:10],
+        )
+        return context
 
 
 class UploadCreate(View):
