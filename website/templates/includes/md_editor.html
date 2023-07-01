@@ -1,0 +1,90 @@
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="w-full container p-4">
+
+  <div class="w-full h-full bg-white rounded-lg shadow-lg p-4">
+    <div class="w-full flex items-center justify-between mb-4">
+      <h1 class="text-gray-700 text-2xl font-semibold">BUG DESCRIPTION</h1>
+      <div>
+        <button id="boldButton" type="button" class="text-2xl px-3 py-2 bg-gray-500 text-white rounded-md">Bold</button>
+        <button id="italicButton" type="button" class="text-2xl px-3 py-2 bg-gray-500 text-white rounded-md">Italic</button>
+        <button id="imageButton" type="button" class="text-2xl px-3 py-2 bg-gray-500 text-white rounded-md">Add Image</button>
+        <button id="linkButton" type="button" class="text-2xl px-3 py-2 bg-gray-500 text-white rounded-md">Add Link</button>
+        <button id="previewButton" type="button" class="text-2xl px-4 py-2 bg-red-500 text-white rounded-md">Preview</button>
+        <button id="editButton" type="button" class="text-2xl px-4 py-2 bg-red-500 text-white rounded-md hidden">Edit</button>
+      </div>
+    </div>
+    <div class="flex">
+      <textarea id="markdownInput" name="markdown_description" class="flex-1 h-[200px] bg-gray-200 text-2xl resize-none border border-gray-300 rounded-md p-5" placeholder="Enter your markdown here..."></textarea>
+      <div id="previewContainer" class="h-[200px] flex-1 bg-white rounded-md p-4 hidden">
+        <div id="markdownPreview"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.0/showdown.min.js"></script>
+<script>
+const converter = new showdown.Converter();
+
+const markdownInput = document.getElementById('markdownInput');
+const previewButton = document.getElementById('previewButton');
+const editButton = document.getElementById('editButton');
+const previewContainer = document.getElementById('previewContainer');
+const markdownPreview = document.getElementById('markdownPreview');
+const boldButton = document.getElementById('boldButton');
+const italicButton = document.getElementById('italicButton');
+const imageButton = document.getElementById('imageButton');
+const linkButton = document.getElementById('linkButton');
+
+previewButton.addEventListener('click', () => {
+  const markdownText = markdownInput.value;
+  const markdownHTML = converter.makeHtml(markdownText);
+  console.log(markdownHTML)
+  markdownPreview.innerHTML = markdownHTML;
+  previewContainer.classList.remove('hidden');
+  markdownInput.classList.add('hidden');
+  previewButton.classList.add('hidden');
+  editButton.classList.remove('hidden');
+});
+
+editButton.addEventListener('click', () => {
+  markdownInput.classList.remove('hidden');
+  previewContainer.classList.add('hidden');
+  previewButton.classList.remove('hidden');
+  editButton.classList.add('hidden');
+});
+
+boldButton.addEventListener('click', () => {
+  insertMarkdownSyntax('**', '**');
+});
+
+italicButton.addEventListener('click', () => {
+  insertMarkdownSyntax('_', '_');
+});
+
+imageButton.addEventListener('click', () => {
+  const imageURL = prompt('Enter the URL of the image:');
+  if (imageURL) {
+    insertMarkdownSyntax('![alt text]', `(${imageURL})`);
+  }
+});
+
+linkButton.addEventListener('click', () => {
+  const linkURL = prompt('Enter the URL:');
+  if (linkURL) {
+    insertMarkdownSyntax('[link text]', `(${linkURL})`);
+  }
+});
+
+function insertMarkdownSyntax(startTag, endTag) {
+  const startPos = markdownInput.selectionStart;
+  const endPos = markdownInput.selectionEnd;
+  const selectedText = markdownInput.value.substring(startPos, endPos);
+  const modifiedText = `${startTag}${selectedText}${endTag}`;
+  markdownInput.value = markdownInput.value.substring(0, startPos) + modifiedText + markdownInput.value.substring(endPos);
+}
+</script>

@@ -66,7 +66,6 @@ from website.api.views import (
     BugHuntApiViewset,
 )
 from website.alternative_views import (
-    IssueCreate2,
     CreateHunt2,
 )
 
@@ -301,7 +300,6 @@ urlpatterns = [
 
     re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
-    re_path(r"^issue2/$", IssueCreate2.as_view(), name="issue2"),
 
     re_path(
         r"^upload/(?P<time>[^/]+)/(?P<hash>[^/]+)/",
