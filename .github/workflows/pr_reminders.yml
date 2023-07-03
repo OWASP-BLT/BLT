@@ -1,0 +1,22 @@
+name: PRs reviews reminder
+
+# on:
+#   schedule:
+#     # Every weekday every 2 hours during working hours, send notification
+#     - cron: "* * * * *"
+on:
+  pull_request:
+
+jobs:
+  pr-reviews-reminder:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: davideviolante/pr-reviews-reminder-action@v2.7.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        webhook-url: ${{ secrets.SLACK_PR_REMINDER_WEBHOOK_URL }}
+        provider: 'slack' # Required (slack, rocket or msteams)
+        channel: '#project-blt-prs' # Optional, eg: #general
+#         github-provider-map: 'DavideViolante:UEABCDEFG' # Optional, eg: DavideViolante:UEABCDEFG,foobar:UAABCDEFG
+#         ignore-label: 'ignore' # Optional, eg: no-reminder,ignore
