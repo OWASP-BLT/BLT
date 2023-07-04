@@ -3,7 +3,7 @@ name: PRs reviews reminder
 on:
   schedule:
     # Runs every hour, between 14:00 and 21:00, Monday through Friday.
-    - cron: "0 14-21 * * 1-5"
+    - cron: "0,30 14-21 * * 1-5"
 
 
 jobs:
