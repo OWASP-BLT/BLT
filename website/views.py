@@ -541,7 +541,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         raise Exception
             except:
                 messages.error(request,"Domain does not exist")
-                return HttpResponseRedirect("/issue2/")
+                return HttpResponseRedirect("/report/")
 
         return super().post(request, *args, **kwargs)
 
