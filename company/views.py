@@ -598,7 +598,7 @@ class CompanyDashboardManageRolesView(View):
             'domains': domains_data,
         }
 
-        return render(request,"company/company_manage_roles.html.html",context)
+        return render(request,"company/company_manage_roles.html",context)
     
 
     def post(self,request,company,*args,**kwargs):
