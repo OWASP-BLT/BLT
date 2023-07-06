@@ -5,15 +5,15 @@
 {% block body %}
 
     <div class="bg-[#F3F5F7] h-full flex flex-col items-center">
-        <div class="flex justify-between w-full mt-5">
+        <div class="flex items-center md:justify-between w-full md:h-max mt-5 flex-col md:flex-row">
             <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Roles</p>
 
-            <div class="w-[15%] flex justify-center">
-                <button type="button" onclick="ToggleDisplayForm(0)" class="flex items-center justify-center px-16 bg-[#DC4654] rounded-xl hover:bg-red-600 transition-all">
+            <div class="w-full md:w-[15%] flex justify-center md:justify-end mr-10">
+                <button type="button" onclick="ToggleDisplayForm(0)" class="flex items-center justify-center md:justify-center px-16 py-7 bg-[#DC4654] rounded-xl hover:bg-red-600 transition-all">
                     <i class="fa-sharp fa-solid fa-plus fa-xl text-white"></i>   
                 </button>
             </div>
-        </div>
+        </div> 
 
         {% for domain in domains %}
 
