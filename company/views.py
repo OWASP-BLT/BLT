@@ -37,7 +37,7 @@ def validate_company_user(func):
 
         if company == None:
             return redirect("company_view")
-
+        
         return func(self,request,company.company_id,*args,**kwargs)
 
     return wrapper
@@ -106,7 +106,6 @@ class RegisterCompanyView(View):
             messages.error(request,"Login with company email in order to create the company.")
             return redirect("/")
         
-        print(data)
         if user_domain != company_name:
             messages.error(request,"Company name doesn't match your email domain.")
             return redirect("register_company")
@@ -146,6 +145,8 @@ class RegisterCompanyView(View):
         ).first()
 
         return redirect('company_analytics',company=company.company_id) 
+
+
 
 class CompanyDashboardAnalyticsView(View):
 
@@ -302,9 +303,15 @@ class CompanyDashboardAnalyticsView(View):
     @validate_company_user
     def get(self,request,company,*args,**kwargs):
 
+        companies = Company.objects.values("name","company_id").filter(
+            Q(managers__in=[request.user]) | 
+            Q(admin=request.user)
+        ).distinct()
 
         context = {
             "company": company,
+            "companies":companies,
+            "company_obj": Company.objects.filter(company_id=company).first(),
             "total_info":self.get_general_info(company),
             "bug_report_type_piechart_data":self.get_bug_report_type_piechart_data(company),
             "reports_on_domain_piechart_data": self.get_reports_on_domain_piechart_data(company),
@@ -321,8 +328,16 @@ class CompanyDashboardManageBugsView(View):
     @validate_company_user
     def get(self,request,company,*args,**kwargs):
 
+        companies = Company.objects.values("name","company_id").filter(
+            Q(managers__in=[request.user]) | 
+            Q(admin=request.user)
+        ).distinct()
+
         context = {
-            'company': company
+            'company': company,
+            "companies":companies,
+            "company_obj": Company.objects.filter(company_id=company).first(),
+
         }
         return render(request,"company/company_manage_bugs.html",context=context)
     
@@ -334,8 +349,15 @@ class CompanyDashboardManageDomainsView(View):
 
         domains = Domain.objects.values("id","name","url","logo").filter(company__company_id=company).order_by("modified")
 
+        companies = Company.objects.values("name","company_id").filter(
+            Q(managers__in=[request.user]) | 
+            Q(admin=request.user)
+        ).distinct()
+
         context = {
             'company': company,
+            "companies": companies,
+            "company_obj": Company.objects.filter(company_id=company).first(),
             'domains':domains
         }
 
@@ -359,10 +381,11 @@ class AddDomainView(View):
         companies = Company.objects.values("name","company_id").filter(
             Q(managers__in=[request.user]) | 
             Q(admin=request.user)
-        )
+        ).distinct()
         
         context = {
             'company': company,
+            "company_obj": Company.objects.filter(company_id=company).first(),
             'companies': companies
         }
 
@@ -574,7 +597,7 @@ class CompanyDashboardManageRolesView(View):
         companies = Company.objects.values("name","company_id").filter(
             Q(managers__in=[request.user]) | 
             Q(admin=request.user)
-        )
+        ).distinct()
         
         domains = Domain.objects.filter(
             Q(company__company_id=company) &
@@ -594,6 +617,7 @@ class CompanyDashboardManageRolesView(View):
 
         context = {
             'company': company,
+            "company_obj": Company.objects.filter(company_id=company).first(),
             'companies': companies,
             'domains': domains_data,
         }
@@ -643,10 +667,11 @@ class CompanyDashboardManageBughuntView(View):
         companies = Company.objects.values("name","company_id").filter(
             Q(managers__in=[request.user]) | 
             Q(admin=request.user)
-        )
-         
+        ).distinct()
+        
         context = {
             'company': company,
+            "company_obj": Company.objects.filter(company_id=company).first(),
             'companies': companies
         }
 
