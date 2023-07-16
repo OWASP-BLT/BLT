@@ -661,18 +661,83 @@ class CompanyDashboardManageRolesView(View):
 
 class CompanyDashboardManageBughuntView(View):
 
-    @validate_company_user
-    def get(self,request,company,*args,**kwargs):
+
+    def show(self,request,company,*args,**kwargs):
 
         companies = Company.objects.values("name","company_id").filter(
             Q(managers__in=[request.user]) | 
             Q(admin=request.user)
         ).distinct()
+
+        hunt_id = request.GET.get("hunt")
+        hunt_obj = get_object_or_404(Hunt,pk=hunt_id)
+
+        # get issues/reports that are done between hunt.start_date and hunt.end_date
+        hunt_issues = Issue.objects.filter(
+                Q(created__range=[hunt_obj.starts_on,hunt_obj.end_on]) &
+                Q(domain__url=hunt_obj.domain.url)
+            )
         
+        # total bugs reported in this bughunt
+        total_bugs = hunt_issues.count()
+        total_bug_accepted = hunt_issues.filter(verified=True).count()
+
+        total_money_distributed = hunt_issues.aggregate(total_money=Sum('rewarded'))["total_money"]
+        total_money_distributed = (0 if total_money_distributed==None else total_money_distributed)
+
+
+        bughunt_leaderboard = hunt_issues.values("user__id","user__username","user__userprofile__user_avatar").filter(user__isnull=False,verified=True).annotate(count=Count('user__username')).order_by("-count")[:16]
+
         context = {
             'company': company,
             "company_obj": Company.objects.filter(company_id=company).first(),
-            'companies': companies
+            'companies': companies,
+            "hunt_obj":hunt_obj,
+            "stats":{
+                "total_rewarded": total_money_distributed,
+                "total_bugs": total_bugs,
+                "total_bug_accepted": total_bug_accepted
+            },
+            "bughunt_leaderboard": bughunt_leaderboard,
         }
 
-        return render(request,"company/company_manage_bughunts.html",context) 
+
+
+        return render(request,"company/view_bughunt.html",context)
+    
+    @validate_company_user
+    def get(self,request,company,*args,**kwargs):
+
+        hunt = request.GET.get("hunt")
+
+        if hunt:
+            return self.show(request,company)
+        
+
+        companies = Company.objects.values("name","company_id").filter(
+            Q(managers__in=[request.user]) | 
+            Q(admin=request.user)
+        ).distinct()
+
+        context = {
+            'company': company,
+            "company_obj": Company.objects.filter(company_id=company).first(),
+            'companies': companies,
+        }
+
+        query = Hunt.objects.values("id","name","prize","starts_on__day","starts_on__month","starts_on__year","end_on__day","end_on__month","end_on__year").filter(domain__company__company_id=company)
+        filtered_bughunts = {
+            "all": query,
+            "ongoing": query.filter(result_published=False),
+            "ended": query.filter(result_published=True),
+            "draft": query.filter(is_published=False)
+        } 
+
+        filter_type = request.GET.get("filter","all")
+        
+        context = {
+            **context,
+            "bughunts": filtered_bughunts.get(filter_type,[])
+        }
+
+        return render(request,"company/view_bughunt.html",context)

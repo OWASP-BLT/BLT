@@ -19,49 +19,102 @@
             </div>
         </div>
 
-        <div class="w-[96%] max-h-[70vh] p-4 mt-10 bg-white border border-gray-200 rounded-lg shadow-md sm:p-8">
-            <div class="flex items-center justify-between mb-4 ">
-                <h5 class="text-xl font-bold leading-none text-gray-900">All Domains</h5>
-                <a href="#" class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-500">
-                    View all
-                </a>
-           </div>
-           <div class="flow-root h-full mt-5">
-                <ul role="list" class="divide-y divide-gray-200 px-5 overflow-y-scroll">
-                    
-                    {% for domain in domains %}
-                        <li class="py-3 sm:py-4">
-                            <div class="flex items-center space-x-4">
-                                <div class="flex-shrink-0">
-                                    <img class="w-8 h-8 rounded-full" src="{{MEDIA_URL}}{{ domain.logo }}" alt="Domain Logo">
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-medium text-gray-900 truncate">
-                                        {{ domain.name | capfirst }}
-                                    </p>
-                                    <p class="text-sm text-gray-500 truncate dark:text-gray-400">
-                                        {{ domain.url }}
-                                    </p>
-                                </div>
-                                <div class="inline-flex items-center text-base font-semibold text-gray-900 ">
-                                   <a href="{% url 'view_domain' domain.id %}">View</a>
-                                    <form id="deleteForm" action="{% url 'add_domain' company %}?domain={{ domain.id }}" method="post" style="display: inline;">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="_method" value="delete">
-                                    </form>
-                                    <button type="button" onclick="deleteDomain()" class="ml-2">Delete</button>
-                                </div>
+        <div class="w-[96%] h-[70vh] overflow-y-scroll flow-root my-10">
+            <div class="relative overflow-x-auto shadow-md sm:rounded-lg h-full bg-white">
+                <table class="w-full text-sm text-left text-gray-500">
+                    <caption class="p-5 text-xl font-semibold text-left text-gray-900 bg-white">
+                        <div class="flex w-full justify-between">
+                            <h2 class="mt-1 text-xl font-extrabold text-gray-500">Bughunts</h2>
+                            
+                            
+                            <button id="dropdownDefaultButton" data-dropdown-toggle="dropdown" class="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800" type="button">Filter Bughunts <svg class="w-2.5 h-2.5 ml-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+                            </svg></button>
+                            <!-- Dropdown menu -->
+                            <div id="dropdown" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700">
+                                <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefaultButton">
+                                <li>
+                                    <a href="{% url 'company_manage_bughunts' company %}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">All</a>
+                                </li>
+                                <li>
+                                    <a href="{% url 'company_manage_bughunts' company %}?filter=ongoing" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Ongoing</a>
+                                </li>
+                                <li>
+                                    <a href="{% url 'company_manage_bughunts' company %}?filter=draft" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Draft</a>
+                                </li>
+                                <li>
+                                    <a href="{% url 'company_manage_bughunts' company %}?filter=ended" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Ended</a>
+                                </li>
+                                </ul>
                             </div>
-                        </li>
-                    {% endfor %}
-                </ul>
+
+                            
+                            
+                        </div>
+                        <p class="mt-1 text-sm font-normal text-gray-500">Filter, view, edit or delete. Manage your bughunts easily</p>
+                    </caption>
+                    <thead class="text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-[1rem]">
+                                Hunt
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-[1rem]">
+                                Start Date
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-[1rem]">
+                                End Date
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-[1rem]">
+                                Prize
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-[1rem]">
+                                <span class="sr-only">View</span>
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-lg">
+                                <span class="sr-only">Edit</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if bughunts %}
+                            {% for hunt in bughunts%}
+                                <tr class="bg-white border-b">
+                                    <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                        {{ hunt.name }}
+                                    </th>
+                                    <td class="px-6 py-4">
+                                        {{ hunt.starts_on__day }}/{{ hunt.starts_on__month }}/{{ hunt.starts_on__year }}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        {{ hunt.end_on__day }}/{{ hunt.end_on__month }}/{{ hunt.end_on__year }}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        ${{ hunt.prize }}
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <a href="#" class="font-medium text-blue-600 hover:underline">View</a>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <a href="#" class="font-medium text-blue-600 hover:underline">Edit</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr class="bg-white border-b">
+                                <th scope="row" class="px-6 py-4 font-medium text-red-500 whitespace-nowrap">
+                                    No Bughunts found
+                                </th>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
            </div>
-        </div>
 
     </div>
 
 {% endblock %}
 
 {% block js %}
-
+    <script src="https://unpkg.com/@themesberg/flowbite@latest/dist/flowbite.bundle.js"></script>
 {% endblock %}
