@@ -13,7 +13,7 @@
             <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Bughunts</p>
 
             <div class="w-full md:w-[15%] flex justify-center md:justify-end mr-10">
-                <a href="{% url 'add_domain' company %}" class="flex items-center justify-center md:justify-center px-16 py-7 bg-[#DC4654] rounded-xl hover:bg-red-600 transition-all">
+                <a href="{% url 'create_hunt'  %}" class="flex items-center justify-center md:justify-center px-16 py-7 bg-[#DC4654] rounded-xl hover:bg-red-600 transition-all">
                     <i class="fa-sharp fa-solid fa-plus fa-xl text-white"></i>   
                 </a>
             </div>
@@ -92,7 +92,7 @@
                                         ${{ hunt.prize }}
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <a href="#" class="font-medium text-blue-600 hover:underline">View</a>
+                                        <a href="{% url 'show_bughunt' hunt.id %}" class="font-medium text-blue-600 hover:underline">View</a>
                                     </td>
                                     <td class="px-6 py-4 text-right">
                                         <a href="#" class="font-medium text-blue-600 hover:underline">Edit</a>

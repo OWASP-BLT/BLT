@@ -659,18 +659,11 @@ class CompanyDashboardManageRolesView(View):
         return redirect('company_manage_roles',company)
 
 
-class CompanyDashboardManageBughuntView(View):
+class ShowBughuntView(View):
 
-
-    def show(self,request,company,*args,**kwargs):
-
-        companies = Company.objects.values("name","company_id").filter(
-            Q(managers__in=[request.user]) | 
-            Q(admin=request.user)
-        ).distinct()
-
-        hunt_id = request.GET.get("hunt")
-        hunt_obj = get_object_or_404(Hunt,pk=hunt_id)
+    def get(self,request,pk,*args, **kwargs):
+        
+        hunt_obj = get_object_or_404(Hunt,pk=pk)
 
         # get issues/reports that are done between hunt.start_date and hunt.end_date
         hunt_issues = Issue.objects.filter(
@@ -688,10 +681,36 @@ class CompanyDashboardManageBughuntView(View):
 
         bughunt_leaderboard = hunt_issues.values("user__id","user__username","user__userprofile__user_avatar").filter(user__isnull=False,verified=True).annotate(count=Count('user__username')).order_by("-count")[:16]
 
+        is_hunt_manager = hunt_obj.domain.managers.filter(id=request.user.id).exists()
+        
+        # get latest reported public issues
+        latest_issues = (
+            Issue.objects
+            .values("id","domain__name","url","description","user__id","user__username","user__userprofile__user_avatar","label","status","verified","rewarded","created__day","created__month","created__year")
+            .filter(
+                domain__id=hunt_obj.domain.pk,
+                hunt__id=hunt_obj.id
+            ).order_by("-created")
+        )
+
+        if is_hunt_manager:
+            latest_issues = latest_issues.filter(is_hidden=True)
+        else:
+            latest_issues = latest_issues.filter(is_hidden=False)
+
+        issue_labels = [label[-1] for label in Issue.labels]
+        cleaned_issues = []
+        for issue in latest_issues:
+            cleaned_issues.append({
+                **issue,
+                "label": issue_labels[issue["label"]]
+            })
+
+        
+        # get top testers
+        top_testers = Issue.objects.values("user__id","user__username","user__userprofile__user_avatar").filter(user__isnull=False).annotate(count=Count('user__username')).order_by("-count")[:16]
+
         context = {
-            'company': company,
-            "company_obj": Company.objects.filter(company_id=company).first(),
-            'companies': companies,
             "hunt_obj":hunt_obj,
             "stats":{
                 "total_rewarded": total_money_distributed,
@@ -699,31 +718,26 @@ class CompanyDashboardManageBughuntView(View):
                 "total_bug_accepted": total_bug_accepted
             },
             "bughunt_leaderboard": bughunt_leaderboard,
+            "top_testers":top_testers,
+            "latest_issues": cleaned_issues,
         }
 
 
 
         return render(request,"company/view_bughunt.html",context)
+
+
+class CompanyDashboardManageBughuntView(View):
+
     
     @validate_company_user
     def get(self,request,company,*args,**kwargs):
-
-        hunt = request.GET.get("hunt")
-
-        if hunt:
-            return self.show(request,company)
-        
-
+                
         companies = Company.objects.values("name","company_id").filter(
             Q(managers__in=[request.user]) | 
             Q(admin=request.user)
         ).distinct()
 
-        context = {
-            'company': company,
-            "company_obj": Company.objects.filter(company_id=company).first(),
-            'companies': companies,
-        }
 
         query = Hunt.objects.values("id","name","prize","starts_on__day","starts_on__month","starts_on__year","end_on__day","end_on__month","end_on__year").filter(domain__company__company_id=company)
         filtered_bughunts = {
@@ -736,8 +750,94 @@ class CompanyDashboardManageBughuntView(View):
         filter_type = request.GET.get("filter","all")
         
         context = {
-            **context,
+            'company': company,
+            "company_obj": Company.objects.filter(company_id=company).first(),
+            'companies': companies,
             "bughunts": filtered_bughunts.get(filter_type,[])
         }
 
-        return render(request,"company/view_bughunt.html",context)
+        return render(request,"company/company_manage_bughunts.html",context)
+    
+
+    # def post(self, request, *args, **kwargs):
+    #     try:
+    #         domain_admin = CompanyAdmin.objects.get(user=request.user)
+    #         if (
+    #             domain_admin.role == 1
+    #             and (
+    #                 str(domain_admin.domain.pk)
+    #                 == ((request.POST["domain"]).split("-"))[0].replace(" ", "")
+    #             )
+    #         ) or domain_admin.role == 0:
+    #             wallet, created = Wallet.objects.get_or_create(user=request.user)
+    #             total_amount = (
+    #                 Decimal(request.POST["prize_winner"])
+    #                 + Decimal(request.POST["prize_runner"])
+    #                 + Decimal(request.POST["prize_second_runner"])
+    #             )
+    #             if total_amount > wallet.current_balance:
+    #                 return HttpResponse("failed")
+    #             hunt = Hunt()
+    #             hunt.domain = Domain.objects.get(
+    #                 pk=(request.POST["domain"]).split("-")[0].replace(" ", "")
+    #             )
+    #             data = {}
+    #             data["content"] = request.POST["content"]
+    #             data["start_date"] = request.POST["start_date"]
+    #             data["end_date"] = request.POST["end_date"]
+    #             form = HuntForm(data)
+    #             if not form.is_valid():
+    #                 return HttpResponse("failed")
+    #             if not domain_admin.is_active:
+    #                 return HttpResponse("failed")
+    #             if domain_admin.role == 1:
+    #                 if hunt.domain != domain_admin.domain:
+    #                     return HttpResponse("failed")
+    #             hunt.domain = Domain.objects.get(
+    #                 pk=(request.POST["domain"]).split("-")[0].replace(" ", "")
+    #             )
+    #             tzsign = 1
+    #             offset = request.POST["tzoffset"]
+    #             if int(offset) < 0:
+    #                 offset = int(offset) * (-1)
+    #                 tzsign = -1
+    #             start_date = form.cleaned_data["start_date"]
+    #             end_date = form.cleaned_data["end_date"]
+    #             if tzsign > 0:
+    #                 start_date = start_date + timedelta(
+    #                     hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
+    #                 )
+    #                 end_date = end_date + timedelta(
+    #                     hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
+    #                 )
+    #             else:
+    #                 start_date = start_date - (
+    #                     timedelta(
+    #                         hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
+    #                     )
+    #                 )
+    #                 end_date = end_date - (
+    #                     timedelta(
+    #                         hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
+    #                     )
+    #                 )
+    #             hunt.starts_on = start_date
+    #             hunt.prize_winner = Decimal(request.POST["prize_winner"])
+    #             hunt.prize_runner = Decimal(request.POST["prize_runner"])
+    #             hunt.prize_second_runner = Decimal(request.POST["prize_second_runner"])
+    #             hunt.end_on = end_date
+    #             hunt.name = request.POST["name"]
+    #             hunt.description = request.POST["content"]
+    #             wallet.withdraw(total_amount)
+    #             wallet.save()
+    #             try:
+    #                 is_published = request.POST["publish"]
+    #                 hunt.is_published = True
+    #             except:
+    #                 hunt.is_published = False
+    #             hunt.save()
+    #             return HttpResponse("success")
+    #         else:
+    #             return HttpResponse("failed")
+    #     except:
+    #         return HttpResponse("failed")
