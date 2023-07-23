@@ -58,6 +58,8 @@
                         </div>
                     </div>
 
+                
+                    
                 <div class="sm:col-span-3">
                     <label
                     for="domain"
@@ -78,58 +80,30 @@
                     </div>
                 </div>
 
-
-                <div class="sm:col-span-2 sm:col-start-1">
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.7.0/datepicker.min.js"></script>   
+                <div class="sm:col-span-3">
                     <label
-                    for="github_url"
-                    class="block text-sm font-medium leading-6 text-gray-900"
-                    >Github Repo URL (Optional)</label
+                        for="domain_url"
+                        class="block text-sm font-medium leading-6 text-gray-900"
+                        >Bughunt Timeline</label
                     >
-                    <div class="mt-2">
-                    <input
-                        type="text"
-                        name="github_url"
-                        id="github_url"
-                        autocomplete="github"
-                        placeholder="https://github.com/repo"
-                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
-                    />
-                    </div>
-                </div>
-
-                <div class="sm:col-span-2">
-                    <label
-                    for="twitter_url"
-                    class="block text-sm font-medium leading-6 text-gray-900"
-                    >Domain Twitter URL (Optional)</label
-                    >
-                    <div class="mt-2">
-                    <input
-                        type="text"
-                        name="twitter_url"
-                        id="twitter_url"
-                        autocomplete="twitter"
-                        placeholder="https://twitter.com/handle"
-                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
-                    />
-                    </div>
-                </div>
-
-                <div class="sm:col-span-2">
-                    <label
-                    for="facebook_url"
-                    class="block text-sm font-medium leading-6 text-gray-900"
-                    >Domain Facebook URL (Optional)</label
-                    >
-                    <div class="mt-2">
-                    <input
-                        type="text"
-                        name="facebook_url"
-                        id="facebook_url"
-                        autocomplete="facebook"
-                        placeholder="https://facebook.com/handle"
-                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
-                    />
+                    <div date-rangepicker class="flex items-center">
+                        <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"/>
+                            </svg>
+                        </div>
+                        <input name="start" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5  " placeholder="Select date start">
+                        </div>
+                        <span class="mx-4 text-gray-500">to</span>
+                        <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"/>
+                            </svg>
+                        </div>
+                        <input name="end" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5  " placeholder="Select date end">
                     </div>
                 </div>
                 </div>
@@ -138,7 +112,7 @@
             <div class="space-y-12">
             <div class="border-b border-gray-900/10 pb-12">
 
-                <div class="col-span-full mb-5">
+                <div class="col-span-full my-5">
                     <label
                     for="bughunt_logo"
                     class="block text-sm font-medium leading-6 text-gray-900"
@@ -220,6 +194,10 @@
                 </div>
             </div>
 
+            <div class="w-full ">
+                {% include "company/company_includes/md_editor.html" %}
+            </div>
+
             <div class="border-b border-gray-900/10 pb-12 mt-5">
                 <h2 class="text-base font-semibold leading-7 text-gray-900">
                     Bughunt Prizes
@@ -289,6 +267,12 @@
                     class="text-md font-semibold leading-6 text-gray-900"
                 >
                 Cancel
+                </button>
+                <button
+                    type="submit"
+                    class="rounded-md bg-gray-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
+                >
+                Draft
                 </button>
                 <button
                     type="submit"
@@ -407,4 +391,5 @@
         }
 
     </script>
+
 {% endblock %}
