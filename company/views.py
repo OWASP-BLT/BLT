@@ -111,7 +111,7 @@ class RegisterCompanyView(View):
             return redirect("register_company")
         
 
-        managers = User.objects.values("id").filter(email__in=data["email"])
+        managers = User.objects.values("id").filter(email__in=data.get("email",[]))
 
         company = Company.objects.filter(name=data["company_name"]).first()
 
@@ -131,7 +131,7 @@ class RegisterCompanyView(View):
             email=data["support_email"],
             twitter=data["twitter_url"],
             facebook=data["facebook_url"],
-            logo=f"logos/{company_logo.name}",
+            logo=f"company_logos/{company_logo.name}",
             is_active=True,
             company_id=uuid.uuid4()
         )
@@ -413,9 +413,9 @@ class AddDomainView(View):
             return redirect("add_domain",company)
         
         parsed_url = urlparse(domain_data["url"])
-        domain = parsed_url.hostname
+        domain = (parsed_url.hostname).replace("www.","")
 
-        domain_data["url"] = f"{parsed_url.scheme}://{domain}" # clean the domain eg https://mail.google.com/mail1# -> https://mail.google.com  
+        # domain_data["url"] = f"{parsed_url.scheme}://{domain}" # clean the domain eg https://mail.google.com/mail1# -> https://mail.google.com  
         domain_data["name"] = domain_data["name"].lower()
 
 
@@ -425,7 +425,7 @@ class AddDomainView(View):
 
         domain_exist = Domain.objects.filter(
             Q(name=domain_data["name"]) |
-            Q(url=domain)
+            Q(url=domain_data["url"])
         ).exists()
 
         if domain_exist:
@@ -434,10 +434,12 @@ class AddDomainView(View):
 
         # validate domain url
         try:
-            response = requests.get(domain_data["url"] ,timeout=2)
+            print(domain_data["url"])
+            response = requests.get(domain_data["url"] ,timeout=5)
             if response.status_code != 200:
                 raise Exception
-        except:
+        except Exception as e:
+            print(e)
             messages.error(request,"Domain does not exist.")
             return redirect("add_domain",company)
         
@@ -726,6 +728,24 @@ class ShowBughuntView(View):
 
         return render(request,"company/view_bughunt.html",context)
 
+
+class AddHuntView(View):
+
+    @validate_company_user
+    def get(self,request,company,*args,**kwargs):
+        
+        companies = Company.objects.values("name","company_id").filter(
+            Q(managers__in=[request.user]) | 
+            Q(admin=request.user)
+        ).distinct()
+
+        context = {
+            'company': company,
+            "company_obj": Company.objects.filter(company_id=company).first(),
+            'companies': companies,
+            }   
+
+        return render(request,"company/add_bughunt.html",context)
 
 class CompanyDashboardManageBughuntView(View):
 
