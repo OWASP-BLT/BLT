@@ -200,6 +200,19 @@ class Hunt(models.Model):
     def __str__(self) -> str:
         return self.name
 
+class BughuntPrize(models.Model):
+
+    hunt = models.ForeignKey(Hunt,on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
+    value = models.PositiveIntegerField(default=0)
+    no_of_eligible_projects = models.PositiveIntegerField(default=1) # no of winner in this prize
+    valid_submissions_eligible = models.BooleanField(default=False)  # all valid submissions are winners in this prize
+    prize_in_crypto = models.BooleanField(default=False)
+    description = models.TextField(null=True,blank=True)
+
+    def __str__(self) -> str:
+        return self.hunt.name + self.name
+    
 
 class Issue(models.Model):
     labels = (
