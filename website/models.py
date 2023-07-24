@@ -181,6 +181,7 @@ class Hunt(models.Model):
     prize_runner = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     prize_second_runner = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     logo = models.ImageField(upload_to="logos", null=True, blank=True)
+    banner = models.ImageField(upload_to="banners", null=True, blank=True)
     plan = models.CharField(max_length=10)
     txn_id = models.CharField(max_length=50, null=True, blank=True)
     color = models.CharField(max_length=10, null=True, blank=True)
@@ -200,7 +201,7 @@ class Hunt(models.Model):
     def __str__(self) -> str:
         return self.name
 
-class BughuntPrize(models.Model):
+class HuntPrize(models.Model):
 
     hunt = models.ForeignKey(Hunt,on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
