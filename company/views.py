@@ -4,7 +4,7 @@ import json
 from django import http 
 import requests
 from urllib.parse import urlparse
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import DetailView, TemplateView, ListView, View
@@ -17,7 +17,7 @@ from django.core.files.storage import default_storage
 from django.contrib.auth.models import User
 from django.http import Http404
 
-from website.models import Company, Domain, Issue, Hunt, UserProfile
+from website.models import Company, Domain, Issue, Hunt, UserProfile, HuntPrize
 
 restricted_domain = ["gmail.com","hotmail.com","outlook.com","yahoo.com","proton.com"]
 
@@ -739,13 +739,75 @@ class AddHuntView(View):
             Q(admin=request.user)
         ).distinct()
 
+        domains = Domain.objects.values('id','name').filter(company__company_id=company)
+
         context = {
             'company': company,
             "company_obj": Company.objects.filter(company_id=company).first(),
             'companies': companies,
+            'domains':domains
             }   
 
         return render(request,"company/add_bughunt.html",context)
+
+    @validate_company_user
+    def post(self,request,company,*args,**kwargs):
+
+        data = request.POST
+        domain = Domain.objects.filter(id=data.get("domain",None)).first()
+
+        if domain == None:
+            messages.error(request,"Domain Does not exists")
+            return redirect('add_bughunt',company)
+
+        start_date = datetime.strptime(data["start_date"],"%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+        end_date = datetime.strptime(data["end_date"],"%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+
+        hunt_logo = request.FILES.get("logo")
+        hunt_logo_file = hunt_logo.name.split(".")[0]
+        extension = hunt_logo.name.split(".")[-1] 
+        hunt_logo.name = hunt_logo_file[:99] + str(uuid.uuid4()) + "." + extension            
+        default_storage.save(f"logos/{hunt_logo.name}",hunt_logo)
+
+        webshot_logo = request.FILES.get("webshot") 
+        webshot_logo_file = webshot_logo.name.split(".")[0]
+        extension = webshot_logo.name.split(".")[-1] 
+        webshot_logo.name = webshot_logo_file[:99] + str(uuid.uuid4()) + "." + extension            
+        default_storage.save(f"banners/{webshot_logo.name}",webshot_logo)
+                
+
+        hunt = Hunt.objects.create(
+            name = data.get("bughunt_name",""),
+            domain = domain,
+            url = data.get("domain_url",""),
+            description = data.get("markdown-description",""),
+            starts_on = start_date,
+            end_on = end_date,
+            logo=f"logos/{hunt_logo.name}",
+            banner=f"banners/{webshot_logo.name}",
+
+        )
+
+        prizes = json.loads(data.get("prizes",""))
+        
+        for prize in prizes:
+            if prize.get("prize_name","").strip() == "":
+                continue
+
+            HuntPrize.objects.create(
+                hunt = hunt,
+                name = prize["prize_name"],
+                value = prize.get("cash_value",0),
+                no_of_eligible_projects = prize.get("number_of_winning_projects",1),
+                valid_submissions_eligible = prize.get("every_valid_submissions",False),
+                prize_in_crypto = prize.get("paid_in_cryptocurrency",False),
+                description = prize.get("prize_description",""),
+            )
+
+
+
+        messages.success(request,"successfully added the managers")
+        return redirect('add_bughunt',company)
 
 class CompanyDashboardManageBughuntView(View):
 
