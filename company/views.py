@@ -415,7 +415,6 @@ class AddDomainView(View):
         parsed_url = urlparse(domain_data["url"])
         domain = (parsed_url.hostname).replace("www.","")
 
-        # domain_data["url"] = f"{parsed_url.scheme}://{domain}" # clean the domain eg https://mail.google.com/mail1# -> https://mail.google.com  
         domain_data["name"] = domain_data["name"].lower()
 
 
@@ -860,7 +859,7 @@ class AddHuntView(View):
 
 
         messages.success(request,"successfully added the managers")
-        return redirect('add_bughunt',company)
+        return redirect('company_manage_bughunts',company)
 
 class CompanyDashboardManageBughuntView(View):
 
