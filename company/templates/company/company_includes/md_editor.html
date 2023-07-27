@@ -1,6 +1,3 @@
-{% verbatim %}
-
-
 	<style>
 		#markdown-editor {
 		width: 100%;
@@ -102,17 +99,17 @@
 			<button type="button" id="link"><i class="fa fa-link" aria-hidden="true"></i></button>
 			<button type="button" id="list-ul"><i class="fa fa-list-ul" aria-hidden="true"></i></button>
 			<button type="button" id="list-ol"><i class="fa fa-list-ol" aria-hidden="true"></i></button>
-			<button type="button" id="token">{{Token}}</button>
 		</div>
 		<button type="button" id="preview">Preview</button>
 		</div>
 		<div id="input-output">
-		<textarea id="input-area" name="markdown-description" rows="30" cols="50"></textarea>
+		<textarea id="input-area" name="markdown-description" rows="30" cols="50">{{ markdown_value }}</textarea>
 		<div id="output-area"></div>
 		<p class="preview-message">Preview Mode</p>
 		</div>
 	</div>
 
+{% verbatim %}
 
 	<script>
 		// -------------------------------------------
