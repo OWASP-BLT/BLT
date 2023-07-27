@@ -712,6 +712,10 @@ class ShowBughuntView(View):
         # get top testers
         top_testers = Issue.objects.values("user__id","user__username","user__userprofile__user_avatar").filter(user__isnull=False).annotate(count=Count('user__username')).order_by("-count")[:16]
 
+        # bughunt prizes
+        rewards = HuntPrize.objects.values().filter(hunt__id=hunt_obj.id)
+
+
         context = {
             "hunt_obj":hunt_obj,
             "stats":{
@@ -722,24 +726,48 @@ class ShowBughuntView(View):
             "bughunt_leaderboard": bughunt_leaderboard,
             "top_testers":top_testers,
             "latest_issues": cleaned_issues,
+            "rewards":rewards
         }
 
 
 
-        return render(request,"company/view_bughunt.html",context)
+        return render(request,"company/bughunt/view_bughunt.html",context)
 
 
 class AddHuntView(View):
 
+
+    def edit(self,request,company,companies,domains,hunt_id,*args,**kwargs):
+
+        hunt = get_object_or_404(Hunt,pk=hunt_id)
+        prizes = HuntPrize.objects.values().filter(hunt__id=hunt_id)
+
+        context = {
+            'company': company,
+            "company_obj": Company.objects.filter(company_id=company).first(),
+            'companies': companies,
+            'domains':domains,
+            'hunt': hunt,
+            'prizes': prizes,
+            'markdown_value': hunt.description
+        } 
+
+        return render(request,"company/bughunt/edit_bughunt.html",context)
+
     @validate_company_user
     def get(self,request,company,*args,**kwargs):
         
+        hunt_id = request.GET.get("hunt",None)
+
         companies = Company.objects.values("name","company_id").filter(
             Q(managers__in=[request.user]) | 
             Q(admin=request.user)
         ).distinct()
 
         domains = Domain.objects.values('id','name').filter(company__company_id=company)
+
+        if hunt_id != None:
+            return self.edit(request,company,companies,domains,hunt_id,*args,**kwargs)
 
         context = {
             'company': company,
@@ -748,12 +776,20 @@ class AddHuntView(View):
             'domains':domains
             }   
 
-        return render(request,"company/add_bughunt.html",context)
+        return render(request,"company/bughunt/add_bughunt.html",context)
 
     @validate_company_user
     def post(self,request,company,*args,**kwargs):
 
         data = request.POST
+
+        hunt_id = data.get("hunt_id",None) # when post is for edit hunt
+        is_edit = True if hunt_id != None else False
+
+        if is_edit:
+            hunt = get_object_or_404(Hunt,pk=hunt_id)
+
+
         domain = Domain.objects.filter(id=data.get("domain",None)).first()
 
         if domain == None:
@@ -763,32 +799,49 @@ class AddHuntView(View):
         start_date = datetime.strptime(data["start_date"],"%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
         end_date = datetime.strptime(data["end_date"],"%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
 
-        hunt_logo = request.FILES.get("logo")
-        hunt_logo_file = hunt_logo.name.split(".")[0]
-        extension = hunt_logo.name.split(".")[-1] 
-        hunt_logo.name = hunt_logo_file[:99] + str(uuid.uuid4()) + "." + extension            
-        default_storage.save(f"logos/{hunt_logo.name}",hunt_logo)
+        hunt_logo = request.FILES.get("logo",None)
+        if hunt_logo != None:
+            hunt_logo_file = hunt_logo.name.split(".")[0]
+            extension = hunt_logo.name.split(".")[-1] 
+            hunt_logo.name = hunt_logo_file[:99] + str(uuid.uuid4()) + "." + extension            
+            default_storage.save(f"logos/{hunt_logo.name}",hunt_logo)
 
-        webshot_logo = request.FILES.get("webshot") 
-        webshot_logo_file = webshot_logo.name.split(".")[0]
-        extension = webshot_logo.name.split(".")[-1] 
-        webshot_logo.name = webshot_logo_file[:99] + str(uuid.uuid4()) + "." + extension            
-        default_storage.save(f"banners/{webshot_logo.name}",webshot_logo)
-                
+        webshot_logo = request.FILES.get("webshot",None) 
+        if webshot_logo != None:
+            webshot_logo_file = webshot_logo.name.split(".")[0]
+            extension = webshot_logo.name.split(".")[-1] 
+            webshot_logo.name = webshot_logo_file[:99] + str(uuid.uuid4()) + "." + extension            
+            default_storage.save(f"banners/{webshot_logo.name}",webshot_logo)
+        
+        if is_edit:
+            hunt.name = data.get("bughunt_name","")
+            hunt.domain = domain
+            hunt.url = data.get("domain_url","")
+            hunt.description = data.get("markdown-description","")
+            hunt.starts_on = start_date
+            hunt.starts_on = start_date
+            hunt.end_on = end_date
+            hunt.is_published = False if data["publish_bughunt"] == "false" else True
+            
+            if hunt_logo != None:
+                hunt.logo = f"logos/{hunt_logo.name}"
+            if webshot_logo != None:
+                hunt.banner = f"banners/{webshot_logo.name}"
+            
+            hunt.save()
 
-        hunt = Hunt.objects.create(
-            name = data.get("bughunt_name",""),
-            domain = domain,
-            url = data.get("domain_url",""),
-            description = data.get("markdown-description",""),
-            starts_on = start_date,
-            end_on = end_date,
-            logo=f"logos/{hunt_logo.name}",
-            banner=f"banners/{webshot_logo.name}",
+        else:
+            hunt = Hunt.objects.create(
+                name = data.get("bughunt_name",""),
+                domain = domain,
+                url = data.get("domain_url",""),
+                description = data.get("markdown-description",""),
+                starts_on = start_date,
+                end_on = end_date,
+                is_published = False if data["publish_bughunt"] == "false" else True
+            )
 
-        )
-
-        prizes = json.loads(data.get("prizes",""))
+        prizes = json.loads(data.get("prizes","[]"))
         
         for prize in prizes:
             if prize.get("prize_name","").strip() == "":
@@ -814,14 +867,13 @@ class CompanyDashboardManageBughuntView(View):
     
     @validate_company_user
     def get(self,request,company,*args,**kwargs):
-                
+        
         companies = Company.objects.values("name","company_id").filter(
             Q(managers__in=[request.user]) | 
             Q(admin=request.user)
         ).distinct()
 
-
-        query = Hunt.objects.values("id","name","prize","starts_on__day","starts_on__month","starts_on__year","end_on__day","end_on__month","end_on__year").filter(domain__company__company_id=company)
+        query = Hunt.objects.values("id","name","prize","is_published","result_published","starts_on__day","starts_on__month","starts_on__year","end_on__day","end_on__month","end_on__year").filter(domain__company__company_id=company)
         filtered_bughunts = {
             "all": query,
             "ongoing": query.filter(result_published=False),
@@ -838,88 +890,4 @@ class CompanyDashboardManageBughuntView(View):
             "bughunts": filtered_bughunts.get(filter_type,[])
         }
 
-        return render(request,"company/company_manage_bughunts.html",context)
-    
-
-    # def post(self, request, *args, **kwargs):
-    #     try:
-    #         domain_admin = CompanyAdmin.objects.get(user=request.user)
-    #         if (
-    #             domain_admin.role == 1
-    #             and (
-    #                 str(domain_admin.domain.pk)
-    #                 == ((request.POST["domain"]).split("-"))[0].replace(" ", "")
-    #             )
-    #         ) or domain_admin.role == 0:
-    #             wallet, created = Wallet.objects.get_or_create(user=request.user)
-    #             total_amount = (
-    #                 Decimal(request.POST["prize_winner"])
-    #                 + Decimal(request.POST["prize_runner"])
-    #                 + Decimal(request.POST["prize_second_runner"])
-    #             )
-    #             if total_amount > wallet.current_balance:
-    #                 return HttpResponse("failed")
-    #             hunt = Hunt()
-    #             hunt.domain = Domain.objects.get(
-    #                 pk=(request.POST["domain"]).split("-")[0].replace(" ", "")
-    #             )
-    #             data = {}
-    #             data["content"] = request.POST["content"]
-    #             data["start_date"] = request.POST["start_date"]
-    #             data["end_date"] = request.POST["end_date"]
-    #             form = HuntForm(data)
-    #             if not form.is_valid():
-    #                 return HttpResponse("failed")
-    #             if not domain_admin.is_active:
-    #                 return HttpResponse("failed")
-    #             if domain_admin.role == 1:
-    #                 if hunt.domain != domain_admin.domain:
-    #                     return HttpResponse("failed")
-    #             hunt.domain = Domain.objects.get(
-    #                 pk=(request.POST["domain"]).split("-")[0].replace(" ", "")
-    #             )
-    #             tzsign = 1
-    #             offset = request.POST["tzoffset"]
-    #             if int(offset) < 0:
-    #                 offset = int(offset) * (-1)
-    #                 tzsign = -1
-    #             start_date = form.cleaned_data["start_date"]
-    #             end_date = form.cleaned_data["end_date"]
-    #             if tzsign > 0:
-    #                 start_date = start_date + timedelta(
-    #                     hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
-    #                 )
-    #                 end_date = end_date + timedelta(
-    #                     hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
-    #                 )
-    #             else:
-    #                 start_date = start_date - (
-    #                     timedelta(
-    #                         hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
-    #                     )
-    #                 )
-    #                 end_date = end_date - (
-    #                     timedelta(
-    #                         hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
-    #                     )
-    #                 )
-    #             hunt.starts_on = start_date
-    #             hunt.prize_winner = Decimal(request.POST["prize_winner"])
-    #             hunt.prize_runner = Decimal(request.POST["prize_runner"])
-    #             hunt.prize_second_runner = Decimal(request.POST["prize_second_runner"])
-    #             hunt.end_on = end_date
-    #             hunt.name = request.POST["name"]
-    #             hunt.description = request.POST["content"]
-    #             wallet.withdraw(total_amount)
-    #             wallet.save()
-    #             try:
-    #                 is_published = request.POST["publish"]
-    #                 hunt.is_published = True
-    #             except:
-    #                 hunt.is_published = False
-    #             hunt.save()
-    #             return HttpResponse("success")
-    #         else:
-    #             return HttpResponse("failed")
-    #     except:
-    #         return HttpResponse("failed")
+        return render(request,"company/bughunt/company_manage_bughunts.html",context)

@@ -65,7 +65,7 @@
                                 End Date
                             </th>
                             <th scope="col" class="px-6 py-3 text-[1rem]">
-                                Prize
+                                Status
                             </th>
                             <th scope="col" class="px-6 py-3 text-[1rem]">
                                 <span class="sr-only">View</span>
@@ -89,13 +89,19 @@
                                         {{ hunt.end_on__day }}/{{ hunt.end_on__month }}/{{ hunt.end_on__year }}
                                     </td>
                                     <td class="px-6 py-4">
-                                        ${{ hunt.prize }}
+                                        {% if not hunt.is_published %}
+                                            <p class="text-gray-500">Draft</p>
+                                        {% elif not hunt.result_published %}
+                                            <p class="text-green-500">Ongoing</p>
+                                        {% else %}
+                                            <p class="text-red-500">Ended</p>
+                                        {% endif %}
                                     </td>
                                     <td class="px-6 py-4 text-right">
                                         <a href="{% url 'show_bughunt' hunt.id %}" class="font-medium text-blue-600 hover:underline">View</a>
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <a href="#" class="font-medium text-blue-600 hover:underline">Edit</a>
+                                        <a href="{% url 'add_bughunt' company %}?hunt={{ hunt.id }}" class="font-medium text-blue-600 hover:underline">Edit</a>
                                     </td>
                                 </tr>
                             {% endfor %}
