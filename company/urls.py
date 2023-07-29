@@ -9,6 +9,7 @@ from company.views import (
     CompanyDashboardManageBughuntView,
     RegisterCompanyView,
     AddHuntView,
+    EndBughuntView,
     company_view,
 )
 
@@ -22,7 +23,7 @@ urlpatterns = [
     path("dashboard/roles/<str:company>/",CompanyDashboardManageRolesView.as_view(),name="company_manage_roles"),
     path("dashboard/bughunts/<str:company>/",CompanyDashboardManageBughuntView.as_view(),name="company_manage_bughunts"),
 
-    
+    path("dashboard/end_bughunt/<int:pk>",EndBughuntView.as_view(),name="end_bughunt"),
     path("dashboard/add_bughunt/<str:company>",AddHuntView.as_view(),name="add_bughunt"),
     path("dashboard/add_domain/<str:company>",AddDomainView.as_view(),name="add_domain"),
     path("domain/<int:pk>/",DomainView.as_view(),name="view_domain"),
