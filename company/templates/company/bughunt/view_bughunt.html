@@ -34,14 +34,21 @@
             </div>
             <div class="flex-1 flex flex-col items-center lg:items-end justify-end px-8 mt-2">
                 <div class="flex items-center space-x-4 mt-2">
-                    <button class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
-                      <i class="fa-sharp fa-solid fa-bell fa-lg text-white"></i>   
-                        <span>Subscribe</span>
-                    </button>
-                    <a href="{% url 'report'%}" class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
-                        <i class="fa-sharp fa-solid fa-bug fa-lg text-white"></i>   
-                        <span>Submit Bug</span>
-                    </a>
+                    {% if is_hunt_manager %}
+                        <a href="{% url 'end_bughunt' hunt_obj.id %}" class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
+                            <i class="fa-sharp fa-solid fa-bug fa-lg text-white"></i>   
+                            <span>End Bughunt</span>
+                        </a>
+                    {% else %}
+                        <button class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
+                        <i class="fa-sharp fa-solid fa-bell fa-lg text-white"></i>   
+                            <span>Subscribe</span>
+                        </button>
+                        <a href="{% url 'report'%}" class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
+                            <i class="fa-sharp fa-solid fa-bug fa-lg text-white"></i>   
+                            <span>Submit Bug</span>
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </div>

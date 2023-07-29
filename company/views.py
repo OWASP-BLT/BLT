@@ -493,31 +493,6 @@ class AddDomainView(View):
         messages.success(request,"Domain deleted successfully")
         return redirect("company_manage_domains",company)
 
-    # @validate_company_user
-    # def put(self,request,company,*args,**kwargs):
-
-    #     domain_id = kwargs.get("domain",None)
-    #     companies = Company.objects.values("name","company_id").filter(
-    #         Q(managers__in=[request.user]) | 
-    #         Q(admin=request.user)
-    #     )
-    #     domain_info = (
-    #         Domain.objects
-    #         .values("id","name","url","company__name","github","twitter","facebook","logo","webshot")
-    #         .filter(id=domain_id).first()
-    #     )
-    #     managers_email = User.objects.values("email").filter(user_domains__id=domain_id)
-
-    #     if domain_info == {}:
-    #         return Http404("Domain not found")
-        
-    #     context = {
-    #         'company': company,
-    #         'companies': companies,
-    #         'domain_info': managers_email
-    #     }
-    #     return render(request,"company/edit_domain.html", context)
-
 
 class DomainView(View):
 
@@ -564,6 +539,13 @@ class DomainView(View):
             .filter(domain__id=domain["id"],is_hidden=False).order_by("-created")
             [:11]
         )
+        is_domain_manager = Domain.objects.filter(
+            Q(domain__id=domain["id"]) & 
+            Q(managers__in=[request.user])
+        ).exists() 
+        if not is_domain_manager:
+            latest_issues.filter(is_hidden=False) #show public issues to normal users
+
         issue_labels = [label[-1] for label in Issue.labels]
         cleaned_issues = []
         for issue in latest_issues:
@@ -584,7 +566,7 @@ class DomainView(View):
             "total_bug_accepted": total_bug_accepted,
             "latest_issues": cleaned_issues,
             "monthly_activity_chart":self.get_current_year_monthly_reported_bar_data(domain["id"]),
-            "top_testers":top_testers,
+            "top_testers":top_testers
         }
 
         return render(request, "company/view_domain.html", context)
@@ -725,12 +707,32 @@ class ShowBughuntView(View):
             "bughunt_leaderboard": bughunt_leaderboard,
             "top_testers":top_testers,
             "latest_issues": cleaned_issues,
-            "rewards":rewards
+            "rewards":rewards,
+            "is_hunt_manager":is_hunt_manager
         }
 
 
 
         return render(request,"company/bughunt/view_bughunt.html",context)
+
+
+class EndBughuntView(View):
+
+    def get(self,request,pk,*args,**kwargs):
+
+        hunt = get_object_or_404(Hunt,pk=pk)
+
+        is_hunt_manager = hunt.domain.managers.filter(id=request.user.id).exists()
+
+        if not is_hunt_manager:
+            return Http404("User not allowed")
+        
+        hunt.result_published = True
+        hunt.save()
+        company = hunt.domain.company.company_id
+
+        messages.success(request,f"successfully Ended Bughunt {hunt.name}")
+        return redirect('company_manage_bughunts',company)
 
 
 class AddHuntView(View):
