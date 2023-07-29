@@ -64,6 +64,7 @@ from website.api.views import (
     StatsApiViewset,
     UrlCheckApiViewset,
     BugHuntApiViewset,
+    BugHuntApiViewsetV2
 )
 from company.views import ShowBughuntView
 from website.alternative_views import (
@@ -367,6 +368,9 @@ urlpatterns = [
     re_path(r"^api/v1/urlcheck/$", UrlCheckApiViewset.as_view(), name="url_check"),
     re_path(
         r"^api/v1/hunt/$",BugHuntApiViewset.as_view(),name="hunt_details"
+    ),
+    re_path(
+        r"^api/v2/hunts/$",BugHuntApiViewsetV2.as_view(),name="hunts_detail_v2"
     ),
     re_path(r"^api/v1/userscore/$", website.views.get_score, name="get_score"),
     re_path(r"^authenticate/", CustomObtainAuthToken.as_view()),
