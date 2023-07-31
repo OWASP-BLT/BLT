@@ -39,6 +39,9 @@
                             value="{{ hunt.name }}"
                             required
                             class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
+                            {% if hunt.is_published %}
+                                disabled
+                            {% endif %}
                         />
                         </div>
                     </div>
@@ -100,7 +103,7 @@
                                 <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"/>
                             </svg>
                         </div>
-                        <input name="start_date" required type="text" value="{{ hunt.starts_on }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5  " placeholder="Select date start">
+                        <input {% if hunt.is_published %} disabled {% endif %} name="start_date" required type="text" value="{{ hunt.starts_on }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5  " placeholder="Select date start">
                         </div>
                         <span class="mx-4 text-gray-500">to</span>
                         <div class="relative">
@@ -284,13 +287,16 @@
                 >
                 Cancel
                 </button>
-                <button
-                    type="submit"
-                    onclick="PublishBughunt('false')"
-                    class="rounded-md bg-gray-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
-                >
-                Draft
-                </button>
+                {% if not hunt.is_published %}
+                    <button
+                        type="submit"
+                        onclick="PublishBughunt('false')"
+                        class="rounded-md bg-gray-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
+                    >
+                        Draft
+                    </button>
+                {% endif %}
+                
                 <button
                     type="button"
                     onclick="PublishBughunt('true')"

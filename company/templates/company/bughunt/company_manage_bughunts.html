@@ -100,9 +100,15 @@
                                     <td class="px-6 py-4 text-right">
                                         <a href="{% url 'show_bughunt' hunt.id %}" class="font-medium text-blue-600 hover:underline">View</a>
                                     </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <a href="{% url 'add_bughunt' company %}?hunt={{ hunt.id }}" class="font-medium text-blue-600 hover:underline">Edit</a>
-                                    </td>
+                                    {% if hunt.result_published %}
+                                        <td class="px-6 py-4 text-right">
+                                            <a class="font-medium text-gray-600 hover:underline cursor-pointer">Edit</a>
+                                        </td>
+                                    {% else %}
+                                        <td class="px-6 py-4 text-right">
+                                            <a href="{% url 'add_bughunt' company %}?hunt={{ hunt.id }}" class="font-medium text-blue-600 hover:underline">Edit</a>
+                                        </td>
+                                    {% endif %}
                                 </tr>
                             {% endfor %}
                         {% else %}
