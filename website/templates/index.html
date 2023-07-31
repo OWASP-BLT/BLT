@@ -6,7 +6,7 @@
 {% providers_media_js %}
 {% load i18n %}f
 {% block content %}
-<script src="{% static "js/jquery.validate.js" %}"></script>
+<script src="{% static 'js/jquery.validate.js' %}"></script>
 <script src="{% static 'js/activity.js' %}"></script>
 <div class="w-full h-[30rem] flex flex-col  space-y-14 items-center">
     <p class="text-5xl text-center mt-20 font-sans sm:text-6xl lg:text-7xl">Find Bugs, Win Points and Prizes</p>
@@ -108,7 +108,7 @@
 </div>
 
 
-<p class="text-7xl text-center mb-10 font-sans text-[#B1B1B1]">TOP HUNTS</p>
+<p class="text-7xl text-center mb-10 font-sans text-[#B1B1B1]">LATEST HUNTS</p>
 
 <div class="flex items-center flex-wrap items-center w-full  justify-between mb-[100px] mt-20 sm:justify-center ">
 
@@ -126,8 +126,7 @@
                     <p class="text-3xl font-extrabold mt-6">{{hunt.name}}</p>
                     <p class="tw-font-extralight text-gray-500 text-xl mt-1">{{hunt.url}}</p>
                     <div class="flex mt-5 justify-between items-center w-[90%]">
-                        <p class="font-bold">${{hunt.prize}}</p>
-                        <button class="bg-red-600 text-white w-[100px] h-[25px] font-bold">SUBMIT BUG</button>
+                        <a href="{% url 'show_bughunt' hunt.id %}" class="bg-red-600 flex items-center justify-center text-white w-[100px] h-[25px] font-bold">MORE INFO</a>
                     </div>
                 </div>
             </div>
