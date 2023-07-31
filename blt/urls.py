@@ -403,7 +403,7 @@ urlpatterns = [
     path("robots.txt", website.views.robots_txt),
     path("ads.txt", website.views.ads_txt),
     re_path(r"^contributors/$",contributors_view,name="contributors"),
-    path("company/",include("company.urls"))
+    path("company/",include("company.urls")),
 ]
 
 if settings.DEBUG:
