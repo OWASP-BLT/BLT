@@ -6,7 +6,55 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <link rel="stylesheet" href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" />
+                    <link rel="stylesheet" href="https://unpkg.com/@tailwindcss/typography@0.2.x/dist/typography.min.css"/>
+                    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.59.2/lib/codemirror.min.css" />
+                    <link rel="preconnect" href="https://fonts.gstatic.com">
+                    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+                    <style>
+                        html { 
+                            scroll-behavior: smooth; 
+                            font-family: 'Space Grotesk', sans-serif;
+                        }
+                        .cursive {
+                            font-family: 'Nanum Pen Script', cursive;
+                        }
+                        [x-cloak] { display: none; }
+
+                        .CodeMirror-focused {   
+                            border-radius: .375rem;
+                            outline: 2px solid transparent;
+                            outline-offset: 2px;
+                            --tw-ring-opacity: 0.5;
+                            --tw-ring-color: rgba(199, 210, 254, var(--tw-ring-opacity));
+                            --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+                            --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+                            box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+                        }
+                        .CodeMirror {
+                            padding: 0.75rem;
+                            font-family: inherit;
+                            font-size: inherit;
+                            border-bottom-left-radius: .375rem;
+                            border-bottom-right-radius: .375rem;
+                            --tw-border-opacity: 1;
+                            border: 1px solid rgba(209, 213, 219, var(--tw-border-opacity));
+                        }
+                        .CodeMirror.CodeMirror-focused {
+                            --tw-border-opacity: 1;
+                            border-color: rgba(165, 180, 252, var(--tw-border-opacity));
+                        }
+
+                        .cm-s-default .cm-header,
+                        .cm-s-default .cm-variable-2 {
+                            color: rgb(31, 41, 55);
+                        }
+                    </style>
+
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
@@ -21,7 +69,14 @@
     <div class="h-full bg-gray-200 p-8">
         <div class="bg-white rounded-lg shadow-xl pb-8">
             <div class="w-full h-[250px]">
-                <img {% if webshot %} src="{{ MEDIA_URL }}{{ webshot }}" {% else %} src="https://versohydraulic.com/bitrix/templates/aspro-allcorp/images/background.png" {% endif %} class="w-full h-full rounded-tl-lg rounded-tr-lg object-cover">
+                <img 
+                    {% if hunt_obj.banner %} 
+                        src="{{ MEDIA_URL }}{{ hunt_obj.banner }}" 
+                    {% else %} 
+                        src="https://versohydraulic.com/bitrix/templates/aspro-allcorp/images/background.png" 
+                    {% endif %} 
+                    class="w-full h-full rounded-tl-lg rounded-tr-lg object-cover"
+                    >
             </div>
             <div class="flex flex-col items-center -mt-20">
                 <img src="{{ MEDIA_URL }}{{ hunt_obj.logo }}" class="w-40 h-40 border-4  rounded-full">
@@ -34,12 +89,12 @@
             </div>
             <div class="flex-1 flex flex-col items-center lg:items-end justify-end px-8 mt-2">
                 <div class="flex items-center space-x-4 mt-2">
-                    {% if is_hunt_manager %}
+                    {% if is_hunt_manager and not hunt_obj.result_published %}
                         <a href="{% url 'end_bughunt' hunt_obj.id %}" class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
                             <i class="fa-sharp fa-solid fa-bug fa-lg text-white"></i>   
                             <span>End Bughunt</span>
                         </a>
-                    {% else %}
+                    {% elif not is_hunt_manager and not hunt_obj.result_published %}
                         <button class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
                         <i class="fa-sharp fa-solid fa-bell fa-lg text-white"></i>   
                             <span>Subscribe</span>
@@ -349,16 +404,55 @@
             </div>
             
         </div>
-        
-        <div class="bg-white w-full p-10 my-5">
+
+        <div class="bg-white w-full p-10 my-5 rounded-lg shadow-md">
             <div class="w-full flex justify-between">
-                <h4 class="text-xl text-gray-900 font-bold mb-5">REWARDS</h4>
-                <a href="" class="text-md text-blue-600">View all</a>
+                <h4 class="text-xl text-gray-900 font-bold mb-5">Description</h4>
             </div>
-            <div class="flex justify-evenly w-full flex-wrap">
+            
+            <div class="w-full">
+            
+                <div
+                    x-data="markdown()"
+                    x-init="
+                        convertHtmlToMarkdown();
+                        codeMirrorEditor = CodeMirror.fromTextArea($refs.input, {
+                            mode: 'markdown',
+                            theme: 'default',
+                            lineWrapping: true
+                        });
+
+                        codeMirrorEditor.setValue(content);
+                        codeMirrorEditor.setSize('100%', height);
+                        setTimeout(function() {
+                            codeMirrorEditor.refresh();
+                        }, 1);
+
+                        codeMirrorEditor.on('change', () => content = codeMirrorEditor.getValue())
+                    "
+                    class="relative"
+                    x-cloak
+                >
+                    <div class="bg-gray-50 border border-b-0 border-gray-300 top-0 left-0 right-0 block rounded-t-md">
+                        <button type="button" id="mdPreview" class="py-2 px-4 inline-block text-gray-400 font-semibold" :class="{ 'text-indigo-600': tab === 'preview' && showConvertedMarkdown === true }" x-on:click.prevent="tab = 'preview'; convertedMarkdown()">See Description</button>
+                    </div>
+
+                    <div x-show="showConvertedMarkdown">
+                        <div x-html="convertedContent" class="w-full prose max-w-none prose-indigo leading-6 rounded-b-md shadow-sm border border-gray-300 p-5 bg-white overflow-y-auto" :style="`height: ${height}; max-width: 100%`"></div>
+                    </div>
+                </div>
+
+            </div>            
+        </div>
+        
+        <div class="bg-white w-full p-10 my-5 rounded-lg shadow-md">
+            <div class="w-full flex justify-between">
+                <h4 class="text-xl text-gray-900 font-bold mb-5">Rewards</h4>
+            </div>
+            <div class="flex justify-start w-full overflow-x-scroll">
                     
                     {% for reward in rewards %}
-                        <div class="w-full max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-8">
+                        <div class="min-w-[400px] w-full max-w-sm p-4 m-5 bg-white border border-gray-200 rounded-lg shadow-md sm:p-8">
                             <h5 class="mb-4 text-xl font-medium text-gray-700">{{ reward.name }}</h5>
                             <div class="flex items-baseline text-gray-900">
                                 <span class="text-3xl font-semibold">$</span>
@@ -370,9 +464,9 @@
                                         <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z"/>
                                     </svg>
                                     {% if reward.valid_submissions_eligible %}
-                                        <span class="text-base font-normal leading-tight text-gray-500">Eligiblity: All Accepted Bugs</span>
+                                        <span class="text-base font-normal leading-tight text-gray-500">Each Accepted Bug will recieve ${{ reward.value }}</span>
                                     {% else %}
-                                        <span class="text-base font-normal leading-tight text-gray-500">Eligiblity: Top {{ reward.no_of_eligible_projects }}</span>
+                                        <span class="text-base font-normal leading-tight text-gray-500">Top {{ reward.no_of_eligible_projects }} Users</span>
                                     {% endif %}
                                 </li>
                                 {% if reward.prize_in_crypto %}
@@ -384,7 +478,7 @@
                                     </li>
                                 {% endif %}
                             </ul>
-                            <button type="button" class="text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-200 font-medium rounded-lg text-xl px-5 py-2.5 inline-flex justify-center w-full text-center">Submit Bug</button>
+                            <button type="button" class="text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-200 font-medium rounded-lg text-lg px-5 py-1.5 inline-flex justify-center w-1/2 text-center">MORE INFO</button>
                         </div>
                     {% endfor %}
             </div>
@@ -454,7 +548,9 @@
                     
                         {% for tester in top_testers %}
                             <a href="{% url 'profile' tester.user__username %}" class="flex flex-col items-center m-5 justify-center text-gray-800 hover:text-red-600" title="View Profile">
-                                <img src="{{MEDIA_URL}}{{ tester.user__userprofile__user_avatar }}" class="w-[100px] rounded-full">
+                                <div class="w-[100px] h-[100px] rounded-full border-[1px] border-gray-500 overflow-hidden flex items-center justify-center">
+                                    <img src="{{MEDIA_URL}}{{ tester.user__userprofile__user_avatar }}" class="object-cover">
+                                </div>
                                 <p class="text-center font-bold text-sm mt-1">{{ tester.user__username }}</p>
                                 <p class="text-xs text-gray-500 text-center">Reported {{ tester.count }} Bugs</p>
                             </a>
@@ -505,3 +601,62 @@
         </script>
 </body>
 </html>
+
+<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.59.2/lib/codemirror.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.59.2/mode/markdown/markdown.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/turndown@7.0.0/dist/turndown.min.js"></script>
+<script src="https://unpkg.com/marked@0.3.6/lib/marked.js"></script>
+<script>
+    function markdown() {
+        return {
+            height: '500px',
+            tab: 'write',
+            content: '',
+            showConvertedMarkdown: false,
+            convertedContent: '',
+            convertedMarkdown() {
+                this.showConvertedMarkdown = true;
+                this.convertedContent = marked(`{{ hunt_obj.description }}`, { sanitize: true });
+            },
+            convertHtmlToMarkdown() {
+                turndownService = new TurndownService({
+                    headingStyle: 'atx',
+                    codeBlockStyle: 'fenced'
+                });
+
+                this.content = turndownService.turndown(`
+                    <h1 id="sample-markdown">Sample Markdown</h1>
+                    <p>This is some basic, sample markdown.</p>
+                    <h2 id="second-heading">Second Heading</h2>
+                    <ul>
+                    <li>Unordered lists, and:<ol>
+                    <li>One</li>
+                    <li>Two</li>
+                    <li>Three</li>
+                    </ol>
+                    </li>
+                    <li>More</li>
+                    </ul>
+                    <blockquote>
+                    <p>Blockquote</p>
+                    </blockquote>
+                    <p>And <strong>bold</strong>, <em>italics</em>, and even <em>italics and later <strong>bold</strong></em>. Even <del>strikethrough</del>. <a href="https://markdowntohtml.com">A link</a> to somewhere.</p>
+                    <p>And code highlighting:</p>
+                    <pre><code class="lang-js"><span class="hljs-keyword">var</span> foo = <span class="hljs-string">'bar'</span>;
+
+                    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">baz</span><span class="hljs-params">(s)</span> </span>{
+                    <span class="hljs-keyword">return</span> foo + <span class="hljs-string">':'</span> + s;
+                    }
+                    </code></pre>
+                    <p>Or inline code like <code>var foo = &#39;bar&#39;;</code>.</p>
+                    <p>Or an image of bears</p>
+                    <p><img src="http://placebear.com/200/200" alt="bears"></p>
+                    <p>The end ...</p>
+                `);
+            }
+        }
+    }
+    let prev = document.getElementById("mdPreview");
+    prev.onload(()=>prev.click())
+</script>
