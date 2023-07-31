@@ -576,9 +576,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 )
                 domain.save()
             
+            hunt = self.request.POST.get("hunt")
+            hunt = Hunt.objects.filter(id=hunt).first()
 
             obj.domain = domain
             obj.is_hidden = bool(self.request.POST.get("private",False))
+            obj.hunt = hunt
             obj.save()
 
 
@@ -712,7 +715,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
         context["captcha_form"] = CaptchaForm()
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["hunts"] = Hunt.objects.exclude(plan="Free")[:4]
         context["leaderboard"] = (
             User.objects.filter(
                 points__created__month=datetime.now().month,
@@ -721,6 +723,18 @@ class IssueCreate(IssueBaseCreate, CreateView):
             .annotate(total_score=Sum("points__score"))
             .order_by("-total_score")[:10],
         )
+
+        # automatically add specified hunt to dropdown of Bugreport
+        report_on_hunt = self.request.GET.get("hunt",None)
+        if report_on_hunt:
+            context["hunts"] = Hunt.objects.values("id","name").filter(id=report_on_hunt)
+            context["report_on_hunt"] = True
+        else:    
+            context["hunts"] = Hunt.objects.values("id","name").all()
+            context["report_on_hunt"] = False
+
+
+
         return context
 
 
