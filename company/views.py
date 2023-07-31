@@ -540,7 +540,7 @@ class DomainView(View):
             [:11]
         )
         is_domain_manager = Domain.objects.filter(
-            Q(domain__id=domain["id"]) & 
+            Q(id=domain["id"]) & 
             Q(managers__in=[request.user])
         ).exists() 
         if not is_domain_manager:
@@ -797,8 +797,11 @@ class AddHuntView(View):
             messages.error(request,"Domain Does not exists")
             return redirect('add_bughunt',company)
 
-        start_date = datetime.strptime(data["start_date"],"%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
-        end_date = datetime.strptime(data["end_date"],"%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+        start_date = data.get("start_date",datetime.now().strftime("%m/%d/%Y"))
+        end_date = data.get("end_date",datetime.now().strftime("%m/%d/%Y"))
+
+        start_date = datetime.strptime(start_date,"%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+        end_date = datetime.strptime(end_date,"%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
 
         hunt_logo = request.FILES.get("logo",None)
         if hunt_logo != None:
@@ -815,12 +818,14 @@ class AddHuntView(View):
             default_storage.save(f"banners/{webshot_logo.name}",webshot_logo)
         
         if is_edit:
-            hunt.name = data.get("bughunt_name","")
             hunt.domain = domain
             hunt.url = data.get("domain_url","")
             hunt.description = data.get("markdown-description","")
-            hunt.starts_on = start_date
-            hunt.starts_on = start_date
+            
+            if not hunt.is_published:
+                hunt.name = data.get("bughunt_name","")
+                hunt.starts_on = start_date
+            
             hunt.end_on = end_date
             hunt.is_published = False if data["publish_bughunt"] == "false" else True
             
@@ -877,9 +882,9 @@ class CompanyDashboardManageBughuntView(View):
         query = Hunt.objects.values("id","name","prize","is_published","result_published","starts_on__day","starts_on__month","starts_on__year","end_on__day","end_on__month","end_on__year").filter(domain__company__company_id=company)
         filtered_bughunts = {
             "all": query,
-            "ongoing": query.filter(result_published=False),
+            "ongoing": query.filter(result_published=False,is_published=True),
             "ended": query.filter(result_published=True),
-            "draft": query.filter(is_published=False)
+            "draft": query.filter(result_published=False,is_published=False)
         } 
 
         filter_type = request.GET.get("filter","all")
