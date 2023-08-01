@@ -118,7 +118,18 @@ def index(request, template="index.html"):
     top_testers = Issue.objects.values("user__id","user__username").filter(user__isnull=False).annotate(count=Count('user__username')).order_by("-count")[:10]
     activities = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:10]
     
-    top_hunts = Hunt.objects.values('id','name','url','logo').annotate(total_prize=Sum("huntprize__value")).filter(is_published=True,result_published=False).order_by("-created")[:3]
+    top_hunts = Hunt.objects.values(
+        'id',
+        'name',
+        'url',
+        'logo',
+        'starts_on__day',
+        'starts_on__month',
+        'starts_on__year',
+        'end_on__day',
+        'end_on__month',
+        'end_on__year',
+        ).annotate(total_prize=Sum("huntprize__value")).filter(is_published=True,result_published=False).order_by("-created")[:3]
 
     context = {
         "server_url": request.build_absolute_uri('/'),
