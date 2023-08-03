@@ -2183,8 +2183,6 @@ class ListHunts(TemplateView):
         domain = request.GET.get("domain",None)
         hunt_type = request.GET.get("hunt_type","all")
 
-        print(hunt_type,domain,search,start_date,end_date)
-
         hunts = Hunt.objects.values(
         'id',
         'name',
