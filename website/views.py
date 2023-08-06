@@ -1524,6 +1524,16 @@ class HuntCreate(CreateView):
         return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HH7MNY6KJGZFW"
 
 
+class IssueView2(DetailView):
+    model = Issue
+    slug_field = "id"
+    template_name = "issue2.html"
+
+    def get(self, request, *args, **kwargs):
+        
+        return render(request,self.template_name)
+        
+
 class IssueView(DetailView):
     model = Issue
     slug_field = "id"
