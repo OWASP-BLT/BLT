@@ -1,5 +1,16 @@
 {% extends 'base.html' %}
+<<<<<<< Updated upstream
 
+=======
+{% load static %}
+{% load gravatar %}
+
+{% block head %}
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.0/flowbite.min.js"></script>
+
+{% endblock %}
+>>>>>>> Stashed changes
 
 {% block natural_content %}
 
@@ -12,6 +23,7 @@
                 <div class="w-full flex items-center flex-col">
                     
                     <p class="text-gray-800">
+<<<<<<< Updated upstream
                         <strong>Published</strong>
                         <span class="font-light text-2xl">August 3, 2022, 2:20am EDT</span>
                     </p>
@@ -22,6 +34,18 @@
     
                     <p class="text-black font-bold text-6xl text-center w-[60%] mt-5 leading-snug">
                         Flowbite Blocks Tutorial - Learn how to get started with custom sections using the Flowbite Blocks
+=======
+                        <strong>Published on</strong>
+                        <span class="font-light text-2xl">{{ bug_info.createdAt }}</span>
+                    </p>
+                    <p class="text-gray-800 ">
+                        <strong>Reported on</strong>
+                        <span class="font-light text-2xl"><a href="">{{ object.url }}</a></span>
+                    </p>
+    
+                    <p class="text-black font-bold text-6xl text-center w-[90%] xl:w-[60%] mt-5 leading-snug">
+                        {{ object.description }}
+>>>>>>> Stashed changes
                     </p>
 
                 </div>
@@ -29,6 +53,7 @@
 
             <div class="w-full flex justify-between mt-20 flex-wrap-reverse">
 
+<<<<<<< Updated upstream
                 <div class="w-full xl:w-[70%] pl-20">
 
                     <div class="border-t-[1px] border-b-[1px] justify-between w-full min-h-[70px] flex items-center mb-10 border-gray-300 flex-wrap">
@@ -63,6 +88,51 @@
                                 Tweet
                             </button>
                             <button class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100">
+=======
+                <div class="w-full xl:w-[70%] xl:pl-20">
+
+                    <div class="border-t-[1px] border-b-[1px] w-full min-h-[70px] flex flex-col xl:flex-row justify-between items-center mb-10 border-gray-300 flex-wrap pt-7 xl:p-0">
+                        <div class="flex items-center">
+                            <div class="w-[50px] h-[50px] rounded-full object-fill mr-4 flex items-center justify-center overflow-hidden">
+                                {% if object.user.username %}
+                                    {% if object.user.userprofile.user_avatar %}
+                                    <img class="w-full h-full object-cover" src="{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}" alt="User Profile Logo">
+                                    {% else %}
+                                    <img class="w-full h-full object-cover" src="{% gravatar_url object.user.email 100 %}" alt="User Profile Logo">
+                                    {% endif %}
+                                {% else %}
+                                    <img class="w-full h-full object-cover" src="{% static 'images/dummy-user.png' %}" alt="User Profile Logo">
+                                {% endif %}
+
+                            </div>
+                            <div class="flex flex-col justify-center">
+
+                                <a href="/profile/{{ object.user.username }}">
+                                    Reported By 
+                                    <span class="font-bold">{{ object.user.username|default_if_none:"Anonymous" }}</span>
+                                </a>
+                                <p class="text-xl text-gray-600">Report viewed by {{ object.views }} users</p>
+                            </div>
+                        </div>
+                        <div class="w-full xl:w-[60%] mt-10 xl:mt-0 flex flex-wrap justify-between text-black">
+                            <button class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
+                                <i class="fa-regular fa-thumbs-up text-2xl mr-2"> </i>
+                                {{ likes }} Upvotes
+                            </button>
+                            <button class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
+                                <i class="fa-solid fa-flag text-2xl mr-2"> </i>
+                                {{ flags }} Flags
+                            </button>
+                            <button class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
+                                <i class="fa-brands fa-facebook text-2xl mr-2"> </i>
+                                Share
+                            </button>
+                            <button class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
+                                <i class="fa-brands fa-twitter text-2xl mr-2"> </i>
+                                Tweet
+                            </button>
+                            <button class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
+>>>>>>> Stashed changes
                                 <i class="fa-solid fa-link text-2xl mr-2"> </i>
                                 Copy Link
                             </button>
@@ -70,6 +140,7 @@
                         </div>
                     </div>
 
+<<<<<<< Updated upstream
                     <p class="lead">Flowbite is an open-source library of UI components built with the utility-first
                         classes from Tailwind CSS. It also includes interactive elements such as dropdowns, modals,
                         datepickers.</p>
@@ -247,6 +318,68 @@
                                 <div class="w-full flex justify-between">
                                     <p class="text-3xl font-bold">Reported On:</p>
                                     <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">August 10 2023</span>
+=======
+                    <p class="text-3xl font-bold">Screenshots (5)</p>
+                    <div class="w-[full flex overflow-x-scroll">
+                        {% if object.screenshot %}
+                            <a href="{{ object.screenshot.url }}" data-lightbox="image">
+                                <img class="w-[500px] h-[250px] object-cover rounded-lg m-5" src="{{ object.screenshot.url }}" alt="Image thumbnail">
+                            </a>
+                        {% else %}
+                            {% for screenshot in screenshots %}
+                                <a href="{{ screenshot.image.url }}" data-lightbox="image">
+                                    <img class="w-[500px] h-[250px] object-cover rounded-lg m-5" src="{{ screenshot.image.url }}" alt="Screenshot">
+
+                                </a>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div id="bug_report  " class="w-full flex flex-col items-center">
+
+                    </div>
+                    
+                </div>
+
+
+                <div class="w-full xl:w-[30%] flex flex-row xl:flex-col xl:items-center lg:min-w-[450px] justify-evenly xl:justify-normal items-center flex-wrap">
+
+                    <div class="w-[500px] xl:w-[80%] border-[1px] border-gray-300 rounded-2xl shadow-md p-7 cursor-pointer mb-10">
+                        <div class="w-full flex items-center">  
+                            <div class="w-[100%] p-3 flex flex-col justify-between">
+                                <div class="w-full flex justify-between my-3">
+                                    <p class="text-3xl font-bold">Bug Type:</p>
+                                    <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">{{ object.get_label_display }}</span>
+                                </div>
+                                <div class="w-full flex justify-between my-3">
+                                    <p class="text-3xl font-bold">Status:</p>
+                                    <div class="w-1/2 flex {% if request.user == object.user %} justify-between {% else %} justify-end {% endif %}">
+                                        {% if request.user == object.user %}
+                                            <a class="font-bold bg-gray-600 px-5 py-1 text-white rounded-xl">Click
+                                                to
+                                                {% if object.status == "open" %}Close{% else %}Open{% endif %}
+                                            </a>
+                                        {% endif %}
+                                        <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">
+                                            {% if object.status == "open" %}Close{% else %}Open{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="w-full flex justify-between my-3">
+                                    <p class="text-3xl font-bold">Reported On:</p>
+                                    <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">{{ bug_info.createdAtShort }}</span>
+                                </div>
+                                <div class="w-full flex justify-between my-3">
+                                    <p class="text-3xl font-bold">Submitted:</p>
+                                    
+                                    {% if object.hunt == None %}
+                                    
+                                    <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">Independently</span>
+                                    
+                                    {% else %}
+                                        <a class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl" href="{% url 'show_bughunt' object.hunt.id %}">{{ object.hunt.name }}</a>
+                                    {% endif %}
+>>>>>>> Stashed changes
                                 </div>
                             </div>
                         </div>
@@ -254,6 +387,7 @@
 
                     <div class="w-[500px] xl:w-[80%] border-[1px] border-gray-300 rounded-2xl shadow-md p-7 cursor-pointer mb-10">
                         <div class="w-full flex items-center">
+<<<<<<< Updated upstream
                             <div class="w-[90px] h-[90px] rounded-full object-fill flex flex-col  overflow-hidden">
                                 <img class="w-full h-full object-cover" src="https://www.bugheist.com/static/img/browser-logos/firefox/firefox_64x64.png" alt="">
                             </div>
@@ -262,6 +396,27 @@
                                 <p class="text-3xl font-light">Browser Version: <span class="font-bold">112.0</span></p>
                                 <p class="text-3xl font-light">Operating System: <span class="font-bold">Linux</span></p>
                                 <p class="text-3xl font-light">OS Version: <span class="font-bold"></span></p>
+=======
+                            
+                            <div class="w-[90px] h-[90px] rounded-full object-fill flex flex-col  overflow-hidden">
+                                {% if browser_family %}
+                                    {% with 'img/browser-logos/'|add:browser_family|add:'/'|add:browser_family|add:'_64x64.png'|lower as image_static %}
+                                        <img class="w-full h-full object-cover" src="{% static image_static %}" alt="Browser Image">
+                                    {% endwith %}
+                                {% endif %}
+                            </div>
+    
+                            <div class="full p-3 flex flex-col justify-center">
+                                <p class="text-3xl font-light">Browser Version: <span class="font-bold text-2xl">{{ browser_version }}</span></p>
+                                <p class="text-3xl font-light">Operating System: <span class="font-bold text-2xl">{{ os_family }}</span></p>
+                                <p class="text-3xl font-light">OS Version: <span class="font-bold text-2xl">
+                                    {% if os_version %}
+                                        {{ os_version }}
+                                    {% else %}
+                                        Unknown
+                                    {% endif %}
+                                </span></p>
+>>>>>>> Stashed changes
                             </div>
                         </div>
                     </div>
@@ -269,12 +424,21 @@
                     <div class="w-[500px] xl:w-[80%] border-[1px] border-gray-300 rounded-2xl shadow-md p-7 cursor-pointer mb-10">
                         <div class="w-full flex items-center">
                             <div class="w-[90px] h-[90px] rounded-full object-fill border-black border-[1px] flex flex-col  overflow-hidden">
+<<<<<<< Updated upstream
                                 <img class="w-full h-full object-cover" src="https://storage.googleapis.com/bhfiles/logos/basij.ir.jpg" alt="">
                             </div>
     
                             <div class="full p-3 flex flex-col justify-center">
                                 <a class="font-bold text-3xl" href="#">Reported on Google.com</a>
                                 <p class="text-2xl font-light">Total <span class="font-bold">10</span> bugs reported</p>
+=======
+                                <img class="w-full h-full object-cover" src="{{ object.domain.get_logo }}" alt="">
+                            </div>
+    
+                            <div class="full p-3 flex flex-col justify-center">
+                                <a class="font-bold text-3xl" href="/domain/{{ object.domain_name }}">Reported on {{ object.domain.name }}</a>
+                                <p class="text-2xl font-light">Total <span class="font-bold">{{ issue_count }}</span> bugs reported</p>
+>>>>>>> Stashed changes
                             </div>
                         </div>
 
@@ -286,12 +450,29 @@
                     <div class="w-[500px] xl:w-[80%] border-[1px] border-gray-300 rounded-2xl shadow-md p-7 cursor-pointer mb-10">
                         <div class="w-full flex items-center">
                             <div class="w-[90px] h-[90px] rounded-full object-fill border-black border-[1px] flex flex-col  overflow-hidden">
+<<<<<<< Updated upstream
                                 <img class="w-full h-full object-cover" src="https://secure.gravatar.com/avatar/54e1af8b11945e8712b0b550a6ce0a11.jpg?s=100&d=mm&r=g" alt="">
                             </div>
     
                             <div class="full p-3 flex flex-col justify-center">
                                 <a class="font-bold text-3xl" href="#">Reported By Swapnil332</a>
                                 <p class="text-2xl font-light">Total points <span class="font-bold">10</span></p>
+=======
+                                {% if object.user.username %}
+                                    {% if object.user.userprofile.user_avatar %}
+                                    <img class="w-full h-full object-cover" src="{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}" alt="User Profile Logo">
+                                    {% else %}
+                                    <img class="w-full h-full object-cover" src="{% gravatar_url object.user.email 100 %}" alt="User Profile Logo">
+                                    {% endif %}
+                                {% else %}
+                                    <img class="w-full h-full object-cover" src="{% static 'images/dummy-user.png' %}" alt="User Profile Logo">
+                                {% endif %}
+                            </div>
+    
+                            <div class="full p-3 flex flex-col justify-center">
+                                <a class="font-bold text-3xl" href="/profile/{{ object.user.username }}">Reported By {{ object.user.username|default_if_none:"Anonymous" }}</a>
+                                <p class="text-2xl font-light">Total points <span class="font-bold">{{ users_score }}</span></p>
+>>>>>>> Stashed changes
                             </div>
                         </div>
 
@@ -304,6 +485,7 @@
 
             </div>
 
+<<<<<<< Updated upstream
             <section class="not-format">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-lg lg:text-2xl font-bold text-gray-900 ">Discussion (20)</h2>
@@ -317,6 +499,21 @@
                     </div>
                     <button type="submit"
                         class="inline-flex items-center py-2.5 px-4 text-xs font-medium text-center text-white bg-primary-700 rounded-lg focus:ring-4 focus:ring-primary-200  hover:bg-primary-800">
+=======
+            <section class="not-format mt-10">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl lg:text-3xl font-bold text-gray-900 ">Comments (20)</h2>
+                </div>
+                <form class="mb-6">
+                    <div class="py-2 px-4 mb-4 bg-white rounded-lg rounded-t-lg border border-gray-200 ">
+                        <label for="comment" class="sr-only">Your comment</label>
+                        <textarea id="comment" rows="6"
+                            class="px-0 w-full text-xl text-gray-900 border-0"
+                            placeholder="Write a comment..." required></textarea>
+                    </div>
+                    <button type="submit"
+                        class="inline-flex items-center py-2.5 px-4 text-xl xl:text-2xl font-medium text-center text-white bg-red-700 rounded-lg  hover:bg-red-800">
+>>>>>>> Stashed changes
                         Post comment
                     </button>
                 </form>
@@ -527,8 +724,13 @@
   </main>
   
   <aside aria-label="Related articles" class="py-8 lg:py-24 bg-gray-50 ">
+<<<<<<< Updated upstream
     <div class="px-4 mx-auto max-w-screen-xl">
         <h2 class="mb-8 text-2xl font-bold text-gray-900 ">Related articles</h2>
+=======
+    <div class="w-full px-20">
+        <h2 class="mb-8 text-4xl font-bold text-gray-900 ">More Bugs from {{ object.user.username }}</h2>
+>>>>>>> Stashed changes
         <div class="grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
             <article class="max-w-xs">
                 <a href="#">
@@ -606,5 +808,16 @@
     </div>
   </section>
 
+<<<<<<< Updated upstream
 
 {% endblock %}
+=======
+  <script>
+    const markdownContent = document.getElementById('bug_report').textContent;
+    const renderedHtml = marked(markdownContent);
+
+    document.getElementById('rendered-html').innerHTML = renderedHtml;
+  </script>
+
+{% endblock %}
+>>>>>>> Stashed changes
