@@ -3,17 +3,18 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.storage import default_storage
 from django.test import TestCase
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium import webdriver
 from django.test.utils import override_settings
 import os
+import chromedriver_autoinstaller
 
 from django.test import LiveServerTestCase
 
 os.environ['DJANGO_LIVE_TEST_SERVER_ADDRESS'] = 'localhost:8082'
+chromedriver_autoinstaller.install()
 
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ['initial_data.json']
@@ -26,8 +27,7 @@ class MySeleniumTests(LiveServerTestCase):
         option.add_argument("window-size=1920,1080")
 
         # switch these
-        cls.selenium = webdriver.Chrome(ChromeDriverManager(
-        ).install(), desired_capabilities=d, options=option)
+        cls.selenium = webdriver.Chrome(desired_capabilities=d, options=option)
         super(MySeleniumTests, cls).setUpClass()
 
     @classmethod
