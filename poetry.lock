@@ -299,6 +299,17 @@ files = [
 ]
 
 [[package]]
+name = "chromedriver-autoinstaller"
+version = "0.6.2"
+description = "Automatically install chromedriver that supports the currently installed version of chrome."
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "chromedriver-autoinstaller-0.6.2.tar.gz", hash = "sha256:8ff5c715160b294c9e7cc0fae5ecc5ccaff5563ca1405daed6b959cca606e57c"},
+    {file = "chromedriver_autoinstaller-0.6.2-py3-none-any.whl", hash = "sha256:7055e3e5a64e4352855fafab15d266e2ed325620222224fb261a2131e821dfe3"},
+]
+
+[[package]]
 name = "click"
 version = "8.1.3"
 description = "Composable command line interface toolkit"
