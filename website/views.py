@@ -589,12 +589,13 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 )
                 domain.save()
             
-            hunt = self.request.POST.get("hunt")
-            hunt = Hunt.objects.filter(id=hunt).first()
+            hunt = self.request.POST.get("hunt",None)
+            if hunt != None and hunt!="None":
+                hunt = Hunt.objects.filter(id=hunt).first()
+                obj.hunt = hunt
 
             obj.domain = domain
             obj.is_hidden = bool(self.request.POST.get("private",False))
-            obj.hunt = hunt
             obj.save()
 
 

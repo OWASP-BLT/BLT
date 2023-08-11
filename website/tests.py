@@ -56,9 +56,10 @@ class MySeleniumTests(LiveServerTestCase):
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element('tag name', 'body')
         self.assertIn('bugbug (0 Pts)', body.text)
-
+    
     @override_settings(DEBUG=True)
     def test_post_bug_full_url(self):
+
         self.selenium.set_page_load_timeout(70)
         self.selenium.get('%s%s' % (self.live_server_url, '/accounts/login/'))
         self.selenium.find_element("name", "login").send_keys('bugbug')
@@ -68,9 +69,9 @@ class MySeleniumTests(LiveServerTestCase):
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
         self.selenium.get('%s%s' % (self.live_server_url, '/report/'))
-        self.selenium.find_element("name", "url").send_keys('https://www.bugheist.com/report/')
-        self.selenium.find_element("name","markdown_description").send_keys("Test markdown description")
-        self.selenium.find_element("id", "description").send_keys('Description of bug')
+        self.selenium.find_element("name", "url").send_keys("https://www.bugheist.com/report/")
+        self.selenium.find_element("id", "description").send_keys('XSS Attack on Google') # title of bug  
+        self.selenium.find_element("id", "markdownInput").send_keys('Description of bug')
         Imagepath = os.path.abspath(os.path.join(os.getcwd(), 'website/static/img/background.jpg'))
         self.selenium.find_element("name", "screenshots").send_keys(Imagepath)
         # pass captacha if in test mode
@@ -79,10 +80,11 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.get('%s%s' % (self.live_server_url, '/all_activity/'))
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element('tag name', 'body')
-        self.assertIn('Description of bug', body.text)
+        self.assertIn('XSS Attack on Google', body.text)
+
 
     @override_settings(DEBUG=True)
-    def test_post_bug(self):
+    def test_post_bug_domain_url(self):
         self.selenium.set_page_load_timeout(70)
         self.selenium.get('%s%s' % (self.live_server_url, '/accounts/login/'))
         self.selenium.find_element("name", "login").send_keys('bugbug')
@@ -92,9 +94,9 @@ class MySeleniumTests(LiveServerTestCase):
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
         self.selenium.get('%s%s' % (self.live_server_url, '/report/'))
-        self.selenium.find_element("name", "url").send_keys('https://google.com')
-        self.selenium.find_element("name","markdown_description").send_keys("Test markdown description")
-        self.selenium.find_element("id", "description").send_keys('Description of bug')
+        self.selenium.find_element("name", "url").send_keys("https://google.com")
+        self.selenium.find_element("id", "description").send_keys('XSS Attack on Google') # title of bug  
+        self.selenium.find_element("id", "markdownInput").send_keys('Description of bug')
         Imagepath = os.path.abspath(os.path.join(os.getcwd(), 'website/static/img/background.jpg'))
         self.selenium.find_element("name", "screenshots").send_keys(Imagepath)
         # pass captacha if in test mode
@@ -103,7 +105,7 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.get('%s%s' % (self.live_server_url, '/all_activity/'))
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element('tag name', 'body')
-        self.assertIn('Description of bug', body.text)
+        self.assertIn('XSS Attack on Google', body.text)
 
 class HideImage(TestCase):
     def setUp(self):
