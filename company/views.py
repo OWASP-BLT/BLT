@@ -4,7 +4,7 @@ import json
 from django import http 
 import requests
 from urllib.parse import urlparse
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import DetailView, TemplateView, ListView, View
@@ -17,7 +17,7 @@ from django.core.files.storage import default_storage
 from django.contrib.auth.models import User
 from django.http import Http404
 
-from website.models import Company, Domain, Issue, Hunt, UserProfile
+from website.models import Company, Domain, Issue, Hunt, UserProfile, HuntPrize
 
 restricted_domain = ["gmail.com","hotmail.com","outlook.com","yahoo.com","proton.com"]
 
@@ -111,7 +111,7 @@ class RegisterCompanyView(View):
             return redirect("register_company")
         
 
-        managers = User.objects.values("id").filter(email__in=data["email"])
+        managers = User.objects.values("id").filter(email__in=data.get("email",[]))
 
         company = Company.objects.filter(name=data["company_name"]).first()
 
@@ -131,7 +131,7 @@ class RegisterCompanyView(View):
             email=data["support_email"],
             twitter=data["twitter_url"],
             facebook=data["facebook_url"],
-            logo=f"logos/{company_logo.name}",
+            logo=f"company_logos/{company_logo.name}",
             is_active=True,
             company_id=uuid.uuid4()
         )
@@ -413,9 +413,8 @@ class AddDomainView(View):
             return redirect("add_domain",company)
         
         parsed_url = urlparse(domain_data["url"])
-        domain = parsed_url.hostname
+        domain = (parsed_url.hostname).replace("www.","")
 
-        domain_data["url"] = f"{parsed_url.scheme}://{domain}" # clean the domain eg https://mail.google.com/mail1# -> https://mail.google.com  
         domain_data["name"] = domain_data["name"].lower()
 
 
@@ -425,7 +424,7 @@ class AddDomainView(View):
 
         domain_exist = Domain.objects.filter(
             Q(name=domain_data["name"]) |
-            Q(url=domain)
+            Q(url=domain_data["url"])
         ).exists()
 
         if domain_exist:
@@ -434,10 +433,12 @@ class AddDomainView(View):
 
         # validate domain url
         try:
-            response = requests.get(domain_data["url"] ,timeout=2)
+            print(domain_data["url"])
+            response = requests.get(domain_data["url"] ,timeout=5)
             if response.status_code != 200:
                 raise Exception
-        except:
+        except Exception as e:
+            print(e)
             messages.error(request,"Domain does not exist.")
             return redirect("add_domain",company)
         
@@ -492,31 +493,6 @@ class AddDomainView(View):
         messages.success(request,"Domain deleted successfully")
         return redirect("company_manage_domains",company)
 
-    # @validate_company_user
-    # def put(self,request,company,*args,**kwargs):
-
-    #     domain_id = kwargs.get("domain",None)
-    #     companies = Company.objects.values("name","company_id").filter(
-    #         Q(managers__in=[request.user]) | 
-    #         Q(admin=request.user)
-    #     )
-    #     domain_info = (
-    #         Domain.objects
-    #         .values("id","name","url","company__name","github","twitter","facebook","logo","webshot")
-    #         .filter(id=domain_id).first()
-    #     )
-    #     managers_email = User.objects.values("email").filter(user_domains__id=domain_id)
-
-    #     if domain_info == {}:
-    #         return Http404("Domain not found")
-        
-    #     context = {
-    #         'company': company,
-    #         'companies': companies,
-    #         'domain_info': managers_email
-    #     }
-    #     return render(request,"company/edit_domain.html", context)
-
 
 class DomainView(View):
 
@@ -563,6 +539,13 @@ class DomainView(View):
             .filter(domain__id=domain["id"],is_hidden=False).order_by("-created")
             [:11]
         )
+        is_domain_manager = Domain.objects.filter(
+            Q(id=domain["id"]) & 
+            Q(managers__in=[request.user])
+        ).exists() 
+        if not is_domain_manager:
+            latest_issues.filter(is_hidden=False) #show public issues to normal users
+
         issue_labels = [label[-1] for label in Issue.labels]
         cleaned_issues = []
         for issue in latest_issues:
@@ -583,7 +566,7 @@ class DomainView(View):
             "total_bug_accepted": total_bug_accepted,
             "latest_issues": cleaned_issues,
             "monthly_activity_chart":self.get_current_year_monthly_reported_bar_data(domain["id"]),
-            "top_testers":top_testers,
+            "top_testers":top_testers
         }
 
         return render(request, "company/view_domain.html", context)
@@ -659,20 +642,258 @@ class CompanyDashboardManageRolesView(View):
         return redirect('company_manage_roles',company)
 
 
-class CompanyDashboardManageBughuntView(View):
+class ShowBughuntView(View):
+
+    def get(self,request,pk,*args, **kwargs):
+        
+        hunt_obj = get_object_or_404(Hunt,pk=pk)
+
+        # get issues/reports that are done between hunt.start_date and hunt.end_date
+        hunt_issues = Issue.objects.filter(
+                Q(created__range=[hunt_obj.starts_on,hunt_obj.end_on]) &
+                Q(domain__url=hunt_obj.domain.url)
+            )
+        
+        # total bugs reported in this bughunt
+        total_bugs = hunt_issues.count()
+        total_bug_accepted = hunt_issues.filter(verified=True).count()
+
+        total_money_distributed = hunt_issues.aggregate(total_money=Sum('rewarded'))["total_money"]
+        total_money_distributed = (0 if total_money_distributed==None else total_money_distributed)
+
+
+        bughunt_leaderboard = hunt_issues.values("user__id","user__username","user__userprofile__user_avatar").filter(user__isnull=False,verified=True).annotate(count=Count('user__username')).order_by("-count")[:16]
+
+        is_hunt_manager = hunt_obj.domain.managers.filter(id=request.user.id).exists()
+        
+        # get latest reported public issues
+        latest_issues = (
+            Issue.objects
+            .values("id","domain__name","url","description","user__id","user__username","user__userprofile__user_avatar","label","status","verified","rewarded","created__day","created__month","created__year")
+            .filter(
+                domain__id=hunt_obj.domain.pk,
+                hunt__id=hunt_obj.id
+            ).order_by("-created")
+        )
+
+        if is_hunt_manager:
+            latest_issues = latest_issues.filter(is_hidden=True)
+        else:
+            latest_issues = latest_issues.filter(is_hidden=False)
+
+        issue_labels = [label[-1] for label in Issue.labels]
+        cleaned_issues = []
+        for issue in latest_issues:
+            cleaned_issues.append({
+                **issue,
+                "label": issue_labels[issue["label"]]
+            })
+
+        
+        # get top testers
+        top_testers = Issue.objects.values("user__id","user__username","user__userprofile__user_avatar").filter(user__isnull=False).annotate(count=Count('user__username')).order_by("-count")[:16]
+
+        # bughunt prizes
+        rewards = HuntPrize.objects.values().filter(hunt__id=hunt_obj.id)
+
+
+        context = {
+            "hunt_obj":hunt_obj,
+            "stats":{
+                "total_rewarded": total_money_distributed,
+                "total_bugs": total_bugs,
+                "total_bug_accepted": total_bug_accepted
+            },
+            "bughunt_leaderboard": bughunt_leaderboard,
+            "top_testers":top_testers,
+            "latest_issues": cleaned_issues,
+            "rewards":rewards,
+            "is_hunt_manager":is_hunt_manager
+        }
+
+
+
+        return render(request,"company/bughunt/view_bughunt.html",context)
+
+
+class EndBughuntView(View):
+
+    def get(self,request,pk,*args,**kwargs):
+
+        hunt = get_object_or_404(Hunt,pk=pk)
+
+        is_hunt_manager = hunt.domain.managers.filter(id=request.user.id).exists()
+
+        if not is_hunt_manager:
+            return Http404("User not allowed")
+        
+        hunt.result_published = True
+        hunt.save()
+        company = hunt.domain.company.company_id
+
+        messages.success(request,f"successfully Ended Bughunt {hunt.name}")
+        return redirect('company_manage_bughunts',company)
+
+
+class AddHuntView(View):
+
+
+    def edit(self,request,company,companies,domains,hunt_id,*args,**kwargs):
+
+        hunt = get_object_or_404(Hunt,pk=hunt_id)
+        prizes = HuntPrize.objects.values().filter(hunt__id=hunt_id)
+
+        context = {
+            'company': company,
+            "company_obj": Company.objects.filter(company_id=company).first(),
+            'companies': companies,
+            'domains':domains,
+            'hunt': hunt,
+            'prizes': prizes,
+            'markdown_value': hunt.description
+        } 
+
+        return render(request,"company/bughunt/edit_bughunt.html",context)
 
     @validate_company_user
     def get(self,request,company,*args,**kwargs):
+        
+        hunt_id = request.GET.get("hunt",None)
 
         companies = Company.objects.values("name","company_id").filter(
             Q(managers__in=[request.user]) | 
             Q(admin=request.user)
         ).distinct()
+
+        domains = Domain.objects.values('id','name').filter(company__company_id=company)
+
+        if hunt_id != None:
+            return self.edit(request,company,companies,domains,hunt_id,*args,**kwargs)
+
+        context = {
+            'company': company,
+            "company_obj": Company.objects.filter(company_id=company).first(),
+            'companies': companies,
+            'domains':domains
+            }   
+
+        return render(request,"company/bughunt/add_bughunt.html",context)
+
+    @validate_company_user
+    def post(self,request,company,*args,**kwargs):
+
+        data = request.POST
+
+        hunt_id = data.get("hunt_id",None) # when post is for edit hunt
+        is_edit = True if hunt_id != None else False
+
+        if is_edit:
+            hunt = get_object_or_404(Hunt,pk=hunt_id)
+
+
+        domain = Domain.objects.filter(id=data.get("domain",None)).first()
+
+        if domain == None:
+            messages.error(request,"Domain Does not exists")
+            return redirect('add_bughunt',company)
+
+        start_date = data.get("start_date",datetime.now().strftime("%m/%d/%Y"))
+        end_date = data.get("end_date",datetime.now().strftime("%m/%d/%Y"))
+
+        start_date = datetime.strptime(start_date,"%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+        end_date = datetime.strptime(end_date,"%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+
+        hunt_logo = request.FILES.get("logo",None)
+        if hunt_logo != None:
+            hunt_logo_file = hunt_logo.name.split(".")[0]
+            extension = hunt_logo.name.split(".")[-1] 
+            hunt_logo.name = hunt_logo_file[:99] + str(uuid.uuid4()) + "." + extension            
+            default_storage.save(f"logos/{hunt_logo.name}",hunt_logo)
+
+        webshot_logo = request.FILES.get("webshot",None) 
+        if webshot_logo != None:
+            webshot_logo_file = webshot_logo.name.split(".")[0]
+            extension = webshot_logo.name.split(".")[-1] 
+            webshot_logo.name = webshot_logo_file[:99] + str(uuid.uuid4()) + "." + extension            
+            default_storage.save(f"banners/{webshot_logo.name}",webshot_logo)
+        
+        if is_edit:
+            hunt.domain = domain
+            hunt.url = data.get("domain_url","")
+            hunt.description = data.get("markdown-description","")
+            
+            if not hunt.is_published:
+                hunt.name = data.get("bughunt_name","")
+                hunt.starts_on = start_date
+            
+            hunt.end_on = end_date
+            hunt.is_published = False if data["publish_bughunt"] == "false" else True
+            
+            if hunt_logo != None:
+                hunt.logo = f"logos/{hunt_logo.name}"
+            if webshot_logo != None:
+                hunt.banner = f"banners/{webshot_logo.name}"
+            
+            hunt.save()
+
+        else:
+            hunt = Hunt.objects.create(
+                name = data.get("bughunt_name",""),
+                domain = domain,
+                url = data.get("domain_url",""),
+                description = data.get("markdown-description",""),
+                starts_on = start_date,
+                end_on = end_date,
+                is_published = False if data["publish_bughunt"] == "false" else True
+            )
+
+        prizes = json.loads(data.get("prizes","[]"))
+        
+        for prize in prizes:
+            if prize.get("prize_name","").strip() == "":
+                continue
+
+            HuntPrize.objects.create(
+                hunt = hunt,
+                name = prize["prize_name"],
+                value = prize.get("cash_value",0),
+                no_of_eligible_projects = prize.get("number_of_winning_projects",1),
+                valid_submissions_eligible = prize.get("every_valid_submissions",False),
+                prize_in_crypto = prize.get("paid_in_cryptocurrency",False),
+                description = prize.get("prize_description",""),
+            )
+
+
+
+        messages.success(request,"successfully added the managers")
+        return redirect('company_manage_bughunts',company)
+
+class CompanyDashboardManageBughuntView(View):
+
+    
+    @validate_company_user
+    def get(self,request,company,*args,**kwargs):
+        
+        companies = Company.objects.values("name","company_id").filter(
+            Q(managers__in=[request.user]) | 
+            Q(admin=request.user)
+        ).distinct()
+
+        query = Hunt.objects.values("id","name","prize","is_published","result_published","starts_on__day","starts_on__month","starts_on__year","end_on__day","end_on__month","end_on__year").filter(domain__company__company_id=company)
+        filtered_bughunts = {
+            "all": query,
+            "ongoing": query.filter(result_published=False,is_published=True),
+            "ended": query.filter(result_published=True),
+            "draft": query.filter(result_published=False,is_published=False)
+        } 
+
+        filter_type = request.GET.get("filter","all")
         
         context = {
             'company': company,
             "company_obj": Company.objects.filter(company_id=company).first(),
-            'companies': companies
+            'companies': companies,
+            "bughunts": filtered_bughunts.get(filter_type,[])
         }
 
-        return render(request,"company/company_manage_bughunts.html",context) 
+        return render(request,"company/bughunt/company_manage_bughunts.html",context)

@@ -65,6 +65,7 @@ from website.api.views import (
     UrlCheckApiViewset,
     BugHuntApiViewset,
 )
+from company.views import ShowBughuntView
 from website.alternative_views import (
     CreateHunt2,
 )
@@ -223,6 +224,9 @@ urlpatterns = [
     ),
     re_path(
         r"^dashboard/company/hunt/create$", CreateHunt.as_view(), name="create_hunt"
+    ),
+    path(
+        "hunt/<int:pk>", ShowBughuntView.as_view(), name="show_bughunt"
     ),
     re_path(
         r"^dashboard/company/hunt/drafts$", DraftHunts.as_view(), name="draft_hunts"
@@ -399,7 +403,7 @@ urlpatterns = [
     path("robots.txt", website.views.robots_txt),
     path("ads.txt", website.views.ads_txt),
     re_path(r"^contributors/$",contributors_view,name="contributors"),
-    path("company/",include("company.urls"))
+    path("company/",include("company.urls")),
 ]
 
 if settings.DEBUG:
