@@ -8,6 +8,8 @@ from company.views import (
     CompanyDashboardManageRolesView,
     CompanyDashboardManageBughuntView,
     RegisterCompanyView,
+    AddHuntView,
+    EndBughuntView,
     company_view,
 )
 
@@ -15,12 +17,14 @@ from company.views import (
 urlpatterns = [
     path("",RegisterCompanyView.as_view(),name="register_company"),
     path("dashboard/",company_view,name="company_view"),
-    path("dashboard/analytics/<str:company>/",CompanyDashboardAnalyticsView.as_view(),name="company_analytics"),
-    path("dashboard/bugs/<str:company>/",CompanyDashboardManageBugsView.as_view(),name="company_manage_bugs"),
-    path("dashboard/domains/<str:company>/",CompanyDashboardManageDomainsView.as_view(),name="company_manage_domains"),
-    path("dashboard/roles/<str:company>/",CompanyDashboardManageRolesView.as_view(),name="company_manage_roles"),
-    path("dashboard/bughunts/<str:company>/",CompanyDashboardManageBughuntView.as_view(),name="company_manage_bughunts"),
+    path("<str:company>/dashboard/analytics/",CompanyDashboardAnalyticsView.as_view(),name="company_analytics"),
+    path("<str:company>/dashboard/bugs/",CompanyDashboardManageBugsView.as_view(),name="company_manage_bugs"),
+    path("<str:company>/dashboard/domains/",CompanyDashboardManageDomainsView.as_view(),name="company_manage_domains"),
+    path("<str:company>/dashboard/roles/",CompanyDashboardManageRolesView.as_view(),name="company_manage_roles"),
+    path("<str:company>/dashboard/bughunts/",CompanyDashboardManageBughuntView.as_view(),name="company_manage_bughunts"),
 
-    path("dashboard/add_domain/<str:company>",AddDomainView.as_view(),name="add_domain"),
+    path("dashboard/end_bughunt/<int:pk>",EndBughuntView.as_view(),name="end_bughunt"),
+    path("<str:company>/dashboard/add_bughunt/",AddHuntView.as_view(),name="add_bughunt"),
+    path("<str:company>/dashboard/add_domain/",AddDomainView.as_view(),name="add_domain"),
     path("domain/<int:pk>/",DomainView.as_view(),name="view_domain"),
 ]

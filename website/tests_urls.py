@@ -6,7 +6,7 @@ import os
 
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 # todo
-from webdriver_manager.chrome import ChromeDriverManager
+import chromedriver_autoinstaller
 
 # can uncomment with chromedrivermanager
 os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
@@ -18,7 +18,8 @@ d = DesiredCapabilities.CHROME
 d["loggingPrefs"] = {"browser": "ALL"}
 
 # switch these
-driver = webdriver.Chrome(ChromeDriverManager().install(), desired_capabilities=d)
+print(chromedriver_autoinstaller.install(),"====")
+driver = webdriver.Chrome(desired_capabilities=d)
 
 
 
