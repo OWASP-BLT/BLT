@@ -1,26 +1,22 @@
-from django import test
-from django.urls import reverse
-from django.conf import settings
 import importlib
 import os
 
-from django.contrib.staticfiles.testing import StaticLiveServerTestCase
-# todo
 import chromedriver_autoinstaller
+from django import test
+from django.conf import settings
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from django.urls import reverse
+from selenium.webdriver.chrome.service import Service
 
-# can uncomment with chromedrivermanager
 os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 
 from selenium import webdriver
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
-d = DesiredCapabilities.CHROME
-d["loggingPrefs"] = {"browser": "ALL"}
+service = Service(chromedriver_autoinstaller.install())
 
-# switch these
-print(chromedriver_autoinstaller.install(),"====")
-driver = webdriver.Chrome(desired_capabilities=d)
-
+options = webdriver.ChromeOptions()
+options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
+driver = webdriver.Chrome(service=service, options=options)
 
 
 class UrlsTest(StaticLiveServerTestCase):
