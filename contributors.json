@@ -1,18 +1,5 @@
 [
     {
-        "id":1,
-        "img":"https://avatars.githubusercontent.com/u/7475382?v=4",
-        "name":"Fredfalcon",
-        "repository":"BLT",
-        "short_description":"Maintatiner of BLT Project",
-        "long_description":"",
-        "location":"Anyon",
-        "twitter":"",
-        "linkedin":"",
-        "website":"",
-        "bch_addr":""
-    },
-    {
         "id":2,
         "img":"https://avatars.githubusercontent.com/u/76696648?v=4",
         "name":"Aryan Ranjan",
@@ -261,19 +248,6 @@
         "bch_addr":""
     },
     {
-        "id":21,
-        "img":"https://avatars.githubusercontent.com/u/16075543?v=4",
-        "name":"mareiska",
-        "repository":"",
-        "short_description":"",
-        "long_description":"",
-        "location":"Anyon",
-        "twitter":"",
-        "linkedin":"",
-        "website":"",
-        "bch_addr":""
-    },
-    {
         "id":22,
         "img":"https://avatars.githubusercontent.com/u/76243309?v=4",
         "name":"Abhay Kumar Gupta",
@@ -290,19 +264,6 @@
         "id":23,
         "img":"https://avatars.githubusercontent.com/u/105916104?v=4",
         "name":"Shubham Jaiswal",
-        "repository":"",
-        "short_description":"",
-        "long_description":"",
-        "location":"Anyon",
-        "twitter":"",
-        "linkedin":"",
-        "website":"",
-        "bch_addr":""
-    },
-     {
-        "id":24,
-        "img":"https://avatars.githubusercontent.com/u/234438?v=4",
-        "name":"Psy Tek",
         "repository":"",
         "short_description":"",
         "long_description":"",
