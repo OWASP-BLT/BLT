@@ -1,33 +1,32 @@
-from .models import Issue, IssueScreenshot
-from django.core.files.uploadedfile import SimpleUploadedFile
+import os
+
+import chromedriver_autoinstaller
 from django.core.files.storage import default_storage
-from django.test import TestCase
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import LiveServerTestCase, TestCase
+from django.test.utils import override_settings
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium import webdriver
-from django.test.utils import override_settings
-import os
-import chromedriver_autoinstaller
 
-from django.test import LiveServerTestCase
+from .models import Issue, IssueScreenshot
 
 os.environ['DJANGO_LIVE_TEST_SERVER_ADDRESS'] = 'localhost:8082'
-chromedriver_autoinstaller.install()
 
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ['initial_data.json']
 
     @classmethod
     def setUpClass(cls):
-        d = DesiredCapabilities.CHROME
-        d["loggingPrefs"] = {"browser": "ALL"}
-        option = webdriver.ChromeOptions()
-        option.add_argument("window-size=1920,1080")
 
-        # switch these
-        cls.selenium = webdriver.Chrome(desired_capabilities=d, options=option)
+        options = webdriver.ChromeOptions()
+        options.add_argument("window-size=1920,1080")
+        options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
+        service = Service(chromedriver_autoinstaller.install())
+        cls.selenium = webdriver.Chrome(service=service, options=options)
+
         super(MySeleniumTests, cls).setUpClass()
 
     @classmethod
