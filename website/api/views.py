@@ -21,11 +21,15 @@ from website.models import (
     Issue,
     Domain,
     IssueScreenshot,
+    Hunt,
+    HuntPrize
 )
 from website.serializers import (
     IssueSerializer,
     UserProfileSerializer,
     DomainSerializer,
+    BugHuntPrizeSerializer,
+    BugHuntSerializer
 )
 
 from website.models import (
@@ -451,6 +455,8 @@ class UrlCheckApiViewset(APIView):
 
 class BugHuntApiViewset(APIView):
 
+    permission_classes = [AllowAny]
+
     def get_active_hunts(self,request,*args,**kwargs):
 
         hunts = Hunt.objects.values('id','name','url','prize','logo',"starts_on","end_on").filter(is_published=True,starts_on__lte=datetime.now(),end_on__gte=datetime.now()).order_by("-prize")
@@ -476,4 +482,74 @@ class BugHuntApiViewset(APIView):
             return self.get_upcoming_hunts(request,*args,**kwargs)
         hunts = Hunt.objects.values('id','name','url','prize','logo',"starts_on","end_on").filter(is_published=True).order_by("-end_on")
         return Response(hunts)
+    
+
+class BugHuntApiViewsetV2(APIView):
+
+    permission_classes = [AllowAny]
+
+    def serialize_hunts(self,hunts):
+        
+        hunts = BugHuntSerializer(hunts,many=True)
+
+        serialize_hunts_list = []
+
+        for hunt in hunts.data:
+            hunt_prizes = HuntPrize.objects.filter(hunt__id=hunt["id"])
+            hunt_prizes = BugHuntPrizeSerializer(hunt_prizes,many=True)
+
+            serialize_hunts_list.append({
+                **hunt,
+                "prizes":hunt_prizes.data
+            })
+
+        return serialize_hunts_list
+
+    def get_active_hunts(self,request,*args,**kwargs):
+        hunts = Hunt.objects.filter(is_published=True,starts_on__lte=datetime.now(),end_on__gte=datetime.now()).order_by("-prize")
+        return Response(self.serialize_hunts(hunts))
+
+    def get_previous_hunts(self,request,*args,**kwargs):
+        hunts = Hunt.objects.filter(is_published=True,end_on__lte=datetime.now()).order_by("-end_on")
+        return Response(self.serialize_hunts(hunts))
+    
+    def get_upcoming_hunts(self,request,*args,**kwargs):
+        hunts = Hunt.objects.filter(is_published=True,starts_on__gte=datetime.now()).order_by("starts_on")
+        return Response(self.serialize_hunts(hunts))
+
+    def get(self,request,*args,**kwargs):
+
+        paginator = PageNumberPagination()
+        
+        activeHunt = request.query_params.get("activeHunt")
+        previousHunt = request.query_params.get("previousHunt")
+        upcomingHunt = request.query_params.get("upcomingHunt")
+        if activeHunt:
+            page = paginator.paginate_queryset(
+                self.get_active_hunts(request,*args,**kwargs),
+                request
+            )
+
+            return paginator.get_paginated_response(page)
+
+        elif previousHunt:
+            page = paginator.paginate_queryset(
+                    self.get_previous_hunts(request,*args,**kwargs),
+                    request
+            )
+
+            return paginator.get_paginated_response(page)
+        
+        elif upcomingHunt:
+            page = paginator.paginate_queryset(
+                    self.get_upcoming_hunts(request,*args,**kwargs),
+                    request
+            )
+
+            return paginator.get_paginated_response(page)
+        
+        hunts = self.serialize_hunts(Hunt.objects.filter(is_published=True).order_by("-end_on"))
+        page = paginator.paginate_queryset(hunts,request)
+
+        return paginator.get_paginated_response(page)
     

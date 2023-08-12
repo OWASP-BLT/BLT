@@ -1,4 +1,4 @@
-from website.models import Issue, Points, User, UserProfile, Domain
+from website.models import Issue, Points, User, UserProfile, Domain, Hunt, HuntPrize
 from rest_framework import  serializers
 from django.db.models import Sum
 
@@ -70,3 +70,16 @@ class DomainSerializer(serializers.ModelSerializer):
         model = Domain
         fields = '__all__'
 
+
+    
+class BugHuntPrizeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = HuntPrize
+        fields = '__all__'
+
+class BugHuntSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Hunt
+        fields = '__all__'
