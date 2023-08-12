@@ -2090,13 +2090,13 @@ files = [
 
 [[package]]
 name = "ua-parser"
-version = "0.10.0"
+version = "0.18.0"
 description = "Python port of Browserscope's user agent parser"
 optional = false
 python-versions = "*"
 files = [
-    {file = "ua-parser-0.10.0.tar.gz", hash = "sha256:47b1782ed130d890018d983fac37c2a80799d9e0b9c532e734c67cf70f185033"},
-    {file = "ua_parser-0.10.0-py2.py3-none-any.whl", hash = "sha256:46ab2e383c01dbd2ab284991b87d624a26a08f72da4d7d413f5bfab8b9036f8a"},
+    {file = "ua-parser-0.18.0.tar.gz", hash = "sha256:db51f1b59bfaa82ed9e2a1d99a54d3e4153dddf99ac1435d51828165422e624e"},
+    {file = "ua_parser-0.18.0-py2.py3-none-any.whl", hash = "sha256:9d94ac3a80bcb0166823956a779186c746b50ea4c9fd9bf30fdb758553c38950"},
 ]
 
 [[package]]
@@ -2228,5 +2228,5 @@ files = [
 
 [metadata]
 lock-version = "2.0"
-python-versions = "3.11.2"
-content-hash = "21d0bd61594c92c4d327c5792b85c83bd69f775c2fab97639c0d94ef4cba4e11"
+python-versions = "~3.11"
+content-hash = "23ea467ac3a97e38aa87edcff6e8490a38da13ecbcc6e60a501b6a9bcd0a357d"
