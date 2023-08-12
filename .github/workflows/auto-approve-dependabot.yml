@@ -7,6 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
-    if: github.actor == 'dependabot[bot]'
+    if: github.actor == 'dependabot'
     steps:
       - uses: hmarr/auto-approve-action@v3
