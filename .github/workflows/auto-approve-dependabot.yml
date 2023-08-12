@@ -10,6 +10,6 @@ jobs:
     steps:
       - name: Auto approve
         uses: cognitedata/auto-approve-dependabot-action@v3.0.1
-        if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]'
+        if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]' || github.actor == 'dependabot'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
