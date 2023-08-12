@@ -259,9 +259,6 @@ if "DATABASE_URL" in os.environ:
     GS_SECRET_ACCESS_KEY = os.environ.get("GS_SECRET_ACCESS_KEY", "blank")
     GOOGLE_APPLICATION_CREDENTIALS = "/app/google-credentials.json"
 
-    # GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
-    # "/app/google-credentials.json"
-    # )
 
     GS_BUCKET_NAME = "bhfiles"
     DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
@@ -269,15 +266,15 @@ if "DATABASE_URL" in os.environ:
     GS_QUERYSTRING_AUTH = False
     MEDIA_URL = "https://bhfiles.storage.googleapis.com/"
 
-    ROLLBAR = {
-        "access_token": os.environ.get("ROLLBAR_ACCESS_TOKEN", "blank"),
-        "environment": "development" if DEBUG else "production",
-        "root": BASE_DIR,
-        "exception_level_filters": [(Http404, "warning")],
-    }
-    import rollbar
-
-    rollbar.init(**ROLLBAR)
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+    sentry_sdk.init(
+        dsn=os.environ.get("SENTRY_DSN", "https://key.ingest.sentry.io/project"),
+        integrations=[DjangoIntegration()],
+        send_default_pii=True,
+        traces_sample_rate=1.0,
+        profiles_sample_rate=1.0,
+    )
 
 else:
     if not TESTING:
