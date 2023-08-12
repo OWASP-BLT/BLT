@@ -1,6 +1,5 @@
 from datetime import datetime
 import uuid
-import json
 
 from django.core.mail import send_mail
 from django.core.files.storage import default_storage
@@ -556,19 +555,11 @@ class BugHuntApiViewsetV2(APIView):
 
         return paginator.get_paginated_response(page)
     
-class InviteFriendApi(APIView):
+class InviteFriendApiViewset(APIView):
 
     def post(self,request,*args,**kwargs):
 
-        body = json.loads(self.request.body)
-
-        if (request.user == None or isinstance(request.user,AnonymousUser)):
-            return Response("UNAUTHORISED_USER",status=401)
-
-        email = body.get("email",None)
-
-        if (email==None):
-            return Response("EMAIL NOT PROVIDED",status=400)
+        email = request.POST.get("email")
         already_exists = User.objects.filter(email=email).exists()
 
         if already_exists:
@@ -579,7 +570,8 @@ class InviteFriendApi(APIView):
 
         invite = InviteFriend.objects.create(
             sender = request.user,
-            recipient = email
+            recipient = email,
+            sent = False
         )
 
         mail_status = send_mail(
@@ -593,22 +585,20 @@ class InviteFriendApi(APIView):
             [invite.recipient],
         )
 
+        if (mail_status):
+            invite.sent = True
+            invite.save()
+
         if (
             mail_status
-            and InviteFriend.objects.filter(sender=self.request.user).count() == 2
+            and InviteFriend.objects.filter(sender=self.request.user,sent=True).count() == 2
         ):
             Points.objects.create(user=self.request.user, score=1)
             InviteFriend.objects.filter(sender=self.request.user).delete()
 
-            return Response({
-                "title": "SUCCESS",
-                "Points": "+1",
-                "message": "An email has been sent to your friend. Keep inviting your friends and get points!"
-            },status=200)
-
         return Response({
             "title": "SUCCESS",
-            "Points": "+0",
+            "Points": "+1",
             "message": "An email has been sent to your friend. Keep inviting your friends and get points!"
         },status=200)
         
