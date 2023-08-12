@@ -117,8 +117,21 @@ def index(request, template="index.html"):
     top_companies = Issue.objects.values("domain__name").annotate(count=Count('domain__name')).order_by("-count")[:10]
     top_testers = Issue.objects.values("user__id","user__username").filter(user__isnull=False).annotate(count=Count('user__username')).order_by("-count")[:10]
     activities = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:10]
-    
-    top_hunts = Hunt.objects.values('id','name','url','prize','logo').filter(is_published=True).order_by("-prize")[:3]
+
+    top_hunts = Hunt.objects.values(
+        'id',
+        'name',
+        'url',
+        'logo',
+        'starts_on',
+        'starts_on__day',
+        'starts_on__month',
+        'starts_on__year',
+        'end_on',
+        'end_on__day',
+        'end_on__month',
+        'end_on__year',
+        ).annotate(total_prize=Sum("huntprize__value")).filter(is_published=True,result_published=False).order_by("-created")[:3]
 
     context = {
         "server_url": request.build_absolute_uri('/'),
@@ -576,6 +589,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 )
                 domain.save()
             
+            hunt = self.request.POST.get("hunt",None)
+            if hunt != None and hunt!="None":
+                hunt = Hunt.objects.filter(id=hunt).first()
+                obj.hunt = hunt
 
             obj.domain = domain
             obj.is_hidden = bool(self.request.POST.get("private",False))
@@ -712,7 +729,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
         context["captcha_form"] = CaptchaForm()
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["hunts"] = Hunt.objects.exclude(plan="Free")[:4]
         context["leaderboard"] = (
             User.objects.filter(
                 points__created__month=datetime.now().month,
@@ -721,6 +737,18 @@ class IssueCreate(IssueBaseCreate, CreateView):
             .annotate(total_score=Sum("points__score"))
             .order_by("-total_score")[:10],
         )
+
+        # automatically add specified hunt to dropdown of Bugreport
+        report_on_hunt = self.request.GET.get("hunt",None)
+        if report_on_hunt:
+            context["hunts"] = Hunt.objects.values("id","name").filter(id=report_on_hunt)
+            context["report_on_hunt"] = True
+        else:    
+            context["hunts"] = Hunt.objects.values("id","name").all()
+            context["report_on_hunt"] = False
+
+
+
         return context
 
 
