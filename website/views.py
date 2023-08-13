@@ -2166,6 +2166,76 @@ class CreateHunt(TemplateView):
         except:
             return HttpResponse("failed")
 
+class ListHunts(TemplateView):
+
+    model = Hunt
+    template_name = "hunt_list.html"
+
+
+    def get(self, request, *args, **kwargs):
+
+
+        search = request.GET.get("search","")
+        start_date = request.GET.get("start_date",None)
+        end_date = request.GET.get("end_date",None)
+        domain = request.GET.get("domain",None)
+        hunt_type = request.GET.get("hunt_type","all")
+
+        hunts = Hunt.objects.values(
+        'id',
+        'name',
+        'url',
+        'logo',
+        'starts_on',
+        'starts_on__day',
+        'starts_on__month',
+        'starts_on__year',
+        'end_on',
+        'end_on__day',
+        'end_on__month',
+        'end_on__year',
+        ).annotate(total_prize=Sum("huntprize__value")).all()
+
+        filtered_bughunts = {
+            "all": hunts,
+            "ongoing": hunts.filter(result_published=False,is_published=True),
+            "ended": hunts.filter(result_published=True),
+            "draft": hunts.filter(result_published=False,is_published=False)
+        } 
+
+        hunts = filtered_bughunts.get(hunt_type,hunts)
+
+        if search.strip() != "":
+            hunts = hunts.filter(Q(name__icontains=search))
+
+        if start_date != "" and start_date != None:
+            start_date = datetime.strptime(start_date,"%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+            hunts = hunts.filter(starts_on__gte=start_date)
+        
+        if end_date != "" and end_date != None:
+            end_date = datetime.strptime(end_date,"%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+            hunts = hunts.filter(end_on__gte=end_date)
+
+        if domain != "Select Domain" and domain != None:
+            domain = Domain.objects.filter(id=domain).first()
+            hunts = hunts.filter(domain=domain)
+        
+        context = {
+            "hunts": hunts,
+            "domains": Domain.objects.values("id","name").all()
+        }
+
+        return render(request,self.template_name,context)
+
+    def post(self,request,*args,**kwargs):
+
+        request.GET.search = request.GET.get("search","")
+        request.GET.start_date = request.GET.get("start_date",'')
+        request.GET.end_date = request.GET.get("end_date",'')
+        request.GET.domain = request.GET.get("domain",'Select Domain')
+        request.GET.hunt_type = request.GET.get("type","all")
+
+        return self.get(request)
 
 class DraftHunts(TemplateView):
     model = Hunt
