@@ -8,6 +8,7 @@ from django.template.loader import render_to_string
 from django.db.models import Sum
 from django.contrib.auth.models import AnonymousUser
 from django.db.models import Q
+from django.contrib.sites.shortcuts import get_current_site
 
 from rest_framework import viewsets, filters, status
 from rest_framework.response import Response
@@ -22,7 +23,8 @@ from website.models import (
     Domain,
     IssueScreenshot,
     Hunt,
-    HuntPrize
+    HuntPrize,
+    InviteFriend
 )
 from website.serializers import (
     IssueSerializer,
@@ -552,4 +554,51 @@ class BugHuntApiViewsetV2(APIView):
         page = paginator.paginate_queryset(hunts,request)
 
         return paginator.get_paginated_response(page)
-    
+
+class InviteFriendApiViewset(APIView):
+
+    def post(self,request,*args,**kwargs):
+
+        email = request.POST.get("email")
+        already_exists = User.objects.filter(email=email).exists()
+
+        if already_exists:
+            return Response("USER EXISTS",status=409)
+
+        site = get_current_site(self.request)
+      
+
+        invite = InviteFriend.objects.create(
+            sender = request.user,
+            recipient = email,
+            sent = False
+        )
+
+        mail_status = send_mail(
+            "Inivtation to {site} from {user}".format(
+                site=site.name, user=request.user.username
+            ),
+            "You have been invited by {user} to join {site} community.".format(
+                user=request.user.username, site=site.name
+            ),
+            settings.DEFAULT_FROM_EMAIL,
+            [invite.recipient],
+        )
+
+        if (mail_status):
+            invite.sent = True
+            invite.save()
+
+        if (
+            mail_status
+            and InviteFriend.objects.filter(sender=self.request.user,sent=True).count() == 2
+        ):
+            Points.objects.create(user=self.request.user, score=1)
+            InviteFriend.objects.filter(sender=self.request.user).delete()
+
+        return Response({
+            "title": "SUCCESS",
+            "Points": "+1",
+            "message": "An email has been sent to your friend. Keep inviting your friends and get points!"
+        },status=200)
+        
