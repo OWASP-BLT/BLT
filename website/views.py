@@ -633,7 +633,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 screenshot_text += "![0](" + screenshot.image.url + ") "
 
             team_members_id = [member["id"] for member in User.objects.values("id").filter(email__in=self.request.POST.getlist("team_members"))] + [self.request.user.id]
-            team_members_id.remove(None) # remove None values if user not exists
+            for member_id in team_members_id:
+                if member_id == None:
+                    team_members_id.remove(member_id) # remove None values if user not exists
             obj.team_members.set(team_members_id)
 
             obj.save()
