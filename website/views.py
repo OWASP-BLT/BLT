@@ -744,10 +744,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
         # automatically add specified hunt to dropdown of Bugreport
         report_on_hunt = self.request.GET.get("hunt",None)
         if report_on_hunt:
-            context["hunts"] = Hunt.objects.values("id","name").filter(id=report_on_hunt)
+            context["hunts"] = Hunt.objects.values("id","name").filter(id=report_on_hunt,is_published=True,result_published=False)
             context["report_on_hunt"] = True
         else:    
-            context["hunts"] = Hunt.objects.values("id","name").all()
+            context["hunts"] = Hunt.objects.values("id","name").filter(is_published=True,result_published=False)
             context["report_on_hunt"] = False
 
 
