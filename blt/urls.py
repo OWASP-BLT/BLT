@@ -48,6 +48,7 @@ from website.views import (
     GithubLogin,
     GoogleLogin,
     GoogleConnect,
+    ListHunts,
     contributors_view,
     github_callback,
     google_callback,
@@ -64,7 +65,8 @@ from website.api.views import (
     StatsApiViewset,
     UrlCheckApiViewset,
     BugHuntApiViewset,
-    BugHuntApiViewsetV2
+    BugHuntApiViewsetV2,
+    InviteFriendApiViewset
 )
 from company.views import ShowBughuntView
 from website.alternative_views import (
@@ -302,6 +304,7 @@ urlpatterns = [
     re_path(r"^api/v1/issue/like/(?P<id>\w+)/$", LikeIssueApiView.as_view(), name="like_issue"),
     re_path(r"^api/v1/issue/flag/(?P<id>\w+)/$", FlagIssueApiView.as_view(), name="flag_issue"),
     re_path(r"^api/v1/leaderboard/$",LeaderboardApiViewSet.as_view(),name="leaderboard"),
+    re_path(r"^api/v1/invite_friend/",InviteFriendApiViewset.as_view(),name="invite_friend"),
 
     re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
@@ -326,6 +329,7 @@ urlpatterns = [
     re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html"),name="start_hunt"),
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
     re_path(r"^hunt2/$", login_required(CreateHunt2.as_view()), name="hunt2"),
+    re_path(r"^hunts/$", ListHunts.as_view(), name="hunts"),
     re_path(r"^invite/$", InviteCreate.as_view(template_name="invite.html")),
     re_path(
         r"^invite-friend/$",
