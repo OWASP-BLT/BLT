@@ -107,8 +107,18 @@
     </div>
 </div>
 
+{% if ended_hunts %}
+    <p class="text-7xl text-center mb-8 font-sans text-[#B1B1B1]">ENDED HUNTS</p>
+    <div class="w-full flex justify-center">
+        <a href="/" class="px-8 py-3 bg-red-500 rounded-lg text-center text-white font-bold text-2xl">View Ongoing Hunts</a>
+    </div>
+{% else %}
+    <p class="text-7xl text-center mb-8 font-sans text-[#B1B1B1]">LATEST HUNTS</p>
+    <div class="w-full flex justify-center">
+        <a href="/?latest_hunts=ended" class="px-8 py-3 bg-red-500 rounded-lg text-center text-white font-bold text-2xl">View Ended Hunts</a>
+    </div>
+{% endif %}
 
-<p class="text-7xl text-center mb-10 font-sans text-[#B1B1B1]">LATEST HUNTS</p>
 
 <div class="flex items-center flex-wrap w-full justify-between mb-[100px] mt-20 sm:justify-center ">
 

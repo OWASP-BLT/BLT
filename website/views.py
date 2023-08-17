@@ -99,6 +99,8 @@ def index(request, template="index.html"):
     except:
         pass
 
+    latest_hunts_filter = request.GET.get("latest_hunts",None)
+
     bug_count = Issue.objects.all().count()
     user_count = User.objects.all().count()
     hunt_count = Hunt.objects.all().count()
@@ -131,7 +133,13 @@ def index(request, template="index.html"):
         'end_on__day',
         'end_on__month',
         'end_on__year',
-        ).annotate(total_prize=Sum("huntprize__value")).filter(is_published=True,result_published=False).order_by("-created")[:3]
+    ).annotate(total_prize=Sum("huntprize__value"))
+
+    if latest_hunts_filter != None:
+        top_hunts = top_hunts.filter(result_published=True).order_by("-created")[:3]
+    else:
+        top_hunts = top_hunts.filter(is_published=True,result_published=False).order_by("-created")[:3]
+
 
     context = {
         "server_url": request.build_absolute_uri('/'),
@@ -153,7 +161,8 @@ def index(request, template="index.html"):
         "activity_screenshots":activity_screenshots,
         "top_companies":top_companies,
         "top_testers":top_testers,
-        "top_hunts": top_hunts 
+        "top_hunts": top_hunts,
+        "ended_hunts": False if latest_hunts_filter == None else True 
     }
     return render(request, template, context)
 
@@ -744,10 +753,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
         # automatically add specified hunt to dropdown of Bugreport
         report_on_hunt = self.request.GET.get("hunt",None)
         if report_on_hunt:
-            context["hunts"] = Hunt.objects.values("id","name").filter(id=report_on_hunt)
+            context["hunts"] = Hunt.objects.values("id","name").filter(id=report_on_hunt,is_published=True,result_published=False)
             context["report_on_hunt"] = True
         else:    
-            context["hunts"] = Hunt.objects.values("id","name").all()
+            context["hunts"] = Hunt.objects.values("id","name").filter(is_published=True,result_published=False)
             context["report_on_hunt"] = False
 
 
