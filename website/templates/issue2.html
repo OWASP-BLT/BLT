@@ -1,19 +1,18 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load gravatar %}
+{% load custom_tags %}
 
 {% block head %}
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.0/flowbite.min.js"></script>
-
 {% endblock %}
 
 {% block natural_content %}
 
 
-<main class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-white">
+<div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-white">
     <div class="flex justify-between px-10 mx-auto">
-        <article class="w-full max-w-full format format-sm sm:format-base lg:format-lg format-blue">
+        <div class="w-full max-w-full">
 
             <div class="w-full flex items-center flex-col">
                 <div class="w-full flex items-center flex-col">
@@ -61,27 +60,20 @@
                                 <p class="text-xl text-gray-600">Report viewed by {{ object.views }} users</p>
                             </div>
                         </div>
-                        <div class="w-full xl:w-[60%] mt-10 xl:mt-0 flex flex-wrap justify-between text-black">
-                            <button class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
-                                <i class="fa-regular fa-thumbs-up text-2xl mr-2"> </i>
-                                {{ likes }} Upvotes
-                            </button>
-                            <button class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
-                                <i class="fa-solid fa-flag text-2xl mr-2"> </i>
-                                {{ flags }} Flags
-                            </button>
-                            <button class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
-                                <i class="fa-brands fa-facebook text-2xl mr-2"> </i>
-                                Share
-                            </button>
-                            <button class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
+                        <div class="w-full xl:w-[70%] mt-10 xl:mt-0 flex flex-wrap justify-between text-black">
+                            
+                            {% include '_likes.html' %}
+                            
+                            {% include '_flags.html' %}
+
+                            {% include '_bookmark.html' %}
+                            <a 
+                                target="_blank"
+                                href="https://twitter.com/intent/tweet?text=Bug Found on @{{ object.domain_title }} - {{ object.description }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}"
+                                class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
                                 <i class="fa-brands fa-twitter text-2xl mr-2"> </i>
-                                Tweet
-                            </button>
-                            <button class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
-                                <i class="fa-solid fa-link text-2xl mr-2"> </i>
-                                Copy Link
-                            </button>
+                                Share
+                            </a>
 
                         </div>
                     </div>
@@ -101,14 +93,18 @@
                             {% endfor %}
                         {% endif %}
                     </div>
-
-                    <div id="bug_report  " class="w-full flex flex-col items-center">
+                    
+                    <template id="bug_report_template">
+                        <style>
+                            /* Local styles here */
+                            </style>
+                        <!-- Local HTML content here -->
+                    </template>
+                    
+                    <div id="bug_report" class="w-full flex flex-col">
 
                     </div>
-                    
                 </div>
-
-
                 <div class="w-full xl:w-[30%] flex flex-row xl:flex-col xl:items-center lg:min-w-[450px] justify-evenly xl:justify-normal items-center flex-wrap">
 
                     <div class="w-[500px] xl:w-[80%] border-[1px] border-gray-300 rounded-2xl shadow-md p-7 cursor-pointer mb-10">
@@ -121,20 +117,21 @@
                                 <div class="w-full flex justify-between my-3">
                                     <p class="text-3xl font-bold">Status:</p>
                                     <div class="w-1/2 flex {% if request.user == object.user %} justify-between {% else %} justify-end {% endif %}">
-                                        {% if request.user == object.user %}
-                                            <a class="font-bold bg-gray-600 px-5 py-1 text-white rounded-xl">Click
+                                        {% if request.user == object.user or request.is_staff or request.is_superuser%} 
+                                            <a class="edit-issue-status font-bold bg-gray-600 px-5 py-1 text-white rounded-xl" id="issue_stat">
+                                                Click
                                                 to
                                                 {% if object.status == "open" %}Close{% else %}Open{% endif %}
                                             </a>
                                         {% endif %}
-                                        <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">
-                                            {% if object.status == "open" %}Close{% else %}Open{% endif %}
+                                        <span class="status font-bold bg-red-600 px-5 py-1 text-white rounded-xl">
+                                            {{ object.status }}
                                         </span>
                                     </div>
                                 </div>
                                 <div class="w-full flex justify-between my-3">
                                     <p class="text-3xl font-bold">Reported On:</p>
-                                    <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">{{ bug_info.createdAtShort }}</span>
+                                    <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">{{ object.created }}</span>
                                 </div>
                                 <div class="w-full flex justify-between my-3">
                                     <p class="text-3xl font-bold">Submitted:</p>
@@ -222,227 +219,11 @@
 
             </div>
 
-            <section class="not-format mt-10">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl lg:text-3xl font-bold text-gray-900 ">Comments (20)</h2>
-                </div>
-                <form class="mb-6">
-                    <div class="py-2 px-4 mb-4 bg-white rounded-lg rounded-t-lg border border-gray-200 ">
-                        <label for="comment" class="sr-only">Your comment</label>
-                        <textarea id="comment" rows="6"
-                            class="px-0 w-full text-xl text-gray-900 border-0"
-                            placeholder="Write a comment..." required></textarea>
-                    </div>
-                    <button type="submit"
-                        class="inline-flex items-center py-2.5 px-4 text-xl xl:text-2xl font-medium text-center text-white bg-red-700 rounded-lg  hover:bg-red-800">
-                        Post comment
-                    </button>
-                </form>
-                <article class="p-6 mb-6 text-base bg-white rounded-lg ">
-                    <footer class="flex justify-between items-center mb-2">
-                        <div class="flex items-center">
-                            <p class="inline-flex items-center mr-3 text-sm text-gray-900 "><img
-                                    class="mr-2 w-6 h-6 rounded-full"
-                                    src="https://flowbite.com/docs/images/people/profile-picture-2.jpg"
-                                    alt="Michael Gough">Michael Gough</p>
-                            <p class="text-sm text-gray-600 "><time pubdate datetime="2022-02-08"
-                                    title="February 8th, 2022">Feb. 8, 2022</time></p>
-                        </div>
-                        <button id="dropdownComment1Button" data-dropdown-toggle="dropdownComment1"
-                            class="inline-flex items-center p-2 text-sm font-medium text-center text-gray-400 bg-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-50   "
-                            type="button">
-                            <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z">
-                                </path>
-                            </svg>
-                            <span class="sr-only">Comment settings</span>
-                        </button>
-                        <!-- Dropdown menu -->
-                        <div id="dropdownComment1"
-                            class="hidden z-10 w-36 bg-white rounded divide-y divide-gray-100 shadow  ">
-                            <ul class="py-1 text-sm text-gray-700 "
-                                aria-labelledby="dropdownMenuIconHorizontalButton">
-                                <li>
-                                    <a href="#"
-                                        class="block py-2 px-4 hover:bg-gray-100  ">Edit</a>
-                                </li>
-                                <li>
-                                    <a href="#"
-                                        class="block py-2 px-4 hover:bg-gray-100  ">Remove</a>
-                                </li>
-                                <li>
-                                    <a href="#"
-                                        class="block py-2 px-4 hover:bg-gray-100  ">Report</a>
-                                </li>
-                            </ul>
-                        </div>
-                    </footer>
-                    <p>Very straight-to-point article. Really worth time reading. Thank you! But tools are just the
-                        instruments for the UX designers. The knowledge of the design tools are as important as the
-                        creation of the design strategy.</p>
-                    <div class="flex items-center mt-4 space-x-4">
-                        <button type="button"
-                            class="flex items-center text-sm text-gray-500 hover:underline ">
-                            <svg aria-hidden="true" class="mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                            Reply
-                        </button>
-                    </div>
-                </article>
-                <article class="p-6 mb-6 ml-6 lg:ml-12 text-base bg-white rounded-lg ">
-                    <footer class="flex justify-between items-center mb-2">
-                        <div class="flex items-center">
-                            <p class="inline-flex items-center mr-3 text-sm text-gray-900 "><img
-                                    class="mr-2 w-6 h-6 rounded-full"
-                                    src="https://flowbite.com/docs/images/people/profile-picture-5.jpg"
-                                    alt="Jese Leos">Jese Leos</p>
-                            <p class="text-sm text-gray-600 "><time pubdate datetime="2022-02-12"
-                                    title="February 12th, 2022">Feb. 12, 2022</time></p>
-                        </div>
-                        <button id="dropdownComment2Button" data-dropdown-toggle="dropdownComment2"
-                            class="inline-flex items-center p-2 text-sm font-medium text-center text-gray-400 bg-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-50   "
-                            type="button">
-                            <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z">
-                                </path>
-                            </svg>
-                            <span class="sr-only">Comment settings</span>
-                        </button>
-                        <!-- Dropdown menu -->
-                        <div id="dropdownComment2"
-                            class="hidden z-10 w-36 bg-white rounded divide-y divide-gray-100 shadow  ">
-                            <ul class="py-1 text-sm text-gray-700 "
-                                aria-labelledby="dropdownMenuIconHorizontalButton">
-                                <li>
-                                    <a href="#"
-                                        class="block py-2 px-4 hover:bg-gray-100  ">Edit</a>
-                                </li>
-                                <li>
-                                    <a href="#"
-                                        class="block py-2 px-4 hover:bg-gray-100  ">Remove</a>
-                                </li>
-                                <li>
-                                    <a href="#"
-                                        class="block py-2 px-4 hover:bg-gray-100  ">Report</a>
-                                </li>
-                            </ul>
-                        </div>
-                    </footer>
-                    <p>Much appreciated! Glad you liked it ☺️</p>
-                    <div class="flex items-center mt-4 space-x-4">
-                        <button type="button"
-                            class="flex items-center text-sm text-gray-500 hover:underline ">
-                            <svg aria-hidden="true" class="mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                            Reply
-                        </button>
-                    </div>
-                </article>
-                <article class="p-6 mb-6 text-base bg-white border-t border-gray-200  ">
-                    <footer class="flex justify-between items-center mb-2">
-                        <div class="flex items-center">
-                            <p class="inline-flex items-center mr-3 text-sm text-gray-900 "><img
-                                    class="mr-2 w-6 h-6 rounded-full"
-                                    src="https://flowbite.com/docs/images/people/profile-picture-3.jpg"
-                                    alt="Bonnie Green">Bonnie Green</p>
-                            <p class="text-sm text-gray-600 "><time pubdate datetime="2022-03-12"
-                                    title="March 12th, 2022">Mar. 12, 2022</time></p>
-                        </div>
-                        <button id="dropdownComment3Button" data-dropdown-toggle="dropdownComment3"
-                            class="inline-flex items-center p-2 text-sm font-medium text-center text-gray-400 bg-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-50   "
-                            type="button">
-                            <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z">
-                                </path>
-                            </svg>
-                            <span class="sr-only">Comment settings</span>
-                        </button>
-                        <!-- Dropdown menu -->
-                        <div id="dropdownComment3"
-                            class="hidden z-10 w-36 bg-white rounded divide-y divide-gray-100 shadow  ">
-                            <ul class="py-1 text-sm text-gray-700 "
-                                aria-labelledby="dropdownMenuIconHorizontalButton">
-                                <li>
-                                    <a href="#"
-                                        class="block py-2 px-4 hover:bg-gray-100  ">Edit</a>
-                                </li>
-                                <li>
-                                    <a href="#"
-                                        class="block py-2 px-4 hover:bg-gray-100  ">Remove</a>
-                                </li>
-                                <li>
-                                    <a href="#"
-                                        class="block py-2 px-4 hover:bg-gray-100  ">Report</a>
-                                </li>
-                            </ul>
-                        </div>
-                    </footer>
-                    <p>The article covers the essentials, challenges, myths and stages the UX designer should consider while creating the design strategy.</p>
-                    <div class="flex items-center mt-4 space-x-4">
-                        <button type="button"
-                            class="flex items-center text-sm text-gray-500 hover:underline ">
-                            <svg aria-hidden="true" class="mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                            Reply
-                        </button>
-                    </div>
-                </article>
-                <article class="p-6 text-base bg-white border-t border-gray-200  ">
-                    <footer class="flex justify-between items-center mb-2">
-                        <div class="flex items-center">
-                            <p class="inline-flex items-center mr-3 text-sm text-gray-900 "><img
-                                    class="mr-2 w-6 h-6 rounded-full"
-                                    src="https://flowbite.com/docs/images/people/profile-picture-4.jpg"
-                                    alt="Helene Engels">Helene Engels</p>
-                            <p class="text-sm text-gray-600 "><time pubdate datetime="2022-06-23"
-                                    title="June 23rd, 2022">Jun. 23, 2022</time></p>
-                        </div>
-                        <button id="dropdownComment4Button" data-dropdown-toggle="dropdownComment4"
-                            class="inline-flex items-center p-2 text-sm font-medium text-center text-gray-400 bg-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-50   "
-                            type="button">
-                            <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z">
-                                </path>
-                            </svg>
-                        </button>
-                        <!-- Dropdown menu -->
-                        <div id="dropdownComment4"
-                            class="hidden z-10 w-36 bg-white rounded divide-y divide-gray-100 shadow  ">
-                            <ul class="py-1 text-sm text-gray-700 "
-                                aria-labelledby="dropdownMenuIconHorizontalButton">
-                                <li>
-                                    <a href="#"
-                                        class="block py-2 px-4 hover:bg-gray-100  ">Edit</a>
-                                </li>
-                                <li>
-                                    <a href="#"
-                                        class="block py-2 px-4 hover:bg-gray-100  ">Remove</a>
-                                </li>
-                                <li>
-                                    <a href="#"
-                                        class="block py-2 px-4 hover:bg-gray-100  ">Report</a>
-                                </li>
-                            </ul>
-                        </div>
-                    </footer>
-                    <p>Thanks for sharing this. I do came from the Backend development and explored some of the tools to design my Side Projects.</p>
-                    <div class="flex items-center mt-4 space-x-4">
-                        <button type="button"
-                            class="flex items-center text-sm text-gray-500 hover:underline ">
-                            <svg aria-hidden="true" class="mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                            Reply
-                        </button>
-                    </div>
-                </article>
-            </section>
-        </article>
+            {% include 'comments2.html' %}
+
+        </div>
     </div>
-  </main>
+  </div>
   
   <aside aria-label="Related articles" class="py-8 lg:py-24 bg-gray-50 ">
     <div class="w-full px-20">
@@ -524,11 +305,86 @@
     </div>
   </section>
 
-  <script>
-    const markdownContent = document.getElementById('bug_report').textContent;
-    const renderedHtml = marked(markdownContent);
+  <script src="{% static '/company/js/md_editor.js' %}"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.1.0/dist/markdown-it.min.js"></script>
 
-    document.getElementById('rendered-html').innerHTML = renderedHtml;
+
+  <script>
+    
+      
+    const template = document.querySelector('#bug_report_template');
+    const shadowRoot = document.querySelector('#bug_report').attachShadow({ mode: 'open' });
+    shadowRoot.appendChild(template.content.cloneNode(true));
+    const contentContainer = shadowRoot.querySelector('#bug_report'); // Assuming a container class
+
+    const md = window.markdownit();
+    const markdownContent = `{{ object.markdown_description|escapejs }}`;
+    const renderedHtml = md.render(markdownContent);
+    // const renderedHtml = parse(markdownContent);
+    // const renderedHtml = marked.parse(markdownContent)
+    contentContainer.innerHTML = renderedHtml;
+
+    // $("#bug_report").html(renderedHtml);
+
+
+
+    $(document).on('click', '.edit-issue-status',(e)=>{
+        var s = $('.status').text();
+        var action = s == "open" ? "close" : "open";
+        $.ajax({
+            type: 'POST',
+            url: '/issue/update/',
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader('X-CSRFToken', "{{csrf_token}}");
+            },
+            data: {
+                issue_pk: "{{object.id}}",
+                action: action
+            },
+            success: function (data) {
+                console.log(data);
+
+                if (data == "Updated") {
+                    if (action == "open") {
+                        $('.status').text('open');
+                        $('.status').removeClass('label-danger');
+                        $('.status').addClass('label-success');
+                        $('#issue_stat').text('Click to Close');
+                        $.notify("Issue Opened!", {
+                        style: "custom",
+                        className: "success"
+                        });
+                    } else {
+                        $('.status').text('closed');
+                        $('.status').removeClass('label-success');
+                        $('.status').addClass('label-danger');
+                        $('#issue_stat').text('Click to Open');
+                        $.notify("Issue Closed!", {
+                        style: "custom",
+                        className: "success"
+                        });
+                    }
+                } else {
+                    $.notify(
+                        "Only the user who has submitted the bug and superuser can close/open an issue"
+                    ), {
+                        style: "custom",
+                        className: "danger"
+                    }
+                }
+            },
+            error: function () {
+                $.notify("Some error occurred!", {
+                    style: "custom",
+                    className: "danger"
+                });
+            }
+        })
+    })
+
+    
+
   </script>
 
 {% endblock %}

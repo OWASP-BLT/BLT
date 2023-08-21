@@ -1589,15 +1589,13 @@ class IssueView2(DetailView):
         context["all_users"] = User.objects.all()
         context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
         context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
-
         context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
         context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
+        
+        if isinstance(self.request.user,User): 
+            context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(pk=self.object.id  ).exists()
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
-
-        context["bug_info"] = {
-            'createdAtShort': 
-        }
 
 
         return context
@@ -1823,6 +1821,8 @@ def UpdateIssue(request):
 
         elif request.POST.get("action") == "open":
             issue.status = "open"
+            issue.closed_by = None
+            issue.closed_date = None
             msg_plain = msg_html = render_to_string(
                 "email/bug_updated.txt",
                 {
@@ -1999,8 +1999,16 @@ def save_issue(request, issue_pk):
     issue_pk = int(issue_pk)
     issue = Issue.objects.get(pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
-    userprof.issue_saved.add(issue)
-    return HttpResponse("OK")
+
+    already_saved = userprof.issue_saved.filter(pk=issue_pk).exists()
+
+    if already_saved:
+        userprof.issue_saved.remove(issue)
+        return HttpResponse("REMOVED")
+
+    else:
+        userprof.issue_saved.add(issue)
+        return HttpResponse("OK")
 
 
 @login_required(login_url="/accounts/login")
