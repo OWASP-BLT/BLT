@@ -6,6 +6,8 @@ import time
 import urllib.request
 import urllib.error
 import urllib.parse
+import stripe
+import humanize
 from collections import deque
 from datetime import datetime, timezone, timedelta
 from urllib.parse import urlparse
@@ -80,11 +82,9 @@ from website.models import (
 from .forms import FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm
 
 from decimal import Decimal
-import stripe
-import humanize
 from django.conf import settings
+from comments.models import Comment
 
-from django.views.decorators.cache import cache_page
 
 #@cache_page(60 * 60 * 24)
 def index(request, template="index.html"):
@@ -1585,7 +1585,7 @@ class IssueView2(DetailView):
         context["issue_count"] = Issue.objects.filter(
             url__contains=self.object.domain_name
         ).count()
-        context["all_comment"] = self.object.comments.all
+        context["all_comment"] = self.object.comments.all().order_by("-created_date")
         context["all_users"] = User.objects.all()
         context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
         context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
@@ -2060,6 +2060,57 @@ def get_score(request):
         rank_user = rank_user + 1
         users.append(temp)
     return JsonResponse(users, safe=False)
+
+
+def comment_on_issue(request, issue_pk):
+
+
+    issue = Issue.objects.filter(pk=issue_pk).first()
+
+    if request.method == "POST":
+
+        if not isinstance(request.user,User):
+            return redirect("/accounts/login") 
+
+        comment = request.POST.get("comment","")
+        replying_to_input = request.POST.get("replying_to_input","").split("#")
+        
+        if issue == None:
+            Http404("Issue does not exist, cannot comment")
+
+        if len(replying_to_input) == 2:
+            replying_to_user = replying_to_input[0]
+            replying_to_comment_id = replying_to_input[1]
+
+            parent_comment = Comment.objects.filter(pk=replying_to_comment_id).first()
+
+            if parent_comment == None:
+                messages.error(request,"Parent comment doesn't exist.")
+                return redirect(f"/issue2/{issue_pk}")
+
+            Comment.objects.create(
+                parent = parent_comment,
+                issue = issue,
+                author = request.user.username,
+                author_url = f"profile/{request.user.username}/",
+                text = comment
+            )
+
+        else:
+            Comment.objects.create(
+                issue = issue,
+                author = request.user.username,
+                author_url = f"profile/{request.user.username}/",
+                text = comment
+            )
+
+
+    context = {
+        "all_comment": Comment.objects.filter(issue__id=issue_pk).order_by("-created_date"),
+        "object": issue
+    }
+
+    return render(request, "comments2.html",context)
 
 
 class CustomObtainAuthToken(ObtainAuthToken):

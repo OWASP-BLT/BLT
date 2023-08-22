@@ -296,6 +296,7 @@ urlpatterns = [
     ), 
     re_path(r"^issue/edit/$", website.views.IssueEdit, name="edit_issue"),
     re_path(r"^issue/update/$", website.views.UpdateIssue, name="update_issue"),
+    path("issue/<str:issue_pk>/comment/", website.views.comment_on_issue, name="comment_on_issue"),
     re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
     re_path(r"^issue2/(?P<slug>\w+)/$", IssueView2.as_view(), name="issue_view2"),
     re_path(r"^follow/(?P<user>[^/]+)/", website.views.follow_user, name="follow_user"),

@@ -1,19 +1,23 @@
-<section class="not-format mt-10">
+<section id="comment_root" class="not-format mt-10">
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl lg:text-3xl font-bold text-gray-900 ">Comments ({{ all_comment | length }})</h2>
     </div>
+    
     <form class="mb-6" id="comments">
         {% csrf_token %}
         <div class="py-2 px-4 mb-4 bg-white rounded-lg rounded-t-lg border border-gray-200 ">
             <label for="comment" class="sr-only">Your comment</label>
+            <input type="text" id="replying_to_input" hidden>
             <div id="replying_to_root">
                 
             </div>
             <textarea id="comment" rows="6"
+                name="comment"
                 class="py-5 px-2 w-full text-xl text-gray-900 border-none focus:outline-none"
                 placeholder="Write a comment..." required></textarea>
         </div>
-        <button type="submit"
+        <button type="button"
+            id="post_comment_btn"
             class="inline-flex items-center py-2.5 px-4 text-xl xl:text-2xl font-medium text-center text-white bg-red-700 rounded-lg  hover:bg-red-800">
             Post comment
         </button>
@@ -33,7 +37,7 @@
                                 {{ comment.author }}
                             </p>
                             <p class="text-md text-gray-600 "><time pubdate datetime="2022-02-08"
-                                    title="February 8th, 2022">{{ comment.created_date | timesince }} ago</time></p>
+                                    title="February 8th, 2022">commented {{ comment.created_date | timesince }} ago</time></p>
                             
                             <button onclick="add_reply('{{ comment.id }}','{{ comment.author }}')" class="ml-5 w-20 h-8 rounded-lg border-[1px] border-gray-400">
                                 <i class="fa-solid fa-reply text-gray-500"></i>
@@ -157,6 +161,7 @@
 
         function remove_reply(){
             document.getElementById("replying_to_cont").remove();
+            document.getElementById("replying_to_input").value = "";
         }
 
         function add_reply(comment_id,comment_author){
@@ -171,6 +176,7 @@
                         <i onclick="remove_reply()" class="fa-solid fa-xmark ml-3 text-3xl font-bold text-gray-600 hover:text-black"></i>
                 </div>
             `
+            document.getElementById("replying_to_input").value = reply_text;
             
         }
 
@@ -180,5 +186,47 @@
             let comment_container = document.getElementById(id);
             comment_container.toggleAttribute('hidden');
         }
+
+        function comment_on_issue(e){
+            e.preventDefault();
+            let issue_pk = '{{ object.pk|safe }}';
+            var csrftoken = $("[name=csrfmiddlewaretoken]").val(); // Get the CSRF token value
+
+            let replying_to_input = document.getElementById("replying_to_input").value;
+            let comment = document.getElementById("comment").value;
+            $.ajax({
+                type: 'POST',
+                url: '/issue/' + issue_pk + '/comment/',
+                data: {
+                    "replying_to_input":replying_to_input,
+                    "comment":comment
+                },
+                beforeSend: function(xhr, settings) {
+                        xhr.setRequestHeader("X-CSRFToken", csrftoken); // Set the CSRF token in the request header
+                },
+                success: function (data) {
+                    $('#comment_root').html(data);
+                },
+            });
+        }
+        $('#post_comment_btn').click((e)=>comment_on_issue(e))
+        
+        // refresh comments after x interval
+        // function get_comments(){
+        //     let issue_pk = '{{ object.pk|safe }}';
+
+        //     $.ajax({
+        //         type: 'GET',
+        //         url: '/issue/' + issue_pk + '/comment/',
+        //         data: {},
+        //         success: function (data) {
+        //             $('#comment_root').html(data);
+        //         }
+        //     });
+        // }
+
+        // setInterval(get_comments, 10000);
+
+
     </script>
 </section>
