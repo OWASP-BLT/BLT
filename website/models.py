@@ -454,6 +454,7 @@ class UserProfile(models.Model):
 
     subscribed_domains = models.ManyToManyField(Domain,related_name="user_subscribed_domains")
     subscribed_users = models.ManyToManyField(User,related_name="user_subscribed_users")
+    crypto_address = models.CharField(max_length=100,null=True,blank=True)
 
     def avatar(self, size=36):
         if self.user_avatar:
