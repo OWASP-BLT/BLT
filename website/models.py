@@ -452,6 +452,9 @@ class UserProfile(models.Model):
     issue_flaged = models.ManyToManyField(Issue,blank=True,related_name="flaged") 
     issues_hidden = models.BooleanField(default=False)
 
+    subscribed_domains = models.ManyToManyField(Domain,related_name="user_subscribed_domains")
+    subscribed_users = models.ManyToManyField(User,related_name="user_subscribed_users")
+
     def avatar(self, size=36):
         if self.user_avatar:
             return self.user_avatar.url
