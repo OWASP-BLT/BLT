@@ -397,13 +397,13 @@
             {% csrf_token %}
             <div class="form-group">
                 <input type="hidden" name="issue_pk" id="issue_pk" value="{{ issue.pk }}">
-                <textarea placeholder="Comment" class="form-control" id="text_comment" name="text_comment" rows="3"
+                <textarea placeholder="Comment" class="form-control -ml-2" id="text_comment" name="text_comment" rows="3"
                     required></textarea>
             </div>
             <div class="alert alert-danger hidden" role="alert">
                 <strong>Oh snap!</strong> Cannot comment just newlines and spaces. Please add text.
             </div>
-            <button id="comment_submit" class="btn btn-small hover:bg-sky-600" type="submit" onclick="window.location.reload()">Add Comment</button>
+            <button id="comment_submit" class="btn btn-small hover:bg-sky-600" type="submit">Add Comment</button>
         </form>
         {% endif %}
     </div>
@@ -575,5 +575,6 @@
             }
         });
     });
+    
 </script>
 {% endblock %}

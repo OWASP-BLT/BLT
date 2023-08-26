@@ -3,7 +3,7 @@
         {% if comment.parent == None %}
             <blockquote>
             <div class="well comment">
-                <div class="comment-actions">
+                <div class="comment-actions -ml-20 flex-col space-y-5 p-5">
                     <strong><a href="{{ comment.author_url }}">{{ comment.author }}</a></strong>
                     &nbsp;commented &nbsp;<div class="date">{{ comment.created_date | timesince }} ago</div>
                     {% if user.username == comment.author %}
@@ -16,12 +16,12 @@
                 <form class="edit_form" style="display:none">
                     {% csrf_token %}
                     <div class="form-group">
-                        <textarea class="form-control" required></textarea>
+                        <textarea class="form-control -ml-16" required></textarea>
                     </div>
                     <button class="btn btn-primary" type="submit">Update</button>
                     <button class="btn btn-default cancel-comment-edit">Cancel</button>
                 </form>
-                <div class="text-comment">{{ comment.text | safe }}</div>
+                <div class="text-comment -ml-10">{{ comment.text | safe }}</div>
             </div>
         {% endif %}
 
