@@ -53,6 +53,7 @@ from website.views import (
     github_callback,
     google_callback,
     facebook_callback,
+    sponsor_view
 )
 from website.api.views import (
     IssueViewSet,
@@ -412,6 +413,7 @@ urlpatterns = [
     path("ads.txt", website.views.ads_txt),
     re_path(r"^contributors/$",contributors_view,name="contributors"),
     path("company/",include("company.urls")),
+    path("sponsor/",website.views.sponsor_view, name="sponsor")
 ]
 
 if settings.DEBUG:
