@@ -26,16 +26,14 @@
                     </defs>
                 </svg>
                 <div class="flex flex-col font-semibold">
-                <span>
-                    Current Balance:
+                <span id="balanceDisplay">
+                    Current Balance: 
                 </span>
-                <span>1BCH</span>
-                <span>$100</span>
             </div>
             </div>
 
         </div>
-        <span class="text-2xl font-semibold">bitcoincash:qqeht8vnwag20yv8dvtcrd4ujx09fwxwsqqqw93w88</span>
+        <span class="text-2xl font-semibold" id="walletAddress">bitcoincash:qqeht8vnwag20yv8dvtcrd4ujx09fwxwsqqqw93w88</span>
     </div>
 
     <h2 class="text-[1.72rem] my-5 font-semibold ">How Does Sponsoring Work?</h2>
@@ -108,4 +106,42 @@
 
     <p>Thank you for championing the spirit of excellence on BLT!</p>
 </div>
+
+    <script>
+        async function getBCHPriceInUSD() {
+            const apiUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin-cash&vs_currencies=usd';
+            try {
+                let response = await fetch(apiUrl);
+                let data = await response.json();
+                return data["bitcoin-cash"].usd;
+            } catch (error) {
+                console.error("Error fetching BCH price:", error);
+                return null;
+            }
+        }
+
+        async function getBCHBalance() {
+            const walletAddress = document.getElementById("walletAddress").value;
+            const apiUrl = `https://api.blockchair.com/bitcoin-cash/dashboards/address/${walletAddress}`;
+
+            try {
+                let [response, bchPrice] = await Promise.all([fetch(apiUrl), getBCHPriceInUSD()]);
+
+                let data = await response.json();
+
+                const balance = data.data[walletAddress].address.balance / 1e8; // Convert satoshis to BCH
+
+                if (bchPrice) {
+                    const usdBalance = balance * bchPrice;
+                    document.getElementById("balanceDisplay").innerText = `Balance: ${balance} BCH (~$${usdBalance.toFixed(2)} USD)`;
+                } else {
+                    document.getElementById("balanceDisplay").innerText = `Balance: ${balance} BCH (Failed to fetch USD conversion)`;
+                }
+            } catch (error) {
+                console.error("Error fetching balance:", error);
+                document.getElementById("balanceDisplay").innerText = "Error fetching balance.";
+            }
+        }
+    </script>
+
 {% endblock %}
