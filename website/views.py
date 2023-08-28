@@ -3152,6 +3152,9 @@ def contributors_view(request,*args,**kwargs):
 
     return render(request,"contributors.html",context=context)
 
+def sponsor_view(request):
+    return render(request, "sponsor.html")
+
 
 # class CreateIssue(CronJobBase):
 #     RUN_EVERY_MINS = 1
