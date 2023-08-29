@@ -2,15 +2,17 @@
     {% for comment in all_comment %}
         {% if comment.parent == None %}
             <blockquote>
-            <div class="well comment">
-                <div class="comment-actions">
+            <div class="well comment -ml-11  ">
+                <div class="comment-actions flex-col space-y-5 p-5">
                     <strong><a href="{{ comment.author_url }}">{{ comment.author }}</a></strong>
                     &nbsp;commented &nbsp;<div class="date">{{ comment.created_date | timesince }} ago</div>
                     {% if user.username == comment.author %}
-                        <a class="btn btn-xs btn-primary reply_comment"
+                    <div class="lg:flex-row">
+                        <a class="btn btn-xs btn-primary reply_comment lg:h-12 lg:p-2"
                            name="{{ comment.pk }}">{{ comment.children | length }} replies</a>
-                        <a class="btn btn-xs btn-primary edit_comment" name="{{ comment.pk }}">Edit</a>
-                        <a class="btn btn-xs btn-danger del_comment" name="{{ comment.pk }}">Delete</a>
+                        <a class="btn btn-xs btn-primary edit_comment lg:h-12 lg:p-2" name="{{ comment.pk }}">Edit</a>
+                        <a class="btn btn-xs btn-danger del_comment lg:h-12 lg:p-2" name="{{ comment.pk }}">Delete</a>
+                    </div>
                     {% endif %}
                 </div>
                 <form class="edit_form" style="display:none">
