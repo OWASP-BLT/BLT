@@ -227,7 +227,7 @@ class Issue(models.Model):
         (7, "Server Down"),
     )
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    team_members = models.ManyToManyField(User,related_name="reportmembers",null=True,blank=True)
+    team_members = models.ManyToManyField(User,related_name="reportmembers",blank=True)
     hunt = models.ForeignKey(Hunt, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     url = models.URLField()
@@ -451,6 +451,10 @@ class UserProfile(models.Model):
     issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
     issue_flaged = models.ManyToManyField(Issue,blank=True,related_name="flaged") 
     issues_hidden = models.BooleanField(default=False)
+
+    subscribed_domains = models.ManyToManyField(Domain,related_name="user_subscribed_domains")
+    subscribed_users = models.ManyToManyField(User,related_name="user_subscribed_users")
+    crypto_address = models.CharField(max_length=100,null=True,blank=True)
 
     def avatar(self, size=36):
         if self.user_avatar:

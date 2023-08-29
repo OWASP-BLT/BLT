@@ -6,6 +6,8 @@ import time
 import urllib.request
 import urllib.error
 import urllib.parse
+import stripe
+import humanize
 from collections import deque
 from datetime import datetime, timezone, timedelta
 from urllib.parse import urlparse
@@ -80,11 +82,9 @@ from website.models import (
 from .forms import FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm
 
 from decimal import Decimal
-import stripe
-import humanize
 from django.conf import settings
+from comments.models import Comment
 
-from django.views.decorators.cache import cache_page
 
 #@cache_page(60 * 60 * 24)
 def index(request, template="index.html"):
@@ -1523,7 +1523,6 @@ class HuntCreate(CreateView):
             return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=9R3LPM3ZN8KCC"
         return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HH7MNY6KJGZFW"
 
-
 class IssueView(DetailView):
     model = Issue
     slug_field = "id"
@@ -1744,6 +1743,8 @@ def UpdateIssue(request):
 
         elif request.POST.get("action") == "open":
             issue.status = "open"
+            issue.closed_by = None
+            issue.closed_date = None
             msg_plain = msg_html = render_to_string(
                 "email/bug_updated.txt",
                 {
@@ -1920,8 +1921,16 @@ def save_issue(request, issue_pk):
     issue_pk = int(issue_pk)
     issue = Issue.objects.get(pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
-    userprof.issue_saved.add(issue)
-    return HttpResponse("OK")
+
+    already_saved = userprof.issue_saved.filter(pk=issue_pk).exists()
+
+    if already_saved:
+        userprof.issue_saved.remove(issue)
+        return HttpResponse("REMOVED")
+
+    else:
+        userprof.issue_saved.add(issue)
+        return HttpResponse("OK")
 
 
 @login_required(login_url="/accounts/login")
@@ -1973,6 +1982,55 @@ def get_score(request):
         rank_user = rank_user + 1
         users.append(temp)
     return JsonResponse(users, safe=False)
+
+
+def comment_on_issue(request, issue_pk):
+
+    issue = Issue.objects.filter(pk=issue_pk).first()
+
+    if request.method == "POST" and isinstance(request.user,User):
+
+        comment = request.POST.get("comment","")
+        replying_to_input = request.POST.get("replying_to_input","").split("#")
+        
+        if issue == None:
+            Http404("Issue does not exist, cannot comment")
+
+        if len(replying_to_input) == 2:
+            replying_to_user = replying_to_input[0]
+            replying_to_comment_id = replying_to_input[1]
+
+            parent_comment = Comment.objects.filter(pk=replying_to_comment_id).first()
+
+            if parent_comment == None:
+                messages.error(request,"Parent comment doesn't exist.")
+                return redirect(f"/issue2/{issue_pk}")
+
+            Comment.objects.create(
+                parent = parent_comment,
+                issue = issue,
+                author = request.user.username,
+                author_fk = request.user.userprofile,
+                author_url = f"profile/{request.user.username}/",
+                text = comment
+            )
+
+        else:
+            Comment.objects.create(
+                issue = issue,
+                author = request.user.username,
+                author_fk = request.user.userprofile,
+                author_url = f"profile/{request.user.username}/",
+                text = comment
+            )
+
+
+    context = {
+        "all_comment": Comment.objects.filter(issue__id=issue_pk).order_by("-created_date"),
+        "object": issue
+    }
+
+    return render(request, "comments2.html",context)
 
 
 class CustomObtainAuthToken(ObtainAuthToken):

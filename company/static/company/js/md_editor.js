@@ -127,7 +127,7 @@ function parse(content) {
 
         matches.forEach(element => {
             const extractedText = element.slice(1);
-            content = content.replace(element, '<h1>' + extractedText + '</h1>');
+            content = content.replace(element, '<h1 class="text-4xl font-bold">' + extractedText + '</h1>');
         });
     }
 
@@ -137,7 +137,7 @@ function parse(content) {
 
         matches.forEach(element => {
             const extractedText = element.slice(2);
-            content = content.replace(element, '<h2>' + extractedText + '</h2>');
+            content = content.replace(element, '<h2 class="text-3xl font-semibold">' + extractedText + '</h2>');
         });
     }
 
@@ -147,7 +147,7 @@ function parse(content) {
 
         matches.forEach(element => {
             const extractedText = element.slice(3);
-            content = content.replace(element, '<h3>' + extractedText + '</h3>');
+            content = content.replace(element, '<h3 class="text-2xl font-medium">' + extractedText + '</h3>');
         });
     }
 
@@ -157,7 +157,7 @@ function parse(content) {
 
         matches.forEach(element => {
             const extractedText = element.slice(2, -2);
-            content = content.replace(element, '<strong>' + extractedText + '</strong>');
+            content = content.replace(element, '<strong class="font-bold">' + extractedText + '</strong>');
         });
     }
 
@@ -167,7 +167,7 @@ function parse(content) {
 
         matches.forEach(element => {
             const extractedText = element.slice(2, -1);
-            content = content.replace(element, ' <em>' + extractedText + '</em>');
+            content = content.replace(element, ' <em class="italic">' + extractedText + '</em>');
         });
     }
 
@@ -179,7 +179,7 @@ function parse(content) {
             const text = element.match(/^\[.*\]/)[0].slice(1, -1);
             const url = element.match(/\]\(.*\)/)[0].slice(2, -1);
 
-            content = content.replace(element, '<a href="' + url + '">' + text + '</a>');
+            content = content.replace(element, '<a class="text-blue-500 underline" href="' + url + '">' + text + '</a>');
         });
     }
 
@@ -194,7 +194,7 @@ function parse(content) {
                     currentValue = '<li>' + currentValue.slice(2) + '</li>';
 
                     if (!unorderedList.test(array[index - 1]) && !unorderedSubList.test(array[index - 1])) {
-                        currentValue = '<ul>' + currentValue;
+                        currentValue = '<ul class="list-disc pl-4">' + currentValue;
                     }
 
                     if (!unorderedList.test(array[index + 1]) && !unorderedSubList.test(array[index + 1])) {
@@ -227,7 +227,7 @@ function parse(content) {
                     currentValue = '<li>' + currentValue.slice(2) + '</li>';
 
                     if (!orderedList.test(array[index - 1]) && !orderedSubList.test(array[index - 1])) {
-                        currentValue = '<ol>' + currentValue;
+                        currentValue = '<ol class="list-decimal pl-4">' + currentValue;
                     }
 
                     if (!orderedList.test(array[index + 1]) && !orderedSubList.test(array[index + 1]) && !orderedList.test(array[index + 1])) {
@@ -244,7 +244,7 @@ function parse(content) {
                     currentValue = '<li>' + currentValue.slice(2) + '</li>';
 
                     if (!orderedSubList.test(array[index - 1])) {
-                        currentValue = '<ol>' + currentValue;
+                        currentValue = '<ol class="list-decimal pl-4">' + currentValue;
                     }
 
                     if (orderedList.test(array[index + 1]) && !orderedSubList.test(array[index + 1])) {
@@ -252,7 +252,7 @@ function parse(content) {
                     }
 
                     if (!orderedList.test(array[index + 1]) && !orderedSubList.test(array[index + 1])) {
-                        currentValue = currentValue + '</ol></li></ol>';
+                        currentValue = currentValue + '</ol class="list-decimal pl-4"></li></ol>';
                     }
                 }
 
@@ -269,4 +269,43 @@ function parse(content) {
             return line.replace(line, '<p>' + line + '</p>');
         }
     }).join('');
+}
+
+
+function parse2(content) {
+    // Regular Expressions
+    const h1 = /^#{1}[^#].*$/gm;
+    const h2 = /^#{2}[^#].*$/gm;
+    const h3 = /^#{3}[^#].*$/gm;
+    const bold = /\*\*[^\*\n]+\*\*/gm;
+    const italics = /[^\*]\*[^\*\n]+\*/gm;
+    const link = /\[[\w|\(|\)|\s|\*|\?|\-|\.|\,]*(\]\(){1}[^\)]*\)/gm;
+    const lists = /^((\s*((\*|\-)|\d(\.|\))) [^\n]+))+$/gm;
+    const unorderedList = /^[\*|\+|\-]\s.*$/;
+    const unorderedSubList = /^\s\s\s*[\*|\+|\-]\s.*$/;
+    const orderedList = /^\d\.\s.*$/;
+    const orderedSubList = /^\s\s+\d\.\s.*$/;
+
+    // ... (your existing parsing logic)
+
+    // Apply consistent Tailwind CSS classes to generated HTML elements
+    content = content.replace(h1, '<h1 class="text-4xl font-bold">$1</h1>');
+    content = content.replace(h2, '<h2 class="text-3xl font-semibold">$1</h2>');
+    content = content.replace(h3, '<h3 class="text-2xl font-medium">$1</h3>');
+    content = content.replace(bold, '<strong class="font-bold">$1</strong>');
+    content = content.replace(italics, '<em class="italic">$1</em>');
+    content = content.replace(link, '<a class="text-blue-500 underline" href="$1">$2</a>');
+    // ... (update the rest of the parsing logic)
+
+    // Apply Tailwind CSS classes to lists and list items
+    content = content.replace(unorderedList, '<ul class="list-disc pl-4">$&');
+    content = content.replace(unorderedSubList, '<ul class="list-disc pl-8">$&');
+    content = content.replace(orderedList, '<ol class="list-decimal pl-4">$&');
+    content = content.replace(orderedSubList, '<ol class="list-decimal pl-8">$&');
+    content = content.replace('</li>', '</li>'); // Ensure list item closing tag
+
+    // Apply Tailwind CSS class to paragraphs
+    content = content.replace(/<p>(.*?)<\/p>/g, '<p class="text-base">$1</p>');
+
+    return '<div class="container mx-auto py-8">' + content + '</div>';
 }
