@@ -94,14 +94,15 @@
                         {% endif %}
                     </div>
                     
-                    <template id="bug_report_template">
-                        <style>
-                            /* Local styles here */
-                            </style>
-                        <!-- Local HTML content here -->
-                    </template>
-                    
-                    <div id="bug_report" class="w-full flex flex-col">
+                    <style>
+                        .reset-style * {
+                            all: revert;
+                        }
+                        .reset-style img{
+                            max-width: 100%;
+                        }
+                    </style>
+                    <div id="bug_report" class="reset-style">
 
                     </div>
                 </div>
@@ -262,20 +263,14 @@
 
   <script>
     
-      
-    const template = document.querySelector('#bug_report_template');
-    const shadowRoot = document.querySelector('#bug_report').attachShadow({ mode: 'open' });
-    shadowRoot.appendChild(template.content.cloneNode(true));
-    const contentContainer = shadowRoot.querySelector('#bug_report'); // Assuming a container class
-
+       
     const md = window.markdownit();
     const markdownContent = `{{ object.markdown_description|escapejs }}`;
     const renderedHtml = md.render(markdownContent);
     // const renderedHtml = parse(markdownContent);
     // const renderedHtml = marked.parse(markdownContent)
-    contentContainer.innerHTML = renderedHtml;
 
-    // $("#bug_report").html(renderedHtml);
+    $("#bug_report").html(renderedHtml);
 
 
     function subscribe_domain(){

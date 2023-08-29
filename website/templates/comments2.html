@@ -1,3 +1,5 @@
+{% load static %}
+
 <section id="comment_root" class="not-format mt-10">
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl lg:text-3xl font-bold text-gray-900 ">Comments ({{ all_comment | length }})</h2>
@@ -30,11 +32,20 @@
                     <footer class="flex justify-between items-center mb-2">
                         <div class="flex items-center">
                             <p class="inline-flex items-center mr-3 text-3xl text-gray-900 ">
-                                <img
-                                    class="mr-2 w-12 h-12 rounded-full"
-                                    src="{{ MEDIA_URL }}{{ user.userprofile.user_avatar }}"
-                                    alt="Michael Gough">
-                                {{ comment.author }}
+                                {% if comment.author_fk %}
+                                
+                                    <img
+                                        class="mr-2 w-12 h-12 rounded-full"
+                                        src="{{ MEDIA_URL }}{{ comment.author_fk.user_avatar }}"
+                                        alt="{{ comment.author }} profile">
+                                
+                                {% else %}
+                                    <img
+                                        class="mr-2 w-12 h-12 rounded-full"
+                                        src="{% static 'images/dummy-user.png' %}"
+                                        alt="User profile">
+                                {% endif %}
+                                {{ comment.author }} {{ comment.author_url }}
                             </p>
                             <p class="text-2xl text-gray-600 "><time pubdate datetime="2022-02-08"
                                     title="February 8th, 2022">commented {{ comment.created_date | timesince }} ago</time></p>

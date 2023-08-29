@@ -1986,13 +1986,9 @@ def get_score(request):
 
 def comment_on_issue(request, issue_pk):
 
-
     issue = Issue.objects.filter(pk=issue_pk).first()
 
-    if request.method == "POST":
-
-        if not isinstance(request.user,User):
-            return redirect("/accounts/login") 
+    if request.method == "POST" and isinstance(request.user,User):
 
         comment = request.POST.get("comment","")
         replying_to_input = request.POST.get("replying_to_input","").split("#")
@@ -2014,6 +2010,7 @@ def comment_on_issue(request, issue_pk):
                 parent = parent_comment,
                 issue = issue,
                 author = request.user.username,
+                author_fk = request.user.userprofile,
                 author_url = f"profile/{request.user.username}/",
                 text = comment
             )
@@ -2022,6 +2019,7 @@ def comment_on_issue(request, issue_pk):
             Comment.objects.create(
                 issue = issue,
                 author = request.user.username,
+                author_fk = request.user.userprofile,
                 author_url = f"profile/{request.user.username}/",
                 text = comment
             )

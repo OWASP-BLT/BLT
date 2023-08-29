@@ -227,7 +227,7 @@ class Issue(models.Model):
         (7, "Server Down"),
     )
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    team_members = models.ManyToManyField(User,related_name="reportmembers",null=True,blank=True)
+    team_members = models.ManyToManyField(User,related_name="reportmembers",blank=True)
     hunt = models.ForeignKey(Hunt, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     url = models.URLField()
