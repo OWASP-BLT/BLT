@@ -17,21 +17,21 @@
         content="{% block description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and companies can get involved and help out.{% endblock %}">
     <meta name="author" content="">
     <meta property="og:title" content="{% block og_title %}{% env 'PROJECT_NAME' %}{% endblock %}" />
-    <meta property="og:image" content="{% block og_image %}{% static "img/screenshot.png" %}{% endblock %}" />
+    <meta property="og:image" content="{% block og_image %}{% static 'img/screenshot.png' %}{% endblock %}" />
     <meta property="og:description"
         content="{% block og_description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and companies can get involved and help out.{% endblock %}" />
     <meta property="og:type" content="website" />
     
-    <link href="{% static "vendor/bootstrap/css/bootstrap.css" %}" rel="stylesheet">
-    <link href="{% static "css/style.css" %}" rel="stylesheet">
-    <link href="{% static "css/lightbox.min.css" %}" rel="stylesheet">
-    <link href="{% static "vendor/font-awesome/css/font-awesome.min.css" %}" rel="stylesheet" type="text/css">
-    <link href="{% static "css/animate.css" %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'vendor/bootstrap/css/bootstrap.css' %}" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <link href="{% static 'css/lightbox.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/animate.css' %}" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400" rel="stylesheet">
-    <link href="{% static "css/main.css" %}" rel="stylesheet" type="text/css">
-    <link href="{% static "css/text-slider.css" %}" rel="stylesheet" type="text/css">
-    <link href="{% static "css/activity.css" %}" rel="stylesheet" type="text/css">
-    <link href="{% static "css/navbar.css" %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/main.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/text-slider.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/activity.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/navbar.css' %}" rel="stylesheet" type="text/css">
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
@@ -40,12 +40,12 @@
         referrerpolicy="no-referrer"
     />
 
-    <script src="{% static "vendor/jquery/jquery.min.js" %}"></script>
-    <script src="{% static "js/notify.js" %}"></script>
-    <script src="{% static "js/text-slider.js" %}"></script>
+    <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'js/notify.js' %}"></script>
+    <script src="{% static 'js/text-slider.js' %}"></script>
 <!--     <script src="{% static "js/embed.js" %}"></script> -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     {% block head %}
     {% endblock %}
 
@@ -78,7 +78,7 @@
 
 </body>
 
-<script src="{% static "vendor/bootstrap/js/bootstrap.min.js" %}"></script>
+<script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
 <script src="{% static 'js/ui.js' %}"></script>
 {% block after_js %}
 {% endblock %}

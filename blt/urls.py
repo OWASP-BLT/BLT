@@ -71,7 +71,10 @@ from website.api.views import (
 )
 from company.views import ShowBughuntView
 from website.alternative_views import (
-    CreateHunt2,
+    like_issue2,
+    flag_issue2,
+    subscribe_to_domains,
+    IssueView2
 )
 
 from blt import settings
@@ -285,6 +288,17 @@ urlpatterns = [
     re_path(
         r"^flag_issue/(?P<issue_pk>\d+)/$", website.views.flag_issue, name="flag_issue"
     ),
+
+    re_path(
+        r"^like_issue2/(?P<issue_pk>\d+)/$", like_issue2, name="like_issue2"
+    ),
+    re_path(
+        r"^flag_issue2/(?P<issue_pk>\d+)/$", flag_issue2, name="flag_issue2"
+    ),
+    path(
+        "domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"
+    ),
+
     re_path(
         r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"
     ),
@@ -295,7 +309,9 @@ urlpatterns = [
     ), 
     re_path(r"^issue/edit/$", website.views.IssueEdit, name="edit_issue"),
     re_path(r"^issue/update/$", website.views.UpdateIssue, name="update_issue"),
+    path("issue/<str:issue_pk>/comment/", website.views.comment_on_issue, name="comment_on_issue"),
     re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
+    re_path(r"^issue2/(?P<slug>\w+)/$", IssueView2.as_view(), name="issue_view2"),
     re_path(r"^follow/(?P<user>[^/]+)/", website.views.follow_user, name="follow_user"),
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
     re_path(r"^label_activity/$", SpecificIssuesView.as_view(), name="all_activity"),
@@ -329,7 +345,6 @@ urlpatterns = [
     re_path(r"^accounts/", include("allauth.urls")),
     re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html"),name="start_hunt"),
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
-    re_path(r"^hunt2/$", login_required(CreateHunt2.as_view()), name="hunt2"),
     re_path(r"^hunts/$", ListHunts.as_view(), name="hunts"),
     re_path(r"^invite/$", InviteCreate.as_view(template_name="invite.html")),
     re_path(
