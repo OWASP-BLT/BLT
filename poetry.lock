@@ -562,13 +562,13 @@ files = [
 
 [[package]]
 name = "django-environ"
-version = "0.9.0"
+version = "0.11.1"
 description = "A package that allows you to utilize 12factor inspired environment variables to configure your Django application."
 optional = false
-python-versions = ">=3.4,<4"
+python-versions = ">=3.6,<4"
 files = [
-    {file = "django-environ-0.9.0.tar.gz", hash = "sha256:bff5381533056328c9ac02f71790bd5bf1cea81b1beeb648f28b81c9e83e0a21"},
-    {file = "django_environ-0.9.0-py2.py3-none-any.whl", hash = "sha256:f21a5ef8cc603da1870bbf9a09b7e5577ab5f6da451b843dbcc721a7bca6b3d9"},
+    {file = "django-environ-0.11.1.tar.gz", hash = "sha256:f50dde64c024dfac76279dfd7dade8da994e376d38c3374623ce99490f1534dd"},
+    {file = "django_environ-0.11.1-py2.py3-none-any.whl", hash = "sha256:3b8a0f7f02e6c2999776123f7b5afca4eda4b2b3d8bb5fc3805b2cf476c50018"},
 ]
 
 [package.extras]
@@ -1847,13 +1847,13 @@ pyasn1 = ">=0.1.3"
 
 [[package]]
 name = "selenium"
-version = "4.11.2"
+version = "4.12.0"
 description = ""
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "selenium-4.11.2-py3-none-any.whl", hash = "sha256:98e72117b194b3fa9c69b48998f44bf7dd4152c7bd98544911a1753b9f03cc7d"},
-    {file = "selenium-4.11.2.tar.gz", hash = "sha256:9f9a5ed586280a3594f7461eb1d9dab3eac9d91e28572f365e9b98d9d03e02b5"},
+    {file = "selenium-4.12.0-py3-none-any.whl", hash = "sha256:b2c48b1440db54a0653300d9955f5421390723d53b36ec835e18de8e13bbd401"},
+    {file = "selenium-4.12.0.tar.gz", hash = "sha256:95be6aa449a0ab4ac1198bb9de71bbe9170405e04b9752f4b450dc7292a21828"},
 ]
 
 [package.dependencies]
@@ -2267,4 +2267,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "1625429f3324bab4986987eab350c151046e357f7b973d5042c7eea14bcf2412"
+content-hash = "250b81720ac1d5fad30032db5bf052d6ec2739b6a468576769be4e3d8878eb34"
