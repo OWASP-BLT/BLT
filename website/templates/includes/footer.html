@@ -67,26 +67,34 @@
             {% csrf_token %}
             <input name="next" type="hidden" value="{{ redirect_to }}" />
             <input name="language" id="footerLanguage" type="hidden" value=""/>
-                <li class="dropup list-none">
-                    {% get_current_language as LANGUAGE_CODE %}
-                    {% get_available_languages as LANGUAGES %}
 
-                    <a class="dropdown-toggle flex gap-1" data-toggle="dropdown" href="#">
-                        <div class="flag-{{ LANGUAGE_CODE }} w-8 rounded h-6"></div>
-                        <i class="fa fa-caret-down"></i>
-                    </a>
-                    <ul class="bg-gray-900 dropdown-menu">
-                    {% for lang in LANGUAGES %}
-                    {% if lang.0 != LANGUAGE_CODE  %}
-                        <li> <a onclick='{
-                            $("#footerLanguage").val("{{ lang.0 }}");
-                            $("#footerForm").submit();}'>
-                            <div class="flag-{{ lang.0 }} w-8 rounded h-6"></div>
-                        </a> </li>
-                    {% endif %}
+            <li class="dropup list-none">
+                {% get_current_language as LANGUAGE_CODE %}
+                {% get_available_languages as LANGUAGES %}
+        
+                <a class="dropdown-toggle flex gap-1" data-toggle="dropdown" href="#">
+                    <div class="flag-{{ LANGUAGE_CODE }} w-8 rounded h-6"></div>
+                    <i class="fa fa-caret-down"></i>
+                </a>
+                <ul class="bg-gray-900 dropdown-menu">
+                    {% for lang_code, lang_name in LANGUAGES %}
+                        {% if lang_code != LANGUAGE_CODE %}
+                            <li>
+                                <a onclick='{
+                                    $("#footerLanguage").val("{{ lang_code }}");
+                                    $("#footerForm").submit();}'
+                                    class="hover-black-text">
+
+                                    <div class="flex items-center gap-2 hover:text-black">
+                                        <div class="flag-{{ lang_code }} w-8 rounded h-6"></div>
+                                        <div class="lang_name text-gray-500 l-3">{{ lang_name }}</div>
+                                    </div>
+                                </a>
+                            </li>
+                        {% endif %}
                     {% endfor %}
-                    </ul>
-                </li>
+                </ul>
+            </li>
         </form>
     </div>
 </footer>
