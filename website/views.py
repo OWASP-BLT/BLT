@@ -631,7 +631,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             for screenshot in self.request.FILES.getlist("screenshots"):
                 filename = screenshot.name
                 extension = filename.split(".")[-1] 
-                screenshot.name = filename[:99] + str(uuid.uuid4()) + "." + extension            
+                screenshot.name = (filename + str(uuid.uuid4()))[:90] + "." + extension            
                 default_storage.save(f"screenshots/{screenshot.name}",screenshot)
                 IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}",issue=obj)
                 
