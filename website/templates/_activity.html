@@ -3,21 +3,21 @@
 <div class="list-group-item activity-strip overflow-auto">
     <div class="activity-strip-section">
         {% if activity.user.userprofile.avatar %}
-            <img src="{{ activity.user.userprofile.avatar }}" width="100" class="img-responsive img-rounded">
+            <img src="{{ activity.user.userprofile.avatar }}" width="100" class="img-responsive img-rounded" loading="lazy">
         {% elif activity.user.socialaccount_set.all.0.get_avatar_url %}
             <img src="{{ activity.user.socialaccount_set.all.0.get_avatar_url }}" width="100"
-                 class="img-responsive img-rounded">
+                 class="img-responsive img-rounded" loading="lazy">
         {% elif activity.user.email %}
-            <img src="{% gravatar_url activity.user.email 100 %}" width="100" class="img-responsive img-rounded">
+            <img src="{% gravatar_url activity.user.email 100 %}" width="100" class="img-responsive img-rounded" loading="lazy">
         {% else %}
             <img src="{% static 'images/dummy-user.png' %}" width="100"
-                 class="img-responsive img-rounded">
+                 class="img-responsive img-rounded" loading="lazy">
         {% endif %}
 
         <div class="info">
             <a href="/domain/{{ activity.domain_name }}">
                 <img src="http://www.{{ activity.domain_name }}/favicon.ico" height="25"
-                     onerror="this.onerror=null; this.style.display='none';">
+                     onerror="this.onerror=null; this.style.display='none';" loading="lazy">
             </a>
             <a href="{{ activity.get_absolute_url }}">{{ activity.description|truncatechars:100 }}</a>
 
@@ -48,14 +48,14 @@
         {% for screenshot_activity,screenshot in activity_screenshots.items %}
             {% if activity == screenshot_activity %}
                 <a href="{{ activity.get_absolute_url }}">
-                    <img src="{{ screenshot.image.url }}">
+                    <img src="{{ screenshot.image.url }}" loading="lazy">
                 </a>
             {% endif %}
         {% endfor %}
 
         {% if activity.screenshot %}
             <a href="{{ activity.get_absolute_url }}">
-                <img src="{{ activity.screenshot.url }}">
+                <img src="{{ activity.screenshot.url }}" loading="lazy">
             </a>
         {% endif %}
     </div>
