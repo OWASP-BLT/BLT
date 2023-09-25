@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-07-11 16:18+0530\n"
+"POT-Creation-Date: 2023-09-25 16:36+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,42 +18,168 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: blt/settings.py:145
+#: blt/settings.py:224
 msgid "English"
 msgstr "अंग्रेज़ी"
 
-#: blt/settings.py:146
+#: blt/settings.py:225
 msgid "French"
 msgstr "फ्रेंच"
 
-#: website/templates/_subscriptions.html:51
-#: website/templates/_subscriptions.html:72
-#: website/templates/_subscriptions.html:93
-msgid "Featured on Homepage"
-msgstr "होम पेज पर प्रदर्शित"
+#: blt/settings.py:226
+msgid "Chinese"
+msgstr ""
 
-#: website/templates/_subscriptions.html:54
-#: website/templates/_subscriptions.html:75
-#: website/templates/_subscriptions.html:97
-msgid "Start"
-msgstr "प्रारंभ"
+#: blt/settings.py:227
+msgid "German"
+msgstr ""
 
-#: website/templates/_subscriptions.html:73
-#: website/templates/_subscriptions.html:94
-msgid "Featured in Newsletter"
-msgstr "न्यूज़लेटर में विशेष रुप से प्रदर्शित"
+#: blt/settings.py:228
+msgid "Japanese"
+msgstr ""
 
-#: website/templates/_subscriptions.html:95
-msgid "Announced to Users"
-msgstr "उपयोगकर्ताओं के लिए घोषित"
+#: blt/settings.py:229
+msgid "Russian"
+msgstr ""
 
-#: website/templates/account/login.html:76
-msgid "Sign In"
-msgstr "साइन इन करें"
+#: blt/settings.py:230
+msgid "Hindi"
+msgstr ""
 
-#: website/templates/account/login.html:77
+#: company/templates/company/register_company.html:9
+#: company/templates/company/register_company.html:31
+msgid "Register Company"
+msgstr "कंपनी पंजीकृत करें"
+
+#: company/templates/company/register_company.html:37
+msgid "Company Information"
+msgstr "कंपनी की जानकारी"
+
+#: company/templates/company/register_company.html:45
+msgid "Company Name"
+msgstr "कंपनी का नाम"
+
+#: company/templates/company/register_company.html:64
+msgid "Company Url"
+msgstr "कंपनी का यूआरएल"
+
+#: company/templates/company/register_company.html:83
+msgid "Company Support Email (Optional)"
+msgstr "कंपनी समर्थन ईमेल (वैकल्पिक)"
+
+#: company/templates/company/register_company.html:101
+msgid "Company Twitter URL (Optional)"
+msgstr "कंपनी का ट्विटर यूआरएल (वैकल्पिक)"
+
+#: company/templates/company/register_company.html:119
+msgid "Company Facebook URL (Optional)"
+msgstr "कंपनी का फेसबुक यूआरएल (वैकल्पिक)"
+
+#: company/templates/company/register_company.html:142
+msgid "Company Logo"
+msgstr "कंपनी का लोगो"
+
+#: company/templates/company/register_company.html:162
+msgid "Upload logo"
+msgstr "लोगो अपलोड करें"
+
+#: company/templates/company/register_company.html:178
+msgid "Company Managers"
+msgstr "कंपनी के प्रबंधक"
+
+#: company/templates/company/register_company.html:181
+msgid "Add Emails which will be allowed to add domains"
+msgstr "वे ईमेल जो डोमेन जोड़ने की अनुमति देंगे, जोड़े"
+
+#: company/templates/company/register_company.html:182
+#, fuzzy
+#| msgid "Email should be registered user on bugheist"
+msgid "Email should be registerd user on bugheist"
+msgstr "ईमेल bugheist पर पंजीकृत उपयोगकर्ता होना चाहिए"
+
+#: company/templates/company/register_company.html:186
+#: website/templates/report.html:286
+msgid "Add Email"
+msgstr "ईमेल जोड़ें"
+
+#: company/templates/company/register_company.html:193
+#: website/templates/report.html:299
+msgid "Email address"
+msgstr "ईमेल पता"
+
+#: company/templates/company/register_company.html:205
+#: website/templates/account/logout.html:14 website/templates/report.html:328
+msgid "Cancel"
+msgstr "रद्द करें"
+
+#: company/templates/company/register_company.html:211
+msgid "Save"
+msgstr "सहेजें"
+
+#: website/templates/account/email/email_confirmation_message.txt:5
+#, python-format
+msgid ""
+"You're receiving this e-mail because user %(user_display)s has given your e-"
+"mail address to register an account on %(site_domain)s.\n"
+"\n"
+"To confirm this is correct, go to %(activate_url)s"
+msgstr ""
+
+#: website/templates/account/login.html:21
+#: website/templates/account/signup.html:17
+msgid ""
+"OWASP BLT is a bug logging tool to report issues and get points, companies "
+"are held accountable"
+msgstr ""
+"OWASP BLT एक बग लॉगिंग टूल है जिसका उपयोग समस्याओं की रिपोर्ट करने और पॉइंट्स प्राप्त "
+"करने के लिए किया जाता है, कंपनियों को जिम्मेदारी दी जाती है"
+
+#: website/templates/account/login.html:24
+#, fuzzy
+#| msgid "Already have an account"
+msgid "Don't have an account"
+msgstr "पहले से ही एक खाता है"
+
+#: website/templates/account/login.html:25
+#: website/templates/includes/footer.html:30
+msgid "Get Started"
+msgstr "प्रारंभ करें"
+
+#: website/templates/account/login.html:28
+#: website/templates/account/signup.html:24
+msgid "Read our"
+msgstr "हमारा पढ़ें"
+
+#: website/templates/account/login.html:28
+#: website/templates/account/signup.html:24
+msgid "terms"
+msgstr "शर्तें"
+
+#: website/templates/account/login.html:28
+#: website/templates/account/signup.html:24
+msgid "and"
+msgstr "और"
+
+#: website/templates/account/login.html:28
+#: website/templates/account/signup.html:24
+msgid "conditions"
+msgstr "शर्तें"
+
+#: website/templates/account/login.html:32
+msgid "Account Login"
+msgstr "खाता लॉग इन"
+
+#: website/templates/account/login.html:48
 msgid "Forgot Password?"
 msgstr "पासवर्ड भूल गए?"
+
+#: website/templates/account/login.html:73
+msgid "Log in"
+msgstr "लॉग इन करें"
+
+#: website/templates/account/login.html:86
+msgid "or login with"
+msgstr "या इससे लॉग इन करें"
 
 #: website/templates/account/logout.html:6
 msgid "Sign Out"
@@ -65,169 +191,789 @@ msgstr "क्या आप निश्चित हैं?"
 
 #: website/templates/account/logout.html:13
 msgid "Yes"
-msgstr  "हाँ"
+msgstr "हाँ"
 
-#: website/templates/account/logout.html:14
-msgid "Cancel"
-msgstr "रद्द करें"
-
-#: website/templates/account/password_change.html:22
-#: website/templates/account/password_change.html:41
-#: website/templates/account/password_reset_from_key.html:26
-#: website/templates/account/password_reset_from_key.html:52
+#: website/templates/account/password_change.html:39
+#: website/templates/account/password_change.html:67
+#: website/templates/account/password_reset_from_key.html:41
+#: website/templates/account/password_reset_from_key.html:67
+#: website/templates/base_admin.html:109
+#: website/templates/base_dashboard_company.html:134
+#: website/templates/base_dashboard_user.html:116
+#: website/templates/includes/navbar.html:125
 msgid "Change Password"
 msgstr "पासवर्ड बदलें"
 
-#: website/templates/account/password_reset.html:27
+#: website/templates/account/password_reset.html:42
 msgid "Password Reset"
 msgstr "पासवर्ड रीसेट करें"
 
-#: website/templates/account/password_reset.html:29
-msgid "Forgotten your password? Enter your e-mail address below, and we'll send you an e-mail allowing you to reset it."
-msgstr "अपना पासवर्ड भूल गए? नीचे अपना ई-मेल पता दर्ज करें, और हम आपको एक ई-मेल भेजेंगे जिससे आप इसे रीसेट कर सकते हैं।"
+#: website/templates/account/password_reset.html:44
+msgid ""
+"Forgotten your password? Enter your e-mail address below, and we'll send you "
+"an e-mail allowing you to reset it."
+msgstr ""
+"अपना पासवर्ड भूल गए? नीचे अपना ई-मेल पता दर्ज करें, और हम आपको एक ई-मेल भेजेंगे जिससे आप "
+"इसे रीसेट कर सकते हैं।"
 
-#: website/templates/account/password_reset.html:38
+#: website/templates/account/password_reset.html:54
 msgid "Reset My Password"
 msgstr "मेरा पासवर्ड रीसेट करें"
 
-#: website/templates/account/password_reset_from_key.html:24
+#: website/templates/account/password_reset_from_key.html:39
 msgid "Bad Token"
 msgstr "खराब टोकन"
 
-#: website/templates/account/password_reset_from_key.html:55
+#: website/templates/account/password_reset_from_key.html:70
 msgid "Your password is now changed!"
 msgstr "आपका पासवर्ड अब बदल गया है!"
 
-#: website/templates/account/signup.html:22
-#: website/templates/account/signup.html:65
-msgid "Sign Up"
-msgstr "साइन अप करें"
+#: website/templates/account/signup.html:20
+msgid "Already have an account"
+msgstr "पहले से ही एक खाता है"
 
-#: website/templates/account/signup.html:67
-#: python-format
-msgid "Already have an account? <a href=\"%(login_url)s\">Login</a>."
-msgstr "पहले से ही एक खाता है? <a href=\"%(login_url)s\"> लॉगिन </a>।"
-
-#: website/templates/index.html:13
-msgid "Find Bugs, Win Points and Prizes"
-msgstr "कीड़े, जीत के अंक और पुरस्कार खोजें"
-
-#: website/templates/index.html:17
-msgid "Fix issues on websites, apps or hardware (+3 points)"
-msgstr "वेबसाइट, एप्लिकेशन या हार्डवेयर (+3 अंक) पर समस्याएँ ठीक करें"
-
-#: website/templates/index.html:18
-msgid "Verify other bug reports(+2 points)"
-msgstr "अन्य बग रिपोर्ट (+2 अंक) की जाँच करें"
-
-#: website/templates/index.html:19
-msgid "Invite friends (when they signup , get +1 point)"
-msgstr "मित्रों को आमंत्रित करें (जब वे साइनअप करते हैं, तो +1 अंक प्राप्त करें)"
-
-#: website/templates/index.html:20
-msgid "Find a bug on a new site or app (+4 points)"
-msgstr "नई साइट या ऐप (+4 अंक) पर एक बग खोजें"
-
-#: website/templates/index.html:33
-msgid "Number Error"
-msgstr "संख्या त्रुटि"
-
-#: website/templates/index.html:34
-msgid "For pages where you see a number 404, 500."
-msgstr "उन पृष्ठों के लिए जहाँ आप संख्या 404, 500 देखते हैं।"
-
-#: website/templates/index.html:48
-msgid "Functional"
-msgstr "कार्यात्मक"
-
-#: website/templates/index.html:49
-msgid "Something doesn't work."
-msgstr "कुछ काम नहीं करता है।"
-
-#: website/templates/index.html:63
-msgid "Performance"
-msgstr "प्रदर्शन"
-
-#: website/templates/index.html:64
-msgid "Anything over 5 seconds."
-msgstr "5 सेकंड से अधिक कुछ भी।"
-
-#: website/templates/index.html:82
-msgid "Security"
-msgstr "सुरक्षा"
-
-#: website/templates/index.html:83
-msgid "Data leaks, exploits or anything smelly."
-msgstr "डेटा लीक, शोषण या कुछ भी बदबूदार।"
-
-#: website/templates/index.html:97
-msgid "Typo"
-msgstr "टाइपो"
-
-#: website/templates/index.html:98
-msgid "Miss-spellings, miss-grammar and more."
-msgstr "मिस-स्पेलिंग, मिस-व्याकरण और बहुत कुछ।"
-
-#: website/templates/index.html:112
-msgid "Design"
-msgstr "डिजाइन"
-
-#: website/templates/index.html:113
-msgid "Layout, responsiveness and improvements"
-msgstr "लेआउट, जवाबदेही और सुधार"
-
-#: website/templates/index.html:131
-msgid "Featured Websites"
-msgstr "विशेष रुप से प्रदर्शित वेबसाइट"
-
-#: website/templates/index.html:194
-msgid "Leaderboard"
-msgstr "लीडरबोर्ड"
-
-msgid "Upload Screenshot"
-msgstr "स्क्रीनशॉट अपलोड करें"
-
-msgid "Report Bug"
-msgstr "रिपोर्ट"
-
-msgid "Describe bug issue"
-msgstr "बग समस्या का वर्णन करें"
-
-msgid "Social"
-msgstr "सामाजिक"
-
-msgid "Bug Hunt"
-msgstr "कीट का शिकार"
-
-msgid "Tour"
-msgstr "टूर"
-
-msgid "User Profile"
-msgstr "उपयोगकर्ता प्रोफ़ाइल"
-
-msgid "Logout"
-msgstr "लॉगआउट"
-
-msgid "Signup"
-msgstr "साइनअप"
-
+#: website/templates/account/signup.html:21
+#: website/templates/includes/navbar.html:49
+#: website/templates/includes/navbar.html:150
 msgid "Login"
 msgstr "लॉगिन"
 
-msgid "About"
-msgstr "के बारे में"
+#: website/templates/account/signup.html:28
+msgid "Account SignUp"
+msgstr "खाता साइन अप"
 
-msgid "Stats"
-msgstr "आँकड़े"
+#: website/templates/account/signup.html:85
+#: website/templates/includes/navbar.html:44
+msgid "Sign Up"
+msgstr "साइन अप करें"
 
-msgid "Company Scoreboard"
-msgstr "कंपनी स्कोरबोर्ड"
+#: website/templates/base_admin.html:107
+#: website/templates/base_dashboard_company.html:132
+#: website/templates/base_dashboard_user.html:114
+#: website/templates/includes/navbar.html:102
+msgid "User Profile"
+msgstr "उपयोगकर्ता प्रोफ़ाइल"
 
-msgid "Terms of Service"
-msgstr "सेवा की शर्तें"
+#: website/templates/base_admin.html:111
+#: website/templates/base_dashboard_company.html:136
+#: website/templates/base_dashboard_user.html:118
+#: website/templates/includes/navbar.html:36
+#: website/templates/includes/navbar.html:141
+msgid "Logout"
+msgstr "लॉगआउट"
 
+# Hindi (hi)
+#: website/templates/hunt.html:182
+msgid "Enter URL, APP name or GPS location of issue"
+msgstr "मुद्दे के URL, APP नाम या GPS स्थान दर्ज करें"
+
+#: website/templates/hunt.html:228 website/templates/hunt.html:229
+#: website/templates/hunt.html:230 website/templates/hunt.html:231
+msgid "Month"
+msgstr "महीना"
+
+#: website/templates/hunt.html:235
+msgid "Grand Prize"
+msgstr "महान पुरस्कार"
+
+#: website/templates/hunt.html:236
+#, fuzzy
+#| msgid "Max amount awarded to winner"
+msgid "Max amout awarded to winner"
+msgstr "विजेता को दिया गया अधिकतम राशि"
+
+#: website/templates/hunt.html:249
+msgid "START BUGHUNT"
+msgstr "बगहंट शुरू करें"
+
+#: website/templates/hunt.html:255 website/templates/index.html:284
+#: website/templates/mobile_about.html:4
+msgid "free to use"
+msgstr "उपयोग करने के लिए स्वतंत्र"
+
+#: website/templates/hunt.html:255
+#, fuzzy
+#| msgid "Open Source and a non-commercials"
+msgid "Open Source and a non-commercial"
+msgstr "ओपन सोर्स और गैर-वाणिज्यिक"
+
+#: website/templates/hunt.html:255 website/templates/index.html:284
+#: website/templates/mobile_about.html:4
+msgid "not for profit initiative"
+msgstr "लाभ के लिए नहीं, गैर लाभकारी पहल"
+
+#: website/templates/hunt_list.html:29
+#: website/templates/includes/navbar.html:29
+#: website/templates/includes/navbar.html:67
 msgid "Search"
 msgstr "खोज"
 
+#: website/templates/hunt_list.html:37
+msgid "Filter Hunts"
+msgstr "हंट्स फ़िल्टर करें"
+
+#: website/templates/includes/footer.html:13
+msgid "Community"
+msgstr "समुदाय"
+
+#: website/templates/includes/footer.html:14
+msgid "Contributors"
+msgstr "योगदानकर्ता"
+
+#: website/templates/includes/footer.html:18
+msgid "Company"
+msgstr "कंपनी"
+
+#: website/templates/includes/footer.html:19
+msgid "Features"
+msgstr "विशेषताएँ"
+
+#: website/templates/includes/footer.html:20 website/templates/profile.html:269
+msgid "Stats"
+msgstr "आँकड़े"
+
+#: website/templates/includes/footer.html:21
+msgid "Company Scoreboard"
+msgstr "कंपनी स्कोरबोर्ड"
+
+#: website/templates/includes/footer.html:24
+msgid "Legal"
+msgstr "कानूनी"
+
+#: website/templates/includes/footer.html:25
+#: website/templates/mobile_about.html:3
+msgid "About"
+msgstr "के बारे में"
+
+#: website/templates/includes/footer.html:26
+msgid "Privacy"
+msgstr "गोपनीयता"
+
+#: website/templates/includes/footer.html:27
+msgid "Terms of Service"
+msgstr "सेवा की शर्तें"
+
+#: website/templates/includes/footer.html:31
+msgid "Developer API"
+msgstr "डेवलपर API"
+
+#: website/templates/includes/footer.html:32
+msgid "Documentation"
+msgstr "दस्तावेज़ीकरण"
+
+#: website/templates/includes/footer.html:33
+msgid "Guides"
+msgstr "मार्गदर्शिकाएँ"
+
+#: website/templates/includes/footer.html:37
+msgid "Follow Us"
+msgstr "हमें फ़ॉलो करें"
+
+#: website/templates/includes/footer.html:62
+msgid "Powered by"
+msgstr "के द्वारा संचालित"
+
+#: website/templates/includes/navbar.html:23
+#: website/templates/includes/navbar.html:69
+msgid "Report a Bug"
+msgstr "रिपोर्ट"
+
+#: website/templates/includes/navbar.html:72
+msgid "Bughunts"
+msgstr "बग हंट्स"
+
+#: website/templates/includes/navbar.html:109
 msgid "Add to chrome"
 msgstr "क्रोम में जोड़ें"
+
+#: website/templates/includes/navbar.html:114
+msgid "Start a Bug Hunt"
+msgstr "कीट का शिकार"
+
+#: website/templates/includes/navbar.html:120
+msgid "Social"
+msgstr "सामाजिक"
+
+#: website/templates/includes/navbar.html:130
+msgid "Invite Friends"
+msgstr "मित्रों को आमंत्रित करें"
+
+#: website/templates/includes/navbar.html:135
+msgid "Company Dashboard"
+msgstr "कंपनी स्कोरबोर्ड"
+
+#: website/templates/includes/navbar.html:149
+msgid "Signup"
+msgstr "साइनअप"
+
+#: website/templates/index.html:12
+msgid "Find Bugs, Win Points and Prizes"
+msgstr "कीड़े, जीत के अंक और पुरस्कार खोजें"
+
+#: website/templates/index.html:20
+msgid "Fix issues on websites, apps or hardware (+3 points)"
+msgstr "वेबसाइट, एप्लिकेशन या हार्डवेयर (+3 अंक) पर समस्याएँ ठीक करें"
+
+#: website/templates/index.html:23
+msgid "Verify other bug reports(+2 points)"
+msgstr "अन्य बग रिपोर्ट (+2 अंक) की जाँच करें"
+
+#: website/templates/index.html:26
+msgid "Invite friends (when they signup , get +1 point)"
+msgstr "मित्रों को आमंत्रित करें (जब वे साइनअप करते हैं, तो +1 अंक प्राप्त करें)"
+
+#: website/templates/index.html:29
+msgid "Find a bug on a new site or app (+4 points)"
+msgstr "नई साइट या ऐप (+4 अंक) पर एक बग खोजें"
+
+#: website/templates/index.html:42
+msgid "Number Error"
+msgstr "संख्या त्रुटि"
+
+#: website/templates/index.html:43
+msgid "For pages where you see a number 404, 500."
+msgstr "उन पृष्ठों के लिए जहाँ आप संख्या 404, 500 देखते हैं।"
+
+#: website/templates/index.html:44 website/templates/index.html:51
+#: website/templates/index.html:58 website/templates/index.html:65
+#: website/templates/index.html:72 website/templates/index.html:79
+#: website/templates/index.html:86 website/templates/index.html:271
+msgid "Examples"
+msgstr "उदाहरण"
+
+#: website/templates/index.html:49 website/templates/profile.html:238
+msgid "Functional"
+msgstr "कार्यात्मक"
+
+#: website/templates/index.html:50
+msgid "Something doesn't work as intended"
+msgstr "कुछ काम नहीं करता है।"
+
+#: website/templates/index.html:56 website/templates/profile.html:243
+msgid "Performance"
+msgstr "प्रदर्शन"
+
+#: website/templates/index.html:57
+msgid "Any process that takes over 5 seconds."
+msgstr "5 सेकंड से अधिक कुछ भी।"
+
+#: website/templates/index.html:63 website/templates/profile.html:249
+msgid "Security"
+msgstr "सुरक्षा"
+
+#: website/templates/index.html:64
+msgid "Data leaks, exploits or anything smelly."
+msgstr "डेटा लीक, शोषण या कुछ भी बदबूदार।"
+
+#: website/templates/index.html:70 website/templates/profile.html:254
+msgid "Typo"
+msgstr "टाइपो"
+
+#: website/templates/index.html:71
+msgid "Miss-spellings, miss-grammar and more."
+msgstr "मिस-स्पेलिंग, मिस-व्याकरण और बहुत कुछ।"
+
+#: website/templates/index.html:77 website/templates/profile.html:261
+msgid "Design"
+msgstr "डिजाइन"
+
+#: website/templates/index.html:78
+msgid "Layout, responsiveness and improvements"
+msgstr "लेआउट, जवाबदेही और सुधार"
+
+#: website/templates/index.html:84
+msgid "Server Down"
+msgstr "सर्वर धीमा चर रहा है"
+
+#: website/templates/index.html:85
+msgid "500 Server Error and Downtime"
+msgstr "500 सर्वर त्रुटि और डाउनटाइम"
+
+#: website/templates/index.html:95
+msgid "Bugs"
+msgstr "बग"
+
+#: website/templates/index.html:98
+msgid "Users"
+msgstr "उपयोगकर्ताओं"
+
+#: website/templates/index.html:101
+msgid "Hunts"
+msgstr "शिकार"
+
+#: website/templates/index.html:104
+msgid "Domains"
+msgstr "डोमेन्स"
+
+#: website/templates/index.html:111
+#, fuzzy
+#| msgid "LATEST HUNTS"
+msgid "ENDED HUNTS"
+msgstr "नवीनतम शिकार"
+
+#: website/templates/index.html:113
+#, fuzzy
+#| msgid "View Ended Hunts"
+msgid "View Ongoing Hunts"
+msgstr "समाप्त शिकार देखें"
+
+#: website/templates/index.html:116
+msgid "LATEST HUNTS"
+msgstr "नवीनतम शिकार"
+
+#: website/templates/index.html:118
+msgid "View Ended Hunts"
+msgstr "समाप्त शिकार देखें"
+
+#: website/templates/index.html:131
+#, fuzzy
+#| msgid "LATEST HUNTS"
+msgid "LATEST"
+msgstr "नवीनतम शिकार"
+
+#: website/templates/index.html:177
+msgid "No ongoing hunt's found"
+msgstr "कोई चल रहे शिकार नहीं मिला"
+
+#: website/templates/index.html:187
+msgid "LEADER BOARDS"
+msgstr "लीडर बोर्ड्स"
+
+#: website/templates/index.html:192
+msgid "TOP COMPANY"
+msgstr "शीर्ष कंपनी"
+
+#: website/templates/index.html:202
+msgid "SUBMIT A BUG"
+msgstr ""
+
+#: website/templates/index.html:210
+msgid "TOP TESTER"
+msgstr "शीर्ष टेस्टर"
+
+#: website/templates/index.html:220
+msgid "VIEW PROFILE"
+msgstr ""
+
+#: website/templates/index.html:232
+msgid "Latest activity"
+msgstr "नवीनतम गतिविधि"
+
+#: website/templates/index.html:238
+msgid "View All Activity"
+msgstr "सभी गतिविधि देखें"
+
+#: website/templates/index.html:244
+msgid "Leaderboard"
+msgstr "लीडरबोर्ड"
+
+#: website/templates/index.html:248
+msgid "The 1st Place Hunter for"
+msgstr "पहले स्थान पर हंटर के लिए"
+
+#: website/templates/index.html:248
+msgid "will receive"
+msgstr "प्राप्त होगा"
+
+#: website/templates/index.html:250
+msgid "No sponsored prizes this month"
+msgstr "इस महीने कोई प्रायोजित पुरस्कार नहीं हैं"
+
+#: website/templates/index.html:251
+msgid "Sponsor a Prize"
+msgstr "पुरस्कार संरचित करें"
+
+#: website/templates/index.html:267 website/templates/mobile_about.html:19
+#: website/templates/profile.html:345
+msgid "Points"
+msgstr "अंक"
+
+#: website/templates/index.html:271
+msgid "Be first to find issues"
+msgstr "पहले इस्यू खोजने वाले बनें"
+
+#: website/templates/index.html:274
+msgid "View All"
+msgstr "सभी देखें"
+
+#: website/templates/index.html:275
+msgid "Filter Monthly"
+msgstr "मासिक फ़िल्टर"
+
+#: website/templates/index.html:276
+msgid "View Monthly"
+msgstr "मासिक देखें"
+
+#: website/templates/index.html:284 website/templates/mobile_about.html:4
+msgid "Open Source and a non-commercials"
+msgstr "ओपन सोर्स और गैर-वाणिज्यिक"
+
+#: website/templates/invite.html:11
+msgid "Invite a company and get +5 points when they join"
+msgstr "एक कंपनी को आमंत्रित करें और जब वे जुड़ें, +5 अंक प्राप्त करें"
+
+#: website/templates/join.html:431 website/templates/join.html:460
+#: website/templates/join.html:489
+msgid "Featured on Homepage"
+msgstr "होम पेज पर प्रदर्शित"
+
+#: website/templates/join.html:461 website/templates/join.html:490
+msgid "Featured in Newsletter"
+msgstr "न्यूज़लेटर में विशेष रुप से प्रदर्शित"
+
+#: website/templates/join.html:492
+msgid "Announced to Users"
+msgstr "उपयोगकर्ताओं के लिए घोषित"
+
+#: website/templates/mobile_about.html:5
+msgid "All prize money goes directly to the bug hunter"
+msgstr "सभी पुरस्कार राशि सीधे बग हंटर के पास जाती है"
+
+#: website/templates/mobile_about.html:6
+msgid ""
+"Software code allows us to buy a gift for Mom or Dad on amazon.com in 7 "
+"seconds"
+msgstr ""
+"सॉफ़्टवेयर कोड हमें 7 सेकंड में amazon.com पर माँ या पापा के लिए उपहार खरीदने की अनुमति "
+"देता है"
+
+#: website/templates/mobile_about.html:6
+msgid "watch our favorite"
+msgstr "हमारे पसंदीदा देखें"
+
+#: website/templates/mobile_about.html:7
+msgid ""
+"“House of Cards” episode on Netflix or read Yelp reviews about a new "
+"restaurant"
+msgstr ""
+"Netflix पर 'House of Cards' एपिसोड देखें या एक नया रेस्तरां के बारे में Yelp समीक्षाएँ पढ़ें"
+
+#: website/templates/mobile_about.html:9
+msgid ""
+"When we can’t access the information we’re looking for on the internet "
+"within seconds"
+msgstr ""
+"जब हम इंटरनेट पर सेकंडों में हमें जिस जानकारी की तलाश है, तो हम उसका उपयोग नहीं कर सकते"
+
+#: website/templates/mobile_about.html:9
+msgid "we are not happy"
+msgstr "हम खुश नहीं हैं"
+
+#: website/templates/mobile_about.html:12
+msgid "This is where you come into the picture"
+msgstr "यहाँ पर आप प्रवेश करते हैं"
+
+#: website/templates/mobile_about.html:14
+msgid ""
+"wants you to identify the software (and hardware) bugs that delay downloads"
+msgstr ""
+"आपसे अनुरोध है कि आप डाउनलोड को विलंबित करने वाली सॉफ़्टवेयर (और हार्डवेयर) बग्स की "
+"पहचान करें"
+
+#: website/templates/mobile_about.html:14
+msgid "freeze screens"
+msgstr "स्क्रीन जम करना"
+
+#: website/templates/mobile_about.html:15
+msgid ""
+"create payloads that deliver malware to websites and generate other issues"
+msgstr "मैलवेयर को वेबसाइटों पर पहुंचाने और अन्य समस्याएँ उत्पन्न करने वाले पेलोड बनाएं"
+
+#: website/templates/mobile_about.html:17
+msgid "What’s in it for you"
+msgstr "आपके लिए इसमें क्या है"
+
+#: website/templates/mobile_about.html:20
+msgid "Money if you join a"
+msgstr "पैसा अगर आप शामिल होते हैं"
+
+#: website/templates/mobile_about.html:20
+msgid "Sponsored Bug Hunt"
+msgstr "प्रायोजित बग हंट"
+
+#: website/templates/mobile_about.html:21
+msgid "Jackpot money listed on the Leaderboard"
+msgstr "लीडरबोर्ड पर सूचित जैकपॉट राशि"
+
+#: website/templates/mobile_about.html:22
+msgid "Money if someone tips you for finding a bug through the tip button"
+msgstr "पैसा अगर कोई आपको सुझाव देता है कि आप टिप बटन के माध्यम से बग खोजने के लिए"
+
+#: website/templates/mobile_about.html:23
+msgid "Experience to add to your résumé or portfolio"
+msgstr "अपने रिज्यूमे या पोर्टफोलियो में जोड़ने के लिए अनुभव"
+
+#: website/templates/mobile_about.html:26
+msgid "How it Works"
+msgstr "यह कैसे काम करता है"
+
+#: website/templates/mobile_about.html:28
+msgid "Testers"
+msgstr "टेस्टर्स"
+
+#: website/templates/mobile_about.html:30
+msgid "Create a User Account to log into"
+msgstr "लॉग इन करने के लिए एक उपयोगकर्ता खाता बनाएं"
+
+#: website/templates/mobile_about.html:31
+msgid "Describe the software or hardware bug you found"
+msgstr "वह सॉफ़्टवेयर या हार्डवेयर बग विवरण करें जिसे आपने पाया"
+
+#: website/templates/mobile_about.html:32
+msgid "Attach a screenshot of the bug"
+msgstr "बग का एक स्क्रीनशॉट संलग्न करें"
+
+#: website/templates/mobile_about.html:33
+msgid "Submit the information"
+msgstr "जानकारी सबमिट करें"
+
+#: website/templates/mobile_about.html:34
+msgid "Win money through company-sponsored Bug Hunts"
+msgstr "कंपनी के प्रायोजित बग हंट के माध्यम से पैसे जीतें"
+
+#: website/templates/mobile_about.html:34
+msgid "tips or the Grand Prize/Jackpot"
+msgstr "सुझाव या मुख्य पुरस्कार/जैकपॉट"
+
+#: website/templates/mobile_about.html:34
+msgid ""
+"We may also have \"heists\" where each bug is worth a specific amount based "
+"on what the company sets"
+msgstr ""
+"हमारे पास \"हैस्ट\" भी हो सकते हैं जहां प्रति बग की मूल्य निर्धारित की जाएगी जिस पर "
+"कंपनी ने निर्धारित किया है"
+
+#: website/templates/mobile_about.html:36
+msgid "If you participate in"
+msgstr "यदि आप भाग लेते हैं"
+
+#: website/templates/mobile_about.html:36
+msgid "sponsored Bug Hunts"
+msgstr "प्रायोजित बग हंट"
+
+#: website/templates/mobile_about.html:36
+msgid "you could win prize money known as tips"
+msgstr "आप सुझाव के रूप में जाने जाने वाले पुरस्कार राशि जीत सकते हैं"
+
+#: website/templates/mobile_about.html:39
+msgid "Organizations"
+msgstr "संगठन"
+
+#: website/templates/mobile_about.html:41
+msgid "We want everyone to love your website"
+msgstr "हम चाहते हैं कि सभी आपकी वेबसाइट को पसंद करें"
+
+#: website/templates/mobile_about.html:42
+msgid ""
+"You want to keep your customers happy by giving them a consistent bug-free "
+"user experience"
+msgstr ""
+"आप चाहते हैं कि आपके ग्राहक आपकी वेबसाइट पर एक संगत बग-मुक्त उपयोगकर्ता अनुभव प्राप्त करके "
+"खुश रहें"
+
+#: website/templates/mobile_about.html:43
+msgid ""
+"offers monthly Bug Hunts through 4 different subscription plans to help you "
+"achieve this"
+msgstr ""
+"इसे प्राप्त करने में आपकी मदद करने के लिए 4 विभिन्न सदस्यता योजनाओं के माध्यम से मासिक बग "
+"हंट प्रदान करता है"
+
+#: website/templates/profile.html:185
+msgid "Upload"
+msgstr "अपलोड"
+
+#: website/templates/profile.html:197
+msgid "Hide all issues"
+msgstr "सभी मुद्दे छुपाएं"
+
+#: website/templates/profile.html:198
+msgid "OK"
+msgstr "ठीक"
+
+#: website/templates/profile.html:205
+msgid "Unfollow"
+msgstr ""
+
+#: website/templates/profile.html:207
+#, fuzzy
+#| msgid "Follow Us"
+msgid "Follow"
+msgstr "हमें फ़ॉलो करें"
+
+#: website/templates/profile.html:218
+msgid "Send a tip"
+msgstr "संकेत भेजें"
+
+#: website/templates/profile.html:226
+msgid "General"
+msgstr "सामान्य"
+
+#: website/templates/profile.html:231
+msgid "Number"
+msgstr "संख्या"
+
+#: website/templates/profile.html:272
+msgid "Followers"
+msgstr "अनुयायी"
+
+#: website/templates/profile.html:276
+#, fuzzy
+#| msgid "Follow Us"
+msgid "Following"
+msgstr "हमें फ़ॉलो करें"
+
+#: website/templates/profile.html:280
+msgid "Bookmarks"
+msgstr "बुकमार्क"
+
+#: website/templates/profile.html:291
+msgid "No Bug Reported"
+msgstr "कोई बग नहीं रिपोर्ट किया गया"
+
+#: website/templates/profile.html:344
+msgid "Bugs Reported"
+msgstr "रिपोर्ट किए गए बग"
+
+#: website/templates/profile.html:347
+msgid "Open Issues"
+msgstr "खुले मुद्दे"
+
+#: website/templates/profile.html:350
+msgid "Closed Issues"
+msgstr "बंद मुद्दे"
+
+#: website/templates/profile.html:359
+msgid "activity"
+msgstr "गतिविधि"
+
+#: website/templates/profile.html:371
+msgid "No Activity Yet"
+msgstr "अभी तक कोई गतिविधि नहीं"
+
+#: website/templates/profile.html:380
+msgid "top bug findings"
+msgstr "शीर्ष बग खोज"
+
+#: website/templates/profile.html:399
+msgid "Nothing Found"
+msgstr "कुछ भी नहीं मिला"
+
+#: website/templates/registration/password_reset_email.html:1
+msgid ""
+"You're receiving this\n"
+"email because you requested a password reset for your user account at {{\n"
+"site_name }}."
+msgstr ""
+
+#: website/templates/registration/password_reset_email.html:6
+msgid "Your username, in case you’ve forgotten:"
+msgstr ""
+
+#: website/templates/registration/password_reset_email.html:7
+msgid "Thanks for using our site!"
+msgstr ""
+
+#: website/templates/report.html:102
+msgid "REPORT A BUG"
+msgstr "बग की रिपोर्ट करें"
+
+#: website/templates/report.html:110
+msgid "DOMAIN URL"
+msgstr ""
+
+#: website/templates/report.html:128
+#, fuzzy
+#| msgid "DOMAIN URLCheck for Duplicates"
+msgid "Check for Duplicates"
+msgstr "डोमेन URL के लिए डुप्लिकेट देखें"
+
+#: website/templates/report.html:139
+msgid "BUG TITLE"
+msgstr "बग शीर्षक"
+
+#: website/templates/report.html:160
+msgid "BUG TYPE"
+msgstr "बग प्रकार"
+
+#: website/templates/report.html:186
+msgid "BUG HUNT"
+msgstr "बग हंट"
+
+#: website/templates/report.html:195
+msgid "REPORT INDEPENDENTLY"
+msgstr ""
+
+#: website/templates/report.html:219
+msgid "SCREENSHOTS"
+msgstr "स्क्रीनशॉट"
+
+#: website/templates/report.html:243
+msgid "Upload screenshots"
+msgstr "स्क्रीनशॉट अपलोड करें"
+
+#: website/templates/report.html:254
+msgid "or drag and drop"
+msgstr "या खींचें और छोड़ें"
+
+#: website/templates/report.html:282
+msgid "ADD TEAM MEMBERS"
+msgstr "टीम के सदस्यों को जोड़ें"
+
+#: website/templates/report.html:291
+msgid "Team members should be bughunts users"
+msgstr "टीम के सदस्य बगहंट्स उपयोगकर्ता होने चाहिए"
+
+#: website/templates/report.html:313
+msgid "Report Privately"
+msgstr "निजी रूप से सूचित करें"
+
+#: website/templates/report.html:335
+msgid "Report"
+msgstr "रिपोर्ट करें"
+
+#~ msgid "Start"
+#~ msgstr "प्रारंभ"
+
+#~ msgid "Sign In"
+#~ msgstr "साइन इन करें"
+
+#~ msgid "Already have an account? <a href=\"%(login_url)s\">Login</a>."
+#~ msgstr "पहले से ही एक खाता है? <a href=\"%(login_url)s\"> लॉगिन </a>।"
+
+#~ msgid "Featured Websites"
+#~ msgstr "विशेष रुप से प्रदर्शित वेबसाइट"
+
+#~ msgid "Upload Screenshot"
+#~ msgstr "स्क्रीनशॉट अपलोड करें"
+
+#~ msgid "Describe bug issue"
+#~ msgstr "बग समस्या का वर्णन करें"
+
+#~ msgid "Tour"
+#~ msgstr "टूर"
+
+#~ msgid "Leaderboard reset for"
+#~ msgstr "लीडरबोर्ड रीसेट करें"
+
+#~ msgid "Unrated"
+#~ msgstr "अनमोल्यित"
+
+#~ msgid "START A "
+#~ msgstr "शुरू करें "
+
+# Hindi (hi)
+#~ msgid "BUGHUNT"
+#~ msgstr "बगहंट"
+
+#~ msgid "Name of the bughunt"
+#~ msgstr "बगहंट का नाम"
+
+#~ msgid "You do not have a company, create one"
+#~ msgstr "आपके पास कोई कंपनी नहीं है, एक बनाएं"
+
+#~ msgid "Forgot Password"
+#~ msgstr "पासवर्ड भूल गए"
+
+#~ msgid "BUG DESCRIPTION"
+#~ msgstr "बग विवरण"
