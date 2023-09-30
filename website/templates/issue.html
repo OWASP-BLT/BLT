@@ -390,7 +390,9 @@
             {% include 'comments.html' %}
         </div>
         {% else %}
+        <div id="target_dev">
         <p>No comment added yet. Be the first to comment!</p>
+        </div>
         {% endif %}
         {% if user.is_authenticated %}
         <form id="comments">
