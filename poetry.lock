@@ -712,26 +712,27 @@ swapper = "*"
 
 [[package]]
 name = "django-storages"
-version = "1.13.2"
+version = "1.14.1"
 description = "Support for many storage backends in Django"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "django-storages-1.13.2.tar.gz", hash = "sha256:cbadd15c909ceb7247d4ffc503f12a9bec36999df8d0bef7c31e57177d512688"},
-    {file = "django_storages-1.13.2-py3-none-any.whl", hash = "sha256:31dc5a992520be571908c4c40d55d292660ece3a55b8141462b4e719aa38eab3"},
+    {file = "django-storages-1.14.1.tar.gz", hash = "sha256:a2c327d67792eec04c7f5f5bb2900b21f426de8a3a811cea85fac7904bdccf36"},
+    {file = "django_storages-1.14.1-py3-none-any.whl", hash = "sha256:18cb6c305fbb2f114c11b5b7b647b6271aa251972dcd4a5651b9cee2b0bd3a8a"},
 ]
 
 [package.dependencies]
 Django = ">=3.2"
-google-cloud-storage = {version = ">=1.27.0", optional = true, markers = "extra == \"google\""}
+google-cloud-storage = {version = ">=1.27", optional = true, markers = "extra == \"google\""}
 
 [package.extras]
-azure = ["azure-storage-blob (>=12.0.0)"]
+azure = ["azure-storage-blob (>=12)"]
 boto3 = ["boto3 (>=1.4.4)"]
 dropbox = ["dropbox (>=7.2.1)"]
-google = ["google-cloud-storage (>=1.27.0)"]
+google = ["google-cloud-storage (>=1.27)"]
 libcloud = ["apache-libcloud"]
-sftp = ["paramiko (>=1.10.0)"]
+s3 = ["boto3 (>=1.4.4)"]
+sftp = ["paramiko (>=1.15)"]
 
 [[package]]
 name = "django-tellme"
@@ -2149,13 +2150,13 @@ files = [
 
 [[package]]
 name = "urllib3"
-version = "2.0.4"
+version = "2.0.6"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "urllib3-2.0.4-py3-none-any.whl", hash = "sha256:de7df1803967d2c2a98e4b11bb7d6bd9210474c46e8a0401514e3a42a75ebde4"},
-    {file = "urllib3-2.0.4.tar.gz", hash = "sha256:8d22f86aae8ef5e410d4f539fde9ce6b2113a001bb4d189e0aed70642d602b11"},
+    {file = "urllib3-2.0.6-py3-none-any.whl", hash = "sha256:7a7c7003b000adf9e7ca2a377c9688bbc54ed41b985789ed576570342a375cd2"},
+    {file = "urllib3-2.0.6.tar.gz", hash = "sha256:b19e1a85d206b56d7df1d5e683df4a7725252a964e3993648dd0fb5a1c157564"},
 ]
 
 [package.dependencies]
@@ -2255,4 +2256,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "e2e1c937396350fa21ec1ec6c7a6284cc64443c09ead41bacc9160ec4a2a4257"
+content-hash = "ede2a6fc4473f6cc7e796b5772493b75cb796e2dfbc95c5b86fda4a49edf5e08"
