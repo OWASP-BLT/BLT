@@ -10,14 +10,24 @@
         <div class="col-md-12">
             <div class="text-center">
                 {% if page_obj.has_previous %}
-                    <a href="?page={{ page_obj.previous_page_number }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
-                       class="btn btn-default">Prev</a>
+                    <a href="?page=1{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
+                       class="btn btn-default">First</a>
+                {% else %}
+                    <button class="btn btn-default" disabled>First</button>
                 {% endif %}
-                <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                {% for num in page_obj.paginator.page_range %}
+                    {% if num == page_obj.number %}
+                        <button class="btn btn-default" disabled>{{num}}</button>
+                    {% elif num > page_obj.number|add:"-5" and num < page_obj.number|add:"5" %}
+                        <a href="?page={{ num }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}" class="btn btn-default">{{num}}</a>
+                    {% endif %}
+                {% endfor %}
                 {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
-                       class="btn btn-default">Next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}" class="btn btn-default">Last</a>
+                {% else %}
+                    <button class="btn btn-default" disabled>Last</button>
                 {% endif %}
+                <div>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
             </div>
         </div>
     {% endif %}
@@ -38,14 +48,23 @@
             <div class="col-md-12">
                 <div class="text-center">
                     {% if page_obj.has_previous %}
-                        <a href="?page={{ page_obj.previous_page_number }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
-                           class="btn btn-default">Prev</a>
+                        <a href="?page=1{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}" class="btn btn-default">First</a>
+                    {% else %}
+                        <button class="btn btn-default" disabled>First</button>
                     {% endif %}
-                    <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if num == page_obj.number %}
+                            <button class="btn btn-default" disabled>{{num}}</button>
+                        {% elif num > page_obj.number|add:"-5" and num < page_obj.number|add:"5" %}
+                            <a href="?page={{ num }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}" class="btn btn-default">{{num}}</a>
+                        {% endif %}
+                    {% endfor %}
                     {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
-                           class="btn btn-default">Next</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}" class="btn btn-default">Last</a>
+                    {% else %}
+                        <button class="btn btn-default" disabled>Last</button>
                     {% endif %}
+                        <div>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
                 </div>
             </div>
         {% endif %}
