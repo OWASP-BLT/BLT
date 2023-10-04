@@ -4395,6 +4395,13 @@ tbody.collapse.in {
     box-shadow: 0 6px 12px rgba(0, 0, 0, .175);
 }
 
+@media (max-width: 540px) {
+    .dropdown-menu{
+        left:-300%;
+    }
+    
+}
+
 .dropdown-menu.pull-right {
     right: 0;
     left: auto;
