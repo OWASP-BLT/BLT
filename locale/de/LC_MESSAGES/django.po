@@ -971,3 +971,15 @@ msgstr "Melden"
 
 #~ msgid "BUG DESCRIPTION"
 #~ msgstr "Fehlerbeschreibung"
+
+#~ msgid "Flea Plan"
+#~ msgstr "Flohplan"
+
+#~ msgid "Ant Plan"
+#~ msgstr "Ameisenplan"
+
+#~ msgid "Wasp Plan"
+#~ msgstr "Wespenplan"
+
+#~ msgid "Scorpion Plan"
+#~ msgstr "Skorpionplan"

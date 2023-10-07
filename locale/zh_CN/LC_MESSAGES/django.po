@@ -948,3 +948,15 @@ msgstr "报告"
 
 #~ msgid "BUG DESCRIPTION"
 #~ msgstr "漏洞描述"
+
+#~ msgid "Flea Plan"
+#~ msgstr "跳蚤计划"
+
+#~ msgid "Ant Plan"
+#~ msgstr "蚂蚁计划"
+
+#~ msgid "Wasp Plan"
+#~ msgstr "黄蜂计划"
+
+#~ msgid "Scorpion Plan"
+#~ msgstr "蝎子计划"

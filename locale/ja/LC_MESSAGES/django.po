@@ -964,3 +964,15 @@ msgstr "報告"
 
 #~ msgid "BUG DESCRIPTION"
 #~ msgstr "バグの説明"
+
+#~ msgid "Flea Plan"
+#~ msgstr "ノミプラン"
+
+#~ msgid "Ant Plan"
+#~ msgstr "アリプラン"
+
+#~ msgid "Wasp Plan"
+#~ msgstr "スズメバチプラン"
+
+#~ msgid "Scorpion Plan"
+#~ msgstr "サソリプラン"

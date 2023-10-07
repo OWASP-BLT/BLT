@@ -995,3 +995,15 @@ msgstr "Signaler"
 
 #~ msgid "BUG DESCRIPTION"
 #~ msgstr "DESCRIPTION DU BUG"
+
+#~ msgid "Flea Plan"
+#~ msgstr "Plan de la puce"
+
+#~ msgid "Ant Plan"
+#~ msgstr "Plan de la fourmi"
+
+#~ msgid "Wasp Plan"
+#~ msgstr "Plan de la guêpe"
+
+#~ msgid "Scorpion Plan"
+#~ msgstr "Plan du scorpion"

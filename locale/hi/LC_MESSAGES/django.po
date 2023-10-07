@@ -977,3 +977,15 @@ msgstr "रिपोर्ट करें"
 
 #~ msgid "BUG DESCRIPTION"
 #~ msgstr "बग विवरण"
+
+#~ msgid "Flea Plan"
+#~ msgstr "बिल्ली योजना"
+
+#~ msgid "Ant Plan"
+#~ msgstr "मूर्गा योजना"
+
+#~ msgid "Wasp Plan"
+#~ msgstr "ततैया योजना"
+
+#~ msgid "Scorpion Plan"
+#~ msgstr "बिचू योजना"

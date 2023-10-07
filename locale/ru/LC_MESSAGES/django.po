@@ -973,3 +973,15 @@ msgstr "Сообщить"
 
 #~ msgid "BUG DESCRIPTION"
 #~ msgstr "Описание ошибки"
+
+#~ msgid "Flea Plan"
+#~ msgstr "План блохи"
+
+#~ msgid "Ant Plan"
+#~ msgstr "План муравья"
+
+#~ msgid "Wasp Plan"
+#~ msgstr "План оси"
+
+#~ msgid "Scorpion Plan"
+#~ msgstr "План скорпиона"
