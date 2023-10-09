@@ -268,7 +268,7 @@
                     </div>
                     {% endfor %}
                     {% else %}
-                    </br> {% trans "Examples" %} {% now "F" %}. {% trans "Be first to find issues" %}!
+                    </br> {% trans "Leaderboard reset for" %} {% now "F" %}. {% trans "Be first to find issues" %}!
                     {% endif %}
                 </div>
                 <a href="/leaderboard" class="btn btn-default btn-block submit_button">{% trans "View All" %}</a>
@@ -281,7 +281,7 @@
 
 <div class="row">
     <div class="col-lg-12">
-        <h1 class="page-sub-header">Bugheist is 100% {% trans "free to use" %}, {% trans "Open Source and a non-commercial" %}, {% trans "not for profit initiative" %}.</h1>
+        <h1 class="page-sub-header">{% env 'PROJECT_NAME' %} is 100% {% trans "free to use" %}, {% trans "Open Source and a non-commercial" %}, {% trans "not for profit initiative" %}.</h1>
     </div>
 </div>
 

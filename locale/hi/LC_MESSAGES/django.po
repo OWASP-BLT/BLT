@@ -2,13 +2,13 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # Sourav Badami <souravbadami@gmail.com>, 2017.
-#
+# 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-25 16:36+0000\n"
+"POT-Creation-Date: 2023-10-09 07:37+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -128,11 +128,11 @@ msgstr ""
 #: website/templates/account/login.html:21
 #: website/templates/account/signup.html:17
 msgid ""
-"OWASP BLT is a bug logging tool to report issues and get points, companies "
-"are held accountable"
+"is a bug logging tool to report issues and get points, companies are held "
+"accountable"
 msgstr ""
-"OWASP BLT एक बग लॉगिंग टूल है जिसका उपयोग समस्याओं की रिपोर्ट करने और पॉइंट्स प्राप्त "
-"करने के लिए किया जाता है, कंपनियों को जिम्मेदारी दी जाती है"
+"एक बग लॉगिंग टूल है जिसका उपयोग समस्याओं की रिपोर्ट करने और पॉइंट्स प्राप्त करने के लिए "
+"किया जाता है, कंपनियों को जिम्मेदारी दी जाती है"
 
 #: website/templates/account/login.html:24
 #, fuzzy
@@ -267,37 +267,54 @@ msgstr "लॉगआउट"
 msgid "Enter URL, APP name or GPS location of issue"
 msgstr "मुद्दे के URL, APP नाम या GPS स्थान दर्ज करें"
 
-#: website/templates/hunt.html:228 website/templates/hunt.html:229
-#: website/templates/hunt.html:230 website/templates/hunt.html:231
+#: website/templates/hunt.html:229
+msgid "Flea Plan"
+msgstr "बिल्ली योजना"
+
+#: website/templates/hunt.html:229 website/templates/hunt.html:230
+#: website/templates/hunt.html:231 website/templates/hunt.html:232
 msgid "Month"
 msgstr "महीना"
 
-#: website/templates/hunt.html:235
+#: website/templates/hunt.html:230
+msgid "Ant Plan"
+msgstr "मूर्गा योजना"
+
+#: website/templates/hunt.html:231
+msgid "Wasp Plan"
+msgstr "ततैया योजना"
+
+#: website/templates/hunt.html:232
+msgid "Scorpion Plan"
+msgstr "बिचू योजना"
+
+#: website/templates/hunt.html:236
 msgid "Grand Prize"
 msgstr "महान पुरस्कार"
 
-#: website/templates/hunt.html:236
+#: website/templates/hunt.html:237
 #, fuzzy
 #| msgid "Max amount awarded to winner"
 msgid "Max amout awarded to winner"
 msgstr "विजेता को दिया गया अधिकतम राशि"
 
-#: website/templates/hunt.html:249
+#: website/templates/hunt.html:250
 msgid "START BUGHUNT"
 msgstr "बगहंट शुरू करें"
 
-#: website/templates/hunt.html:255 website/templates/index.html:284
+#: website/templates/hunt.html:256 website/templates/index.html:284
 #: website/templates/mobile_about.html:4
 msgid "free to use"
 msgstr "उपयोग करने के लिए स्वतंत्र"
 
-#: website/templates/hunt.html:255
+#: website/templates/hunt.html:256 website/templates/index.html:284
+#: website/templates/mobile_about.html:4
 #, fuzzy
 #| msgid "Open Source and a non-commercials"
 msgid "Open Source and a non-commercial"
 msgstr "ओपन सोर्स और गैर-वाणिज्यिक"
 
-#: website/templates/hunt.html:255 website/templates/index.html:284
+#: website/templates/hunt.html:256 website/templates/index.html:284
 #: website/templates/mobile_about.html:4
 msgid "not for profit initiative"
 msgstr "लाभ के लिए नहीं, गैर लाभकारी पहल"
@@ -437,7 +454,7 @@ msgstr "उन पृष्ठों के लिए जहाँ आप सं
 #: website/templates/index.html:44 website/templates/index.html:51
 #: website/templates/index.html:58 website/templates/index.html:65
 #: website/templates/index.html:72 website/templates/index.html:79
-#: website/templates/index.html:86 website/templates/index.html:271
+#: website/templates/index.html:86
 msgid "Examples"
 msgstr "उदाहरण"
 
@@ -589,6 +606,10 @@ msgid "Points"
 msgstr "अंक"
 
 #: website/templates/index.html:271
+msgid "Leaderboard reset for"
+msgstr "लीडरबोर्ड रीसेट करें"
+
+#: website/templates/index.html:271
 msgid "Be first to find issues"
 msgstr "पहले इस्यू खोजने वाले बनें"
 
@@ -603,10 +624,6 @@ msgstr "मासिक फ़िल्टर"
 #: website/templates/index.html:276
 msgid "View Monthly"
 msgstr "मासिक देखें"
-
-#: website/templates/index.html:284 website/templates/mobile_about.html:4
-msgid "Open Source and a non-commercials"
-msgstr "ओपन सोर्स और गैर-वाणिज्यिक"
 
 #: website/templates/invite.html:11
 msgid "Invite a company and get +5 points when they join"
@@ -932,6 +949,9 @@ msgstr "निजी रूप से सूचित करें"
 msgid "Report"
 msgstr "रिपोर्ट करें"
 
+#~ msgid "Open Source and a non-commercials"
+#~ msgstr "ओपन सोर्स और गैर-वाणिज्यिक"
+
 #~ msgid "Start"
 #~ msgstr "प्रारंभ"
 
@@ -952,9 +972,6 @@ msgstr "रिपोर्ट करें"
 
 #~ msgid "Tour"
 #~ msgstr "टूर"
-
-#~ msgid "Leaderboard reset for"
-#~ msgstr "लीडरबोर्ड रीसेट करें"
 
 #~ msgid "Unrated"
 #~ msgstr "अनमोल्यित"
@@ -977,15 +994,3 @@ msgstr "रिपोर्ट करें"
 
 #~ msgid "BUG DESCRIPTION"
 #~ msgstr "बग विवरण"
-
-#~ msgid "Flea Plan"
-#~ msgstr "बिल्ली योजना"
-
-#~ msgid "Ant Plan"
-#~ msgstr "मूर्गा योजना"
-
-#~ msgid "Wasp Plan"
-#~ msgstr "ततैया योजना"
-
-#~ msgid "Scorpion Plan"
-#~ msgstr "बिचू योजना"

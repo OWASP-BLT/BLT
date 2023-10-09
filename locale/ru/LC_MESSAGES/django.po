@@ -2,13 +2,13 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # Sourav Badami <souravbadami@gmail.com>, 2017.
-#
+# 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-25 16:36+0000\n"
+"POT-Creation-Date: 2023-10-09 07:37+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -135,11 +135,11 @@ msgstr ""
 #: website/templates/account/login.html:21
 #: website/templates/account/signup.html:17
 msgid ""
-"OWASP BLT is a bug logging tool to report issues and get points, companies "
-"are held accountable"
+"is a bug logging tool to report issues and get points, companies are held "
+"accountable"
 msgstr ""
-"OWASP BLT - это инструмент для регистрации ошибок, предназначенный для "
-"сообщения о проблемах и получения баллов; компании несут ответственность"
+"- это инструмент для регистрации ошибок, предназначенный для сообщения о "
+"проблемах и получения баллов; компании несут ответственность"
 
 #: website/templates/account/login.html:24
 #, fuzzy
@@ -274,37 +274,54 @@ msgstr "Выйти"
 msgid "Enter URL, APP name or GPS location of issue"
 msgstr "Введите URL, название приложения или GPS-местоположение проблемы"
 
-#: website/templates/hunt.html:228 website/templates/hunt.html:229
-#: website/templates/hunt.html:230 website/templates/hunt.html:231
+#: website/templates/hunt.html:229
+msgid "Flea Plan"
+msgstr "План блохи"
+
+#: website/templates/hunt.html:229 website/templates/hunt.html:230
+#: website/templates/hunt.html:231 website/templates/hunt.html:232
 msgid "Month"
 msgstr "Месяц"
 
-#: website/templates/hunt.html:235
+#: website/templates/hunt.html:230
+msgid "Ant Plan"
+msgstr "План муравья"
+
+#: website/templates/hunt.html:231
+msgid "Wasp Plan"
+msgstr "План оси"
+
+#: website/templates/hunt.html:232
+msgid "Scorpion Plan"
+msgstr "План скорпиона"
+
+#: website/templates/hunt.html:236
 msgid "Grand Prize"
 msgstr "Главный приз"
 
-#: website/templates/hunt.html:236
+#: website/templates/hunt.html:237
 #, fuzzy
 #| msgid "Max amount awarded to winner"
 msgid "Max amout awarded to winner"
 msgstr "Максимальная сумма, выделяемая победителю"
 
-#: website/templates/hunt.html:249
+#: website/templates/hunt.html:250
 msgid "START BUGHUNT"
 msgstr "Начать поиск багов"
 
-#: website/templates/hunt.html:255 website/templates/index.html:284
+#: website/templates/hunt.html:256 website/templates/index.html:284
 #: website/templates/mobile_about.html:4
 msgid "free to use"
 msgstr "бесплатно для использования"
 
-#: website/templates/hunt.html:255
+#: website/templates/hunt.html:256 website/templates/index.html:284
+#: website/templates/mobile_about.html:4
 #, fuzzy
 #| msgid "Open Source and a non-commercials"
 msgid "Open Source and a non-commercial"
 msgstr "Open Source и без коммерческих целей"
 
-#: website/templates/hunt.html:255 website/templates/index.html:284
+#: website/templates/hunt.html:256 website/templates/index.html:284
 #: website/templates/mobile_about.html:4
 msgid "not for profit initiative"
 msgstr "инициатива без извлечения прибыли"
@@ -446,7 +463,7 @@ msgstr "Для страниц, где вы видите число 404, 500."
 #: website/templates/index.html:44 website/templates/index.html:51
 #: website/templates/index.html:58 website/templates/index.html:65
 #: website/templates/index.html:72 website/templates/index.html:79
-#: website/templates/index.html:86 website/templates/index.html:271
+#: website/templates/index.html:86
 msgid "Examples"
 msgstr "Примеры"
 
@@ -598,6 +615,10 @@ msgid "Points"
 msgstr "баллы"
 
 #: website/templates/index.html:271
+msgid "Leaderboard reset for"
+msgstr "Сброс таблицы лидеров для"
+
+#: website/templates/index.html:271
 msgid "Be first to find issues"
 msgstr "Будьте первым, кто найдет проблемы"
 
@@ -612,10 +633,6 @@ msgstr "Фильтр по месяцам"
 #: website/templates/index.html:276
 msgid "View Monthly"
 msgstr "Просмотр по месяцам"
-
-#: website/templates/index.html:284 website/templates/mobile_about.html:4
-msgid "Open Source and a non-commercials"
-msgstr "Open Source и без коммерческих целей"
 
 #: website/templates/invite.html:11
 msgid "Invite a company and get +5 points when they join"
@@ -949,8 +966,8 @@ msgstr "Сообщить в частном порядке"
 msgid "Report"
 msgstr "Сообщить"
 
-#~ msgid "Leaderboard reset for"
-#~ msgstr "Сброс таблицы лидеров для"
+#~ msgid "Open Source and a non-commercials"
+#~ msgstr "Open Source и без коммерческих целей"
 
 #~ msgid "Unrated"
 #~ msgstr "Без оценки"
@@ -973,15 +990,3 @@ msgstr "Сообщить"
 
 #~ msgid "BUG DESCRIPTION"
 #~ msgstr "Описание ошибки"
-
-#~ msgid "Flea Plan"
-#~ msgstr "План блохи"
-
-#~ msgid "Ant Plan"
-#~ msgstr "План муравья"
-
-#~ msgid "Wasp Plan"
-#~ msgstr "План оси"
-
-#~ msgid "Scorpion Plan"
-#~ msgstr "План скорпиона"
