@@ -119,7 +119,7 @@
                                     <p class="text-3xl font-bold">Status:</p>
                                     <div class="w-1/2 flex {% if request.user == object.user %} justify-between {% else %} justify-end {% endif %}">
                                         {% if request.user == object.user or request.is_staff or request.is_superuser%} 
-                                            <a class="edit-issue-status font-bold bg-gray-600 px-5 py-1 text-white rounded-xl" id="issue_stat">
+                                            <a class="edit-issue-status font-bold bg-gray-600 px-5 py-1 text-white rounded-xl mr-2" id="issue_stat">
                                                 Click
                                                 to
                                                 {% if object.status == "open" %}Close{% else %}Open{% endif %}
