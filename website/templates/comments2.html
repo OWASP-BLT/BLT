@@ -57,7 +57,7 @@
                             </button>
                         </div>
                         {% if user.username == comment.author %}
-                            <button id="dropdownComment1Button" data-dropdown-toggle="dropdownComment1"
+                            <button id="dropdownComment1Button" data-dropdown-toggle="dropdownComment{{ comment.id }}"
                                 class="inline-flex items-center p-2 text-md font-medium text-center text-gray-400 bg-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-50   "
                                 type="button">
                                 <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
@@ -69,7 +69,7 @@
                                 <span class="sr-only">Comment settings</span>
                             </button>
                             <!-- Dropdown menu -->
-                            <div id="dropdownComment1"
+                            <div id="dropdownComment{{ comment.id }}"
                                 class="hidden z-10 w-36 bg-white rounded divide-y divide-gray-100 shadow  ">
                                 <ul class="py-1 text-lg text-gray-700 "
                                     aria-labelledby="dropdownMenuIconHorizontalButton">
@@ -117,7 +117,7 @@
                                             title="February 8th, 2022">{{ child_comment.created_date | timesince }} ago</time></p>
                                 </div>
                                 {% if user.username == child_comment.author %}
-                                    <button id="dropdownComment1Button" data-dropdown-toggle="dropdownComment1"
+                                    <button id="dropdownComment1Button" data-dropdown-toggle="dropdownComment{{ child_comment.id }}"
                                         class="inline-flex items-center p-2 text-md font-medium text-center text-gray-400 bg-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-50   "
                                         type="button">
                                         <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
@@ -129,7 +129,7 @@
                                         <span class="sr-only">Comment settings</span>
                                     </button>
                                     <!-- Dropdown menu -->
-                                    <div id="dropdownComment1"
+                                    <div id="dropdownComment{{ child_comment.id }}"
                                         class="hidden z-10 w-36 bg-white rounded divide-y divide-gray-100 shadow  ">
                                         <ul class="py-1 text-lg text-gray-700 "
                                             aria-labelledby="dropdownMenuIconHorizontalButton">
@@ -206,6 +206,9 @@
 
             let replying_to_input = document.getElementById("replying_to_input").value;
             let comment = document.getElementById("comment").value;
+            if(comment == ""){
+                return;
+            }
             $.ajax({
                 type: 'POST',
                 url: '/issue/' + issue_pk + '/comment/',
@@ -218,6 +221,18 @@
                 },
                 success: function (data) {
                     $('#comment_root').html(data);
+                    document.querySelectorAll("[data-dropdown-toggle]").forEach((toggle) => {
+                        toggle.addEventListener("click", () => {
+                            const { dropdownToggle } = toggle.dataset;
+                            const dropdown = document.getElementById(dropdownToggle);
+                            dropdown.classList.toggle("hidden");
+                            dropdown.classList.toggle("block");
+                            dropdown.style.position = "absolute";
+                            dropdown.style.top = toggle.offsetTop + toggle.offsetHeight + "px";
+                            dropdown.style.left = toggle.offsetLeft - 50 + "px";
+                            
+                        });
+                    });
                 },
             });
         }
