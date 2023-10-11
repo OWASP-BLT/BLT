@@ -2,13 +2,13 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # Sourav Badami <souravbadami@gmail.com>, 2017.
-#
+# 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-07-11 16:18+0530\n"
+"POT-Creation-Date: 2023-10-09 07:36+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,42 +18,172 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: blt/settings.py:145
+#: blt/settings.py:224
 msgid "English"
 msgstr "Anglais"
 
-#: blt/settings.py:146
+#: blt/settings.py:225
 msgid "French"
-msgstr "français"
+msgstr "Français"
 
-#: website/templates/_subscriptions.html:51
-#: website/templates/_subscriptions.html:72
-#: website/templates/_subscriptions.html:93
-msgid "Featured on Homepage"
-msgstr "En vedette sur la page d'accueil"
+#: blt/settings.py:226
+msgid "Chinese"
+msgstr "Chinois"
 
-#: website/templates/_subscriptions.html:54
-#: website/templates/_subscriptions.html:75
-#: website/templates/_subscriptions.html:97
-msgid "Start"
-msgstr "Début"
+#: blt/settings.py:227
+msgid "German"
+msgstr "Allemand"
 
-#: website/templates/_subscriptions.html:73
-#: website/templates/_subscriptions.html:94
-msgid "Featured in Newsletter"
-msgstr "Présenté dans la Newsletter"
+#: blt/settings.py:228
+msgid "Japanese"
+msgstr "Japonais"
 
-#: website/templates/_subscriptions.html:95
-msgid "Announced to Users"
-msgstr "Annoncé aux utilisateurs"
+#: blt/settings.py:229
+msgid "Russian"
+msgstr "Russe"
 
-#: website/templates/account/login.html:76
-msgid "Sign In"
-msgstr "se connecter"
+#: blt/settings.py:230
+msgid "Hindi"
+msgstr "Hindi"
 
-#: website/templates/account/login.html:77
+#: company/templates/company/register_company.html:9
+#: company/templates/company/register_company.html:31
+msgid "Register Company"
+msgstr "Enregistrer l'entreprise"
+
+#: company/templates/company/register_company.html:37
+msgid "Company Information"
+msgstr "Informations sur l'entreprise"
+
+#: company/templates/company/register_company.html:45
+msgid "Company Name"
+msgstr "Nom de l'entreprise"
+
+#: company/templates/company/register_company.html:64
+msgid "Company Url"
+msgstr "URL de l'entreprise"
+
+#: company/templates/company/register_company.html:83
+msgid "Company Support Email (Optional)"
+msgstr "E-mail de support de l'entreprise (facultatif)"
+
+#: company/templates/company/register_company.html:101
+msgid "Company Twitter URL (Optional)"
+msgstr "URL Twitter de l'entreprise (facultatif)"
+
+#: company/templates/company/register_company.html:119
+msgid "Company Facebook URL (Optional)"
+msgstr "URL Facebook de l'entreprise (facultatif)"
+
+#: company/templates/company/register_company.html:142
+msgid "Company Logo"
+msgstr "Logo de l'entreprise"
+
+#: company/templates/company/register_company.html:162
+msgid "Upload logo"
+msgstr "Télécharger le logo"
+
+#: company/templates/company/register_company.html:178
+msgid "Company Managers"
+msgstr "Gestionnaires de l'entreprise"
+
+#: company/templates/company/register_company.html:181
+msgid "Add Emails which will be allowed to add domains"
+msgstr "Ajoutez des e-mails qui seront autorisés à ajouter des domaines"
+
+#: company/templates/company/register_company.html:182
+#, fuzzy
+#| msgid "Email should be registered user on bugheist"
+msgid "Email should be registerd user on bugheist"
+msgstr "L'e-mail doit être un utilisateur enregistré sur bugheist"
+
+#: company/templates/company/register_company.html:186
+#: website/templates/report.html:286
+msgid "Add Email"
+msgstr "Ajouter un e-mail"
+
+#: company/templates/company/register_company.html:193
+#: website/templates/report.html:299
+msgid "Email address"
+msgstr "Adresse e-mail"
+
+#: company/templates/company/register_company.html:205
+#: website/templates/account/logout.html:14 website/templates/report.html:328
+msgid "Cancel"
+msgstr "Annuler"
+
+#: company/templates/company/register_company.html:211
+msgid "Save"
+msgstr "Enregistrer"
+
+#: website/templates/account/email/email_confirmation_message.txt:5
+#, python-format
+msgid ""
+"You're receiving this e-mail because user %(user_display)s has given your e-"
+"mail address to register an account on %(site_domain)s.\n"
+"\n"
+"To confirm this is correct, go to %(activate_url)s"
+msgstr ""
+"Vous recevez cet e-mail parce que l'utilisateur %(user_display)s a fourni "
+"votre adresse e-mail pour créer un compte sur %(site_domain)s.\n"
+"\n"
+"Pour confirmer que c'est correct, rendez-vous sur %(activate_url)s"
+
+#: website/templates/account/login.html:21
+#: website/templates/account/signup.html:17
+msgid ""
+"is a bug logging tool to report issues and get points, companies are held "
+"accountable"
+msgstr ""
+"est un outil de journalisation des bugs permettant de signaler des problèmes "
+"et d'obtenir des points, les entreprises sont tenues responsables"
+
+#: website/templates/account/login.html:24
+#, fuzzy
+#| msgid "Already have an account"
+msgid "Don't have an account"
+msgstr "Vous avez déjà un compte"
+
+#: website/templates/account/login.html:25
+#: website/templates/includes/footer.html:30
+msgid "Get Started"
+msgstr "Commencer"
+
+#: website/templates/account/login.html:28
+#: website/templates/account/signup.html:24
+msgid "Read our"
+msgstr "Lisez nos"
+
+#: website/templates/account/login.html:28
+#: website/templates/account/signup.html:24
+msgid "terms"
+msgstr "conditions"
+
+#: website/templates/account/login.html:28
+#: website/templates/account/signup.html:24
+msgid "and"
+msgstr "et"
+
+#: website/templates/account/login.html:28
+#: website/templates/account/signup.html:24
+msgid "conditions"
+msgstr "conditions"
+
+#: website/templates/account/login.html:32
+msgid "Account Login"
+msgstr "Connexion au compte"
+
+#: website/templates/account/login.html:48
 msgid "Forgot Password?"
-msgstr "Mot de passe oublié?"
+msgstr "Mot de passe oublié ?"
+
+#: website/templates/account/login.html:73
+msgid "Log in"
+msgstr "Se connecter"
+
+#: website/templates/account/login.html:86
+msgid "or login with"
+msgstr "ou connectez-vous avec"
 
 #: website/templates/account/logout.html:6
 msgid "Sign Out"
@@ -61,173 +191,824 @@ msgstr "Déconnexion"
 
 #: website/templates/account/logout.html:7
 msgid "Are you sure?"
-msgstr "Êtes-vous sûr?"
+msgstr "Êtes-vous sûr ?"
 
 #: website/templates/account/logout.html:13
 msgid "Yes"
 msgstr "Oui"
 
-#: website/templates/account/logout.html:14
-msgid "Cancel"
-msgstr "Annuler"
-
-#: website/templates/account/password_change.html:22
-#: website/templates/account/password_change.html:41
-#: website/templates/account/password_reset_from_key.html:26
-#: website/templates/account/password_reset_from_key.html:52
+#: website/templates/account/password_change.html:39
+#: website/templates/account/password_change.html:67
+#: website/templates/account/password_reset_from_key.html:41
+#: website/templates/account/password_reset_from_key.html:67
+#: website/templates/base_admin.html:109
+#: website/templates/base_dashboard_company.html:134
+#: website/templates/base_dashboard_user.html:116
+#: website/templates/includes/navbar.html:125
 msgid "Change Password"
 msgstr "Changer le mot de passe"
 
-#: website/templates/account/password_reset.html:27
+#: website/templates/account/password_reset.html:42
 msgid "Password Reset"
-msgstr "réinitialiser le mot de passe"
+msgstr "Réinitialisation du mot de passe"
 
-#: website/templates/account/password_reset.html:29
-msgid "Forgotten your password? Enter your e-mail address below, and we'll send you an e-mail allowing you to reset it."
-msgstr "Mot de passe oublié? Entrez votre adresse e-mail ci-dessous, et nous vous enverrons un courrier électronique vous permettant de le réinitialiser."
+#: website/templates/account/password_reset.html:44
+msgid ""
+"Forgotten your password? Enter your e-mail address below, and we'll send you "
+"an e-mail allowing you to reset it."
+msgstr ""
+"Mot de passe oublié ? Saisissez votre adresse e-mail ci-dessous, et nous "
+"vous enverrons un e-mail vous permettant de le réinitialiser."
 
-#: website/templates/account/password_reset.html:38
+#: website/templates/account/password_reset.html:54
 msgid "Reset My Password"
 msgstr "Réinitialiser mon mot de passe"
 
-#: website/templates/account/password_reset_from_key.html:24
+#: website/templates/account/password_reset_from_key.html:39
 msgid "Bad Token"
-msgstr "Mauvais jeton"
+msgstr "Jeton incorrect"
 
-#: website/templates/account/password_reset_from_key.html:55
+#: website/templates/account/password_reset_from_key.html:70
 msgid "Your password is now changed!"
-msgstr "Votre mot de passe est maintenant modifié!"
+msgstr "Votre mot de passe est désormais modifié !"
 
-#: website/templates/account/signup.html:22
-#: website/templates/account/signup.html:65
+#: website/templates/account/signup.html:20
+msgid "Already have an account"
+msgstr "Vous avez déjà un compte"
+
+#: website/templates/account/signup.html:21
+#: website/templates/includes/navbar.html:49
+#: website/templates/includes/navbar.html:150
+msgid "Login"
+msgstr "Connexion"
+
+#: website/templates/account/signup.html:28
+msgid "Account SignUp"
+msgstr "Inscription au compte"
+
+#: website/templates/account/signup.html:85
+#: website/templates/includes/navbar.html:44
 msgid "Sign Up"
 msgstr "S'inscrire"
 
-#: website/templates/account/signup.html:67
-#, python-format
-msgid "Already have an account? <a href=\"%(login_url)s\">Login</a>."
-msgstr "Vous avez déjà un compte? <a href=\"%(login_url)s\">S'identifier</a>."
-
-#: website/templates/index.html:13
-msgid "Find Bugs, Win Points and Prizes"
-msgstr "Trouver des insectes, gagner des points et des prix"
-
-#: website/templates/index.html:17
-msgid "Fix issues on websites, apps or hardware (+3 points)"
-msgstr "Corrigez les problèmes sur les sites Web, les applications ou le matériel (+3 points)"
-
-#: website/templates/index.html:18
-msgid "Verify other bug reports(+2 points)"
-msgstr "Vérifiez d'autres rapports de bogue (+2 points)"
-
-#: website/templates/index.html:19
-msgid "Invite friends (when they signup , get +1 point)"
-msgstr "Invitez des amis (lorsqu'ils s'inscrivent, obtenez +1 point)"
-
-#: website/templates/index.html:20
-msgid "Find a bug on a new site or app (+4 points)"
-msgstr "Trouver un bug sur un nouveau site ou une application (+4 points)"
-
-#: website/templates/index.html:33
-msgid "Number Error"
-msgstr "Erreur de numéro"
-
-#: website/templates/index.html:34
-msgid "For pages where you see a number 404, 500."
-msgstr "Pour les pages où vous voyez un numéro 404, 500."
-
-#: website/templates/index.html:48
-msgid "Functional"
-msgstr "Fonctionnel"
-
-#: website/templates/index.html:49
-msgid "Something doesn't work."
-msgstr "Quelque chose ne marche pas."
-
-#: website/templates/index.html:63
-msgid "Performance"
-msgstr "Performance"
-
-#: website/templates/index.html:64
-msgid "Anything over 5 seconds."
-msgstr "Tout au long de 5 secondes."
-
-#: website/templates/index.html:82
-msgid "Security"
-msgstr "Sécurité"
-
-#: website/templates/index.html:83
-msgid "Data leaks, exploits or anything smelly."
-msgstr "Des fuites de données, des exploits ou quelque chose de malodorant."
-
-#: website/templates/index.html:97
-msgid "Typo"
-msgstr "faute de frappe"
-
-#: website/templates/index.html:98
-msgid "Miss-spellings, miss-grammar and more."
-msgstr "Miss-spellings, miss-grammar et plus encore."
-
-#: website/templates/index.html:112
-msgid "Design"
-msgstr "Conception"
-
-#: website/templates/index.html:113
-msgid "Layout, responsiveness and improvements"
-msgstr "Disposition, réactivité et améliorations"
-
-#: website/templates/index.html:131
-msgid "Featured Websites"
-msgstr "Sites Web en vedette"
-
-#: website/templates/index.html:194
-msgid "Leaderboard"
-msgstr "Tableau de classement"
-
-msgid "Upload Screenshot"
-msgstr "Capture d'écran"
-
-msgid "Report Bug"
-msgstr "Rapportez"
-
-msgid "Describe bug issue"
-msgstr "Décrire le problème des bugs"
-
-msgid "Social"
-msgstr "Social"
-
-msgid "Bug Hunt"
-msgstr "Chasse insectes"
-
-msgid "Tour"
-msgstr "Tour"
-
+#: website/templates/base_admin.html:107
+#: website/templates/base_dashboard_company.html:132
+#: website/templates/base_dashboard_user.html:114
+#: website/templates/includes/navbar.html:102
 msgid "User Profile"
 msgstr "Profil de l'utilisateur"
 
+#: website/templates/base_admin.html:111
+#: website/templates/base_dashboard_company.html:136
+#: website/templates/base_dashboard_user.html:118
+#: website/templates/includes/navbar.html:36
+#: website/templates/includes/navbar.html:141
 msgid "Logout"
-msgstr "Connectez - Out"
+msgstr "Déconnexion"
 
-msgid "Signup"
-msgstr "S'inscrire"
+#: website/templates/hunt.html:182
+msgid "Enter URL, APP name or GPS location of issue"
+msgstr ""
+"Entrez l'URL, le nom de l'application ou la localisation GPS du problème"
 
-msgid "Login"
-msgstr "S'identifier"
+#: website/templates/hunt.html:229
+msgid "Flea Plan"
+msgstr "Plan de la puce"
 
-msgid "About"
-msgstr "Sur"
+#: website/templates/hunt.html:229 website/templates/hunt.html:230
+#: website/templates/hunt.html:231 website/templates/hunt.html:232
+msgid "Month"
+msgstr "Mois"
 
+#: website/templates/hunt.html:230
+msgid "Ant Plan"
+msgstr "Plan de la fourmi"
+
+#: website/templates/hunt.html:231
+msgid "Wasp Plan"
+msgstr "Plan de la guêpe"
+
+#: website/templates/hunt.html:232
+msgid "Scorpion Plan"
+msgstr "Plan du scorpion"
+
+#: website/templates/hunt.html:236
+msgid "Grand Prize"
+msgstr "Grand prix"
+
+#: website/templates/hunt.html:237
+#, fuzzy
+#| msgid "Max amount awarded to winner"
+msgid "Max amout awarded to winner"
+msgstr "Montant maximal attribué au gagnant"
+
+#: website/templates/hunt.html:250
+msgid "START BUGHUNT"
+msgstr "DÉMARRER UNE CHASSE AUX BUGS"
+
+#: website/templates/hunt.html:256 website/templates/index.html:284
+#: website/templates/mobile_about.html:4
+msgid "free to use"
+msgstr "libre d'utilisation"
+
+#: website/templates/hunt.html:256 website/templates/index.html:284
+#: website/templates/mobile_about.html:4
+#, fuzzy
+#| msgid "Open Source and a non-commercials"
+msgid "Open Source and a non-commercial"
+msgstr "Open Source et à but non commercial"
+
+#: website/templates/hunt.html:256 website/templates/index.html:284
+#: website/templates/mobile_about.html:4
+msgid "not for profit initiative"
+msgstr "initiative à but non lucratif"
+
+#: website/templates/hunt_list.html:29
+#: website/templates/includes/navbar.html:29
+#: website/templates/includes/navbar.html:67
+msgid "Search"
+msgstr "Recherche"
+
+#: website/templates/hunt_list.html:37
+msgid "Filter Hunts"
+msgstr "Filtrer les chasses aux bugs"
+
+#: website/templates/includes/footer.html:13
+msgid "Community"
+msgstr "Communauté"
+
+#: website/templates/includes/footer.html:14
+msgid "Contributors"
+msgstr "Contributeurs"
+
+#: website/templates/includes/footer.html:18
+msgid "Company"
+msgstr "Compagnie"
+
+#: website/templates/includes/footer.html:19
+msgid "Features"
+msgstr "Fonctionnalités"
+
+#: website/templates/includes/footer.html:20 website/templates/profile.html:269
 msgid "Stats"
-msgstr "Stats"
+msgstr "Statistiques"
 
+#: website/templates/includes/footer.html:21
 msgid "Company Scoreboard"
-msgstr "Tableau de bord de la société"
+msgstr "Tableau de bord de l'entreprise"
 
+#: website/templates/includes/footer.html:24
+msgid "Legal"
+msgstr "Légal"
+
+#: website/templates/includes/footer.html:25
+#: website/templates/mobile_about.html:3
+msgid "About"
+msgstr "À propos"
+
+#: website/templates/includes/footer.html:26
+msgid "Privacy"
+msgstr "Vie privée"
+
+#: website/templates/includes/footer.html:27
 msgid "Terms of Service"
 msgstr "Conditions d'utilisation"
 
-msgid "Search"
-msgstr "Chercher"
+#: website/templates/includes/footer.html:31
+msgid "Developer API"
+msgstr "API pour les développeurs"
 
+#: website/templates/includes/footer.html:32
+msgid "Documentation"
+msgstr "Documentation"
+
+#: website/templates/includes/footer.html:33
+msgid "Guides"
+msgstr "Guides"
+
+#: website/templates/includes/footer.html:37
+msgid "Follow Us"
+msgstr "Suivez-nous"
+
+#: website/templates/includes/footer.html:62
+msgid "Powered by"
+msgstr "Propulsé par"
+
+#: website/templates/includes/navbar.html:23
+#: website/templates/includes/navbar.html:69
+msgid "Report a Bug"
+msgstr "Signaler un bug"
+
+#: website/templates/includes/navbar.html:72
+msgid "Bughunts"
+msgstr "Chasses aux bugs"
+
+#: website/templates/includes/navbar.html:109
 msgid "Add to chrome"
 msgstr "Ajouter à Chrome"
+
+#: website/templates/includes/navbar.html:114
+msgid "Start a Bug Hunt"
+msgstr "Commencer une chasse aux bugs"
+
+#: website/templates/includes/navbar.html:120
+msgid "Social"
+msgstr "Social"
+
+#: website/templates/includes/navbar.html:130
+msgid "Invite Friends"
+msgstr "Inviter des amis"
+
+#: website/templates/includes/navbar.html:135
+msgid "Company Dashboard"
+msgstr "Tableau de bord de l'entreprise"
+
+#: website/templates/includes/navbar.html:149
+msgid "Signup"
+msgstr "Inscription"
+
+#: website/templates/index.html:12
+msgid "Find Bugs, Win Points and Prizes"
+msgstr "Trouvez des bugs, gagnez des points et des prix"
+
+#: website/templates/index.html:20
+msgid "Fix issues on websites, apps or hardware (+3 points)"
+msgstr ""
+"Corriger les problèmes sur les sites web, les applications ou le matériel "
+"(+3 points)"
+
+#: website/templates/index.html:23
+msgid "Verify other bug reports(+2 points)"
+msgstr "Vérifier d'autres rapports de bug (+2 points)"
+
+#: website/templates/index.html:26
+msgid "Invite friends (when they signup , get +1 point)"
+msgstr "Inviter des amis (quand ils s'inscrivent, recevez +1 point)"
+
+#: website/templates/index.html:29
+msgid "Find a bug on a new site or app (+4 points)"
+msgstr ""
+"Trouver un bug sur un nouveau site ou une nouvelle application (+4 points)"
+
+#: website/templates/index.html:42
+msgid "Number Error"
+msgstr "Erreur de numéro"
+
+#: website/templates/index.html:43
+msgid "For pages where you see a number 404, 500."
+msgstr "Pour les pages où vous voyez un numéro 404, 500."
+
+#: website/templates/index.html:44 website/templates/index.html:51
+#: website/templates/index.html:58 website/templates/index.html:65
+#: website/templates/index.html:72 website/templates/index.html:79
+#: website/templates/index.html:86
+msgid "Examples"
+msgstr "Exemples"
+
+#: website/templates/index.html:49 website/templates/profile.html:238
+msgid "Functional"
+msgstr "Fonctionnel"
+
+#: website/templates/index.html:50
+msgid "Something doesn't work as intended"
+msgstr "Quelque chose ne fonctionne pas comme prévu"
+
+#: website/templates/index.html:56 website/templates/profile.html:243
+msgid "Performance"
+msgstr "Performance"
+
+#: website/templates/index.html:57
+msgid "Any process that takes over 5 seconds."
+msgstr "Tout processus prenant plus de 5 secondes."
+
+#: website/templates/index.html:63 website/templates/profile.html:249
+msgid "Security"
+msgstr "Sécurité"
+
+#: website/templates/index.html:64
+msgid "Data leaks, exploits or anything smelly."
+msgstr "Fuites de données, exploits ou toute chose suspecte."
+
+#: website/templates/index.html:70 website/templates/profile.html:254
+msgid "Typo"
+msgstr "Faute de frappe"
+
+#: website/templates/index.html:71
+msgid "Miss-spellings, miss-grammar and more."
+msgstr "Fautes d'orthographe, fautes de grammaire et plus encore."
+
+#: website/templates/index.html:77 website/templates/profile.html:261
+msgid "Design"
+msgstr "Design"
+
+#: website/templates/index.html:78
+msgid "Layout, responsiveness and improvements"
+msgstr "Mise en page, réactivité et améliorations"
+
+#: website/templates/index.html:84
+msgid "Server Down"
+msgstr "Serveur hors service"
+
+#: website/templates/index.html:85
+msgid "500 Server Error and Downtime"
+msgstr "Erreur serveur 500 et temps d'arrêt"
+
+#: website/templates/index.html:95
+msgid "Bugs"
+msgstr "Bugs"
+
+#: website/templates/index.html:98
+msgid "Users"
+msgstr "Utilisateurs"
+
+#: website/templates/index.html:101
+msgid "Hunts"
+msgstr "Chasses"
+
+#: website/templates/index.html:104
+msgid "Domains"
+msgstr "Domaines"
+
+#: website/templates/index.html:111
+#, fuzzy
+#| msgid "LATEST HUNTS"
+msgid "ENDED HUNTS"
+msgstr "DERNIÈRES CHASSES"
+
+#: website/templates/index.html:113
+#, fuzzy
+#| msgid "View Ended Hunts"
+msgid "View Ongoing Hunts"
+msgstr "Voir les chasses terminées"
+
+#: website/templates/index.html:116
+msgid "LATEST HUNTS"
+msgstr "DERNIÈRES CHASSES"
+
+#: website/templates/index.html:118
+msgid "View Ended Hunts"
+msgstr "Voir les chasses terminées"
+
+#: website/templates/index.html:131
+#, fuzzy
+#| msgid "LATEST HUNTS"
+msgid "LATEST"
+msgstr "DERNIÈRES CHASSES"
+
+#: website/templates/index.html:177
+msgid "No ongoing hunt's found"
+msgstr "Aucune chasse en cours trouvée"
+
+#: website/templates/index.html:187
+msgid "LEADER BOARDS"
+msgstr "TABLEAUX DE BORD"
+
+#: website/templates/index.html:192
+msgid "TOP COMPANY"
+msgstr "TOP COMPAGNIE"
+
+#: website/templates/index.html:202
+msgid "SUBMIT A BUG"
+msgstr ""
+
+#: website/templates/index.html:210
+msgid "TOP TESTER"
+msgstr "MEILLEUR TESTEUR"
+
+#: website/templates/index.html:220
+msgid "VIEW PROFILE"
+msgstr ""
+
+#: website/templates/index.html:232
+msgid "Latest activity"
+msgstr "Dernière activité"
+
+#: website/templates/index.html:238
+msgid "View All Activity"
+msgstr "Voir toutes les activités"
+
+#: website/templates/index.html:244
+msgid "Leaderboard"
+msgstr "Classement"
+
+#: website/templates/index.html:248
+msgid "The 1st Place Hunter for"
+msgstr "Le premier chasseur pour"
+
+#: website/templates/index.html:248
+msgid "will receive"
+msgstr "recevra"
+
+#: website/templates/index.html:250
+msgid "No sponsored prizes this month"
+msgstr "Pas de prix sponsorisés ce mois-ci"
+
+#: website/templates/index.html:251
+msgid "Sponsor a Prize"
+msgstr "Parrainer un prix"
+
+#: website/templates/index.html:267 website/templates/mobile_about.html:19
+#: website/templates/profile.html:345
+msgid "Points"
+msgstr "Points"
+
+#: website/templates/index.html:271
+msgid "Leaderboard reset for"
+msgstr "Réinitialisation du classement pour"
+
+#: website/templates/index.html:271
+msgid "Be first to find issues"
+msgstr "Soyez le premier à trouver des problèmes"
+
+#: website/templates/index.html:274
+msgid "View All"
+msgstr "Tout afficher"
+
+#: website/templates/index.html:275
+msgid "Filter Monthly"
+msgstr "Filtrer par mois"
+
+#: website/templates/index.html:276
+msgid "View Monthly"
+msgstr "Voir par mois"
+
+#: website/templates/invite.html:11
+msgid "Invite a company and get +5 points when they join"
+msgstr "Invitez une entreprise et obtenez +5 points lorsqu'ils rejoignent"
+
+#: website/templates/join.html:431 website/templates/join.html:460
+#: website/templates/join.html:489
+msgid "Featured on Homepage"
+msgstr "En vedette sur la page d'accueil"
+
+#: website/templates/join.html:461 website/templates/join.html:490
+msgid "Featured in Newsletter"
+msgstr "En vedette dans la newsletter"
+
+#: website/templates/join.html:492
+msgid "Announced to Users"
+msgstr "Annoncé aux utilisateurs"
+
+#: website/templates/mobile_about.html:5
+msgid "All prize money goes directly to the bug hunter"
+msgstr "Toutes les sommes gagnées vont directement au chasseur de bugs"
+
+#: website/templates/mobile_about.html:6
+msgid ""
+"Software code allows us to buy a gift for Mom or Dad on amazon.com in 7 "
+"seconds"
+msgstr ""
+"Le code logiciel nous permet d'acheter un cadeau pour Maman ou Papa sur "
+"amazon.com en 7 secondes"
+
+#: website/templates/mobile_about.html:6
+msgid "watch our favorite"
+msgstr "regarder notre favori"
+
+#: website/templates/mobile_about.html:7
+msgid ""
+"“House of Cards” episode on Netflix or read Yelp reviews about a new "
+"restaurant"
+msgstr ""
+"épisode de \"House of Cards\" sur Netflix ou lire les avis Yelp sur un "
+"nouveau restaurant"
+
+#: website/templates/mobile_about.html:9
+msgid ""
+"When we can’t access the information we’re looking for on the internet "
+"within seconds"
+msgstr ""
+"Quand nous ne pouvons pas accéder à l'information que nous cherchons sur "
+"internet en quelques secondes"
+
+#: website/templates/mobile_about.html:9
+msgid "we are not happy"
+msgstr "nous ne sommes pas heureux"
+
+#: website/templates/mobile_about.html:12
+msgid "This is where you come into the picture"
+msgstr "C'est là que vous entrez en jeu"
+
+#: website/templates/mobile_about.html:14
+msgid ""
+"wants you to identify the software (and hardware) bugs that delay downloads"
+msgstr ""
+"vous demande d'identifier les bugs logiciels (et matériels) qui retardent "
+"les téléchargements"
+
+#: website/templates/mobile_about.html:14
+msgid "freeze screens"
+msgstr "figer les écrans"
+
+#: website/templates/mobile_about.html:15
+msgid ""
+"create payloads that deliver malware to websites and generate other issues"
+msgstr ""
+"créer des charges utiles qui livrent des logiciels malveillants aux sites "
+"web et génèrent d'autres problèmes"
+
+#: website/templates/mobile_about.html:17
+msgid "What’s in it for you"
+msgstr "Qu'y a-t-il pour vous"
+
+#: website/templates/mobile_about.html:20
+msgid "Money if you join a"
+msgstr "Argent si vous rejoignez un"
+
+#: website/templates/mobile_about.html:20
+msgid "Sponsored Bug Hunt"
+msgstr "Chasse aux bugs sponsorisée"
+
+#: website/templates/mobile_about.html:21
+msgid "Jackpot money listed on the Leaderboard"
+msgstr "Argent du jackpot répertorié sur le classement"
+
+#: website/templates/mobile_about.html:22
+msgid "Money if someone tips you for finding a bug through the tip button"
+msgstr ""
+"Argent si quelqu'un vous donne un pourboire pour avoir trouvé un bug via le "
+"bouton de pourboire"
+
+#: website/templates/mobile_about.html:23
+msgid "Experience to add to your résumé or portfolio"
+msgstr "Expérience à ajouter à votre CV ou à votre portfolio"
+
+#: website/templates/mobile_about.html:26
+msgid "How it Works"
+msgstr "Comment ça marche"
+
+#: website/templates/mobile_about.html:28
+msgid "Testers"
+msgstr "Testeurs"
+
+#: website/templates/mobile_about.html:30
+msgid "Create a User Account to log into"
+msgstr "Créez un compte utilisateur pour vous connecter"
+
+#: website/templates/mobile_about.html:31
+msgid "Describe the software or hardware bug you found"
+msgstr "Décrivez le bug logiciel ou matériel que vous avez trouvé"
+
+#: website/templates/mobile_about.html:32
+msgid "Attach a screenshot of the bug"
+msgstr "Joindre une capture d'écran du bug"
+
+#: website/templates/mobile_about.html:33
+msgid "Submit the information"
+msgstr "Soumettre l'information"
+
+#: website/templates/mobile_about.html:34
+msgid "Win money through company-sponsored Bug Hunts"
+msgstr ""
+"Gagnez de l'argent grâce aux chasses aux bugs sponsorisées par l'entreprise"
+
+#: website/templates/mobile_about.html:34
+msgid "tips or the Grand Prize/Jackpot"
+msgstr "pourboires ou le Grand Prix/Jackpot"
+
+#: website/templates/mobile_about.html:34
+msgid ""
+"We may also have \"heists\" where each bug is worth a specific amount based "
+"on what the company sets"
+msgstr ""
+"Nous pouvons également avoir des \"cambriolages\" où chaque bug vaut un "
+"montant spécifique en fonction de ce que l'entreprise fixe"
+
+#: website/templates/mobile_about.html:36
+msgid "If you participate in"
+msgstr "Si vous participez à"
+
+#: website/templates/mobile_about.html:36
+msgid "sponsored Bug Hunts"
+msgstr "chasses aux bugs sponsorisées"
+
+#: website/templates/mobile_about.html:36
+msgid "you could win prize money known as tips"
+msgstr "vous pourriez gagner de l'argent connu sous le nom de pourboires"
+
+#: website/templates/mobile_about.html:39
+msgid "Organizations"
+msgstr "Organisations"
+
+#: website/templates/mobile_about.html:41
+msgid "We want everyone to love your website"
+msgstr "Nous voulons que tout le monde aime votre site web"
+
+#: website/templates/mobile_about.html:42
+msgid ""
+"You want to keep your customers happy by giving them a consistent bug-free "
+"user experience"
+msgstr ""
+"Vous voulez garder vos clients heureux en leur offrant une expérience "
+"utilisateur sans bug et cohérente"
+
+#: website/templates/mobile_about.html:43
+msgid ""
+"offers monthly Bug Hunts through 4 different subscription plans to help you "
+"achieve this"
+msgstr ""
+"offre des chasses aux bugs mensuelles via 4 plans d'abonnement différents "
+"pour vous aider à atteindre cet objectif"
+
+#: website/templates/profile.html:185
+msgid "Upload"
+msgstr "Télécharger"
+
+#: website/templates/profile.html:197
+msgid "Hide all issues"
+msgstr "Masquer tous les problèmes"
+
+#: website/templates/profile.html:198
+msgid "OK"
+msgstr "OK"
+
+#: website/templates/profile.html:205
+msgid "Unfollow"
+msgstr ""
+
+#: website/templates/profile.html:207
+#, fuzzy
+#| msgid "Follow Us"
+msgid "Follow"
+msgstr "Suivez-nous"
+
+#: website/templates/profile.html:218
+msgid "Send a tip"
+msgstr "Envoyer un conseil"
+
+#: website/templates/profile.html:226
+msgid "General"
+msgstr "Général"
+
+#: website/templates/profile.html:231
+msgid "Number"
+msgstr "Numéro"
+
+#: website/templates/profile.html:272
+msgid "Followers"
+msgstr "Abonnés"
+
+#: website/templates/profile.html:276
+#, fuzzy
+#| msgid "Follow Us"
+msgid "Following"
+msgstr "Suivez-nous"
+
+#: website/templates/profile.html:280
+msgid "Bookmarks"
+msgstr "Signets"
+
+#: website/templates/profile.html:291
+msgid "No Bug Reported"
+msgstr "Aucun bug signalé"
+
+#: website/templates/profile.html:344
+msgid "Bugs Reported"
+msgstr "Bugs signalés"
+
+#: website/templates/profile.html:347
+msgid "Open Issues"
+msgstr "Problèmes ouverts"
+
+#: website/templates/profile.html:350
+msgid "Closed Issues"
+msgstr "Problèmes résolus"
+
+#: website/templates/profile.html:359
+#, fuzzy
+#| msgid "Activity"
+msgid "activity"
+msgstr "contrii"
+
+#: website/templates/profile.html:371
+msgid "No Activity Yet"
+msgstr "Aucune activité pour le moment"
+
+#: website/templates/profile.html:380
+msgid "top bug findings"
+msgstr "Principales découvertes de bugs"
+
+#: website/templates/profile.html:399
+msgid "Nothing Found"
+msgstr "Rien trouvé"
+
+#: website/templates/registration/password_reset_email.html:1
+msgid ""
+"You're receiving this\n"
+"email because you requested a password reset for your user account at {{\n"
+"site_name }}."
+msgstr ""
+"Vous recevez cet e-mail car vous avez demandé une réinitialisation de votre "
+"mot de passe pour votre compte utilisateur sur {{ site_name }}."
+
+#: website/templates/registration/password_reset_email.html:6
+msgid "Your username, in case you’ve forgotten:"
+msgstr "Votre nom d'utilisateur, au cas où vous l'auriez oublié :"
+
+#: website/templates/registration/password_reset_email.html:7
+msgid "Thanks for using our site!"
+msgstr "Merci d'utiliser notre site !"
+
+#: website/templates/report.html:102
+msgid "REPORT A BUG"
+msgstr "SIGNALER UN BUG"
+
+#: website/templates/report.html:110
+msgid "DOMAIN URL"
+msgstr ""
+
+#: website/templates/report.html:128
+#, fuzzy
+#| msgid "DOMAIN URLCheck for Duplicates"
+msgid "Check for Duplicates"
+msgstr "Vérification des doublons pour l'URL du domaine"
+
+#: website/templates/report.html:139
+msgid "BUG TITLE"
+msgstr "TITRE DU BUG"
+
+#: website/templates/report.html:160
+msgid "BUG TYPE"
+msgstr "TYPE DE BUG"
+
+#: website/templates/report.html:186
+msgid "BUG HUNT"
+msgstr "CHASSE AUX BUGS"
+
+#: website/templates/report.html:195
+msgid "REPORT INDEPENDENTLY"
+msgstr ""
+
+#: website/templates/report.html:219
+msgid "SCREENSHOTS"
+msgstr "CAPTURES D'ÉCRAN"
+
+#: website/templates/report.html:243
+msgid "Upload screenshots"
+msgstr "Télécharger des captures d'écran"
+
+#: website/templates/report.html:254
+msgid "or drag and drop"
+msgstr "ou glisser et déposer"
+
+#: website/templates/report.html:282
+msgid "ADD TEAM MEMBERS"
+msgstr "AJOUTER DES MEMBRES D'ÉQUIPE"
+
+#: website/templates/report.html:291
+msgid "Team members should be bughunts users"
+msgstr "Les membres de l'équipe doivent être des utilisateurs de Bughunts"
+
+#: website/templates/report.html:313
+msgid "Report Privately"
+msgstr "Signaler en privé"
+
+#: website/templates/report.html:335
+msgid "Report"
+msgstr "Signaler"
+
+#~ msgid "Open Source and a non-commercials"
+#~ msgstr "Open Source et à but non commercial"
+
+#~ msgid "Start"
+#~ msgstr "Démarrer"
+
+#~ msgid "Sign In"
+#~ msgstr "Se connecter"
+
+#~ msgid "Already have an account? <a href=\"%(login_url)s\">Login</a>."
+#~ msgstr ""
+#~ "Vous avez déjà un compte ? <a href=\"%(login_url)s\"> Connexion </a>."
+
+#~ msgid "Featured Websites"
+#~ msgstr "Sites web en vedette"
+
+#~ msgid "Upload Screenshot"
+#~ msgstr "Télécharger une capture d'écran"
+
+#~ msgid "Describe bug issue"
+#~ msgstr "Décrire le problème du bug"
+
+#~ msgid "Tour"
+#~ msgstr "Visite guidée"
+
+#~ msgid "Unrated"
+#~ msgstr "Non noté"
+
+#~ msgid "START A "
+#~ msgstr "DÉMARRER UNE "
+
+#~ msgid "BUGHUNT"
+#~ msgstr "CHASSE AUX BUGS"
+
+#~ msgid "Name of the bughunt"
+#~ msgstr "Nom de la chasse aux bugs"
+
+#~ msgid "You do not have a company, create one"
+#~ msgstr "Vous n'avez pas d'entreprise, créez-en une"
+
+#~ msgid "Forgot Password"
+#~ msgstr "Mot de passe oublié"
+
+#~ msgid "BUG DESCRIPTION"
+#~ msgstr "DESCRIPTION DU BUG"

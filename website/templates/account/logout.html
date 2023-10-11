@@ -10,7 +10,7 @@
         {% if redirect_field_value %}
             <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
         {% endif %}
-        <button class="btn btn-primary" type="submit">{% trans 'Yes' %}</button>
+        <button class="btn btn-primary text-black" type="submit">{% trans 'Yes' %}</button>
         <a href="/accounts/profile/" class="btn btn-default">{% trans 'Cancel' %}</a>
     </form>
 {% endblock %}
