@@ -2032,6 +2032,24 @@ def comment_on_issue(request, issue_pk):
 
     return render(request, "comments2.html",context)
 
+def delete_comment(request):
+    issue = Issue.objects.get(pk=request.POST['issue_pk'])
+    if request.method == "POST":
+        all_comment = Comment.objects.filter(issue=issue)
+        print(request.POST['issue_pk'])
+        comment = Comment.objects.get(pk=int(request.POST['comment_pk']))
+        try:
+            show = comment.parent.pk
+        except:
+            show = -1
+        if request.user.username != comment.author:
+            return HttpResponse("Cannot delete this comment")
+        comment.delete()
+    context = {
+        "all_comment": Comment.objects.filter(issue__id=int(request.POST['issue_pk'])).order_by("-created_date"),
+        "object": issue,
+    }
+    return render(request, "comments2.html", context)
 
 class CustomObtainAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
