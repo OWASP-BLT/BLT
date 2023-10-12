@@ -1,44 +1,43 @@
 {% load custom_tags %}
-<h1>About {% env 'PROJECT_NAME' %}</h1>
-<h2>Bugheist is 100% free to use, Open Source and a non-commercial, not for profit initiative. 
-    All prize money goes directly to the bug hunter.</h2>
-<p>Software code allows us to buy a gift for Mom or Dad on amazon.com in 7 seconds, watch our favorite
-    “House of Cards” episode on Netflix or read Yelp reviews about a new restaurant.</p>
+{% load i18n %}
+<h1>{% trans 'About' %} {% env 'PROJECT_NAME' %}</h1>
+<h2>{% env 'PROJECT_NAME' %} is 100% {% trans 'free to use' %}, {% trans 'Open Source and a non-commercial' %}, {% trans 'not for profit initiative' %}. 
+    {% trans 'All prize money goes directly to the bug hunter' %}.</h2>
+<p>{% trans 'Software code allows us to buy a gift for Mom or Dad on amazon.com in 7 seconds' %}, {% trans 'watch our favorite' %}
+    {% trans '“House of Cards” episode on Netflix or read Yelp reviews about a new restaurant' %}.</p>
 
-<p>When we can’t access the information we’re looking for on the internet within seconds, <i>we are not
-        happy.</i>
+<p>{% trans 'When we can’t access the information we’re looking for on the internet within seconds' %}, <i>{% trans 'we are not happy' %}.</i>
 <p>
 
-<p>This is where you come into the picture.</p>
+<p>{% trans 'This is where you come into the picture' %}.</p>
 
-<p>{% env 'PROJECT_NAME' %} wants you to identify the software (and hardware) bugs that delay downloads, freeze screens,
-    create payloads that deliver malware to websites and generate other issues.</p>
+<p>{% env 'PROJECT_NAME' %} {% trans 'wants you to identify the software (and hardware) bugs that delay downloads' %}, {% trans 'freeze screens' %},
+    {% trans 'create payloads that deliver malware to websites and generate other issues' %}.</p>
 
-<h2><strong>What’s in it for you?</strong></h2>
+<h2><strong>{% trans 'What’s in it for you' %}?</strong></h2>
 <ul>
-    <li>Points.</li>
-    <li>Money if you join a {% env 'PROJECT_NAME' %} Sponsored Bug Hunt.</li>
-    <li>Jackpot money listed on the Leaderboard.</li>
-    <li>Money if someone tips you for finding a bug through the tip button.</li>
-    <li>Experience to add to your résumé or portfolio.</li>
+    <li>{% trans 'Points' %}.</li>
+    <li>{% trans 'Money if you join a' %} {% env 'PROJECT_NAME' %} {% trans 'Sponsored Bug Hunt' %}.</li>
+    <li>{% trans 'Jackpot money listed on the Leaderboard' %}.</li>
+    <li>{% trans 'Money if someone tips you for finding a bug through the tip button' %}.</li>
+    <li>{% trans 'Experience to add to your résumé or portfolio' %}.</li>
 </ul>
 
-<h3><strong>How it Works</strong></h3>
+<h3><strong>{% trans 'How it Works' %}</strong></h3>
 
-<h4><strong>Testers</strong></h4>
+<h4><strong>{% trans 'Testers' %}</strong></h4>
 <ol>
-    <li>Create a User Account to log into {% env 'PROJECT_NAME' %}.</li>
-    <li>Describe the software or hardware bug you found.</li>
-    <li>Attach a screenshot of the bug.</li>
-    <li>Submit the information.</li>
-    <li>Win money through company-sponsored Bug Hunts, tips or the Grand Prize/Jackpot.We may also have
-        "heists" where each bug is worth a specific amount based on what the company sets.
+    <li>{% trans 'Create a User Account to log into' %} {% env 'PROJECT_NAME' %}.</li>
+    <li>{% trans 'Describe the software or hardware bug you found' %}.</li>
+    <li>{% trans 'Attach a screenshot of the bug' %}.</li>
+    <li>{% trans 'Submit the information' %}.</li>
+    <li>{% trans 'Win money through company-sponsored Bug Hunts' %}, {% trans 'tips or the Grand Prize/Jackpot' %}.{% trans 'We may also have "heists" where each bug is worth a specific amount based on what the company sets' %}.
     </li>
-    <li>If you participate in {% env 'PROJECT_NAME' %}’s sponsored Bug Hunts, you could win prize money known as tips.</li>
+    <li>{% trans 'If you participate in' %} {% env 'PROJECT_NAME' %}’s {% trans 'sponsored Bug Hunts' %}, {% trans 'you could win prize money known as tips' %}.</li>
 </ol>
 
-<h4><strong>Organizations</strong></h4>
+<h4><strong>{% trans 'Organizations' %}</strong></h4>
 
-We want everyone to love your website.
-<p>You want to keep your customers happy by giving them a consistent bug-free user experience. {% env 'PROJECT_NAME' %}
-    offers monthly Bug Hunts through 4 different subscription plans to help you achieve this.</p>
+{% trans 'We want everyone to love your website' %}.
+<p>{% trans 'You want to keep your customers happy by giving them a consistent bug-free user experience' %}. {% env 'PROJECT_NAME' %}
+    {% trans 'offers monthly Bug Hunts through 4 different subscription plans to help you achieve this' %}.</p>

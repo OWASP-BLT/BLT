@@ -2,13 +2,13 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # Sourav Badami <souravbadami@gmail.com>, 2017.
-#
+# 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-07-11 16:18+0530\n"
+"POT-Creation-Date: 2023-10-09 07:37+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,42 +18,171 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: blt/settings.py:145
+#: blt/settings.py:224
 msgid "English"
 msgstr "英語"
 
-#: blt/settings.py:146
+#: blt/settings.py:225
 msgid "French"
 msgstr "フランス語"
 
-#: website/templates/_subscriptions.html:51
-#: website/templates/_subscriptions.html:72
-#: website/templates/_subscriptions.html:93
-msgid "Featured on Homepage"
-msgstr "ホームページに掲載"
+#: blt/settings.py:226
+msgid "Chinese"
+msgstr "中国語"
 
-#: website/templates/_subscriptions.html:54
-#: website/templates/_subscriptions.html:75
-#: website/templates/_subscriptions.html:97
-msgid "Start"
-msgstr "開始"
+#: blt/settings.py:227
+msgid "German"
+msgstr "ドイツ語"
 
-#: website/templates/_subscriptions.html:73
-#: website/templates/_subscriptions.html:94
-msgid "Featured in Newsletter"
-msgstr "ニュースレターに掲載"
+#: blt/settings.py:228
+msgid "Japanese"
+msgstr "日本語"
 
-#: website/templates/_subscriptions.html:95
-msgid "Announced to Users"
-msgstr "ユーザーにアナウンス"
+#: blt/settings.py:229
+msgid "Russian"
+msgstr "ロシア語"
 
-#: website/templates/account/login.html:76
-msgid "Sign In"
-msgstr "サインイン"
+#: blt/settings.py:230
+msgid "Hindi"
+msgstr "ヒンディー語"
 
-#: website/templates/account/login.html:77
+#: company/templates/company/register_company.html:9
+#: company/templates/company/register_company.html:31
+msgid "Register Company"
+msgstr "企業を登録"
+
+#: company/templates/company/register_company.html:37
+msgid "Company Information"
+msgstr "企業情報"
+
+#: company/templates/company/register_company.html:45
+msgid "Company Name"
+msgstr "企業名"
+
+#: company/templates/company/register_company.html:64
+msgid "Company Url"
+msgstr "企業のURL"
+
+#: company/templates/company/register_company.html:83
+msgid "Company Support Email (Optional)"
+msgstr "企業のサポートメール（オプション）"
+
+#: company/templates/company/register_company.html:101
+msgid "Company Twitter URL (Optional)"
+msgstr "企業のTwitter URL（オプション）"
+
+#: company/templates/company/register_company.html:119
+msgid "Company Facebook URL (Optional)"
+msgstr "企業のFacebook URL（オプション）"
+
+#: company/templates/company/register_company.html:142
+msgid "Company Logo"
+msgstr "企業のロゴ"
+
+#: company/templates/company/register_company.html:162
+msgid "Upload logo"
+msgstr "ロゴをアップロード"
+
+#: company/templates/company/register_company.html:178
+msgid "Company Managers"
+msgstr "企業のマネージャー"
+
+#: company/templates/company/register_company.html:181
+msgid "Add Emails which will be allowed to add domains"
+msgstr "ドメインを追加できる電子メールを追加"
+
+#: company/templates/company/register_company.html:182
+#, fuzzy
+#| msgid "Email should be registered user on bugheist"
+msgid "Email should be registerd user on bugheist"
+msgstr "電子メールはbugheistの登録ユーザーである必要があります"
+
+#: company/templates/company/register_company.html:186
+#: website/templates/report.html:286
+msgid "Add Email"
+msgstr "電子メールを追加"
+
+#: company/templates/company/register_company.html:193
+#: website/templates/report.html:299
+msgid "Email address"
+msgstr "電子メールアドレス"
+
+#: company/templates/company/register_company.html:205
+#: website/templates/account/logout.html:14 website/templates/report.html:328
+msgid "Cancel"
+msgstr "キャンセル"
+
+#: company/templates/company/register_company.html:211
+msgid "Save"
+msgstr "保存"
+
+#: website/templates/account/email/email_confirmation_message.txt:5
+#, python-format
+msgid ""
+"You're receiving this e-mail because user %(user_display)s has given your e-"
+"mail address to register an account on %(site_domain)s.\n"
+"\n"
+"To confirm this is correct, go to %(activate_url)s"
+msgstr ""
+"%(activate_url)s に移動して、これが正しいことを確認してください。このメールを"
+"受け取ったのは、ユーザー %(user_display)s があなたのメールアドレスを登録のた"
+"めに %(site_domain)s に提供したためです。"
+
+#: website/templates/account/login.html:21
+#: website/templates/account/signup.html:17
+msgid ""
+"is a bug logging tool to report issues and get points, companies are held "
+"accountable"
+msgstr ""
+"は問題を報告してポイントを獲得するためのバグ記録ツールであり、企業は責任を負"
+"います"
+
+#: website/templates/account/login.html:24
+#, fuzzy
+#| msgid "Already have an account"
+msgid "Don't have an account"
+msgstr "すでにアカウントをお持ちの場合"
+
+#: website/templates/account/login.html:25
+#: website/templates/includes/footer.html:30
+msgid "Get Started"
+msgstr "はじめる"
+
+#: website/templates/account/login.html:28
+#: website/templates/account/signup.html:24
+msgid "Read our"
+msgstr "当社の読む"
+
+#: website/templates/account/login.html:28
+#: website/templates/account/signup.html:24
+msgid "terms"
+msgstr "利用規約"
+
+#: website/templates/account/login.html:28
+#: website/templates/account/signup.html:24
+msgid "and"
+msgstr "および"
+
+#: website/templates/account/login.html:28
+#: website/templates/account/signup.html:24
+msgid "conditions"
+msgstr "条件"
+
+#: website/templates/account/login.html:32
+msgid "Account Login"
+msgstr "アカウントログイン"
+
+#: website/templates/account/login.html:48
 msgid "Forgot Password?"
 msgstr "パスワードをお忘れですか？"
+
+#: website/templates/account/login.html:73
+msgid "Log in"
+msgstr "ログイン"
+
+#: website/templates/account/login.html:86
+msgid "or login with"
+msgstr "または以下でログイン"
 
 #: website/templates/account/logout.html:6
 msgid "Sign Out"
@@ -61,173 +190,794 @@ msgstr "サインアウト"
 
 #: website/templates/account/logout.html:7
 msgid "Are you sure?"
-msgstr "よろしいですか？"
+msgstr "本当によろしいですか？"
 
 #: website/templates/account/logout.html:13
 msgid "Yes"
 msgstr "はい"
 
-#: website/templates/account/logout.html:14
-msgid "Cancel"
-msgstr "キャンセル"
-
-#: website/templates/account/password_change.html:22
-#: website/templates/account/password_change.html:41
-#: website/templates/account/password_reset_from_key.html:26
-#: website/templates/account/password_reset_from_key.html:52
+#: website/templates/account/password_change.html:39
+#: website/templates/account/password_change.html:67
+#: website/templates/account/password_reset_from_key.html:41
+#: website/templates/account/password_reset_from_key.html:67
+#: website/templates/base_admin.html:109
+#: website/templates/base_dashboard_company.html:134
+#: website/templates/base_dashboard_user.html:116
+#: website/templates/includes/navbar.html:125
 msgid "Change Password"
-msgstr "パスワードの変更"
+msgstr "パスワードを変更する"
 
-#: website/templates/account/password_reset.html:27
+#: website/templates/account/password_reset.html:42
 msgid "Password Reset"
 msgstr "パスワードのリセット"
 
-#: website/templates/account/password_reset.html:29
-msgid "Forgotten your password? Enter your e-mail address below, and we'll send you an e-mail allowing you to reset it."
-msgstr "パスワードをお忘れですか？以下にメールアドレスを入力してください。リセットできるメールをお送りします。"
+#: website/templates/account/password_reset.html:44
+msgid ""
+"Forgotten your password? Enter your e-mail address below, and we'll send you "
+"an e-mail allowing you to reset it."
+msgstr ""
+"パスワードをお忘れですか？以下にメールアドレスを入力してください。パスワード"
+"をリセットするためのメールを送信します。"
 
-#: website/templates/account/password_reset.html:38
+#: website/templates/account/password_reset.html:54
 msgid "Reset My Password"
-msgstr "パスワードをリセット"
+msgstr "パスワードをリセットする"
 
-#: website/templates/account/password_reset_from_key.html:24
+#: website/templates/account/password_reset_from_key.html:39
 msgid "Bad Token"
-msgstr "不正なトークン"
+msgstr "無効なトークン"
 
-#: website/templates/account/password_reset_from_key.html:55
+#: website/templates/account/password_reset_from_key.html:70
 msgid "Your password is now changed!"
 msgstr "パスワードが変更されました！"
 
-#: website/templates/account/signup.html:22
-#: website/templates/account/signup.html:65
-msgid "Sign Up"
-msgstr "サインアップ"
+#: website/templates/account/signup.html:20
+msgid "Already have an account"
+msgstr "すでにアカウントをお持ちの場合"
 
-#: website/templates/account/signup.html:67
-#, python-format
-msgid "Already have an account? <a href=\"%(login_url)s\">Login</a>."
-msgstr "すでにアカウントをお持ちですか？<a href=\"%(login_url)s\">ログイン</a>."
-
-#: website/templates/index.html:13
-msgid "Find Bugs, Win Points and Prizes"
-msgstr "バグを見つけ、ポイントと賞品を獲得する"
-
-#: website/templates/index.html:17
-msgid "Fix issues on websites, apps or hardware (+3 points)"
-msgstr "ウェブサイト、アプリ、またはハードウェアの問題を修正（+3ポイント）"
-
-#: website/templates/index.html:18
-msgid "Verify other bug reports(+2 points)"
-msgstr "他のバグレポートを確認する（+2ポイント）"
-
-#: website/templates/index.html:19
-msgid "Invite friends (when they signup , get +1 point)"
-msgstr "友達を招待する（サインアップすると、+ 1ポイントを獲得）"
-
-#: website/templates/index.html:20
-msgid "Find a bug on a new site or app (+4 points)"
-msgstr "新しいサイトまたはアプリのバグを見つける（+4ポイント）"
-
-#: website/templates/index.html:33
-msgid "Number Error"
-msgstr "数値エラー"
-
-#: website/templates/index.html:34
-msgid "For pages where you see a number 404, 500."
-msgstr "番号404、500が表示されるページの場合。"
-
-#: website/templates/index.html:48
-msgid "Functional"
-msgstr "機能的"
-
-#: website/templates/index.html:49
-msgid "Something doesn't work."
-msgstr "何かが機能しません。"
-
-#: website/templates/index.html:63
-msgid "Performance"
-msgstr "パフォーマンス"
-
-#: website/templates/index.html:64
-msgid "Anything over 5 seconds."
-msgstr "5秒を超えるもの"
-
-#: website/templates/index.html:82
-msgid "Security"
-msgstr "セキュリティ"
-
-#: website/templates/index.html:83
-msgid "Data leaks, exploits or anything smelly."
-msgstr "データ漏えい、エクスプロイト、または何か臭いもの。"
-
-#: website/templates/index.html:97
-msgid "Typo"
-msgstr "タイプミス"
-
-#: website/templates/index.html:98
-msgid "Miss-spellings, miss-grammar and more."
-msgstr "スペルミス、文法ミスなど。"
-
-#: website/templates/index.html:112
-msgid "Design"
-msgstr "デザイン"
-
-#: website/templates/index.html:113
-msgid "Layout, responsiveness and improvements"
-msgstr "レイアウト、応答性、および改善"
-
-#: website/templates/index.html:131
-msgid "Featured Websites"
-msgstr "注目のウェブサイト"
-
-#: website/templates/index.html:194
-msgid "Leaderboard"
-msgstr "リーダーボード"
-
-msgid "Upload Screenshot"
-msgstr "スクリーンショットのアップロード"
-
-msgid "Report Bug"
-msgstr "バグの報告"
-
-msgid "Describe bug issue"
-msgstr "バグの問題を説明する"
-
-msgid "Social"
-msgstr "ソーシャル"
-
-msgid "Bug Hunt"
-msgstr "バグハント"
-
-msgid "Tour"
-msgstr "ツアー"
-
-msgid "User Profile"
-msgstr "ユーザープロファイル"
-
-msgid "Logout"
-msgstr "ログアウト"
-
-msgid "Signup"
-msgstr "サインアップ"
-
+#: website/templates/account/signup.html:21
+#: website/templates/includes/navbar.html:49
+#: website/templates/includes/navbar.html:150
 msgid "Login"
 msgstr "ログイン"
 
-msgid "About"
-msgstr "バージョン情報"
+#: website/templates/account/signup.html:28
+msgid "Account SignUp"
+msgstr "アカウント登録"
 
-msgid "Stats"
-msgstr "統計"
+#: website/templates/account/signup.html:85
+#: website/templates/includes/navbar.html:44
+msgid "Sign Up"
+msgstr "サインアップ"
 
-msgid "Company Scoreboard"
-msgstr "会社のスコアボード"
+#: website/templates/base_admin.html:107
+#: website/templates/base_dashboard_company.html:132
+#: website/templates/base_dashboard_user.html:114
+#: website/templates/includes/navbar.html:102
+msgid "User Profile"
+msgstr "ユーザープロフィール"
 
-msgid "Terms of Service"
-msgstr "利用規約"
+#: website/templates/base_admin.html:111
+#: website/templates/base_dashboard_company.html:136
+#: website/templates/base_dashboard_user.html:118
+#: website/templates/includes/navbar.html:36
+#: website/templates/includes/navbar.html:141
+msgid "Logout"
+msgstr "ログアウト"
 
+# Japanese (ja)
+#: website/templates/hunt.html:182
+msgid "Enter URL, APP name or GPS location of issue"
+msgstr "問題のURL、アプリ名、またはGPS位置を入力してください"
+
+#: website/templates/hunt.html:229
+msgid "Flea Plan"
+msgstr "ノミプラン"
+
+#: website/templates/hunt.html:229 website/templates/hunt.html:230
+#: website/templates/hunt.html:231 website/templates/hunt.html:232
+msgid "Month"
+msgstr "月"
+
+#: website/templates/hunt.html:230
+msgid "Ant Plan"
+msgstr "アリプラン"
+
+#: website/templates/hunt.html:231
+msgid "Wasp Plan"
+msgstr "スズメバチプラン"
+
+#: website/templates/hunt.html:232
+msgid "Scorpion Plan"
+msgstr "サソリプラン"
+
+#: website/templates/hunt.html:236
+msgid "Grand Prize"
+msgstr "グランプリ"
+
+#: website/templates/hunt.html:237
+#, fuzzy
+#| msgid "Max amount awarded to winner"
+msgid "Max amout awarded to winner"
+msgstr "優勝者に授与される最大金額"
+
+#: website/templates/hunt.html:250
+msgid "START BUGHUNT"
+msgstr "バグハントを開始"
+
+#: website/templates/hunt.html:256 website/templates/index.html:284
+#: website/templates/mobile_about.html:4
+msgid "free to use"
+msgstr "無料で利用可能"
+
+#: website/templates/hunt.html:256 website/templates/index.html:284
+#: website/templates/mobile_about.html:4
+#, fuzzy
+#| msgid "Open Source and a non-commercials"
+msgid "Open Source and a non-commercial"
+msgstr "オープンソースおよび非営利"
+
+#: website/templates/hunt.html:256 website/templates/index.html:284
+#: website/templates/mobile_about.html:4
+msgid "not for profit initiative"
+msgstr "非営利イニシアティブ"
+
+#: website/templates/hunt_list.html:29
+#: website/templates/includes/navbar.html:29
+#: website/templates/includes/navbar.html:67
 msgid "Search"
 msgstr "検索"
 
+#: website/templates/hunt_list.html:37
+msgid "Filter Hunts"
+msgstr "ハントをフィルタリング"
+
+#: website/templates/includes/footer.html:13
+msgid "Community"
+msgstr "コミュニティ"
+
+#: website/templates/includes/footer.html:14
+msgid "Contributors"
+msgstr "寄稿者"
+
+#: website/templates/includes/footer.html:18
+msgid "Company"
+msgstr "企業"
+
+#: website/templates/includes/footer.html:19
+msgid "Features"
+msgstr "機能"
+
+#: website/templates/includes/footer.html:20 website/templates/profile.html:269
+msgid "Stats"
+msgstr ""
+
+#: website/templates/includes/footer.html:21
+msgid "Company Scoreboard"
+msgstr "企業スコアボード"
+
+#: website/templates/includes/footer.html:24
+msgid "Legal"
+msgstr "法的"
+
+#: website/templates/includes/footer.html:25
+#: website/templates/mobile_about.html:3
+msgid "About"
+msgstr ""
+
+#: website/templates/includes/footer.html:26
+msgid "Privacy"
+msgstr "プライバシー"
+
+#: website/templates/includes/footer.html:27
+msgid "Terms of Service"
+msgstr ""
+
+#: website/templates/includes/footer.html:31
+msgid "Developer API"
+msgstr "開発者API"
+
+#: website/templates/includes/footer.html:32
+msgid "Documentation"
+msgstr "ドキュメンテーション"
+
+#: website/templates/includes/footer.html:33
+msgid "Guides"
+msgstr "ガイド"
+
+#: website/templates/includes/footer.html:37
+msgid "Follow Us"
+msgstr "フォローする"
+
+#: website/templates/includes/footer.html:62
+msgid "Powered by"
+msgstr "提供"
+
+#: website/templates/includes/navbar.html:23
+#: website/templates/includes/navbar.html:69
+msgid "Report a Bug"
+msgstr "バグを報告する"
+
+#: website/templates/includes/navbar.html:72
+msgid "Bughunts"
+msgstr "バグハント"
+
+#: website/templates/includes/navbar.html:109
 msgid "Add to chrome"
-msgstr "クロームに追加"
+msgstr "Chrome に追加"
+
+#: website/templates/includes/navbar.html:114
+msgid "Start a Bug Hunt"
+msgstr "バグハントを開始する"
+
+#: website/templates/includes/navbar.html:120
+msgid "Social"
+msgstr "ソーシャル"
+
+#: website/templates/includes/navbar.html:130
+msgid "Invite Friends"
+msgstr "友達を招待する"
+
+#: website/templates/includes/navbar.html:135
+msgid "Company Dashboard"
+msgstr "企業ダッシュボード"
+
+#: website/templates/includes/navbar.html:149
+msgid "Signup"
+msgstr "サインアップ"
+
+#: website/templates/index.html:12
+msgid "Find Bugs, Win Points and Prizes"
+msgstr "バグを見つけてポイントと賞品を獲得する"
+
+#: website/templates/index.html:20
+msgid "Fix issues on websites, apps or hardware (+3 points)"
+msgstr ""
+"ウェブサイト、アプリ、またはハードウェアの問題を修正する（+3 ポイント）"
+
+#: website/templates/index.html:23
+msgid "Verify other bug reports(+2 points)"
+msgstr "他のバグレポートを確認する（+2 ポイント）"
+
+#: website/templates/index.html:26
+msgid "Invite friends (when they signup , get +1 point)"
+msgstr "友達を招待する（サインアップしたとき、+1 ポイントを獲得）"
+
+#: website/templates/index.html:29
+msgid "Find a bug on a new site or app (+4 points)"
+msgstr "新しいサイトまたはアプリでバグを見つける（+4 ポイント）"
+
+#: website/templates/index.html:42
+msgid "Number Error"
+msgstr "数字のエラー"
+
+#: website/templates/index.html:43
+msgid "For pages where you see a number 404, 500."
+msgstr "数字 404、500 が表示されるページに対して。"
+
+#: website/templates/index.html:44 website/templates/index.html:51
+#: website/templates/index.html:58 website/templates/index.html:65
+#: website/templates/index.html:72 website/templates/index.html:79
+#: website/templates/index.html:86
+msgid "Examples"
+msgstr "例"
+
+#: website/templates/index.html:49 website/templates/profile.html:238
+msgid "Functional"
+msgstr "機能的"
+
+#: website/templates/index.html:50
+msgid "Something doesn't work as intended"
+msgstr "意図したとおりに機能しないものがあります"
+
+#: website/templates/index.html:56 website/templates/profile.html:243
+msgid "Performance"
+msgstr "パフォーマンス"
+
+#: website/templates/index.html:57
+msgid "Any process that takes over 5 seconds."
+msgstr "5 秒以上かかるプロセス"
+
+#: website/templates/index.html:63 website/templates/profile.html:249
+msgid "Security"
+msgstr "セキュリティ"
+
+#: website/templates/index.html:64
+msgid "Data leaks, exploits or anything smelly."
+msgstr "データの漏洩、エクスプロイト、または不正なもの"
+
+#: website/templates/index.html:70 website/templates/profile.html:254
+msgid "Typo"
+msgstr "誤字脱字"
+
+#: website/templates/index.html:71
+msgid "Miss-spellings, miss-grammar and more."
+msgstr "スペルミス、文法ミスなど"
+
+#: website/templates/index.html:77 website/templates/profile.html:261
+msgid "Design"
+msgstr "デザイン"
+
+#: website/templates/index.html:78
+msgid "Layout, responsiveness and improvements"
+msgstr "レイアウト、レスポンシブ性、および改善"
+
+#: website/templates/index.html:84
+msgid "Server Down"
+msgstr "サーバーダウン"
+
+#: website/templates/index.html:85
+msgid "500 Server Error and Downtime"
+msgstr "500 サーバーエラーおよびダウンタイム"
+
+#: website/templates/index.html:95
+msgid "Bugs"
+msgstr ""
+
+#: website/templates/index.html:98
+msgid "Users"
+msgstr "ユーザー"
+
+#: website/templates/index.html:101
+msgid "Hunts"
+msgstr "ハント"
+
+#: website/templates/index.html:104
+msgid "Domains"
+msgstr "ドメイン"
+
+#: website/templates/index.html:111
+#, fuzzy
+#| msgid "LATEST HUNTS"
+msgid "ENDED HUNTS"
+msgstr "最新のハント"
+
+#: website/templates/index.html:113
+#, fuzzy
+#| msgid "View Ended Hunts"
+msgid "View Ongoing Hunts"
+msgstr "終了したハントを表示"
+
+#: website/templates/index.html:116
+msgid "LATEST HUNTS"
+msgstr "最新のハント"
+
+#: website/templates/index.html:118
+msgid "View Ended Hunts"
+msgstr "終了したハントを表示"
+
+#: website/templates/index.html:131
+#, fuzzy
+#| msgid "LATEST HUNTS"
+msgid "LATEST"
+msgstr "最新のハント"
+
+#: website/templates/index.html:177
+msgid "No ongoing hunt's found"
+msgstr "進行中のハントは見つかりませんでした"
+
+#: website/templates/index.html:187
+msgid "LEADER BOARDS"
+msgstr "リーダーボード"
+
+#: website/templates/index.html:192
+msgid "TOP COMPANY"
+msgstr "トップ企業"
+
+#: website/templates/index.html:202
+msgid "SUBMIT A BUG"
+msgstr ""
+
+#: website/templates/index.html:210
+msgid "TOP TESTER"
+msgstr "トップテスター"
+
+#: website/templates/index.html:220
+msgid "VIEW PROFILE"
+msgstr ""
+
+#: website/templates/index.html:232
+msgid "Latest activity"
+msgstr "最新のアクティビティ"
+
+#: website/templates/index.html:238
+msgid "View All Activity"
+msgstr "すべてのアクティビティを表示"
+
+#: website/templates/index.html:244
+msgid "Leaderboard"
+msgstr "リーダーボード"
+
+#: website/templates/index.html:248
+msgid "The 1st Place Hunter for"
+msgstr "第1位のハンター"
+
+#: website/templates/index.html:248
+msgid "will receive"
+msgstr "受け取ります"
+
+#: website/templates/index.html:250
+msgid "No sponsored prizes this month"
+msgstr "今月はスポンサーによる賞品はありません"
+
+#: website/templates/index.html:251
+msgid "Sponsor a Prize"
+msgstr "賞品をスポンサーにする"
+
+#: website/templates/index.html:267 website/templates/mobile_about.html:19
+#: website/templates/profile.html:345
+msgid "Points"
+msgstr "ポイント"
+
+#: website/templates/index.html:271
+msgid "Leaderboard reset for"
+msgstr "リーダーボードのリセット"
+
+#: website/templates/index.html:271
+msgid "Be first to find issues"
+msgstr "問題を最初に見つけましょう"
+
+#: website/templates/index.html:274
+msgid "View All"
+msgstr "すべて表示"
+
+#: website/templates/index.html:275
+msgid "Filter Monthly"
+msgstr "月別にフィルタリング"
+
+#: website/templates/index.html:276
+msgid "View Monthly"
+msgstr "月別に表示"
+
+#: website/templates/invite.html:11
+msgid "Invite a company and get +5 points when they join"
+msgstr "企業を招待して参加すると+5ポイントを獲得できます"
+
+#: website/templates/join.html:431 website/templates/join.html:460
+#: website/templates/join.html:489
+msgid "Featured on Homepage"
+msgstr "ホームページに掲載"
+
+#: website/templates/join.html:461 website/templates/join.html:490
+msgid "Featured in Newsletter"
+msgstr "ニュースレターに掲載"
+
+#: website/templates/join.html:492
+msgid "Announced to Users"
+msgstr "ユーザーに発表"
+
+#: website/templates/mobile_about.html:5
+msgid "All prize money goes directly to the bug hunter"
+msgstr "すべての賞金は直接バグハンターに支払われます"
+
+#: website/templates/mobile_about.html:6
+msgid ""
+"Software code allows us to buy a gift for Mom or Dad on amazon.com in 7 "
+"seconds"
+msgstr ""
+"ソフトウェアコードを使用して、amazon.comで7秒で母親や父親へのプレゼントを購入"
+"できます"
+
+#: website/templates/mobile_about.html:6
+msgid "watch our favorite"
+msgstr "お気に入りを見る"
+
+#: website/templates/mobile_about.html:7
+msgid ""
+"“House of Cards” episode on Netflix or read Yelp reviews about a new "
+"restaurant"
+msgstr ""
+"Netflixで「ハウス・オブ・カード」のエピソードを見るか、新しいレストランに関す"
+"るYelpのレビューを読む"
+
+#: website/templates/mobile_about.html:9
+msgid ""
+"When we can’t access the information we’re looking for on the internet "
+"within seconds"
+msgstr "インターネットで数秒で探している情報にアクセスできない場合"
+
+#: website/templates/mobile_about.html:9
+msgid "we are not happy"
+msgstr "私たちは幸せではありません"
+
+#: website/templates/mobile_about.html:12
+msgid "This is where you come into the picture"
+msgstr "ここであなたが登場する場所です"
+
+#: website/templates/mobile_about.html:14
+msgid ""
+"wants you to identify the software (and hardware) bugs that delay downloads"
+msgstr ""
+"あなたに、ダウンロードを遅らせるソフトウェア（およびハードウェア）のバグを特"
+"定してほしいと思っています"
+
+#: website/templates/mobile_about.html:14
+msgid "freeze screens"
+msgstr "画面をフリーズさせる"
+
+#: website/templates/mobile_about.html:15
+msgid ""
+"create payloads that deliver malware to websites and generate other issues"
+msgstr ""
+"マルウェアをウェブサイトに配信し、その他の問題を発生させるペイロードを作成す"
+"る"
+
+#: website/templates/mobile_about.html:17
+msgid "What’s in it for you"
+msgstr "あなたにとってのメリットは何ですか"
+
+#: website/templates/mobile_about.html:20
+msgid "Money if you join a"
+msgstr "参加するとお金がもらえます"
+
+#: website/templates/mobile_about.html:20
+msgid "Sponsored Bug Hunt"
+msgstr "スポンサードバグハント"
+
+#: website/templates/mobile_about.html:21
+msgid "Jackpot money listed on the Leaderboard"
+msgstr "リーダーボードに掲載されたジャックポット賞金"
+
+#: website/templates/mobile_about.html:22
+msgid "Money if someone tips you for finding a bug through the tip button"
+msgstr "誰かがあなたにチップを支払ってバグを見つけた場合にお金がもらえます"
+
+#: website/templates/mobile_about.html:23
+msgid "Experience to add to your résumé or portfolio"
+msgstr "履歴書やポートフォリオに追加する経験"
+
+#: website/templates/mobile_about.html:26
+msgid "How it Works"
+msgstr "動作原理"
+
+#: website/templates/mobile_about.html:28
+msgid "Testers"
+msgstr "テスター"
+
+#: website/templates/mobile_about.html:30
+msgid "Create a User Account to log into"
+msgstr "ログインするためのユーザーアカウントを作成する"
+
+#: website/templates/mobile_about.html:31
+msgid "Describe the software or hardware bug you found"
+msgstr "見つけたソフトウェアまたはハードウェアのバグを説明する"
+
+#: website/templates/mobile_about.html:32
+msgid "Attach a screenshot of the bug"
+msgstr "バグのスクリーンショットを添付する"
+
+#: website/templates/mobile_about.html:33
+msgid "Submit the information"
+msgstr "情報を送信する"
+
+#: website/templates/mobile_about.html:34
+msgid "Win money through company-sponsored Bug Hunts"
+msgstr "企業がスポンサーとなるバグハントで賞金を獲得する"
+
+#: website/templates/mobile_about.html:34
+msgid "tips or the Grand Prize/Jackpot"
+msgstr "チップまたは大賞/ジャックポット"
+
+#: website/templates/mobile_about.html:34
+msgid ""
+"We may also have \"heists\" where each bug is worth a specific amount based "
+"on what the company sets"
+msgstr ""
+"各バグが会社が設定した特定の金額に基づいて価値がある\"強盗\"もあるかもしれま"
+"せん"
+
+#: website/templates/mobile_about.html:36
+msgid "If you participate in"
+msgstr "もし参加するなら"
+
+#: website/templates/mobile_about.html:36
+msgid "sponsored Bug Hunts"
+msgstr "スポンサー付きバグハント"
+
+#: website/templates/mobile_about.html:36
+msgid "you could win prize money known as tips"
+msgstr "あなたはチップとして知られる賞金を獲得することができます"
+
+#: website/templates/mobile_about.html:39
+msgid "Organizations"
+msgstr "組織"
+
+#: website/templates/mobile_about.html:41
+msgid "We want everyone to love your website"
+msgstr "私たちは誰もがあなたのウェブサイトを愛することを望んでいます"
+
+#: website/templates/mobile_about.html:42
+msgid ""
+"You want to keep your customers happy by giving them a consistent bug-free "
+"user experience"
+msgstr ""
+"あなたは、一貫したバグのないユーザーエクスペリエンスを提供することで顧客を幸"
+"せにしたいと思っています"
+
+#: website/templates/mobile_about.html:43
+msgid ""
+"offers monthly Bug Hunts through 4 different subscription plans to help you "
+"achieve this"
+msgstr ""
+"これを実現するのに役立つ4つの異なるサブスクリプションプランを介して月次のバグ"
+"ハントを提供しています"
+
+#: website/templates/profile.html:185
+msgid "Upload"
+msgstr "アップロード"
+
+#: website/templates/profile.html:197
+msgid "Hide all issues"
+msgstr "すべての問題を非表示"
+
+#: website/templates/profile.html:198
+msgid "OK"
+msgstr "OK"
+
+#: website/templates/profile.html:205
+msgid "Unfollow"
+msgstr ""
+
+#: website/templates/profile.html:207
+#, fuzzy
+#| msgid "Follow Us"
+msgid "Follow"
+msgstr "フォローする"
+
+#: website/templates/profile.html:218
+msgid "Send a tip"
+msgstr "ヒントを送る"
+
+#: website/templates/profile.html:226
+msgid "General"
+msgstr "一般"
+
+#: website/templates/profile.html:231
+msgid "Number"
+msgstr "番号"
+
+#: website/templates/profile.html:272
+msgid "Followers"
+msgstr "フォロワー"
+
+#: website/templates/profile.html:276
+#, fuzzy
+#| msgid "Follow Us"
+msgid "Following"
+msgstr "フォローする"
+
+#: website/templates/profile.html:280
+msgid "Bookmarks"
+msgstr "ブックマーク"
+
+#: website/templates/profile.html:291
+msgid "No Bug Reported"
+msgstr "バグは報告されていません"
+
+#: website/templates/profile.html:344
+msgid "Bugs Reported"
+msgstr "報告されたバグ"
+
+#: website/templates/profile.html:347
+msgid "Open Issues"
+msgstr "オープンな問題"
+
+#: website/templates/profile.html:350
+msgid "Closed Issues"
+msgstr "クローズした問題"
+
+#: website/templates/profile.html:359
+msgid "activity"
+msgstr "アクティビティ"
+
+#: website/templates/profile.html:371
+msgid "No Activity Yet"
+msgstr "まだアクティビティはありません"
+
+#: website/templates/profile.html:380
+msgid "top bug findings"
+msgstr "トップバグの発見"
+
+#: website/templates/profile.html:399
+msgid "Nothing Found"
+msgstr "何も見つかりません"
+
+#: website/templates/registration/password_reset_email.html:1
+msgid ""
+"You're receiving this\n"
+"email because you requested a password reset for your user account at {{\n"
+"site_name }}."
+msgstr ""
+"このメールを受け取ったのは、{{ site_name }} でのユーザーアカウントのパスワー"
+"ドリセットをリクエストしたためです。"
+
+#: website/templates/registration/password_reset_email.html:6
+msgid "Your username, in case you’ve forgotten:"
+msgstr "ユーザー名（忘れた場合）："
+
+#: website/templates/registration/password_reset_email.html:7
+msgid "Thanks for using our site!"
+msgstr "当サイトをご利用いただきありがとうございます！"
+
+#: website/templates/report.html:102
+msgid "REPORT A BUG"
+msgstr "バグを報告"
+
+#: website/templates/report.html:110
+msgid "DOMAIN URL"
+msgstr ""
+
+#: website/templates/report.html:128
+#, fuzzy
+#| msgid "DOMAIN URLCheck for Duplicates"
+msgid "Check for Duplicates"
+msgstr "重複のためのドメインURLをチェック"
+
+#: website/templates/report.html:139
+msgid "BUG TITLE"
+msgstr "バグのタイトル"
+
+#: website/templates/report.html:160
+msgid "BUG TYPE"
+msgstr "バグの種類"
+
+#: website/templates/report.html:186
+msgid "BUG HUNT"
+msgstr "バグハント"
+
+#: website/templates/report.html:195
+msgid "REPORT INDEPENDENTLY"
+msgstr ""
+
+#: website/templates/report.html:219
+msgid "SCREENSHOTS"
+msgstr "スクリーンショット"
+
+#: website/templates/report.html:243
+msgid "Upload screenshots"
+msgstr "スクリーンショットをアップロード"
+
+#: website/templates/report.html:254
+msgid "or drag and drop"
+msgstr "またはドラッグアンドドロップ"
+
+#: website/templates/report.html:282
+msgid "ADD TEAM MEMBERS"
+msgstr "チームメンバーを追加"
+
+#: website/templates/report.html:291
+msgid "Team members should be bughunts users"
+msgstr "チームメンバーはバグハントのユーザーである必要があります"
+
+#: website/templates/report.html:313
+msgid "Report Privately"
+msgstr "非公開で報告"
+
+#: website/templates/report.html:335
+msgid "Report"
+msgstr "報告"
+
+#~ msgid "Open Source and a non-commercials"
+#~ msgstr "オープンソースおよび非営利"
+
+#~ msgid "Unrated"
+#~ msgstr "未評価"
+
+#~ msgid "START A "
+#~ msgstr "開始する "
+
+# Japanese (ja)
+#~ msgid "BUGHUNT"
+#~ msgstr "バグハント"
+
+#~ msgid "Name of the bughunt"
+#~ msgstr "バグハントの名前"
+
+#~ msgid "You do not have a company, create one"
+#~ msgstr "企業がありません、作成してください"
+
+#~ msgid "Forgot Password"
+#~ msgstr "パスワードをお忘れの方"
+
+#~ msgid "BUG DESCRIPTION"
+#~ msgstr "バグの説明"

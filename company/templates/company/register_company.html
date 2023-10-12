@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -5,7 +6,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register Company</title>
+    <title>{% trans 'Register Company' %}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,13 +28,13 @@
         <form method='POST' action="#" enctype="multipart/form-data" class="w-[96%] bg-white rounded-2xl p-10 my-5 shadow-md">
             <div class="w-full mb-5">
                 <p class="text-gray-300 font-satoshi font-bold text-[35px]">
-                Register Company
+                    {% trans 'Register Company' %}
                 </p>
             </div>
             {% csrf_token %}
             <div class="pb-12">
                 <h2 class="text-base font-semibold leading-7 text-gray-900">
-                    Company Information
+                    {% trans 'Company Information' %}
                 </h2>
 
                 <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
@@ -41,7 +42,7 @@
                         <label
                         for="domain_name"
                         class="block text-sm font-medium leading-6 text-gray-900"
-                        >Company Name</label
+                        >{% trans 'Company Name' %}</label
                         >
                         <div class="mt-2">
                         <input
@@ -60,7 +61,7 @@
                         <label
                         for="company_url"
                         class="block text-sm font-medium leading-6 text-gray-900"
-                        >Company Url</label
+                        >{% trans 'Company Url' %}</label
                         >
                         <div class="mt-2">
                         <input
@@ -79,7 +80,7 @@
                     <label
                     for="support_email"
                     class="block text-sm font-medium leading-6 text-gray-900"
-                    >Company Support Email (Optional)</label
+                    >{% trans 'Company Support Email (Optional)' %}</label
                     >
                     <div class="mt-2">
                     <input
@@ -97,7 +98,7 @@
                     <label
                     for="twitter_url"
                     class="block text-sm font-medium leading-6 text-gray-900"
-                    >Company Twitter URL (Optional)</label
+                    >{% trans 'Company Twitter URL (Optional)' %}</label
                     >
                     <div class="mt-2">
                     <input
@@ -115,7 +116,7 @@
                     <label
                     for="facebook_url"
                     class="block text-sm font-medium leading-6 text-gray-900"
-                    >Company Facebook URL (Optional)</label
+                    >{% trans 'Company Facebook URL (Optional)' %}</label
                     >
                     <div class="mt-2">
                     <input
@@ -138,7 +139,7 @@
                     <label
                     for="company_logo"
                     class="block text-sm font-medium leading-6 text-gray-900"
-                    >Company Logo</label
+                    >{% trans 'Company Logo' %}</label
                     >
                     <div class="mt-2 flex items-center gap-x-3" id="previewLogo">
                         <div id="previewLogoDiv" class="h-16 w-16 text-gray-300 overflow-hidden rounded-2xl text-red-500">
@@ -158,7 +159,7 @@
                                 for="logo"
                                 class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500"
                             >
-                            <span class="text-red-600">Upload logo</span>
+                            <span class="text-red-600">{% trans 'Upload logo' %}</span>
                             <input
                             id="logo"
                             name="logo"
@@ -174,22 +175,22 @@
 
             <div class="pb-12 mt-5">
                 <h2 class="text-base font-semibold leading-7 text-gray-900">
-                Company Managers
+                    {% trans 'Company Managers' %}
                 </h2>
                 <p class="mt-1 text-sm leading-6 text-gray-600">
-                    Add Emails which will be allowed to add domains. <br>
-                    Email should be registerd user on bugheist.
+                    {% trans 'Add Emails which will be allowed to add domains' %}. <br>
+                    {% trans 'Email should be registerd user on bugheist' %}.
                 </p>
 
                 <button onclick="add_email_container()" type="button" class="w-[120px] h-[40px] bg-red-500 text-white font-bold rounded-md mt-2 hover:bg-red-600 transition-all">
-                    Add Email
+                    {% trans 'Add Email' %}
                 </button>
 
                 <div class="sm:col-span-4 mt-5" id="email-container">
                     <label
                         for="email"
                         class="block text-sm font-medium leading-6 text-gray-900"
-                        >Email address
+                        >{% trans 'Email address' %}
                     </label>
                 </div>
             </div>
@@ -201,13 +202,13 @@
                     onclick="cancelForm()"
                     class="text-md font-semibold leading-6 text-gray-900"
                 >
-                Cancel
+                {% trans 'Cancel' %}
                 </button>
                 <button
                     type="submit"
                     class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
                 >
-                Save
+                {% trans 'Save' %}
                 </button>
             </div>
         </div>
