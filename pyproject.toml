@@ -62,7 +62,7 @@ django-filter = "^22.1"
 webdriver-manager = "^3.8.2"
 pillow = "^10.0.1"
 chromedriver-autoinstaller = "^0.6.2"
-sentry-sdk = "^1.31.0"
+sentry-sdk = "^1.32.0"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"
