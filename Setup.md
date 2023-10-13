@@ -114,7 +114,7 @@ from the host machine.
  python manage.py runserver
 ```
 
-## Alternative using Virtualenv
+### Alternative using Virtualenv
 ```sh
 brew install postgresql
 
