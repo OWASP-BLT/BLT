@@ -124,10 +124,10 @@ sudo apt-get install postgresql
 # Install VirtualEnv
 pip install virtualenv 
 
-# Create VirtualEnv env
+# Create a Python Virtual Environment
 virtualenv env
 
-# Activate VirtualEnv
+# Activate Virtual Environment
 source env/bin/activate
 
 # Install all packages on Virtual Environment from requirements.txt
