@@ -2032,7 +2032,21 @@ def comment_on_issue(request, issue_pk):
 
     return render(request, "comments2.html",context)
 
+# get issue and comment id from url 
+def update_comment(request, issue_pk, comment_pk):
+    issue = Issue.objects.filter(pk=issue_pk).first()
+    comment = Comment.objects.filter(pk=comment_pk).first()
+    if request.method == "POST" and isinstance(request.user,User):
 
+        comment.text = request.POST.get("comment","")
+        comment.save()
+
+    context = {
+        "all_comment": Comment.objects.filter(issue__id=issue_pk).order_by("-created_date"),
+        "object": issue
+    }
+    return render(request, "comments2.html",context)
+    
 class CustomObtainAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         response = super(CustomObtainAuthToken, self).post(request, *args, **kwargs)
