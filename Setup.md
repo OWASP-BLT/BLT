@@ -121,17 +121,12 @@ brew install postgresql
 # Install postgres on ubuntu
 sudo apt-get install postgresql
 
-# Install VirtualEnv
-pip install virtualenv 
+# Install Poetry
+pip install poetry
 
-# Create a Python Virtual Environment
-virtualenv env
+poetry shell
 
-# Activate Virtual Environment
-source env/bin/activate
-
-# Install all packages on Virtual Environment from requirements.txt
-pip install -r local_requirements.txt
+poetry install
 
 # Create tables in the database
 python manage.py migrate
