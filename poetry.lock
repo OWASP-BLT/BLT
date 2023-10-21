@@ -1981,13 +1981,13 @@ test = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "stripe"
-version = "6.7.0"
+version = "7.0.0"
 description = "Python bindings for the Stripe API"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "stripe-6.7.0-py2.py3-none-any.whl", hash = "sha256:a453d6daa633f656297a9323c736fdcb53164418d643fdc30499a6d32ad7933c"},
-    {file = "stripe-6.7.0.tar.gz", hash = "sha256:2794ccc4b4c97070d1cab4385e1d2aad65937b4437b75cc1faf7d67dda8199f4"},
+    {file = "stripe-7.0.0-py2.py3-none-any.whl", hash = "sha256:15ebdcb8271b4fd54ff861d85101a78a6f01ce7c1ae236bb0e2b8f76bf7ffad8"},
+    {file = "stripe-7.0.0.tar.gz", hash = "sha256:9a35f404c04eb80bff0bb618950e0548943f1ef47c14e8e8f4bbc6f5e751ba99"},
 ]
 
 [package.dependencies]
@@ -2160,13 +2160,13 @@ files = [
 
 [[package]]
 name = "urllib3"
-version = "2.0.6"
+version = "2.0.7"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "urllib3-2.0.6-py3-none-any.whl", hash = "sha256:7a7c7003b000adf9e7ca2a377c9688bbc54ed41b985789ed576570342a375cd2"},
-    {file = "urllib3-2.0.6.tar.gz", hash = "sha256:b19e1a85d206b56d7df1d5e683df4a7725252a964e3993648dd0fb5a1c157564"},
+    {file = "urllib3-2.0.7-py3-none-any.whl", hash = "sha256:fdb6d215c776278489906c2f8916e6e7d4f5a9b602ccbcfdf7f016fc8da0596e"},
+    {file = "urllib3-2.0.7.tar.gz", hash = "sha256:c97dfde1f7bd43a71c8d2a58e369e9b2bf692d1334ea9f9cae55add7d0dd0f84"},
 ]
 
 [package.dependencies]
@@ -2194,13 +2194,13 @@ ua-parser = ">=0.10.0"
 
 [[package]]
 name = "webdriver-manager"
-version = "3.9.1"
+version = "4.0.1"
 description = "Library provides the way to automatically manage drivers for different browsers"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "webdriver_manager-3.9.1-py2.py3-none-any.whl", hash = "sha256:1dfc29a786abb97ba28076d4766d931064eeeac71a9685a3e8d46f5d363fcbe3"},
-    {file = "webdriver_manager-3.9.1.tar.gz", hash = "sha256:cd1f49ebb325a98b4dc3c41056f5b645e82fff3f83e346607844ec0bdf561c0b"},
+    {file = "webdriver_manager-4.0.1-py2.py3-none-any.whl", hash = "sha256:d7970052295bb9cda2c1a24cf0b872dd2c41ababcc78f7b6b8dc37a41e979a7e"},
+    {file = "webdriver_manager-4.0.1.tar.gz", hash = "sha256:25ec177c6a2ce9c02fb8046f1b2732701a9418d6a977967bb065d840a3175d87"},
 ]
 
 [package.dependencies]
@@ -2266,4 +2266,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "19f28cdd85d1329e88d8f09607316ebe6720137f9ceaca7452baa0854dfebda4"
+content-hash = "ed28adb475056e4bfd60e85157f64a9c9e27fdb031f826f53279277b6c72db91"
