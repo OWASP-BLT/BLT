@@ -312,6 +312,8 @@ urlpatterns = [
     path("issue/<str:issue_pk>/comment/", website.views.comment_on_issue, name="comment_on_issue"),
     # UPDATE COMMENT
     path("issue/<str:issue_pk>/comment/update/<str:comment_pk>/", website.views.update_comment, name="update_comment"),
+    # delete_comment 
+    path("issue2/comment/delete/", website.views.delete_comment, name="delete_comment"),
     re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
     re_path(r"^issue2/(?P<slug>\w+)/$", IssueView2.as_view(), name="issue_view2"),
     re_path(r"^follow/(?P<user>[^/]+)/", website.views.follow_user, name="follow_user"),
