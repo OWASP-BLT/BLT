@@ -80,8 +80,7 @@
                                         <a class="block py-2 px-4 hover:bg-gray-100 edit_comment cursor-pointer" data-name="{{comment.id}}">Edit</a>
                                     </li>
                                     <li>
-                                        <a href="#"
-                                            class="block py-2 px-4 hover:bg-gray-100  ">Delete</a>
+                                        <a class="block py-2 px-4 hover:bg-gray-100 del_comment_issue2 cursor-pointer" data-name="{{ comment.id }}">Delete</a>
                                     </li>
                                     <li>
                                         <a href="#"
@@ -139,8 +138,7 @@
                                                 <a class="block py-2 px-4 hover:bg-gray-100 edit_comment cursor-pointer" data-name="{{child_comment.id}}">Edit</a>
                                             </li>
                                             <li>
-                                                <a href="#"
-                                                    class="block py-2 px-4 hover:bg-gray-100  ">Delete</a>
+                                                <a class="block py-2 px-4 hover:bg-gray-100 del_comment_issue2 cursor-pointer" data-name="{{ child_comment.id }}">Delete</a>
                                             </li>
                                             <li>
                                                 <a href="#"
@@ -221,7 +219,7 @@
                         xhr.setRequestHeader("X-CSRFToken", csrftoken); // Set the CSRF token in the request header
                 },
                 success: function (data) {
-                    $('#comment_root').html(data);
+                    $('#comment_root').replaceWith(data);
                     document.querySelectorAll("[data-dropdown-toggle]").forEach((toggle) => {
                         toggle.addEventListener("click", () => {
                             const { dropdownToggle } = toggle.dataset;
@@ -299,6 +297,44 @@
         </div>`;
             // Bind a new click event for the update_comment_btn
             $('#update_comment_btn').off('click').on('click', (e) => update_comment(e, comment_id));
+        });
+        $('body').off('click', '.del_comment_issue2').on('click', '.del_comment_issue2', function (e) {
+            e.preventDefault();
+
+            // Store a reference to the clicked element
+            var clickedElement = $(this);
+            if (confirm("Delete this comment?") == true) {
+                var csrftoken = $("[name=csrfmiddlewaretoken]").val();
+
+                $.ajax({
+                    type: 'POST',
+                    url: "/issue2/comment/delete/",
+                    data: {
+                        "comment_pk": clickedElement.attr('data-name'),
+                        "issue_pk": '{{ object.pk|safe }}',
+                    },
+                    beforeSend: function (xhr, settings) {
+                        xhr.setRequestHeader("X-CSRFToken", csrftoken); // Set the CSRF token in the request header
+                    },
+                    success: function (data) {
+                        // Replace the content of #comment_root with the new data
+                        $('#comment_root').replaceWith(data);
+
+                        document.querySelectorAll("[data-dropdown-toggle]").forEach((toggle) => {
+                            toggle.addEventListener("click", () => {
+                                const { dropdownToggle } = toggle.dataset;
+                                const dropdown = document.getElementById(dropdownToggle);
+                                dropdown.classList.toggle("hidden");
+                                dropdown.classList.toggle("block");
+                                dropdown.style.position = "absolute";
+                                dropdown.style.top = toggle.offsetTop + toggle.offsetHeight + "px";
+                                dropdown.style.left = toggle.offsetLeft - 50 + "px";
+                                
+                            });
+                        });
+                    },
+                });
+            }
         });
         // refresh comments after x interval
         // function get_comments(){
