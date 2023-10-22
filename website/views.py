@@ -2047,24 +2047,6 @@ def update_comment(request, issue_pk, comment_pk):
     }
     return render(request, "comments2.html",context)
     
-def delete_comment(request):
-    int_issue_pk = int(request.POST['issue_pk'])
-    issue = Issue.objects.get(pk=int_issue_pk)
-    if request.method == "POST":
-        all_comment = Comment.objects.filter(issue=issue)
-        comment = Comment.objects.get(pk=int(request.POST['comment_pk']))
-        if request.user.username != comment.author:
-            return HttpResponse("You are not authorized to delete this comment")
-        try:
-            show = comment.parent.pk
-        except:
-            show = -1
-        comment.delete()
-    context = {
-        "all_comment": Comment.objects.filter(issue__id=int_issue_pk).order_by("-created_date"),
-        "object": issue,
-    }
-    return render(request, "comments2.html", context)
 class CustomObtainAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         response = super(CustomObtainAuthToken, self).post(request, *args, **kwargs)
