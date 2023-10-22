@@ -2052,14 +2052,9 @@ def delete_comment(request):
     issue = Issue.objects.get(pk=int_issue_pk)
     if request.method == "POST":
         all_comment = Comment.objects.filter(issue=issue)
-        comment = Comment.objects.get(pk=int(request.POST['comment_pk']))
-        if request.user.username != comment.author:
-            return HttpResponse("You are not authorized to delete this comment")
-        try:
-            show = comment.parent.pk
-        except:
-            show = -1
-        comment.delete()
+        comment = Comment.objects.get(pk=int(request.POST['comment_pk']),author=request.user.username)
+        if request.user.username == comment.author:
+            comment.delete()        
     context = {
         "all_comment": Comment.objects.filter(issue__id=int_issue_pk).order_by("-created_date"),
         "object": issue,
