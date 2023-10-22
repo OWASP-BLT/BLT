@@ -2050,11 +2050,10 @@ def update_comment(request, issue_pk, comment_pk):
 def delete_comment(request):
     int_issue_pk = int(request.POST['issue_pk'])
     issue = Issue.objects.get(pk=int_issue_pk)
+    all_comment = Comment.objects.filter(issue=issue)
     if request.method == "POST":
-        all_comment = Comment.objects.filter(issue=issue)
         comment = Comment.objects.get(pk=int(request.POST['comment_pk']),author=request.user.username)
-        if request.user.username == comment.author:
-            comment.delete()        
+        comment.delete()        
     context = {
         "all_comment": Comment.objects.filter(issue__id=int_issue_pk).order_by("-created_date"),
         "object": issue,
