@@ -414,7 +414,7 @@
         $(".duplicates").click(async () => {
             var uri = $("input[name='url']").val();
 
-            $("#view_all").attr("href", `/search/?query=${uri}`);
+            $("#view_all").attr("href", `/search/?query=${encodeURIComponent(uri)}`);
 
             let resp = await fetch("/api/v1/urlcheck/", {
                 method: "POST",
