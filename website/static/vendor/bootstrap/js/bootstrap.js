@@ -112,8 +112,8 @@ if (typeof jQuery === 'undefined') {
             selector = $this.attr('href')
             selector = selector && selector.replace(/.*(?=#[^\s]*$)/, '') // strip for ie7
         }
-
-        var $parent = $(selector === '#' ? [] : selector)
+        selector = sanitizeSelector(selector === '#' ? '' : selector);
+        var $parent = $(selector);
 
         if (e) e.preventDefault()
 
@@ -138,7 +138,10 @@ if (typeof jQuery === 'undefined') {
                 .emulateTransitionEnd(Alert.TRANSITION_DURATION) :
             removeElement()
     }
-
+    function sanitizeSelector(selector) {
+        // Use a whitelist approach to only allow valid characters in a selector
+        return selector.replace(/[^\w-#.:]/g, '');
+    }
 
     // ALERT PLUGIN DEFINITION
     // =======================
