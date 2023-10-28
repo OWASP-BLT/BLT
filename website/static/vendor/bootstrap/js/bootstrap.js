@@ -15,7 +15,10 @@ if (typeof jQuery === 'undefined') {
         throw new Error('Bootstrap\'s JavaScript requires jQuery version 1.9.1 or higher, but lower than version 4')
     }
 }(jQuery);
-
+function sanitizeSelector(selector) {
+    // Use a whitelist approach to only allow valid characters in a selector
+    return selector.replace(/[^\w-#.:]/g, '');
+}
 /* ========================================================================
  * Bootstrap: transition.js v3.3.7
  * http://getbootstrap.com/javascript/#transitions
@@ -112,8 +115,8 @@ if (typeof jQuery === 'undefined') {
             selector = $this.attr('href')
             selector = selector && selector.replace(/.*(?=#[^\s]*$)/, '') // strip for ie7
         }
-
-        var $parent = $(selector === '#' ? [] : selector)
+        selector = sanitizeSelector(selector === '#' ? '' : selector);
+        var $parent = $(selector);
 
         if (e) e.preventDefault()
 
@@ -138,7 +141,6 @@ if (typeof jQuery === 'undefined') {
                 .emulateTransitionEnd(Alert.TRANSITION_DURATION) :
             removeElement()
     }
-
 
     // ALERT PLUGIN DEFINITION
     // =======================
