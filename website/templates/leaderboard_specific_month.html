@@ -172,6 +172,11 @@ select {
 
 {% block after_js %}
 <script>
+  function sanitizeInput(input) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(input));
+    return div.innerHTML;
+  }
     function padToTwo(number) {
     if (number <= 9999) {
         number = ("0" + number).slice(-2);
@@ -247,6 +252,8 @@ select {
         var monthIndex = $(e.target).data("value"),
           month = months[monthIndex],
           year = this._yearsSelect.val();
+        month = sanitizeInput(month);
+        year = sanitizeInput(year);
         this._el.html(month + " " + year);
         if (options.onMonthSelect) {
           options.onMonthSelect(monthIndex+1, month, year);
