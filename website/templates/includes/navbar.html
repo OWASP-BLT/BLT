@@ -24,17 +24,17 @@
     });
 
     // JavaScript to toggle the dropdown menu
-    const dropdownButton = document.getElementById('dropdown-toggle-mobile');
-    const dropdownMenu = document.getElementById('dropdown-mobile');
+    const dropdownButtonMobile = document.getElementById('dropdown-toggle-mobile');
+    const dropdownMenuMobile = document.getElementById('dropdown-mobile');
 
-    dropdownButton.addEventListener('click', () => {
-        dropdownMenu.classList.toggle('hidden');
+    dropdownButtonMobile.addEventListener('click', () => {
+        dropdownMenuMobile.classList.toggle('hidden');
     });
 
     // Close the dropdown when clicking outside of it
     document.addEventListener('click', (e) => {
-        if (!dropdownButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
-            dropdownMenu.classList.add('hidden');
+        if (!dropdownButtonMobile.contains(e.target) && !dropdownMenuMobile.contains(e.target)) {
+            dropdownMenuMobile.classList.add('hidden');
         }
     });
 });
@@ -90,7 +90,7 @@
                 <a class="" href="/">
                     <img src="{% logo 'TRANSPARENT' %}" class="!max-w-[130px] lg:max-w-[200px]">
                 </a>
-                <p class="text-center sm:!inline text-base lg:text-2xl pl-1">{% trans Report Issues, Win Prizes %}</p>
+                <p class="text-center sm:!inline text-base lg:text-2xl pl-1">{% trans "Report Issues, Win Prizes" %}</p>
             </div>
         </div>
 
@@ -100,10 +100,10 @@
                 <i class="fa fa-search relative left-[28px] top-[-2px] text-gray-700 text-base nav-hidden lg:!inline-block"></i>
                 <input type="text" name="query" placeholder="{% trans "Search" %}" class="w-[200px] h-[38px] pl-[30px] nav-hidden lg:!inline-block bg-[#ececece1] outline-[#e4e4e4] outline-[1px]">
                 <a href="/report/" class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline">
-                   {% trans  Report a Bug %}
+                   {% trans  "Report a Bug" %}
                 </a>
                 <a href="/hunts/" class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline">
-                    {% trans Bughunts %}
+                    {% trans "Bughunts" %}
                 </a>
             </div>
             
