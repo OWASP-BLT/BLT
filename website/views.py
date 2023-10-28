@@ -168,8 +168,12 @@ def index(request, template="index.html"):
 
 
 def github_callback(request):
+    ALLOWED_HOSTS = ['github.com']
     params = urllib.parse.urlencode(request.GET)
-    return redirect(f"{settings.CALLBACK_URL_FOR_GITHUB}?{params}")
+    url = f"{settings.CALLBACK_URL_FOR_GITHUB}?{params}"
+    parsed_url = urlparse(url)
+    if parsed_url.netloc in ALLOWED_HOSTS:
+        return redirect(url)
 
 
 def google_callback(request):
@@ -2032,7 +2036,33 @@ def comment_on_issue(request, issue_pk):
 
     return render(request, "comments2.html",context)
 
+# get issue and comment id from url 
+def update_comment(request, issue_pk, comment_pk):
+    issue = Issue.objects.filter(pk=issue_pk).first()
+    comment = Comment.objects.filter(pk=comment_pk).first()
+    if request.method == "POST" and isinstance(request.user,User):
 
+        comment.text = request.POST.get("comment","")
+        comment.save()
+
+    context = {
+        "all_comment": Comment.objects.filter(issue__id=issue_pk).order_by("-created_date"),
+        "object": issue
+    }
+    return render(request, "comments2.html",context)
+    
+def delete_comment(request):
+    int_issue_pk = int(request.POST['issue_pk'])
+    issue = Issue.objects.get(pk=int_issue_pk)
+    all_comment = Comment.objects.filter(issue=issue)
+    if request.method == "POST":
+        comment = Comment.objects.get(pk=int(request.POST['comment_pk']),author=request.user.username)
+        comment.delete()        
+    context = {
+        "all_comment": Comment.objects.filter(issue__id=int_issue_pk).order_by("-created_date"),
+        "object": issue,
+    }
+    return render(request, "comments2.html", context)
 class CustomObtainAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         response = super(CustomObtainAuthToken, self).post(request, *args, **kwargs)

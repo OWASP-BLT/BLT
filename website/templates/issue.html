@@ -412,6 +412,12 @@
 </div>
 
 <script type="text/javascript">
+    function sanitizeURL(url) {
+        var a = document.createElement('a');
+        a.href = url;
+        return a.href;
+    }
+    
    var label = "{{object.label}}";
 
     $(document).on('click', '.edit-issue', function (e) {
@@ -456,7 +462,8 @@
             success: function (data) {
                 $('.issue-desc').text($('.form input[name=description]').val());
                 $('.issue-domain').text($('.form input[name=domain]').val());
-                $('.issue-domain').attr("href", ($('.form input[name=domain]').val()));
+                var sanitizedDomain = sanitizeURL($('.form input[name=domain]').val());
+                $('.issue-domain').attr("href", sanitizedDomain);
                 label = $('.form select').val();
                 var l = $(".form select option[value='" + label + "']").text();
                 $('.bug-label').text(l);
