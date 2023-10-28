@@ -9,31 +9,31 @@
         </a>
         <div class="w-2/3 block sm:flex text-2xl mt-6 lg:mt-0">
             <ul class="text-gray-700 list-none p-0 font-thin flex flex-col text-left w-full">
-                <li class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">Community</li>
-                <li><a href="/contributors" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">Contributors</a></li>
+                <li class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">{% trans "Community" %}</li>
+                <li><a href="/contributors" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Contributors" %}</a></li>
             </ul>
 
             <ul class="text-gray-700 list-none p-0 font-thin flex flex-col text-left w-full">
-                <li class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">Company</li>
-                <li><a href="https://github.com/OWASP/BLT/releases" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">Features</a></li>
-                <li><a href="/stats" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">Stats</a></li>
-                <li><a href="/scoreboard" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">Company Scoreboard</a></li>
+                <li class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">{% trans "Company" %}</li>
+                <li><a href="https://github.com/OWASP/BLT/releases" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Features" %}</a></li>
+                <li><a href="/stats" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Stats" %}</a></li>
+                <li><a href="/scoreboard" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Company Scoreboard" %}</a></li>
             </ul>
             <ul class="text-gray-700 list-none p-0 font-thin flex flex-col text-left w-full">
-                <li class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">Legal</li>
-                <li><a href="/about" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">About</a></li>
-                <li><a href="/privacypolicy" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">Privacy</a></li>
-                <li><a href="/terms" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">Terms of Service</a></li>
+                <li class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">{% trans "Legal" %}</li>
+                <li><a href="/about" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "About" %}</a></li>
+                <li><a href="/privacypolicy" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Privacy" %}</a></li>
+                <li><a href="/terms" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Terms of Service" %}</a></li>
             </ul>
             <ul class="text-gray-700 list-none p-0 font-thin flex flex-col text-left w-full">
-                <li class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">Get Started</li>
-                <li><a href="https://{% env 'FQDN' %}/swagger/" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">Developer API</a></li>
-                <li><a href="https://github.com/OWASP/BLT/blob/main/Setup.md" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">Documentation</a></li>
-                <li><a href="https://github.com/OWASP/BLT#readme" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">Guides</a></li>
+                <li class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">{% trans "Get Started" %}</li>
+                <li><a href="https://{% env 'FQDN' %}/swagger/" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Developer API" %}</a></li>
+                <li><a href="https://github.com/OWASP/BLT/blob/main/Setup.md" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Documentation" %}</a></li>
+                <li><a href="https://github.com/OWASP/BLT#readme" class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Guides" %}</a></li>
                 </li>
             </ul>
             <div class="text-gray-700 flex flex-col w-full">
-                <div class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">Follow Us</div>
+                <div class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">{% trans "Follow Us" %}</div>
                 <div class="flex pl-4 justify-start mt-2">
                     <a class="block flex items-center text-gray-300 hover:text-white mr-6 no-underline" href="{% env 'FACEBOOK_URL' %}" target="_new">
                         <svg viewBox="0 0 24 24" class="fill-current w-10 h-10" xmlns="http://www.w3.org/2000/svg">
@@ -58,7 +58,7 @@
     </div>
     <div class="pt-4 mt-4 pt-6 text-gray-600 border-t border-gray-800 text-center flex w-full justify-center flex-wrap">
         <p>
-            Powered by
+            {% trans "Powered by" %}
             <a class="text-[#327BB7]" href="https://owasp.org/www-project-bug-logging-tool/">
                 OWASP Bug Logging Tool
             </a>
