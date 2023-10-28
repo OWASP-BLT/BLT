@@ -358,13 +358,17 @@
 
     function previewFile(file_name) {
         event.preventDefault();
+        if (!screenshots || !(screenshots instanceof HTMLInputElement) || !screenshots.files || !screenshots.files.length) return;
         Array.from(screenshots.files).map(file => {
-            if (file.name == file_name) {
-                let src = URL.createObjectURL(file);
-                $("#image-preview").attr("src", src);
+            if (file.name === file_name && file.type.startsWith('image/')) {
+                let src = URL.createObjectURL(file);                
+                // Set the src attribute for the image preview
+                $("#image-preview").attr("src", src).on('load', function() {
+                    URL.revokeObjectURL(src);  // Revoke the blob URL after it's used
+                });
                 $("#image-preview-wrapper").css("display", "flex");
             }
-        })
+        });
     }
 
     $("#image-preview-wrapper").on("click", () => {
