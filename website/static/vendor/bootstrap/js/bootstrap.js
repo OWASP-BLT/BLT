@@ -520,7 +520,14 @@ function sanitizeSelector(selector) {
     var clickHandler = function (e) {
         var href
         var $this = $(this)
-        var $target = $($this.attr('data-target') || (href = $this.attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '')) // strip for ie7
+
+        // sanitizing the elements
+        var dataTarget = $this.attr('data-target');
+        var href = $this.attr('href');
+        var sanitizedDataTarget = escapeHTML(dataTarget);
+        var sanitizedHref = escapeHTML(href);
+        var $target = $(sanitizedDataTarget || sanitizedHref && sanitizedHref.replace(/.*(?=#[^\s]+$)/, ''));
+        
         if (!$target.hasClass('carousel')) return
         var options = $.extend({}, $target.data(), $this.data())
         var slideIndex = $this.attr('data-slide-to')
