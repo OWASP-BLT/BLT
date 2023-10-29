@@ -302,7 +302,7 @@ function parse2(content) {
     content = content.replace(unorderedSubList, '<ul class="list-disc pl-8">$&');
     content = content.replace(orderedList, '<ol class="list-decimal pl-4">$&');
     content = content.replace(orderedSubList, '<ol class="list-decimal pl-8">$&');
-    content = content.replace('</li>', '</li>'); // Ensure list item closing tag
+    content = content.replace('</li>', '</li><br>'); // Ensure list item closing tag
 
     // Apply Tailwind CSS class to paragraphs
     content = content.replace(/<p>(.*?)<\/p>/g, '<p class="text-base">$1</p>');
