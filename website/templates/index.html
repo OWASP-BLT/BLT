@@ -266,7 +266,7 @@
                             {% endif %}
                         </span>
                         <span class="h-full w-2/3 flex flex-col items-center justify-center  overflow-hidden">
-                            <a href="/profile/{{ leader.username }}" class="text-capitalize w-full h-1/2">{{leader.username|truncatechars:20 }}</a>
+                            <a href="/profile/{{ leader.username }}" class="text-capitalize w-full h-1/2 font-bold text-2xl">{{leader.username|truncatechars:20 }}</a>
                             <span class=" w-full h-1/2 flex justify-start items-center gap-3">
                                 <div class="badge ">{{ leader.total_score }} {% trans "Points" %}</div>
                                 <span class="label label-success">{{ forloop.counter|ordinal }}</span>
