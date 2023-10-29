@@ -5,39 +5,35 @@
 {% providers_media_js %}
 {% load i18n %}
 {% load custom_tags %}
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-    // JavaScript to toggle the dropdown menu
-    const dropdownButton = document.getElementById('dropdownButton');
-    const dropdownMenu = document.getElementById('dropdownMenu');
+        const desktopDropdownButton = document.getElementById('dropdownButton');
+        const desktopDropdownMenu = document.getElementById('dropdownMenu');
 
-    dropdownButton.addEventListener('click', () => {
-        dropdownMenu.classList.toggle('hidden');
-    });
+        if (desktopDropdownButton && desktopDropdownMenu) {
+            desktopDropdownButton.addEventListener('click', () => {
+                desktopDropdownMenu.classList.toggle('hidden');
+            });
+            document.addEventListener('click', (e) => {
+                if (!desktopDropdownButton.contains(e.target) && !desktopDropdownMenu.contains(e.target)) {
+                    desktopDropdownMenu.classList.add('hidden');
+                }
+            });
+        }
 
-    // Close the dropdown when clicking outside of it
-    document.addEventListener('click', (e) => {
-        if (!dropdownButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
-            dropdownMenu.classList.add('hidden');
+        const mobileDropdownButton = document.getElementById('dropdown-toggle-mobile');
+        const mobileDropdownMenu = document.getElementById('dropdown-mobile');
+        if (mobileDropdownButton && mobileDropdownMenu) {
+            mobileDropdownButton.addEventListener('click', () => {
+                mobileDropdownMenu.classList.toggle('hidden');
+            });
+            document.addEventListener('click', (e) => {
+                if (!mobileDropdownButton.contains(e.target) && !mobileDropdownMenu.contains(e.target)) {
+                    mobileDropdownMenu.classList.add('hidden');
+                }
+            });
         }
     });
-
-    // JavaScript to toggle the dropdown menu
-    const dropdownButtonMobile = document.getElementById('dropdown-toggle-mobile');
-    const dropdownMenuMobile = document.getElementById('dropdown-mobile');
-
-    dropdownButtonMobile.addEventListener('click', () => {
-        dropdownMenuMobile.classList.toggle('hidden');
-    });
-
-    // Close the dropdown when clicking outside of it
-    document.addEventListener('click', (e) => {
-        if (!dropdownButtonMobile.contains(e.target) && !dropdownMenuMobile.contains(e.target)) {
-            dropdownMenuMobile.classList.add('hidden');
-        }
-    });
-});
 </script>
 
 
@@ -45,12 +41,13 @@
     <div class="flex w-[97vw] justify-between items-center">
         <div class="flex items-center gap-[30px] ml-[20px]">
             <!-- Settings Icon -->
-            <div class="lg:hidden">
-                <a id="dropdown-toggle-mobile" class="hover:no-underline" href="#">
-                    <i class="fa fa-bars !text-5xl text-red-500 "></i>
+            <div class="">
+                <a id="dropdown-toggle-mobile" class="hover:no-underline lg:hidden" href="#">
+                    <i class="fa fa-bars !text-5xl text-red-500 z-50"></i>
                 </a>
                 <!-- Dropdown for Settings Icon -->
-                <ul id="dropdown-mobile" class="hidden z-50 fixed top-32 shadow-xl rounded py-4 px-6 bg-white left-1">
+                <ul id="dropdown-mobile"
+                    class="z-50 fixed top-32 flex flex-col gap-2 shadow-xl rounded py-4 px-6 bg-white left-1 hidden">
                     <li>
                         <a href="/report">
                             <i class="fa fa-bug fa-fw"></i>
@@ -63,8 +60,8 @@
                             {% trans "Search" %}
                         </a>
                     </li>
-                    <li class="border my-2 -mx-4"></li>
                     {% if request.user.is_authenticated %}
+                    <li class="border my-2 -mx-4"></li>
                     <li>
                         <a href="/accounts/logout/">
                             <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
@@ -72,8 +69,7 @@
                     </li>
                     {% else %}
                     <li>
-                        <a href="/accounts/signup"
-                        target="_new">
+                        <a href="/accounts/signup" target="_new">
                             <i class="fa fa-user-plus fa-fw"></i>
                             {% trans "Sign Up" %}
                         </a>
@@ -97,49 +93,55 @@
         <!-- Search Bar -->
         <form class="h-max m-0" action="/search" method="get">
             <div class="items-center w-full h-full nav-hidden lg:!block">
-                <i class="fa fa-search relative left-[28px] top-[-2px] text-gray-700 text-base nav-hidden lg:!inline-block"></i>
-                <input type="text" name="query" placeholder="{% trans "Search" %}" class="w-[200px] h-[38px] pl-[30px] nav-hidden lg:!inline-block bg-[#ececece1] outline-[#e4e4e4] outline-[1px]">
-                <a href="/report/" class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline">
-                   {% trans  "Report a Bug" %}
+                <i
+                    class="fa fa-search relative left-[28px] top-[-2px] text-gray-700 text-base nav-hidden lg:!inline-block"></i>
+                <input type="text" name="query" placeholder="{% trans " Search" %}"
+                    class="w-[200px] h-[38px] pl-[30px] nav-hidden lg:!inline-block bg-[#ececece1] outline-[#e4e4e4] outline-[1px]">
+                <a href="/report/"
+                    class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline">
+                    {% trans "Report a Bug" %}
                 </a>
-                <a href="/hunts/" class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline">
+                <a href="/hunts/"
+                    class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline">
                     {% trans "Bughunts" %}
                 </a>
             </div>
-            
+
         </form>
-         
+
         <ul class="flex items-center">
             <!-- Search Icon -->
             <a href="/search/" class="hidden lg:hidden mr-[30px]">
                 <i class="fa fa-search !text-5xl text-red-500"></i>
-            </a> 
-            <!-- User Avatar -->   
+            </a>
+            <!-- User Avatar -->
             {% if request.user.is_authenticated %}
             <li class="h-[80px] flex justify-center items-center ">
                 <button id="dropdownButton" class="relative flex items-center sm:gap-3 mr-[30px]" type="button">
                     {% if request.user.userprofile.avatar %}
                     <img src="{{ request.user.userprofile.avatar }}" class="h-[30px] w-[30px] rounded-full ">
                     {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
-                    <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}" class="h-[30px] w-[30px] rounded-full ">
+                    <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
+                        class="h-[30px] w-[30px] rounded-full ">
                     {% else %}
                     {% gravatar request.user.email 30 '' 'gravatar rounded-full' %}
                     {% endif %}
-                    <span class="absolute -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap"><span class="">{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
+                    <span
+                        class="absolute -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap"><span
+                            class="">{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
                         <i class="fa fa-caret-down text-red-500"></i>
-                    </span> 
+                    </span>
                 </button>
                 <!-- Dropdown for User Avatar -->
-                <div id="dropdownMenu"  class="z-50 hidden absolute bg-white top-32 right-5">
-                    <ul  class="flex flex-col gap-2 px-8 py-4 border shadow-xl rounded-lg left-auto">
+                <div id="dropdownMenu" class="z-50 hidden absolute bg-white top-32 right-5">
+                    <ul class="flex flex-col gap-2 px-8 py-4 border shadow-xl rounded-lg left-auto">
                         <li>
                             <a href="/accounts/profile/">
                                 <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
                             </a>
                         </li>
                         <li>
-                            <a href="{% env 'EXTENSION_URL' %}"
-                            target="_new">
+                            <a href="{% env 'EXTENSION_URL' %}" target="_new">
                                 <i class="fa fa-chrome fa-fw"></i>
                                 {% trans "Add to chrome" %}
                             </a>
@@ -182,9 +184,13 @@
             </li>
             {% else %}
             <!-- Sign up and Log in Buttons -->
-            <div class="sm:!flex h-[80px] justify-center items-center">
-                <a href="/accounts/signup" class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">{% trans "Signup" %}</a>
-                <a href="/accounts/login" data-toggle="modal" class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">{% trans "Login" %}</a>
+            <div class="hidden lg:!flex h-[80px] justify-center items-center">
+                <a href="/accounts/signup"
+                    class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
+                    {% trans "Signup" %}</a>
+                <a href="/accounts/login" data-toggle="modal"
+                    class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
+                    {%trans "Login" %}</a>
             </div>
             <!-- Log in icon -->
             <a href="/accounts/login" class="block sm:hidden mr-[30px]">
