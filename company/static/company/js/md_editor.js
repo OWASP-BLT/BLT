@@ -20,7 +20,7 @@ const olButton = document.querySelector('#list-ol');
 
 
 preview.addEventListener('click', () => {
-    output(parse(textarea.value));
+    output(escapeHTML(parse(textarea.value)));
 
     outputArea.classList.toggle('show');
     previewMessage.classList.toggle('show');
@@ -302,10 +302,15 @@ function parse2(content) {
     content = content.replace(unorderedSubList, '<ul class="list-disc pl-8">$&');
     content = content.replace(orderedList, '<ol class="list-decimal pl-4">$&');
     content = content.replace(orderedSubList, '<ol class="list-decimal pl-8">$&');
-    content = content.replace('</li>', '</li>'); // Ensure list item closing tag
+    content = content.replace('</li>', '</li><br>'); // Ensure list item closing tag
 
     // Apply Tailwind CSS class to paragraphs
     content = content.replace(/<p>(.*?)<\/p>/g, '<p class="text-base">$1</p>');
 
     return '<div class="container mx-auto py-8">' + content + '</div>';
+}
+function escapeHTML(unsafeText) {
+    let div = document.createElement('div');
+    div.textContent = unsafeText;
+    return div.innerHTML;
 }
