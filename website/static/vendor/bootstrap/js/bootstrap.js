@@ -19,6 +19,11 @@ function sanitizeSelector(selector) {
     // Use a whitelist approach to only allow valid characters in a selector
     return selector.replace(/[^\w-#.:]/g, '');
 }
+function sanitizeInput(input) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(input));
+    return div.innerHTML;
+}
 /* ========================================================================
  * Bootstrap: transition.js v3.3.7
  * http://getbootstrap.com/javascript/#transitions
@@ -1576,7 +1581,13 @@ function sanitizeSelector(selector) {
 
     Tooltip.prototype.setContent = function () {
         var $tip = this.tip()
-        var title = escapeHTML(this.getTitle())
+        var title = this.getTitle()
+        if(this.options.html){
+            title = sanitizeInput(title);
+        }
+        else{
+            title = sanitizeSelector(title);
+        }
 
         $tip.find('.tooltip-inner')[this.options.html ? 'html' : 'text'](title)
         $tip.removeClass('fade in top bottom left right')
