@@ -6,17 +6,51 @@
 {% load i18n %}
 {% load custom_tags %}
 
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+    // JavaScript to toggle the dropdown menu
+    const dropdownButton = document.getElementById('dropdownButton');
+    const dropdownMenu = document.getElementById('dropdownMenu');
 
-<nav class="navbar-default relative top-0 border-b h-[80px] w-auto flex flex-col justify-center items-center">
+    dropdownButton.addEventListener('click', () => {
+        dropdownMenu.classList.toggle('hidden');
+    });
+
+    // Close the dropdown when clicking outside of it
+    document.addEventListener('click', (e) => {
+        if (!dropdownButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
+            dropdownMenu.classList.add('hidden');
+        }
+    });
+
+    // JavaScript to toggle the dropdown menu
+    const dropdownButtonMobile = document.getElementById('dropdown-toggle-mobile');
+    const dropdownMenuMobile = document.getElementById('dropdown-mobile');
+
+    dropdownButtonMobile.addEventListener('click', () => {
+        dropdownMenuMobile.classList.toggle('hidden');
+    });
+
+    // Close the dropdown when clicking outside of it
+    document.addEventListener('click', (e) => {
+        if (!dropdownButtonMobile.contains(e.target) && !dropdownMenuMobile.contains(e.target)) {
+            dropdownMenuMobile.classList.add('hidden');
+        }
+    });
+});
+</script>
+
+
+<nav class="relative top-0 border-b h-[80px] w-auto flex flex-col justify-center items-center">
     <div class="flex w-[97vw] justify-between items-center">
         <div class="flex items-center gap-[30px] ml-[20px]">
             <!-- Settings Icon -->
             <div class="lg:hidden">
-                <a class="dropdown-toggle hover:no-underline !no-underline" data-toggle="dropdown" href="#">
+                <a id="dropdown-toggle-mobile" class="hover:no-underline" href="#">
                     <i class="fa fa-bars !text-5xl text-red-500 "></i>
                 </a>
                 <!-- Dropdown for Settings Icon -->
-                <ul class="dropdown-menu left-1">
+                <ul id="dropdown-mobile" class="hidden z-50 fixed top-32 shadow-xl rounded py-4 px-6 bg-white left-1">
                     <li>
                         <a href="/report">
                             <i class="fa fa-bug fa-fw"></i>
@@ -29,7 +63,7 @@
                             {% trans "Search" %}
                         </a>
                     </li>
-                    <li class="divider"></li>
+                    <li class="border my-2 -mx-4"></li>
                     {% if request.user.is_authenticated %}
                     <li>
                         <a href="/accounts/logout/">
@@ -52,11 +86,11 @@
                     {% endif %}
                 </ul>
             </div>
-            <div class="flex flex-col items-center h-full">
+            <div class="flex flex-col items-start  h-full">
                 <a class="" href="/">
-                    <img src="{% logo 'TRANSPARENT' %}" class="max-w-[200px]">
+                    <img src="{% logo 'TRANSPARENT' %}" class="!max-w-[130px] lg:max-w-[200px]">
                 </a>
-                <p class="text-center nav-hidden sm:!inline">Report Issues, Win Prizes</p>
+                <p class="text-center sm:!inline text-base lg:text-2xl pl-1">{% trans "Report Issues, Win Prizes" %}</p>
             </div>
         </div>
 
@@ -65,10 +99,10 @@
             <div class="items-center w-full h-full nav-hidden lg:!block">
                 <i class="fa fa-search relative left-[28px] top-[-2px] text-gray-700 text-base nav-hidden lg:!inline-block"></i>
                 <input type="text" name="query" placeholder="{% trans "Search" %}" class="w-[200px] h-[38px] pl-[30px] nav-hidden lg:!inline-block bg-[#ececece1] outline-[#e4e4e4] outline-[1px]">
-                <a href="/report/" class="nav-hidden lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline">
-                    {% trans "Report a Bug" %}
+                <a href="/report/" class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline">
+                   {% trans  "Report a Bug" %}
                 </a>
-                <a href="/hunts/" class="nav-hidden lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline">
+                <a href="/hunts/" class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline">
                     {% trans "Bughunts" %}
                 </a>
             </div>
@@ -77,75 +111,78 @@
          
         <ul class="flex items-center">
             <!-- Search Icon -->
-            <a href="/search/" class="xs-hidden lg:hidden mr-[30px]">
+            <a href="/search/" class="hidden lg:hidden mr-[30px]">
                 <i class="fa fa-search !text-5xl text-red-500"></i>
             </a> 
             <!-- User Avatar -->   
             {% if request.user.is_authenticated %}
-            <li class="dropdown h-[80px] flex justify-center items-center">
-                <a class="dropdown-toggle relative flex items-center sm:gap-3 mr-[30px]" data-toggle="dropdown" href="#">
+            <li class="h-[80px] flex justify-center items-center ">
+                <button id="dropdownButton" class="relative flex items-center sm:gap-3 mr-[30px]" type="button">
                     {% if request.user.userprofile.avatar %}
-                    <img src="{{ request.user.userprofile.avatar }}" class="h-[30px] w-[30px] rounded-full">
+                    <img src="{{ request.user.userprofile.avatar }}" class="h-[30px] w-[30px] rounded-full ">
                     {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
-                    <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}" class="h-[30px] w-[30px] rounded-full">
+                    <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}" class="h-[30px] w-[30px] rounded-full ">
                     {% else %}
                     {% gravatar request.user.email 30 '' 'gravatar rounded-full' %}
                     {% endif %}
-                    <span class="absolute -right-[25px] -bottom-[25px] sm:static whitespace-nowrap">{{ request.user.username }} ({{ request.user|score|default:"0" }} Pts)
+                    <span class="absolute -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap"><span class="">{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
                         <i class="fa fa-caret-down text-red-500"></i>
                     </span> 
-                </a>
+                </button>
                 <!-- Dropdown for User Avatar -->
-                <ul class="dropdown-menu left-auto right-0">
-                    <li>
-                        <a href="/accounts/profile/">
-                            <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% env 'EXTENSION_URL' %}"
-                        target="_new">
-                            <i class="fa fa-chrome fa-fw"></i>
-                            {% trans "Add to chrome" %}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/start">
-                            <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/social">
-                            <i class="fa fa-share fa-fw"></i>
-                            {% trans "Social" %}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/accounts/password/change/">
-                            <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/invite/">
-                            <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite Friends" %}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'company_view' %}">
-                            <i class="fa fa-building fa-fw"></i> {% trans "Company Dashboard" %}
-                        </a>
-                    </li>
-                    <li class="divider"></li>
-                    <li>
-                        <a href="/accounts/logout/">
-                            <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
-                        </a>
-                    </li>
-                </ul>
+                <div id="dropdownMenu"  class="z-50 hidden absolute bg-white top-32 right-5">
+                    <ul  class="flex flex-col gap-2 px-8 py-4 border shadow-xl rounded-lg left-auto">
+                        <li>
+                            <a href="/accounts/profile/">
+                                <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% env 'EXTENSION_URL' %}"
+                            target="_new">
+                                <i class="fa fa-chrome fa-fw"></i>
+                                {% trans "Add to chrome" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/start">
+                                <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/social">
+                                <i class="fa fa-share fa-fw"></i>
+                                {% trans "Social" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/accounts/password/change/">
+                                <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/invite/">
+                                <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite Friends" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'company_view' %}">
+                                <i class="fa fa-building fa-fw"></i> {% trans "Company Dashboard" %}
+                            </a>
+                        </li>
+                        <!-- divider -->
+                        <li class="border my-4 -mx-8"></li>
+                        <li>
+                            <a href="/accounts/logout/">
+                                <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </li>
             {% else %}
             <!-- Sign up and Log in Buttons -->
-            <div class="nav-hidden sm:!flex h-[80px] justify-center items-center">
+            <div class="sm:!flex h-[80px] justify-center items-center">
                 <a href="/accounts/signup" class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">{% trans "Signup" %}</a>
                 <a href="/accounts/login" data-toggle="modal" class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">{% trans "Login" %}</a>
             </div>
@@ -155,73 +192,5 @@
             </a>
             {% endif %}
         </ul>
-
-
-
-
-            {% comment %} <ul class="nav navbar-nav navbar-right">
-                <li>
-                    <p class="navbar-text">Found a bug ?</p>
-                </li>
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-intro="Click here to report any kind of bug."
-                        data-step="1" data-toggle="dropdown"><b>Report here</b> <span class="caret"></span></a>
-                    <ul id="issue-dp" class="dropdown-menu">
-                        <li>
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <form class="form" action="/issue/" method="post" enctype="multipart/form-data">
-                                        {% csrf_token %}
-                                        <div class="form-group">
-                                            <input class="form-control required"
-                                                placeholder="https://testsite.com/bug-found" name="url"
-                                                value="{{ form.url.value|default:"" }}">
-                                        </div>
-                                        <div class="form-group">
-                                            <textarea data-required="true" name="description" id="description"
-                                                class="form-control required" rows="3"
-                                                placeholder="{% trans "Describe bug issue" %}">{{ form.description.value|default:"" }}</textarea>
-                                        </div>
-                                        <div class="form-group">
-                                            <select required name="label" class="form-control">
-                                                <option value="0" selected="selected">General</option>
-                                                <option value="1">Number error</option>
-                                                <option value="2">Functional</option>
-                                                <option value="3">Performance</option>
-                                                <option value="4">Security</option>
-                                                <option value="5">Typo</option>
-                                                <option value="6">Design</option>
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <span>
-                                                <input type="file" class="required" id='${multipartFilePath}'
-                                                    name="screenshot" />
-                                                <button style="width: 100%" class="btn btn-primary"
-                                                    name="test_files" type="button">
-                                                    <i class="fa fa-upload" aria-hidden="true"></i>
-                                                    {% trans "Upload Screenshot" %}
-                                                </button>
-                                                <center><span style="margin-top: 10px;"
-                                                        class="badge badge-important"></span></center>
-                                            </span>
-                                        </div>
-                                        {% csrf_token %}
-                                        {{ captcha_form.captcha }}
-                                        <div class="bottom text-center">
-                                            <button type="submit" id="report-bug-btn" class="btn btn-default">
-                                                <i style="display: none;" id="spinner" class="fa fa-spinner fa-spin"
-                                                    aria-hidden="true"></i>
-                                                {% trans "Report Bug" %}
-                                                <i class="fa fa-trophy" aria-hidden="true">+3</i>
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </li>
-                    </ul>
-                </li>
-            </ul> {% endcomment %}
     </div>
 </nav>
