@@ -470,11 +470,11 @@ STRIPE_LIVE_PUBLIC_KEY = os.environ.get(
 STRIPE_LIVE_SECRET_KEY = os.environ.get("STRIPE_LIVE_SECRET_KEY", "<your secret key>")
 STRIPE_TEST_PUBLIC_KEY = os.environ.get(
     "STRIPE_TEST_PUBLIC_KEY",
-    "pk_test_51HFiXMFf0OkkOVnDkNs4opFLqM0Sx5GA6Pedf63uGzG1gHhumFYHEOLfCA7yzZwXUpjaa5j9ZhS1yciNhouYCMh400pSx5ZEx6",
+    "pk_test_12345",
 )
 STRIPE_TEST_SECRET_KEY = os.environ.get(
     "STRIPE_TEST_SECRET_KEY",
-    "sk_test_51HFiXMFf0OkkOVnDiAnuYiq6JInx3VSXw2HzIV6ihGWzaO8un5djIi990OCLTAv5PRnY7Yl8v8yuxf6yU47gvKYj00hkKaKaQ0",
+    "sk_test_12345",
 )
 STRIPE_LIVE_MODE = False  # Change to True in production
 

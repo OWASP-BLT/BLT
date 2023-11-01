@@ -50,7 +50,7 @@
             _a = decodeURI("%C3%80");
             _y = decodeURI("%C3%BF");
             space = acceptSpaceBar ? "\ " : "";
-            regexp = new RegExp(flag + "([A-Za-z" + _a + "-" + _y + "0-9_" + space + "\'\.\+\-]*)$|" + flag + "([^\\x00-\\xff]*)$", 'gi');
+            regexp = new RegExp(flag + "([A-Za-z" + _a + "-" + _y + "0-9_" + space + "'\\.\\+\\-]*)$|" + flag + "([^\\x00-\\xff]*)$", 'gi');
             match = regexp.exec(subtext);
             if (match) {
                 return match[2] || match[1];
@@ -786,7 +786,7 @@
                 }
             }
             if ($query.length > 0 && (query_content = $query.attr('data-atwho-at-query'))) {
-                $query.empty().html(query_content).attr('data-atwho-at-query', null);
+                $query.empty().text(query_content).removeAttr('data-atwho-at-query');
                 this._setRange('after', $query.get(0), range);
             }
             _range = range.cloneRange();

@@ -15,7 +15,15 @@ if (typeof jQuery === 'undefined') {
         throw new Error('Bootstrap\'s JavaScript requires jQuery version 1.9.1 or higher, but lower than version 4')
     }
 }(jQuery);
-
+function sanitizeSelector(selector) {
+    // Use a whitelist approach to only allow valid characters in a selector
+    return selector.replace(/[^\w-#.:]/g, '');
+}
+function sanitizeInput(input) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(input));
+    return div.innerHTML;
+}
 /* ========================================================================
  * Bootstrap: transition.js v3.3.7
  * http://getbootstrap.com/javascript/#transitions
@@ -112,8 +120,8 @@ if (typeof jQuery === 'undefined') {
             selector = $this.attr('href')
             selector = selector && selector.replace(/.*(?=#[^\s]*$)/, '') // strip for ie7
         }
-
-        var $parent = $(selector === '#' ? [] : selector)
+        selector = sanitizeSelector(selector === '#' ? '' : selector);
+        var $parent = $(selector);
 
         if (e) e.preventDefault()
 
@@ -138,7 +146,6 @@ if (typeof jQuery === 'undefined') {
                 .emulateTransitionEnd(Alert.TRANSITION_DURATION) :
             removeElement()
     }
-
 
     // ALERT PLUGIN DEFINITION
     // =======================
@@ -518,7 +525,8 @@ if (typeof jQuery === 'undefined') {
     var clickHandler = function (e) {
         var href
         var $this = $(this)
-        var $target = $($this.attr('data-target') || (href = $this.attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '')) // strip for ie7
+        var $target = $($(sanitizeSelector($this.attr('data-target'))) || ((href = sanitizeSelector($this.attr('href'))) && href.replace(/.*(?=#[^\s]+$)/, '')));
+        
         if (!$target.hasClass('carousel')) return
         var options = $.extend({}, $target.data(), $this.data())
         var slideIndex = $this.attr('data-slide-to')
@@ -684,9 +692,9 @@ if (typeof jQuery === 'undefined') {
         this[this.$element.hasClass('in') ? 'hide' : 'show']()
     }
 
-    Collapse.prototype.getParent = function () {
-        return $(this.options.parent)
-            .find('[data-toggle="collapse"][data-parent="' + this.options.parent + '"]')
+    Collapse.prototype.getParent = function () {var sanitizedParent = sanitizeSelector(this.options.parent);
+        return $(sanitizedParent)
+            .find('[data-toggle="collapse"][data-parent="' + sanitizedParent + '"]')
             .each($.proxy(function (i, element) {
                 var $element = $(element)
                 this.addAriaAndCollapsedClass(getTargetFromTrigger($element), $element)
@@ -705,8 +713,8 @@ if (typeof jQuery === 'undefined') {
 
     function getTargetFromTrigger($trigger) {
         var href
-        var target = $trigger.attr('data-target')
-            || (href = $trigger.attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '') // strip for ie7
+        var target = sanitizeSelector($trigger.attr('data-target'))
+            || (href = sanitizeSelector($trigger.attr('href'))) && href.replace(/.*(?=#[^\s]+$)/, '') // strip for ie7
 
         return $(target)
     }
@@ -1574,6 +1582,12 @@ if (typeof jQuery === 'undefined') {
     Tooltip.prototype.setContent = function () {
         var $tip = this.tip()
         var title = this.getTitle()
+        if(this.options.html){
+            title = sanitizeInput(title);
+        }
+        else{
+            title = sanitizeSelector(title);
+        }
 
         $tip.find('.tooltip-inner')[this.options.html ? 'html' : 'text'](title)
         $tip.removeClass('fade in top bottom left right')

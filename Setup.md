@@ -114,6 +114,36 @@ from the host machine.
  python manage.py runserver
 ```
 
+### Alternative using Poetry
+```sh
+brew install postgresql
+
+# Install postgres on ubuntu
+sudo apt-get install postgresql
+
+# Install Poetry
+pip install poetry
+
+poetry shell
+
+poetry install
+
+# Create tables in the database
+python manage.py migrate
+
+# Load initial data
+python3 manage.py loaddata website/fixtures/initial_data.json
+
+# Create a super user
+python manage.py createsuperuser
+
+# Collect static files
+python manage.py collectstatic
+
+# Run the server
+python manage.py runserver
+```
+
 ### Ready to go now
 
 Then go to `http://127.0.0.1:8000/admin/socialaccount/socialapp/` and add filler information for social auth accounts.
