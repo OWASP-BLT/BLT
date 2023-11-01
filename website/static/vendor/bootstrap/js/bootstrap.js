@@ -791,7 +791,7 @@ function sanitizeInput(input) {
     Dropdown.VERSION = '3.3.7'
 
     function getParent($this) {
-        var selector = $this.attr('data-target')
+        var selector = sanitizeSelector($this.attr('data-target'))
 
         if (!selector) {
             selector = $this.attr('href')
