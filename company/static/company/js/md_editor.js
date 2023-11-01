@@ -20,7 +20,7 @@ const olButton = document.querySelector('#list-ol');
 
 
 preview.addEventListener('click', () => {
-    output(parse(textarea.value));
+    output(escapeHTML(parse(textarea.value)));
 
     outputArea.classList.toggle('show');
     previewMessage.classList.toggle('show');
@@ -308,4 +308,9 @@ function parse2(content) {
     content = content.replace(/<p>(.*?)<\/p>/g, '<p class="text-base">$1</p>');
 
     return '<div class="container mx-auto py-8">' + content + '</div>';
+}
+function escapeHTML(unsafeText) {
+    let div = document.createElement('div');
+    div.textContent = unsafeText;
+    return div.innerHTML;
 }
