@@ -5700,9 +5700,9 @@
 
     jQuery.extend({
         htmlPrefilter: function (html) {
-            var sanitizedHTML = sanitizeHTML(html);
-            return sanitizedHTML.replace(rxhtmlTag, "<$1></$2>");
-        },
+            var expandedHTML = html.replace(rxhtmlTag, "<$1></$2>");
+            return sanitizeHTML(expandedHTML);
+        },        
 
         clone: function (elem, dataAndEvents, deepDataAndEvents) {
             var i, l, srcElements, destElements,
