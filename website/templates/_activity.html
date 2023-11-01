@@ -1,6 +1,21 @@
 {% load gravatar %}
 {% load static %}
-<div class="list-group-item activity-strip overflow-auto">
+
+<style>
+    .truncate-450 {
+      display: none;
+    }
+  
+    @media only screen and (max-width: 500px) {
+      .truncate-450 {
+        display: inline;
+      }
+      .truncate-100 {
+        display: none;
+      }
+    }
+</style>
+<div class="list-group-item activity-strip overflow-hidden">
     <div class="activity-strip-section">
         {% if activity.user.userprofile.avatar %}
             <img src="{{ activity.user.userprofile.avatar }}" width="100" class="img-responsive img-rounded" loading="lazy">
@@ -15,11 +30,25 @@
         {% endif %}
 
         <div class="info">
-            <a href="/domain/{{ activity.domain_name }}">
-                <img src="http://www.{{ activity.domain_name }}/favicon.ico" height="25"
-                     onerror="this.onerror=null; this.style.display='none';" loading="lazy">
+            <div class="flex overflow-hidden gap-3">
+                <a href="/domain/{{ activity.domain_name }} h-auto">
+                    <img src="http://www.{{ activity.domain_name }}/favicon.ico"
+                        onerror="this.onerror=null; this.style.display='none';" loading="lazy"
+                        class="h-[30px] w-[30px]"
+                        >
+                </a>
+                {% if activity.status == "open" %}
+                    <span class="label label-success text-capitalize !leading-loose">{{ activity.status }}</span>
+                {% else %}
+                    <span class="label label-danger text-capitalize !leading-loose">{{ activity.status }}</span>
+                {% endif %}
+                <span class="label label-info !leading-loose">{{ activity.get_label_display }}</span>
+            </div>
+
+            <a href="{{ activity.get_absolute_url }}">
+                <span class="truncate-450">{{ activity.description|truncatechars:60 }}</span>
+                <span class="truncate-100">{{ activity.description|truncatechars:100 }}</span>
             </a>
-            <a href="{{ activity.get_absolute_url }}">{{ activity.description|truncatechars:100 }}</a>
 
             <div class="small">
                 <a href="{{ activity.user.get_absolute_url }}" data-toggle="popover"
@@ -35,12 +64,6 @@
                     {{ activity.comments.all|length }} comments
                 {% endif %}
             </a>
-            {% if activity.status == "open" %}
-            <span class="label label-success text-capitalize !leading-loose">{{ activity.status }}</span>
-        {% else %}
-            <span class="label label-danger text-capitalize !leading-loose">{{ activity.status }}</span>
-        {% endif %}
-        <span class="label label-info !leading-loose">{{ activity.get_label_display }}</span>
         </div>
     </div>
     <div class="activity-screenshot">
