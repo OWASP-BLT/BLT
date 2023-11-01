@@ -520,7 +520,8 @@ function sanitizeSelector(selector) {
     var clickHandler = function (e) {
         var href
         var $this = $(this)
-        var $target = $($this.attr('data-target') || (href = $this.attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '')) // strip for ie7
+        var $target = $($(sanitizeSelector($this.attr('data-target'))) || ((href = sanitizeSelector($this.attr('href'))) && href.replace(/.*(?=#[^\s]+$)/, '')));
+        
         if (!$target.hasClass('carousel')) return
         var options = $.extend({}, $target.data(), $this.data())
         var slideIndex = $this.attr('data-slide-to')
@@ -1575,7 +1576,7 @@ function sanitizeSelector(selector) {
 
     Tooltip.prototype.setContent = function () {
         var $tip = this.tip()
-        var title = this.getTitle()
+        var title = escapeHTML(this.getTitle())
 
         $tip.find('.tooltip-inner')[this.options.html ? 'html' : 'text'](title)
         $tip.removeClass('fade in top bottom left right')

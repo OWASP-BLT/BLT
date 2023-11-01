@@ -786,7 +786,7 @@
                 }
             }
             if ($query.length > 0 && (query_content = $query.attr('data-atwho-at-query'))) {
-                $query.empty().html(query_content).attr('data-atwho-at-query', null);
+                $query.empty().text(query_content).removeAttr('data-atwho-at-query');
                 this._setRange('after', $query.get(0), range);
             }
             _range = range.cloneRange();
