@@ -692,9 +692,9 @@ function sanitizeInput(input) {
         this[this.$element.hasClass('in') ? 'hide' : 'show']()
     }
 
-    Collapse.prototype.getParent = function () {
-        return $(this.options.parent)
-            .find('[data-toggle="collapse"][data-parent="' + this.options.parent + '"]')
+    Collapse.prototype.getParent = function () {var sanitizedParent = sanitizeSelector(this.options.parent);
+        return $(sanitizedParent)
+            .find('[data-toggle="collapse"][data-parent="' + sanitizedParent + '"]')
             .each($.proxy(function (i, element) {
                 var $element = $(element)
                 this.addAriaAndCollapsedClass(getTargetFromTrigger($element), $element)
