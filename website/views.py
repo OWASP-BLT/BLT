@@ -3359,4 +3359,4 @@ def sponsor_view(request):
 #                     data=json.dumps(data),
 #                     headers=headers,
 #                 )
-#         mail.logout() 
+#         mail.logout()
