@@ -9,7 +9,36 @@
 {% load custom_tags %}
 <script src="{% static 'js/jquery.validate.js' %}"></script>
 <script src="{% static 'js/activity.js' %}"></script>
-<div class="w-full h-[30rem] flex flex-col  space-y-14 items-center">
+<script>
+    let calcScrollValue = () => {
+  let scrollProgress = document.getElementById("progress");
+  let progressValue = document.getElementById("progress-value");
+  let pos = document.documentElement.scrollTop;
+  let calcHeight =
+    document.documentElement.scrollHeight -
+    document.documentElement.clientHeight;
+  let scrollValue = Math.round((pos * 100) / calcHeight);
+  if (pos > 100) {
+    scrollProgress.style.display = "grid";
+  } else {
+    scrollProgress.style.display = "none";
+  }
+  scrollProgress.addEventListener("click", () => {
+    document.documentElement.scrollTop = 0;
+  });
+  scrollProgress.style.background = `conic-gradient(#03cc65 ${scrollValue}%, #d7d7d7 ${scrollValue}%)`;
+};
+window.onscroll = calcScrollValue;
+window.onload = calcScrollValue;
+</script>
+
+<div id="progress" class="w-full h-[30rem] flex flex-col  space-y-14 items-center ">
+    <div id="progress-value" class="bg-[#EF4444] fixed bottom-5 right-[10px] w-[70px] h-[70px] items-center rounded-full cursor-pointer shadow-2xl">
+        <span class=" block h-[calc(100%-15px)] w-[calc(100%-15px)] bg-white rounded-full  items-center text-[35px] text-[#001A2E] ml-[7px]">
+            <span class="ml-[1.7rem] mt-[2rem] ">^</span>
+        </span>
+    </div>
+</div>
     <p class="text-5xl text-center mt-20 font-sans sm:text-6xl lg:text-7xl">{% trans "Find Bugs, Win Points and Prizes" %}</p>
 
     <hr class="w-full bg-black"/>
@@ -33,7 +62,7 @@
             </ul>
         </div>
     </section>
-</div>
+
 
 <div class="w-full m-0 p-0 flex flex-wrap justify-center">
 
