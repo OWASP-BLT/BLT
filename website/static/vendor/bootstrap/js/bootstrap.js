@@ -2028,7 +2028,7 @@ function sanitizeInput(input) {
             '[data-target="' + target + '"],' +
             this.selector + '[href="' + target + '"]'
 
-        var active = $(selector)
+        var active = $(escapePotentialXSS(selector))
             .parents('li')
             .addClass('active')
 
@@ -2407,3 +2407,20 @@ function sanitizeInput(input) {
     })
 
 }(jQuery);
+function escapePotentialXSS(selector) {
+    // Escaping only the specific characters that can lead to XSS
+    // such as <, >, ", ', and ` which are not valid in CSS selectors
+    // and can be used for XSS if injected into HTML content.
+    return selector.replace(/[<>\"'`]/g, function(match) {
+        // Convert potentially dangerous characters to their
+        // corresponding HTML entity representations.
+        switch(match) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '"': return '&quot;';
+            case '\'': return '&#39;';
+            case '`': return '&#96;';
+            default: return match;
+        }
+    });
+}
