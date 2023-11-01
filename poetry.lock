@@ -1862,13 +1862,13 @@ urllib3 = {version = ">=1.26,<3", extras = ["socks"]}
 
 [[package]]
 name = "sentry-sdk"
-version = "1.32.0"
+version = "1.33.1"
 description = "Python client for Sentry (https://sentry.io)"
 optional = false
 python-versions = "*"
 files = [
-    {file = "sentry-sdk-1.32.0.tar.gz", hash = "sha256:935e8fbd7787a3702457393b74b13d89a5afb67185bc0af85c00cb27cbd42e7c"},
-    {file = "sentry_sdk-1.32.0-py2.py3-none-any.whl", hash = "sha256:eeb0b3550536f3bbc05bb1c7e0feb3a78d74acb43b607159a606ed2ec0a33a4d"},
+    {file = "sentry-sdk-1.33.1.tar.gz", hash = "sha256:816aeb900a54bba2d9346bad8ffac2d258c4fa09271b95a6533a714e9000f074"},
+    {file = "sentry_sdk-1.33.1-py2.py3-none-any.whl", hash = "sha256:1cce906dc86afda1ecd22c4716b0c846639151a3c3b59e23826711c6525c5642"},
 ]
 
 [package.dependencies]
@@ -1894,7 +1894,7 @@ huey = ["huey (>=2)"]
 loguru = ["loguru (>=0.5)"]
 opentelemetry = ["opentelemetry-distro (>=0.35b0)"]
 opentelemetry-experimental = ["opentelemetry-distro (>=0.40b0,<1.0)", "opentelemetry-instrumentation-aiohttp-client (>=0.40b0,<1.0)", "opentelemetry-instrumentation-django (>=0.40b0,<1.0)", "opentelemetry-instrumentation-fastapi (>=0.40b0,<1.0)", "opentelemetry-instrumentation-flask (>=0.40b0,<1.0)", "opentelemetry-instrumentation-requests (>=0.40b0,<1.0)", "opentelemetry-instrumentation-sqlite3 (>=0.40b0,<1.0)", "opentelemetry-instrumentation-urllib (>=0.40b0,<1.0)"]
-pure-eval = ["asttokens", "executing", "pure-eval"]
+pure-eval = ["asttokens", "executing", "pure_eval"]
 pymongo = ["pymongo (>=3.1)"]
 pyspark = ["pyspark (>=2.4.4)"]
 quart = ["blinker (>=1.1)", "quart (>=0.16.1)"]
@@ -1983,13 +1983,13 @@ test = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "stripe"
-version = "7.1.0"
+version = "7.2.0"
 description = "Python bindings for the Stripe API"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "stripe-7.1.0-py2.py3-none-any.whl", hash = "sha256:efd1e54825752c41bb311497cb5b6ae745464a57ca63bbe2847984a2409bcb0a"},
-    {file = "stripe-7.1.0.tar.gz", hash = "sha256:9cc2632230d5742eeb779af2b41c1510e724f498a296dfb40507de98d563f9a2"},
+    {file = "stripe-7.2.0-py2.py3-none-any.whl", hash = "sha256:2ac98a5ce45d102b8c95cf57259fb182a99043e7a5dae5559220102d34bcba5c"},
+    {file = "stripe-7.2.0.tar.gz", hash = "sha256:45edff0627217de5348cb4fcf397fff6d722c88cacc0ff7bc9d47b85139138bf"},
 ]
 
 [package.dependencies]
@@ -2268,4 +2268,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "0a76119a9ebf4deba1008d60f06fab07207c643178bebc91ed5ba37053ada4f0"
+content-hash = "bfdd4b230ad64d90a82c2f1880ea71157f5a789d1717209d0d14120e7439f33b"
