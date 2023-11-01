@@ -2423,4 +2423,4 @@ function escapePotentialXSS(selector) {
             default: return match;
         }
     });
-}
+} 
