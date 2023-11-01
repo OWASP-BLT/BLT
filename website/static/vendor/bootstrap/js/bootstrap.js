@@ -2042,7 +2042,7 @@ function sanitizeInput(input) {
     }
 
     ScrollSpy.prototype.clear = function () {
-        $(this.selector)
+        $(escapePotentialXSS(this.selector))
             .parentsUntil(this.options.target, '.active')
             .removeClass('active')
     }
