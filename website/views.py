@@ -2008,7 +2008,10 @@ def comment_on_issue(request, issue_pk):
 
             if parent_comment == None:
                 messages.error(request,"Parent comment doesn't exist.")
-                return redirect(f"/issue2/{issue_pk}")
+                if isinstance(issue_pk, int):  # Check if issue_pk is an integer
+                    return redirect(f"/issue2/{issue_pk}")
+                else:
+                    raise Http404("Issue does not exist")
 
             Comment.objects.create(
                 parent = parent_comment,
