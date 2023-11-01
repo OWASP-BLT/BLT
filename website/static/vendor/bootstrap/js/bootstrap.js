@@ -791,7 +791,7 @@ function sanitizeInput(input) {
     Dropdown.VERSION = '3.3.7'
 
     function getParent($this) {
-        var selector = $this.attr('data-target')
+        var selector = sanitizeSelector($this.attr('data-target'))
 
         if (!selector) {
             selector = $this.attr('href')
@@ -1328,7 +1328,7 @@ function sanitizeInput(input) {
         this.type = type
         this.$element = $(element)
         this.options = this.getOptions(options)
-        this.$viewport = this.options.viewport && $($.isFunction(this.options.viewport) ? this.options.viewport.call(this, this.$element) : (this.options.viewport.selector || this.options.viewport))
+        this.$viewport = this.options.viewport && $(sanitizeSelector($.isFunction(this.options.viewport) ? this.options.viewport.call(this, this.$element) : (this.options.viewport.selector || this.options.viewport)))
         this.inState = {click: false, hover: false, focus: false}
 
         if (this.$element[0] instanceof document.constructor && !this.options.selector) {
@@ -2028,7 +2028,7 @@ function sanitizeInput(input) {
             '[data-target="' + target + '"],' +
             this.selector + '[href="' + target + '"]'
 
-        var active = $(selector)
+        var active = $(escapePotentialXSS(selector))
             .parents('li')
             .addClass('active')
 
@@ -2407,3 +2407,20 @@ function sanitizeInput(input) {
     })
 
 }(jQuery);
+function escapePotentialXSS(selector) {
+    // Escaping only the specific characters that can lead to XSS
+    // such as <, >, ", ', and ` which are not valid in CSS selectors
+    // and can be used for XSS if injected into HTML content.
+    return selector.replace(/[<>\"'`]/g, function(match) {
+        // Convert potentially dangerous characters to their
+        // corresponding HTML entity representations.
+        switch(match) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '"': return '&quot;';
+            case '\'': return '&#39;';
+            case '`': return '&#96;';
+            default: return match;
+        }
+    });
+}
