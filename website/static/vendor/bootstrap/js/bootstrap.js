@@ -692,9 +692,9 @@ function sanitizeInput(input) {
         this[this.$element.hasClass('in') ? 'hide' : 'show']()
     }
 
-    Collapse.prototype.getParent = function () {var sanitizedParent = sanitizeSelector(this.options.parent);
-        return $(sanitizedParent)
-            .find('[data-toggle="collapse"][data-parent="' + sanitizedParent + '"]')
+    Collapse.prototype.getParent = function () {
+        return $(this.options.parent)
+            .find('[data-toggle="collapse"][data-parent="' + this.options.parent + '"]')
             .each($.proxy(function (i, element) {
                 var $element = $(element)
                 this.addAriaAndCollapsedClass(getTargetFromTrigger($element), $element)
@@ -791,7 +791,7 @@ function sanitizeInput(input) {
     Dropdown.VERSION = '3.3.7'
 
     function getParent($this) {
-        var selector = $this.attr('data-target')
+        var selector = sanitizeSelector($this.attr('data-target'))
 
         if (!selector) {
             selector = $this.attr('href')
