@@ -401,14 +401,17 @@
 
         fileList.map(file => {
             let src = URL.createObjectURL(file);
-            $("#files_manage").append(`
-                <div class="w-full md:w-[300px] h-[180px] overflow-hidden rounded-lg" onclick="previewFile('${file.name}')">
-                    <div class="w-full h-10 flex justify-center rounded-t-lg p-2 bg-gray-500">
-                        <p class="text-xl text-white font-bold">${file.name.slice(0,20)}...</p>
-                    </div>
-                    <img class="object-cover" src="${src}" alt="">
-                </div>
-            `)
+            let safeName = $("<div>").text(file.name).html();
+            let safeNameDisplay = safeName.slice(0, 20) + (safeName.length > 20 ? "..." : "");
+            // Use the safe name for display and in the onclick handler
+            let fileDiv = $("<div>").addClass("w-full md:w-[300px] h-[180px] overflow-hidden rounded-lg").attr("onclick", `previewFile('${safeName}')`);
+            let titleDiv = $("<div>").addClass("w-full h-10 flex justify-center rounded-t-lg p-2 bg-gray-500");
+            let titleP = $("<p>").addClass("text-xl text-white font-bold").text(safeNameDisplay);
+            let img = $("<img>").addClass("object-cover").attr("src", src);
+    
+            titleDiv.append(titleP);
+            fileDiv.append(titleDiv).append(img);
+            $("#files_manage").append(fileDiv);
         })
 
     });
