@@ -449,20 +449,24 @@ bcrypt = ["bcrypt"]
 
 [[package]]
 name = "django-allauth"
-version = "0.51.0"
+version = "0.58.1"
 description = "Integrated set of Django applications addressing authentication, registration, account management as well as 3rd party (social) account authentication."
 optional = false
-python-versions = "*"
+python-versions = ">=3.7"
 files = [
-    {file = "django-allauth-0.51.0.tar.gz", hash = "sha256:ca1622733b6faa591580ccd3984042f12d8c79ade93438212de249b7ffb6f91f"},
+    {file = "django-allauth-0.58.1.tar.gz", hash = "sha256:485db513f1794f5636ae38a78e9414e8818ce076770b75a6f8a003ab3a32b8fa"},
 ]
 
 [package.dependencies]
-Django = ">=2.0"
+Django = ">=3.2"
 pyjwt = {version = ">=1.7", extras = ["crypto"]}
 python3-openid = ">=3.0.8"
-requests = "*"
+requests = ">=2.0.0"
 requests-oauthlib = ">=0.3.0"
+
+[package.extras]
+mfa = ["qrcode (>=7.0.0)"]
+saml = ["python3-saml (>=1.15.0,<2.0.0)"]
 
 [[package]]
 name = "django-annoying"
@@ -2267,4 +2271,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "552855fc5a3d57365eea7dd0b054eb21661e5a7dda92f72bf0b64021b3c9bf88"
+content-hash = "13c1ded61da855d3c506dbfb3aa9b0ac14912f8b4b51d8e3c2e927b942cbda0e"
