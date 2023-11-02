@@ -356,17 +356,17 @@
     const screenshots = document.getElementById('screenshots');
     let manage_div = document.getElementById("files_manage");
 
+    function escapeHtml(str) {return str.replace(/[&<>"']/g, function (s) {var entityMap = {"&": "&amp;","<": "&lt;",">": "&gt;",'"': '&quot;',"'": '&#39;',};return entityMap[s];});}
     function previewFile(file_name) {
         event.preventDefault();
-        if (!screenshots || !(screenshots instanceof HTMLInputElement) || !screenshots.files || !screenshots.files.length) return;
         Array.from(screenshots.files).map(file => {
-            if (file.name === file_name && file.type.startsWith('image/')) {
-                let src = URL.createObjectURL(file);                
-                // Set the src attribute for the image preview
-                $("#image-preview").attr("src", src).on('load', function() {
-                    URL.revokeObjectURL(src);  // Revoke the blob URL after it's used
-                });
-                $("#image-preview-wrapper").css("display", "flex");
+            if (file.name === file_name) {
+                let src = URL.createObjectURL(file);
+                if (src.startsWith('blob:')) {
+                    let escapedSrc = escapeHtml(src);
+                    $("#image-preview").attr("src", escapedSrc);
+                    $("#image-preview-wrapper").show();
+                }else {$("#image-preview-wrapper").hide();}
             }
         });
     }
@@ -401,14 +401,17 @@
 
         fileList.map(file => {
             let src = URL.createObjectURL(file);
-            $("#files_manage").append(`
-                <div class="w-full md:w-[300px] h-[180px] overflow-hidden rounded-lg" onclick="previewFile('${file.name}')">
-                    <div class="w-full h-10 flex justify-center rounded-t-lg p-2 bg-gray-500">
-                        <p class="text-xl text-white font-bold">${file.name.slice(0,20)}...</p>
-                    </div>
-                    <img class="object-cover" src="${src}" alt="">
-                </div>
-            `)
+            let safeName = $("<div>").text(file.name).html();
+            let safeNameDisplay = safeName.slice(0, 20) + (safeName.length > 20 ? "..." : "");
+            // Use the safe name for display and in the onclick handler
+            let fileDiv = $("<div>").addClass("w-full md:w-[300px] h-[180px] overflow-hidden rounded-lg").attr("onclick", `previewFile('${safeName}')`);
+            let titleDiv = $("<div>").addClass("w-full h-10 flex justify-center rounded-t-lg p-2 bg-gray-500");
+            let titleP = $("<p>").addClass("text-xl text-white font-bold").text(safeNameDisplay);
+            let img = $("<img>").addClass("object-cover").attr("src", escapeHtml(src));
+    
+            titleDiv.append(titleP);
+            fileDiv.append(titleDiv).append(img);
+            $("#files_manage").append(fileDiv);
         })
 
     });
