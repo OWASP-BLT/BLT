@@ -104,6 +104,7 @@ MIDDLEWARE = (
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "tz_detect.middleware.TimezoneMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 )
 
 TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
