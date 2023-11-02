@@ -356,7 +356,7 @@
     const screenshots = document.getElementById('screenshots');
     let manage_div = document.getElementById("files_manage");
 
-    function escapeHtml(str) {return str.replace(/[&<>"'/]/g, function (s) {var entityMap = {"&": "&amp;","<": "&lt;",">": "&gt;",'"': '&quot;',"'": '&#39;',"/": '&#x2F;'};return entityMap[s];});}
+    function escapeHtml(str) {return str.replace(/[&<>"']/g, function (s) {var entityMap = {"&": "&amp;","<": "&lt;",">": "&gt;",'"': '&quot;',"'": '&#39;',};return entityMap[s];});}
     function previewFile(file_name) {
         event.preventDefault();
         Array.from(screenshots.files).map(file => {
