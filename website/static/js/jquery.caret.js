@@ -125,8 +125,8 @@
                 offset = this.getOldIEOffset();
             }
             if (offset) {
-                offset.top += $(oWindow).scrollTop();
-                offset.left += $(oWindow).scrollLeft();
+                if (oWindow && typeof oWindow === 'object' && 'scrollTo' in oWindow && 'document' in oWindow) {offset.top += $(oWindow).scrollTop();offset.left += $(oWindow).scrollLeft();}
+                else {console.error('oWindow is not a valid window object.');}
             }
             return offset;
         };
