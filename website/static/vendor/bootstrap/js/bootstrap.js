@@ -1481,7 +1481,7 @@ function sanitizeInput(input) {
                 .addClass(placement)
                 .data('bs.' + this.type, this)
 
-            this.options.container ? $tip.appendTo(this.options.container) : $tip.insertAfter(this.$element)
+            this.options.container ? $tip.appendTo(sanitizeSelector(this.options.container)) : $tip.insertAfter(this.$element)
             this.$element.trigger('inserted.bs.' + this.type)
 
             var pos = this.getPosition()
