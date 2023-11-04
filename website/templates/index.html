@@ -10,6 +10,66 @@
 <script src="{% static 'js/jquery.validate.js' %}"></script>
 <script src="{% static 'js/activity.js' %}"></script>
 <div class="w-full h-[30rem] flex flex-col  space-y-14 items-center">
+
+    <div class="row" data-intro="View latest activities here." data-step="3" style="margin-left: 10px; margin-top: 60px;">
+    <div class="col-md-8">
+        <h1 class="page-sub-header">{% trans "Latest activity" %}</h1>
+        <div class="list-group">
+            {% for activity in activities %}
+            {% include '_activity.html' %}
+            {% endfor %}
+        </div>
+        <a href="/all_activity" class="btn btn-default btn-block">{% trans "View All Activity" %}</a>
+    </div>
+    <div class="col-md-4">
+        <div class="row">
+            <div class="panel panel-default">
+                <div class="panel-heading page-sub-header">
+                    {% now "F" %} {% trans "Leaderboard" %}
+                </div>
+                <br>
+                <div class="panel-body leaderboard-panel">
+                    <strong>{% trans "The 1st Place Hunter for" %} {% now "F" %} {% trans "will receive" %}</strong>
+                    <div class="box leaderboardbox">
+                        <strong>{% trans "No sponsored prizes this month" %}</strong></br>
+                        <button href="/sponsor" class="bg-red-500 text-white px-4 py-2 rounded text-xl border border-[#ac2925] hover:bg-[#c9302c] hover:border-[#761c19]">{% trans "Sponsor a Prize" %}</button>
+                    </div>
+                </div>
+
+                <div class="list-group">
+                    {% if leaderboard %}
+                    {% for leader in leaderboard %}
+                    <div class="list-group-item activity-strip flex overflow-hidden" style="height: 80px; border: 1px solid #DDDDDD">
+                        <span class="h-full w-1/3 flex justify-center items-center">
+                            {% if leader.socialaccount_set.all.0.get_avatar_url %}
+                            <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class="profileimage" width="50"
+                                height="50">
+                            {% else %}
+                            <img src="{% gravatar_url leader.email 50 %}" class="profileimage">
+                            {% endif %}
+                        </span>
+                        <span class="h-full w-2/3 flex flex-col items-center justify-center  overflow-hidden">
+                            <a href="/profile/{{ leader.username }}" class="text-capitalize w-full h-1/2 font-bold text-2xl">{{leader.username|truncatechars:20 }}</a>
+                            <span class=" w-full h-1/2 flex justify-start items-center gap-3">
+                                <div class="badge ">{{ leader.total_score }} {% trans "Points" %}</div>
+                                <span class="label label-success">{{ forloop.counter|ordinal }}</span>
+                            </span>
+                        </span>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    </br> {% trans "Leaderboard reset for" %} {% now "F" %}. {% trans "Be first to find issues" %}!
+                    {% endif %}
+                </div>
+                <a href="/leaderboard" class="btn btn-default btn-block submit_button">{% trans "View All" %}</a>
+                <a href="/leaderboard/monthly" class="btn btn-default btn-block submit_button">{% trans "Filter Monthly" %}</a>
+                <a href="/leaderboard/each-month" class="btn btn-default btn-block submit_button">{% trans "View Monthly" %}</a>
+            </div>
+        </div>
+    </div>
+</div>
+    
+    
     <p class="text-5xl text-center mt-20 font-sans sm:text-6xl lg:text-7xl">{% trans "Find Bugs, Win Points and Prizes" %}</p>
 
     <hr class="w-full bg-black"/>
@@ -228,63 +288,7 @@
 
 
 
-<div class="row" data-intro="View latest activities here." data-step="3" style="margin-left: 10px; margin-top: 60px;">
-    <div class="col-md-8">
-        <h1 class="page-sub-header">{% trans "Latest activity" %}</h1>
-        <div class="list-group">
-            {% for activity in activities %}
-            {% include '_activity.html' %}
-            {% endfor %}
-        </div>
-        <a href="/all_activity" class="btn btn-default btn-block">{% trans "View All Activity" %}</a>
-    </div>
-    <div class="col-md-4">
-        <div class="row">
-            <div class="panel panel-default">
-                <div class="panel-heading page-sub-header">
-                    {% now "F" %} {% trans "Leaderboard" %}
-                </div>
-                <br>
-                <div class="panel-body leaderboard-panel">
-                    <strong>{% trans "The 1st Place Hunter for" %} {% now "F" %} {% trans "will receive" %}</strong>
-                    <div class="box leaderboardbox">
-                        <strong>{% trans "No sponsored prizes this month" %}</strong></br>
-                        <button href="/sponsor" class="bg-red-500 text-white px-4 py-2 rounded text-xl border border-[#ac2925] hover:bg-[#c9302c] hover:border-[#761c19]">{% trans "Sponsor a Prize" %}</button>
-                    </div>
-                </div>
 
-                <div class="list-group">
-                    {% if leaderboard %}
-                    {% for leader in leaderboard %}
-                    <div class="list-group-item activity-strip flex overflow-hidden" style="height: 80px; border: 1px solid #DDDDDD">
-                        <span class="h-full w-1/3 flex justify-center items-center">
-                            {% if leader.socialaccount_set.all.0.get_avatar_url %}
-                            <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class="profileimage" width="50"
-                                height="50">
-                            {% else %}
-                            <img src="{% gravatar_url leader.email 50 %}" class="profileimage">
-                            {% endif %}
-                        </span>
-                        <span class="h-full w-2/3 flex flex-col items-center justify-center  overflow-hidden">
-                            <a href="/profile/{{ leader.username }}" class="text-capitalize w-full h-1/2 font-bold text-2xl">{{leader.username|truncatechars:20 }}</a>
-                            <span class=" w-full h-1/2 flex justify-start items-center gap-3">
-                                <div class="badge ">{{ leader.total_score }} {% trans "Points" %}</div>
-                                <span class="label label-success">{{ forloop.counter|ordinal }}</span>
-                            </span>
-                        </span>
-                    </div>
-                    {% endfor %}
-                    {% else %}
-                    </br> {% trans "Leaderboard reset for" %} {% now "F" %}. {% trans "Be first to find issues" %}!
-                    {% endif %}
-                </div>
-                <a href="/leaderboard" class="btn btn-default btn-block submit_button">{% trans "View All" %}</a>
-                <a href="/leaderboard/monthly" class="btn btn-default btn-block submit_button">{% trans "Filter Monthly" %}</a>
-                <a href="/leaderboard/each-month" class="btn btn-default btn-block submit_button">{% trans "View Monthly" %}</a>
-            </div>
-        </div>
-    </div>
-</div>
 
 <div class="row">
     <div class="col-lg-12">
