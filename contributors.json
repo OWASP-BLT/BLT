@@ -415,5 +415,18 @@
         "linkedin":"",
         "website":"",
         "bch_addr":""
+    },
+    {
+        "id":36,
+        "img":"https://avatars.githubusercontent.com/u/97744811?v=4",
+        "name":"Altafur Rahman",
+        "repository":"BLT | BLT-Flutter",
+        "short_description":"always want do something for the world☺",
+        "long_description":"Hi there, I'm Altafur Rahman Jisan! With a knack for Python and a dash of JavaScript, I turn code into comfort, crafting web experiences that feel like home. 🏡✨",
+        "location":"Chittagong, Bangladesh",
+        "twitter":"https://twitter.com/JisanAR03",
+        "linkedin":"https://www.linkedin.com/in/jisanar/",
+        "website":"https://github.com/JisanAR03",
+        "bch_addr":"wish me luck☺"
     }
 ]
