@@ -271,8 +271,10 @@ def github_callback(request):
     params = urllib.parse.urlencode(request.GET)
     url = f"{settings.CALLBACK_URL_FOR_GITHUB}?{params}"
     parsed_url = urlparse(url)
-    if parsed_url.netloc in ALLOWED_HOSTS:
+    if parsed_url.scheme == 'https' and parsed_url.netloc in ALLOWED_HOSTS:
         return redirect(url)
+    else:
+        return HttpResponseNotFound('<h1>Page not found</h1>')
 
 
 def google_callback(request):
