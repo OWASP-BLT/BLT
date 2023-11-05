@@ -552,11 +552,16 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     print('Web site exists')
 
                 # skip domain validation check if bugreport server down 
-                elif request.POST["label"] == "7":
+                elif request.POST["label"] == "7":  
                     pass
 
                 else:
-                    response = requests.get( "https://" + url ,timeout=2)
+            # Validate the URL provided by the user
+                    parsed_url = urllib.parse.urlparse(url)
+                    if parsed_url.scheme not in ["http", "https"]:
+                        raise Exception("Invalid URL scheme")
+
+                    response = requests.get(parsed_url.geturl(), timeout=2)
                     if response.status_code == 200:
                         print('Web site exists')
                     else:
