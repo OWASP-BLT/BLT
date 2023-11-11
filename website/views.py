@@ -10,7 +10,7 @@ import stripe
 import humanize
 from collections import deque
 from datetime import datetime, timezone, timedelta
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 from urllib.parse import urlsplit
 
 import requests
@@ -84,7 +84,20 @@ from .forms import FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm
 from decimal import Decimal
 from django.conf import settings
 from comments.models import Comment
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
 
+def is_valid_https_url(url):
+    validate = URLValidator(schemes=['https'])  # Only allow HTTPS URLs
+    try:
+        validate(url)
+        return True
+    except ValidationError:
+        return False
+def rebuild_safe_url(url):
+    parsed_url = urlparse(url)
+    # Rebuild the URL with scheme, netloc, and path only
+    return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, '', '', ''))
 
 #@cache_page(60 * 60 * 24)
 def index(request, template="index.html"):
@@ -560,9 +573,17 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     pass
 
                 else:
-                    response = requests.get( "https://" + url ,timeout=2)
-                    if response.status_code == 200:
-                        print('Web site exists')
+                    full_url = "https://" + url
+                    if is_valid_https_url(full_url):
+                        safe_url = rebuild_safe_url(full_url)
+                        try:
+                            response = requests.get(safe_url, timeout=5)
+                            if response.status_code == 200:
+                                print('Web site exists')
+                            else:
+                                raise Exception
+                        except Exception as e:
+                            raise Exception
                     else:
                         raise Exception
             except:
