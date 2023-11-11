@@ -40,16 +40,19 @@ function add_prize(){
     paid_in_cryptocurrency.checked = false;
 
     const prize_container_child_html = document.createElement('div');
+    const prize_name_sanitized = prize_data.prize_name.trim().substring(0, 8) + '...'; // Sanitize prize_name
+    const prize_description_sanitized = prize_data.prize_description.trim().substring(0, 55) + '...'; // Sanitize prize_description
+    const sanitizedNumberOfWinningProjects = Number(prize_data.number_of_winning_projects); // Sanitize number_of_winning_projects
     prize_container_child_html.innerHTML = `
             <div class="bg-white rounded-lg shadow-lg p-6 w-72 mr-5">
-                <h2 class="text-2xl font-bold mb-4 text-gray-800">${prize_data.prize_name.trim(0,8)}...</h2>
+                <h2 class="text-2xl font-bold mb-4 text-gray-800">${escapeHTML(prize_name_sanitized)}</h2>
                 <div class="mb-4">
                     <p class="text-red-500 font-bold">Cash Value (USD)</p>
                     <p class="text-gray-800">$1000</p>
                 </div>
                 <div class="mb-4">
                     <p class="text-gray-800 font-bold">Number of Winning Projects</p>
-                    <p class="text-gray-600">${prize_data.number_of_winning_projects}</p>
+                    <p class="text-gray-600">${sanitizedNumberOfWinningProjects}</p>
                 </div>
                 <div class="mb-4">
                     <p class="text-gray-800 font-bold">Reward Valid Submission</p>
@@ -57,12 +60,17 @@ function add_prize(){
                 </div>
                 <div class="mb-4">
                     <p class="text-red-500 font-bold">Prize Description</p>
-                    <p class="text-gray-800">${prize_data.prize_description.trim(0,55)}...</p>
+                    <p class="text-gray-800">${escapeHTML(prize_description_sanitized)}</p>
                 </div>
             </div>
     `;
 
     list_prize_container.appendChild(prize_container_child_html);
+    function escapeHTML(unsafeText) {
+        const div = document.createElement('div');
+        div.innerText = unsafeText;
+        return div.innerHTML;
+    }
 }
 
 function cancelForm(){

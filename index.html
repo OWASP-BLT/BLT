@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 	<title>BLT Landing Page</title>
 	<style>
@@ -8,11 +9,13 @@
 			padding: 0;
 			font-family: Arial, sans-serif;
 		}
+
 		.container {
 			max-width: 1200px;
 			margin: 0 auto;
 			padding: 20px;
 		}
+
 		header {
 			display: flex;
 			justify-content: space-between;
@@ -27,24 +30,28 @@
 			z-index: 999;
 			border-bottom: 1px solid #ccc;
 		}
+
 		.logo img {
 			height: 50px;
 		}
+
 		.search {
 			flex-grow: 1;
 			margin: 0 20px;
 			position: relative;
 		}
+
 		.search input[type="text"] {
 			width: 100%;
 			padding: 10px;
 			border: none;
 			border-radius: 20px;
-			box-shadow: 0 0 10px rgba(0,0,0,0.2);
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 			outline: none;
 			font-size: 16px;
 			background-color: #f9f9f9;
 		}
+
 		.search button {
 			position: absolute;
 			top: 50%;
@@ -56,7 +63,9 @@
 			outline: none;
 			padding: 10px;
 		}
-		.get-app, .login {
+
+		.get-app,
+		.login {
 			background-color: #007bff;
 			color: #fff;
 			padding: 10px 20px;
@@ -66,6 +75,7 @@
 			font-size: 16px;
 			margin-left: 10px;
 		}
+
 		.user-icon {
 			position: relative;
 			display: inline-block;
@@ -76,32 +86,38 @@
 			background-color: #007bff;
 			margin-left: 10px;
 		}
+
 		.user-icon img {
 			display: block;
 			height: 100%;
 			margin: 0 auto;
 		}
+
 		.dropdown {
 			position: absolute;
 			top: 60px;
 			right: 10px;
 			background-color: #fff;
-			box-shadow: 0 0 10px rgba(0,0,0,0.2);
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 			padding: 10px;
 			display: none;
 		}
+
 		.dropdown a {
 			display: block;
 			padding: 5px 0;
 			color: #333;
 			text-decoration: none;
 		}
+
 		.dropdown a:hover {
 			color: #007bff;
 		}
+
 		.user-icon:hover .dropdown {
 			display: block;
 		}
+
 		.navbar {
 			position: fixed;
 			top: 80px;
@@ -113,161 +129,186 @@
 			padding: 10px;
 			border-right: 1px solid #ccc;
 		}
+
 		.navbar a {
 			display: block;
 			padding: 10px 0;
 			color: #333;
 			text-decoration: none;
 		}
-        .navbar a:hover {
-		background-color: #007bff;
-		color: #fff;
-	}
-	.join-website {
-		background-color: #007bff;
-		color: #fff;
-		padding: 10px 20px;
-		border: none;
-		border-radius: 20px;
-		cursor: pointer;
-		font-size: 16px;
-		margin-top: 20px;
-	}
-	.top-bar {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-top: 120px;
-	}
-	.top-bar img {
-		width: 23%;
-		cursor: pointer;
-		position: relative;
-	}
-	.top-bar .post {
-		position: absolute;
-		top: 40%;
-		left: 0;
-		right: 0;
-		text-align: center;
-		font-size: 18px;
-		font-weight: bold;
-		color: #fff;
-		text-shadow: 0 0 10px rgba(0,0,0,0.7);
-		cursor: pointer;
-	}
-	.top-bar .user {
-		position: absolute;
-		bottom: 10%;
-		left: 10px;
-		display: flex;
-		align-items: center;
-		color: #fff;
-		font-size: 14px;
-		font-weight: bold;
-	}
-	.top-bar .user img {
-		width: 20px;
-		height: 20px;
-		border-radius: 50%;
-		margin-right: 10px;
-	}
-	.tags {
-		margin-top: 30px;
-	}
-	.tags a {
-		display: inline-block;
-		background-color: #f9f9f9;
-		color: #333;
-		padding: 5px 10px;
-		border-radius: 20px;
-		margin-right: 10px;
-		margin-bottom: 10px;
-		font-size: 14px;
-		text-decoration: none;
-		box-shadow: 0 0 5px rgba(0,0,0,0.2);
-		transition: all 0.2s ease-in-out;
-	}
-	.tags a:hover {
-		background-color: #007bff;
-		color: #fff;
-	}
-	.recent-bugs {
-		display: flex;
-		flex-wrap: wrap;
-		margin-top: 30px;
-	}
-	.bug {
-		flex-basis: calc(33.33% - 20px);
-		margin-right: 20px;
-		margin-bottom: 20px;
-		background-color: #fff;
-		box-shadow: 0 0 10px rgba(0,0,0,0.2);
-		border-radius: 10px;
-		overflow: hidden;
-		position: relative;
-	}
-	.bug img {
-		width: 100%;
-		height: 200px;
-		object-fit: cover;
-		object-position: center;
-	}
-	.bug .details {
-		padding: 10px;
-		display: flex;
-		align-items: center;
-	}
-	.bug .details img {
-		width: 30px;
-		height: 30px;
-		border-radius: 50%;
-		margin-right: 10px;
-	}
-	.bug .details h3 {
-		font-size: 16px;
-		font-weight: bold;
-		margin: 0;
-	}
-	.bug .details p {
-		font-size: 14px;
-		margin: 0;
-    }
-	.floating-box {
-		position: fixed;
-		top: 80px;
-		right: 20px;
-		background-color: #f9f9f9;
-		padding: 20px;
-		box-shadow: 0 0 10px rgba(0,0,0,0.2);
-		border-radius: 10px;
-		text-align: center;
-		z-index: 999;
-	}
-	.floating-box h4 {
-		font-size: 16px;
-		font-weight: bold;
-		margin-top: 0;
-		margin-bottom: 20px;
-	}
-	.floating-box ul {
-		padding: 0;
-		list-style: none;
-		margin-bottom: 0;
-	}
-	.floating-box li {
-		margin-bottom: 10px;
-	}
-	.floating-box a {
-		color: #333;
-		text-decoration: none;
-		transition: all 0.2s ease-in-out;
-	}
-	.floating-box a:hover {
-		color: #007bff;
-	}
-</style>
+
+		.navbar a:hover {
+			background-color: #007bff;
+			color: #fff;
+		}
+
+		.join-website {
+			background-color: #007bff;
+			color: #fff;
+			padding: 10px 20px;
+			border: none;
+			border-radius: 20px;
+			cursor: pointer;
+			font-size: 16px;
+			margin-top: 20px;
+		}
+
+		.top-bar {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-top: 120px;
+		}
+
+		.top-bar img {
+			width: 23%;
+			cursor: pointer;
+			position: relative;
+		}
+
+		.top-bar .post {
+			position: absolute;
+			top: 40%;
+			left: 0;
+			right: 0;
+			text-align: center;
+			font-size: 18px;
+			font-weight: bold;
+			color: #fff;
+			text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+			cursor: pointer;
+		}
+
+		.top-bar .user {
+			position: absolute;
+			bottom: 10%;
+			left: 10px;
+			display: flex;
+			align-items: center;
+			color: #fff;
+			font-size: 14px;
+			font-weight: bold;
+		}
+
+		.top-bar .user img {
+			width: 20px;
+			height: 20px;
+			border-radius: 50%;
+			margin-right: 10px;
+		}
+
+		.tags {
+			margin-top: 30px;
+		}
+
+		.tags a {
+			display: inline-block;
+			background-color: #f9f9f9;
+			color: #333;
+			padding: 5px 10px;
+			border-radius: 20px;
+			margin-right: 10px;
+			margin-bottom: 10px;
+			font-size: 14px;
+			text-decoration: none;
+			box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+			transition: all 0.2s ease-in-out;
+		}
+
+		.tags a:hover {
+			background-color: #007bff;
+			color: #fff;
+		}
+
+		.recent-bugs {
+			display: flex;
+			flex-wrap: wrap;
+			margin-top: 30px;
+		}
+
+		.bug {
+			flex-basis: calc(33.33% - 20px);
+			margin-right: 20px;
+			margin-bottom: 20px;
+			background-color: #fff;
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+			border-radius: 10px;
+			overflow: hidden;
+			position: relative;
+		}
+
+		.bug img {
+			width: 100%;
+			height: 200px;
+			object-fit: cover;
+			object-position: center;
+		}
+
+		.bug .details {
+			padding: 10px;
+			display: flex;
+			align-items: center;
+		}
+
+		.bug .details img {
+			width: 30px;
+			height: 30px;
+			border-radius: 50%;
+			margin-right: 10px;
+		}
+
+		.bug .details h3 {
+			font-size: 16px;
+			font-weight: bold;
+			margin: 0;
+		}
+
+		.bug .details p {
+			font-size: 14px;
+			margin: 0;
+		}
+
+		.floating-box {
+			position: fixed;
+			top: 80px;
+			right: 20px;
+			background-color: #f9f9f9;
+			padding: 20px;
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+			border-radius: 10px;
+			text-align: center;
+			z-index: 999;
+		}
+
+		.floating-box h4 {
+			font-size: 16px;
+			font-weight: bold;
+			margin-top: 0;
+			margin-bottom: 20px;
+		}
+
+		.floating-box ul {
+			padding: 0;
+			list-style: none;
+			margin-bottom: 0;
+		}
+
+		.floating-box li {
+			margin-bottom: 10px;
+		}
+
+		.floating-box a {
+			color: #333;
+			text-decoration: none;
+			transition: all 0.2s ease-in-out;
+		}
+
+		.floating-box a:hover {
+			color: #007bff;
+		}
+	</style>
 </head>
+
 <body>
 	<header>
 		<div class="logo">
@@ -291,12 +332,17 @@
 		</div>
 	</header>
 	<div class="container">
-		<nav class="navbar">
-			<a href="#">Home</a>
-			<a href="/html/dashboard.html">Dashboard</a>
-			<a href="/html/team.html">Team</a>
-			<a href="#">Topics</a>
-			<button class="join-website">Join Website</button>
+		<nav class="navbar bg-gray-200 h-screen w-48 fixed top-20 left-0 overflow-y-auto p-4 border-r border-gray-300">
+			<a href="#"
+				class="block text-gray-700 text-lg no-underline py-2 hover:bg-blue-500 hover:text-white">Home</a>
+			<a href="/html/dashboard.html"
+				class="block text-gray-700 text-lg no-underline py-2 hover:bg-blue-500 hover:text-white">Dashboard</a>
+			<a href="/html/team.html"
+				class="block text-gray-700 text-lg no-underline py-2 hover:bg-blue-500 hover:text-white">Team</a>
+			<a href="#"
+				class="block text-gray-700 text-lg no-underline py-2 hover:bg-blue-500 hover:text-white">Topics</a>
+			<button class="join-website bg-blue-500 text-white px-4 py-2 rounded-full cursor-pointer mt-4">Join
+				Website</button>
 		</nav>
 		<div class="main-content">
 			<div class="top-bar">
@@ -329,7 +375,7 @@
 				<a href="#">Tag5</a>
 			</div>
 
-  <div class="recent-bugs">
+			<div class="recent-bugs">
 				<div class="bug">
 					<img src="https://via.placeholder.com/400x200" alt="Bug">
 					<div class="details">
@@ -390,7 +436,8 @@
 		</div>
 	</div>
 </body>
-</html>          
+
+</html>
 
 
 

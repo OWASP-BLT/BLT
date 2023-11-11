@@ -5700,8 +5700,18 @@
 
     jQuery.extend({
         htmlPrefilter: function (html) {
-            return html.replace(rxhtmlTag, "<$1></$2>");
-        },
+            var safeTagsToExpand = /<([a-z]+)([^<]*)\/>/gi;
+            var expandedHTML = html.replace(safeTagsToExpand, function(match, tag, attributes) {
+                // Check if the tag is one that should never be self-closing
+                if (!/^(?:area|br|col|embed|hr|img|input|link|meta|param)$/i.test(tag)) {
+                    return "<" + tag + attributes + "></" + tag + ">";
+                } else {
+                    // If it's a self-closing tag, leave it as is
+                    return match;
+                }
+            });
+            return sanitizeHTML(expandedHTML);
+        },        
 
         clone: function (elem, dataAndEvents, deepDataAndEvents) {
             var i, l, srcElements, destElements,

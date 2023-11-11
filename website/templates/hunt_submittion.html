@@ -199,12 +199,18 @@
   {% endif %}
 </table>
 <script type="text/javascript">
+  function sanitizeInput(input) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(input));
+    return div.innerHTML;
+  }
   $(function () {
     $('button[name="test_files"]').on('click', function () {
       $(this).parent().find('input[type=file]').click();
     });
     $('input[name="screenshot"]').on('change', function () {
       var file = $(this).val().replace('C:\\fakepath\\', '');
+      file = sanitizeInput(file);
       $(this).parent().find('.badge').html(file);
     });
     $(".duplicates").click(function () {

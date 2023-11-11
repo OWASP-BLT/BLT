@@ -4,7 +4,7 @@
 {% load custom_tags %}
 
 {% block head %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.0/flowbite.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.0/flowbite.min.js" integrity="sha384-SXh3DHBSUxvOFk7+R9qN3hv+DtgPJz4vQwOArU6zxWGnvtR1sy+XmzKUkNh2qWST" crossorigin="anonymous"></script>
 {% endblock %}
 
 {% block natural_content %}
@@ -71,7 +71,7 @@
                                 target="_blank"
                                 href="https://twitter.com/intent/tweet?text=Bug Found on @{{ object.domain_title }} - {{ object.description }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}"
                                 class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
-                                <i class="fa-brands fa-twitter text-2xl mr-2"> </i>
+                                <i class="fa-brands fa-x-twitter text-2xl mr-2"> </i>
                                 Share
                             </a>
 
@@ -119,7 +119,7 @@
                                     <p class="text-3xl font-bold">Status:</p>
                                     <div class="w-1/2 flex {% if request.user == object.user %} justify-between {% else %} justify-end {% endif %}">
                                         {% if request.user == object.user or request.is_staff or request.is_superuser%} 
-                                            <a class="edit-issue-status font-bold bg-gray-600 px-5 py-1 text-white rounded-xl" id="issue_stat">
+                                            <a class="edit-issue-status font-bold bg-gray-600 px-5 py-1 text-white rounded-xl mr-2" id="issue_stat">
                                                 Click
                                                 to
                                                 {% if object.status == "open" %}Close{% else %}Open{% endif %}

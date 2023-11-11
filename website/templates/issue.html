@@ -198,7 +198,7 @@
                 </span>
             {% endif %}
             
-            <a class="tweet-btn fa fa-twitter btn btn-xs tweet-btn"
+            <a class="tweet-btn fa fa-x-twitter btn btn-xs tweet-btn"
                 href="https://twitter.com/intent/tweet?text=Bug on @{{ object.domain_title }} - {{ object.description }}"
                 data-size="small"> Tweet</a>
             <span class="fb-share-button"
@@ -390,7 +390,9 @@
             {% include 'comments.html' %}
         </div>
         {% else %}
+        <div id="target_div">
         <p>No comment added yet. Be the first to comment!</p>
+        </div>
         {% endif %}
         {% if user.is_authenticated %}
         <form id="comments">
@@ -410,6 +412,12 @@
 </div>
 
 <script type="text/javascript">
+    function sanitizeURL(url) {
+        var a = document.createElement('a');
+        a.href = encodeURI(url);
+        return a.href;
+    }
+    
    var label = "{{object.label}}";
 
     $(document).on('click', '.edit-issue', function (e) {
@@ -454,7 +462,8 @@
             success: function (data) {
                 $('.issue-desc').text($('.form input[name=description]').val());
                 $('.issue-domain').text($('.form input[name=domain]').val());
-                $('.issue-domain').attr("href", ($('.form input[name=domain]').val()));
+                var sanitizedDomain = sanitizeURL($('.form input[name=domain]').val());
+                $('.issue-domain').attr("href", sanitizedDomain);
                 label = $('.form select').val();
                 var l = $(".form select option[value='" + label + "']").text();
                 $('.bug-label').text(l);

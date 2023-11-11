@@ -1,4 +1,5 @@
 {% extends 'base.html' %} 
+{% load i18n %}
 {% load static %}
 {% load gravatar %}
 {% load socialaccount %}
@@ -98,7 +99,7 @@
             {% csrf_token %}
             <div class="w-full pb-12">
                 <p class="text-5xl font-semibold leading-7 text-gray-900">
-                    REPORT A BUG
+                    {% trans 'REPORT A BUG' %}
                 </p>
 
                 <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
@@ -106,7 +107,7 @@
                         <label
                         for="url"
                         class="block text-2xl font-semibold leading-6 text-gray-900"
-                        >DOMAIN URL</label
+                        >{% trans 'DOMAIN URL' %}</label
                         >
                         <div class="mt-2">
                         <input
@@ -124,7 +125,7 @@
                     <div class="h-full flex items-end w-full min-w-[150px]">
                         <a
                             class="duplicates w-full h-[60%] min-h-[40px] rounded-md hover:text-white cursor-pointer hover:no-underline hover:shadow-form bg-red-500 hover:bg-red-700 items-center justify-center flex text-2xl font-semibold text-white outline-none">
-                            Check for Duplicates
+                            {% trans 'Check for Duplicates' %}
                         </a>
                     </div>
                 </div>
@@ -135,7 +136,7 @@
                         <label
                         for="description"
                         class="block text-2xl font-semibold leading-6 text-gray-900"
-                        >BUG TITLE</label
+                        >{% trans 'BUG TITLE' %}</label
                         >
                         <div class="mt-2">
                             <input
@@ -156,7 +157,7 @@
                             <label
                             for="label"
                             class="block text-2xl font-semibold leading-6 text-gray-900"
-                            >BUG TYPE</label
+                            >{% trans 'BUG TYPE' %}</label
                             >
                             <div class="mt-2">
                                 <select
@@ -182,7 +183,7 @@
                         <label
                         for="hunt"
                         class="block text-2xl font-semibold leading-6 text-gray-900"
-                        >BUG HUNT</label
+                        >{% trans 'BUG HUNT' %}</label
                         >
                         <div class="mt-2">
                             <select
@@ -191,7 +192,7 @@
                                 class="flex w-full placeholder:text-xl rounded-md border-0 py-4 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset"
                             >
                                 {% if not report_on_hunt %}
-                                    <option value="None">REPORT INDEPENDENTLY</option>
+                                    <option value="None">{% trans 'REPORT INDEPENDENTLY' %}</option>
                                 {% endif %}
                                 {% for hunt in hunts %}
                                     <option value="{{ hunt.id }}">{{ hunt.name }}</option>
@@ -215,7 +216,7 @@
                             <label
                             for="file"
                             class="block text-2xl font-medium leading-6 text-gray-900"
-                            >SCREENSHOTS</label
+                            >{% trans 'SCREENSHOTS' %}</label
                             >
                             <div
                             id="screenshot-container"
@@ -239,7 +240,7 @@
                                     for="screenshots"
                                     class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500"
                                 >
-                                    <span class="text-red-600">Upload screenshots</span>
+                                    <span class="text-red-600">{% trans 'Upload screenshots' %}</span>
                                     <input
                                     id="screenshots"
                                     name="screenshots"
@@ -250,7 +251,7 @@
                                     max="4"
                                     />
                                 </label>
-                                <p class="pl-1">or drag and drop</p>
+                                <p class="pl-1">{% trans 'or drag and drop' %}</p>
                                 </div>
                                 <p class="text-lg leading-5 text-gray-600">
                                     PNG, JPG, GIF up to 5 images
@@ -278,16 +279,16 @@
                 <div class="w-1/2 pl-10 mt-5">
                     <div class="flex w-full items-center justify-between">
                         <h2 class="text-2xl font-semibold leading-7 text-gray-900">
-                        ADD TEAM MEMBERS
+                            {% trans 'ADD TEAM MEMBERS' %}
                         </h2>
                         
                         <button onclick="add_email_container()" type="button" class="w-[70px] h-[30px] mt-5 text-lg md:text-2xl md:w-[120px] md:h-[40px] md:mt-10 bg-red-500 text-white font-bold rounded-md hover:bg-red-600 transition-all">
-                            Add Email
+                            {% trans 'Add Email' %}
                         </button>
 
                     </div>
                     <p class="mt-4 text-xl leading-6 text-gray-600">
-                        Team members should be bughunts users.
+                        {% trans 'Team members should be bughunts users' %}.
                     </p>
     
     
@@ -295,7 +296,7 @@
                         <label
                             for="team_members"
                             class="block text-2l font-medium leading-6 text-gray-900"
-                            >Email address
+                            >{% trans 'Email address' %}
                         </label>
                     </div>
                 </div>
@@ -309,8 +310,7 @@
                         <label class="w-full ml-5 flex items-center text-2xl border-2 border-gray-200 rounded px-10">
                             <input id="default-checkbox" type="checkbox" name="private" value="true"
                                 class="w-7 h-7 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                            <label for="default-checkbox" class="w-full text-center  ml-4 mt-6 text-3xl  font-medium text-gray-900">Report
-                                Privately</label>
+                            <label for="default-checkbox" class="w-full text-center  ml-4 mt-6 text-3xl  font-medium text-gray-900">{% trans 'Report Privately' %}</label>
                         </label>
 
 
@@ -325,14 +325,14 @@
                             onclick="cancelForm()"
                             class="text-md font-semibold leading-6 mr-10 text-gray-900"
                         >
-                        Cancel
+                        {% trans 'Cancel' %}
                         </button>
                         <button
                             type="submit"
                             name="reportbug_button"
                             class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500"
                         >
-                        Report
+                        {% trans 'Report' %}
                         </button>
                     </div>
                 </div>
@@ -356,15 +356,19 @@
     const screenshots = document.getElementById('screenshots');
     let manage_div = document.getElementById("files_manage");
 
+    function escapeHtml(str) {return str.replace(/[&<>"']/g, function (s) {var entityMap = {"&": "&amp;","<": "&lt;",">": "&gt;",'"': '&quot;',"'": '&#39;',};return entityMap[s];});}
     function previewFile(file_name) {
         event.preventDefault();
         Array.from(screenshots.files).map(file => {
-            if (file.name == file_name) {
+            if (file.name === file_name) {
                 let src = URL.createObjectURL(file);
-                $("#image-preview").attr("src", src);
-                $("#image-preview-wrapper").css("display", "flex");
+                if (src.startsWith('blob:')) {
+                    let escapedSrc = escapeHtml(src);
+                    $("#image-preview").attr("src", escapedSrc);
+                    $("#image-preview-wrapper").show();
+                }else {$("#image-preview-wrapper").hide();}
             }
-        })
+        });
     }
 
     $("#image-preview-wrapper").on("click", () => {
@@ -397,14 +401,17 @@
 
         fileList.map(file => {
             let src = URL.createObjectURL(file);
-            $("#files_manage").append(`
-                <div class="w-full md:w-[300px] h-[180px] overflow-hidden rounded-lg" onclick="previewFile('${file.name}')">
-                    <div class="w-full h-10 flex justify-center rounded-t-lg p-2 bg-gray-500">
-                        <p class="text-xl text-white font-bold">${file.name.slice(0,20)}...</p>
-                    </div>
-                    <img class="object-cover" src="${src}" alt="">
-                </div>
-            `)
+            let safeName = $("<div>").text(file.name).html();
+            let safeNameDisplay = safeName.slice(0, 20) + (safeName.length > 20 ? "..." : "");
+            // Use the safe name for display and in the onclick handler
+            let fileDiv = $("<div>").addClass("w-full md:w-[300px] h-[180px] overflow-hidden rounded-lg").attr("onclick", `previewFile('${safeName}')`);
+            let titleDiv = $("<div>").addClass("w-full h-10 flex justify-center rounded-t-lg p-2 bg-gray-500");
+            let titleP = $("<p>").addClass("text-xl text-white font-bold").text(safeNameDisplay);
+            let img = $("<img>").addClass("object-cover").attr("src", escapeHtml(src));
+    
+            titleDiv.append(titleP);
+            fileDiv.append(titleDiv).append(img);
+            $("#files_manage").append(fileDiv);
         })
 
     });
@@ -414,7 +421,7 @@
         $(".duplicates").click(async () => {
             var uri = $("input[name='url']").val();
 
-            $("#view_all").attr("href", `/search/?query=${uri}`);
+            $("#view_all").attr("href", `/search/?query=${encodeURIComponent(uri)}`);
 
             let resp = await fetch("/api/v1/urlcheck/", {
                 method: "POST",
