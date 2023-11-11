@@ -1844,13 +1844,13 @@ pyasn1 = ">=0.1.3"
 
 [[package]]
 name = "selenium"
-version = "4.15.1"
+version = "4.15.2"
 description = ""
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "selenium-4.15.1-py3-none-any.whl", hash = "sha256:e3a4ebdcc3eed27eec69f8000d798923dbf4897c97cc6441eb88a1386809170d"},
-    {file = "selenium-4.15.1.tar.gz", hash = "sha256:8f0436b5949f1d4aa742f3dff0d748b955c371be92db8b6b008bf9c9ca227de7"},
+    {file = "selenium-4.15.2-py3-none-any.whl", hash = "sha256:9e82cd1ac647fb73cf0d4a6e280284102aaa3c9d94f0fa6e6cc4b5db6a30afbf"},
+    {file = "selenium-4.15.2.tar.gz", hash = "sha256:22eab5a1724c73d51b240a69ca702997b717eee4ba1f6065bf5d6b44dba01d48"},
 ]
 
 [package.dependencies]
@@ -1982,13 +1982,13 @@ test = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "stripe"
-version = "7.3.0"
+version = "7.4.0"
 description = "Python bindings for the Stripe API"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "stripe-7.3.0-py2.py3-none-any.whl", hash = "sha256:77bd0c3020ef7a5f3005127152898f6aabfe6056d11f1175902c50158911e332"},
-    {file = "stripe-7.3.0.tar.gz", hash = "sha256:4288d180cf63a60cb4803282830f862a8954e45207eb6e1d0870171b15234c94"},
+    {file = "stripe-7.4.0-py2.py3-none-any.whl", hash = "sha256:475ef52ed0bdea1c115460bd211a840ae02f9f678c6c8fd59c459ccb73f95724"},
+    {file = "stripe-7.4.0.tar.gz", hash = "sha256:3dc7dd823936d3262dd430abe57438af32e8910352dbb34eb296bfdb59ef0aec"},
 ]
 
 [package.dependencies]
@@ -2267,4 +2267,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "03b798e2c4d6f356053c21491c6f4dcd652b83b72cec64a8751c5dc5010b839a"
+content-hash = "480ef4e040f27106a16081b7d4e9ec188c4755534b5e478b35dd12374e6b81fe"
