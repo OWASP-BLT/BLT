@@ -786,6 +786,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             context["hunts"] = Hunt.objects.values("id","name").filter(is_published=True,result_published=False)
             context["report_on_hunt"] = False
 
+        context['top_domains'] = Issue.objects.values("domain__name").annotate(count=Count('domain__name')).order_by("-count")[:30]
 
 
         return context

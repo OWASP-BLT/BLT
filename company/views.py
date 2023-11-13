@@ -3,7 +3,7 @@ import uuid
 import json
 from django import http 
 import requests
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 from datetime import timedelta, datetime
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -13,6 +13,8 @@ from django.contrib import messages
 from django.db.models import Q, Sum, Count
 from django.utils import timezone
 from django.db.models.functions import ExtractMonth
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.contrib.auth.models import User
 from django.http import Http404
@@ -20,6 +22,18 @@ from django.http import Http404
 from website.models import Company, Domain, Issue, Hunt, UserProfile, HuntPrize
 
 restricted_domain = ["gmail.com","hotmail.com","outlook.com","yahoo.com","proton.com"]
+
+def is_valid_https_url(url):
+    validate = URLValidator(schemes=['https'])  # Only allow HTTPS URLs
+    try:
+        validate(url)
+        return True
+    except ValidationError:
+        return False
+def rebuild_safe_url(url):
+    parsed_url = urlparse(url)
+    # Rebuild the URL with scheme, netloc, and path only
+    return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, '', '', ''))
 
 
 def get_email_domain(email):
@@ -433,10 +447,15 @@ class AddDomainView(View):
 
         # validate domain url
         try:
-            print(domain_data["url"])
-            response = requests.get(domain_data["url"] ,timeout=5)
-            if response.status_code != 200:
-                raise Exception
+            if is_valid_https_url(domain_data["url"]):
+                safe_url = rebuild_safe_url(domain_data["url"])
+                try:
+                    response = requests.get(safe_url, timeout=5)
+                    if response.status_code != 200:
+                        raise Exception
+                except Exception as e:
+                    messages.error(request,"Domain does not exist.")
+                    return redirect("add_domain",company)
         except Exception as e:
             print(e)
             messages.error(request,"Domain does not exist.")
