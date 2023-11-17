@@ -85,7 +85,8 @@
     .bookmark,
     .copy-btn,
     .flag_btn a.flaged-by,
-    .like_btn a.liked-by {
+    .like_btn a.liked-by,
+    .dislike_btn a.disliked-by {
         vertical-align: top;
     }
 
@@ -183,8 +184,13 @@
                 <i class="glyphicon glyphicon-copy"></i> Copy Title
             </button>
             
-            <span class="like_btn">
-                {% include '_likes.html' %}
+            <span class="like_dislike_buttons">
+                <span class="like_btn">
+                    {% include '_likes.html' %}
+                </span>
+                <span class="dislike_btn">
+                    {% include '_dislikes.html' %}
+                </span>
             </span>
             <span class="flag_btn">
                 {% include '_flags.html' %}
@@ -547,6 +553,35 @@
                 $('.like_btn').html(data);
             },
         });
+        // $.ajax({
+        //     type: 'GET',
+        //     url: '/update_issue_likes_dislikes/' + issue_pk + '/',
+        //     data: {},
+        //     success: function (data) {
+        //         $('.dislike_btn').html(data);
+        //     },
+        // })
+    });
+
+    $('body').on('click', '.dislike_undislike', function (e) {
+        e.preventDefault();
+        var issue_pk = $(this).attr('name');
+        $.ajax({
+            type: 'GET',
+            url: '/dislike_issue/' + issue_pk + '/',
+            data: {},
+            success: function (data) {
+                $('.dislike_btn').html(data);
+            },
+        });
+        // $.ajax({
+        //     type: 'GET',
+        //     url: '/update_issue_likes_dislikes/' + issue_pk + '/',
+        //     data: {},
+        //     success: function (data) {
+        //         $('.like_btn').html(data);
+        //     },
+        // })
     });
 
     $('body').on('click', '.flag_unflag', function (e) {
