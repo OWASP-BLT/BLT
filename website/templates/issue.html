@@ -185,12 +185,7 @@
             </button>
             
             <span class="like_dislike_buttons">
-                <span class="like_btn">
-                    {% include '_likes.html' %}
-                </span>
-                <span class="dislike_btn">
-                    {% include '_dislikes.html' %}
-                </span>
+                {% include '_likes_and_dislikes.html' %}
             </span>
             <span class="flag_btn">
                 {% include '_flags.html' %}
@@ -550,17 +545,9 @@
             url: '/like_issue/' + issue_pk + '/',
             data: {},
             success: function (data) {
-                $('.like_btn').html(data);
+                $('.like_dislike_buttons').html(data);
             },
         });
-        // $.ajax({
-        //     type: 'GET',
-        //     url: '/update_issue_likes_dislikes/' + issue_pk + '/',
-        //     data: {},
-        //     success: function (data) {
-        //         $('.dislike_btn').html(data);
-        //     },
-        // })
     });
 
     $('body').on('click', '.dislike_undislike', function (e) {
@@ -571,17 +558,9 @@
             url: '/dislike_issue/' + issue_pk + '/',
             data: {},
             success: function (data) {
-                $('.dislike_btn').html(data);
+                $('.like_dislike_buttons').html(data);
             },
         });
-        // $.ajax({
-        //     type: 'GET',
-        //     url: '/update_issue_likes_dislikes/' + issue_pk + '/',
-        //     data: {},
-        //     success: function (data) {
-        //         $('.like_btn').html(data);
-        //     },
-        // })
     });
 
     $('body').on('click', '.flag_unflag', function (e) {
