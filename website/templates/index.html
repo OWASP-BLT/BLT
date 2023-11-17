@@ -38,7 +38,7 @@
                 <div class="list-group">
                     {% if leaderboard %}
                     {% for leader in leaderboard %}
-                    <div class="list-group-item activity-strip flex overflow-hidden" style="height: 80px; border: 1px solid #DDDDDD">
+                    <div class="list-group-item activity-strip flex overflow-hidden" style="height: 80px; display:flex; border: 1px solid #DDDDDD">
                         <span class="h-full w-1/3 flex justify-center items-center">
                             {% if leader.socialaccount_set.all.0.get_avatar_url %}
                             <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class="profileimage" width="50"
