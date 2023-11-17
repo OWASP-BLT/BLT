@@ -1614,6 +1614,8 @@ class IssueView(DetailView):
         context["all_users"] = User.objects.all()
         context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
         context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
+        context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
+        context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
 
         context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
         context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
@@ -1903,6 +1905,10 @@ def like_issue(request, issue_pk):
     issue_pk = int(issue_pk)
     issue = Issue.objects.get(pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
+
+    if userprof in UserProfile.objects.filter(issue_downvoted=issue):
+        userprof.issue_downvoted.remove(issue)
+
     if userprof in UserProfile.objects.filter(issue_upvoted=issue):
         userprof.issue_upvoted.remove(issue)
     else:
@@ -1939,8 +1945,76 @@ def like_issue(request, issue_pk):
     total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
     context["object"] = issue
     context["likes"] = total_votes
+    context["likers"] = UserProfile.objects.filter(issue_upvoted=issue)
+    context["dislikes"] = UserProfile.objects.filter(issue_downvoted=issue).count()
+    context["dislikers"] = UserProfile.objects.filter(issue_downvoted=issue)
+
     return render(request, "_likes.html", context)
 
+
+@login_required(login_url="/accounts/login")
+def dislike_issue(request, issue_pk):
+    context = {}
+    issue_pk = int(issue_pk)
+    issue = Issue.objects.get(pk=issue_pk)
+    userprof = UserProfile.objects.get(user=request.user)
+
+    if userprof in UserProfile.objects.filter(issue_upvoted=issue):
+        userprof.issue_upvoted.remove(issue)
+    
+    if userprof in UserProfile.objects.filter(issue_downvoted=issue):
+        userprof.issue_downvoted.remove(issue)
+    else:
+        userprof.issue_downvoted.add(issue)
+        liked_user = issue.user
+        liker_user = request.user
+        issue_pk = issue.pk
+        msg_plain = render_to_string(
+            "email/issue_liked.txt",
+            {
+                "liker_user": liker_user.username,
+                "liked_user": liked_user.username,
+                "issue_pk": issue_pk,
+            },
+        )
+        msg_html = render_to_string(
+            "email/issue_liked.txt",
+            {
+                "liker_user": liker_user.username,
+                "liked_user": liked_user.username,
+                "issue_pk": issue_pk,
+            },
+        )
+
+        send_mail(
+            "Your issue got an upvote!!",
+            msg_plain,
+            settings.EMAIL_TO_STRING,
+            [liked_user.email],
+            html_message=msg_html,
+        )
+
+    userprof.save()
+    total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
+    context["object"] = issue
+    context["likes"] = UserProfile.objects.filter(issue_upvoted=issue).count()
+    context["likers"] = UserProfile.objects.filter(issue_upvoted=issue)
+    context["dislikes"] = total_downvotes
+    context["dislikers"] = UserProfile.objects.filter(issue_downvoted=issue)
+
+    return render(request, ["_dislikes.html", "_likes.html"], context)
+
+
+def update_issue_likes_dislikes(request,issue_pk):
+    context = {}
+    issue_pk = int(issue_pk)
+    issue = Issue.objects.get(pk=issue_pk)
+    context["likes"] = UserProfile.objects.filter(issue_upvoted=issue).count()
+    context["likers"] = UserProfile.objects.filter(issue_upvoted=issue)
+    context["dislikes"] = UserProfile.objects.filter(issue_downvoted=issue).count()
+    context["dislikers"] = UserProfile.objects.filter(issue_downvoted=issue)
+
+    return context
 
 @login_required(login_url="/accounts/login")
 def save_issue(request, issue_pk):
