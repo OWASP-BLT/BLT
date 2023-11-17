@@ -1949,7 +1949,7 @@ def like_issue(request, issue_pk):
     context["dislikes"] = UserProfile.objects.filter(issue_downvoted=issue).count()
     context["dislikers"] = UserProfile.objects.filter(issue_downvoted=issue)
 
-    return render(request, "_likes.html", context)
+    return render(request, "_likes_and_dislikes.html", context)
 
 
 @login_required(login_url="/accounts/login")
@@ -2002,7 +2002,7 @@ def dislike_issue(request, issue_pk):
     context["dislikes"] = total_downvotes
     context["dislikers"] = UserProfile.objects.filter(issue_downvoted=issue)
 
-    return render(request, ["_dislikes.html", "_likes.html"], context)
+    return render(request, "_likes_and_dislikes.html", context)
 
 
 def update_issue_likes_dislikes(request,issue_pk):
