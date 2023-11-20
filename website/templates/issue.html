@@ -85,7 +85,8 @@
     .bookmark,
     .copy-btn,
     .flag_btn a.flaged-by,
-    .like_btn a.liked-by {
+    .like_btn a.liked-by,
+    .dislike_btn a.disliked-by {
         vertical-align: top;
     }
 
@@ -183,8 +184,8 @@
                 <i class="glyphicon glyphicon-copy"></i> Copy Title
             </button>
             
-            <span class="like_btn">
-                {% include '_likes.html' %}
+            <span class="like_dislike_buttons">
+                {% include '_likes_and_dislikes.html' %}
             </span>
             <span class="flag_btn">
                 {% include '_flags.html' %}
@@ -544,7 +545,20 @@
             url: '/like_issue/' + issue_pk + '/',
             data: {},
             success: function (data) {
-                $('.like_btn').html(data);
+                $('.like_dislike_buttons').html(data);
+            },
+        });
+    });
+
+    $('body').on('click', '.dislike_undislike', function (e) {
+        e.preventDefault();
+        var issue_pk = $(this).attr('name');
+        $.ajax({
+            type: 'GET',
+            url: '/dislike_issue/' + issue_pk + '/',
+            data: {},
+            success: function (data) {
+                $('.like_dislike_buttons').html(data);
             },
         });
     });
