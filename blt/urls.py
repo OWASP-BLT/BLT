@@ -286,9 +286,11 @@ urlpatterns = [
         r"^like_issue/(?P<issue_pk>\d+)/$", website.views.like_issue, name="like_issue"
     ),
     re_path(
+        r"^dislike_issue/(?P<issue_pk>\d+)/$", website.views.dislike_issue, name="dislike_issue"
+    ),
+    re_path(
         r"^flag_issue/(?P<issue_pk>\d+)/$", website.views.flag_issue, name="flag_issue"
     ),
-
     re_path(
         r"^like_issue2/(?P<issue_pk>\d+)/$", like_issue2, name="like_issue2"
     ),

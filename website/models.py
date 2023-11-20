@@ -448,6 +448,7 @@ class UserProfile(models.Model):
         max_digits=10, decimal_places=2, null=True, blank=True
     )
     issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
+    issue_downvoted = models.ManyToManyField(Issue, blank=True, related_name="downvoted")
     issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
     issue_flaged = models.ManyToManyField(Issue,blank=True,related_name="flaged") 
     issues_hidden = models.BooleanField(default=False)
