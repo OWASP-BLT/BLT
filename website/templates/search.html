@@ -75,21 +75,28 @@
                 <div class="col-md-8 col-md-offset-2">
                     <div class="list-group">
                         {% for user in users %}
-                            <div class="list-group-item">
-                                {% if user.socialaccount_set.all.0.get_avatar_url %}
-                                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" height="50px">
-                                {% else %}
-                                    <img src="{% gravatar_url user.email 50 %}">
-                                {% endif %}
-                                <a class="search-username" href="/profile/{{ user.username }}">{{ user.user.username }}</a>
-                                
+                            <div class="list-group-item flex">
+                                <div>
+                                    {% if user.user.userprofile.avatar %}
+                                        <img src="{{ user.user.userprofile.avatar }}" width="50px" height="50px" class="img-responsive img-rounded" loading="lazy">
+                                    {% elif user.user.socialaccount_set.all.0.get_avatar_url %}
+                                        <img src="{{ user.user.socialaccount_set.all.0.get_avatar_url }}" width="100"
+                                            class="img-responsive img-rounded" loading="lazy">
+                                    {% else %}
+                                        <img src="{% static 'images/dummy-user.png' %}" width="50"
+                                            class="img-responsive img-rounded" loading="lazy">
+                                    {% endif %}
+                                    <a class="search-username" href="/profile/{{ user.user.username }}">{{ user.user.username }}</a>
+                                </div>
                                  <div style="padding:0px 75px;">
-                                    {{ user.total_score }} Points
+                                    <label style="font-size: 15px;">User points :</label>
+                                    {% if user.total_score == None %}
+                                        <span style="font-size: 15px;">0</span> Point
+                                    {% else %}
+                                        <span style="font-size: 15px;">{{ user.total_score|floatformat:0 }}</span> Points
+                                    {% endif %}
                                  </div>
-                                 <div style="padding:0px 75px;">
-                                    {{ user.description }}
-                                 </div>
-                                 <a style="position: absolute;right: 22px;top: 14px;" href="/profile/{{ user.username }}" class="btn btn-danger btn-sm prizebtn">View Profile</a>
+                                 <a style="position: absolute;right: 22px;top: 14px;" href="/profile/{{ user.user.username }}" class="btn btn-danger btn-sm prizebtn">View Profile</a>
                             </div>
                         {% endfor %}
                     </div>

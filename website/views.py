@@ -1469,7 +1469,7 @@ def search(request, template="search.html"):
             "query": query,
             "type": stype,
             "users": UserProfile.objects.filter(
-                Q(user__username__icontains=query), hunt=None
+                Q(user__username__icontains=query)
             )
             .annotate(total_score=Sum("user__points__score"))
             .order_by("-total_score")[0:20],
