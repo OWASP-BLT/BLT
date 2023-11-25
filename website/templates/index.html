@@ -39,10 +39,11 @@
                     {% if leaderboard %}
                     {% for leader in leaderboard %}
                     <div class="list-group-item activity-strip flex overflow-hidden" style="height: 80px; display:flex; border: 1px solid #DDDDDD">
-                        <span class="h-full w-1/3 flex justify-center items-center">
-                            {% if leader.socialaccount_set.all.0.get_avatar_url %}
-                            <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class="profileimage" width="50"
-                                height="50">
+                        <span class="h-full w-1/3 flex justify-center items-center">                            
+                            {% if leader.userprofile.avatar %}
+                            <img src="{{ leader.userprofile.avatar }}" class="profileimage">
+                            {% elif user.socialaccount_set.all.0.get_avatar_url %}
+                            <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class="profileimage">
                             {% else %}
                             <img src="{% gravatar_url leader.email 50 %}" class="profileimage">
                             {% endif %}
