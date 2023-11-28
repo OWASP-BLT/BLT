@@ -1,6 +1,6 @@
 [
     {
-        "id":2,
+        "id":1,
         "img":"https://avatars.githubusercontent.com/u/76696648?v=4",
         "name":"Aryan Ranjan",
         "repository":"BLT Flutter",
@@ -14,7 +14,7 @@
 
     },
     {
-        "id":3,
+        "id":2,
         "img":"https://avatars.githubusercontent.com/u/18749480?v=4",
         "name":"Raghav Jajodia",
         "repository":"BLT Core",
@@ -27,7 +27,7 @@
         "bch_addr":""
     },
     {
-        "id":4,
+        "id":3,
         "img":"https://avatars.githubusercontent.com/u/68425016?v=4",
         "name":"Swapnil Shinde",
         "repository":"BLT Core | BLT Bacon",
@@ -40,7 +40,7 @@
         "bch_addr":"qq62zrxxeyqlvhunl2zeq7xqf2xu3pv39q6wyz7ckk"
     },
     {
-        "id":5,
+        "id":4,
         "img":"https://avatars.githubusercontent.com/u/37345795?v=4",
         "name":"Harshit Seksaria",
         "repository":"BLT Flutter",
@@ -51,6 +51,19 @@
         "linkedin":"https://www.linkedin.com/in/letsintegreat/",
         "website":"https://github.com/letsintegreat/",
         "bch_addr":"qqns6a42hx0945jr0t3dwdt0vmuaeve8qvfaqfgmfp"
+    },
+    {
+        "id":5,
+        "img":"https://avatars.githubusercontent.com/u/47253186?v=4",
+        "name":"Pulkit Agrawal",
+        "repository":"BLT Core",
+        "short_description":"IIT Delhi | Passionate Full Stack Web Developer",
+        "long_description":"",
+        "location":"Delhi, India",
+        "twitter":"",
+        "linkedin":"https://www.linkedin.com/in/pulkit-agrawal-a5295427a/",
+        "website":"https://github.com/errorassassin/",
+        "bch_addr":""
     },
     {
         "id":6,
