@@ -6,36 +6,43 @@
 {% load i18n %}
 {% load custom_tags %}
 
-<header class="fixed font-['Inter'] z-20 h-[65px] bg-white w-[100vw] flex column px-[0vw] items-center justify-between px-[2vw]">
-    
-    <!-- Logo -->
-    <div class="flex flex-col items-center">
-        <a class="" href="/">
-            <img src="{% logo 'TRANSPARENT' %}" class="!max-w-[130px] lg:max-w-[200px]">
-        </a>
-        <p class="text-center sm:!inline text-base lg:text-2xl pl-1">{% trans "Report Issues, Win Prizes" %}</p>
-    </div>    
+<nav class="fixed top-0 z-50 w-full bg-white border-b border-[#F7F7F7] border-b-2">
+    <div class="px-3 py-3 lg:px-5 lg:pl-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center justify-start rtl:justify-end">
+                <!-- Ham Menu -->
+                <button data-drawer-target="logo-sidebar" data-drawer-toggle="logo-sidebar" aria-controls="logo-sidebar" type="button" class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg lg:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
+                    <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path>
+                    </svg>
+                </button>
+                <!-- Logo -->
+                <a href="/newhome" class="flex flex-col ms-2 md:me-24 items-center">
+                    <img src="{% logo 'TRANSPARENT' %}" class="!max-w-[130px] lg:max-w-[200px]" />
+                    <p class="text-center inline-block text-xl pl-1">
+                        {% trans 'Report Issues, Win Prizes' %}
+                    </p>
+                </a>
+            </div>
 
+            <!-- Search Bar  -->
+            <div class="column items-center gap-[8px] invisible lg:visible lg:flex w-0 h-0 lg:w-[auto] lg:h-[auto]">
+                <form class="relative px-[34px]" action="/search" method="get">
+                    <i class="fa fa-search absolute left-[13px] top-[6.4px] text-[#9CA3AF] z-10"></i>
+                    <input type="text" name="query" placeholder="Search"
+                        class="text-base ps-9 scale-[1.4] placeholder-[#9CA3AF] bg-[#EDEDED] outline-none p-2.5 font-semibold rounded-lg">
+                </form>
+                <a href="/report/"
+                    class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[20px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
+                    {% trans "Report a Bug" %}
+                </a>
+                <a href="/hunts/"
+                    class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[20px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
+                    {% trans "Bug Hunts" %}
+                </a>
+            </div>
 
-    <!-- Search Bar -->
-    <div class="flex column items-center gap-[8px]">
-        <form class="relative px-[34px]" action="/search" method="get">
-            <i class="fa fa-search absolute left-[10px] top-[6.4px] text-[#9CA3AF] z-10"></i>
-            <input type="text" name="query" placeholder="Search"
-                class="text-base ps-9 scale-[1.4] placeholder-[#9CA3AF] bg-[#EDEDED] outline-none p-2.5 font-semibold rounded-lg">
-        </form>
-        <a href="/report/"
-            class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[20px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
-            {% trans "Report a Bug" %}
-        </a>
-        <a href="/hunts/"
-            class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[20px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
-            {% trans "Bug Hunts" %}
-        </a>
-    </div>
-
-
-    <!-- User Avatar -->
+            <!-- User Avatar -->
     {% if request.user.is_authenticated %}
     <li class="flex justify-center items-center ">
         <a href="/accounts/logout" id="user" class="relative flex items-center sm:gap-3 mr-[30px] hover:no-underline">
@@ -70,4 +77,6 @@
     {% endif %}
 
 
-</header>
+        </div>
+    </div>
+</nav>
