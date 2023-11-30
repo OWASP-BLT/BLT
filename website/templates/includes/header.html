@@ -1,0 +1,73 @@
+{% load static %}
+{% load gravatar %}
+{% load socialaccount %}
+{% load user_score %}
+{% providers_media_js %}
+{% load i18n %}
+{% load custom_tags %}
+
+<header class="fixed font-['Inter'] z-20 h-[65px] bg-white w-[100vw] flex column px-[0vw] items-center justify-between px-[2vw]">
+    
+    <!-- Logo -->
+    <div class="flex flex-col items-center">
+        <a class="" href="/">
+            <img src="{% logo 'TRANSPARENT' %}" class="!max-w-[130px] lg:max-w-[200px]">
+        </a>
+        <p class="text-center sm:!inline text-base lg:text-2xl pl-1">{% trans "Report Issues, Win Prizes" %}</p>
+    </div>    
+
+
+    <!-- Search Bar -->
+    <div class="flex column items-center gap-[8px]">
+        <form class="relative px-[34px]" action="/search" method="get">
+            <i class="fa fa-search absolute left-[10px] top-[6.4px] text-[#9CA3AF] z-10"></i>
+            <input type="text" name="query" placeholder="Search"
+                class="text-base ps-9 scale-[1.4] placeholder-[#9CA3AF] bg-[#EDEDED] outline-none p-2.5 font-semibold rounded-lg">
+        </form>
+        <a href="/report/"
+            class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[20px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
+            {% trans "Report a Bug" %}
+        </a>
+        <a href="/hunts/"
+            class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[20px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
+            {% trans "Bug Hunts" %}
+        </a>
+    </div>
+
+
+    <!-- User Avatar -->
+    {% if request.user.is_authenticated %}
+    <li class="flex justify-center items-center ">
+        <a href="/accounts/logout" id="user" class="relative flex items-center sm:gap-3 mr-[30px] hover:no-underline">
+            {% if request.user.userprofile.avatar %}
+            <img src="{{ request.user.userprofile.avatar }}" class="h-[30px] w-[30px] rounded-full ">
+            {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
+            <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
+                class="h-[30px] w-[30px] rounded-full ">
+            {% else %}
+            {% gravatar request.user.email 30 '' 'gravatar rounded-full' %}
+            {% endif %}
+            <span
+                class="absolute -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap text-[1.6rem] font-[600]"><span
+                    class="">{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
+            </span>
+        </a>
+    </li>
+    {% else %}
+
+
+    <!-- Sign up and Log in Buttons -->
+    <div class="flex column items-center gap-[8px]">
+        <a href="/accounts/signup"
+            class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
+            {% trans "Signup" %}
+        </a>
+        <a href="/accounts/login"
+            class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
+            {% trans "Login" %}
+        </a>
+    </div>
+    {% endif %}
+
+
+</header>
