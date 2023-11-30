@@ -53,22 +53,19 @@
 
 </head>
 
-<body class="relative min-h-[100vh] flex flex-col">
+<body class="relative min-h-[100vh] flex flex-col bg-[#F7F7F7] font-['Inter']">
     
     {% comment %} navigation {% endcomment %}
         {% include "includes/header.html" %}
         {% include "includes/sidenav.html" %}
     {% comment %} navigation {% endcomment %}
 
-    <div id="wrapper" class="grow bg-[#F7F7F7]">
-        <div id="page-wrapper" class="relative">
-            <div id="base-container" class="container">
-                <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br> <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br> <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br> <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>hello<br>
-                {% block content %}
-                {% endblock %}
-            </div>
-        </div>
+    
+    <div class="lg:ml-[230px] mt-[63px]">
+
     </div>
+
+
     {% comment %} block with no bootstrap wrappers {% endcomment %}
     {% block natural_content %}
     {% endblock %}
