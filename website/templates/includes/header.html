@@ -6,6 +6,12 @@
 {% load i18n %}
 {% load custom_tags %}
 
+<style>
+    a {
+        color: black;
+    }
+</style>
+
 <nav class="fixed top-0 z-50 w-full bg-white border-b border-[#F7F7F7] border-b-2">
     <div class="px-3 py-3 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
@@ -19,15 +25,15 @@
                 <!-- Logo -->
                 <a href="/newhome" class="flex flex-col ms-2 md:me-24 items-center">
                     <img src="{% logo 'TRANSPARENT' %}" class="!max-w-[130px] lg:max-w-[200px]" />
-                    <p class="text-center inline-block text-xl pl-1">
+                    <p class="text-center inline-block text-xl pl-1 mb-0">
                         {% trans 'Report Issues, Win Prizes' %}
                     </p>
                 </a>
             </div>
 
             <!-- Search Bar  -->
-            <div class="column items-center gap-[8px] invisible lg:visible lg:flex w-0 h-0 lg:w-[auto] lg:h-[auto]">
-                <form class="relative px-[34px]" action="/search" method="get">
+            <div class="column items-center gap-[8px] w-0 overflow-clip lg:w-fit lg:flex w-0 h-0 lg:w-[auto] lg:h-[auto]">
+                <form class="relative px-[34px] mb-0" action="/search" method="get">
                     <i class="fa fa-search absolute left-[13px] top-[6.4px] text-[#9CA3AF] z-10"></i>
                     <input type="text" name="query" placeholder="Search"
                         class="text-base ps-9 scale-[1.4] placeholder-[#9CA3AF] bg-[#EDEDED] outline-none p-2.5 font-semibold rounded-lg">
@@ -43,38 +49,36 @@
             </div>
 
             <!-- User Avatar -->
-    {% if request.user.is_authenticated %}
-    <li class="flex justify-center items-center ">
-        <a href="/accounts/logout" id="user" class="relative flex items-center sm:gap-3 mr-[30px] hover:no-underline">
-            {% if request.user.userprofile.avatar %}
-            <img src="{{ request.user.userprofile.avatar }}" class="h-[30px] w-[30px] rounded-full ">
-            {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
-            <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
-                class="h-[30px] w-[30px] rounded-full ">
-            {% else %}
-            {% gravatar request.user.email 30 '' 'gravatar rounded-full' %}
-            {% endif %}
-            <span
-                class="absolute -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap text-[1.6rem] font-[600]"><span
+            {% if request.user.is_authenticated %}
+            <a href="/accounts/logout" id="user" class="relative flex row items-center gap-3 mr-[30px] hover:no-underline inline-block">
+                {% if request.user.userprofile.avatar %}
+                <img src="{{ request.user.userprofile.avatar }}" class="h-[30px] w-[30px] rounded-full ">
+                {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
+                <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
+                    class="h-[30px] w-[30px] rounded-full ">
+                {% else %}
+                {% gravatar request.user.email 30 '' 'gravatar rounded-full' %}
+                {% endif %}
+                <span
+                    class="text-[1.6rem] font-[600]"><span
                     class="">{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
-            </span>
-        </a>
-    </li>
-    {% else %}
+                </span>
+            </a>
+            {% else %}
 
 
-    <!-- Sign up and Log in Buttons -->
-    <div class="flex column items-center gap-[8px]">
-        <a href="/accounts/signup"
-            class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
-            {% trans "Signup" %}
-        </a>
-        <a href="/accounts/login"
-            class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
-            {% trans "Login" %}
-        </a>
-    </div>
-    {% endif %}
+            <!-- Sign up and Log in Buttons -->
+            <div class="flex column items-center gap-[8px]">
+                <a href="/accounts/signup"
+                    class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
+                    {% trans "Signup" %}
+                </a>
+                <a href="/accounts/login"
+                    class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
+                    {% trans "Login" %}
+                </a>
+            </div>
+            {% endif %}
 
 
         </div>
