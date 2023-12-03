@@ -16,6 +16,8 @@
     <meta name="description"
         content="{% block description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and companies can get involved and help out.{% endblock %}">
     <meta name="author" content="">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
     <meta property="og:title" content="{% block og_title %}{% env 'PROJECT_NAME' %}{% endblock %}" />
     <meta property="og:image" content="{% block og_image %}{% static 'img/screenshot.png' %}{% endblock %}" />
     <meta property="og:description"
@@ -53,7 +55,7 @@
 
 </head>
 
-<body class="relative min-h-[100vh] flex flex-col bg-[#F7F7F7] font-['Inter']">
+<body class="relative min-h-[100vh] flex flex-col bg-[#F7F7F7] font-['Ubuntu']">
     
     {% comment %} navigation {% endcomment %}
         {% include "includes/header.html" %}
