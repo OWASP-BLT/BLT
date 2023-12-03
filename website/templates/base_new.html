@@ -29,7 +29,12 @@
     <link href="{% static 'css/lightbox.min.css' %}" rel="stylesheet">
     <link href="{% static 'vendor/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet" type="text/css">
     <link href="{% static 'css/animate.css' %}" rel="stylesheet" type="text/css">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400" rel="stylesheet">
+    <link href='https://fonts.googleapis.com/css?family=Inter' rel='stylesheet'>
+    <link href='https://fonts.googleapis.com/css?family=Barlow:500' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans" rel="stylesheet">
     <link href="{% static 'css/main.css' %}" rel="stylesheet" type="text/css">
     <link href="{% static 'css/text-slider.css' %}" rel="stylesheet" type="text/css">
     <link href="{% static 'css/activity.css' %}" rel="stylesheet" type="text/css">
@@ -61,12 +66,11 @@
         {% include "includes/header.html" %}
         {% include "includes/sidenav.html" %}
     {% comment %} navigation {% endcomment %}
-
     
     <div class="lg:ml-[230px] mt-[63px]">
-
+        {% block hero %}
+        {% endblock %}
     </div>
-
 
     {% comment %} block with no bootstrap wrappers {% endcomment %}
     {% block natural_content %}
