@@ -277,14 +277,17 @@ files = [
 
 [[package]]
 name = "chromedriver-autoinstaller"
-version = "0.6.2"
+version = "0.6.3"
 description = "Automatically install chromedriver that supports the currently installed version of chrome."
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "chromedriver-autoinstaller-0.6.2.tar.gz", hash = "sha256:8ff5c715160b294c9e7cc0fae5ecc5ccaff5563ca1405daed6b959cca606e57c"},
-    {file = "chromedriver_autoinstaller-0.6.2-py3-none-any.whl", hash = "sha256:7055e3e5a64e4352855fafab15d266e2ed325620222224fb261a2131e821dfe3"},
+    {file = "chromedriver-autoinstaller-0.6.3.tar.gz", hash = "sha256:63d320dce98e16bf5ca575c127954cdc97bf9d7bf38f25799b24e607125bb906"},
+    {file = "chromedriver_autoinstaller-0.6.3-py3-none-any.whl", hash = "sha256:0d6f1434c17d7c554804395e36d0eb7e1c9e78dde0e4dd828267a186da02a945"},
 ]
+
+[package.dependencies]
+packaging = ">=23.1"
 
 [[package]]
 name = "click"
@@ -2268,4 +2271,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "7ea172d92f45d2b3114f6b6e85a3f3e28be4d4702afbf7bc4ea3e6de55360af1"
+content-hash = "bdf0d7e4e8932b12b11e207868313b6ab906b92d008102e88288695cbf65af73"
