@@ -188,6 +188,14 @@ def newhome(request, template="new_home.html"):
     except:
         pass
 
+    bugs=Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+    bugs_screenshots = {}
+
+    for bug in bugs:
+        bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[0:3]
+
+    print(bugs_screenshots[bug][0].image.url)
+
     # latest_hunts_filter = request.GET.get("latest_hunts",None)
 
     # bug_count = Issue.objects.all().count()
@@ -231,6 +239,8 @@ def newhome(request, template="new_home.html"):
 
 
     context = {
+        "bugs": bugs,
+        "bugs_screenshots" : bugs_screenshots,
         # "server_url": request.build_absolute_uri('/'),
         # "activities": activities,
         # "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],

@@ -1,0 +1,57 @@
+{% load gravatar %}
+{% load static %}
+
+<div class="bug-container flex flex-col p-5 bg-white m-1 w-[100%] h-[290px] rounded-[2.5rem] border-[#e8e8e8] border-2">
+    <div class="bug-author bg-red font-medium font-['Inter'] text-[#656565] flex flex-row items-center gap-[0.8rem]">
+        {% if bug.user.userprofile.avatar %}
+            <img src="{{ bug.user.userprofile.avatar }}" width="30" class="h-[30px] object-cover img-responsive rounded-full" loading="lazy">
+        {% elif bug.user.socialaccount_set.all.0.get_avatar_url %}
+            <img src="{{ bug.user.socialaccount_set.all.0.get_avatar_url }}" width="30"
+                 class="h-[30px] object-cover img-responsive rounded-full" loading="lazy">
+        {% elif bug.user.email %}
+            <img src="{% gravatar_url bug.user.email 30 %}" width="30" class="h-[30px] object-cover img-responsive  rounded-full" loading="lazy">
+        {% else %}
+            <img src="{% static 'images/dummy-user.png' %}" width="30"
+                 class="h-[30px] object-cover img-responsive rounded-full" loading="lazy">
+        {% endif %}
+        <span class="whitespace-nowrap overflow-clip"> {{bug.user}} </span>
+        <div class="bug-type bg-[#0097ED] border-[#005AAD] ms-auto me-2 border-[1px] tracking-wider px-3 py-[1px] rounded-full font-['Nunito_Sans'] font-bold text-lg text-white">
+            {{bug.get_label_display}}
+        </div>
+    </div>
+    <div class="bug-desc py-2 h-[100%] font-['Barlow'] font-medium text-[#774343] text-3xl leading-10 overflow-clip">
+        {{bug.description}}
+    </div>
+    <div class="bug-images h-[50px] flex flex-row justify-between px-3 my-2">
+        {% for bug_key, bug_screenshots in bugs_screenshots.items %}
+            {% if bug == bug_key%}
+                {% for bug_screenshot in bug_screenshots %}
+                    <img class="bug-img h-[100%] w-[70px] object-contain" src="{{bug_screenshot.image.url}}" alt="">
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    </div>
+    <div class="bug-actions h-[45px] flex flex-row">
+        <svg class="scale-125 m-3" width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7.46692 9.45723V18.6604" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16.0815 18.6604H7.46693H3.78564V9.4572H7.46693L12.2485 3.87867C12.7023 3.34933 13.4161 3.12177 14.0925 3.29086L14.1362 3.3018C15.3711 3.61052 15.9274 5.04941 15.2214 6.10849L12.9889 9.4572H17.1859C18.3474 9.4572 19.2186 10.5198 18.9908 11.6588L17.8864 17.1807C17.7143 18.0411 16.9589 18.6604 16.0815 18.6604Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>  
+        <svg class="scale-125 m-3 ms-1"  width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4.06152 19.5808V13.1385V3.93531" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4.06152 3.93531H18.7867L14.1851 8.53692L18.7867 13.1385H4.06152" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <svg class="scale-125 m-3 ms-auto" width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path opacity="0.15" d="M4.18701 4.85562C4.18701 4.34735 4.59906 3.9353 5.10733 3.9353H17.9918C18.5001 3.9353 18.9122 4.34735 18.9122 4.85562V17.7401C18.9122 18.2484 18.5001 18.6604 17.9918 18.6604H5.10733C4.59906 18.6604 4.18701 18.2484 4.18701 17.7401V4.85562Z" fill="#8C0000" fill-opacity="0.74"/>
+            <path d="M17.0715 3.9353H6.02765C5.01109 3.9353 4.18701 4.75939 4.18701 5.77595V16.8198C4.18701 16.923 4.1955 17.0241 4.2118 17.1226C4.35621 17.995 5.11424 18.6604 6.02765 18.6604H17.0715C18.0881 18.6604 18.9122 17.8364 18.9122 16.8198V13.3135V5.77595C18.9122 4.75939 18.0881 3.9353 17.0715 3.9353Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10.6283 8.53688C10.6283 9.55346 9.80425 10.3775 8.78766 10.3775C7.7711 10.3775 6.94702 9.55346 6.94702 8.53688C6.94702 7.52032 7.7711 6.69624 8.78766 6.69624C9.80425 6.69624 10.6283 7.52032 10.6283 8.53688Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4.21252 17.1226L7.7288 13.6063C8.35464 13.0587 9.26994 12.9987 9.96185 13.4601L10.4305 13.7724C11.0973 14.217 11.9754 14.1789 12.6013 13.6782L15.0384 11.7285C15.6596 11.2315 16.5249 11.1925 17.1853 11.6185C17.2584 11.6657 17.3236 11.7242 17.3852 11.7857L18.9129 13.3135" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <svg class="scale-125 m-3 ms-1" width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19.3375 5.77593C19.3375 7.30077 18.1014 8.5369 16.5765 8.5369C15.0516 8.5369 13.8156 7.30077 13.8156 5.77593C13.8156 4.2511 15.0516 3.01497 16.5765 3.01497C18.1014 3.01497 19.3375 4.2511 19.3375 5.77593Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658"/>
+            <path d="M8.00513 10.0626L14.1051 7.0126" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658"/>
+            <path d="M8.29475 11.2979C8.29475 12.8227 7.05863 14.0588 5.53379 14.0588C4.00896 14.0588 2.77283 12.8227 2.77283 11.2979C2.77283 9.77298 4.00896 8.5369 5.53379 8.5369C7.05863 8.5369 8.29475 9.77298 8.29475 11.2979Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658"/>
+            <path d="M14.1071 15.5846L8.01294 12.5375" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658"/>
+            <path d="M19.3375 16.8198C19.3375 18.3447 18.1014 19.5808 16.5765 19.5808C15.0516 19.5808 13.8156 18.3447 13.8156 16.8198C13.8156 15.2949 15.0516 14.0588 16.5765 14.0588C18.1014 14.0588 19.3375 15.2949 19.3375 16.8198Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658"/>
+        </svg>
+    </div>
+</div>
