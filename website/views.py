@@ -194,8 +194,6 @@ def newhome(request, template="new_home.html"):
     for bug in bugs:
         bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[0:3]
 
-    print(bugs_screenshots[bug][0].image.url)
-
     # latest_hunts_filter = request.GET.get("latest_hunts",None)
 
     # bug_count = Issue.objects.all().count()
