@@ -414,18 +414,19 @@ textarea {
 }
 
 .panel-heading .col-xs-3 {
-    width: 75px;
     height: 75px;
-}
-
-.panel-heading .col-xs-3 {
-    background-color: white;
-    width: 75px;
-    height: 75px;
+    margin-left: 10px;
+    margin-right: -10px;
 }
 
 .panel-heading .col-xs-9 {
-    color: white;
+    font-size: 28px;
+    font-weight: 900;
+    height: 75px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #333333;
 }
 
 .owasp-panel {
@@ -571,4 +572,6 @@ i.fa-5x {
 
 .profileimage{
     border-radius:50%;
-    }
+    width: 50px;
+    height: 50px;
+}

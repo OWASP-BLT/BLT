@@ -1,0 +1,15 @@
+{% extends "base_new.html" %}
+
+{% block hero %}
+    <style>
+        .hero-bugs-container {
+            grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+        }
+    </style>
+    <div class="font-['Barlow'] text-[#2B2B2B] text-5xl tracking-wide font-semibold mb-0 mt-10 ms-[4.3%]">Find bugs, earn points, prize and cash!</div>
+    <div class="hero-bugs-container mx-[4%] my-[2.5rem] grid grid-flow-row gap-[25px]">
+        {% for bug in bugs %}
+            {% include '_bug.html' %}
+        {% endfor %}
+    </div>
+{% endblock %}

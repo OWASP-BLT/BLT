@@ -365,8 +365,7 @@
                     {% include '_activity.html' %}
                     {% endfor %}
                 </div>
-                <a href="/all_activity?user={{ user.username }}" class="btn btn-default btn-block">{% trans 'View All
-                    Activity by' %} {{ user.username }}</a>
+                <a href="/all_activity?user={{ user.username }}" class="btn btn-default btn-block">{% trans 'View All Activity by' %} {{ user.username }}</a>
                 {% else %}
                 <div class="text-center">{% trans 'No Activity Yet' %}!</div>
                 {% endif %}
