@@ -188,7 +188,7 @@ def newhome(request, template="new_home.html"):
     except:
         pass
 
-    bugs=Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+    bugs=Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20]
     bugs_screenshots = {}
 
     for bug in bugs:
