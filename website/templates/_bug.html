@@ -15,7 +15,13 @@
             <img src="{% static 'images/dummy-user.png' %}" width="30"
                  class="h-[30px] object-cover img-responsive rounded-full" loading="lazy">
         {% endif %}
-        <a href="/profile/{{bug.user.username}}" class="whitespace-nowrap overflow-clip"> {{bug.user}} </a>
+        
+        {% if bug.user.username is not None %}
+            <a href="/profile/{{bug.user.username}}" class="whitespace-nowrap overflow-clip"> {{bug.user}} </a>
+        {% else %}
+            <span class="whitespace-nowrap overflow-clip"> Anonymous </span>
+        {% endif %}
+
         <div class="bug-type bg-[#0097ED] border-[#005AAD] ms-auto me-2 border-[1px] tracking-wider px-3 py-[1px] rounded-full font-['Nunito_Sans'] font-bold text-lg text-white">
             {{bug.get_label_display}}
         </div>
