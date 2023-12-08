@@ -32,11 +32,24 @@
             {% endif %}
         {% endfor %}
     </div>
+    {% comment %} print logged in user issue_upvoted list {% endcomment %}
+
     <div class="bug-actions h-[45px] flex flex-row">
-        <svg class="scale-125 m-3" width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M7.46692 9.45723V18.6604" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M16.0815 18.6604H7.46693H3.78564V9.4572H7.46693L12.2485 3.87867C12.7023 3.34933 13.4161 3.12177 14.0925 3.29086L14.1362 3.3018C15.3711 3.61052 15.9274 5.04941 15.2214 6.10849L12.9889 9.4572H17.1859C18.3474 9.4572 19.2186 10.5198 18.9908 11.6588L17.8864 17.1807C17.7143 18.0411 16.9589 18.6604 16.0815 18.6604Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>  
+        <button onclick="like_unlike_handler(event,{{bug.id}})">
+            <svg id="likeSvg{{bug.id}}" class="scale-125 m-3" width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7.46692 9.45723V18.6604" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M16.0815 18.6604H7.46693H3.78564V9.4572H7.46693L12.2485 3.87867C12.7023 3.34933 13.4161 3.12177 14.0925 3.29086L14.1362 3.3018C15.3711 3.61052 15.9274 5.04941 15.2214 6.10849L12.9889 9.4572H17.1859C18.3474 9.4572 19.2186 10.5198 18.9908 11.6588L17.8864 17.1807C17.7143 18.0411 16.9589 18.6604 16.0815 18.6604Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>            
+        </button>
+        {% with user_issue_upvoted_list=bug.user.userprofile.issue_upvoted.all %}
+            {% if user_issue_upvoted_list and bug in user_issue_upvoted_list %}
+                <script>
+                    $(document).ready(function () {
+                        $('#likeSvg{{bug.id}}').find('path').attr('fill', '#a11010');
+                    });
+                </script>
+            {% endif %}
+        {% endwith %}
         <svg class="scale-125 m-3 ms-1"  width="23" height="23" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M4.06152 19.5808V13.1385V3.93531" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M4.06152 3.93531H18.7867L14.1851 8.53692L18.7867 13.1385H4.06152" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round"/>
@@ -60,3 +73,27 @@
         </a>        
     </div>
 </div>
+<script>
+    function like_unlike_handler(e,issue_pk){
+        e.preventDefault();
+        var issue_pk = issue_pk;
+        $.ajax({
+            type: 'GET',
+            url: '/like_issue2/' + issue_pk + '/',
+            data: {},
+            success: function (data) {
+                // Toggle the color of the SVG
+                var svg = $('#likeSvg' + issue_pk);
+                var currentColor = svg.find('path').attr('fill');
+
+                if (currentColor === '#a11010') {
+                    // Change to default color
+                    svg.find('path').attr('fill', ''); // Set to default color
+                } else {
+                    // Change to full red
+                    svg.find('path').attr('fill', '#a11010');
+                }
+            },
+        });
+    }
+</script>
