@@ -13,4 +13,27 @@
             {% include '_bug.html' %}
         {% endfor %}
     </div>
+    <div class="col-md-12">
+        <div class="text-center">
+            {% if bugs.has_previous %}
+                <a href="?page=1{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
+                   class="btn btn-default">First</a>
+            {% else %}
+                <button class="btn btn-default" disabled>First</button>
+            {% endif %}
+            {% for num in bugs.paginator.page_range %}
+                {% if num == bugs.number %}
+                    <button class="btn btn-default" disabled>{{num}}</button>
+                {% elif num > bugs.number|add:"-5" and num < bugs.number|add:"5" %}
+                    <a href="?page={{ num }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}" class="btn btn-default">{{num}}</a>
+                {% endif %}
+            {% endfor %}
+            {% if bugs.has_next %}
+                <a href="?page={{ bugs.paginator.num_pages }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}" class="btn btn-default">Last</a>
+            {% else %}
+                <button class="btn btn-default" disabled>Last</button>
+            {% endif %}
+            <div>Page {{ bugs.number }} of {{ bugs.paginator.num_pages }}</div>
+        </div>
+    </div>
 {% endblock %}
