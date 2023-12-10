@@ -196,7 +196,6 @@ def newhome(request, template="new_home.html"):
 
     paginator = Paginator(bugs, 7)
     page_number = request.GET.get('page')
-    print(page_number)
     page_obj = paginator.get_page(page_number)
     
     # latest_hunts_filter = request.GET.get("latest_hunts",None)
