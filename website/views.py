@@ -188,12 +188,17 @@ def newhome(request, template="new_home.html"):
     except:
         pass
 
-    bugs=Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+    bugs=Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id)).all()
     bugs_screenshots = {}
 
     for bug in bugs:
         bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[0:3]
 
+    paginator = Paginator(bugs, 7)
+    page_number = request.GET.get('page')
+    print(page_number)
+    page_obj = paginator.get_page(page_number)
+    
     # latest_hunts_filter = request.GET.get("latest_hunts",None)
 
     # bug_count = Issue.objects.all().count()
@@ -237,7 +242,7 @@ def newhome(request, template="new_home.html"):
 
 
     context = {
-        "bugs": bugs,
+        "bugs": page_obj,
         "bugs_screenshots" : bugs_screenshots,
         # "server_url": request.build_absolute_uri('/'),
         # "activities": activities,
