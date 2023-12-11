@@ -1986,13 +1986,13 @@ test = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "stripe"
-version = "7.7.0"
+version = "7.8.1"
 description = "Python bindings for the Stripe API"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "stripe-7.7.0-py2.py3-none-any.whl", hash = "sha256:4abaf64dab50c6309a258c63f609b8b41ccb4fd776b052fc6fad4aa6943e053f"},
-    {file = "stripe-7.7.0.tar.gz", hash = "sha256:e13fe07d4d2334c8338ea269a21673a4e7f862a7548e1eddac4aa020b596db96"},
+    {file = "stripe-7.8.1-py2.py3-none-any.whl", hash = "sha256:1889786b43d46b9fc5f70cdd7c16ef6d7e584ddc0440bfeb3e3e68a1aecd3510"},
+    {file = "stripe-7.8.1.tar.gz", hash = "sha256:9c16227c075144d8f623de6a649c669ec575db0d13a354a3ca3f4cb21fbe8b59"},
 ]
 
 [package.dependencies]
@@ -2271,4 +2271,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "d56585916c9b041b8e84dd0796814d7105f7624e6fe873a1c39a9cae23ead634"
+content-hash = "85312b3f162a554be834bc2c4c634a5c23651ed349612e8785a4c370dee45790"
