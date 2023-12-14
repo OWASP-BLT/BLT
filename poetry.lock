@@ -484,17 +484,17 @@ six = "*"
 
 [[package]]
 name = "django-bootstrap-datepicker-plus"
-version = "5.0.4"
+version = "5.0.5"
 description = "Bootstrap3/Bootstrap4/Bootstrap5 DatePickerInput, TimePickerInput, DateTimePickerInput, MonthPickerInput, YearPickerInput"
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = ">=3.8,<4.0"
 files = [
-    {file = "django_bootstrap_datepicker_plus-5.0.4-py3-none-any.whl", hash = "sha256:3adc135b474d4b4b7d6844ea0cf365c262c21b335609c2e11359d1ddf0ee09b6"},
-    {file = "django_bootstrap_datepicker_plus-5.0.4.tar.gz", hash = "sha256:fac3f7aeacd3fa63a9829077983ff728aea145f5a4f493c5dfbf870cb36c53ca"},
+    {file = "django_bootstrap_datepicker_plus-5.0.5-py3-none-any.whl", hash = "sha256:f0818dcaca6824f2bc3b42b53e2cd0e42e9ceb2c8802254f9d38d4cce04b31d8"},
+    {file = "django_bootstrap_datepicker_plus-5.0.5.tar.gz", hash = "sha256:ea5e2bc2137a72b57ba10d2a5f18373049b0d252052f921e5a76c260eaaa35ee"},
 ]
 
 [package.dependencies]
-Django = ">=2,<5"
+Django = ">=2,<6"
 pydantic = "*"
 typing-extensions = "*"
 
@@ -1865,13 +1865,13 @@ urllib3 = {version = ">=1.26,<3", extras = ["socks"]}
 
 [[package]]
 name = "sentry-sdk"
-version = "1.38.0"
+version = "1.39.0"
 description = "Python client for Sentry (https://sentry.io)"
 optional = false
 python-versions = "*"
 files = [
-    {file = "sentry-sdk-1.38.0.tar.gz", hash = "sha256:8feab81de6bbf64f53279b085bd3820e3e737403b0a0d9317f73a2c3374ae359"},
-    {file = "sentry_sdk-1.38.0-py2.py3-none-any.whl", hash = "sha256:0017fa73b8ae2d4e57fd2522ee3df30453715b29d2692142793ec5d5f90b94a6"},
+    {file = "sentry-sdk-1.39.0.tar.gz", hash = "sha256:67f62238af273eebd6432f85116dc6cd5422d4bc02df886514e8139e755f48e4"},
+    {file = "sentry_sdk-1.39.0-py2.py3-none-any.whl", hash = "sha256:9d3644b7c36a2c290f0d3275cba250202773f37545ef9097c8bcf561c6f5cdea"},
 ]
 
 [package.dependencies]
@@ -1897,7 +1897,7 @@ huey = ["huey (>=2)"]
 loguru = ["loguru (>=0.5)"]
 opentelemetry = ["opentelemetry-distro (>=0.35b0)"]
 opentelemetry-experimental = ["opentelemetry-distro (>=0.40b0,<1.0)", "opentelemetry-instrumentation-aiohttp-client (>=0.40b0,<1.0)", "opentelemetry-instrumentation-django (>=0.40b0,<1.0)", "opentelemetry-instrumentation-fastapi (>=0.40b0,<1.0)", "opentelemetry-instrumentation-flask (>=0.40b0,<1.0)", "opentelemetry-instrumentation-requests (>=0.40b0,<1.0)", "opentelemetry-instrumentation-sqlite3 (>=0.40b0,<1.0)", "opentelemetry-instrumentation-urllib (>=0.40b0,<1.0)"]
-pure-eval = ["asttokens", "executing", "pure-eval"]
+pure-eval = ["asttokens", "executing", "pure_eval"]
 pymongo = ["pymongo (>=3.1)"]
 pyspark = ["pyspark (>=2.4.4)"]
 quart = ["blinker (>=1.1)", "quart (>=0.16.1)"]
@@ -1986,13 +1986,13 @@ test = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "stripe"
-version = "7.7.0"
+version = "7.8.2"
 description = "Python bindings for the Stripe API"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "stripe-7.7.0-py2.py3-none-any.whl", hash = "sha256:4abaf64dab50c6309a258c63f609b8b41ccb4fd776b052fc6fad4aa6943e053f"},
-    {file = "stripe-7.7.0.tar.gz", hash = "sha256:e13fe07d4d2334c8338ea269a21673a4e7f862a7548e1eddac4aa020b596db96"},
+    {file = "stripe-7.8.2-py2.py3-none-any.whl", hash = "sha256:06c4729c71d0e2c3f10b34a8b995454b191c138e394f214f3adf780e5b13be98"},
+    {file = "stripe-7.8.2.tar.gz", hash = "sha256:9be13e00b7c1cc773fcf1e56616f084cf97b1cbe2f0fd9679f2698fc7e4803ed"},
 ]
 
 [package.dependencies]
@@ -2271,4 +2271,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "d56585916c9b041b8e84dd0796814d7105f7624e6fe873a1c39a9cae23ead634"
+content-hash = "899ef118da488c72f83bf2e7f5bf39befa708da7b63e7b01e5d1bc84786f0e2d"
