@@ -484,17 +484,17 @@ six = "*"
 
 [[package]]
 name = "django-bootstrap-datepicker-plus"
-version = "5.0.4"
+version = "5.0.5"
 description = "Bootstrap3/Bootstrap4/Bootstrap5 DatePickerInput, TimePickerInput, DateTimePickerInput, MonthPickerInput, YearPickerInput"
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = ">=3.8,<4.0"
 files = [
-    {file = "django_bootstrap_datepicker_plus-5.0.4-py3-none-any.whl", hash = "sha256:3adc135b474d4b4b7d6844ea0cf365c262c21b335609c2e11359d1ddf0ee09b6"},
-    {file = "django_bootstrap_datepicker_plus-5.0.4.tar.gz", hash = "sha256:fac3f7aeacd3fa63a9829077983ff728aea145f5a4f493c5dfbf870cb36c53ca"},
+    {file = "django_bootstrap_datepicker_plus-5.0.5-py3-none-any.whl", hash = "sha256:f0818dcaca6824f2bc3b42b53e2cd0e42e9ceb2c8802254f9d38d4cce04b31d8"},
+    {file = "django_bootstrap_datepicker_plus-5.0.5.tar.gz", hash = "sha256:ea5e2bc2137a72b57ba10d2a5f18373049b0d252052f921e5a76c260eaaa35ee"},
 ]
 
 [package.dependencies]
-Django = ">=2,<5"
+Django = ">=2,<6"
 pydantic = "*"
 typing-extensions = "*"
 
@@ -1848,13 +1848,13 @@ pyasn1 = ">=0.1.3"
 
 [[package]]
 name = "selenium"
-version = "4.15.2"
+version = "4.16.0"
 description = ""
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "selenium-4.15.2-py3-none-any.whl", hash = "sha256:9e82cd1ac647fb73cf0d4a6e280284102aaa3c9d94f0fa6e6cc4b5db6a30afbf"},
-    {file = "selenium-4.15.2.tar.gz", hash = "sha256:22eab5a1724c73d51b240a69ca702997b717eee4ba1f6065bf5d6b44dba01d48"},
+    {file = "selenium-4.16.0-py3-none-any.whl", hash = "sha256:aec71f4e6ed6cb3ec25c9c1b5ed56ae31b6da0a7f17474c7566d303f84e6219f"},
+    {file = "selenium-4.16.0.tar.gz", hash = "sha256:b2e987a445306151f7be0e6dfe2aa72a479c2ac6a91b9d5ef2d6dd4e49ad0435"},
 ]
 
 [package.dependencies]
@@ -1865,13 +1865,13 @@ urllib3 = {version = ">=1.26,<3", extras = ["socks"]}
 
 [[package]]
 name = "sentry-sdk"
-version = "1.38.0"
+version = "1.39.1"
 description = "Python client for Sentry (https://sentry.io)"
 optional = false
 python-versions = "*"
 files = [
-    {file = "sentry-sdk-1.38.0.tar.gz", hash = "sha256:8feab81de6bbf64f53279b085bd3820e3e737403b0a0d9317f73a2c3374ae359"},
-    {file = "sentry_sdk-1.38.0-py2.py3-none-any.whl", hash = "sha256:0017fa73b8ae2d4e57fd2522ee3df30453715b29d2692142793ec5d5f90b94a6"},
+    {file = "sentry-sdk-1.39.1.tar.gz", hash = "sha256:320a55cdf9da9097a0bead239c35b7e61f53660ef9878861824fd6d9b2eaf3b5"},
+    {file = "sentry_sdk-1.39.1-py2.py3-none-any.whl", hash = "sha256:81b5b9ffdd1a374e9eb0c053b5d2012155db9cbe76393a8585677b753bd5fdc1"},
 ]
 
 [package.dependencies]
@@ -1986,13 +1986,13 @@ test = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "stripe"
-version = "7.7.0"
+version = "7.9.0"
 description = "Python bindings for the Stripe API"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "stripe-7.7.0-py2.py3-none-any.whl", hash = "sha256:4abaf64dab50c6309a258c63f609b8b41ccb4fd776b052fc6fad4aa6943e053f"},
-    {file = "stripe-7.7.0.tar.gz", hash = "sha256:e13fe07d4d2334c8338ea269a21673a4e7f862a7548e1eddac4aa020b596db96"},
+    {file = "stripe-7.9.0-py2.py3-none-any.whl", hash = "sha256:42b4aa5162e45f889afaa40fc1eccfb9ec551c616e1620f700c19a11ae8e62eb"},
+    {file = "stripe-7.9.0.tar.gz", hash = "sha256:84e5e430835a4b0cd4fd2a57ce3853269d1db3439111cda6b6ed752e349cf4a1"},
 ]
 
 [package.dependencies]
@@ -2271,4 +2271,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "1975712ee93f491abf66c89b97cd8298218680a5f0e642a0fb2ee3198c016d1e"
+content-hash = "112baf6c2f4c7ff0474c577fbf5764ae7bb52395f3dc93f90ae03627fc76f47d"

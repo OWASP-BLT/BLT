@@ -8,8 +8,79 @@
     </style>
     <div class="font-['Barlow'] text-[#2B2B2B] text-5xl tracking-wide font-semibold mb-0 mt-10 ms-[4.3%]">Find bugs, earn points, prize and cash!</div>
     <div class="hero-bugs-container mx-[4%] my-[2.5rem] grid grid-flow-row gap-[25px]">
+        {% include '_report_widget.html' %}
         {% for bug in bugs %}
             {% include '_bug.html' %}
         {% endfor %}
+    </div>
+    
+    <script>
+        function like_unlike_handler(e,issue_pk){
+            e.preventDefault();
+            var issue_pk = issue_pk;
+            $.ajax({
+                type: 'GET',
+                url: '/like_issue2/' + issue_pk + '/',
+                data: {},
+                success: function (data) {
+                    // Toggle the color of the SVG
+                    var svg = $('#likeSvg' + issue_pk);
+                    var currentColor = svg.find('path').attr('fill');
+    
+                    if (currentColor === '#a11010') {
+                        // Change to default color
+                        svg.find('path').attr('fill', ''); // Set to default color
+                    } else {
+                        // Change to full red
+                        svg.find('path').attr('fill', '#a11010');
+                    }
+                },
+            });
+        }
+        function flag_unflag_handler(e,issue_pk){
+            e.preventDefault();
+            var issue_pk = issue_pk;
+            $.ajax({
+                type: 'GET',
+                url: '/flag_issue2/' + issue_pk + '/',
+                data: {},
+                success: function (data) {
+                    // Toggle the color of the SVG
+                    var svg = $('#flagSvg' + issue_pk);
+                    var currentColor = svg.find('path').attr('fill');
+    
+                    if (currentColor === '#a11010') {
+                        // Change to default color
+                        svg.find('path').attr('fill', ''); // Set to default color
+                    } else {
+                        // Change to full red
+                        svg.find('path').attr('fill', '#a11010');
+                    }
+                },
+            });
+        }
+    </script>
+    <div class="col-md-12">
+        <div class="text-center">
+            {% if bugs.has_previous %}
+                <a href="?page=1{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
+                   class="btn btn-default">First</a>
+            {% else %}
+                <button class="btn btn-default" disabled>First</button>
+            {% endif %}
+            {% for num in bugs.paginator.page_range %}
+                {% if num == bugs.number %}
+                    <button class="btn btn-default" disabled>{{num}}</button>
+                {% elif num > bugs.number|add:"-5" and num < bugs.number|add:"5" %}
+                    <a href="?page={{ num }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}" class="btn btn-default">{{num}}</a>
+                {% endif %}
+            {% endfor %}
+            {% if bugs.has_next %}
+                <a href="?page={{ bugs.paginator.num_pages }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}" class="btn btn-default">Last</a>
+            {% else %}
+                <button class="btn btn-default" disabled>Last</button>
+            {% endif %}
+            <div>Page {{ bugs.number }} of {{ bugs.paginator.num_pages }}</div>
+        </div>
     </div>
 {% endblock %}
