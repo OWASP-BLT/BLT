@@ -37,7 +37,7 @@ from django.urls import reverse, reverse_lazy
 from django.db.models import Sum, Count, Q
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
-from django.http import Http404,JsonResponse,HttpResponseRedirect,HttpResponse,HttpResponseNotFound
+from django.http import Http404,JsonResponse,HttpResponseRedirect,HttpResponse,HttpResponseNotFound, HttpResponseBadRequest
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
@@ -266,23 +266,49 @@ def newhome(request, template="new_home.html"):
     }
     return render(request, template, context)
 
+def is_safe_url(url, allowed_hosts, allowed_paths=None):
+    if not is_valid_https_url(url):
+        return False
+
+    parsed_url = urlparse(url)
+
+    if parsed_url.netloc not in allowed_hosts:
+        return False
+
+    if allowed_paths and parsed_url.path not in allowed_paths:
+        return False
+
+    return True
+
+def safe_redirect(url, allowed_hosts, allowed_paths=None):
+    if is_safe_url(url, allowed_hosts, allowed_paths):
+        safe_url = rebuild_safe_url(url)
+        return redirect(safe_url)
+    else:
+        return HttpResponseBadRequest('Invalid redirection URL.')
+
 def github_callback(request):
     ALLOWED_HOSTS = ['github.com']
     params = urllib.parse.urlencode(request.GET)
     url = f"{settings.CALLBACK_URL_FOR_GITHUB}?{params}"
-    parsed_url = urlparse(url)
-    if parsed_url.netloc in ALLOWED_HOSTS:
-        return redirect(url)
+    
+    return safe_redirect(url, ALLOWED_HOSTS)
 
 
 def google_callback(request):
+    ALLOWED_HOSTS = ['accounts.google.com']
     params = urllib.parse.urlencode(request.GET)
-    return redirect(f"{settings.CALLBACK_URL_FOR_GOOGLE}?{params}")
+    url = f"{settings.CALLBACK_URL_FOR_GOOGLE}?{params}"
+
+    return safe_redirect(url, ALLOWED_HOSTS)
 
 
 def facebook_callback(request):
+    ALLOWED_HOSTS = ['www.facebook.com']
     params = urllib.parse.urlencode(request.GET)
-    return redirect(f"{settings.CALLBACK_URL_FOR_FACEBOOK}?{params}")
+    url = f"{settings.CALLBACK_URL_FOR_FACEBOOK}?{params}"
+
+    return safe_redirect(url, ALLOWED_HOSTS)
 
 
 class FacebookLogin(SocialLoginView):
