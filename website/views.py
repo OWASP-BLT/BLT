@@ -194,7 +194,7 @@ def newhome(request, template="new_home.html"):
     for bug in bugs:
         bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[0:3]
 
-    paginator = Paginator(bugs, 7)
+    paginator = Paginator(bugs, 9)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
