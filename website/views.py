@@ -246,10 +246,10 @@ def newhome(request, template="new_home.html"):
         # "server_url": request.build_absolute_uri('/'),
         # "activities": activities,
         # "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
-        # "leaderboard": User.objects.filter(
-        #     points__created__month=datetime.now().month,
-        #     points__created__year=datetime.now().year,
-        # )
+        "leaderboard": User.objects.filter(
+            points__created__month=datetime.now().month,
+            points__created__year=datetime.now().year,
+        )
         # .annotate(total_score=Sum("points__score"))
         # .order_by("-total_score")[:10],
         # "bug_count": bug_count,
