@@ -1,10 +1,5 @@
-{% load static %}
 {% load gravatar %}
-{% load socialaccount %}
 {% load humanize %}
-{% providers_media_js %}
-{% load i18n %}
-{% load custom_tags %}
 
 <div class="row-start-1 bug-container leaderboard-widget flex flex-col p-5 pt-3 bg-[white] m-1 w-[100%] row-span-2 rounded-[2.5rem]  border-[#e8e8e8] border-2 font-['Inter'] h-[630px]">
     
@@ -21,6 +16,9 @@
     </div>
 
     <div class="users-all h-full max-h-full overflow-y-auto my-3 font-['Barlow']">
+        {% if not leaderboard %}
+            Leaderboard has been reset for {% now "F" %}, be the first to find issues!
+        {% endif %}
         {% for leader in leaderboard %}
 
             <a href="/profile/{{ leader.username }}" class="flex flex-row h-[4rem] items-center my-2 mx-1 hover:bg-[#e8e8e8] rounded-2xl">

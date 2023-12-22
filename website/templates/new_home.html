@@ -11,9 +11,7 @@
 
         {% include '_report_widget.html' %}
 
-        {% if leaderboard %}
-            {% include '_leaderboard_widget.html' %}
-        {% endif %}
+        {% include '_leaderboard_widget.html' %}
 
         {% for bug in bugs %}
             {% include '_bug.html' %}
