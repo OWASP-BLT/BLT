@@ -4,7 +4,7 @@
 
 {% block body %}
 
-<div class="bg-[#F3F5F7]">
+<div class="bg-[#F3F5F7] pb-10">
   <div class="w-full mt-5">
     <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">
       Dashboard
@@ -81,16 +81,16 @@
     <div class="flex flex-col px-8  gap-5 ">
       <div class="flex flex-col lg:flex-row gap-5 bg-[#F3F5F7]">
         <div class="bg-white p-5 rounded-xl lg:w-[60vh]">
-          <div class="">
-            <h3 class="">Bug Reported Type</h3>
+          <div class="header-container">
+            <h3 class="section-header">Bug Reported Type</h3>
           </div>
           <div class="pie-chart w-full h-[90%]">
             <canvas id="bugTypePie" height="220px" width="660px"></canvas>
           </div>
         </div>
         <div class="bg-white p-5 rounded-xl lg:w-[60vh]">
-          <div class="">
-            <h3 class="">Reported on Domains</h3>
+          <div class="header-container">
+            <h3 class="section-header">Reported on Domains</h3>
           </div>
           <div class="pie-chart w-full h-[90%]">
             <canvas id="domainPie" height="220px" width="660px"></canvas>
