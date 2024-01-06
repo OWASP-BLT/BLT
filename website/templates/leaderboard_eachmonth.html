@@ -50,7 +50,7 @@
         <h1 class="page-header">Monthly Leaderboard</h1>         
     </div>
 </div>
-<div class="row">
+<div class="row" style="display: flex;justify-content: center; align-items: center;">
     <div class="col-lg-9">
         <div class="list-group">
             {%if not leaderboard%}
@@ -67,9 +67,9 @@
                             {% if month.user.userprofile.avatar %}
                             <img src="{{ month.user.userprofile.avatar }}" class="img-responsive img-thumbnail profileimage">
                             {% elif user.socialaccount_set.all.0.get_avatar_url %}
-                            <img src="{{ month.user.socialaccount_set.all.0.get_avatar_url }}" class="profileimage">
+                            <img src="{{ month.user.socialaccount_set.all.0.get_avatar_url }}" class="img-responsive img-thumbnail profileimage">
                             {% else %}
-                            <img src="{% gravatar_url month.user.email 50 %}" class="profileimage">
+                            <img src="{% gravatar_url month.user.email 50 %}" class="img-responsive img-thumbnail profileimage">
                             {% endif %}
                             <a href="/profile/{{ month.user.username }}">{{ month.user.username }}</a>
                             <span class="pull-right badge">{{ month.user.total_score }} Points</span>
