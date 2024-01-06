@@ -180,7 +180,7 @@
                             >
                             <div class="mt-2">
                                 <select
-                                    name="label"
+                                    name="label" id="labelSelect"
                                     required data-intro="Categorize the bug." data-step="3"
                                     class="flex w-full placeholder:text-xl rounded-md border-0 py-4 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset"
                                 >
@@ -535,6 +535,16 @@
         email_container.appendChild(email_container_child_html)
     }
 
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // Get the value from the URL parameter
+        var labelParam = new URLSearchParams(window.location.search).get("label");
+    
+        // Set the selected option based on the parameter
+        if (labelParam !== null) {
+            document.getElementById("labelSelect").value = labelParam;
+        }
+    });
 
 </script>
 {% endblock %}
