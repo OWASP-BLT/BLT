@@ -20,6 +20,16 @@
         margin-left: 10px;
     }
 
+    @media (min-height: 800px) and (min-width: 992px) {
+    .col-md-8 {
+        width: 66.66666667%;
+    }}
+    @media (min-height: 800px) and (min-width: 360px) {
+    .col-md-8 {
+        width: 90%;
+        font-size: small;
+    }}
+
     .silver {
         background-color: lightblue;
         color: #333;
@@ -48,13 +58,13 @@
 {% endblock %}
 
 {% block content %}
-<div class="row container-min-height">
+<div class="row container-min-height" style="display:flex;justify-content:center">
     <div class="col-lg-6" style="display: flex; justify-content: center; align-items: center;">
         <h1 class="page-header">Global Leaderboard</h1>         
     </div>
 </div>
-<div class="row">
-    <div class="col-lg-9">
+<div class="row" style="display:flex;justify-content:center">
+    <div class="col-md-8">
         <div class="list-group">
             {%if not leaderboard%}
                 <p style="color: red;">No data for this month</p>
@@ -64,9 +74,9 @@
                     {% if leader.userprofile.avatar %}
                     <img src="{{ leader.userprofile.avatar }}" class="img-responsive img-thumbnail profileimage">
                     {% elif leader.socialaccount_set.all.0.get_avatar_url %}
-                    <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class="profileimage">
+                    <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class="img-responsive img-thumbnail profileimage">
                     {% else %}
-                    <img src="{% gravatar_url leader.email 50 %}" class="profileimage">
+                    <img src="{% gravatar_url leader.email 50 %}" class="img-responsive img-thumbnail profileimage">
                     {% endif %}
                     <a href="/profile/{{ leader.username }}">{{ leader.username }}</a>
                     <span class="pull-right badge">{{ leader.total_score }} Points</span>

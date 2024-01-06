@@ -194,7 +194,7 @@ def newhome(request, template="new_home.html"):
     for bug in bugs:
         bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[0:3]
 
-    paginator = Paginator(bugs, 7)
+    paginator = Paginator(bugs, 9)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -246,10 +246,10 @@ def newhome(request, template="new_home.html"):
         # "server_url": request.build_absolute_uri('/'),
         # "activities": activities,
         # "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
-        # "leaderboard": User.objects.filter(
-        #     points__created__month=datetime.now().month,
-        #     points__created__year=datetime.now().year,
-        # )
+        "leaderboard": User.objects.filter(
+            points__created__month=datetime.now().month,
+            points__created__year=datetime.now().year,
+        )
         # .annotate(total_score=Sum("points__score"))
         # .order_by("-total_score")[:10],
         # "bug_count": bug_count,
