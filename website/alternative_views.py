@@ -66,7 +66,6 @@ def flag_issue2(request, issue_pk):
     issue_pk = int(issue_pk)
     issue = Issue.objects.get(pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
-    print(UserProfile.objects.filter(issue_flaged=issue))
     if userprof in UserProfile.objects.filter(issue_flaged=issue):
         print("already flagged")
         userprof.issue_flaged.remove(issue)
