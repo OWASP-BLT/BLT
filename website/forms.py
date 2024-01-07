@@ -23,3 +23,8 @@ class HuntForm (forms.Form):
 
 class CaptchaForm(forms.Form):
     captcha = CaptchaField()
+
+class QuickIssueForm(forms.Form):
+    url = forms.CharField()
+    label = forms.CharField()
+    description = forms.CharField()

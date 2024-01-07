@@ -79,7 +79,7 @@ from website.models import (
     Company,
     IssueScreenshot
 )
-from .forms import FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm
+from .forms import FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm, QuickIssueForm
 
 from decimal import Decimal
 from django.conf import settings
@@ -181,6 +181,13 @@ def index(request, template="index.html"):
 
 #@cache_page(60 * 60 * 24)
 def newhome(request, template="new_home.html"):
+
+    if request.method == 'POST':
+        form = QuickIssueForm(request.POST)
+        if form.is_valid():
+            query_string = urllib.parse.urlencode(form.cleaned_data)
+            redirect_url = f'/report/?{query_string}'
+            return HttpResponseRedirect(redirect_url)
     
     try:
         if not EmailAddress.objects.get(email=request.user.email).verified:
@@ -194,7 +201,7 @@ def newhome(request, template="new_home.html"):
     for bug in bugs:
         bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[0:3]
 
-    paginator = Paginator(bugs, 7)
+    paginator = Paginator(bugs, 9)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -246,10 +253,10 @@ def newhome(request, template="new_home.html"):
         # "server_url": request.build_absolute_uri('/'),
         # "activities": activities,
         # "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
-        # "leaderboard": User.objects.filter(
-        #     points__created__month=datetime.now().month,
-        #     points__created__year=datetime.now().year,
-        # )
+        "leaderboard": User.objects.filter(
+            points__created__month=datetime.now().month,
+            points__created__year=datetime.now().year,
+        )
         # .annotate(total_score=Sum("points__score"))
         # .order_by("-total_score")[:10],
         # "bug_count": bug_count,
