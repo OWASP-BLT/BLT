@@ -79,7 +79,7 @@ from website.models import (
     Company,
     IssueScreenshot
 )
-from .forms import FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm
+from .forms import FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm, QuickIssueForm
 
 from decimal import Decimal
 from django.conf import settings
@@ -181,6 +181,13 @@ def index(request, template="index.html"):
 
 #@cache_page(60 * 60 * 24)
 def newhome(request, template="new_home.html"):
+
+    if request.method == 'POST':
+        form = QuickIssueForm(request.POST)
+        if form.is_valid():
+            query_string = urllib.parse.urlencode(form.cleaned_data)
+            redirect_url = f'/report/?{query_string}'
+            return HttpResponseRedirect(redirect_url)
     
     try:
         if not EmailAddress.objects.get(email=request.user.email).verified:
