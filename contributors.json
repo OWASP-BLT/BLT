@@ -441,5 +441,18 @@
         "linkedin":"https://www.linkedin.com/in/jisanar/",
         "website":"https://github.com/JisanAR03",
         "bch_addr":"wish me luck☺"
+    },
+    {
+        "id":37,
+        "img":"https://avatars.githubusercontent.com/u/119354421?v=4",
+        "name":"Shirsh Jain",
+        "repository":"BLT | BLT-Core",
+        "short_description":"",
+        "long_description":"",
+        "location":"udaipur , India ",
+        "twitter":"https://twitter.com/jainshirsh",
+        "linkedin":"",
+        "website":"https://github.com/haniljain/",
+        "bch_addr":""
     }
 ]
