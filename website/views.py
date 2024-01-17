@@ -180,26 +180,26 @@ def index(request, template="index.html"):
     return render(request, template, context)
 
 #@cache_page(60 * 60 * 24)
-def newhome(request, template="new_home.html"):
+#def newhome(request, template="new_home.html"):
 
-    if request.method == 'POST':
-        form = QuickIssueForm(request.POST)
-        if form.is_valid():
-            query_string = urllib.parse.urlencode(form.cleaned_data)
-            redirect_url = f'/report/?{query_string}'
-            return HttpResponseRedirect(redirect_url)
-    
-    try:
-        if not EmailAddress.objects.get(email=request.user.email).verified:
-            messages.error(request, "Please verify your email address")
-    except:
-        pass
+#    if request.method == 'POST':
+#        form = QuickIssueForm(request.POST)
+    # if form.is_valid():
+    #     query_string = urllib.parse.urlencode(form.cleaned_data)
+    #     redirect_url = f'/report/?{query_string}'
+    #     return HttpResponseRedirect(redirect_url)
 
-    bugs=Issue.objects.exclude(Q(is_hidden=True) | ~Q(user_id=request.user.id)).all()
-    bugs_screenshots = {}
+    # try:
+    #     if not EmailAddress.objects.get(email=request.user.email).verified:
+    #         messages.error(request, "Please verify your email address")
+    # except:
+    #     pass
 
-    for bug in bugs:
-        bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[0:3]
+    # bugs=Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id)).all()
+    # bugs_screenshots = {}
+
+    # for bug in bugs:
+    #     bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[0:3]
 
 #    paginator = Paginator(bugs, 3)
 #    page_number = request.GET.get('page')
@@ -248,16 +248,16 @@ def newhome(request, template="new_home.html"):
     #     top_hunts = top_hunts.filter(is_published=True,result_published=False).order_by("-created")[:3]
 
 
-    context = {
-        "bugs": bugs,
-        "bugs_screenshots" : bugs_screenshots,
-        # "server_url": request.build_absolute_uri('/'),
-        # "activities": activities,
-        # "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
-        "leaderboard": User.objects.filter(
-            points__created__month=datetime.now().month,
-            points__created__year=datetime.now().year,
-        )
+    # context = {
+    #     "bugs": bugs,
+    #     "bugs_screenshots" : bugs_screenshots,
+    #     # "server_url": request.build_absolute_uri('/'),
+    #     # "activities": activities,
+    #     # "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
+    #     "leaderboard": User.objects.filter(
+    #         points__created__month=datetime.now().month,
+    #         points__created__year=datetime.now().year,
+    #     )
         # .annotate(total_score=Sum("points__score"))
         # .order_by("-total_score")[:10],
         # "bug_count": bug_count,
@@ -271,8 +271,37 @@ def newhome(request, template="new_home.html"):
         # "top_testers":top_testers,
         # "top_hunts": top_hunts,
         # "ended_hunts": False if latest_hunts_filter == None else True 
-    }
-    return render(request, template, context)
+    # }
+
+    # return render(request , template, context)
+
+class newhome(ListView):
+    model = Issue 
+    paginate_by = 7 
+    template_name = "new_home.html"
+
+
+    def post(self, request):
+        form = QuickIssueForm(request.POST)
+        if form.is_valid():
+            query_string = urllib.parse.urlencode(form.cleaned_data)
+            redirect_url = f'/report/?{query_string}'
+            return HttpResponseRedirect(redirect_url)
+
+
+    def get_context_data(self, *args , **kwargs):
+        context = super(newhome, self).get_context_data(*args,**kwargs)
+        bugs = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id)).all()
+        context['bugs'] = bugs
+        bugs_screenshots = {}
+        for bug in bugs:
+            bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[0:3]
+        context['bugs_screenshots'] = bugs_screenshots
+        context['leaderboard'] = User.objects.filter(
+            points__created__month=datetime.now().month,
+            points__created__year=datetime.now().year,
+        )
+        return context
 
 def is_safe_url(url, allowed_hosts, allowed_paths=None):
     if not is_valid_https_url(url):
