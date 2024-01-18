@@ -17,3 +17,5 @@ chromedriver
 requirements.txt
 *.log
 *.exe
+Pipfile
+Pipfile.lock
