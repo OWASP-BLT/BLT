@@ -6,20 +6,48 @@
             grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
         }
     </style>
-    <div class="font-['Barlow'] text-[#2B2B2B] text-5xl tracking-wide font-semibold mb-0 mt-10 ms-[4.3%] mx-auto">Find bugs, earn points, prize and cash!</div>
-    <div class="hero-bugs-container mx-[4%] my-[2.5rem] grid grid-rows-2 gap-[25px] sm:max-w-screen-3xsm relative ">
-    <div class="z-10 mt-20 h-fit">
-        {% include '_report_widget.html' %}
+    <div class="font-['Barlow'] text-[#2B2B2B] text-5xl tracking-wide font-semibold mb-0 mt-10 ms-[4.3%] mx-auto">
+        Find bugs, earn points, prize and cash!
     </div>
-    <div class="z-9 -mt-[11rem]">
-        {% include '_leaderboard_widget.html' %}
-    </div>
-        {% for bug in bugs %}
-            {% include '_bug.html' %}
-            
-        {% endfor %}
+    <div class="flex flex-col sm:flex-row">
+    
+        <div class="flex-1">
+            <div class="hero-bugs-container grid grid-cols-1 sm:grid-cols-2 gap-4 mx-4 my-2.5">
+                <!-- Report Section -->
+                <section class="z-10">
+                    {% include '_report_widget.html' %}
+                </section>
+                
+                <!-- Bugs Section -->
+                {% for bug in bugs %}
+                    {% include '_bug.html' %}
+                {% endfor %}
+            </div>
+        </div>
+    
+        <div class="w-full mt-4  sm:w-[20%] sm:mt-0 sm:order-2 ">
+            <!-- Leaderboard Widget -->
+            <div class="mx-4 mr-10 ">
+                {% include '_leaderboard_widget.html' %}
+            </div>
+        </div>
     </div>
     
+    
+        <!-- <section class="hero-bugs-container grid grid-rows-2 gap-[25px] mx-[4%] my-[2.5rem] sm:max-w-screen-3xsm">
+            <div class="-order-1 sm:-order-1">
+    {% include '_report_widget.html' %}
+            </div>
+                    {% for bug in bugs %}
+                        {% include '_bug.html' %}
+                    {% endfor %}
+               
+         {% include '_leaderboard_widget.html' %}
+        
+        </section>
+        -->
+  
+
     <script>
         function like_unlike_handler(e,issue_pk){
             e.preventDefault();
@@ -66,7 +94,7 @@
             });
         }
     </script>
-    <div class="col-md-12">
+    <div class="col-md-12 ">
         <div class="text-center">
             {% if bugs.has_previous %}
                 <a href="?page=1{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
