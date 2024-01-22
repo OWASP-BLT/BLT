@@ -129,11 +129,12 @@
                                     <img 
                                         src="https://www.google.com/s2/favicons?sz=32&domain_url={{ domain.domain__name }}" 
                                         alt="{{ domain.domain__name }}" 
-                                        class="cursor-pointer rounded-full p-1 bg-gray-200 hover:bg-gray-300 transition duration-300 ease-in-out"
+                                        class="cursor-pointer rounded-full p-1 bg-gray-200 hover:bg-gray-300 hover:scale-110 transition duration-300 ease-in-out w-14 h-14" 
                                         onclick="fillUrl('{{ domain.domain__name }}')"> <!-- JavaScript function to fill URL -->
                                 {% endfor %}
                             </div>
                         </div>
+                        
                         
                     </div>
                     <div class="h-full flex items-end w-full min-w-[150px]">
