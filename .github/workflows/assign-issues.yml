@@ -9,21 +9,31 @@ on:
 
 jobs:
   slash_assign:
-    if: >
-      (github.event_name == 'issue_comment' && (
-      contains(github.event.comment.body, '/assign') || 
-      startsWith(github.event.comment.body, '/unassign') || 
-      contains(github.event.comment.body, 'assign to me') || 
-      contains(github.event.comment.body, 'assign this to me') || 
-      contains(github.event.comment.body, 'please assign me this')  || 
-      contains(github.event.comment.body, 'assign this to me')  || 
-      contains(github.event.comment.body, 'I can try fixing this')  || 
-      contains(github.event.comment.body, 'i am interested in doing this')  || 
-      contains(github.event.comment.body, 'I am interested in contributing'))) || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
+      - name: Check Comment and PR
+        id: condition-check
+        run: |
+          should_assign=false
+          pr_attached=false
+          
+          # Check for comment keywords
+          if echo "${{ github.event.comment.body }}" | grep -E '/assign|/unassign|assign to me|assign this to me|please assign me this|I can try fixing this|i am interested in doing this|I am interested in contributing'; then
+            should_assign=true
+          fi
+
+          # Check for associated pull request
+          if gh pr list --json number | jq -e ". | contains([${{ github.event.issue.number }}])" > /dev/null; then
+            pr_attached=true
+          fi
+
+          echo "::set-output name=should_assign::${should_assign}"
+          echo "::set-output name=pr_attached::${pr_attached}"
+          
       - name: Assign Issues
+        if: steps.condition-check.outputs.should_assign == 'true' || steps.condition-check.outputs.pr_attached == 'true' || (github.event_name == 'issue_comment' && (contains(github.event.comment.body, '/assign') || startsWith(github.event.comment.body, '/unassign') || contains(github.event.comment.body, 'assign to me') || contains(github.event.comment.body, 'assign this to me') || contains(github.event.comment.body, 'please assign me this')  || contains(github.event.comment.body, 'assign this to me')  || contains(github.event.comment.body, 'I can try fixing this')  || contains(github.event.comment.body, 'i am interested in doing this')  || contains(github.event.comment.body, 'I am interested in contributing'))) || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         uses: OWASP/BLT-Action@main
         with:
-            repo-token: ${{ secrets.GITHUB_TOKEN }}
-            repository: ${{ github.repository }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+
