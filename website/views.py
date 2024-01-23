@@ -131,7 +131,11 @@ def index(request, template="index.html"):
 
     top_companies = Issue.objects.values("domain__name").annotate(count=Count('domain__name')).order_by("-count")[:10]
     top_testers = Issue.objects.values("user__id","user__username").filter(user__isnull=False).annotate(count=Count('user__username')).order_by("-count")[:10]
-    activities = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:10]
+
+    if request.user.is_anonymous:
+        activities = Issue.objects.exclude(Q(is_hidden=True))[0:10]
+    else :
+        activities = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:10]
 
     top_hunts = Hunt.objects.values(
         'id',
