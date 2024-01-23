@@ -81,13 +81,13 @@ $(function () {
 
     $('body').on('click', '.edit_comment', function (e) {
         e.preventDefault();
-        comment_id = $(this).attr('name');
         old_message = $(this).parent().next().next().text();
-        $(this).parent().next().show();
-        $(this).parent().next().find('textarea').val(old_message);
+        comment_id = $(this).attr('name');
         $(this).hide();
+        $(this).next('.edit_comment').hide();
         $(this).next('.del_comment').hide();
-        $(this).parent().next().next().hide();
+        $(this).parent().next().find('textarea').val(old_message);
+        $(this).parent().parent().next().show();
     });
 
     $(document).on('click', '.edit_form button[type="submit"]', function (e) {
@@ -113,10 +113,7 @@ $(function () {
     $('body').on('click', '.reply_comment', function (e) {
         e.preventDefault();
         comment_id = $(this).attr('name');
-        $(this).hide();
-        $(this).next('.edit_comment').hide();
-        $(this).next().next('.del_comment').hide();
-        $(this).parent().parent().next().show();
+        $(this).parent().parent().parent().next().toggle();
     });
 
     $(document).on('click', '.reply_form button[type="submit"]', function (e) {
