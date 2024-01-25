@@ -5,7 +5,6 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">  
 	<script src='https://kit.fontawesome.com/a076d05399.js' crossorigin='anonymous'></script>
-	
 	<style>
 		.no-scrollbar::-webkit-scrollbar {
 			display: none;
@@ -27,51 +26,31 @@
 		a:visited {
             color: black;
         }
-		.sidebar-item {
-			display: flex;
-			align-items: center;
-			padding: 10px; 
-			margin: 0; 
-			box-sizing: border-box; 
-        }
-		.icon-container {
-			width: 30px; 
-			margin-right: 10px; 
-		}
-		.text {
-  			white-space: nowrap; 
-        }
-		#icon {
-  			font-size: 20px; 
-		}
-		.content-container {
-         flex-grow: 1; 
-         }
 	</style>
 	<div class="h-full px-11 overflow-y-auto bg-white flex flex-col justify-between no-scrollbar">
 		<div>
 		<ul class="space-y-3 font-medium text-3xl mt-6 mb-0">
-			<li class="sidebar-item">
-				<div class="icon-container"><i class="fa fa-exclamation-circle" id="icon"></i></div><a href="/" class=""><span class="text">Issues</span></a>
+			<li class="flex items-center p-4 border-b">
+				<div class="w-8 mr-4"><i class="fa fa-exclamation-circle" id="icon"></i></div><a href="/" class=""><span class="text">Issues</span></a>
 			</li>
-			<li class="sidebar-item">
-				<div class="icon-container"><i class="fa fa-institution" id="icon"></i></div>
+			<li class="flex items-center p-4 border-b">
+				<div class="w-8 mr-4"><i class="fa fa-institution" id="icon"></i></div>
 				<div class="content-container"><a href="/companies" class=""><span class="text">Companies</span></a></div>
 			</li>
-			<li class="sidebar-item">
-				<div class="icon-container"><i class="fa fa-trophy" id="icon"></i></div><a href="/leaderboard" class=""><span class="text">Users</span></a>
+			<li class="flex items-center p-4 border-b">
+				<div class="w-8 mr-4"><i class="fa fa-trophy" id="icon"></i></div><a href="/leaderboard" class=""><span class="text">Users</span></a>
 			</li>
-			<li class="sidebar-item">
-				<div class="icon-container"><i class="fa fa-users" id="icon"></i></div><a href="/teams" class=""><span class="text">Teams</span></a>
+			<li class="flex items-center p-4 border-b">
+				<div class="w-8 mr-4"><i class="fa fa-users" id="icon"></i></div><a href="/teams" class=""><span class="text">Teams</span></a>
 			</li>
-			<li class="sidebar-item">
-				<div class="icon-container"><i class="fa fa-bug" aria-hidden="true" id="icon"></i></div><a href="/hunts" class="text"><span class="">Hunts</span></a>
+			<li class="flex items-center p-4 border-b">
+				<div class="w-8 mr-4"><i class="fa fa-bug" aria-hidden="true" id="icon"></i></div><a href="/hunts" class="text"><span class="">Hunts</span></a>
 			</li>
-			<li class="sidebar-item">
-				<div class="icon-container"><i class="fa fa-cubes" id="icon"></i></div><a href="/projects" class=""><span class="text">Projects</span></a>
+			<li class="flex items-center p-4 border-b">
+				<div class="w-8 mr-4"><i class="fa fa-cubes" id="icon"></i></div><a href="/projects" class=""><span class="text">Projects</span></a>
 			</li>
-			<li class="sidebar-item">
-				<div class="icon-container"><i class="fa fa-file-code-o" id="icon"></i></div><a href="/apps" class=""><span class="text">Apps</span></a>
+			<li class="flex items-center p-4 border-b">
+				<div class="w-8 mr-4"><i class="fa fa-file-code-o" id="icon"></i></div><a href="/apps" class=""><span class="text">Apps</span></a>
 			</li>
 		</ul>
 
@@ -79,17 +58,17 @@
 			<li class="mb-[-6px] ms-[1px]">
 				<span class="font-bold text-[#AAA] text-[1.2rem] tracking-wide">EXPERIMENTAL</span>
 			</li>
-			<li class="sidebar-item">
-				<div class="icon-container"><i class="fa fa-trash" id="icon"></i></div><a href="/deletions" class=""><span class="text">Deletions</span></a>
+			<li class="flex items-center p-4 border-b">
+				<div class="w-8 mr-4"><i class="fa fa-trash" id="icon"></i></div><a href="/deletions" class=""><span class="text">Deletions</span></a>
 			</li>
-			<li class="sidebar-item">
-				<div class="icon-container"><i class="fa fa-trademark" id="icon"></i></div><a href="/trademarks" class=""><span class="text">Trademarks</span></a>
+			<li class="flex items-center p-4 border-b">
+				<div class="w-8 mr-4"><i class="fa fa-trademark" id="icon"></i></div><a href="/trademarks" class=""><span class="text">Trademarks</span></a>
 			</li>
-			<li class="sidebar-item">
-				<div class="icon-container"><i class="fa-solid fa-bacon" id="icon"></i></div><a href="/bacon" class=""><span class="text">BACON</span></a>
+			<li class="flex items-center p-4 border-b">
+				<div class="w-8 mr-4"><i class="fa-solid fa-bacon" id="icon"></i></div><a href="/bacon" class=""><span class="text">BACON</span></a>
 			</li>
-			<li class="sidebar-item">
-				<div class="icon-container"><i class="fa fa-tv" id="icon"></i></div><a href="/bltv" class=""><span class="text">BLTV</span></a>
+			<li class="flex items-center p-4 border-b">
+				<div class="w-8 mr-4"><i class="fa fa-tv" id="icon"></i></div><a href="/bltv" class=""><span class="text">BLTV</span></a>
 			</li>
 		</ul>
 
@@ -102,17 +81,17 @@
 		</button>
 
 		<ul class="space-y-3 font-medium text-3xl mt-1 overflow-clip transition-[max-height] duration-[250ms] max-h-0" id="menu-more-section">
-			<li class="sidebar-item"> 
-				<div class="icon-container"><i class="fa fa-code" aria-hidden="true" id="icon"></i></div><a href="/contributors" class="text"><span class="">Contributors</span></a>
+			<li class="flex items-center p-4 border-b"> 
+				<div class="w-8 mr-4"><i class="fa fa-code" aria-hidden="true" id="icon"></i></div><a href="/contributors" class="text"><span class="">Contributors</span></a>
 			</li>
-			<li class="sidebar-item">
-				<div class="icon-container"><i class="fa fa-info" id="icon"></i></div><a href="/about" class=""><span class="text">About Us</span></a>
+			<li class="flex items-center p-4 border-b">
+				<div class="w-8 mr-4"><i class="fa fa-info" id="icon"></i></div><a href="/about" class=""><span class="text">About Us</span></a>
 			</li>
-			<li class="sidebar-item">
-				<div class="icon-container"><i class="fa-solid fa-file-contract" id="icon"></i></div><a href="/terms" class="text"><span class="">Terms</span></a>
+			<li class="flex items-center p-4 border-b">
+				<div class="w-8 mr-4"><i class="fa-solid fa-file-contract" id="icon"></i></div><a href="/terms" class="text"><span class="">Terms</span></a>
 			</li>
-			<li class="sidebar-item">
-				<div class="icon-container"><i class="fa fa-code-fork" id="icon"></i></div><a href="https://github.com/OWASP/BLT#readme" class=""><span class="">Developers</span></a>
+			<li class="flex items-center p-4 border-b">
+				<div class="w-8 mr-4"><i class="fa fa-code-fork" id="icon"></i></div><a href="https://github.com/OWASP/BLT#readme" class=""><span class="">Developers</span></a>
 			</li>
 		</ul>
 		</div>
