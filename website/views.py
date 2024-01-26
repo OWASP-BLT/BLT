@@ -1630,13 +1630,17 @@ def search_issues(request, template="search.html"):
         stype = "label"
         query = query[6:]
     if stype == "issue" or stype is None:
+        if request.user.is_anonymous:
+            issues = Issue.objects.filter(Q(description__icontains=query),
+            hunt=None).exclude(Q(is_hidden=True))[0:20]
+        else :
+            issues = Issue.objects.filter(Q(description__icontains=query),
+            hunt=None).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20]
+
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(Q(description__icontains=query),
-            hunt=None).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[
-                0:20
-            ],
+            "issues": issues,
         }
     if request.user.is_authenticated:
         context["wallet"] = Wallet.objects.get(user=request.user)
