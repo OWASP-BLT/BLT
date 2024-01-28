@@ -177,7 +177,9 @@ AUTHENTICATION_BACKENDS = (
 #        'LOCATION': 'cache_table',
 #    }
 # }
-
+REST_AUTH = {
+    'SESSION_LOGIN': False
+}
 CONN_MAX_AGE = None
 
 WSGI_APPLICATION = "blt.wsgi.application"
