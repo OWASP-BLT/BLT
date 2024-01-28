@@ -1992,7 +1992,7 @@ class CreateInviteFriend(CreateView):
         )
         return HttpResponseRedirect(self.success_url)
 
-
+@login_required(login_url="/accounts/login")
 def follow_user(request, user):
     if request.method == "GET":
         userx = User.objects.get(username=user)
