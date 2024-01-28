@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load gravatar %}
+{% load static %}
+{% load humanize %}
+{% load custom_tags %}
+
+
+
+{% block content %}
+
+    <div>
+        <h1>this issue has been hidden by the user that reported it.</h1>
+        <button method="POST" action="/" type="button" class="btn btn-info">Request Access</button>
+        <button type="button" class="btn btn-secondary"><a href="/">Home</a></button>
+    </div>
+
+    
+{% endblock %}

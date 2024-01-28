@@ -47,6 +47,8 @@ from django.views.generic import DetailView, TemplateView, ListView, View
 from django.views.generic.edit import CreateView
 from django.core import serializers
 from django.conf import settings
+from django.contrib.auth.mixins import UserPassesTestMixin , LoginRequiredMixin
+
 
 from user_agents import parse
 from rest_framework.authtoken.models import Token
@@ -321,6 +323,40 @@ def facebook_callback(request):
 
     return safe_redirect(url, ALLOWED_HOSTS)
 
+
+class authenticate_handling(UserPassesTestMixin, LoginRequiredMixin):
+    def test_func(self , **kwargs):
+        pk  = self.kwargs.get('slug')
+        issue = Issue.objects.get(id=pk)
+        issue_user = issue.user
+        if issue.is_hidden : 
+            return issue_user == self.request.user 
+        else :
+            print("1")
+            return True
+
+
+def request_access(request , pk):
+    if request.method == "POST" : 
+        try : 
+            issue = Issue.object.filter(id=pk)
+            msg_plain = render_to_string(
+                'email/request_mention.txt',
+                {'name': issue.user, 'requester': request.user, 'issue_pk': pk})
+            msg_html = render_to_string(
+                'email/request_mention.txt',
+                {'name': issue.user, 'requester': request.user, 'issue_pk': pk})
+
+            send_mail('Request Access for private issue',
+                    msg_plain,
+                    settings.EMAIL_TO_STRING
+                    [issue.user.email],
+                    html_message=msg_html)
+            messages.success("Email has been sent to ")
+        except :
+            messages.error("There Was an error in sending Mail to issue owner. We suggest you to try again !")
+
+    return render(request , "request_access.html")
 
 class FacebookLogin(SocialLoginView):
     adapter_class = FacebookOAuth2Adapter
@@ -1679,7 +1715,7 @@ class HuntCreate(CreateView):
             return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=9R3LPM3ZN8KCC"
         return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HH7MNY6KJGZFW"
 
-class IssueView(DetailView):
+class IssueView(authenticate_handling ,DetailView):
     model = Issue
     slug_field = "id"
     template_name = "issue.html"
@@ -1753,7 +1789,12 @@ class IssueView(DetailView):
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
 
         return context
-
+    
+    def handle_no_permission(self) :
+        try :
+            return super(IssueView , self).handle_no_permission()
+        except :
+            return redirect("request_access/")
 
 @login_required(login_url="/accounts/login")
 def flag_issue(request, issue_pk):

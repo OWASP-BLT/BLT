@@ -53,7 +53,8 @@ from website.views import (
     github_callback,
     google_callback,
     facebook_callback,
-    sponsor_view
+    sponsor_view,
+    request_access
 )
 from website.api.views import (
     IssueViewSet,
@@ -317,7 +318,7 @@ urlpatterns = [
     path("issue/<str:issue_pk>/comment/update/<str:comment_pk>/", website.views.update_comment, name="update_comment"),
     # delete_comment 
     path("issue2/comment/delete/", website.views.delete_comment, name="delete_comment"),
-    re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
+    path("issue/<int:slug>/" , IssueView.as_view() , name = "issue_view"),
     re_path(r"^issue2/(?P<slug>\w+)/$", IssueView2.as_view(), name="issue_view2"),
     re_path(r"^follow/(?P<user>[^/]+)/", website.views.follow_user, name="follow_user"),
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
@@ -435,7 +436,8 @@ urlpatterns = [
     path("ads.txt", website.views.ads_txt),
     re_path(r"^contributors/$",contributors_view,name="contributors"),
     path("company/",include("company.urls")),
-    path("sponsor/",website.views.sponsor_view, name="sponsor")
+    path("sponsor/",website.views.sponsor_view, name="sponsor"),
+    path("issue/<int:pk>/request_access/" , website.views.request_access , name="request_access"),
 ]
 
 if settings.DEBUG:
