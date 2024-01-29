@@ -4,13 +4,34 @@
 {% load humanize %}
 {% load custom_tags %}
 
+{% block style %}
+<style>
+    h1{
+        font: 500px Arial, sans-serif;
+        font-weight: bold;
+
+    }
+    .container{
+        display: grid;
+        grid-area: header;
+        grid-template-rows: auto , auto;
+        grid-template-columns: auto auto;
+        row-gap: 50px;
+        padding: 20px;
+    }
+
+
+</style>
+{% endblock %}
 
 
 {% block content %}
-
-    <div>
+    <div class="container">
         <h1>this issue has been hidden by the user that reported it.</h1>
-        <button method="POST" action="/" type="button" class="btn btn-info">Request Access</button>
+        <form method="POST" action="#" >
+            {% csrf_token %}
+            <button name="request" type="submit" class="btn btn-info" value="request_access">Request Access</button>
+        </form>
         <button type="button" class="btn btn-secondary"><a href="/">Home</a></button>
     </div>
 

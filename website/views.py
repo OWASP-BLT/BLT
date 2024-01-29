@@ -332,29 +332,28 @@ class authenticate_handling(UserPassesTestMixin, LoginRequiredMixin):
         if issue.is_hidden : 
             return issue_user == self.request.user 
         else :
-            print("1")
             return True
 
 
 def request_access(request , pk):
+
     if request.method == "POST" : 
-        try : 
-            issue = Issue.object.filter(id=pk)
+            issue = Issue.objects.get(id=pk)
             msg_plain = render_to_string(
-                'email/request_mention.txt',
+                'email/request_access.txt',
                 {'name': issue.user, 'requester': request.user, 'issue_pk': pk})
             msg_html = render_to_string(
-                'email/request_mention.txt',
+                'email/request_access.txt',
                 {'name': issue.user, 'requester': request.user, 'issue_pk': pk})
 
             send_mail('Request Access for private issue',
                     msg_plain,
-                    settings.EMAIL_TO_STRING
+                    settings.EMAIL_TO_STRING,
                     [issue.user.email],
                     html_message=msg_html)
-            messages.success("Email has been sent to ")
-        except :
-            messages.error("There Was an error in sending Mail to issue owner. We suggest you to try again !")
+            messages.success( request , "Email has been sent to ")
+    else : 
+        return render(request , "request_access.html")
 
     return render(request , "request_access.html")
 
