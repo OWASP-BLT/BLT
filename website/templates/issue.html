@@ -372,10 +372,12 @@
         </div>
     </div>
 </div>
+<h1 class="section-heading">Description</h1>
+<div id="markdown-content"></div>
 
 <div class="row">
-    <div class="col-md-6">
-        <h4>Screenshot:</h4>
+    <div id="screenshot-wrapper" class="col-md-6">
+        <h4 class="section-heading">Screenshots:</h4>
         <hr>
         {% if object.screenshot %}
             <a href="{{ object.screenshot.url }}" data-lightbox="image">
@@ -426,14 +428,41 @@
         {% endif %}
     </div>
 </div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.1/showdown.min.js"></script>
 <script type="text/javascript">
+    
+    function embedded_image_markdown(markdownText) {
+        const image = /\$\[img[1-5]\]/g;
+        const screenshotDiv = document.querySelectorAll("#screenshot-wrapper img");
+        let screenshots = [];
+        screenshotDiv.forEach((element) => {
+        screenshots.push(element.attributes.src.value);
+        });
+        console.log(screenshots);
+        if (image.test(markdownText)) {
+            const matches = markdownText.match(image);
+            matches.forEach(element => {
+                const index = element.replace(/\D/g, '');
+                const image = screenshots[index - 1];
+                if (image !== undefined) {
+                    markdownText = markdownText.replace(element, `![img${index}](${image} =300x100)`);
+                }
+            });
+        }
+        return markdownText;
+    };
+
     function sanitizeURL(url) {
         var a = document.createElement('a');
         a.href = encodeURI(url);
         return a.href;
     }
-    
+
+    var markdownText = '{{ object.markdown_description|escapejs }}';
+    markdownText = embedded_image_markdown(markdownText);
+    var converter = new showdown.Converter();
+    var htmlContent = converter.makeHtml(markdownText);
+    document.getElementById('markdown-content').innerHTML = htmlContent;
    var label = "{{object.label}}";
 
     $(document).on('click', '.edit-issue', function (e) {
