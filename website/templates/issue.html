@@ -261,7 +261,11 @@
                             {% endif %}
                         </div>
                         <div class="col-xs-8">
+                            {% if not object.user %}
+                            <h3>Anonymously reported</h3>
+                            {% else %}
                             <h3>Reported by {{ object.user.username|default_if_none:"Anonymous" }}</h3>
+                            {% endif %}
                             {% if object.user.username %}
                             <h4>Total Points of {{ object.user.username }} = {{ users_score }}</h4>
 
@@ -349,6 +353,17 @@
                                 <a href="/delete_issue/{{ object.id }}"
                                     onclick="return confirm('Are you sure you want to delete this issue?')"
                                     class="btn btn-danger btn-xs">Delete Issue</a>
+                                {% if object.user %}
+                                <form method="post" action="/remove_user_from_issue/{{ object.id }}/" class="m-0 p-0">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="token" value="{{ csrf_token }}" class="m-0 p-0"/>
+                                    <!-- Other form fields go here if needed -->
+                                    <button type="submit" class="btn btn-info btn-xs report-anonymously" 
+                                            onclick="return confirm('Are you sure you want to report it anonymously?')">
+                                        Report Anonymously
+                                    </button>
+                                </form>
+                                {% endif %}
                             {% endif %}
                         </div>
                     </div>
