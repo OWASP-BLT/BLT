@@ -291,13 +291,13 @@ files = [
 
 [[package]]
 name = "chromedriver-autoinstaller"
-version = "0.6.3"
+version = "0.6.4"
 description = "Automatically install chromedriver that supports the currently installed version of chrome."
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "chromedriver-autoinstaller-0.6.3.tar.gz", hash = "sha256:63d320dce98e16bf5ca575c127954cdc97bf9d7bf38f25799b24e607125bb906"},
-    {file = "chromedriver_autoinstaller-0.6.3-py3-none-any.whl", hash = "sha256:0d6f1434c17d7c554804395e36d0eb7e1c9e78dde0e4dd828267a186da02a945"},
+    {file = "chromedriver-autoinstaller-0.6.4.tar.gz", hash = "sha256:1b4df04b87e6107c730085b98e5fd541db3d1777c32b8bd08e2ca4b1244050af"},
+    {file = "chromedriver_autoinstaller-0.6.4-py3-none-any.whl", hash = "sha256:b12ed187ca9fac4d744deb588d221222ed50836384607e5303e6eab98bb9dc64"},
 ]
 
 [package.dependencies]
@@ -429,20 +429,20 @@ typing-extensions = ">=3.10.0.0"
 
 [[package]]
 name = "dj-rest-auth"
-version = "2.2.8"
+version = "5.0.2"
 description = "Authentication and Registration in Django Rest Framework"
 optional = false
-python-versions = ">=3.5"
+python-versions = ">=3.6"
 files = [
-    {file = "dj-rest-auth-2.2.8.tar.gz", hash = "sha256:9fb3492888185ede8b2064ad6803120c7b0b83ab08e2347a02e9b44282374242"},
+    {file = "dj-rest-auth-5.0.2.tar.gz", hash = "sha256:aad7d912476169e9991547bf98645344d3939be2d7052098048d819524c115d9"},
 ]
 
 [package.dependencies]
-Django = ">=2.0"
-djangorestframework = ">=3.7.0"
+Django = ">=3.2"
+djangorestframework = ">=3.13.0"
 
 [package.extras]
-with-social = ["django-allauth (>=0.40.0,<0.53.0)"]
+with-social = ["django-allauth (>=0.56.0,<0.58.0)"]
 
 [[package]]
 name = "django"
@@ -466,20 +466,24 @@ bcrypt = ["bcrypt"]
 
 [[package]]
 name = "django-allauth"
-version = "0.51.0"
+version = "0.60.1"
 description = "Integrated set of Django applications addressing authentication, registration, account management as well as 3rd party (social) account authentication."
 optional = false
-python-versions = "*"
+python-versions = ">=3.7"
 files = [
-    {file = "django-allauth-0.51.0.tar.gz", hash = "sha256:ca1622733b6faa591580ccd3984042f12d8c79ade93438212de249b7ffb6f91f"},
+    {file = "django-allauth-0.60.1.tar.gz", hash = "sha256:97b0f9a1807ca812d84204328cd55c273ce4ec1835f822d8fd1a28178708f192"},
 ]
 
 [package.dependencies]
-Django = ">=2.0"
+Django = ">=3.2"
 pyjwt = {version = ">=1.7", extras = ["crypto"]}
 python3-openid = ">=3.0.8"
-requests = "*"
+requests = ">=2.0.0"
 requests-oauthlib = ">=0.3.0"
+
+[package.extras]
+mfa = ["qrcode (>=7.0.0)"]
+saml = ["python3-saml (>=1.15.0,<2.0.0)"]
 
 [[package]]
 name = "django-annoying"
@@ -673,24 +677,6 @@ files = [
 
 [package.dependencies]
 django = "*"
-
-[[package]]
-name = "django-rest-auth"
-version = "0.9.5"
-description = "Create a set of REST API endpoints for Authentication and Registration"
-optional = false
-python-versions = "*"
-files = [
-    {file = "django-rest-auth-0.9.5.tar.gz", hash = "sha256:f11e12175dafeed772f50d740d22caeab27e99a3caca24ec65e66a8d6de16571"},
-]
-
-[package.dependencies]
-Django = ">=1.8.0"
-djangorestframework = ">=3.1.3"
-six = ">=1.9.0"
-
-[package.extras]
-with-social = ["django-allauth (>=0.25.0)"]
 
 [[package]]
 name = "django-simple-captcha"
@@ -1233,13 +1219,13 @@ files = [
 
 [[package]]
 name = "parse"
-version = "1.20.0"
+version = "1.20.1"
 description = "parse() is the opposite of format()"
 optional = false
 python-versions = "*"
 files = [
-    {file = "parse-1.20.0-py2.py3-none-any.whl", hash = "sha256:5e171b001452fa9f004c5a58a93525175468daf69b493e9fa915347ed7ff6968"},
-    {file = "parse-1.20.0.tar.gz", hash = "sha256:bd28bae37714b45d5894d77160a16e2be36b64a3b618c81168b3684676aa498b"},
+    {file = "parse-1.20.1-py2.py3-none-any.whl", hash = "sha256:76ddd5214255ae711db4c512be636151fbabaa948c6f30115aecc440422ca82c"},
+    {file = "parse-1.20.1.tar.gz", hash = "sha256:09002ca350ad42e76629995f71f7b518670bcf93548bdde3684fd55d2be51975"},
 ]
 
 [[package]]
@@ -2305,4 +2291,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "58a5e80c3dbbded884b3192ad6500fda51b4d6596370bc5ce93b4404cdc71d07"
+content-hash = "776144c8efe17d7e461434781f9ab4be883750c71a8c5ec2b17eb6747068bc83"
