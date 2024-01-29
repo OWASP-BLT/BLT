@@ -147,10 +147,11 @@ class Domain(models.Model):
     @property
     def domain_name(self):
         parsed_url = urlparse(self.url)
-        domain = parsed_url.hostname
-        temp = domain.rsplit(".")
-        if len(temp) == 3:
-            domain = temp[1] + "." + temp[2]
+        domain = parsed_url.path
+        if domain is not None:
+            temp = domain.rsplit(".")
+            if len(temp) == 3:
+                domain = temp[1] + "." + temp[2]
         return domain
 
     def get_absolute_url(self):
@@ -303,6 +304,10 @@ class Issue(models.Model):
                 return self.ocr
             except:
                 return "OCR not installed"
+            
+    def remove_user(self):
+        self.user=None
+        self.save()
 
     @property
     def get_absolute_url(self):
