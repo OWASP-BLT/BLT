@@ -1154,13 +1154,15 @@ def delete_issue(request, id):
         return redirect("/")
     
 def remove_user_from_issue(request, id):
+    tokenauth = False  
     try:
         for token in Token.objects.all():
             if request.POST["token"] == token.key:
                 request.user = User.objects.get(id=token.user_id)
                 tokenauth = True
     except:
-        tokenauth = False
+        pass 
+
     issue = Issue.objects.get(id=id)
     if request.user.is_superuser or request.user == issue.user:
         issue.remove_user()
@@ -1168,10 +1170,10 @@ def remove_user_from_issue(request, id):
         if tokenauth:
             return JsonResponse("User removed from the issue", safe=False)
         else:
-            return redirect("/")
+            return redirect(f"/issue/{id}")
     else:
         messages.error(request, "Permission denied")
-        return redirect("/")
+        return redirect(f"/issue/{id}")
 
 
 class DomainDetailView(ListView):
