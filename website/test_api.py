@@ -124,3 +124,24 @@ class APITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         if len(response.data):
             self.assertGreater(response.data[0]["starts_on"], datetime.datetime.now(), "Invalid Response")
+
+    def test_get_issues(self):
+
+        url = "/api/v1/issues/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code , status.HTTP_200_OK)
+        if len(response.data):
+            count = response.data["count"]
+            for n in range(0,count) :
+                message = "Test is failed"
+                self.assertTrue(response.data["results"][n].is_hidden , message)
+
+    def test_get_userissues(self):
+        url = "/api/v1/userissues/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code , status.HTTP_200_OK)
+        if len(response.data):
+            count = response.data["count"]
+            for n in range(0,count) :
+                message = "Test is failed"
+                self.assertTrue(response.data["results"][n].is_hidden , message)
