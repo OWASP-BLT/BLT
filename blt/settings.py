@@ -101,6 +101,7 @@ MIDDLEWARE = (
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    'allauth.account.middleware.AccountMiddleware',#Newly added for allauth 0.60.1
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -177,7 +178,9 @@ AUTHENTICATION_BACKENDS = (
 #        'LOCATION': 'cache_table',
 #    }
 # }
-
+REST_AUTH = {
+    'SESSION_LOGIN': False
+}
 CONN_MAX_AGE = None
 
 WSGI_APPLICATION = "blt.wsgi.application"

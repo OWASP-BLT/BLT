@@ -1086,6 +1086,28 @@ def delete_issue(request, id):
         return JsonResponse("Deleted", safe=False)
     else:
         return redirect("/")
+    
+def remove_user_from_issue(request, id):
+    tokenauth = False  
+    try:
+        for token in Token.objects.all():
+            if request.POST["token"] == token.key:
+                request.user = User.objects.get(id=token.user_id)
+                tokenauth = True
+    except:
+        pass 
+
+    issue = Issue.objects.get(id=id)
+    if request.user.is_superuser or request.user == issue.user:
+        issue.remove_user()
+        messages.success(request, "User removed from the issue")
+        if tokenauth:
+            return JsonResponse("User removed from the issue", safe=False)
+        else:
+            return redirect(reverse('issue_view', kwargs={'slug': issue.id}))
+    else:
+        messages.error(request, "Permission denied")
+        return redirect(reverse('issue_view', kwargs={'slug': issue.id}))
 
 
 class DomainDetailView(ListView):
@@ -1926,7 +1948,7 @@ class CreateInviteFriend(CreateView):
         )
         return HttpResponseRedirect(self.success_url)
 
-
+@login_required(login_url="/accounts/login")
 def follow_user(request, user):
     if request.method == "GET":
         userx = User.objects.get(username=user)
