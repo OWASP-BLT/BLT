@@ -304,6 +304,10 @@ class Issue(models.Model):
                 return self.ocr
             except:
                 return "OCR not installed"
+            
+    def remove_user(self):
+        self.user=None
+        self.save()
 
     @property
     def get_absolute_url(self):
