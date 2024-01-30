@@ -351,7 +351,8 @@ def request_access(request , pk):
                     settings.EMAIL_TO_STRING,
                     [issue.user.email],
                     html_message=msg_html)
-            messages.success( request , "Email has been sent to ")
+            messages.success( request , "Email request has been sent to owner")
+            return redirect("/")
     else : 
         return render(request , "request_access.html")
 

@@ -7,32 +7,42 @@
 {% block style %}
 <style>
     h1{
+        grid-area: header;
         font: 500px Arial, sans-serif;
         font-weight: bold;
-
     }
-    .container{
+    #home-button{
+        align-items: center;
+        justify-items: center;
+        grid-area: main;
+    }
+    #request-button{
+        grid-area: sidebar;
+    }
+
+    .div-container{
+        padding-top: 50px;
+        justify-content: center;    
         display: grid;
-        grid-area: header;
-        grid-template-rows: auto , auto;
-        grid-template-columns: auto auto;
-        row-gap: 50px;
-        padding: 20px;
+        grid-template-columns: 200px 100px ;
+        grid-template-rows: 100px 100px;
+        grid-template-areas: 
+            "header header header"
+            "main main sidebar";
     }
-
 
 </style>
 {% endblock %}
 
 
 {% block content %}
-    <div class="container">
+    <div class="div-container">
         <h1>this issue has been hidden by the user that reported it.</h1>
         <form method="POST" action="#" >
             {% csrf_token %}
-            <button name="request" type="submit" class="btn btn-info" value="request_access">Request Access</button>
+            <button id="request-button"name="request" type="submit" class="btn btn-info" value="request_access">Request Access</button>
         </form>
-        <button type="button" class="btn btn-secondary"><a href="/">Home</a></button>
+        <button id=" home-button" type="button" class="btn btn-secondary"><a href="/">Home</a></button>
     </div>
 
     
