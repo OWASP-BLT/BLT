@@ -350,6 +350,7 @@ urlpatterns = [
     ),
     re_path(r"^accounts/profile/", website.views.profile, name="account_profile"),
     re_path(r"^delete_issue/(?P<id>\w+)/$", website.views.delete_issue, name="delete_issue"),
+    re_path(r"^remove_user_from_issue/(?P<id>\w+)/$", website.views.remove_user_from_issue, name="remove_user_from_issue"),
     re_path(r"^accounts/", include("allauth.urls")),
     re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html"),name="start_hunt"),
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
@@ -413,6 +414,9 @@ urlpatterns = [
     re_path(r"^api/v1/search/$", csrf_exempt(website.views.search_issues), name="search_issues"),
     re_path(
         r"^api/v1/delete_issue/(?P<id>\w+)/$", csrf_exempt(website.views.delete_issue), name="delete_api_issue"
+    ),
+    re_path(
+        r"^api/v1/remove_user_from_issue/(?P<id>\w+)/$", csrf_exempt(website.views.remove_user_from_issue), name="remove_api_user_from_issue"
     ),
     re_path(r"^api/v1/issue/update/$", csrf_exempt(website.views.UpdateIssue), name="update_api_issue"),
     re_path(r"^api/v1/scoreboard/$", website.views.get_scoreboard, name="api_scoreboard"),
