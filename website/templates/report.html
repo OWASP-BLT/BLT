@@ -123,14 +123,19 @@
                             </div>
                         </div>
                         <!-- Top Domains List -->
-                        <div class="flex ml-4">
-                            {% for domain in top_domains %}
-                                <img 
-                                    src="https://www.google.com/s2/favicons?sz=32&domain_url={{ domain.domain__name }}" 
-                                    alt="{{ domain.domain__name }}" 
-                                    class="mr-2 cursor-pointer"
-                                    onclick="fillUrl('{{ domain.domain__name }}')"> <!-- JavaScript function to fill URL -->
-                            {% endfor %}
+                        <div class="relative inline-block ml-4 mt-8">
+                            <div id="domainDropdown" class="flex items-center px-2 py-1 border rounded-md cursor-pointer">
+                                <span>Select domain URL from here</span>
+                                <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                            <div class="domainList absolute hidden mt-2 bg-white border rounded-md shadow-md">
+                                {% for domain in top_domains %}
+                                    <div class="flex items-center px-2 py-1 cursor-pointer hover:bg-gray-200" onclick="fillUrl('{{ domain.domain__name }}')" onmousedown="selectListItem(this)">
+                                        <img src="https://www.google.com/s2/favicons?sz=32&domain_url={{ domain.domain__name }}" alt="{{ domain.domain__name }}" class="mr-2" style="width: 16px; height: 16px;">
+                                        <span>{{ domain.domain__name }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                     <div class="h-full flex items-end w-full min-w-[150px]">
@@ -375,6 +380,13 @@
     const screenshots = document.getElementById('screenshots');
     let manage_div = document.getElementById("files_manage");
 
+    function selectListItem(element) {
+        document.querySelectorAll('.domainList div').forEach(function (item) {
+            item.classList.remove('bg-gray-300');
+        });
+        element.classList.add('bg-gray-300');
+    }
+
     function escapeHtml(str) {return str.replace(/[&<>"']/g, function (s) {var entityMap = {"&": "&amp;","<": "&lt;",">": "&gt;",'"': '&quot;',"'": '&#39;',};return entityMap[s];});}
     function previewFile(file_name) {
         event.preventDefault();
@@ -389,6 +401,10 @@
             }
         });
     }
+
+    $('#domainDropdown').on('click', function () {
+        $('.domainList').toggleClass('hidden');
+    });
 
     $("#image-preview-wrapper").on("click", () => {
         event.preventDefault();
