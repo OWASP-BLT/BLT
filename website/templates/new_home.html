@@ -32,22 +32,6 @@
             </div>
         </div>
     </div>
-    
-    
-        <!-- <section class="hero-bugs-container grid grid-rows-2 gap-[25px] mx-[4%] my-[2.5rem] sm:max-w-screen-3xsm">
-            <div class="-order-1 sm:-order-1">
-    {% include '_report_widget.html' %}
-            </div>
-                    {% for bug in bugs %}
-                        {% include '_bug.html' %}
-                    {% endfor %}
-               
-         {% include '_leaderboard_widget.html' %}
-        
-        </section>
-        -->
-  
-
     <script>
         function like_unlike_handler(e,issue_pk){
             e.preventDefault();
@@ -94,7 +78,7 @@
             });
         }
     </script>
-    <div class="col-md-12 ">
+    <div class="col-md-12">
         <div class="text-center">
             {% if bugs.has_previous %}
                 <a href="?page=1{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
