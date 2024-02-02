@@ -27,7 +27,10 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 # Check the current hostname and adjust PROJECT_NAME and DOMAIN_NAME accordingly
 current_hostname = socket.gethostname()
-if current_hostname == "blt.owasp.org":
+
+print("Current hostname:", current_hostname)
+
+if current_hostname == "owasp.org":
     PROJECT_NAME = "BLT"
     DOMAIN_NAME = "blt.owasp.org"
     FQDN = "blt.owasp.org"
