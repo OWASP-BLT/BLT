@@ -29,16 +29,19 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 current_hostname = socket.gethostname()
 
 print("Current hostname:", current_hostname)
+print(os.environ)
 
-if current_hostname == "owasp.org":
-    PROJECT_NAME = "BLT"
-    DOMAIN_NAME = "blt.owasp.org"
-    FQDN = "blt.owasp.org"
-else:
-    # Default values if hostname does not match
-    PROJECT_NAME = os.environ.get("PROJECT_NAME", "BLT")
-    DOMAIN_NAME = os.environ.get("DOMAIN_NAME", "127.0.0.1") 
-    FQDN = "www." + DOMAIN_NAME
+#if current_hostname == "owasp.org":
+
+PROJECT_NAME = "BLT"
+DOMAIN_NAME = "blt.owasp.org"
+FQDN = "blt.owasp.org"
+
+# else:
+#     # Default values if hostname does not match
+#     PROJECT_NAME = os.environ.get("PROJECT_NAME", "BLT")
+#     DOMAIN_NAME = os.environ.get("DOMAIN_NAME", "127.0.0.1") 
+#     FQDN = "www." + DOMAIN_NAME
 
 PROJECT_NAME_LOWER = PROJECT_NAME.lower()
 PROJECT_NAME_UPPER = PROJECT_NAME.upper()
