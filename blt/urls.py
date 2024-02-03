@@ -54,7 +54,8 @@ from website.views import (
     google_callback,
     facebook_callback,
     sponsor_view,
-    request_access
+    request_access,
+    grant_access,
 )
 from website.api.views import (
     IssueViewSet,
@@ -441,7 +442,9 @@ urlpatterns = [
     re_path(r"^contributors/$",contributors_view,name="contributors"),
     path("company/",include("company.urls")),
     path("sponsor/",website.views.sponsor_view, name="sponsor"),
-    path("issue/<int:pk>/request_access/" , website.views.request_access , name="issue_request_access"),
+    path("issue/<int:issue_pk>/request_access/" , website.views.request_access , name="issue_request_access"),
+    path("private/<int:user_pk>/issue/" , website.views.private_issue , name="private_issue"),
+    path("private/<int:user_pk>/issue/<int:issue_pk>/grant_access/" , website.views.grant_access , name="grant_access")
 ]
 
 if settings.DEBUG:

@@ -18,7 +18,8 @@ from website.models import (
     CompanyAdmin,
     Company,
     IssueScreenshot,
-    HuntPrize
+    HuntPrize,
+    RequestAccess
 )
 
 
@@ -136,3 +137,4 @@ admin.site.register(Winner, WinnerAdmin)
 admin.site.register(Payment, PaymentAdmin)
 admin.site.register(IssueScreenshot)
 admin.site.register(HuntPrize)
+admin.site.register(RequestAccess)

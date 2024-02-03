@@ -79,7 +79,8 @@ from website.models import (
     CompanyAdmin,
     Subscription,
     Company,
-    IssueScreenshot
+    IssueScreenshot,
+    RequestAccess
 )
 from .forms import FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm, QuickIssueForm
 
@@ -88,6 +89,9 @@ from django.conf import settings
 from comments.models import Comment
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
+from .decorator import (
+    private_access_check
+)
 
 def is_valid_https_url(url):
     validate = URLValidator(schemes=['https'])  # Only allow HTTPS URLs
@@ -329,34 +333,128 @@ class authenticate_handling(UserPassesTestMixin, LoginRequiredMixin):
         pk  = self.kwargs.get('slug')
         issue = Issue.objects.get(id=pk)
         issue_user = issue.user
-        if issue.is_hidden : 
-            return issue_user == self.request.user 
+        issue_viewer = issue.viewer.all()
+        if issue.is_hidden :
+            if issue_user == self.request.user :
+                return True 
+            elif (self.request.user in issue_viewer ) :
+                return True 
+            else :
+                return False
         else :
             return True
 
+@login_required(login_url="/accounts/login")
+@private_access_check()
+def private_issue(request , user_pk ):
+    activities = Issue.objects.filter(Q(user_id= user_pk)  & Q(is_hidden=True))
+    context = {
+        "activities" : activities , 
+        "user_pk": user_pk
+    }
+    return render(request , "private_issue.html" , context)
 
-def request_access(request , pk):
+@login_required(login_url="/accounts/login")
+@private_access_check()
+def grant_access(request , user_pk , issue_pk):
+    request_access = RequestAccess.objects.filter(issue=issue_pk)
+    issue = Issue.objects.get(id=issue_pk)
+    
+    if request.method=="POST":
+        if request.POST.get("grant_access"):
+            if request.POST.get('select_user') != None:
+                selected_user = request.POST.get('select_user')
+                r = RequestAccess.objects.get(user=selected_user)
+                try: 
+                    msg_plain = render_to_string(
+                        'email/granted_access.txt',
+                        {'name': r.user, 'issue_pk': issue_pk})
+                    msg_html = render_to_string(
+                        'email/granted_access.txt',
+                        {'name': r.user, 'issue_pk': issue_pk})
 
-    if request.method == "POST" : 
-            issue = Issue.objects.get(id=pk)
-            msg_plain = render_to_string(
-                'email/request_access.txt',
-                {'name': issue.user, 'requester': request.user, 'issue_pk': pk})
-            msg_html = render_to_string(
-                'email/request_access.txt',
-                {'name': issue.user, 'requester': request.user, 'issue_pk': pk})
+                    send_mail('Access Granted for Private Issue',
+                            msg_plain,
+                            settings.EMAIL_TO_STRING,
+                            [r.user.email],
+                            html_message=msg_html)
 
-            send_mail('Request Access for private issue',
-                    msg_plain,
-                    settings.EMAIL_TO_STRING,
-                    [issue.user.email],
-                    html_message=msg_html)
-            messages.success( request , "Email request has been sent to owner")
-            return redirect("/")
-    else : 
-        return render(request , "request_access.html")
+                    issue.viewer.add(selected_user) 
+                    r.delete()
+                    messages.success( request , "Viewership Successfully granted")
+                    return redirect("/")
+                except Exception as e :
+                    print(e)
+                    messages.error(request , "Email could not be sent. Please try again !")
+            else:
+                messages.error(request , "Please select an option")
+        
+        elif request.POST.get("cancel"):
+            print(request.POST.get('select_viewer'))
 
-    return render(request , "request_access.html")
+            if request.POST.get('select_user') != None:
+                selected_user = request.POST.get('select_user')
+                request_access = RequestAccess.objects.get(user=selected_user)
+                request_access.delete()
+                messages.success(request , "Request Declined")
+    
+            elif request.POST.get('select_viewer') != None:
+                selected_viewer = request.POST.get('select_viewer')
+                issue = Issue.objects.get(id=issue_pk)
+                issue.viewer.remove(selected_viewer)
+                messages.success(request , "Viewer Deleted")
+
+            else :
+                messages.error(request , "Please select an option")
+
+    context = {
+        "requesters" : request_access ,
+        "viewers": issue.viewer.all()
+    }
+
+    return render(request , "grant_access.html" , context)
+
+@login_required(login_url="/accounts/login")
+def request_access(request ,  issue_pk):
+
+    try :
+        issue = Issue.objects.get(id=issue_pk)
+    except :
+        messages.error(request , "Issue Does not Exist")
+        return redirect("/")
+    try :
+        RequestAccess.objects.get(user=request.user , issue=issue_pk)
+        messages.success(request , "Request has ALready been sent Please Wait for approval")
+        return redirect("/")
+    except:
+        if issue.is_hidden==True and (request.user not in issue.viewer.all()) :
+            if request.method == "POST" :
+                try: 
+                    msg_plain = render_to_string(
+                        'email/request_access.txt',
+                        {'name': issue.user, 'requester': request.user, 'issue_pk': issue_pk})
+                    msg_html = render_to_string(
+                        'email/request_access.txt',
+                        {'name': issue.user, 'requester': request.user, 'issue_pk': issue_pk})
+
+                    send_mail('Request Access for private issue',
+                            msg_plain,
+                            settings.EMAIL_TO_STRING,
+                            [issue.user.email],
+                            html_message=msg_html)
+                    messages.success( request , "Email request has been sent to owner")
+                    message = request.POST.get("text-box")
+                    print(message)
+                    request_access = RequestAccess(issue = issue , user = request.user , message = message )
+                    request_access.save()
+                    return redirect("/")
+                except:
+                    messages.error(request , "Email could not be sent. Please try again !")
+            else : 
+                return render(request , "request_access.html")
+        else :
+            return redirect('issue_view' , slug=int(issue_pk))
+
 
 class FacebookLogin(SocialLoginView):
     adapter_class = FacebookOAuth2Adapter
@@ -1032,6 +1130,7 @@ class UserProfileDetailView(DetailView):
         context["total_closed"] = Issue.objects.filter(
             user=self.object, status="closed"
         ).count()
+        context["private_issue"] = Issue.objects.filter(user=self.object , is_hidden=True).count()
         context["current_month"] = datetime.now().month
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -1070,6 +1169,7 @@ class UserProfileDetailView(DetailView):
         ]
         context["bookmarks"] = user.userprofile.issue_saved.all()
         context['issues_hidden'] = "checked" if user.userprofile.issues_hidden else "!checked"
+        context['user_pk'] = user.id
         return context
 
     @method_decorator(login_required)

@@ -5,32 +5,58 @@
 {% load custom_tags %}
 
 {% block style %}
+
 <style>
-    h1{
-        grid-area: header;
-        font: 500px Arial, sans-serif;
-        font-weight: bold;
-    }
-    #home-button{
-        align-items: center;
-        justify-items: center;
-        grid-area: main;
-    }
-    #request-button{
-        grid-area: sidebar;
+    body {
+        background-color: #f8f9fa; /* Bootstrap default background color */
+        padding-top: 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Recommended sans-serif font stack */
+        font-size: 16px;
+        color: #333; /* Dark text color */
     }
 
-    .div-container{
-        padding-top: 50px;
-        justify-content: center;    
-        display: grid;
-        grid-template-columns: 200px 100px ;
-        grid-template-rows: 100px 100px;
-        grid-template-areas: 
-            "header header header"
-            "main main sidebar";
+    .div-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
 
+    h1 {
+        font-size: 24px;
+        color: #007bff;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+    }
+
+    form {
+        margin-bottom: 20px;
+    }
+
+    #text-box {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ced4da; /* Bootstrap default border color */
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    #request-button {
+        font-size: 16px;
+        letter-spacing: 1px;
+        transition: background-color 0.3s ease;
+    }
+
+    #request-button:hover {
+        background-color: #0056b3;
+    }
+
+    #home-button {
+        font-size: 16px;
+    }
 </style>
 {% endblock %}
 
@@ -40,6 +66,7 @@
         <h1>this issue has been hidden by the user that reported it.</h1>
         <form method="POST" action="#" >
             {% csrf_token %}
+            <textarea id="text-box" name="text-box" rows="4" cols="30">could you please let me access this issue?</textarea>
             <button id="request-button"name="request" type="submit" class="btn btn-info" value="request_access">Request Access</button>
         </form>
         <button id=" home-button" type="button" class="btn btn-secondary"><a href="/">Home</a></button>

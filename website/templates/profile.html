@@ -349,6 +349,11 @@
             <a href="/label_activity?user={{ user.username }}&label=closed">
                 <kbd class="fa fa-code-fork"> {% trans 'Closed Issues' %} {{ total_closed }}</kbd>
             </a>
+            {% if user_pk == request.user.id %}
+                <a href="{% url 'private_issue' user_pk=user_pk %}">
+                    <kbd class="fa fa-user-secret"> {% trans 'Private Issues' %} {{ private_issue }}</kbd>
+                </a>
+            {% endif %}
         </div>
     </div>
 </div>

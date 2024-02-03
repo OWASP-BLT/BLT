@@ -252,6 +252,7 @@ class Issue(models.Model):
     modified = models.DateTimeField(auto_now=True)
     is_hidden = models.BooleanField(default=False)
     rewarded = models.PositiveIntegerField(default=0) # money rewarded by the company
+    viewer = models.ManyToManyField(User , null=True , blank=True , related_name="viewer")
 
 
     def __unicode__(self):
@@ -317,6 +318,10 @@ class Issue(models.Model):
         ordering = ["-created"]
     
     
+class RequestAccess(models.Model):
+    issue = models.ForeignKey(Issue, null=True , blank=True , on_delete= models.CASCADE)
+    user = models.ForeignKey(User , null=True , blank=True , on_delete=models.CASCADE)
+    message = models.CharField(max_length=100 , null=True , blank = True)
 
 class IssueScreenshot(models.Model):
     image = models.ImageField(upload_to="screenshots", validators=[validate_image])
