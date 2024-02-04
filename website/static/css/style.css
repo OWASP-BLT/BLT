@@ -29,6 +29,14 @@ body {
     border-bottom-width: 1px;
 }
 
+.section-heading {
+    font-weight: 400;
+    font-size: 30px;
+    padding: 30px;
+    margin: 20px 0;
+    border-bottom-width: 1px;
+}
+
 .chrome-plugin {
     color: #dd4252;
 }
