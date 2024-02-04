@@ -87,6 +87,13 @@ from comments.models import Comment
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 
+from django.views.generic.edit import CreateView
+from django.http import HttpResponse
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from rest_framework.decorators import throttle_classes
+from rest_framework.throttling import AnonRateThrottle
+
 def is_valid_https_url(url):
     validate = URLValidator(schemes=['https'])  # Only allow HTTPS URLs
     try:
@@ -478,7 +485,7 @@ def find_key(request, token):
             return HttpResponse(os.environ.get("ACME_KEY_%s" % n))
     raise Http404("Token or key does not exist")
 
-
+@throttle_classes([AnonRateThrottle])
 class IssueBaseCreate(object):
     def form_valid(self, form):
         score = 3
@@ -603,11 +610,12 @@ class IssueBaseCreate(object):
 
         return HttpResponseRedirect("/")
 
+@throttle_classes([AnonRateThrottle])
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
     fields = ["url", "description", "domain", "label","markdown_description"]
     template_name = "report.html"
-
+    
     def get_initial(self):
         try:
             json_data = json.loads(self.request.body)

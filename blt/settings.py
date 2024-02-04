@@ -426,7 +426,11 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': f'{anon_throttle}/day',
         'user': f'{user_throttle}/day'
-    }
+    },
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
 }
 
 SOCIALACCOUNT_PROVIDER = {
