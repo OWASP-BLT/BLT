@@ -14,23 +14,44 @@ from django.http import Http404
 from django.utils.translation import gettext_lazy as _
 import environ
 # from google.oauth2 import service_account
+import os
+import socket
 
 env = environ.Env()
 # reading .env file
 environ.Env.read_env()
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-PROJECT_NAME = os.environ.get("PROJECT_NAME", "BLT")
+
+# Check the current hostname and adjust PROJECT_NAME and DOMAIN_NAME accordingly
+current_hostname = socket.gethostname()
+
+print("Current hostname:", current_hostname)
+print(os.environ)
+
+#if current_hostname == "owasp.org":
+
+PROJECT_NAME = "BLT"
+DOMAIN_NAME = "blt.owasp.org"
+FQDN = "blt.owasp.org"
+
+# else:
+#     # Default values if hostname does not match
+#     PROJECT_NAME = os.environ.get("PROJECT_NAME", "BLT")
+#     DOMAIN_NAME = os.environ.get("DOMAIN_NAME", "127.0.0.1") 
+#     FQDN = "www." + DOMAIN_NAME
+
 PROJECT_NAME_LOWER = PROJECT_NAME.lower()
 PROJECT_NAME_UPPER = PROJECT_NAME.upper()
 
 ADMIN_URL = os.environ.get("ADMIN_URL", "admin")
-DOMAIN_NAME = os.environ.get("DOMAIN_NAME", "127.0.0.1") #domain.com (without www)
-PORT = os.environ.get("PORT","8000")
+PORT = os.environ.get("PORT", "8000")
 DEFAULT_FROM_EMAIL = "support@" + DOMAIN_NAME
 SERVER_EMAIL = "support@" + DOMAIN_NAME
-FQDN = "www." + DOMAIN_NAME
+
+
 EMAIL_TO_STRING = PROJECT_NAME + " <"+ SERVER_EMAIL +">"
 BLOG_URL = os.environ.get("BLOG_URL","https://owasp.org/www-project-bug-logging-tool/")
 FACEBOOK_URL = os.environ.get("FACEBOOK_URL","https://www.facebook.com/groups/owaspfoundation/")
@@ -296,7 +317,7 @@ ACCOUNT_EMAIL_VERIFICATION = "optional"
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Allow all host headers
-ALLOWED_HOSTS = ["." + DOMAIN_NAME, "127.0.0.1", "localhost", "0.0.0.0"]
+ALLOWED_HOSTS = ["." + DOMAIN_NAME, "127.0.0.1", "localhost", "0.0.0.0", "blt.owasp.org"]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
