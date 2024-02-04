@@ -117,4 +117,13 @@
 			</li>
 		</ul>
 	</div>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			const hamburgerButton = document.getElementById('hamburger-button');
+			const sidebar = document.getElementById('sidebar');
+			hamburgerButton.addEventListener('click', function () {
+				sidebar.classList.toggle('-translate-x-full');
+			});
+		});
+	</script>
 </aside>
