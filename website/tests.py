@@ -12,11 +12,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from .models import Issue, IssueScreenshot
-
+from .views import IssueBaseCreate
  
 from rest_framework.test import APITestCase,APIRequestFactory
 from rest_framework import status
-
 
 os.environ['DJANGO_LIVE_TEST_SERVER_ADDRESS'] = 'localhost:8082'
 
@@ -141,15 +140,16 @@ class HideImage(TestCase):
 class IssueBaseCreateTest(APITestCase):
     def setUp(self):
         self.factory = APIRequestFactory()
-    
+        self.view = IssueBaseCreate.as_view()
+
     def test_throttle_exceed_limit(self):
         for i in range(10000):
             request = self.factory.post('/report/', {'url': 'http://example.com', 'description': 'test', 'markdownInput': 'test', 'screenshots': 'test', 'captcha_1': 'PASSED'})
-
+            response = self.view(request)
         self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
 
     def test_throttle_within_limit(self):
         for i in range(0, 1000):
             request = self.factory.post('/report/', {'url': 'http://example.com', 'description': 'test', 'markdownInput': 'test', 'screenshots': 'test', 'captcha_1': 'PASSED'})
-           
+            response = self.view(request)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
