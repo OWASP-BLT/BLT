@@ -145,11 +145,11 @@ class IssueBaseCreateTest(APITestCase):
     def test_throttle_exceed_limit(self):
         for i in range(10000):
             request = self.factory.post('/report/', {'url': 'http://example.com', 'description': 'test', 'markdownInput': 'test', 'screenshots': 'test', 'captcha_1': 'PASSED'})
-            response = self.view(request)
+
         self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
 
     def test_throttle_within_limit(self):
         for i in range(0, 1000):
             request = self.factory.post('/report/', {'url': 'http://example.com', 'description': 'test', 'markdownInput': 'test', 'screenshots': 'test', 'captcha_1': 'PASSED'})
-            response = self.view(request)
+           
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
