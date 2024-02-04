@@ -12,7 +12,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from .models import Issue, IssueScreenshot
-from .views import IssueBaseCreate
+
+from website.views import IssueBaseCreate
  
 from rest_framework.test import APITestCase,APIRequestFactory
 from rest_framework import status
@@ -140,7 +141,7 @@ class HideImage(TestCase):
 class IssueBaseCreateTest(APITestCase):
     def setUp(self):
         self.factory = APIRequestFactory()
-        self.view = IssueBaseCreate.as_view()
+        self.view = IssueBaseCreate.form_valid()
 
     def test_throttle_exceed_limit(self):
         for i in range(10000):
