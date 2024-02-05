@@ -73,7 +73,7 @@ class MySeleniumTests(LiveServerTestCase):
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
         self.selenium.get('%s%s' % (self.live_server_url, '/report/'))
-        self.selenium.find_element("name", "url").send_keys("https://www.bugheist.com/report/")
+        self.selenium.find_element("name", "url").send_keys("https://blt.owasp.org/report/")
         self.selenium.find_element("id", "description").send_keys('XSS Attack on Google') # title of bug  
         self.selenium.find_element("id", "markdownInput").send_keys('Description of bug')
         Imagepath = os.path.abspath(os.path.join(os.getcwd(), 'website/static/img/background.jpg'))
