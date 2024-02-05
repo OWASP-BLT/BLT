@@ -1170,10 +1170,10 @@ def remove_user_from_issue(request, id):
         if tokenauth:
             return JsonResponse("User removed from the issue", safe=False)
         else:
-            return redirect(reverse('issue_view', kwargs={'slug': issue.id}))
+            return redirect(request.META.get('HTTP_REFERER'))
     else:
         messages.error(request, "Permission denied")
-        return redirect(reverse('issue_view', kwargs={'slug': issue.id}))
+        return redirect(request.META.get('HTTP_REFERER'))
 
 
 class DomainDetailView(ListView):
