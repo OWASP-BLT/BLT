@@ -123,18 +123,17 @@
                             </div>
                         </div>
                         <!-- Top Domains List -->
-                        <div class="overflow-x-auto border w-[40rem] border-red-500 rounded p-3 mt-14 ml-10">
-                            <div class="flex ml-4 space-x-2">
+                        <div class="overflow-hidden mt-14 ml-10">
+                            <div class="flex ml-4 space-x-3">
                                 {% for domain in top_domains %}
                                     <img 
                                         src="https://www.google.com/s2/favicons?sz=32&domain_url={{ domain.domain__name }}" 
                                         alt="{{ domain.domain__name }}" 
-                                        class="cursor-pointer rounded-full p-1 bg-gray-200 hover:bg-gray-300 hover:scale-110 transition duration-300 ease-in-out w-14 h-14" 
+                                        class="cursor-pointer rounded-lg p-1 bg-gray-200 hover:bg-gray-300 hover:scale-110 transition duration-300 ease-in-out w-16 h-16" 
                                         onclick="fillUrl('{{ domain.domain__name }}')"> <!-- JavaScript function to fill URL -->
                                 {% endfor %}
                             </div>
                         </div>
-                        
                         
                     </div>
                     <div class="h-full flex items-end w-full min-w-[150px]">
