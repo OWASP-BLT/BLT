@@ -88,6 +88,7 @@ from django.conf import settings
 from comments.models import Comment
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
+from django.http import HttpRequest
 
 def is_valid_https_url(url):
     validate = URLValidator(schemes=['https'])  # Only allow HTTPS URLs
@@ -1210,10 +1211,10 @@ def remove_user_from_issue(request, id):
         if tokenauth:
             return JsonResponse("User removed from the issue", safe=False)
         else:
-            return redirect(reverse('issue_view', kwargs={'slug': issue.id}))
+            return safe_redirect(request)
     else:
         messages.error(request, "Permission denied")
-        return redirect(reverse('issue_view', kwargs={'slug': issue.id}))
+        return safe_redirect(request)
 
 
 class DomainDetailView(ListView):
@@ -3497,6 +3498,19 @@ def contributors_view(request,*args,**kwargs):
 def sponsor_view(request):
     return render(request, "sponsor.html")
 
+def safe_redirect(request: HttpRequest):
+    http_referer = request.META.get('HTTP_REFERER')
+    if http_referer:
+        referer_url = urlparse(http_referer)
+        # Check if the referer URL's host is the same as the site's host
+        if referer_url.netloc == request.get_host():
+            # Build a 'safe' version of the referer URL (without query string or fragment)
+            safe_url = urlunparse((referer_url.scheme, referer_url.netloc, referer_url.path, '', '', ''))
+            return redirect(safe_url)
+    # Redirect to the fallback path if 'HTTP_REFERER' is not provided or is not safe
+    # Build the fallback URL using the request's scheme and host
+    fallback_url = f"{request.scheme}://{request.get_host()}/"
+    return redirect(fallback_url)
 
 # class CreateIssue(CronJobBase):
 #     RUN_EVERY_MINS = 1
