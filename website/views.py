@@ -88,8 +88,6 @@ from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.http import HttpRequest
 
-from django.views.generic.edit import CreateView
-from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from rest_framework.decorators import throttle_classes
