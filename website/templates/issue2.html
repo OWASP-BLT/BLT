@@ -35,7 +35,7 @@
 
             <div class="w-full flex justify-between mt-20 flex-wrap-reverse">
 
-                <div class="w-full xl:w-[70%] xl:pl-20">
+                <div class="w-full xl:w-[62%] xl:pl-20">
 
                     <div class="border-t-[1px] border-b-[1px] w-full min-h-[70px] flex flex-col xl:flex-row justify-between items-center mb-10 border-gray-300 flex-wrap pt-7 xl:p-0">
                         <div class="flex items-center">
@@ -145,6 +145,22 @@
                                         <a class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl" href="{% url 'show_bughunt' object.hunt.id %}">{{ object.hunt.name }}</a>
                                     {% endif %}
                                 </div>
+                                {% if request.user.is_superuser or request.user == object.user %}
+                                <div class="w-full flex justify-between my-3">
+                                    <p class="text-3xl font-bold">Report Anonymously:</p>
+                                    {% if object.user %}
+                                    <form method="post" action="/remove_user_from_issue/{{ object.id }}/" class="m-0 p-0">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="token" value="{{ csrf_token }}" class="m-0 p-0"/>
+                                        <!-- Other form fields go here if needed -->
+                                        <button type="submit" class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl" 
+                                                onclick="return confirm('Are you sure you want to report it anonymously?')">
+                                            Yes <i class="fa fa-check"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -238,15 +254,14 @@
         <div class="grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
             
             {% for issue in more_issues %}
-                <article class="max-w-xs">
+                <article class="max-w-xs h-[100%]">
                     <a href="">
-                        <img src="{{ MEDIA_URL }}{{ issue.screenshots__image }}" class="mb-5 rounded-lg" alt="Image 1">
+                        <img src="{{ MEDIA_URL }}{{ issue.screenshots__image }}" class="mb-5 rounded-lg object-fill h-[70%]" alt="Image 1">
                     </a>
                     <h2 class="mb-2 text-xl font-bold leading-tight text-gray-900 ">
                         <a href="{% url 'issue_view2' issue.id %}">{{ issue.description }}</a>
                     </h2>
                     <a href="#" class="inline-flex items-center font-medium underline underline-offset-4 text-primary-600 hover:no-underline">
-                       
                         Read in {{ issue.markdown_description|length|divide:200 }} minutes
                     </a>
                 </article>
