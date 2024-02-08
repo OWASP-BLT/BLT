@@ -261,7 +261,11 @@
                             {% endif %}
                         </div>
                         <div class="col-xs-8">
+                            {% if not object.user %}
+                            <h3>Anonymously reported</h3>
+                            {% else %}
                             <h3>Reported by {{ object.user.username|default_if_none:"Anonymous" }}</h3>
+                            {% endif %}
                             {% if object.user.username %}
                             <h4>Total Points of {{ object.user.username }} = {{ users_score }}</h4>
 
@@ -349,6 +353,17 @@
                                 <a href="/delete_issue/{{ object.id }}"
                                     onclick="return confirm('Are you sure you want to delete this issue?')"
                                     class="btn btn-danger btn-xs">Delete Issue</a>
+                                {% if object.user %}
+                                <form method="post" action="/remove_user_from_issue/{{ object.id }}/" class="m-0 p-0">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="token" value="{{ csrf_token }}" class="m-0 p-0"/>
+                                    <!-- Other form fields go here if needed -->
+                                    <button type="submit" class="btn btn-info btn-xs report-anonymously" 
+                                            onclick="return confirm('Are you sure you want to report it anonymously?')">
+                                        Report Anonymously
+                                    </button>
+                                </form>
+                                {% endif %}
                             {% endif %}
                         </div>
                     </div>
@@ -357,10 +372,12 @@
         </div>
     </div>
 </div>
+<h1 class="section-heading">Description</h1>
+<div id="markdown-content"></div>
 
 <div class="row">
-    <div class="col-md-6">
-        <h4>Screenshot:</h4>
+    <div id="screenshot-wrapper" class="col-md-6">
+        <h4 class="section-heading">Screenshots:</h4>
         <hr>
         {% if object.screenshot %}
             <a href="{{ object.screenshot.url }}" data-lightbox="image">
@@ -411,14 +428,41 @@
         {% endif %}
     </div>
 </div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.1/showdown.min.js" integrity="sha384-TTjj1KxpUMxMChPbgmSWLlfEep0/67X86v9lnJMkldzkQGHZNAhZRgE9owovIRyz" crossorigin="anonymous"></script>
 <script type="text/javascript">
+    
+    function embedded_image_markdown(markdownText) {
+        const image = /\$\[img[1-5]\]/g;
+        const screenshotDiv = document.querySelectorAll("#screenshot-wrapper img");
+        let screenshots = [];
+        screenshotDiv.forEach((element) => {
+        screenshots.push(element.attributes.src.value);
+        });
+        console.log(screenshots);
+        if (image.test(markdownText)) {
+            const matches = markdownText.match(image);
+            matches.forEach(element => {
+                const index = element.replace(/\D/g, '');
+                const image = screenshots[index - 1];
+                if (image !== undefined) {
+                    markdownText = markdownText.replace(element, `![img${index}](${image} =300x100)`);
+                }
+            });
+        }
+        return markdownText;
+    };
+
     function sanitizeURL(url) {
         var a = document.createElement('a');
         a.href = encodeURI(url);
         return a.href;
     }
-    
+
+    var markdownText = '{{ object.markdown_description|escapejs }}';
+    markdownText = embedded_image_markdown(markdownText);
+    var converter = new showdown.Converter();
+    var htmlContent = converter.makeHtml(markdownText);
+    document.getElementById('markdown-content').innerHTML = htmlContent;
    var label = "{{object.label}}";
 
     $(document).on('click', '.edit-issue', function (e) {
