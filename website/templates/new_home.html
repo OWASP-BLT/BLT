@@ -5,24 +5,33 @@
     <script src="{% static 'js/jquery.waypoints.min.js' %}"></script>
     <script src="{% static 'js/infinite.min.js' %}"></script>
     <style>
+        nav{
+            max-width: 85%;
+        }
         .infinite-container {
-            padding-right: 250px;
+            padding-right: 270px;
             grid-template-columns: repeat(auto-fill, minmax(295px, 1fr));
         }
         .sidebar {
             position: fixed;
-            top: 70px;
-            height: 50%;
-            width: 270px; /* Adjust width as needed */
-            background-color: #f0f0f0; /* Sidebar background color */
-        }
-        .right-side-widget{
-            right: 0;
+            top: 0px;
+            width: 16%; /* Adjust width as needed */
+            height: 500px;
+            background-color: #F7F7F7; /* Sidebar background color */
+            z-index: 1000;
+            right: 20px;
+            row-gap: 10px;
+
         }
     </style>
         <div class="font-['Barlow'] text-[#2B2B2B] text-5xl tracking-wide font-semibold mb-0 mt-10 ms-[4.3%]">Find bugs, earn points, prize and cash!</div>
         <div class="right-side-widget sidebar">
-            {% include '_leaderboard_widget.html' %}
+            <div class="row">
+                {% include '_leaderboard_widget.html' %}
+            </div>
+            <div class="row">
+                {% include '_report_widget.html' %}
+            </div>
         </div>
         <div class="infinite-container mx-[3%] my-[2.5rem] grid grid-rows-2 grid-columns-3 gap-[15px]">
     
