@@ -88,8 +88,7 @@ from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.http import HttpRequest
 
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
+
 from rest_framework.decorators import throttle_classes
 from rest_framework.throttling import AnonRateThrottle
 
@@ -1671,35 +1670,6 @@ def search_issues(request, template="search.html"):
             "type": stype,
             "issues": issues,
         }
-    if stype == "domain" or stype is None:
-        context = {
-            "query": query,
-            "type": stype,
-            "issues": Issue.objects.filter(Q(domain__name__icontains=query),
-            hunt=None).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[
-                0:20
-            ],
-        }
-    if stype == "user" or stype is None:
-        context = {
-            "query": query,
-            "type": stype,
-            "issues": Issue.objects.filter(Q(user__username__icontains=query),
-            hunt=None).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[
-                0:20
-            ],
-        }
-
-    if stype == "label" or stype is None:
-        context = {
-            "query": query,
-            "type": stype,
-            "issues": Issue.objects.filter(Q(label__icontains=query),
-            hunt=None).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[
-                0:20
-            ],
-        }
-        
     if request.user.is_authenticated:
         context["wallet"] = Wallet.objects.get(user=request.user)
     issues = serializers.serialize("json", context["issues"])
