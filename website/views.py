@@ -1599,6 +1599,35 @@ def search_issues(request, template="search.html"):
             "type": stype,
             "issues": issues,
         }
+    if stype == "domain" or stype is None:
+        context = {
+            "query": query,
+            "type": stype,
+            "issues": Issue.objects.filter(Q(domain__name__icontains=query),
+            hunt=None).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[
+                0:20
+            ],
+        }
+    if stype == "user" or stype is None:
+        context = {
+            "query": query,
+            "type": stype,
+            "issues": Issue.objects.filter(Q(user__username__icontains=query),
+            hunt=None).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[
+                0:20
+            ],
+        }
+
+    if stype == "label" or stype is None:
+        context = {
+            "query": query,
+            "type": stype,
+            "issues": Issue.objects.filter(Q(label__icontains=query),
+            hunt=None).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[
+                0:20
+            ],
+        }
+        
     if request.user.is_authenticated:
         context["wallet"] = Wallet.objects.get(user=request.user)
     issues = serializers.serialize("json", context["issues"])

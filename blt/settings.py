@@ -119,6 +119,7 @@ MIDDLEWARE = (
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     'allauth.account.middleware.AccountMiddleware',#Newly added for allauth 0.60.1
