@@ -6,7 +6,7 @@ authors = ["Your Name <you@example.com>"]
 license = "AGPLv3"
 
 [tool.poetry.dependencies]
-python = "3.11.2"
+python = "3.10.12"
 toml = "^0.10.2"
 Django = "^5.0.2"
 dj-database-url = "^1.0.0"
@@ -62,6 +62,7 @@ webdriver-manager = "^4.0.1"
 pillow = "^10.2.0"
 chromedriver-autoinstaller = "^0.6.4"
 sentry-sdk = "^1.40.3"
+django-social-share = "^2.3.0"
 
 [tool.poetry.dev-dependencies]
 black = "^24.1.1"
