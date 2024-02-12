@@ -47,7 +47,7 @@
     <div class="loading" style="display: none;">
         Loading...
     </div>
-
+    
     <script>
         var infinite = new Waypoint.Infinite({
         element: $('.infinite-container')[0],
@@ -59,9 +59,6 @@
             $('.loading').hide();
         }
         });
-    </script>
-    
-    <script>
         function like_unlike_handler(e,issue_pk){
             e.preventDefault();
             var issue_pk = issue_pk;
@@ -106,24 +103,23 @@
                 },
             });
         }
+
+        var infinite = new Waypoint.Infinite({
+            element: $('.infinite-container')[0],
+            handler: function(direction) {
+
+        },
+        offset: 'bottom-in-view',
+
+        onBeforePageLoad: function () {
+        $('.spinner-border').show();
+        },
+        onAfterPageLoad: function () {
+        $('.spinner-border').hide();
+        }
+
+        });
+
     </script>
     
-    <script>
-    var infinite = new Waypoint.Infinite({
-        element: $('.infinite-container')[0],
-        handler: function(direction) {
-
-    },
-    offset: 'bottom-in-view',
-
-    onBeforePageLoad: function () {
-    $('.spinner-border').show();
-    },
-    onAfterPageLoad: function () {
-    $('.spinner-border').hide();
-    }
-
-    });
-
-    </script>
 {% endblock %}
