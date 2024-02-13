@@ -53,8 +53,7 @@ from website.views import (
     github_callback,
     google_callback,
     facebook_callback,
-    sponsor_view,
-    newhome
+    sponsor_view
 )
 from website.api.views import (
     IssueViewSet,
@@ -162,7 +161,7 @@ urlpatterns = [
     re_path(
         r"^redoc/$", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"
     ),
-    re_path(r"^$", website.views.newhome.as_view(), name="index"),
+    re_path(r"^$", website.views.newhome, name="index"),
     re_path(r"^newhome/$", website.views.index, name="newhome"),
     re_path(
         r"^dashboard/company/$",
@@ -440,8 +439,7 @@ urlpatterns = [
     path("ads.txt", website.views.ads_txt),
     re_path(r"^contributors/$",contributors_view,name="contributors"),
     path("company/",include("company.urls")),
-    path("sponsor/",website.views.sponsor_view, name="sponsor"),
-    path("newhome/" , newhome.as_view())
+    path("sponsor/",website.views.sponsor_view, name="sponsor")
 ]
 
 if settings.DEBUG:
