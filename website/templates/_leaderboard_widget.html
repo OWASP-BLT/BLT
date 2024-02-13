@@ -1,7 +1,19 @@
 {% load gravatar %}
 {% load humanize %}
+<style>
+    .filter-monthly{
+        padding-left: 0px;
+        padding-right: 0px;
+        width: 120px;
+    }
+    .view-monthly{
+        padding-left: 0px;
+        padding-right: 0px;
+        width: 120px;
+    }
+</style>
 
-<div class="row-start-1 bug-container leaderboard-widget flex flex-col p-5 pt-3 bg-[white] m-1 w-[100%] row-span-2 rounded-[2.5rem]  border-[#e8e8e8] border-2 font-['Inter'] h-[630px]">
+<div class="row-start-1 bug-container leaderboard-widget flex flex-col p-5 bg-[white] m-1 w-[100%] row-span-2 rounded-[2.5rem]  border-[#e8e8e8] border-2 font-['Inter'] h-[410px]">
     
     <div class="font-['Barlow_Semi_Condensed'] font-semibold text-[black] text-[25px] text-center mb-2">LEADERBOARD</div>
 
@@ -47,12 +59,20 @@
             </a>
         {% endfor %}
     </div>
-
-    <div class="">
-        <a href="/leaderboard" class="btn btn-default btn-block submit_button p-2 rounded-2xl"> View All</a>
-        <a href="/leaderboard/monthly" class="btn btn-default btn-block submit_button p-2 rounded-2xl"> Filter Monthly</a>
-        <a href="/leaderboard/each-month" class="btn btn-default btn-block submit_button p-2 rounded-2xl"> View Monthly</a>
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <a href="/leaderboard" class="btn btn-default btn-block submit_button p-2 rounded-2xl">View All</a>
+        </div>
+        <div class="w-100"></div>
+        <div class="col  col-sm-12 filter-monthly">
+            <a href="/leaderboard/monthly" class="btn btn-default btn-block submit_button p-2 rounded-2xl">Filter Monthly</a>
+        </div>
+        <div class="col col-sm-12 view-monthly">
+            <a href="/leaderboard/each-month" class="btn btn-default btn-block submit_button p-2 rounded-2xl">View Monthly</a>
+        </div>
     </div>
+</div>
 
 </div>
 
