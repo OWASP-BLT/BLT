@@ -1,4 +1,4 @@
-{% extends 'base.html' %} 
+{% extends "base_new.html" %}
 {% load i18n %}
 {% load static %}
 {% load gravatar %}
@@ -44,7 +44,7 @@
             margin-top: 20px;
         }
         #screenshot-container{
-            width: 87vw;
+            width: 73vw
         }
     }
 
@@ -52,7 +52,7 @@
 
 {% endblock %}
 
-{% block natural_content %}
+{% block hero %}
 
 
 <div id="duplicate-container" class="fixed w-full h-full top-0 left-0 overflow-y-auto z-10" hidden>
