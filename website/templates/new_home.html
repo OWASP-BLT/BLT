@@ -1,38 +1,64 @@
 {% extends "base_new.html" %}
-
+{% load static %}
 {% block hero %}
+
+    <script src="{% static 'js/jquery.waypoints.min.js' %}"></script>
+    <script src="{% static 'js/infinite.min.js' %}"></script>
     <style>
-        .hero-bugs-container {
-            grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+        nav{
+            max-width: 85%;
+        }
+        .infinite-container {
+            padding-right: 270px;
+            grid-template-columns: repeat(auto-fill, minmax(295px, 1fr));
+        }
+        .sidebar {
+            position: fixed;
+            top: 0px;
+            width: 16%; /* Adjust width as needed */
+            height: 500px;
+            background-color: #F7F7F7; /* Sidebar background color */
+            z-index: 1000;
+            right: 20px;
+            row-gap: 10px;
+
         }
     </style>
-    <div class="font-['Barlow'] text-[#2B2B2B] text-5xl tracking-wide font-semibold mb-0 mt-10 ms-[4.3%] mx-auto">
-        Find bugs, earn points, prize and cash!
-    </div>
-    <div class="flex flex-col sm:flex-row">
+        <div class="font-['Barlow'] text-[#2B2B2B] text-5xl tracking-wide font-semibold mb-0 mt-10 ms-[4.3%]">Find bugs, earn points, prize and cash!</div>
+        <div class="right-side-widget sidebar">
+            <div class="row">
+                {% include '_leaderboard_widget.html' %}
+            </div>
+            <div class="row">
+                {% include '_report_widget.html' %}
+            </div>
+        </div>
+        <div class="infinite-container mx-[3%] my-[2.5rem] grid grid-rows-2 grid-columns-3 gap-[15px]">
     
-        <div class="flex-1">
-            <div class="hero-bugs-container grid grid-cols-1 sm:grid-cols-2 gap-4 mx-4 my-2.5">
-                <!-- Report Section -->
-                <section class="z-10">
-                    {% include '_report_widget.html' %}
-                </section>
-                
-                <!-- Bugs Section -->
                 {% for bug in bugs %}
                     {% include '_bug.html' %}
                 {% endfor %}
-            </div>
-        </div>
-    
-        <div class="w-full mt-4  sm:w-[20%] sm:mt-0 sm:order-2 ">
-            <!-- Leaderboard Widget -->
-            <div class="mx-4 mr-10 ">
-                {% include '_leaderboard_widget.html' %}
-            </div>
         </div>
     </div>
+    {% if page_obj.has_next %}
+        <a class="infinite-more-link" href="?page={{ page_obj.next_page_number }}">More</a>
+    {% endif %}
+
+    <div class="loading" style="display: none;">
+        Loading...
+    </div>
+    
     <script>
+        var infinite = new Waypoint.Infinite({
+        element: $('.infinite-container')[0],
+        offset :  'bottom-in-view',
+        onBeforePageLoad: function () {
+            $('.loading').show();
+        },
+        onAfterPageLoad: function ($items) {
+            $('.loading').hide();
+        }
+        });
         function like_unlike_handler(e,issue_pk){
             e.preventDefault();
             var issue_pk = issue_pk;
@@ -77,28 +103,23 @@
                 },
             });
         }
+
+        var infinite = new Waypoint.Infinite({
+            element: $('.infinite-container')[0],
+            handler: function(direction) {
+
+        },
+        offset: 'bottom-in-view',
+
+        onBeforePageLoad: function () {
+        $('.spinner-border').show();
+        },
+        onAfterPageLoad: function () {
+        $('.spinner-border').hide();
+        }
+
+        });
+
     </script>
-    <div class="col-md-12">
-        <div class="text-center">
-            {% if bugs.has_previous %}
-                <a href="?page=1{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
-                   class="btn btn-default">First</a>
-            {% else %}
-                <button class="btn btn-default" disabled>First</button>
-            {% endif %}
-            {% for num in bugs.paginator.page_range %}
-                {% if num == bugs.number %}
-                    <button class="btn btn-default" disabled>{{num}}</button>
-                {% elif num > bugs.number|add:"-5" and num < bugs.number|add:"5" %}
-                    <a href="?page={{ num }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}" class="btn btn-default">{{num}}</a>
-                {% endif %}
-            {% endfor %}
-            {% if bugs.has_next %}
-                <a href="?page={{ bugs.paginator.num_pages }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}" class="btn btn-default">Last</a>
-            {% else %}
-                <button class="btn btn-default" disabled>Last</button>
-            {% endif %}
-            <div>Page {{ bugs.number }} of {{ bugs.paginator.num_pages }}</div>
-        </div>
-    </div>
+    
 {% endblock %}
