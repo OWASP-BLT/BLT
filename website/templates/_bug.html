@@ -2,7 +2,7 @@
 {% load static %}
 {% load custom_tags %}
 
-<div class="bug-container flex flex-col p-5 bg-white m-1 w-[100%] h-[300px] rounded-[2.5rem] border-[#e8e8e8] border-2">
+<div class="infinite-item flex flex-col p-5 bg-white m-1 w-[100%] h-[300px] rounded-[2.5rem] border-[#e8e8e8] border-2">
     <div class="bug-author bg-red font-medium font-['Inter'] text-[#656565] flex flex-row items-center gap-[0.8rem]">
         {% if bug.user.userprofile.avatar %}
             <img src="{{ bug.user.userprofile.avatar }}" width="30" class="h-[30px] object-cover img-responsive rounded-full" loading="lazy">
