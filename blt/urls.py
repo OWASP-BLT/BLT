@@ -55,8 +55,7 @@ from website.views import (
     facebook_callback,
     sponsor_view,
     request_access,
-    grant_access,
-    newhome
+    grant_access
 )
 from website.api.views import (
     IssueViewSet,
@@ -164,7 +163,7 @@ urlpatterns = [
     re_path(
         r"^redoc/$", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"
     ),
-    re_path(r"^$", website.views.newhome.as_view(), name="index"),
+    re_path(r"^$", website.views.newhome, name="index"),
     re_path(r"^newhome/$", website.views.index, name="newhome"),
     re_path(
         r"^dashboard/company/$",
@@ -445,8 +444,7 @@ urlpatterns = [
     path("sponsor/",website.views.sponsor_view, name="sponsor"),
     path("issue/<int:issue_pk>/request_access/" , website.views.request_access , name="issue_request_access"),
     path("private/<int:user_pk>/issue/" , website.views.private_issue , name="private_issue"),
-    path("private/<int:user_pk>/issue/<int:issue_pk>/grant_access/" , website.views.grant_access , name="grant_access"),
-    path("newhome/" , newhome.as_view())
+    path("private/<int:user_pk>/issue/<int:issue_pk>/grant_access/" , website.views.grant_access , name="grant_access")
 ]
 
 if settings.DEBUG:
