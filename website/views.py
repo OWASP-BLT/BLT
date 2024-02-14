@@ -61,6 +61,8 @@ from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialConnectView
 from blt import settings
 from rest_framework.authtoken.views import ObtainAuthToken
+import tweepy
+
 
 from website.models import (
 
@@ -511,7 +513,7 @@ class IssueBaseCreate(object):
 
     def process_issue(self, user, obj, created, domain, tokenauth=False, score=3):
         p = Points.objects.create(user=user, issue=obj, score=score)
-        messages.success(self.request, "Bug added! +" + str(score))
+        messages.success(self.request, "Bug added ! +" + str(score))
 
         if created:
             try:
@@ -538,7 +540,21 @@ class IssueBaseCreate(object):
                 [email_to],
                 html_message=msg_html,
             )
+            try :
+                auth = tweepy.Client(
+                    settings.BEARER_TOKEN,
+                    settings.APP_KEY, 
+                    settings.APP_KEY_SECRET,
+                    settings.ACCESS_TOKEN,
+                    settings.ACCESS_TOKEN_SECRET
+                    )
+                blt_url = "https://" + "%s/issue/%d" %(settings.DOMAIN_NAME , obj.id)                
+                auth.create_tweet(text = 'An Issue "%s" has been reported on %s by %s on %s.\n Have look here %s' %(obj.description , domain , user ,settings.PROJECT_NAME, blt_url))
+            except Exception as e :
+                print(e)
+
         else:
+
             email_to = domain.email
             try:
                 name = email_to.split("@")[0]
