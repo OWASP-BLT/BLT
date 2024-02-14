@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends "base_new.html" %}
 {% load static %}
 {% load gravatar %}
 {% load custom_tags %}
@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.0/flowbite.min.js" integrity="sha384-SXh3DHBSUxvOFk7+R9qN3hv+DtgPJz4vQwOArU6zxWGnvtR1sy+XmzKUkNh2qWST" crossorigin="anonymous"></script>
 {% endblock %}
 
-{% block natural_content %}
+{% block hero %}
 
 
 <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-white">
@@ -35,7 +35,7 @@
 
             <div class="w-full flex justify-between mt-20 flex-wrap-reverse">
 
-                <div class="w-full xl:w-[70%] xl:pl-20">
+                <div class="w-full xl:w-[56%] xl:pl-20">
 
                     <div class="border-t-[1px] border-b-[1px] w-full min-h-[70px] flex flex-col xl:flex-row justify-between items-center mb-10 border-gray-300 flex-wrap pt-7 xl:p-0">
                         <div class="flex items-center">
@@ -60,7 +60,7 @@
                                 <p class="text-xl text-gray-600">Report viewed by <i class="fa fa-eye"></i> <span class="font-bold">{{ object.views }} users</span></p>
                             </div>
                         </div>
-                        <div class="w-full xl:w-[70%] mt-10 xl:mt-0 flex flex-wrap justify-between text-black">
+                        <div class="w-full xl:w-[100%] mt-10 xl:mt-0 flex flex-wrap justify-between text-black">
                             
                             {% include 'includes/_likes2.html' %}
                             
@@ -145,6 +145,22 @@
                                         <a class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl" href="{% url 'show_bughunt' object.hunt.id %}">{{ object.hunt.name }}</a>
                                     {% endif %}
                                 </div>
+                                {% if request.user.is_superuser or request.user == object.user %}
+                                <div class="w-full flex justify-between my-3">
+                                    <p class="text-3xl font-bold">Report Anonymously:</p>
+                                    {% if object.user %}
+                                    <form method="post" action="/remove_user_from_issue/{{ object.id }}/" class="m-0 p-0">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="token" value="{{ csrf_token }}" class="m-0 p-0"/>
+                                        <!-- Other form fields go here if needed -->
+                                        <button type="submit" class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl" 
+                                                onclick="return confirm('Are you sure you want to report it anonymously?')">
+                                            Yes <i class="fa fa-check"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>

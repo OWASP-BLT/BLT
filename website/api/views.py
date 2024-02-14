@@ -54,12 +54,18 @@ class UserIssueViewSet(viewsets.ModelViewSet):
     User Issue Model View Set
     """
 
-    queryset = Issue.objects.all()
     serializer_class = IssueSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ("user__username", "user__id")
     http_method_names = ["get", "post", "head"]
-
+    
+    def get_queryset(self):
+        anonymous_user = self.request.user.is_anonymous
+        user_id = self.request.user.id
+        if anonymous_user:
+            return Issue.objects.exclude(Q(is_hidden=True))
+        else :
+            return Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=user_id))
 
 class UserProfileViewSet(viewsets.ModelViewSet):
     """
@@ -120,12 +126,20 @@ class IssueViewSet(viewsets.ModelViewSet):
     Issue View Set
     """
 
-    queryset = Issue.objects.all()
     serializer_class = IssueSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ("url", "description", "user__id")
     http_method_names = ["get", "post", "head"]
 
+
+    def get_queryset(self):
+        anonymous_user = self.request.user.is_anonymous
+        user_id = self.request.user.id
+        if anonymous_user:
+            return Issue.objects.exclude(Q(is_hidden=True))
+        else :
+            return Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=user_id))
+    
     def get_issue_info(self,request,issue):
         
         if issue == None:
