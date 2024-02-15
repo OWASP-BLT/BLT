@@ -22,7 +22,6 @@ RUN apt-get update && apt-get install -y \
 RUN pip install poetry 
 RUN poetry config virtualenvs.create false
 RUN poetry install
-RUN pip install tweepy
 
 RUN python manage.py migrate 
 RUN python manage.py loaddata website/fixtures/initial_data.json
