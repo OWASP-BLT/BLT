@@ -553,8 +553,11 @@ class IssueBaseCreate(object):
                     settings.ACCESS_TOKEN,
                     settings.ACCESS_TOKEN_SECRET
                     )
-                blt_url = "https://" + "%s/issue/%d" %(settings.DOMAIN_NAME , obj.id)                
-                auth.create_tweet(text = 'An Issue "%s" has been reported on %s by %s on %s.\n Have look here %s' %(obj.description , domain , user ,settings.PROJECT_NAME, blt_url))
+                if obj.is_hidden :
+                    pass
+                else :
+                    blt_url = "https://" + "%s/issue/%d" %(settings.DOMAIN_NAME , obj.id)                
+                    auth.create_tweet(text = 'An Issue "%s" has been reported on %s by %s on %s.\n Have look here %s' %(obj.description , domain , user ,settings.PROJECT_NAME, blt_url))
             except Exception as e :
                 print(e)
 
