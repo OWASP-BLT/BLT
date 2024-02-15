@@ -551,20 +551,24 @@ class DomainView(View):
         total_bug_reported = Issue.objects.filter(pk=domain["id"]).count()
         total_bug_accepted = Issue.objects.filter(pk=domain["id"], verified=True).count()
 
-        # get latest reported public issues
-        latest_issues = (
-            Issue.objects
-            .values("id","domain__name","url","description","user__id","user__username","user__userprofile__user_avatar","label","status","verified","rewarded","created__day","created__month","created__year")
-            .filter(domain__id=domain["id"],is_hidden=False).order_by("-created")
-            [:11]
-        )
         is_domain_manager = Domain.objects.filter(
             Q(id=domain["id"]) & 
             Q(managers__in=[request.user])
         ).exists() 
-        if not is_domain_manager:
-            latest_issues.filter(is_hidden=False) #show public issues to normal users
-
+        if is_domain_manager:
+            latest_issues = (
+                Issue.objects
+                .values("id","domain__name","url","description","user__id","user__username","user__userprofile__user_avatar","label","status","verified","rewarded","created__day","created__month","created__year")
+                .filter(domain__id=domain["id"]).order_by("-created")
+                [:11]
+            )
+        else :
+            latest_issues = (
+                Issue.objects
+                .values("id","domain__name","url","description","user__id","user__username","user__userprofile__user_avatar","label","status","verified","rewarded","created__day","created__month","created__year")
+                .filter(domain__id=domain["id"],is_hidden=False).order_by("-created")
+                [:11]
+            )
         issue_labels = [label[-1] for label in Issue.labels]
         cleaned_issues = []
         for issue in latest_issues:
