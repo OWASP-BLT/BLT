@@ -1,4 +1,6 @@
 from django.urls import include, path
+from django.contrib.auth.decorators import login_required
+
 from company.views import (
     CompanyDashboardAnalyticsView,
     CompanyDashboardManageBugsView,
@@ -26,5 +28,5 @@ urlpatterns = [
     path("dashboard/end_bughunt/<int:pk>",EndBughuntView.as_view(),name="end_bughunt"),
     path("<str:company>/dashboard/add_bughunt/",AddHuntView.as_view(),name="add_bughunt"),
     path("<str:company>/dashboard/add_domain/",AddDomainView.as_view(),name="add_domain"),
-    path("domain/<int:pk>/",DomainView.as_view(),name="view_domain"),
+    path("domain/<int:pk>/", login_required(DomainView.as_view()),name="view_domain"),
 ]
