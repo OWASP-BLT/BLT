@@ -441,5 +441,18 @@
         "linkedin":"https://www.linkedin.com/in/jisanar/",
         "website":"https://github.com/JisanAR03",
         "bch_addr":"wish me luck☺"
+    },
+    {
+        "id":37,
+        "img":"https://avatars.githubusercontent.com/u/119354421?v=4",
+        "name":"Shirsh Jain",
+        "repository":"BLT | BLT-Core",
+        "short_description":"working for better world",
+        "long_description":"Hi, there I'm shirsh jain and I am always excited about the power we can achieve with coding and collabrative work.",
+        "location":"Rajasthan, India",
+        "twitter":"https://twitter.com/jainshirsh",
+        "linkedin":"https://www.linkedin.com/in/shirsh-jain-5a5b751b9/",
+        "website":"https://github.com/haniljain",
+        "bch_addr":"serendipity"
     }
 ]
