@@ -23,12 +23,30 @@
                     </p>
                     <p class="text-gray-800 ">
                         <strong>Reported on</strong>
-                        <span class="font-light text-2xl"><a href="">{{ object.url }}</a></span>
+                        <span class="font-light text-2xl"><a href="" class="issue-domain">{{ object.url }}</a></span>
                     </p>
     
-                    <p class="text-black font-bold text-6xl text-center w-[90%] xl:w-[60%] mt-5 leading-snug">
+                    <p class="text-black font-bold text-6xl text-center w-[90%] xl:w-[60%] mt-5 leading-snug issue-desc editables">
                         {{ object.description }}
                     </p>
+                    <div class="form form-inline mt-2" style="display: none;">
+                        {% csrf_token %}
+                        <input type="hidden" name="issue_pk" id="issue_pk" value="{{ object.id }}">
+                        <input type="text" name="domain" placeholder="Domain" class="form-control" value="" required>
+                        <input type="text" name="description" placeholder="Bug Description" class="form-control" value=""
+                            required>
+                        <select name="label" class="form-control" required>
+                            <option value="0">General</option>
+                            <option value="1">Number error</option>
+                            <option value="2">Functional</option>
+                            <option value="3">Performance</option>
+                            <option value="4">Security</option>
+                            <option value="5">Typo</option>
+                            <option value="6">Design</option>
+                        </select>
+                        <button class="font-bold bg-red-600 px-5 py-2 text-white rounded-xl save-issue">Save</button>
+                        <button class="font-bold bg-gray-600 px-5 py-2 text-white rounded-xl cancel-edit">Cancel</button>
+                    </div>
 
                 </div>
             </div>
@@ -159,6 +177,18 @@
                                         </button>
                                     </form>
                                     {% endif %}
+                                </div>
+                                <!-- add a delete button here like anonymous button -->
+                                <div class="w-full flex justify-between my-3">
+                                    <p class="text-3xl font-bold">Delete Issue:</p>
+                                    <a href="/delete_issue/{{ object.id }}"
+                                        onclick="return confirm('Are you sure you want to delete this issue?')"><button
+                                        class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl"> Yes <i class="fa fa-check"></i></button></a>
+                                </div>
+                                <!-- add a edit button here like delete button -->
+                                <div class="w-full flex justify-between my-3">
+                                    <p class="text-3xl font-bold">Edit Issue:</p>
+                                    <a class="font-bold bg-red-600 hover:text-white px-5 py-1 text-white rounded-xl edit-issue">Yes <i class="fa fa-check"></i></a>
                                 </div>
                                 {% endif %}
                             </div>
@@ -376,8 +406,81 @@
         })
     })
 
-    
+    function sanitizeURL(url) {
+        var a = document.createElement('a');
+        a.href = encodeURI(url);
+        return a.href;
+    }
 
-  </script>
+    var label = "{{object.label}}";
+    $(document).on('click', '.edit-issue', function (e) {
+        $issue_desc = $('.issue-desc').text().trim();
+        $('.form input[name=description]').val($issue_desc);
+        $('.form input[name=domain]').val($('.issue-domain').text());
+        $('.form select').val(label);
+        $('.editables').hide();
+        $('.form').show();
+    });
+
+    $(document).on('click', '.cancel-edit', function (e) {
+        $('.form').hide();
+        $('.editables').show();
+    });
+
+    $(document).on('click', '.save-issue', function (e) {
+        e.preventDefault();
+
+        if ($('.form input[name=description]').val().trim().length == 0 ||
+            $('.form input[name=domain]').val().trim().length == 0) {
+            return;
+        }
+        var dom_regex = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi;
+        dom_regex = new RegExp(dom_regex);
+        var domain_url = $('.form input[name=domain]').val();
+        if (domain_url.match(dom_regex) == null) {
+            alert('Enter a valid url');
+            return;
+        }
+
+
+        $.ajax({
+            type: 'POST',
+            url: '/issue/edit/',
+            data: {
+                issue_pk: $('#issue_pk').val(),
+                domain: $('.form input[name=domain]').val(),
+                description: $('.form input[name=description]').val(),
+                label: $('.form select').val(),
+                csrfmiddlewaretoken: $('.form input[name=csrfmiddlewaretoken]').val(),
+            },
+            success: function (data) {
+                $('.issue-desc').text($('.form input[name=description]').val());
+                $('.issue-domain').text($('.form input[name=domain]').val());
+                var sanitizedDomain = sanitizeURL($('.form input[name=domain]').val());
+                $('.issue-domain').attr("href", sanitizedDomain);
+                label = $('.form select').val();
+                var l = $(".form select option[value='" + label + "']").text();
+                $('.bug-label').text(l);
+                $('.form').hide();
+                $('.editables').show();
+                $.notify("Issue updated!", {
+                    style: "custom",
+                    className: "success"
+                });
+                if (data === "Domain Created")
+                    $.notify("Domain Added!", {
+                        style: "custom",
+                        className: "success"
+                    });
+            },
+            error: function () {
+                $.notify("Some error occurred!", {
+                    style: "custom",
+                    className: "danger"
+                });
+            }
+        });
+    });
+</script>
 
 {% endblock %}
