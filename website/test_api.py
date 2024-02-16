@@ -124,6 +124,7 @@ class APITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         if len(response.data):
             self.assertGreater(response.data[0]["starts_on"], datetime.datetime.now(), "Invalid Response")
+            
 
     def test_get_issues(self):
 
