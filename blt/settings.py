@@ -127,6 +127,7 @@ MIDDLEWARE = (
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "tz_detect.middleware.TimezoneMiddleware",
+    "django_ratelimit.middleware.RatelimitMiddleware",
 )
 
 TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
@@ -417,6 +418,10 @@ else:
     anon_throttle = 100
     user_throttle = 1000
 
+RATELIMIT_ENABLE = True
+RATELIMIT_ANON_RATE = '100/day'
+RATELIMIT_USER_RATE = '1000/day'
+
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
@@ -428,10 +433,6 @@ REST_FRAMEWORK = {
         'anon': f'{anon_throttle}/day',
         'user': f'{user_throttle}/day'
     },
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle',
-    ],
 }
 
 SOCIALACCOUNT_PROVIDER = {

@@ -151,4 +151,3 @@ class IssueBaseCreateTest(APITestCase):
             data = {'url': 'http://example.com', 'description': 'test', 'markdownInput': 'test', 'screenshots': 'test', 'captcha_1': 'PASSED'}
             response = self.client.post('/report/', data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-

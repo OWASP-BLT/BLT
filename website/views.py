@@ -487,7 +487,6 @@ def find_key(request, token):
             return HttpResponse(os.environ.get("ACME_KEY_%s" % n))
     raise Http404("Token or key does not exist")
 
-@throttle_classes([AnonRateThrottle])
 class IssueBaseCreate(object):
     def form_valid(self, form):
         score = 3
@@ -612,7 +611,6 @@ class IssueBaseCreate(object):
 
         return HttpResponseRedirect("/")
 
-@throttle_classes([AnonRateThrottle])
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
     fields = ["url", "description", "domain", "label","markdown_description"]
