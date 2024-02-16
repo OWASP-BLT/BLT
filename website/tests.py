@@ -138,7 +138,6 @@ class HideImage(TestCase):
                 self.assertFalse(True, "files rename failed")
 
 
-
 class IssueBaseCreateTest(APITestCase):
     def test_throttle_exceed_limit(self):
         for i in range(10000):
