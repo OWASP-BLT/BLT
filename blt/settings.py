@@ -36,7 +36,7 @@ print(os.environ)
 PROJECT_NAME = "BLT"
 DOMAIN_NAME = "blt.owasp.org"
 FQDN = "blt.owasp.org"
-
+DOMAIN_NAME_PREVIOUS =  os.environ.get("DOMAIN_NAME_PREVIOUS", "BLT")
 # else:
 #     # Default values if hostname does not match
 #     PROJECT_NAME = os.environ.get("PROJECT_NAME", "BLT")
@@ -318,7 +318,7 @@ ACCOUNT_EMAIL_VERIFICATION = "optional"
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Allow all host headers
-ALLOWED_HOSTS = ["." + DOMAIN_NAME, "127.0.0.1", "localhost", "0.0.0.0", "blt.owasp.org"]
+ALLOWED_HOSTS = ["." + DOMAIN_NAME, "127.0.0.1", "localhost", "0.0.0.0", "blt.owasp.org", "." + DOMAIN_NAME_PREVIOUS]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
