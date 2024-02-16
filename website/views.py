@@ -511,8 +511,6 @@ class IssueBaseCreate(object):
                 django_file,
                 save=True,
             )
-
-
         obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
         obj.save()
         p = Points.objects.create(user=self.request.user, issue=obj, score=score)

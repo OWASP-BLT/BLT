@@ -6,7 +6,6 @@ from PIL import Image
 from django.core import mail
 from django.utils.encoding import force_str
 from django.db.transaction import atomic
-from django_ratelimit import *
 import datetime
 
 class APITests(APITestCase):
