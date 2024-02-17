@@ -53,7 +53,12 @@ from website.views import (
     github_callback,
     google_callback,
     facebook_callback,
-    sponsor_view
+    sponsor_view,
+    DomainListView,
+    like_issue2,
+    flag_issue2,
+    subscribe_to_domains,
+    IssueView2
 )
 from website.api.views import (
     IssueViewSet,
@@ -70,12 +75,6 @@ from website.api.views import (
     InviteFriendApiViewset
 )
 from company.views import ShowBughuntView
-from website.alternative_views import (
-    like_issue2,
-    flag_issue2,
-    subscribe_to_domains,
-    IssueView2
-)
 
 from blt import settings
 from rest_framework import permissions, routers
@@ -439,7 +438,8 @@ urlpatterns = [
     path("ads.txt", website.views.ads_txt),
     re_path(r"^contributors/$",contributors_view,name="contributors"),
     path("company/",include("company.urls")),
-    path("sponsor/",website.views.sponsor_view, name="sponsor")
+    path("sponsor/",website.views.sponsor_view, name="sponsor"),
+    path("companies/", DomainListView.as_view() , name="domain_list")
 ]
 
 if settings.DEBUG:
