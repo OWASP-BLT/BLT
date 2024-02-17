@@ -3521,3 +3521,116 @@ class DomainListView(ListView):
         context["domain"] = domain_paginated
         return context
 
+# class CreateIssue(CronJobBase):
+#     RUN_EVERY_MINS = 1
+
+#     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+#     code = "blt.create_issue"  # a unique code
+
+#     def do(self):
+#         from django.conf import settings
+#         import imaplib
+
+#         mail = imaplib.IMAP4_SSL("imap.gmail.com", 993)
+#         error = False
+#         mail.login(settings.REPORT_EMAIL, settings.REPORT_EMAIL_PASSWORD)
+#         mail.list()
+#         # Out: list of "folders" aka labels in gmail.
+#         mail.select("inbox")  # connect to inbox.
+#         typ, data = mail.search(None, "ALL", "UNSEEN")
+#         import email
+
+#         for num in data[0].split():
+#             image = False
+#             screenshot_base64 = ""
+#             url = ""
+#             label = ""
+#             token = "None"
+#             typ, data = mail.fetch(num, "(RFC822)")
+#             raw_email = (data[0][1]).decode("utf-8")
+#             email_message = email.message_from_string(raw_email)
+#             maintype = email_message.get_content_maintype()
+#             error = False
+#             for part in email_message.walk():
+#                 if part.get_content_type() == "text/plain":  # ignore attachments/html
+#                     body = part.get_payload(decode=True)
+#                     body_text = body.decode("utf-8")
+#                     words = body_text.split()
+#                     flag_word = False
+#                     for word in words:
+#                         if word.lower() == ":":
+#                             continue
+#                         if word.lower() == "url":
+#                             continue
+#                         if word.lower() == "type":
+#                             flag_word = True
+#                             continue
+#                         if flag_word == False:
+#                             url = word
+#                             continue
+#                         if flag_word == True:
+#                             label = word
+#                 if part.get_content_maintype() == "multipart":
+#                     continue
+#                 if part.get("Content-Disposition") is None:
+#                     continue
+#                 image = True
+#                 screenshot_base64 = part
+#             sender = email_message["From"].split()[-1]
+#             address = re.sub(r"[<>]", "", sender)
+#             for user in User.objects.all():
+#                 if user.email == address:
+#                     token = Token.objects.get(user_id=user.id).key
+#                     break
+#             if label.lower() == "general":
+#                 label = 0
+#             elif label.lower() == "number error":
+#                 label = 1
+#             elif label.lower() == "functional":
+#                 label = 2
+#             elif label.lower() == "performance":
+#                 label = 3
+#             elif label.lower() == "security":
+#                 label = 4
+#             elif label.lower() == "typo":
+#                 label = 5
+#             elif label.lower() == "design":
+#                 label = 6
+#             else:
+#                 error = True
+#             if token == "None":
+#                 error = "TokenTrue"
+#             if image == False:
+#                 error = True
+#             if error == True:
+#                 send_mail(
+#                     "Error In Your Report",
+#                     "There was something wrong with the mail you sent regarding the issue to be created. Please check the content and try again later !",
+#                     settings.EMAIL_TO_STRING,
+#                     [address],
+#                     fail_silently=False,
+#                 )
+#             elif error == "TokenTrue":
+#                 send_mail(
+#                     "You are not a user of " + settings.PROJECT_NAME,
+#                     "You are not a Registered user at " + settings.PROJECT_NAME + " .Please first Signup at " + settings.PROJECT_NAME + " and Try Again Later ! .",
+#                     settings.EMAIL_TO_STRING,
+#                     [address],
+#                     fail_silently=False,
+#                 )
+#             else:
+#                 data = {
+#                     "url": url,
+#                     "description": email_message["Subject"],
+#                     "file": str(screenshot_base64.get_payload(decode=False)),
+#                     "token": token,
+#                     "label": label,
+#                     "type": "jpg",
+#                 }
+#                 headers = {"Content-Type": "application/x-www-form-urlencoded"}
+#                 requests.post(
+#                     "https://" + settings.FQDN + "/api/v1/createissues/",
+#                     data=json.dumps(data),
+#                     headers=headers,
+#                 )
+#         mail.logout()
