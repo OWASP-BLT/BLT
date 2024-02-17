@@ -87,6 +87,9 @@ from comments.models import Comment
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.http import HttpRequest
+from django.core.cache import cache
+from django.utils.timezone import now
+from django.http import HttpResponseForbidden
 
 def is_valid_https_url(url):
     validate = URLValidator(schemes=['https'])  # Only allow HTTPS URLs
@@ -607,6 +610,20 @@ class IssueBaseCreate(object):
             )
 
         return HttpResponseRedirect("/")
+    
+    
+def get_client_ip(request):
+    """Extract the client's IP address from the request."""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+        
+    print("*"*50)
+    print(f"Client IP: {ip}")
+    print("*"*50)
+    return ip
 
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
@@ -717,6 +734,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
+        user_or_ip = self.request.user.get_username() if self.request.user.is_authenticated else get_client_ip(self.request)
+        limit = 2 if self.request.user.is_authenticated else 5  # Your set limits
+        cache_key = f"issue_create_{user_or_ip}_{now().date()}"
+        issue_count = cache.get(cache_key, 0)
+
+        if issue_count >= limit:
+            messages.error(self.request, "You have reached your issue creation limit for today.")
+            return HttpResponseRedirect("/report/")
 
         @atomic
         def create_issue(self,form):
@@ -870,6 +895,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 self.request.session["created"] = domain_exists
                 self.request.session["domain"] = domain.id
                 login_url = reverse("account_login")
+                cache.set(cache_key, issue_count + 1, 86400)  # Increment the count
                 messages.success(self.request, "Bug added!")
                 return HttpResponseRedirect("{}?next={}".format(login_url, redirect_url))
 
@@ -877,9 +903,11 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 self.process_issue(
                     User.objects.get(id=token.user_id), obj, domain_exists, domain, True
                 )
+                cache.set(cache_key, issue_count + 1, 86400)  # Increment the count
                 return JsonResponse("Created", safe=False)
             else:
                 self.process_issue(self.request.user, obj, domain_exists, domain)
+                cache.set(cache_key, issue_count + 1, 86400)  # Increment the count
                 return HttpResponseRedirect(redirect_url + "/")
         
         return create_issue(self,form)

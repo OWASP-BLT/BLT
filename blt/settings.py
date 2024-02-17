@@ -193,12 +193,14 @@ AUTHENTICATION_BACKENDS = (
 
 # SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
-# CACHES = {
-#    'default': {
-#        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-#        'LOCATION': 'cache_table',
-#    }
-# }
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'django_cache',  # Change 'my_cache_table' to your cache table name if it's not the default
+    },
+}
+
+
 REST_AUTH = {
     'SESSION_LOGIN': False
 }
