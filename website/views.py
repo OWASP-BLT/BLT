@@ -619,10 +619,6 @@ def get_client_ip(request):
         ip = x_forwarded_for.split(',')[0]
     else:
         ip = request.META.get('REMOTE_ADDR')
-        
-    print("*"*50)
-    print(f"Client IP: {ip}")
-    print("*"*50)
     return ip
 
 class IssueCreate(IssueBaseCreate, CreateView):

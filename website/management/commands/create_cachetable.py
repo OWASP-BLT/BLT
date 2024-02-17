@@ -6,7 +6,6 @@ class Command(BaseCommand):
     help = 'Creates the cache table if it does not exist'
 
     def handle(self, *args, **options):
-        # Assuming the default cache table name; change if yours is different
         table_name = 'django_cache'
         table_exists = table_name in connection.introspection.table_names()
 

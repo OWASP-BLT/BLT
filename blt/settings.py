@@ -196,7 +196,7 @@ AUTHENTICATION_BACKENDS = (
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'django_cache',  # Change 'my_cache_table' to your cache table name if it's not the default
+        'LOCATION': 'django_cache',
     },
 }
 
