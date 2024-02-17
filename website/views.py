@@ -608,8 +608,6 @@ class IssueBaseCreate(object):
             )
 
         return HttpResponseRedirect("/")
-    
-    
 def get_client_ip(request):
     """Extract the client's IP address from the request."""
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
