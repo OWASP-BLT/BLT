@@ -49,7 +49,7 @@
 <div class="main">
     {% for objects in domain %}
     <div class="container">
-        <img src="/media/{{MEIDA_ROOT}}/{{objects.logo}}" alt="{{objects.name}}">
+        <img src="{{objects.get_logo}}" alt="{{objects.name}}">
         <a href="{% url 'view_domain' objects.id %}">{{objects.name}}</a>
     </div>
     {% endfor %}
