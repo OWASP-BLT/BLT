@@ -3503,7 +3503,7 @@ def safe_redirect(request: HttpRequest):
     fallback_url = f"{request.scheme}://{request.get_host()}/"
     return redirect(fallback_url)
 
-  class DomainListView(ListView):
+class DomainListView(ListView):
     model = Domain
     paginate_by = 20
     template_name = "domain_list.html"
