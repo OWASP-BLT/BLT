@@ -253,6 +253,8 @@ class Issue(models.Model):
     is_hidden = models.BooleanField(default=False)
     rewarded = models.PositiveIntegerField(default=0) # money rewarded by the company
     viewer = models.ManyToManyField(User , null=True , blank=True , related_name="viewer")
+    reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
+
 
 
     def __unicode__(self):
@@ -364,50 +366,6 @@ class Winner(models.Model):
         on_delete=models.CASCADE,
     )
     prize_distributed = models.BooleanField(default=False)
-
-
-def post_to_twitter(sender, instance, *args, **kwargs):
-    if not kwargs.get("created"):
-        return False
-    try:
-        consumer_key = os.environ["TWITTER_CONSUMER_KEY"]
-        consumer_secret = os.environ["TWITTER_CONSUMER_SECRET"]
-        access_key = os.environ["TWITTER_ACCESS_KEY"]
-        access_secret = os.environ["TWITTER_ACCESS_SECRET"]
-    except KeyError:
-        print("WARNING: Twitter account not configured.")
-        return False
-
-    try:
-        text = instance.get_twitter_message()
-    except AttributeError:
-        text = str(instance)
-
-    mesg = "%s" % (text)
-    if len(mesg) > TWITTER_MAXLENGTH:
-        size = len(mesg + "...") - TWITTER_MAXLENGTH
-        mesg = "%s..." % (text[:-size])
-
-    import logging
-
-    logger = logging.getLogger("testlogger")
-
-    if not settings.DEBUG:
-        try:
-            auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-            auth.set_access_token(access_key, access_secret)
-            api = tweepy.API(auth)
-            file = default_storage.open(instance.screenshot.file.name, "rb")
-            
-            media_ids = api.media_upload(
-                filename=unidecode(instance.screenshot.file.name), file=file
-            )
-            params = dict(status=mesg, media_ids=[media_ids.media_id_string])
-            api.update_status(**params)
-
-        except Exception as ex:
-            logger.debug("rem %s" % str(ex))
-            return False
 
 
 class Points(models.Model):

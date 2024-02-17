@@ -63,6 +63,8 @@ from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialConnectView
 from blt import settings
 from rest_framework.authtoken.views import ObtainAuthToken
+import tweepy
+
 
 from website.models import (
 
@@ -93,6 +95,7 @@ from .decorator import (
     private_access_check
 )
 from django.http import HttpRequest
+from django.utils.timezone import now
 
 
 def is_valid_https_url(url):
@@ -651,7 +654,7 @@ class IssueBaseCreate(object):
 
     def process_issue(self, user, obj, created, domain, tokenauth=False, score=3):
         p = Points.objects.create(user=user, issue=obj, score=score)
-        messages.success(self.request, "Bug added! +" + str(score))
+        messages.success(self.request, "Bug added ! +" + str(score))
 
         if created:
             try:
@@ -678,7 +681,24 @@ class IssueBaseCreate(object):
                 [email_to],
                 html_message=msg_html,
             )
+            try :
+                auth = tweepy.Client(
+                    settings.BEARER_TOKEN,
+                    settings.APP_KEY, 
+                    settings.APP_KEY_SECRET,
+                    settings.ACCESS_TOKEN,
+                    settings.ACCESS_TOKEN_SECRET
+                    )
+                if obj.is_hidden :
+                    pass
+                else :
+                    blt_url = "https://" + "%s/issue/%d" %(settings.DOMAIN_NAME , obj.id)                
+                    auth.create_tweet(text = 'An Issue "%s" has been reported on %s by %s on %s.\n Have look here %s' %(obj.description , domain , user ,settings.PROJECT_NAME, blt_url))
+            except Exception as e :
+                print(e)
+
         else:
+
             email_to = domain.email
             try:
                 name = email_to.split("@")[0]
@@ -742,6 +762,14 @@ class IssueBaseCreate(object):
             )
 
         return HttpResponseRedirect("/")
+def get_client_ip(request):
+    """Extract the client's IP address from the request."""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
 
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
@@ -852,6 +880,18 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
+        reporter_ip = get_client_ip(self.request)
+        form.instance.reporter_ip_address = reporter_ip
+        
+        #implement rate limit
+        limit = 50 if self.request.user.is_authenticated else 30
+        today = now().date()
+        recent_issues_count = Issue.objects.filter(reporter_ip_address=reporter_ip, created__date=today).count()
+
+        if recent_issues_count >= limit:
+            messages.error(self.request, "You have reached your issue creation limit for today.")
+            return HttpResponseRedirect("/report/")
+        form.instance.reporter_ip_address = reporter_ip
 
         @atomic
         def create_issue(self,form):

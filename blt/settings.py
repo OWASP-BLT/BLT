@@ -198,6 +198,8 @@ AUTHENTICATION_BACKENDS = (
 #        'LOCATION': 'cache_table',
 #    }
 # }
+
+
 REST_AUTH = {
     'SESSION_LOGIN': False
 }
@@ -519,3 +521,12 @@ IS_TEST = False
 if "test" in sys.argv:
     CAPTCHA_TEST_MODE = True
     IS_TEST = True
+
+
+# Twitter 
+
+BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
+APP_KEY = os.environ.get("APP_KEY")
+APP_KEY_SECRET = os.environ.get("APP_KEY_SECRET")
+ACCESS_TOKEN = os.environ.get("ACCESS_TOKEN")
+ACCESS_TOKEN_SECRET = os.environ.get("ACCESS_TOKEN_SECRET")
