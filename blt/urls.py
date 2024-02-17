@@ -56,6 +56,7 @@ from website.views import (
     sponsor_view,
     request_access,
     grant_access,
+    DomainListView,
     like_issue2,
     flag_issue2,
     subscribe_to_domains,
@@ -442,7 +443,8 @@ urlpatterns = [
     path("sponsor/",website.views.sponsor_view, name="sponsor"),
     path("issue/<int:issue_pk>/request_access/" , website.views.request_access , name="issue_request_access"),
     path("private/<int:user_pk>/issue/" , website.views.private_issue , name="private_issue"),
-    path("private/<int:user_pk>/issue/<int:issue_pk>/grant_access/" , website.views.grant_access , name="grant_access")
+    path("private/<int:user_pk>/issue/<int:issue_pk>/grant_access/" , website.views.grant_access , name="grant_access"),
+    path("companies/", DomainListView.as_view() , name="domain_list")
 ]
 
 if settings.DEBUG:
