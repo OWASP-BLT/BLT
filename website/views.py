@@ -735,7 +735,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
     def form_valid(self, form):
         user_or_ip = self.request.user.get_username() if self.request.user.is_authenticated else get_client_ip(self.request)
-        limit = 2 if self.request.user.is_authenticated else 5  # Your set limits
+        limit = 50 if self.request.user.is_authenticated else 30  # Your set limits
         cache_key = f"issue_create_{user_or_ip}_{now().date()}"
         issue_count = cache.get(cache_key, 0)
 
