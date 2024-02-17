@@ -48,8 +48,8 @@ PROJECT_NAME_UPPER = PROJECT_NAME.upper()
 
 ADMIN_URL = os.environ.get("ADMIN_URL", "admin")
 PORT = os.environ.get("PORT", "8000")
-DEFAULT_FROM_EMAIL = "support@" + DOMAIN_NAME
-SERVER_EMAIL = "support@" + DOMAIN_NAME
+DEFAULT_FROM_EMAIL = os.environ.get("FROM_EMAIL", "test@localhost")
+SERVER_EMAIL = os.environ.get("FROM_EMAIL", "test@localhost")
 
 
 EMAIL_TO_STRING = PROJECT_NAME + " <"+ SERVER_EMAIL +">"
