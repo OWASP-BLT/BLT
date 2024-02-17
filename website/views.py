@@ -1764,12 +1764,15 @@ class IssueView(DetailView):
                         address=get_client_ip(request), issuenumber=self.object.id
                     )
                     self.object.save()
-                except:
+                except Exception as e:
+                    print(e)
+                    messages.error(self.request, "That issue was not found 2." +str(e))
                     ipdetails.save()
                     self.object.views = (self.object.views or 0) + 1
                     self.object.save()
-        except:
-            messages.error(self.request, "That issue was not found.")
+        except Exception as e:
+            print(e)
+            messages.error(self.request, "That issue was not found 1." +str(e))
             return redirect("/")
         return super(IssueView, self).get(request, *args, **kwargs)
 

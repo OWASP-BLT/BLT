@@ -180,9 +180,11 @@ class IssueView2(DetailView):
                     ipdetails.save()
                     self.object.views = (self.object.views or 0) + 1
                     self.object.save()
-        except:
-            messages.error(self.request, "That issue was not found.")
-            return redirect("/")
+        except Exception as e:
+            print(e)
+            # TODO: this is only an error for ipv6 currently and doesn't require us to redirect the user - we'll sort this out later
+            # messages.error(self.request, "That issue was not found."+str(e))
+            # return redirect("/")
         return super(IssueView2, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
