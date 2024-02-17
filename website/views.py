@@ -3503,116 +3503,170 @@ def safe_redirect(request: HttpRequest):
     fallback_url = f"{request.scheme}://{request.get_host()}/"
     return redirect(fallback_url)
 
-# class CreateIssue(CronJobBase):
-#     RUN_EVERY_MINS = 1
+@login_required(login_url="/accounts/login")
+def flag_issue2(request, issue_pk):
+    context = {}
+    issue_pk = int(issue_pk)
+    issue = Issue.objects.get(pk=issue_pk)
+    userprof = UserProfile.objects.get(user=request.user)
+    if userprof in UserProfile.objects.filter(issue_flaged=issue):
+        userprof.issue_flaged.remove(issue)
+    else:
+        userprof.issue_flaged.add(issue)
+        issue_pk = issue.pk
 
-#     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
-#     code = "blt.create_issue"  # a unique code
+    userprof.save()
+    total_flag_votes = UserProfile.objects.filter(issue_flaged=issue).count()
+    context["object"] = issue
+    context["flags"] = total_flag_votes
+    return render(request, "includes/_flags2.html", context)
 
-#     def do(self):
-#         from django.conf import settings
-#         import imaplib
 
-#         mail = imaplib.IMAP4_SSL("imap.gmail.com", 993)
-#         error = False
-#         mail.login(settings.REPORT_EMAIL, settings.REPORT_EMAIL_PASSWORD)
-#         mail.list()
-#         # Out: list of "folders" aka labels in gmail.
-#         mail.select("inbox")  # connect to inbox.
-#         typ, data = mail.search(None, "ALL", "UNSEEN")
-#         import email
+@login_required(login_url="/accounts/login")
+def like_issue2(request, issue_pk):
+    context = {}
+    issue_pk = int(issue_pk)
+    issue = Issue.objects.get(pk=issue_pk)
+    userprof = UserProfile.objects.get(user=request.user)
+    if userprof in UserProfile.objects.filter(issue_upvoted=issue):
+        userprof.issue_upvoted.remove(issue)
+    else:
+        userprof.issue_upvoted.add(issue)
+        liked_user = issue.user
+        liker_user = request.user
+        issue_pk = issue.pk
+        msg_plain = render_to_string(
+            "email/issue_liked.txt",
+            {
+                "liker_user": liker_user.username,
+                "liked_user": liked_user.username,
+                "issue_pk": issue_pk,
+            },
+        )
+        msg_html = render_to_string(
+            "email/issue_liked.txt",
+            {
+                "liker_user": liker_user.username,
+                "liked_user": liked_user.username,
+                "issue_pk": issue_pk,
+            },
+        )
 
-#         for num in data[0].split():
-#             image = False
-#             screenshot_base64 = ""
-#             url = ""
-#             label = ""
-#             token = "None"
-#             typ, data = mail.fetch(num, "(RFC822)")
-#             raw_email = (data[0][1]).decode("utf-8")
-#             email_message = email.message_from_string(raw_email)
-#             maintype = email_message.get_content_maintype()
-#             error = False
-#             for part in email_message.walk():
-#                 if part.get_content_type() == "text/plain":  # ignore attachments/html
-#                     body = part.get_payload(decode=True)
-#                     body_text = body.decode("utf-8")
-#                     words = body_text.split()
-#                     flag_word = False
-#                     for word in words:
-#                         if word.lower() == ":":
-#                             continue
-#                         if word.lower() == "url":
-#                             continue
-#                         if word.lower() == "type":
-#                             flag_word = True
-#                             continue
-#                         if flag_word == False:
-#                             url = word
-#                             continue
-#                         if flag_word == True:
-#                             label = word
-#                 if part.get_content_maintype() == "multipart":
-#                     continue
-#                 if part.get("Content-Disposition") is None:
-#                     continue
-#                 image = True
-#                 screenshot_base64 = part
-#             sender = email_message["From"].split()[-1]
-#             address = re.sub(r"[<>]", "", sender)
-#             for user in User.objects.all():
-#                 if user.email == address:
-#                     token = Token.objects.get(user_id=user.id).key
-#                     break
-#             if label.lower() == "general":
-#                 label = 0
-#             elif label.lower() == "number error":
-#                 label = 1
-#             elif label.lower() == "functional":
-#                 label = 2
-#             elif label.lower() == "performance":
-#                 label = 3
-#             elif label.lower() == "security":
-#                 label = 4
-#             elif label.lower() == "typo":
-#                 label = 5
-#             elif label.lower() == "design":
-#                 label = 6
-#             else:
-#                 error = True
-#             if token == "None":
-#                 error = "TokenTrue"
-#             if image == False:
-#                 error = True
-#             if error == True:
-#                 send_mail(
-#                     "Error In Your Report",
-#                     "There was something wrong with the mail you sent regarding the issue to be created. Please check the content and try again later !",
-#                     settings.EMAIL_TO_STRING,
-#                     [address],
-#                     fail_silently=False,
-#                 )
-#             elif error == "TokenTrue":
-#                 send_mail(
-#                     "You are not a user of " + settings.PROJECT_NAME,
-#                     "You are not a Registered user at " + settings.PROJECT_NAME + " .Please first Signup at " + settings.PROJECT_NAME + " and Try Again Later ! .",
-#                     settings.EMAIL_TO_STRING,
-#                     [address],
-#                     fail_silently=False,
-#                 )
-#             else:
-#                 data = {
-#                     "url": url,
-#                     "description": email_message["Subject"],
-#                     "file": str(screenshot_base64.get_payload(decode=False)),
-#                     "token": token,
-#                     "label": label,
-#                     "type": "jpg",
-#                 }
-#                 headers = {"Content-Type": "application/x-www-form-urlencoded"}
-#                 requests.post(
-#                     "https://" + settings.FQDN + "/api/v1/createissues/",
-#                     data=json.dumps(data),
-#                     headers=headers,
-#                 )
-#         mail.logout()
+        send_mail(
+            "Your issue got an upvote!!",
+            msg_plain,
+            settings.EMAIL_TO_STRING,
+            [liked_user.email],
+            html_message=msg_html,
+        )
+
+    userprof.save()
+    total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
+    context["object"] = issue
+    context["likes"] = total_votes
+    return render(request, "includes/_likes2.html", context)
+
+@login_required(login_url="/accounts/login")
+def subscribe_to_domains(request, pk):
+
+    domain = Domain.objects.filter(pk=pk).first()
+    if domain == None:
+        return JsonResponse("ERROR", safe=False,status=400)
+    
+    already_subscribed = request.user.userprofile.subscribed_domains.filter(pk=domain.id).exists()
+
+    if already_subscribed:
+        request.user.userprofile.subscribed_domains.remove(domain)
+        request.user.userprofile.save()
+        return JsonResponse("UNSUBSCRIBED",safe=False)
+
+    else:
+        request.user.userprofile.subscribed_domains.add(domain)
+        request.user.userprofile.save()
+        return JsonResponse("SUBSCRIBED",safe=False)
+
+
+class IssueView2(DetailView):
+    model = Issue
+    slug_field = "id"
+    template_name = "issue2.html"
+
+    def get(self, request, *args, **kwargs):
+        ipdetails = IP()
+        try:
+            id = int(self.kwargs["slug"])
+        except ValueError:
+            return HttpResponseNotFound("Invalid ID: ID must be an integer")
+
+        self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
+        ipdetails.user = self.request.user
+        ipdetails.address = get_client_ip(request)
+        ipdetails.issuenumber = self.object.id
+        try:
+            if self.request.user.is_authenticated:
+                try:
+                    objectget = IP.objects.get(
+                        user=self.request.user, issuenumber=self.object.id
+                    )
+                    self.object.save()
+                except:
+                    ipdetails.save()
+                    self.object.views = (self.object.views or 0) + 1
+                    self.object.save()
+            else:
+                try:
+                    objectget = IP.objects.get(
+                        address=get_client_ip(request), issuenumber=self.object.id
+                    )
+                    self.object.save()
+                except:
+                    ipdetails.save()
+                    self.object.views = (self.object.views or 0) + 1
+                    self.object.save()
+        except Exception as e:
+            print(e)
+            # TODO: this is only an error for ipv6 currently and doesn't require us to redirect the user - we'll sort this out later
+            # messages.error(self.request, "That issue was not found."+str(e))
+            # return redirect("/")
+        return super(IssueView2, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(IssueView2, self).get_context_data(**kwargs)
+        if self.object.user_agent:
+            user_agent = parse(self.object.user_agent)
+            context["browser_family"] = user_agent.browser.family
+            context["browser_version"] = user_agent.browser.version_string
+            context["os_family"] = user_agent.os.family
+            context["os_version"] = user_agent.os.version_string
+        context["users_score"] = list(
+            Points.objects.filter(user=self.object.user)
+            .aggregate(total_score=Sum("score"))
+            .values()
+        )[0]
+
+        if self.request.user.is_authenticated:
+            context["wallet"] = Wallet.objects.get(user=self.request.user)
+        context["issue_count"] = Issue.objects.filter(
+            url__contains=self.object.domain_name
+        ).count()
+        context["all_comment"] = self.object.comments.all().order_by("-created_date")
+        context["all_users"] = User.objects.all()
+        context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
+        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
+        context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
+        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
+        context["more_issues"] = Issue.objects.filter(user=self.object.user).exclude(id=self.object.id).values("id","description","markdown_description","screenshots__image").order_by("views")[:4]
+        context["subscribed_to_domain"] = False
+
+        if isinstance(self.request.user,User):  
+            context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(pk=self.request.user.userprofile.id).exists()
+
+
+        if isinstance(self.request.user,User): 
+            context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(pk=self.object.id  ).exists()
+
+        context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
+
+
+        return context
+        
