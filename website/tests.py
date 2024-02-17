@@ -13,6 +13,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from .models import Issue, IssueScreenshot
 
+from website.views import IssueBaseCreate
+from rest_framework.test import APITestCase,APIRequestFactory
+from rest_framework import status
+
 os.environ['DJANGO_LIVE_TEST_SERVER_ADDRESS'] = 'localhost:8082'
 
 class MySeleniumTests(LiveServerTestCase):
@@ -131,3 +135,16 @@ class HideImage(TestCase):
 
             if "hidden" not in filename:
                 self.assertFalse(True, "files rename failed")
+
+class IssueBaseCreateTest(APITestCase):
+    def test_throttle_exceed_limit(self):
+        for i in range(10000):
+            data = {'url': 'http://example.com', 'description': 'test', 'markdownInput': 'test', 'screenshots': 'test', 'captcha_1': 'PASSED'}
+            response = self.client.post('/report/', data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_throttle_within_limit(self):
+        for i in range(1000):
+            data = {'url': 'http://example.com', 'description': 'test', 'markdownInput': 'test', 'screenshots': 'test', 'captcha_1': 'PASSED'}
+            response = self.client.post('/report/', data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
