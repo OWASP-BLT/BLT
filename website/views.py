@@ -89,6 +89,7 @@ from comments.models import Comment
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.http import HttpRequest
+from django.utils.timezone import now
 
 def is_valid_https_url(url):
     validate = URLValidator(schemes=['https'])  # Only allow HTTPS URLs
@@ -626,6 +627,14 @@ class IssueBaseCreate(object):
             )
 
         return HttpResponseRedirect("/")
+def get_client_ip(request):
+    """Extract the client's IP address from the request."""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
 
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
@@ -736,6 +745,18 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
+        reporter_ip = get_client_ip(self.request)
+        form.instance.reporter_ip_address = reporter_ip
+        
+        #implement rate limit
+        limit = 50 if self.request.user.is_authenticated else 30
+        today = now().date()
+        recent_issues_count = Issue.objects.filter(reporter_ip_address=reporter_ip, created__date=today).count()
+
+        if recent_issues_count >= limit:
+            messages.error(self.request, "You have reached your issue creation limit for today.")
+            return HttpResponseRedirect("/report/")
+        form.instance.reporter_ip_address = reporter_ip
 
         @atomic
         def create_issue(self,form):

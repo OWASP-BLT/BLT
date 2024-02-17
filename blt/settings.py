@@ -199,6 +199,8 @@ AUTHENTICATION_BACKENDS = (
 #        'LOCATION': 'cache_table',
 #    }
 # }
+
+
 REST_AUTH = {
     'SESSION_LOGIN': False
 }
