@@ -1190,10 +1190,6 @@ def delete_issue(request, id):
     except:
         tokenauth = False
     issue = Issue.objects.get(id=id)
-    if request.user.is_superuser or request.user == issue.user or tokenauth:
-        screenshots = issue.screenshots.all()
-        for screenshot in screenshots:
-            screenshot.delete()
     if request.user.is_superuser or request.user == issue.user:
         issue.delete()
         messages.success(request, "Issue deleted")
