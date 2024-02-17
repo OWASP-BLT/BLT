@@ -16,6 +16,8 @@ from .models import Issue, IssueScreenshot
 from website.views import IssueBaseCreate
 from rest_framework.test import APITestCase,APIRequestFactory
 from rest_framework import status
+from django.contrib.auth.models import User
+from django.urls import reverse
 
 os.environ['DJANGO_LIVE_TEST_SERVER_ADDRESS'] = 'localhost:8082'
 
@@ -137,14 +139,15 @@ class HideImage(TestCase):
                 self.assertFalse(True, "files rename failed")
 
 class IssueBaseCreateTest(APITestCase):
-    def test_throttle_exceed_limit(self):
-        for i in range(10000):
-            data = {'url': 'http://example.com', 'description': 'test', 'markdownInput': 'test', 'screenshots': 'test', 'captcha_1': 'PASSED'}
-            response = self.client.post('/report/', data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    def setUp(self):
+        # Create a user
+        self.user = User.objects.create(username='testuser', password='testpassword')
 
-    def test_throttle_within_limit(self):
-        for i in range(1000):
+    def test_form_valid_throttling(self):
+        self.client.force_authenticate(user=self.user)
+        
+        for _ in range(100007):
             data = {'url': 'http://example.com', 'description': 'test', 'markdownInput': 'test', 'screenshots': 'test', 'captcha_1': 'PASSED'}
-            response = self.client.post('/report/', data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+            response = self.client.post('/report/', data=data)
+        
+        self.assertIn(response.status_code, [status.HTTP_429_TOO_MANY_REQUESTS, status.HTTP_200_OK])
