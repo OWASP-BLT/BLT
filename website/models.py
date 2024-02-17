@@ -252,6 +252,7 @@ class Issue(models.Model):
     modified = models.DateTimeField(auto_now=True)
     is_hidden = models.BooleanField(default=False)
     rewarded = models.PositiveIntegerField(default=0) # money rewarded by the company
+    reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
 
 
     def __unicode__(self):
