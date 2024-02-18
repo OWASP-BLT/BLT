@@ -1,29 +1,31 @@
-{% extends "base_dashboard_company.html" %}
+{% extends "base_dashboard.html" %}
 {% load static %}
 {% block content %}
 
-
-                 <div>
-                    <div class="col_3">
-                        <h3 class="text-left blank1">Upcoming Hunts</h3>  
-                           {% if hunts %}
-                            {% for hunt in hunts %}                
-                              <div class="col-md-3 widget widget1">
-                                <div class="r3_counter_box">
-                                    <i class="fa fa-mail-forward"></i>
-                                    <div class="stats">
-                                      <h5>{{hunt.url}}</h5>
-                                      <div class="hunt">
-                                        <p>{{hunt.prize}}<span>$</span></p>
-                                      </div>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            </br> no upcoming hunts !
-                        {% endif %}   
-                        <div class="clearfix"> </div>
+  <section>
+    {% include 'includes/company_sideanv.html' %}
+  </section>
+  <div>
+    <div class="col_3">
+        <h3 class="text-left blank1">Upcoming Hunts</h3>  
+            {% if hunts %}
+            {% for hunt in hunts %}                
+              <div class="col-md-3 widget widget1">
+                <div class="r3_counter_box">
+                    <i class="fa fa-mail-forward"></i>
+                    <div class="stats">
+                      <h5>{{hunt.url}}</h5>
+                      <div class="hunt">
+                        <p>{{hunt.prize}}<span>$</span></p>
+                      </div>
                     </div>
                 </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            </br> no upcoming hunts !
+        {% endif %}   
+        <div class="clearfix"> </div>
+    </div>
+</div>
 {% endblock %}

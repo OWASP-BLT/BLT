@@ -1,6 +1,9 @@
-{% extends "base_dashboard_company.html" %}
+{% extends "base_dashboard.html" %}
 {% load static %}
 {% block content %}
+<section>
+  {% include 'includes/company_sideanv.html' %}
+</section>
 <link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
   <link href="{% static 'mdeditor/css/editormd.preview.css' %}" rel="stylesheet">
                 <div>

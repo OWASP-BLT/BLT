@@ -1,4 +1,4 @@
-{% extends "base_dashboard_company.html" %}
+{% extends "base_dashboard.html" %}
 {% load static %}
 {% load tz_detect %}
 {% block style %}
@@ -71,6 +71,9 @@
 {% endblock %}
 
 {% block content %}
+<section>
+  {% include 'includes/company_sideanv.html' %}
+</section>
 <script src="{% static "js/jquery.validate.js" %}"></script>
 <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
 

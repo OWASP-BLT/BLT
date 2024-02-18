@@ -1,4 +1,4 @@
-{% extends "base_dashboard_user.html" %}
+{% extends "base_dashboard.html" %}
 {% load static %}
 {% load custom_tags %}
 {% load gravatar %}
@@ -94,6 +94,10 @@
     }
   }
 </style>
+<section>
+  {% include 'includes/user_sideanv.html'%}
+</section>
+
 {% endblock %}
 
 {% block content %}
@@ -109,6 +113,9 @@
         <hr />
       </div>
     </div>
+    <section>
+      {% include 'includes/user_sideanv.html' %}
+    </section>
     <div class="main-issue-form main-center">
       <form class="form-horizontal" method="post" action="#">
         <div class="form-group{% if form.url.errors %} has-error{% endif %}">

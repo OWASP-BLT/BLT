@@ -1,4 +1,4 @@
-{% extends "base_dashboard_user.html" %}
+{% extends "base_dashboard.html" %}
 {% load static %}
 {% block content %}
 <style>
@@ -73,9 +73,13 @@ h5.card-title{
 }
 
 </style>
+
 <link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
   <link href="{% static 'mdeditor/css/editormd.preview.css' %}" rel="stylesheet">
-                
+
+<section>
+  {% include 'includes/user_sideanv.html'%}
+</section>
 
 <main>
   <!--banner-->
