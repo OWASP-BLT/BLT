@@ -1,6 +1,7 @@
-{% extends "base_new.html" %}
+{% extends "base.html" %}
 
-{% block hero %}
+{% block content %}
+{% include "includes/sidenav.html" %}
     <style>
         .hero-bugs-container {
             grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
