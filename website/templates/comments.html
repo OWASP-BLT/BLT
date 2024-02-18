@@ -1,6 +1,6 @@
 <div class="comment_group">
     {% for comment in all_comment %}
-        {% if comment.parent == None %}
+        {% if comment.parent is None %}
             <blockquote>
             <div class="well comment -ml-11  ">
                 <div class="comment-actions flex-col space-y-5 p-5">
@@ -43,7 +43,7 @@
             </blockquote>
         {% endfor %}
 
-        {% if comment.parent == None %}
+        {% if comment.parent is None %}
             <form class="reply_form">
                 {% csrf_token %}
                 <div class="form-group">

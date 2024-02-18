@@ -91,7 +91,7 @@
                                 </div>
                                  <div style="padding:0px 75px;">
                                     <label style="font-size: 15px;">User points :</label>
-                                    {% if user.total_score == None %}
+                                    {% if user.total_score is None %}
                                         <span style="font-size: 15px;">0</span> Point
                                     {% else %}
                                         <span style="font-size: 15px;">{{ user.total_score|floatformat:0 }}</span> Points
