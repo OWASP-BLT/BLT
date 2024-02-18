@@ -204,7 +204,7 @@ msgstr "Да"
 #: website/templates/account/password_change.html:67
 #: website/templates/account/password_reset_from_key.html:41
 #: website/templates/account/password_reset_from_key.html:67
-#: website/templates/base_admin.html:109
+#: website/templates/base_dashboard.html:109
 #: website/templates/base_dashboard.html:134
 #: website/templates/base_dashboard.html:116
 #: website/templates/includes/navbar.html:125
@@ -254,14 +254,14 @@ msgstr "Регистрация учетной записи"
 msgid "Sign Up"
 msgstr "Зарегистрироваться"
 
-#: website/templates/base_admin.html:107
+#: website/templates/base_dashboard.html:107
 #: website/templates/base_dashboard.html:132
 #: website/templates/base_dashboard.html:114
 #: website/templates/includes/navbar.html:102
 msgid "User Profile"
 msgstr "Профиль пользователя"
 
-#: website/templates/base_admin.html:111
+#: website/templates/base_dashboard.html:111
 #: website/templates/base_dashboard.html:136
 #: website/templates/base_dashboard.html:118
 #: website/templates/includes/navbar.html:36
