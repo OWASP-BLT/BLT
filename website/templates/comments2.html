@@ -31,7 +31,7 @@
     {% endif %}
     <div class="comment_group">
         {% for comment in all_comment %}
-            {% if comment.parent == None %}
+            {% if comment.parent is None %}
                 <article class="p-6 mb-6 text-base bg-white rounded-lg ">
                     <footer class="flex justify-between items-center mb-2">
                         <div class="grid grid-cols-9 items-center justify-between">

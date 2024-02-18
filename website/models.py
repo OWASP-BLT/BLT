@@ -329,6 +329,12 @@ class IssueScreenshot(models.Model):
     image = models.ImageField(upload_to="screenshots", validators=[validate_image])
     issue = models.ForeignKey(Issue,on_delete=models.CASCADE,related_name="screenshots")
 
+    def delete (self, *args, **kwargs):
+        if self.image:
+            if os.path.isfile(self.image.path):
+                os.remove(self.image.path)
+        super(IssueScreenshot, self).delete(*args, **kwargs)
+
 
 @receiver(post_save, sender=Issue)
 def update_issue_image_access(sender, instance, **kwargs):
