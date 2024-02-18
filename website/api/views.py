@@ -83,7 +83,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         
         user_profile = UserProfile.objects.filter(user__id=pk).first()
 
-        if user_profile == None:
+        if user_profile is None:
             return Response({"detail": "Not found."},status=404)
         
         serializer = self.get_serializer(user_profile)
@@ -93,7 +93,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         
         user_profile = request.user.userprofile
         
-        if user_profile==None:
+        if user_profile is None:
             return Response({"detail": "Not found."},status=404)
         
         instance = user_profile
@@ -142,7 +142,7 @@ class IssueViewSet(viewsets.ModelViewSet):
     
     def get_issue_info(self,request,issue):
         
-        if issue == None:
+        if issue is None:
             return {}
 
         screenshots = [
@@ -454,7 +454,7 @@ class UrlCheckApiViewset(APIView):
         
         domain_url = request.data.get("domain_url",None)
 
-        if domain_url == None or domain_url.strip() == "": 
+        if domain_url is None or domain_url.strip() == "": 
             return Response([])
 
         domain = domain_url.replace("https://","").replace("http://","").replace("www.","")

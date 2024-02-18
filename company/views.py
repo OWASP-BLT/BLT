@@ -49,7 +49,7 @@ def validate_company_user(func):
             Q(managers__in=[request.user])
         ).filter(company_id=company).first()
 
-        if company == None:
+        if company is None:
             return redirect("company_view")
         
         return func(self,request,company.company_id,*args,**kwargs)
@@ -64,7 +64,7 @@ def company_view(request,*args,**kwargs):
         messages.info(request,"Email not verified.")
         return redirect("/")
 
-    if (user==None or isinstance(user,AnonymousUser)):
+    if (user is None or isinstance(user,AnonymousUser)):
         messages.error(request,"Login with company or domain provided email.")
         return redirect("/accounts/login/")
     
@@ -80,7 +80,7 @@ def company_view(request,*args,**kwargs):
         Q(admin=user) | 
         Q(managers__in=[user])
     )
-    if (user_companies.first()==None):
+    if (user_companies.first() is None):
 
         messages.error(request,"You do not have a company, create one.")
         return redirect("register_company")        
@@ -108,7 +108,7 @@ class RegisterCompanyView(View):
             messages.info(request,"Email not verified.")
             return redirect("/")
 
-        if (user==None or isinstance(user,AnonymousUser)):
+        if (user is None or isinstance(user,AnonymousUser)):
             messages.error(request,"Login to create company")
             return redirect("/accounts/login/")
         
@@ -129,7 +129,7 @@ class RegisterCompanyView(View):
 
         company = Company.objects.filter(name=data["company_name"]).first()
 
-        if (company!=None):
+        if (company is not None):
             messages.error(request,"Company already exist.")
             return redirect("register_company")
 
@@ -182,7 +182,7 @@ class CompanyDashboardAnalyticsView(View):
         total_bug_hunts = Hunt.objects.filter(domain__company__company_id=company).count()
         total_domains = Domain.objects.filter(company__company_id=company).count()
         total_money_distributed = Issue.objects.filter(domain__company__company_id=company).aggregate(total_money=Sum('rewarded'))["total_money"]
-        total_money_distributed = 0 if total_money_distributed==None else total_money_distributed
+        total_money_distributed = 0 if total_money_distributed is None else total_money_distributed
 
         return {
                 'total_company_bugs':total_company_bugs,
@@ -418,11 +418,11 @@ class AddDomainView(View):
             "facebook": request.POST.get("facebook_url",None),
         }
 
-        if domain_data["name"] == None:
+        if domain_data["name"] is None:
             messages.error(request,"Enter domain name")
             return redirect("add_domain",company) 
         
-        if domain_data["url"] == None:
+        if domain_data["url"] is None:
             messages.error(request,"Enter domain url")
             return redirect("add_domain",company)
         
@@ -546,7 +546,7 @@ class DomainView(View):
             raise Http404("Domain not found")
 
         total_money_distributed = Issue.objects.filter(pk=domain["id"]).aggregate(total_money=Sum('rewarded'))["total_money"]
-        total_money_distributed = 0 if total_money_distributed==None else total_money_distributed
+        total_money_distributed = 0 if total_money_distributed is None else total_money_distributed
 
         total_bug_reported = Issue.objects.filter(pk=domain["id"]).count()
         total_bug_accepted = Issue.objects.filter(pk=domain["id"], verified=True).count()
@@ -639,7 +639,7 @@ class CompanyDashboardManageRolesView(View):
             ( Q(company__admin=request.user) | Q(managers__in=[request.user]) )   
         ).first()
         
-        if domain == None:
+        if domain is None:
             messages.error("you are not manager of this domain.")
             return redirect('company_manage_roles',company)
         
@@ -682,7 +682,7 @@ class ShowBughuntView(View):
         total_bug_accepted = hunt_issues.filter(verified=True).count()
 
         total_money_distributed = hunt_issues.aggregate(total_money=Sum('rewarded'))["total_money"]
-        total_money_distributed = (0 if total_money_distributed==None else total_money_distributed)
+        total_money_distributed = (0 if total_money_distributed is None else total_money_distributed)
 
 
         bughunt_leaderboard = hunt_issues.values("user__id","user__username","user__userprofile__user_avatar").filter(user__isnull=False,verified=True).annotate(count=Count('user__username')).order_by("-count")[:16]
@@ -790,7 +790,7 @@ class AddHuntView(View):
 
         domains = Domain.objects.values('id','name').filter(company__company_id=company)
 
-        if hunt_id != None:
+        if hunt_id is not None:
             return self.edit(request,company,companies,domains,hunt_id,*args,**kwargs)
 
         context = {
@@ -808,7 +808,7 @@ class AddHuntView(View):
         data = request.POST
 
         hunt_id = data.get("hunt_id",None) # when post is for edit hunt
-        is_edit = True if hunt_id != None else False
+        is_edit = True if hunt_id is not None else False
 
         if is_edit:
             hunt = get_object_or_404(Hunt,pk=hunt_id)
@@ -816,7 +816,7 @@ class AddHuntView(View):
 
         domain = Domain.objects.filter(id=data.get("domain",None)).first()
 
-        if domain == None:
+        if domain is None:
             messages.error(request,"Domain Does not exists")
             return redirect('add_bughunt',company)
 
@@ -827,14 +827,14 @@ class AddHuntView(View):
         end_date = datetime.strptime(end_date,"%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
 
         hunt_logo = request.FILES.get("logo",None)
-        if hunt_logo != None:
+        if hunt_logo is not None:
             hunt_logo_file = hunt_logo.name.split(".")[0]
             extension = hunt_logo.name.split(".")[-1] 
             hunt_logo.name = hunt_logo_file[:99] + str(uuid.uuid4()) + "." + extension            
             default_storage.save(f"logos/{hunt_logo.name}",hunt_logo)
 
         webshot_logo = request.FILES.get("webshot",None) 
-        if webshot_logo != None:
+        if webshot_logo is not None:
             webshot_logo_file = webshot_logo.name.split(".")[0]
             extension = webshot_logo.name.split(".")[-1] 
             webshot_logo.name = webshot_logo_file[:99] + str(uuid.uuid4()) + "." + extension            
@@ -852,9 +852,9 @@ class AddHuntView(View):
             hunt.end_on = end_date
             hunt.is_published = False if data["publish_bughunt"] == "false" else True
             
-            if hunt_logo != None:
+            if hunt_logo is not None:
                 hunt.logo = f"logos/{hunt_logo.name}"
-            if webshot_logo != None:
+            if webshot_logo is not None:
                 hunt.banner = f"banners/{webshot_logo.name}"
             
             hunt.save()

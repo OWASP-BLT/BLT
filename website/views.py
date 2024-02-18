@@ -156,7 +156,7 @@ def index(request, template="index.html"):
         'end_on__year',
     ).annotate(total_prize=Sum("huntprize__value"))
 
-    if latest_hunts_filter != None:
+    if latest_hunts_filter is not None:
         top_hunts = top_hunts.filter(result_published=True).order_by("-created")[:3]
     else:
         top_hunts = top_hunts.filter(is_published=True,result_published=False).order_by("-created")[:3]
@@ -183,7 +183,7 @@ def index(request, template="index.html"):
         "top_companies":top_companies,
         "top_testers":top_testers,
         "top_hunts": top_hunts,
-        "ended_hunts": False if latest_hunts_filter == None else True 
+        "ended_hunts": False if latest_hunts_filter is None else True 
     }
     return render(request, template, context)
 
@@ -249,7 +249,7 @@ def newhome(request, template="new_home.html"):
     #     'end_on__year',
     # ).annotate(total_prize=Sum("huntprize__value"))
 
-    # if latest_hunts_filter != None:
+    # if latest_hunts_filter is not None:
     #     top_hunts = top_hunts.filter(result_published=True).order_by("-created")[:3]
     # else:
     #     top_hunts = top_hunts.filter(is_published=True,result_published=False).order_by("-created")[:3]
@@ -277,7 +277,7 @@ def newhome(request, template="new_home.html"):
         # "top_companies":top_companies,
         # "top_testers":top_testers,
         # "top_hunts": top_hunts,
-        # "ended_hunts": False if latest_hunts_filter == None else True 
+        # "ended_hunts": False if latest_hunts_filter is None else True 
     }
     return render(request, template, context)
 
@@ -778,7 +778,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             clean_domain = obj.domain_name.replace("www.", "").replace("https://","").replace("http://","")
             domain = Domain.objects.filter(name=clean_domain).first()
 
-            domain_exists = False if domain==None else True 
+            domain_exists = False if domain is None else True 
 
             if not domain_exists:
                 domain = Domain.objects.create(
@@ -788,7 +788,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 domain.save()
             
             hunt = self.request.POST.get("hunt",None)
-            if hunt != None and hunt!="None":
+            if hunt is not None and hunt!="None":
                 hunt = Hunt.objects.filter(id=hunt).first()
                 obj.hunt = hunt
 
@@ -832,7 +832,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             team_members_id = [member["id"] for member in User.objects.values("id").filter(email__in=self.request.POST.getlist("team_members"))] + [self.request.user.id]
             for member_id in team_members_id:
-                if member_id == None:
+                if member_id is None:
                     team_members_id.remove(member_id) # remove None values if user not exists
             obj.team_members.set(team_members_id)
 
@@ -2287,7 +2287,7 @@ def comment_on_issue(request, issue_pk):
         comment = request.POST.get("comment","")
         replying_to_input = request.POST.get("replying_to_input","").split("#")
         
-        if issue == None:
+        if issue is None:
             Http404("Issue does not exist, cannot comment")
 
         if len(replying_to_input) == 2:
@@ -2296,7 +2296,7 @@ def comment_on_issue(request, issue_pk):
 
             parent_comment = Comment.objects.filter(pk=replying_to_comment_id).first()
 
-            if parent_comment == None:
+            if parent_comment is None:
                 messages.error(request,"Parent comment doesn't exist.")
                 return redirect(f"/issue2/{issue_pk}")
 
@@ -2399,7 +2399,7 @@ def get_scoreboard(request):
         temp["closed"] = len(each.closed_issues)
         temp["modified"] = each.modified
         temp["logo"] = each.logo
-        if each.top_tester == None:
+        if each.top_tester is None:
             temp["top"] = "None"
         else:
             temp["top"] = each.top_tester.username
@@ -2598,15 +2598,15 @@ class ListHunts(TemplateView):
         if search.strip() != "":
             hunts = hunts.filter(Q(name__icontains=search))
 
-        if start_date != "" and start_date != None:
+        if start_date != "" and start_date is not None:
             start_date = datetime.strptime(start_date,"%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
             hunts = hunts.filter(starts_on__gte=start_date)
         
-        if end_date != "" and end_date != None:
+        if end_date != "" and end_date is not None:
             end_date = datetime.strptime(end_date,"%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
             hunts = hunts.filter(end_on__gte=end_date)
 
-        if domain != "Select Domain" and domain != None:
+        if domain != "Select Domain" and domain is not None:
             domain = Domain.objects.filter(id=domain).first()
             hunts = hunts.filter(domain=domain)
         
@@ -3518,7 +3518,7 @@ def contributors_view(request,*args,**kwargs):
             if str(i["id"])==contributor_id:
                 contributor = i
         
-        if contributor==None:
+        if contributor is None:
             return HttpResponseNotFound("Contributor not found")
         
         return render(request,"contributors_detail.html",context={"contributor":contributor})
@@ -3635,7 +3635,7 @@ def like_issue2(request, issue_pk):
 def subscribe_to_domains(request, pk):
 
     domain = Domain.objects.filter(pk=pk).first()
-    if domain == None:
+    if domain is None:
         return JsonResponse("ERROR", safe=False,status=400)
     
     already_subscribed = request.user.userprofile.subscribed_domains.filter(pk=domain.id).exists()
