@@ -572,7 +572,7 @@ class IssueBaseCreate(object):
                 name = "support"
                 domain.email = email_to
                 domain.save()
-            if tokenauth == False:
+            if not tokenauth:
                 msg_plain = render_to_string(
                     "email/bug_added.txt",
                     {
@@ -1197,7 +1197,7 @@ def delete_issue(request, id):
     if request.user.is_superuser or request.user == issue.user:
         issue.delete()
         messages.success(request, "Issue deleted")
-    if tokenauth == True:
+    if tokenauth:
         return JsonResponse("Deleted", safe=False)
     else:
         return redirect("/")
@@ -3096,7 +3096,7 @@ def withdraw(request):
             stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
             if wallet.account_id:
                 account = stripe.Account.retrieve(wallet.account_id)
-                if account.payouts_enabled == True:
+                if account.payouts_enabled:
                     balance = stripe.Balance.retrieve()
                     if balance.available[0].amount > payment.value * 100:
                         stripe.Transfer.create(
@@ -3179,7 +3179,7 @@ def stripe_connected(request, username):
 
     stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
     account = stripe.Account.retrieve(wallet.account_id)
-    if account.payouts_enabled == True:
+    if account.payouts_enabled:
         payment = Payment.objects.get(wallet=wallet, active=True)
         balance = stripe.Balance.retrieve()
         if balance.available[0].amount > payment.value * 100:
@@ -3780,10 +3780,10 @@ class IssueView2(DetailView):
 #                         if word.lower() == "type":
 #                             flag_word = True
 #                             continue
-#                         if flag_word == False:
+#                         if not flag_word:
 #                             url = word
 #                             continue
-#                         if flag_word == True:
+#                         if flag_word:
 #                             label = word
 #                 if part.get_content_maintype() == "multipart":
 #                     continue
@@ -3815,9 +3815,9 @@ class IssueView2(DetailView):
 #                 error = True
 #             if token == "None":
 #                 error = "TokenTrue"
-#             if image == False:
+#             if not image:
 #                 error = True
-#             if error == True:
+#             if error:
 #                 send_mail(
 #                     "Error In Your Report",
 #                     "There was something wrong with the mail you sent regarding the issue to be created. Please check the content and try again later !",
