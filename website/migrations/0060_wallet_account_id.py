@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('website', '0059_transaction_wallet'),
+        ("website", "0059_transaction_wallet"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='wallet',
-            name='account_id',
+            model_name="wallet",
+            name="account_id",
             field=models.TextField(blank=True, null=True),
         ),
     ]
