@@ -90,6 +90,10 @@ from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.http import HttpRequest
 from django.utils.timezone import now
+from django.contrib.sites.shortcuts import get_current_site
+from allauth.account.signals import user_signed_up
+from django.utils.html import strip_tags
+from django.core.mail import EmailMultiAlternatives
 
 def is_valid_https_url(url):
     validate = URLValidator(schemes=['https'])  # Only allow HTTPS URLs
@@ -2066,38 +2070,57 @@ class CreateInviteFriend(CreateView):
     success_url = reverse_lazy("invite_friend")
 
     def form_valid(self, form):
-        from django.conf import settings
-        from django.contrib.sites.shortcuts import get_current_site
+        recipient_email = form.cleaned_data["recipient"]
 
+        # Check if a user with the given email already exists
+        if User.objects.filter(email=recipient_email).exists():
+            messages.error(self.request, "User with this email already exists.")
+            return super().form_invalid(form)
+        # try:
+        #     invite = InviteFriend.objects.get(recipient=recipient_email)
+        #     time_difference = now() - invite.sent
+        #     if time_difference.days < 1: # 1 day
+        #         messages.error(self.request, "An invitation has already been sent to this email recently.")
+        #         return super().form_invalid(form)
+        # except InviteFriend.DoesNotExist:
+        #     pass
         instance = form.save(commit=False)
         instance.sender = self.request.user
         instance.save()
 
         site = get_current_site(self.request)
+        referral_link = f"https://{site.domain}/referral/?ref={instance.referral_code}"
 
-        mail_status = send_mail(
-            "Inivtation to {site} from {user}".format(
-                site=site.name, user=self.request.user.username
-            ),
-            "You have been invited by {user} to join {site} community.".format(
-                user=self.request.user.username, site=site.name
-            ),
-            settings.DEFAULT_FROM_EMAIL,
-            [instance.recipient],
-        )
+        context = {
+            'site_name': site.name,
+            'sender_username': self.request.user.username,
+            'referral_link': referral_link,
+        }
+        html_content = render_to_string('email/invitation_email.html', context)
+        text_content = strip_tags(html_content)
+        subject = f"Invitation to {site.name} from {self.request.user.username}"
+        from_email = settings.DEFAULT_FROM_EMAIL
+        to = [instance.recipient]
+        msg = EmailMultiAlternatives(subject, text_content, from_email, to)
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
+        # email.send()
+        # site = get_current_site(self.request)
+        # referral_link = f"{site.domain}/referral/?ref={instance.referral_code}"
 
-        if (
-            mail_status
-            and InviteFriend.objects.filter(sender=self.request.user).count() == 2
-        ):
-            Points.objects.create(user=self.request.user, score=1)
-            InviteFriend.objects.filter(sender=self.request.user).delete()
+        # mail_status = send_mail(
+        #     subject=f"Invitation to {site.name} from {self.request.user.username}",
+        #     message=f"You have been invited by {self.request.user.username} to join {site.name}. Use this link to sign up: {referral_link}",
+        #     from_email=settings.DEFAULT_FROM_EMAIL,
+        #     recipient_list=[instance.recipient],
+        #     fail_silently=False,
+        # )
 
-        messages.success(
-            self.request,
-            "An email has been sent to your friend. Keep inviting your friends and get points!",
-        )
-        return HttpResponseRedirect(self.success_url)
+        # if mail_status:
+        #     messages.success(self.request, "An email has been sent to your friend. Keep inviting your friends and earn rewards!")
+
+        messages.success(self.request, "An email has been sent to your friend. Keep inviting your friends and earn rewards!")
+        return super().form_valid(form)
 
 @login_required(login_url="/accounts/login")
 def follow_user(request, user):
@@ -3735,6 +3758,41 @@ class IssueView2(DetailView):
 
         return context
         
+@receiver(user_signed_up)
+def handle_user_signup(request, user, **kwargs):
+    referral_token = request.session.get('ref')
+    if referral_token:
+        try:
+            invite = InviteFriend.objects.get(referral_code=referral_token)
+            # also check the signup mail is same as the invite mail or not
+            if (not invite.signup_completed) and (invite.recipient == user.email):
+                # Mark the signup as completed
+                invite.signup_completed = True
+                invite.save()
+                # Reward the user who sent the invite with points
+                reward_sender_with_points(invite.sender)
+                # Clear the referral token from the session
+                del request.session['ref']
+        except InviteFriend.DoesNotExist:
+            pass
+
+def reward_sender_with_points(sender):
+    # Create or update points for the sender
+    points, created = Points.objects.get_or_create(user=sender, defaults={'score': 0})
+    points.score += 2  # Reward 2 points for each successful referral signup
+    points.save()
+
+def referral_signup(request):
+    referral_token = request.GET.get('ref')
+    # check the referral token is present on invitefriend model or not and if present then set the referral token in the session
+    if referral_token:
+        try:
+            invite = InviteFriend.objects.get(referral_code=referral_token)
+            request.session['ref'] = referral_token
+        except InviteFriend.DoesNotExist:
+            messages.error(request, "Invalid referral token")
+            return redirect('account_signup')
+    return redirect('account_signup')
 
 # class CreateIssue(CronJobBase):
 #     RUN_EVERY_MINS = 1

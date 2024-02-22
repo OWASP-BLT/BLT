@@ -117,6 +117,7 @@ handler404 = "website.views.handler404"
 handler500 = "website.views.handler500"
 
 urlpatterns = [
+    path('referral/', website.views.referral_signup, name='referral_signup'),
     path("captcha/", include("captcha.urls")),
     re_path(r"^auth/registration/", include("dj_rest_auth.registration.urls")),
     path('rest-auth/password/reset/confirm/<str:uidb64>/<str:token>', PasswordResetConfirmView.as_view(),

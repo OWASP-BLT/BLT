@@ -381,11 +381,16 @@ class InviteFriend(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
     recipient = models.EmailField()
     sent = models.DateTimeField(auto_now_add=True, db_index=True)
+    referral_code = models.CharField(max_length=100, default=uuid.uuid4, editable=False)
+    signup_completed = models.BooleanField(default=False)
 
     class Meta:
         ordering = ("-sent",)
         verbose_name = "invitation"
         verbose_name_plural = "invitations"
+
+    def __str__(self):
+        return f"Invite from {self.sender} to {self.recipient}"
 
 
 def user_images_path(instance, filename):

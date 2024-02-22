@@ -1,26 +1,29 @@
 {% extends "base.html" %}
 {% block content %}
-    <form action="{% url 'invite_friend' %}" method="post" class="form-inline">
+    <form action="{% url 'invite_friend' %}" method="post" class="mx-auto max-w-lg mt-5">
         {% csrf_token %}
-        <div class="row">
-            {% for error in form.non_field_errors %}
-                <div class="col-lg-6">{{ error }}</div>
-            {% endfor %}
-        </div>
-        <div class="row">
-            <div class="col-lg-10">
-                {% if form.recipient.errors %}
-                    <div class="alert alert-danger">{{ form.recipient.errors }}</div>
-                {% endif %}
+        {% for error in form.non_field_errors %}
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                <strong class="font-bold">Oops!</strong>
+                <span class="block sm:inline">{{ error }}</span>
             </div>
+        {% endfor %}
+    
+        <div class="mb-4">
+            <label for="recipient" class="block text-gray-700 text-2xl font-bold mb-2">Friends mail:</label>
+            {{ form.recipient }}
+            {% if form.recipient.errors %}
+                <p class="text-red-500 text-xs italic">{{ form.recipient.errors }}</p>
+            {% endif %}
         </div>
-        <div class="row">
-            <div class="col-lg-10">
-                <h3 class="page-header">Invite 2 friends and get 1 point!</h3>
-                <label>Email:</label>
-                {{ form.recipient }}
-                <button type="submit" class="btn btn-danger text-black">Invite</button>
-            </div>
+    
+        <div class="flex items-center justify-between">
+            <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Invite
+            </button>
+            <p class="inline-block align-baseline font-bold text-base text-red-500 hover:text-red-800">
+                Invite a friend to join the site and earn 2 points!
+            </p>
         </div>
     </form>
 {% endblock %}
