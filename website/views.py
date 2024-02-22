@@ -2104,20 +2104,6 @@ class CreateInviteFriend(CreateView):
         msg = EmailMultiAlternatives(subject, text_content, from_email, to)
         msg.attach_alternative(html_content, "text/html")
         msg.send()
-        # email.send()
-        # site = get_current_site(self.request)
-        # referral_link = f"{site.domain}/referral/?ref={instance.referral_code}"
-
-        # mail_status = send_mail(
-        #     subject=f"Invitation to {site.name} from {self.request.user.username}",
-        #     message=f"You have been invited by {self.request.user.username} to join {site.name}. Use this link to sign up: {referral_link}",
-        #     from_email=settings.DEFAULT_FROM_EMAIL,
-        #     recipient_list=[instance.recipient],
-        #     fail_silently=False,
-        # )
-
-        # if mail_status:
-        #     messages.success(self.request, "An email has been sent to your friend. Keep inviting your friends and earn rewards!")
 
         messages.success(self.request, "An email has been sent to your friend. Keep inviting your friends and earn rewards!")
         return super().form_valid(form)
