@@ -2076,14 +2076,14 @@ class CreateInviteFriend(CreateView):
         if User.objects.filter(email=recipient_email).exists():
             messages.error(self.request, "User with this email already exists.")
             return super().form_invalid(form)
-        # try:
-        #     invite = InviteFriend.objects.get(recipient=recipient_email)
-        #     time_difference = now() - invite.sent
-        #     if time_difference.days < 1: # 1 day
-        #         messages.error(self.request, "An invitation has already been sent to this email recently.")
-        #         return super().form_invalid(form)
-        # except InviteFriend.DoesNotExist:
-        #     pass
+        try:
+            invite = InviteFriend.objects.get(recipient=recipient_email)
+            time_difference = now() - invite.sent
+            if time_difference.days < 1: # 1 day
+                messages.error(self.request, "An invitation has already been sent to this email recently.")
+                return super().form_invalid(form)
+        except InviteFriend.DoesNotExist:
+            pass
         instance = form.save(commit=False)
         instance.sender = self.request.user
         instance.save()
