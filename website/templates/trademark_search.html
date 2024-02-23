@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load custom_tags %}
+{% load i18n %}
+
+{% block title %}trademarks{% endblock %}
+
+{% block content %}
+
+<style>
+    #query{
+        position: relative;
+        left:275px;
+        border: 2px solid rgb(237, 45, 45);
+        border-style: outset;
+        border-radius: 40px;
+        width: 600px;
+        height: 40px;
+    }
+    .search_input{
+        width: 100%;
+        padding: 10px;
+        border: 2px solid #d21919;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+    .search_input:focus{
+        outline: none;
+        border-color: #f2f2f2; /* Change border color on focus */
+        box-shadow: 0 0 5px rgb(213, 27, 27); /* Add a shadow on focus */
+    }
+    #search_button{
+        width: 200px;
+        height: 40px;
+        background-color: #d21919;
+        position: relative;
+        border: 2px solid  #ce791e;
+        border-radius: 3px;
+        top: 70px;
+        right: 110px;
+        font-size: medium;
+        font-weight: bold;
+        color: #f2f2f2;
+    }
+    #search_button:hover{
+        outline: none;
+        border-color: #f2f2f2; /* Change border color on focus */
+        box-shadow: 0 0 5px rgb(213, 27, 27); /* Add a shadow on focus */
+    }
+
+    .trademark-logo{
+        position: relative;
+        left:275px;
+        top:20px;
+        width:600px;
+        height: 200px;
+    }
+
+</style>
+
+<img class="trademark-logo" src="../static/img/trademark.png">
+<form method="POST" class="search-container" role="search" id="form">
+    {% csrf_token %}
+    <input class="search_input" type="search" id="query" name="query"  placeholder="Search...">
+    <button id="search_button" type="submit">Search</button>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var form = document.getElementById('form');
+        var searchInput = document.getElementById('query'); // Corrected ID
+        var searchButton = document.getElementById('search_button');
+        
+        form.addEventListener('submit', function(event) {
+            if (searchInput.value.trim() === '') {
+                event.preventDefault(); // Prevent the form from submitting
+            }
+        });
+    });
+
+</script>
+
+{% endblock %}

@@ -73,6 +73,33 @@ from website.views import (
     google_callback,
     like_issue2,
     subscribe_to_domains,
+    IssueView2,
+    trademark_search,
+    trademark_detailview
+)
+from website.api.views import (
+    IssueViewSet,
+    DomainViewSet,
+    UserIssueViewSet,
+    UserProfileViewSet,
+    LikeIssueApiView,
+    FlagIssueApiView,
+    LeaderboardApiViewSet,
+    StatsApiViewset,
+    UrlCheckApiViewset,
+    BugHuntApiViewset,
+    BugHuntApiViewsetV2,
+    InviteFriendApiViewset
+)
+from company.views import ShowBughuntView
+
+from blt import settings
+from rest_framework import permissions, routers
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+from dj_rest_auth.registration.views import (
+    SocialAccountListView,
+    SocialAccountDisconnectView,
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
@@ -412,10 +439,13 @@ urlpatterns = [
     re_path(r"^ratings/", include("star_ratings.urls", namespace="ratings")),
     path("robots.txt", website.views.robots_txt),
     path("ads.txt", website.views.ads_txt),
-    re_path(r"^contributors/$", contributors_view, name="contributors"),
-    path("company/", include("company.urls")),
-    path("sponsor/", website.views.sponsor_view, name="sponsor"),
-    path("companies/", DomainListView.as_view(), name="domain_lists"),
+    re_path(r"^contributors/$",contributors_view,name="contributors"),
+    path("company/",include("company.urls")),
+    path("sponsor/",website.views.sponsor_view, name="sponsor"),
+    path("companies/", DomainListView.as_view() , name="domain_list"),
+    path("trademarks/" , website.views.trademark_search , name="trademark_search"),
+    re_path(r"^trademarks/query=(?P<slug>[\w\s]+)" , website.views.trademark_detailview , name="trademark_detailview")
+
 ]
 
 if settings.DEBUG:
