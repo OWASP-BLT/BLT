@@ -16,6 +16,8 @@
     <meta name="description"
         content="{% block description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and companies can get involved and help out.{% endblock %}">
     <meta name="author" content="">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
     <meta property="og:title" content="{% block og_title %}{% env 'PROJECT_NAME' %}{% endblock %}" />
     <meta property="og:image" content="{% block og_image %}{% static 'img/screenshot.png' %}{% endblock %}" />
     <meta property="og:description"
@@ -27,7 +29,12 @@
     <link href="{% static 'css/lightbox.min.css' %}" rel="stylesheet">
     <link href="{% static 'vendor/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet" type="text/css">
     <link href="{% static 'css/animate.css' %}" rel="stylesheet" type="text/css">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400" rel="stylesheet">
+    <link href='https://fonts.googleapis.com/css?family=Inter' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600&family=Barlow:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans" rel="stylesheet">
     <link href="{% static 'css/main.css' %}" rel="stylesheet" type="text/css">
     <link href="{% static 'css/text-slider.css' %}" rel="stylesheet" type="text/css">
     <link href="{% static 'css/activity.css' %}" rel="stylesheet" type="text/css">
@@ -53,25 +60,21 @@
 
 </head>
 
-<body class="relative min-h-[100vh] flex flex-col">
+<body class="relative min-h-[100vh] flex flex-col bg-[#F7F7F7] font-['Inter']">
     
-    {% comment %} navbar {% endcomment %}
-        {% include "includes/navbar.html" %}
-    {% comment %} navbar {% endcomment %}
-
-    <div id="wrapper" class="grow">
-        <div id="page-wrapper" class="relative">
-            <div id="base-container" class="container">
-                {% block content %}
-                {% endblock %}
-            </div>
-        </div>
+    {% comment %} navigation {% endcomment %}
+        {% include "includes/header.html" %}
+    {% comment %} navigation {% endcomment %}
+    
+    <div class="lg:ml-[230px] mt-[70px]">
+        {% block content %}
+        {% endblock %}
     </div>
+
     {% comment %} block with no bootstrap wrappers {% endcomment %}
     {% block natural_content %}
     {% endblock %}
 
-    {% include "includes/footer.html" %}
 
 </body>
 
@@ -117,7 +120,7 @@
         });
 
 
-        {% if messages %} 
+        {% if messages %}
             {% for message in messages %}
             $.notify("{{ message }}", {
                 style: "custom",
