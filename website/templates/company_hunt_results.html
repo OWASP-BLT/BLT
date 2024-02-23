@@ -1,4 +1,4 @@
-{% extends "base_dashboard_company.html" %}
+{% extends "base_dashboard.html" %}
 {% load static %}
 {% block content %}
 <style>
@@ -101,6 +101,9 @@ table.table tbody tr.selected {
 }
 
 </style>
+<section>
+  {% include 'includes/company_sidenav.html' %}
+</section>
 <link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
   <link href="{% static 'mdeditor/css/editormd.preview.css' %}" rel="stylesheet">
                 
