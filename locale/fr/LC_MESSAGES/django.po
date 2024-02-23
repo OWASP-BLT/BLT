@@ -201,9 +201,9 @@ msgstr "Oui"
 #: website/templates/account/password_change.html:67
 #: website/templates/account/password_reset_from_key.html:41
 #: website/templates/account/password_reset_from_key.html:67
-#: website/templates/base_admin.html:109
-#: website/templates/base_dashboard_company.html:134
-#: website/templates/base_dashboard_user.html:116
+#: website/templates/base_dashboard.html:109
+#: website/templates/base_dashboard.html:134
+#: website/templates/base_dashboard.html:116
 #: website/templates/includes/navbar.html:125
 msgid "Change Password"
 msgstr "Changer le mot de passe"
@@ -251,16 +251,16 @@ msgstr "Inscription au compte"
 msgid "Sign Up"
 msgstr "S'inscrire"
 
-#: website/templates/base_admin.html:107
-#: website/templates/base_dashboard_company.html:132
-#: website/templates/base_dashboard_user.html:114
+#: website/templates/base_dashboard.html:107
+#: website/templates/base_dashboard.html:132
+#: website/templates/base_dashboard.html:114
 #: website/templates/includes/navbar.html:102
 msgid "User Profile"
 msgstr "Profil de l'utilisateur"
 
-#: website/templates/base_admin.html:111
-#: website/templates/base_dashboard_company.html:136
-#: website/templates/base_dashboard_user.html:118
+#: website/templates/base_dashboard.html:111
+#: website/templates/base_dashboard.html:136
+#: website/templates/base_dashboard.html:118
 #: website/templates/includes/navbar.html:36
 #: website/templates/includes/navbar.html:141
 msgid "Logout"

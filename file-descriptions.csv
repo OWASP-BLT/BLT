@@ -11,9 +11,9 @@ admin_dashboard_company.html,the info regarding the company dashboard,
 admin_dashboard_company_detail.html,the details about the company,
 admin_home.html,info regarding the home page for admin,
 base.html,this is the base file which all files extend from,https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=340%3A209&t=pqxWpF3hcYxjEDrs-1
-base_admin.html,is only for admin,
-base_dashboard_company.html,,
-base_dashboard_user.html,,
+base_dashboard.html,is only for admin,
+base_dashboard.html,,
+base_dashboard.html,,
 base_home.html,,
 comments.html,info regarding the comments on bugs,https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=4%3A1109&t=pqxWpF3hcYxjEDrs-1
 company_dashboard_domain_detail.html,info regarding company dashboard details,https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1
