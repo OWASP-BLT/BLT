@@ -3747,7 +3747,7 @@ def trademark_detailview(request, slug):
     trademarkAvailable_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" %(slug)
     headers = {
         "x-rapidapi-host" : "uspto-trademark.p.rapidapi.com",
-        "x-rapidapi-key" : "4b9b2ae7f7mshe1b494f1d0240d4p1dba21jsnf5e6c3ade2dc"
+        "x-rapidapi-key" : settings.USPTO_API
     }
     trademarkAvailable_response = requests.get(trademarkAvailable_url , headers = headers)
     ta_data = trademarkAvailable_response.json()
