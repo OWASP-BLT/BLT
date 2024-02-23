@@ -1,10 +1,13 @@
-{% extends "base_dashboard_company.html" %}
+{% extends "base_dashboard.html" %}
 {% load socialaccount %}
 {% load gravatar %}
 {% load static %}
 {% block content %}
+            <section>
+              {% include 'includes/company_sidenav.html' %}
+            </section>
 
-                <div class="col-md-6 widget_middle_left">
+            <div class="col-md-6 widget_middle_left">
               <div class="online">
                 <form id="update-role">
                   {% csrf_token %}
