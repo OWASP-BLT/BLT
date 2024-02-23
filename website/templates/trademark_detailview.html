@@ -1,4 +1,86 @@
 {% extends "base.html" %}
+{% load gravatar %}
+{% load static %}
+{% load humanize %}
+{% load custom_tags %}
+
+
+
+{% block content %}
+
+    <style>
+        #wrapper {
+            background-color: #ffffff;
+            height: 100%;
+        }
+
+
+    </style>
+
+    <p class="text-gray-300 font-satoshi font-bold text-[35px]">
+        {{count}} results found 
+    </p>
+    <table class="table-auto border-collapse w-full">
+        <thead class="font-bold italic text-opacity-25 bg-gray-200">
+            <tr>
+                <th class="px-4 py-2">Name</th>
+                <th class="px-4 py-2">Registration No</th>
+                <th class="px-4 py-2">Serial No</th>
+                <th class="px-4 py-2">Filing Date</th>
+                <th class="px-4 py-2">Registration Date</th>
+                <th class="px-4 py-2">Expiry Date</th>
+                <th class="px-4 py-2">Owner Label</th>
+                <th class="px-4 py-2">Owner Name</th>
+                <th class="px-4 py-2">Owner Address</th>
+                <th class="px-4 py-2">Labels</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+                {% for owner in item.owners %}
+                    <tr class="border">
+                        <td class="px-4 py-2">{{ item.keyword }}</td>
+                        <td class="px-4 py-2">{{ item.registration_number }}</td>
+                        <td class="px-4 py-2">{{ item.serial_number }}</td>
+                        <td class="px-4 py-2">{{ item.filing_date }}</td>
+                        <td class="px-4 py-2">{{ item.registration_date }}</td>
+                        <td class="px-4 py-2">{{ item.expiration_date }}</td>
+                        <td class="px-4 py-2">{{ owner.owner_label }}</td>
+                        <td class="px-4 py-2">{{ owner.name }}</td>
+                        <td class="px-4 py-2">{{ owner.address1 }} {{ owner.address2 }}, {{ owner.city }}, {{ owner.state }}, {{ owner.country }}, {{ owner.postcode }}</td>
+                        <td class="px-4 py-2">{{ item.status_label }} <br> {{ owner.legal_entity_type_label }}</td>
+                    </tr>
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+    
+
+{% endblock %}
+
+
+
+<!-- {% for item in items %}
+    <p>{{item.keyword}}</p>
+    <p>{{item.registration_number}}</p>
+    <p>{{item.serial_number}}</p>
+    <p>{{item.status_label}}</p>
+    <p>{{item.filing_date}}</p>
+    <p>{{item.registration_date}}</p>
+    <p>{{item.expiration_date}}</p>
+    {% for owner in item.owners%}
+        <p>{{owner.owner_label}}</p>
+        <p>{{owner.legal_entity_type_label}}</p>
+        <p>{{owner.name}}</p>
+        <p>{{owner.address1}}  {{owner.address2}}</p> 
+        <p>{{owner.city}}</p>
+        <p>{{owner.state}}</p>
+        <p>{{owner.country}}</p>
+        <p>{{owner.postcode}}</p>
+        <p>new line</p>
+    {% endfor%}
+{% endfor%} -->
+{% extends "base.html" %}
 {% load static %}
 {% block content %}
     {% include "includes/sidenav.html" %}
