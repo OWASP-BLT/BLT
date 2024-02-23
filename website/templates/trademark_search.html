@@ -11,13 +11,25 @@
               rel="stylesheet">
     </head>
     <style>
+{% include 'includes/sidenav.html' %}
+<head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gravitas+One&display=swap" rel="stylesheet">
+</head>
+<style>
     #query{
         position: relative;
         top: 40px;
         left: 172px;
         background-color: #E4E4E4;
+        top: 40px;
+        left: 172px;
+        background-color: #E4E4E4;
         border-style: outset;
         border-radius: 40px;
+        width: 659px;
+        height: 44px;
         width: 659px;
         height: 44px;
     }
@@ -35,7 +47,13 @@
         width: 231px;
         height: 53px;
         background-color: #FF4D4D;
+        width: 231px;
+        height: 53px;
+        background-color: #8dbaff;
         position: relative;
+        border-radius: 30px;
+        top: 118px;
+        right: 260px;
         border-radius: 30px;
         top: 118px;
         right: 260px;
@@ -47,10 +65,36 @@
         outline: none;
         border-color: #f2f2f2; /* Change border color on focus */
         box-shadow: 0 0 5px #e93232; /* Add a shadow on focus */
+        box-shadow: 0 0 5px #72a0e4; /* Add a shadow on focus */
     }
 
     .trademark-logo{
         position: relative;
+        margin-top: 100px;
+        left: 184px;
+        top: 37px;
+        width: 663px;
+        height: 185px;
+    }
+    .tm-wrapper{
+        position: relative;
+        left: 181px;
+        top: 0px;
+        height: 446px;
+        width: 961px;
+        background-color: #FFFFFF;
+        border-radius: 30px;
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+        font-family: "Gravitas One", serif;
+        font-weight: 200;
+        font-style: normal;
+    }
+    .tm-wrapper p{
+        font-size: 13px;
+        position: absolute;
+        left: 207px;
+        top: 374px;
+        opacity: 60%;
         margin-top: 100px;
         left: 184px;
         top: 37px;
@@ -97,6 +141,20 @@
         <p>This data is fetched from United States Patent and Trademark Office</p>
     </div>
     <script>
+</style>
+
+<div class="tm-wrapper">
+    <img class="trademark-logo" src="../static/img/tm-search.png">
+    <form method="POST" class="search-container" role="search" id="form">
+        {% csrf_token %}
+        <input class="search_input" type="search" id="query" name="query"  placeholder="Search...">
+        <button id="search_button" type="submit">Search</button>
+    </form>
+    <p>This data is fetched from United States Patent and Trademark Office</p>
+</div>
+
+
+<script>
     document.addEventListener('DOMContentLoaded', function() {
         var form = document.getElementById('form');
         var searchInput = document.getElementById('query'); // Corrected ID
