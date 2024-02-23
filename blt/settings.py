@@ -522,5 +522,4 @@ ACCESS_TOKEN_SECRET = os.environ.get("ACCESS_TOKEN_SECRET")
 
 #UPSTO 
 
-USPTO_API = "dc3680da3cmsh0fdfca57d38d42fp1771c8jsnddd1dc493d43"
-#USPTO_API = os.environ.get("USPTO_API")
+USPTO_API = os.environ.get("USPTO_API")
