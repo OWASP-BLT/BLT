@@ -1,4 +1,4 @@
-{% extends "base_new.html" %}
+{% extends "base.html" %}
 {% load static %}
 {% load gravatar %}
 {% load custom_tags %}
@@ -7,8 +7,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.0/flowbite.min.js" integrity="sha384-SXh3DHBSUxvOFk7+R9qN3hv+DtgPJz4vQwOArU6zxWGnvtR1sy+XmzKUkNh2qWST" crossorigin="anonymous"></script>
 {% endblock %}
 
-{% block hero %}
+{% block content %}
 
+{% include "includes/sidenav.html" %} 
 
 <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-white">
     <div class="flex justify-between px-10 mx-auto">
