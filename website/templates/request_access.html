@@ -4,73 +4,15 @@
 {% load humanize %}
 {% load custom_tags %}
 
-{% block style %}
-
-<style>
-    body {
-        background-color: #f8f9fa; /* Bootstrap default background color */
-        padding-top: 20px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Recommended sans-serif font stack */
-        font-size: 16px;
-        color: #333; /* Dark text color */
-    }
-
-    .div-container {
-        max-width: 600px;
-        margin: 0 auto;
-        background-color: #ffffff;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    h1 {
-        font-size: 24px;
-        color: #007bff;
-        margin-bottom: 20px;
-        padding-bottom: 10px;
-    }
-
-    form {
-        margin-bottom: 20px;
-    }
-
-    #text-box {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 10px;
-        border: 1px solid #ced4da; /* Bootstrap default border color */
-        border-radius: 4px;
-        box-sizing: border-box;
-    }
-
-    #request-button {
-        font-size: 16px;
-        letter-spacing: 1px;
-        transition: background-color 0.3s ease;
-    }
-
-    #request-button:hover {
-        background-color: #0056b3;
-    }
-
-    #home-button {
-        font-size: 16px;
-    }
-</style>
-{% endblock %}
-
 
 {% block content %}
-    <div class="div-container">
-        <h1>this issue has been hidden by the user that reported it.</h1>
-        <form method="POST" action="#" >
-            {% csrf_token %}
-            <textarea id="text-box" name="text-box" rows="4" cols="30">could you please let me access this issue?</textarea>
-            <button id="request-button"name="request" type="submit" class="btn btn-info" value="request_access">Request Access</button>
-        </form>
-        <button id=" home-button" type="button" class="btn btn-secondary"><a href="/">Home</a></button>
-    </div>
-
-    
+<div class="container mx-auto mt-8">
+    <h1 class="text-blue-500 text-3xl mb-6">This issue has been hidden by the user that reported it.</h1>
+    <form method="POST" action="#">
+        {% csrf_token %}
+        <textarea id="text-box" name="text-box" rows="4" cols="30" class="w-full px-4 py-2 border border-gray-300 rounded mb-4">Could you please let me access this issue?</textarea>
+        <button id="request-button" value="request_access" name="request" type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Request Access</button>
+    </form>
+    <button id="home-button" type="button" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"><a href="/">Home</a></button>
+</div>
 {% endblock %}

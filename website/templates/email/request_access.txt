@@ -19,7 +19,7 @@
       			<td align="left">
 						Hey, {{name}},<br>
 						<a href="https://{% env 'FQDN' %}/profile/{{requester}}">{{ requester }}</a> has requested for the access of the following issue
-						https://{% env 'FQDN' %}/issue/{{ issue_pk }} 
+						https://{% env 'FQDN' %}/issue2/{{ issue_pk }} 
 
 						Best,<br>
 						<br>

@@ -82,7 +82,7 @@ from website.models import (
     Subscription,
     Company,
     IssueScreenshot,
-    RequestAccess
+    RequestIssueAccess
 )
 from .forms import FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm, QuickIssueForm
 
@@ -362,14 +362,14 @@ def private_issue(request , user_pk ):
 @login_required(login_url="/accounts/login")
 @private_access_check()
 def grant_access(request , user_pk , issue_pk):
-    request_access = RequestAccess.objects.filter(issue=issue_pk)
+    request_access = RequestIssueAccess.objects.filter(issue=issue_pk)
     issue = Issue.objects.get(id=issue_pk)
     
     if request.method=="POST":
         if request.POST.get("grant_access"):
             if request.POST.get('select_user') != None:
                 selected_user = request.POST.get('select_user')
-                r = RequestAccess.objects.get(user=selected_user)
+                r = RequestIssueAccess.objects.get(user=selected_user)
                 try: 
                     msg_plain = render_to_string(
                         'email/granted_access.txt',
@@ -399,7 +399,7 @@ def grant_access(request , user_pk , issue_pk):
 
             if request.POST.get('select_user') != None:
                 selected_user = request.POST.get('select_user')
-                request_access = RequestAccess.objects.get(user=selected_user)
+                request_access = RequestIssueAccess.objects.get(user=selected_user)
                 request_access.delete()
                 messages.success(request , "Request Declined")
     
@@ -428,7 +428,7 @@ def request_access(request ,  issue_pk):
         messages.error(request , "Issue Does not Exist")
         return redirect("/")
     try :
-        RequestAccess.objects.get(user=request.user , issue=issue_pk)
+        RequestIssueAccess.objects.get(user=request.user , issue=issue_pk)
         messages.success(request , "Request has ALready been sent Please Wait for approval")
         return redirect("/")
     except:
@@ -450,7 +450,7 @@ def request_access(request ,  issue_pk):
                     messages.success( request , "Email request has been sent to owner")
                     message = request.POST.get("text-box")
                     print(message)
-                    request_access = RequestAccess(issue = issue , user = request.user , message = message )
+                    request_access = RequestIssueAccess(issue = issue , user = request.user , message = message )
                     request_access.save()
                     return redirect("/")
                 except:
@@ -1989,12 +1989,13 @@ class IssueView(authenticate_handling ,DetailView):
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
 
         return context
-    
+
     def handle_no_permission(self) :
         try :
-            return super(IssueView , self).handle_no_permission()
+            return super(IssueView2 , self).handle_no_permission()
         except :
             return redirect("request_access/")
+
 
 @login_required(login_url="/accounts/login")
 def flag_issue(request, issue_pk):
@@ -3793,7 +3794,7 @@ def subscribe_to_domains(request, pk):
         return JsonResponse("SUBSCRIBED",safe=False)
 
 
-class IssueView2(DetailView):
+class IssueView2(authenticate_handling , DetailView):
     model = Issue
     slug_field = "id"
     template_name = "issue2.html"
@@ -3877,6 +3878,11 @@ class IssueView2(DetailView):
 
         return context
         
+    def handle_no_permission(self) :
+        try :
+            return super(IssueView2 , self).handle_no_permission()
+        except :
+            return redirect("request_access/")
 
 # class CreateIssue(CronJobBase):
 #     RUN_EVERY_MINS = 1

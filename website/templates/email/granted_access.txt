@@ -19,7 +19,7 @@
       			<td align="left">
 						Hey, {{name}},<br>
 						you have successfully granted viewership access of the following issue
-						https://{% env 'FQDN' %}/issue/{{ issue_pk }} 
+						https://{% env 'FQDN' %}/issue2/{{ issue_pk }} 
 
 						Best,<br>
 						<br>

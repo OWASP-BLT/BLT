@@ -320,7 +320,7 @@ class Issue(models.Model):
         ordering = ["-created"]
     
     
-class RequestAccess(models.Model):
+class RequestIssueAccess(models.Model):
     issue = models.ForeignKey(Issue, null=True , blank=True , on_delete= models.CASCADE)
     user = models.ForeignKey(User , null=True , blank=True , on_delete=models.CASCADE)
     message = models.CharField(max_length=100 , null=True , blank = True)
