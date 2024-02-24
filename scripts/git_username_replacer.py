@@ -1,4 +1,3 @@
-
 """
     Git Username Replacer: 
     Safeguard user privacy and enhance security by easily replacing usernames in Git commit history.
@@ -7,23 +6,24 @@
     Use: python git_username_replacer.py <repo path> <old_author_username> <new_author_username>
 """
 
-import os
 import argparse
+import os
 import subprocess
+
 
 def replace_username(repo_path, old_username, new_username):
     command = [
-        'git',
-        '-C',
+        "git",
+        "-C",
         repo_path,
-        'filter-branch',
-        '--env-filter',
+        "filter-branch",
+        "--env-filter",
         f'if [ "$GIT_AUTHOR_NAME" = "{old_username}" ]; then GIT_AUTHOR_NAME="{new_username}"; fi',
-        '--tag-name-filter',
-        'cat',
-        '--',
-        '--branches',
-        '--tags'
+        "--tag-name-filter",
+        "cat",
+        "--",
+        "--branches",
+        "--tags",
     ]
 
     try:
@@ -32,6 +32,7 @@ def replace_username(repo_path, old_username, new_username):
     except subprocess.CalledProcessError as e:
         print("Error occurred during username replacement.")
         print(e)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Replace Git Username Tool")
