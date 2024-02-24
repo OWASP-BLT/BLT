@@ -369,7 +369,7 @@ AVATAR_PATH = os.path.join(MEDIA_ROOT, USERS_AVATAR_PATH)
 if not os.path.exists(AVATAR_PATH):
     os.makedirs(AVATAR_PATH)
 
-if DEBUG == True or TESTING:
+if DEBUG or TESTING:
     CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 else:
     if os.environ.get("MEMCACHIER_SERVERS", ""):
