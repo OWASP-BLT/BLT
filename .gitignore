@@ -15,5 +15,6 @@ geckodriver.log
 geckodriver
 chromedriver
 requirements.txt
+*.code-workspace
 *.log
 *.exe
