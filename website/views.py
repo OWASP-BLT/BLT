@@ -413,9 +413,9 @@ def company_dashboard(request, template="index_company.html"):
         if not company_admin.is_active:
             return HttpResponseRedirect("/")
         hunts = Hunt.objects.filter(is_published=True, domain=company_admin.domain)
-        upcoming_hunt = list()
-        ongoing_hunt = list()
-        previous_hunt = list()
+        upcoming_hunt = []
+        ongoing_hunt = []
+        previous_hunt = []
         for hunt in hunts:
             if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
                 upcoming_hunt.append(hunt)
@@ -472,9 +472,9 @@ def admin_dashboard(request, template="admin_home.html"):
 @login_required(login_url="/accounts/login")
 def user_dashboard(request, template="index_user.html"):
     hunts = Hunt.objects.filter(is_published=True)
-    upcoming_hunt = list()
-    ongoing_hunt = list()
-    previous_hunt = list()
+    upcoming_hunt = []
+    ongoing_hunt = []
+    previous_hunt = []
     for hunt in hunts:
         if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
             upcoming_hunt.append(hunt)
@@ -2253,7 +2253,7 @@ def get_client_ip(request):
 
 
 def get_score(request):
-    users = list()
+    users = []
     temp_users = (
         User.objects.annotate(total_score=Sum("points__score"))
         .order_by("-total_score")
@@ -2261,7 +2261,7 @@ def get_score(request):
     )
     rank_user = 1
     for each in temp_users.all():
-        temp = dict()
+        temp = {}
         temp["rank"] = rank_user
         temp["id"] = each.id
         temp["User"] = each.username
@@ -2392,10 +2392,10 @@ def contributors(request):
 
 
 def get_scoreboard(request):
-    scoreboard = list()
+    scoreboard = []
     temp_domain = Domain.objects.all()
     for each in temp_domain:
-        temp = dict()
+        temp = {}
         temp["name"] = each.name
         temp["open"] = len(each.open_issues)
         temp["closed"] = len(each.closed_issues)
@@ -2407,13 +2407,13 @@ def get_scoreboard(request):
             temp["top"] = each.top_tester.username
         scoreboard.append(temp)
     paginator = Paginator(scoreboard, 10)
-    domain_list = list()
+    domain_list = []
     for data in scoreboard:
         domain_list.append(data)
     count = (Paginator(scoreboard, 10).count) % 10
     for i in range(10 - count):
         domain_list.append(None)
-    temp = dict()
+    temp = {}
     temp["name"] = None
     domain_list.append(temp)
     paginator = Paginator(domain_list, 10)
@@ -2658,7 +2658,7 @@ class UpcomingHunts(TemplateView):
                 hunts = self.model.objects.filter(is_published=True)
             else:
                 hunts = self.model.objects.filter(is_published=True, domain=domain_admin.domain)
-            new_hunt = list()
+            new_hunt = []
             for hunt in hunts:
                 if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
                     new_hunt.append(hunt)
@@ -2683,7 +2683,7 @@ class OngoingHunts(TemplateView):
                 hunts = self.model.objects.filter(is_published=True)
             else:
                 hunts = self.model.objects.filter(is_published=True, domain=domain_admin.domain)
-            new_hunt = list()
+            new_hunt = []
             for hunt in hunts:
                 if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
                     new_hunt.append(hunt)
@@ -2708,7 +2708,7 @@ class PreviousHunts(TemplateView):
                 hunts = self.model.objects.filter(is_published=True)
             else:
                 hunts = self.model.objects.filter(is_published=True, domain=domain_admin.domain)
-            new_hunt = list()
+            new_hunt = []
             for hunt in hunts:
                 if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
                     pass

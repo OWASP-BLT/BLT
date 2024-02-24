@@ -322,10 +322,10 @@ class LeaderboardApiViewSet(APIView):
                 return Response("Invalid month or year passed", status=400)
 
         queryset = global_leaderboard.get_leaderboard(month, year, api=True)
-        users = list()
+        users = []
         rank_user = 1
         for each in queryset:
-            temp = dict()
+            temp = {}
             temp["rank"] = rank_user
             temp["id"] = each["id"]
             temp["User"] = each["username"]
