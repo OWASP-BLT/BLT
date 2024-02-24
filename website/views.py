@@ -4310,7 +4310,8 @@ def trademark_detailview(request, slug):
         ts_data = trademarkSearch_response.json()
         context = {
             "count" : ts_data["count"],
-            "items" : ts_data["items"]
+            "items" : ts_data["items"],
+            "query" : slug
         }        
     
     else :

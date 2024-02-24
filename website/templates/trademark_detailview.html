@@ -60,7 +60,7 @@
             text-align: center;
         }
         #back-button{
-            background-color: #ABF5FF;
+            background-color: #FF9191;
             height: 70px;
             width: 250px;
             border-radius: 0px 0px 0px 30px;
@@ -69,7 +69,7 @@
             top: 400px;
         }
         #more-button{
-            background-color: #0ED4EF;
+            background-color: #D92D2D;
             height: 70px;
             width: 250px;
             border-radius: 0px 0px 30px 0px;
@@ -89,8 +89,8 @@
             <button id="more-button"><a href="{% url 'trademark_search' %}">Search More</a></button>
         </div>
     {% else %}
-        <p class="text-gray-300 font-satoshi font-bold text-[35px]">
-            {{count}} results found 
+        <p class="text-gray-300 my-3 font-satoshi font-bold text-[25px]">
+            {{count}} results found for {{query}}
         </p>
         <table class="table-auto border-collapse w-full">
             <thead class="font-bold italic text-opacity-25 bg-gray-200">
