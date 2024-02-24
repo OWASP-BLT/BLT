@@ -4,20 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('website', '0050_auto_20200613_1512'),
+        ("website", "0050_auto_20200613_1512"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='hunt',
-            name='end_on',
+            model_name="hunt",
+            name="end_on",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='hunt',
-            name='starts_on',
+            model_name="hunt",
+            name="starts_on",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]
