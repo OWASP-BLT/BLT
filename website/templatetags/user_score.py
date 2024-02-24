@@ -7,7 +7,7 @@ register = template.Library()
 
 
 def score(value):
-    return list(Points.objects.filter(user=value).aggregate(total_score=Sum('score')).values())[0]
+    return list(Points.objects.filter(user=value).aggregate(total_score=Sum("score")).values())[0]
 
 
-register.filter('score', score)
+register.filter("score", score)

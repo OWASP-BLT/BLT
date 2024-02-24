@@ -1,6 +1,8 @@
-from website.models import Issue, Points, User, UserProfile, Domain, Hunt, HuntPrize
-from rest_framework import  serializers
 from django.db.models import Sum
+from rest_framework import serializers
+
+from website.models import Domain, Hunt, HuntPrize, Issue, Points, User, UserProfile
+
 
 class UserSerializer(serializers.ModelSerializer):
     """
@@ -9,23 +11,27 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username')
+        fields = ("id", "username")
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
     """
     Serializer for user model
     """
-    def get_total_score(self,instance):
-        score = Points.objects.filter(user=instance.user).aggregate(total_score=Sum('score')).get("total_score")
-        if score is None: return 0
-        return score
-    
-    def get_activities(self,instance):
-        
-        issues = Points.objects.filter(user=instance.user,score__gt=0).values("issue__id")
-        return [ issue["issue__id"] for issue in issues ]
 
+    def get_total_score(self, instance):
+        score = (
+            Points.objects.filter(user=instance.user)
+            .aggregate(total_score=Sum("score"))
+            .get("total_score")
+        )
+        if score is None:
+            return 0
+        return score
+
+    def get_activities(self, instance):
+        issues = Points.objects.filter(user=instance.user, score__gt=0).values("issue__id")
+        return [issue["issue__id"] for issue in issues]
 
     user = UserSerializer(read_only=True)
     total_score = serializers.SerializerMethodField(method_name="get_total_score")
@@ -46,7 +52,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "issue_saved",
             "issue_flaged",
             "total_score",
-            "activities"
+            "activities",
         )
 
 
@@ -54,11 +60,12 @@ class IssueSerializer(serializers.ModelSerializer):
     """
     Serializer for Issue Model
     """
+
     user = UserSerializer(read_only=True)
 
     class Meta:
         model = Issue
-        fields = '__all__'
+        fields = "__all__"
 
 
 class DomainSerializer(serializers.ModelSerializer):
@@ -68,18 +75,16 @@ class DomainSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Domain
-        fields = '__all__'
+        fields = "__all__"
 
 
-    
 class BugHuntPrizeSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = HuntPrize
-        fields = '__all__'
+        fields = "__all__"
+
 
 class BugHuntSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Hunt
-        fields = '__all__'
+        fields = "__all__"
