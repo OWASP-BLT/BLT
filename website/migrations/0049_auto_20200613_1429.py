@@ -4,19 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('website', '0048_domainadmin_role'),
+        ("website", "0048_domainadmin_role"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='domain',
-            name='is_published',
+            model_name="domain",
+            name="is_published",
         ),
         migrations.AddField(
-            model_name='hunt',
-            name='is_published',
+            model_name="hunt",
+            name="is_published",
             field=models.BooleanField(default=False),
         ),
     ]

@@ -4,24 +4,26 @@ from django.template.defaultfilters import truncatechars
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
-from website.models import ( 
-    Winner,
-    Payment,
-    Transaction,
-    Wallet,
-    Issue,
-    Points,
-    Hunt,
+from website.models import (
+    Company,
+    CompanyAdmin,
     Domain,
-    UserProfile,
+    Hunt,
+    HuntPrize,
+    Issue,
+    IssueScreenshot,
+    Payment,
+    Points,
     Subscription,
     CompanyAdmin,
     Company,
     IssueScreenshot,
     HuntPrize,
-    RequestIssueAccess
+    RequestIssueAccess,
+    UserProfile,
+    Wallet,
+    Winner
 )
-
 
 
 class UserResource(resources.ModelResource):
@@ -33,17 +35,21 @@ class DomainResource(resources.ModelResource):
     class Meta:
         model = Domain
 
+
 class SubscriptionResource(resources.ModelResource):
     class Meta:
         model = Subscription
+
 
 class CompanyAdminResource(resources.ModelResource):
     class Meta:
         model = CompanyAdmin
 
+
 class CompanyResource(resources.ModelResource):
     class Meta:
         model = Company
+
 
 class WalletResource(resources.ModelResource):
     class Meta:
@@ -61,51 +67,91 @@ class PaymentResource(resources.ModelResource):
 
 
 class WinnerAdmin(admin.ModelAdmin):
-    list_display = (
-        'id', 'hunt', 'winner', 'runner', 'second_runner', 'prize_distributed')
+    list_display = ("id", "hunt", "winner", "runner", "second_runner", "prize_distributed")
+
 
 class WalletAdmin(admin.ModelAdmin):
-    list_display = (
-        'id', 'user', 'current_balance', 'created_at')
+    list_display = ("id", "user", "current_balance", "created_at")
+
 
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = (
-        'id', 'wallet', 'value', 'active')
+    list_display = ("id", "wallet", "value", "active")
 
 
 class IssueAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'user', 'url', 'domain', 'description', 'closed_by', 'closed_date', 'screenshot', 'created', 'modified')
+        "id",
+        "user",
+        "url",
+        "domain",
+        "description",
+        "closed_by",
+        "closed_date",
+        "screenshot",
+        "created",
+        "modified",
+    )
 
 
 class HuntAdmin(admin.ModelAdmin):
-    list_display = ('domain', 'url', 'prize', 'logo', 'starts_on','end_on', 'plan', 'created', 'modified')
+    list_display = (
+        "domain",
+        "url",
+        "prize",
+        "logo",
+        "starts_on",
+        "end_on",
+        "plan",
+        "created",
+        "modified",
+    )
 
 
 class DomainAdminPanel(ImportExportModelAdmin):
     resource_class = DomainResource
     list_display = (
-        'name', 'company', 'url', 'logo', 'clicks', 'color', 'email', 'email_event', 'twitter', 'facebook', 'created', 'modified')
+        "name",
+        "company",
+        "url",
+        "logo",
+        "clicks",
+        "color",
+        "email",
+        "email_event",
+        "twitter",
+        "facebook",
+        "created",
+        "modified",
+    )
+
 
 class CompanyUserAdmin(ImportExportModelAdmin):
     resource_class = CompanyAdminResource
-    list_display = (
-        'role', 'user', 'company', 'domain', 'is_active')
+    list_display = ("role", "user", "company", "domain", "is_active")
+
 
 class SubscriptionAdmin(ImportExportModelAdmin):
     resource_class = SubscriptionResource
-    list_display = (
-        'name', 'charge_per_month', 'hunt_per_domain', 'number_of_domains', 'feature')
+    list_display = ("name", "charge_per_month", "hunt_per_domain", "number_of_domains", "feature")
 
 
 class CompanyAdmins(ImportExportModelAdmin):
     resource_class = CompanyResource
     list_display = (
-        'admin', 'name', 'url', 'email', 'twitter', 'facebook', 'created', 'modified', 'subscription')
+        "admin",
+        "name",
+        "url",
+        "email",
+        "twitter",
+        "facebook",
+        "created",
+        "modified",
+        "subscription",
+    )
 
 
 class PointsAdmin(admin.ModelAdmin):
-    list_display = ('user', 'short_description', 'domain', 'score', 'created', 'modified')
+    list_display = ("user", "short_description", "domain", "score", "created", "modified")
 
     def short_description(self, obj):
         return truncatechars(obj.issue, 100)
@@ -116,7 +162,16 @@ admin.site.unregister(User)
 
 class UserAdmin(ImportExportModelAdmin):
     resource_class = UserResource
-    list_display = ('id', 'username', 'email', 'first_name', 'last_name', 'is_active', 'date_joined', 'is_staff')
+    list_display = (
+        "id",
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "is_active",
+        "date_joined",
+        "is_staff",
+    )
 
 
 admin.site.register(UserProfile)
