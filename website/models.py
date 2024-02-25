@@ -1,6 +1,5 @@
 import os
 import uuid
-import django.db.models.deletion
 from decimal import Decimal
 from urllib.parse import urlparse
 import requests
