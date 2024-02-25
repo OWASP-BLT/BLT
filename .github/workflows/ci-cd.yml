@@ -52,8 +52,8 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
 
-  django-tests:
-    name: Run Django Tests
+  test:
+    name: Run Tests
     needs:
       - code-ql
     runs-on: ubuntu-latest
