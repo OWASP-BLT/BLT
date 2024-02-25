@@ -2071,6 +2071,7 @@ def assign_issue_to_user(request, user, **kwargs):
         assigner.request = request
         assigner.process_issue(user, issue, created, domain)
 
+
 @login_required(login_url="/accounts/login")
 def follow_user(request, user):
     if request.method == "GET":
@@ -3662,6 +3663,7 @@ class IssueView2(DetailView):
 
         return context
 
+
 @receiver(user_signed_up)
 def handle_user_signup(request, user, **kwargs):
     rreferral_token = request.session.get("ref")
@@ -3676,11 +3678,13 @@ def handle_user_signup(request, user, **kwargs):
         except InviteFriend.DoesNotExist:
             pass
 
+
 def reward_sender_with_points(sender):
     # Create or update points for the sender
     points, created = Points.objects.get_or_create(user=sender, defaults={"score": 0})
     points.score += 2  # Reward 2 points for each successful referral signup
     points.save()
+
 
 def referral_signup(request):
     referral_token = request.GET.get("ref")
@@ -3706,6 +3710,7 @@ def invite_friend(request):
         "referral_link": referral_link,
     }
     return render(request, "invite_friend.html", context)
+
 
 # class CreateIssue(CronJobBase):
 #     RUN_EVERY_MINS = 1
