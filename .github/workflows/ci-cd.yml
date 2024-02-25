@@ -1,0 +1,74 @@
+name: CI/CD
+
+on:
+  - merge_group
+  - pull_request
+  - push
+  - workflow_dispatch
+
+env:
+  FORCE_COLOR: 1
+
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+
+jobs:
+  pre-commit:
+    name: Run pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5.0.0
+        with:
+          python-version: 3.11.2
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.1
+
+  code-ql:
+    name: Run CodeQL
+    needs:
+      - pre-commit
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+          - 'javascript'
+          - 'python'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+
+  django-tests:
+    name: Run Django Tests
+    needs:
+      - code-ql
+    runs-on: ubuntu-latest
+    steps:
+      - uses: nanasess/setup-chromedriver@v2
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.11.2
+        run: pipx install poetry
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11.2
+          cache: 'poetry'
+      - name: Install dependencies
+        run: poetry install
+      - name: Collect static files
+        run: poetry run python manage.py collectstatic --noinput
+      - name: Run tests
+        run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
