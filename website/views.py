@@ -3666,7 +3666,7 @@ class IssueView2(DetailView):
 
 @receiver(user_signed_up)
 def handle_user_signup(request, user, **kwargs):
-    rreferral_token = request.session.get("ref")
+    referral_token = request.session.get("ref")
     if referral_token:
         try:
             invite = InviteFriend.objects.get(referral_code=referral_token)
