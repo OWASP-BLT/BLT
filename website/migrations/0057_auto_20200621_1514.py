@@ -4,19 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('website', '0056_hunt_description_html'),
+        ("website", "0056_hunt_description_html"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='hunt',
-            name='description_html',
+            model_name="hunt",
+            name="description_html",
         ),
         migrations.AlterField(
-            model_name='companyadmin',
-            name='role',
-            field=models.IntegerField(choices=[(0, 'Admin'), (1, 'Moderator')], default=0),
+            model_name="companyadmin",
+            name="role",
+            field=models.IntegerField(choices=[(0, "Admin"), (1, "Moderator")], default=0),
         ),
     ]

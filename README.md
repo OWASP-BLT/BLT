@@ -121,6 +121,7 @@ Please follow the development server setup procedure [here](https://github.com/O
   
 
 Please follow the [black](https://github.com/psf/black) code style for the project. It helps us in keeping the codebase consistent and improves readability for other developers.
+Use `pre-commit run` command to make sure your changes comply with the standards.
 
   
 

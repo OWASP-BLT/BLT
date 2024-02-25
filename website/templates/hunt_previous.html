@@ -1,4 +1,4 @@
-{% extends "base_dashboard_company.html" %}
+{% extends "base_dashboard.html" %}
 {% load static %}
 {% block content %}
 <style type="text/css">
@@ -84,29 +84,32 @@ img {
   font-weight: 400;
 }
 </style>
+  <section>
+    {% include 'includes/company_sidenav.html' %}
+  </section>
 
-                 {% if hunts %}
-                        <div class="col_3">
-                            <h3 class="text-left blank1">Previous Hunt</h3>                        
-                              <ul class="cards">
-                                {% for hunt in hunts %}
-                                    <li class="cards_item">
-                                      <div class="card">
-                                        {% if hunt.logo %}
-                                        <div class="card_image"><img src="{{hunt.logo}}"></div>
-                                        {% endif %}
-                                        <div class="card_content">
-                                          <h2 class="card_title">{{hunt.name}}</h2>
-                                          <p class="card_text">{{hunt.domain.name}}, {{hunt.domain.company.name}} - Starts on {{hunt.starts_on}}</p>
-                                          <a href="/dashboard/company/hunt/previous/{{hunt.pk}}">
-                                            <button class="btn card_btn">Read More</button>
-                                          </a>
-                                        </div>
-                                      </div>
-                                    </li>    
-                                {% endfor %}
-                              </ul>
-                            <div class="clearfix"> </div>
+  {% if hunts %}
+        <div class="col_3">
+            <h3 class="text-left blank1">Previous Hunt</h3>                        
+              <ul class="cards">
+                {% for hunt in hunts %}
+                    <li class="cards_item">
+                      <div class="card">
+                        {% if hunt.logo %}
+                        <div class="card_image"><img src="{{hunt.logo}}"></div>
+                        {% endif %}
+                        <div class="card_content">
+                          <h2 class="card_title">{{hunt.name}}</h2>
+                          <p class="card_text">{{hunt.domain.name}}, {{hunt.domain.company.name}} - Starts on {{hunt.starts_on}}</p>
+                          <a href="/dashboard/company/hunt/previous/{{hunt.pk}}">
+                            <button class="btn card_btn">Read More</button>
+                          </a>
                         </div>
-                    {% endif %}
+                      </div>
+                    </li>    
+                {% endfor %}
+              </ul>
+            <div class="clearfix"> </div>
+        </div>
+    {% endif %}
 {% endblock %}
