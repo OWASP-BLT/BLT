@@ -70,8 +70,16 @@ jobs:
         run: poetry install
       - name: Install djlint
         run: pip install djlint      
-      - name: Lint Django Templates with djlint
-        run: djlint --check templates/
+      - name: Debugging current directory
+        run: pwd && ls -l
+      - name: Debugging company templates directory
+        run: ls -l company/templates/
+      - name: Debugging website templates directory
+        run: ls -l website/templates/
+      - name: Run djlint on company templates
+        run: djlint --check company/templates/
+      - name: Run djlint on website templates
+        run: djlint --check website/templates/
       - name: Collect static files
         run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
