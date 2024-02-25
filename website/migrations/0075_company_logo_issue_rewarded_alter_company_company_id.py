@@ -4,25 +4,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('website', '0074_company_company_id_company_managers_domain_managers_and_more'),
+        ("website", "0074_company_company_id_company_managers_domain_managers_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='company',
-            name='logo',
-            field=models.ImageField(blank=True, null=True, upload_to='company_logos'),
+            model_name="company",
+            name="logo",
+            field=models.ImageField(blank=True, null=True, upload_to="company_logos"),
         ),
         migrations.AddField(
-            model_name='issue',
-            name='rewarded',
+            model_name="issue",
+            name="rewarded",
             field=models.PositiveIntegerField(default=0),
         ),
         migrations.AlterField(
-            model_name='company',
-            name='company_id',
+            model_name="company",
+            name="company_id",
             field=models.CharField(editable=False, max_length=255, unique=True),
         ),
     ]

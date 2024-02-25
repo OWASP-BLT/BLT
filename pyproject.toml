@@ -52,7 +52,7 @@ django-tz-detect = "^0.4.0"
 django-tellme = "^0.7.3"
 django-bootstrap-datepicker-plus = "^5.0.5"
 django-star-ratings = "^0.9.2"
-stripe = "^8.3.0"
+stripe = "^8.4.0"
 django-environ = "^0.11.2"
 django-humanize = "^0.1.2"
 drf-yasg = "^1.20.0"
@@ -63,8 +63,24 @@ pillow = "^10.2.0"
 chromedriver-autoinstaller = "^0.6.4"
 sentry-sdk = "^1.40.5"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 black = "^24.2.0"
+isort = "^5.13.2"
+ruff = "^0.2.2"
+
+[tool.isort]
+known_first_party = ["blt"]
+line_length = 100
+profile = "black"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+# This is a temporary ignore list to address on a PR per category basis after the initial run.
+ignore = ["E402", "E722", "F811", "F821", "F841", "T201"]
+select = ["E4", "E7", "E9", "F", "T"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

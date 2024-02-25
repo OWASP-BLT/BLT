@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0080_alter_issue_team_members"),
     ]
@@ -13,8 +12,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="userprofile",
             name="issue_downvoted",
-            field=models.ManyToManyField(
-                blank=True, related_name="downvoted", to="website.issue"
-            ),
+            field=models.ManyToManyField(blank=True, related_name="downvoted", to="website.issue"),
         ),
     ]

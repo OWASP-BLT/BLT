@@ -1,4 +1,4 @@
-{% extends "base_new.html" %}
+{% extends "base.html" %}
 {% load i18n %}
 {% load static %}
 {% load gravatar %}
@@ -52,8 +52,8 @@
 
 {% endblock %}
 
-{% block hero %}
-
+{% block content %}
+{% include "includes/sidenav.html" %} 
 
 <div id="duplicate-container" class="fixed w-full h-full top-0 left-0 overflow-y-auto z-10" hidden>
 
