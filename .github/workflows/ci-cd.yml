@@ -68,6 +68,8 @@ jobs:
           cache: 'poetry'
       - name: Install dependencies
         run: poetry install
+      - name: Install djlint
+        run: pip install djlint      
       - name: Lint Django Templates with djlint
         run: djlint --check templates/
       - name: Collect static files
