@@ -374,8 +374,8 @@ class Points(models.Model):
 
 
 class InviteFriend(models.Model):
-    sender = models.ForeignKey(User, related_name='sent_invites', on_delete=models.CASCADE)
-    recipients = models.ManyToManyField(User, related_name='received_invites', blank=True)
+    sender = models.ForeignKey(User, related_name="sent_invites", on_delete=models.CASCADE)
+    recipients = models.ManyToManyField(User, related_name="received_invites", blank=True)
     referral_code = models.CharField(max_length=100, default=uuid.uuid4, editable=False)
     point_by_referral = models.IntegerField(default=0)
 

@@ -22,7 +22,7 @@ import tweepy
 
 # from django_cron import CronJobBase, Schedule
 from allauth.account.models import EmailAddress
-from allauth.account.signals import user_logged_in
+from allauth.account.signals import user_logged_in, user_signed_up
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
@@ -69,7 +69,6 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 from user_agents import parse
 from django.contrib.sites.shortcuts import get_current_site
-from allauth.account.signals import user_signed_up
 
 from blt import settings
 from comments.models import Comment
@@ -3665,7 +3664,7 @@ class IssueView2(DetailView):
 
 @receiver(user_signed_up)
 def handle_user_signup(request, user, **kwargs):
-    referral_token = request.session.get('ref')
+    rreferral_token = request.session.get("ref")
     if referral_token:
         try:
             invite = InviteFriend.objects.get(referral_code=referral_token)
@@ -3673,40 +3672,40 @@ def handle_user_signup(request, user, **kwargs):
             invite.point_by_referral += 2
             invite.save()
             reward_sender_with_points(invite.sender)
-            del request.session['ref']
+            del request.session["ref"]
         except InviteFriend.DoesNotExist:
             pass
 
 def reward_sender_with_points(sender):
     # Create or update points for the sender
-    points, created = Points.objects.get_or_create(user=sender, defaults={'score': 0})
+    points, created = Points.objects.get_or_create(user=sender, defaults={"score": 0})
     points.score += 2  # Reward 2 points for each successful referral signup
     points.save()
 
 def referral_signup(request):
-    referral_token = request.GET.get('ref')
+    referral_token = request.GET.get("ref")
     # check the referral token is present on invitefriend model or not and if present then set the referral token in the session
     if referral_token:
         try:
             invite = InviteFriend.objects.get(referral_code=referral_token)
-            request.session['ref'] = referral_token
+            request.session["ref"] = referral_token
         except InviteFriend.DoesNotExist:
             messages.error(request, "Invalid referral token")
-            return redirect('account_signup')
-    return redirect('account_signup')
+            return redirect("account_signup")
+    return redirect("account_signup")
 
 
 def invite_friend(request):
     # check if the user is authenticated or not
     if not request.user.is_authenticated:
-        return redirect('account_login')
+        return redirect("account_login")
     current_site = get_current_site(request)
     referral_code, created = InviteFriend.objects.get_or_create(sender=request.user)
     referral_link = f"https://{current_site.domain}/referral/?ref={referral_code.referral_code}"
     context = {
-        'referral_link': referral_link,
+        "referral_link": referral_link,
     }
-    return render(request, 'invite_friend.html', context)
+    return render(request, "invite_friend.html", context)
 
 # class CreateIssue(CronJobBase):
 #     RUN_EVERY_MINS = 1

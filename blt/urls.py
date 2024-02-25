@@ -107,8 +107,8 @@ handler404 = "website.views.handler404"
 handler500 = "website.views.handler500"
 
 urlpatterns = [
-    path('invite-friend/', website.views.invite_friend, name='invite_friend'),
-    path('referral/', website.views.referral_signup, name='referral_signup'),
+    path("invite-friend/", website.views.invite_friend, name="invite_friend"),
+    path("referral/", website.views.referral_signup, name="referral_signup"),
     path("captcha/", include("captcha.urls")),
     re_path(r"^auth/registration/", include("dj_rest_auth.registration.urls")),
     path(
