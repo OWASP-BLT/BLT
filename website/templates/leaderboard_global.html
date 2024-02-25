@@ -1,8 +1,7 @@
 {% extends "base.html" %}
 {% load gravatar %}
-
 {% block style %}
-<style>
+    <style>
   .container-min-height{
     min-height: 50vh;
   }
@@ -54,43 +53,48 @@
         margin-top: 12px;
         margin-left: 5px;
     }
-</style>
+    </style>
 {% endblock %}
-
 {% block content %}
-{% include 'includes/sidenav.html' %}
-<div class="row container-min-height" style="display:flex;justify-content:center">
-    <div class="col-lg-6" style="display: flex; justify-content: center; align-items: center;">
-        <h1 class="page-header">Global Leaderboard</h1>         
-    </div>
-</div>
-<div class="row" style="display:flex;justify-content:center">
-    <div class="col-md-8">
-        <div class="list-group">
-            {%if not leaderboard%}
-                <p style="color: red;">No data for this month</p>
-            {% else %}
-                {% for leader in leaderboard %}
-                <div class="list-group-item">
-                    {% if leader.userprofile.avatar %}
-                    <img src="{{ leader.userprofile.avatar }}" class="img-responsive img-thumbnail profileimage">
-                    {% elif leader.socialaccount_set.all.0.get_avatar_url %}
-                    <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class="img-responsive img-thumbnail profileimage">
-                    {% else %}
-                    <img src="{% gravatar_url leader.email 50 %}" class="img-responsive img-thumbnail profileimage">
-                    {% endif %}
-                    <a href="/profile/{{ leader.username }}">{{ leader.username }}</a>
-                    <span class="pull-right badge">{{ leader.total_score }} Points</span>
-                    {% if leader.userprofile.winnings %}
-                    <span class="pull-right badge">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
-                    {% endif %}
-
-                    <span><kbd
-                            class="{{ leader.userprofile.get_title_display }} titleuser">{{ leader.userprofile.get_title_display }}</kbd></span>
-                </div>
-                {% endfor %}
-            {%endif%}
+    {% include 'includes/sidenav.html' %}
+    <div class="row container-min-height"
+         style="display:flex;
+                justify-content:center">
+        <div class="col-lg-6"
+             style="display: flex;
+                    justify-content: center;
+                    align-items: center">
+            <h1 class="page-header">Global Leaderboard</h1>
         </div>
     </div>
-</div>
+    <div class="row" style="display:flex;justify-content:center">
+        <div class="col-md-8">
+            <div class="list-group">
+                {% if not leaderboard %}
+                    <p style="color: red;">No data for this month</p>
+                {% else %}
+                    {% for leader in leaderboard %}
+                        <div class="list-group-item">
+                            {% if leader.userprofile.avatar %}
+                                <img src="{{ leader.userprofile.avatar }}"
+                                     class="img-responsive img-thumbnail profileimage">
+                            {% elif leader.socialaccount_set.all.0.get_avatar_url %}
+                                <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
+                                     class="img-responsive img-thumbnail profileimage">
+                            {% else %}
+                                <img src="{% gravatar_url leader.email 50 %}"
+                                     class="img-responsive img-thumbnail profileimage">
+                            {% endif %}
+                            <a href="/profile/{{ leader.username }}">{{ leader.username }}</a>
+                            <span class="pull-right badge">{{ leader.total_score }} Points</span>
+                            {% if leader.userprofile.winnings %}
+                                <span class="pull-right badge">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
+                            {% endif %}
+                            <span><kbd class="{{ leader.userprofile.get_title_display }} titleuser">{{ leader.userprofile.get_title_display }}</kbd></span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
 {% endblock %}

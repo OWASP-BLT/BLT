@@ -1,7 +1,7 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
 {% block content %}
-<style>
+    <style>
   #banner {
  background:
    url("https://i.postimg.cc/FzSHSbhQ/img-soccer.jpg") no-repeat;
@@ -100,108 +100,106 @@ table.table tbody tr.selected {
   color: white;
 }
 
-</style>
-<section>
-  {% include 'includes/company_sidenav.html' %}
-</section>
-<link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
-  <link href="{% static 'mdeditor/css/editormd.preview.css' %}" rel="stylesheet">
-                
-
-<main style="
-    margin: -40px -2em 0px;
-">
-  <!--banner-->
-  <article id="banner" class="jumbotron jumbotron-fluid">
-    <div class="font-italic pl-4 mt-4 text-light">
-      <h1 class="display-1 font-italic">
-        {{hunt.domain.company.name}}
-        <span class="badge-company badge-primary shadow">{{hunt.domain.name}}</span>
-      </h1>
-
-      <p class="lead mt-5">
-        Ended
-      </p>
-    </div>
-  </article>
-  <!--banner end-->
-
-</main>
-{% if hunt.result_published %}
-<table class="table">
-    <thead>
-        <tr>
-            <th>id</th>
-            <th>name</th>
-        </tr>
-    </thead>
-    <tbody>
-      {% if winner.winner %}
-        <tr>
-            <td>1</td>
-            <td>{{winner.winner}}</td>
-        </tr>
-      {% endif %}
-      {% if winner.runner %}
-        <tr>
-            <td>2</td>
-            <td>{{winner.runner}}</td>
-        </tr>
-      {% endif %}
-      {% if winner.second_runner %}
-        <tr>
-            <td>3</td>
-            <td>{{winner.second_runner}}</td>
-        </tr>
-      {% endif %}
-    </tbody>
-</table>
-{% else %}
-<form method="post" id="publish_result">
-  {% csrf_token%}
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                <input type="checkbox" class="checkAll" name="checkAll" />
-            </th>
-            <th>id</th>
-            <th>points</th>
-            <th>description</th>
-            <th>type</th>
-        </tr>
-    </thead>
-    <tbody>
-      {% for issue in issues %}
-        <tr>
-            {% if issue.verified %}
-            <td><input type="checkbox" name="item_{{issue.pk}}" checked></td>
-            {% else %}
-            <td><input type="checkbox" name="item_{{issue.pk}}"></td>
-            {% endif %}
-            <td>{{forloop.counter}}</td>
-            <td><input type="number" value="{{issue.score}}" name="value_{{issue.pk}}"/></td>
-            <td>{{issue.description}}</td>
-            <td>{{issue.get_label_display}}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-<button class="btn btn-danger" name="submit" value="save">Save</button>
-<button class="btn btn-danger" name="submit" value="publish">Save and Publish Result</button>
-</form>
-{% endif %}
-
-                  <script src="{% static 'mdeditor/js/jquery.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/editormd.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/marked.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/prettify.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/raphael.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/underscore.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/sequence-diagram.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/flowchart.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/jquery.flowchart.min.js' %}"></script>
-<script type="text/javascript">
+    </style>
+    <section>
+        {% include 'includes/company_sidenav.html' %}
+    </section>
+    <link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
+    <link href="{% static 'mdeditor/css/editormd.preview.css' %}"
+          rel="stylesheet">
+    <main style=" margin: -40px -2em 0px; ">
+        <!--banner-->
+        <article id="banner" class="jumbotron jumbotron-fluid">
+            <div class="font-italic pl-4 mt-4 text-light">
+                <h1 class="display-1 font-italic">
+                    {{ hunt.domain.company.name }}
+                    <span class="badge-company badge-primary shadow">{{ hunt.domain.name }}</span>
+                </h1>
+                <p class="lead mt-5">Ended</p>
+            </div>
+        </article>
+        <!--banner end-->
+    </main>
+    {% if hunt.result_published %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>id</th>
+                    <th>name</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if winner.winner %}
+                    <tr>
+                        <td>1</td>
+                        <td>{{ winner.winner }}</td>
+                    </tr>
+                {% endif %}
+                {% if winner.runner %}
+                    <tr>
+                        <td>2</td>
+                        <td>{{ winner.runner }}</td>
+                    </tr>
+                {% endif %}
+                {% if winner.second_runner %}
+                    <tr>
+                        <td>3</td>
+                        <td>{{ winner.second_runner }}</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    {% else %}
+        <form method="post" id="publish_result">
+            {% csrf_token %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" class="checkAll" name="checkAll" />
+                        </th>
+                        <th>id</th>
+                        <th>points</th>
+                        <th>description</th>
+                        <th>type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for issue in issues %}
+                        <tr>
+                            {% if issue.verified %}
+                                <td>
+                                    <input type="checkbox" name="item_{{ issue.pk }}" checked>
+                                </td>
+                            {% else %}
+                                <td>
+                                    <input type="checkbox" name="item_{{ issue.pk }}">
+                                </td>
+                            {% endif %}
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <input type="number" value="{{ issue.score }}" name="value_{{ issue.pk }}" />
+                            </td>
+                            <td>{{ issue.description }}</td>
+                            <td>{{ issue.get_label_display }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <button class="btn btn-danger" name="submit" value="save">Save</button>
+            <button class="btn btn-danger" name="submit" value="publish">Save and Publish Result</button>
+        </form>
+    {% endif %}
+    <script src="{% static 'mdeditor/js/jquery.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/editormd.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/marked.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/prettify.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/raphael.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/underscore.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/sequence-diagram.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/flowchart.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/jquery.flowchart.min.js' %}"></script>
+    <script type="text/javascript">
   $(document).ready(function() {
   $(".checkAll").on("click", function() {
     $(this)
@@ -232,8 +230,8 @@ table.table tbody tr.selected {
   });
 });
 
-</script>
-  <script>
+    </script>
+    <script>
   $(function () {
       editormd.markdownToHTML("content", {
           emoji           : true,
@@ -248,6 +246,5 @@ table.table tbody tr.selected {
       })
   })
 
-</script>
-
+    </script>
 {% endblock %}

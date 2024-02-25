@@ -1,36 +1,50 @@
 <div class="bug-container flex flex-col p-5 px-7 bg-[#FFC8C485] m-1 w-[100%] h-[300px] rounded-[2.5rem] border-[#FF545433] border-[3px]">
-    
     <form class="h-full flex flex-col gap-[0.9rem]" action="" method="post">
-
         {% csrf_token %}
-        
-        <div class="font-['Barlow_Semi_Condensed'] font-semibold text-[#b10909] text-5xl text-center mb-1">REPORT AN ISSUE</div>
-
-            <input type="text" id="first_name" name="url" class="bg-white text-[#4C4C4C] placeholder:text-xl rounded-full block w-full p-[0.4rem] px-4 font-semibold outline-none" placeholder="Domain URL" required>
-
-            <select class="bg-white text-[#4C4C4C] text-2xl rounded-full block w-full p-2 px-3 font-semibold outline-none border-r-8 border-r-white cursor-pointer" name="label">
-                <option value="0" selected="selected">General</option>
-                <option value="1">Number error</option>
-                <option value="2">Functional</option>
-                <option value="3">Performance</option>
-                <option value="4">Security</option>
-                <option value="5">Typo</option>
-                <option value="6">Design</option>
-                <option value="7">Server down</option>
-            </select>
-
-
-            <div>
-                <label class="bg-trans text-[#303030] text-[1.4rem] rounded-full block w-full px-2 font-semibold outline-none m-0 mb-0 mt-[-2px]"> Attach Screenshots: </label>
-                <input type="file" id="screenshot" class="bg-white text-[#4C4C4C] text-xl rounded-lg block w-full p-2 px-2 font-semibold outline-none" multiple>
-            </div>
-
-            <textarea type="text" id="first_name" class="bg-white text-[#4C4C4C] text-xl rounded-[1rem] w-full p-2 px-3 font-semibold outline-none h-full flex flex-col resize-none" placeholder="Description" name="description" required></textarea>
-
-            <div class="flex flex-row gap-[0.7rem]">
-                <button id="expand" class="font-['Barlow'] font-bold text-[#b10909] text-3xl text-center bg-[#FF9090] p-2 rounded-full border border-1 border-[#CB3838] w-[4rem]"><i class="fa fa-angle-down" aria-hidden="true"></i></button>
-                <button type="submit" class="w-full font-['Barlow'] font-bold text-[#b10909] text-3xl text-center bg-[#FF9090] p-2 rounded-full border border-1 border-[#CB3838]">SUBMIT BUG!</button>
-            </div>
-
+        <div class="font-['Barlow_Semi_Condensed'] font-semibold text-[#b10909] text-5xl text-center mb-1">
+            REPORT AN ISSUE
+        </div>
+        <input type="text"
+               id="first_name"
+               name="url"
+               class="bg-white text-[#4C4C4C] placeholder:text-xl rounded-full block w-full p-[0.4rem] px-4 font-semibold outline-none"
+               placeholder="Domain URL"
+               required>
+        <select class="bg-white text-[#4C4C4C] text-2xl rounded-full block w-full p-2 px-3 font-semibold outline-none border-r-8 border-r-white cursor-pointer"
+                name="label">
+            <option value="0" selected="selected">General</option>
+            <option value="1">Number error</option>
+            <option value="2">Functional</option>
+            <option value="3">Performance</option>
+            <option value="4">Security</option>
+            <option value="5">Typo</option>
+            <option value="6">Design</option>
+            <option value="7">Server down</option>
+        </select>
+        <div>
+            <label class="bg-trans text-[#303030] text-[1.4rem] rounded-full block w-full px-2 font-semibold outline-none m-0 mb-0 mt-[-2px]">
+                Attach Screenshots:
+            </label>
+            <input type="file"
+                   id="screenshot"
+                   class="bg-white text-[#4C4C4C] text-xl rounded-lg block w-full p-2 px-2 font-semibold outline-none"
+                   multiple>
+        </div>
+        <textarea type="text"
+                  id="first_name"
+                  class="bg-white text-[#4C4C4C] text-xl rounded-[1rem] w-full p-2 px-3 font-semibold outline-none h-full flex flex-col resize-none"
+                  placeholder="Description"
+                  name="description"
+                  required></textarea>
+        <div class="flex flex-row gap-[0.7rem]">
+            <button id="expand"
+                    class="font-['Barlow'] font-bold text-[#b10909] text-3xl text-center bg-[#FF9090] p-2 rounded-full border border-1 border-[#CB3838] w-[4rem]">
+                <i class="fa fa-angle-down" aria-hidden="true"></i>
+            </button>
+            <button type="submit"
+                    class="w-full font-['Barlow'] font-bold text-[#b10909] text-3xl text-center bg-[#FF9090] p-2 rounded-full border border-1 border-[#CB3838]">
+                SUBMIT BUG!
+            </button>
+        </div>
     </form>
 </div>

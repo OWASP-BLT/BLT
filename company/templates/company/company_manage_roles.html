@@ -1,106 +1,97 @@
-{% extends 'company/company_dashboard_base.html' %} 
-
-{% block title %} Add Domain {% endblock title %}
-
+{% extends 'company/company_dashboard_base.html' %}
+{% block title %}
+    Add Domain
+{% endblock title %}
 {% block body %}
-
     <div class="bg-[#F3F5F7] h-full flex flex-col items-center">
         <div class="flex items-center md:justify-between w-full md:h-max mt-5 flex-col md:flex-row">
             <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Roles</p>
-
             <div class="w-full md:w-[15%] flex justify-center md:justify-end mr-10">
-                <button type="button" onclick="ToggleDisplayForm(0)" class="flex items-center justify-center md:justify-center px-16 py-7 bg-[#DC4654] rounded-xl hover:bg-red-600 transition-all">
-                    <i class="fa-sharp fa-solid fa-plus fa-xl text-white"></i>   
+                <button type="button"
+                        onclick="ToggleDisplayForm(0)"
+                        class="flex items-center justify-center md:justify-center px-16 py-7 bg-[#DC4654] rounded-xl hover:bg-red-600 transition-all">
+                    <i class="fa-sharp fa-solid fa-plus fa-xl text-white"></i>
                 </button>
             </div>
-        </div> 
-
+        </div>
         {% for domain in domains %}
-
             <div class="w-[96%] bg-white rounded-lg shadow-xl p-8 mt-10">
                 <div class="flex items-center justify-between">
                     <h4 class="text-xl text-gray-900 font-bold">{{ domain.name }}</h4>
                     <a href="#" title="View All">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500 hover:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-6 w-6 text-gray-500 hover:text-gray-700"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z">
+                            </path>
                         </svg>
                     </a>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-8 mt-8">
-                    
                     {% for manager in domain.managers %}
-                        <a class="flex flex-col cursor-pointer items-center justify-center text-gray-800 hover:text-red-600" title="View Profile">
-                            <img src="{{ MEDIA_URL }}{{ manager.userprofile__user_avatar }}" class="w-20 h-20 object-cover rounded-full">
+                        <a class="flex flex-col cursor-pointer items-center justify-center text-gray-800 hover:text-red-600"
+                           title="View Profile">
+                            <img src="{{ MEDIA_URL }}{{ manager.userprofile__user_avatar }}"
+                                 class="w-20 h-20 object-cover rounded-full">
                             <p class="text-center font-bold text-md mt-1">{{ manager.username }}</p>
                             <p class="text-sm text-gray-500 text-center">Domain Manager</p>
                         </a>
                     {% endfor %}
                 </div>
             </div>
-
         {% endfor %}
     </div>
-
     <!-- add domain popup overlay -->
-    <div id="addManagersFormCont" class="w-full h-full absolute hidden items-center justify-center bg-black bg-opacity-20">
-        <form class="flex flex-col w-[30%] h-[60%] bg-white rounded-lg p-8 z-10" action="#" method="post">
+    <div id="addManagersFormCont"
+         class="w-full h-full absolute hidden items-center justify-center bg-black bg-opacity-20">
+        <form class="flex flex-col w-[30%] h-[60%] bg-white rounded-lg p-8 z-10"
+              action="#"
+              method="post">
             {% csrf_token %}
-            <div class="w-full">   
-
+            <div class="w-full">
                 <div class="flex w-full justify-between items-center">
                     <p class="text-[#464255] font-satoshi font-bold text-[25px]">Add Managers</p>
-                    <i class="fa-sharp fa-solid fa-xmark fa-xl text-black" onclick="ToggleDisplayForm(1)"></i>   
+                    <i class="fa-sharp fa-solid fa-xmark fa-xl text-black"
+                       onclick="ToggleDisplayForm(1)"></i>
                 </div>
-                
-
                 <div class="pb-12 mt-5">
-                    <h2 class="text-base font-semibold leading-7 text-gray-900">
-                    Domain Managers
-                    </h2>
+                    <h2 class="text-base font-semibold leading-7 text-gray-900">Domain Managers</h2>
                     <p class="mt-1 text-sm leading-6 text-gray-600">
                         Add Emails which will be allowed to start hunts and manage reported bugs.
                         Email should be domain mail and should be registerd user on bugheist.
                     </p>
-
                     <div class="sm:col-span-3 my-5">
                         <div class="mt-2">
-                            <select
-                                id="domain"
-                                name="domain"
-                                autocomplete="domain-name"
-                                class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:max-w-xs sm:text-sm sm:leading-6"
-                            >
-                                {% for domain in domains %}
-                                    <option value="{{ domain.id }}">{{ domain.name }}</option>
-                                {% endfor %}
+                            <select id="domain"
+                                    name="domain"
+                                    autocomplete="domain-name"
+                                    class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:max-w-xs sm:text-sm sm:leading-6">
+                                {% for domain in domains %}<option value="{{ domain.id }}">{{ domain.name }}</option>{% endfor %}
                             </select>
                         </div>
                     </div>
-                    
                     <div class="w-full flex justify-between">
-                        <button onclick="add_email_container()" type="button" class="w-[120px] h-[40px] bg-red-500 text-white font-bold rounded-md mt-2 hover:bg-red-600 transition-all">
+                        <button onclick="add_email_container()"
+                                type="button"
+                                class="w-[120px] h-[40px] bg-red-500 text-white font-bold rounded-md mt-2 hover:bg-red-600 transition-all">
                             Add Email
                         </button>
-
-                        <button type="submit" class="w-[120px] h-[40px] bg-red-500 text-white font-bold rounded-md mt-2 hover:bg-red-600 transition-all">
+                        <button type="submit"
+                                class="w-[120px] h-[40px] bg-red-500 text-white font-bold rounded-md mt-2 hover:bg-red-600 transition-all">
                             Submit
                         </button>
                     </div>
-    
-                    <div class="sm:col-span-4 mt-5 overflow-y-scroll max-h-[200px]" id="email-container">
-                        <label
-                            for="email"
-                            class="block text-sm font-medium leading-6 text-gray-900"
-                            >Email address
-                        </label>
+                    <div class="sm:col-span-4 mt-5 overflow-y-scroll max-h-[200px]"
+                         id="email-container">
+                        <label for="email" class="block text-sm font-medium leading-6 text-gray-900">Email address</label>
                     </div>
                 </div>
             </div>
         </form>
     </div>
-
 {% endblock %}
-
 {% block js %}
     <script>
             function remove_email_container(){
@@ -113,13 +104,7 @@
         const email_container_child_html = document.createElement('div');
         email_container_child_html.innerHTML = `
             <div class="mt-2 flex flex-row items-center">
-                <input
-                name="email"
-                type="email"
-                autocomplete="email"
-                required
-                class="w-[90%] block rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                />
+                <input name="email" type="email" autocomplete="email" required class="w-[90%] block rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" />
                 <button type="button" onclick="remove_email_container()">
                     <i class="fa-sharp fa-solid fa-trash fa-lg text-[#596780] ml-4 hover:text-black"></i>   
                 </button>

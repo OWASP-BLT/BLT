@@ -1,5 +1,4 @@
 {% load gravatar %}
-
 {% if request.user.is_authenticated %}
     <a class="btn btn-info btn-xs like_unlike" name="{{ object.pk }}">
         <i class="fa fa-thumbs-up"></i> {{ likes }}
@@ -9,11 +8,11 @@
         <i class="fa fa-thumbs-up"></i> {{ likes }}
     </button>
 {% endif %}
-
 {% if likers %}
-    <a href="#likedBy" class="btn btn-xs btn-default liked-by" data-toggle="modal">Liked By</a>
+    <a href="#likedBy"
+       class="btn btn-xs btn-default liked-by"
+       data-toggle="modal">Liked By</a>
 {% endif %}
-
 <div id="likedBy" class="modal" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -22,7 +21,8 @@
                 {% for usr in likers %}
                     <div class="list-group-item">
                         {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
-                            <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}" height="50px">
+                            <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
+                                 height="50px">
                         {% else %}
                             <img src="{% gravatar_url usr.user.email 50 %}">
                         {% endif %}
@@ -33,8 +33,6 @@
         </div>
     </div>
 </div>
-
-
 {% if request.user.is_authenticated %}
     <a class="btn btn-info btn-xs dislike_undislike" name="{{ object.pk }}">
         <i class="fa fa-thumbs-down"></i> {{ dislikes }}
@@ -44,11 +42,11 @@
         <i class="fa fa-thumbs-down"></i> {{ dislikes }}
     </button>
 {% endif %}
-
 {% if dislikers %}
-    <a href="#dislikedBy" class="btn btn-xs btn-default disliked-by" data-toggle="modal">Disliked By</a>
+    <a href="#dislikedBy"
+       class="btn btn-xs btn-default disliked-by"
+       data-toggle="modal">Disliked By</a>
 {% endif %}
-
 <div id="dislikedBy" class="modal" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -57,7 +55,8 @@
                 {% for usr in dislikers %}
                     <div class="list-group-item">
                         {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
-                            <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}" height="50px">
+                            <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
+                                 height="50px">
                         {% else %}
                             <img src="{% gravatar_url usr.user.email 50 %}">
                         {% endif %}

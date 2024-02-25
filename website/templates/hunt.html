@@ -3,7 +3,7 @@
 {% load i18n %}
 {% load custom_tags %}
 {% block style %}
-<style>
+    <style>
     .row .col-md-6:nth-child(1) .panel {
         background-color: #F76B78;
     }
@@ -163,69 +163,71 @@
         }
     }
 
-</style>
+    </style>
 {% endblock %}
-
 {% block content %}
-<script src="{% static "js/jquery.validate.js" %}"></script>
-<link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
-<form role="form" action="/hunt/" method="post" enctype="multipart/form-data" class="hunt-form">
-    {% csrf_token %}
-    <div id="start-hunt-root">
-        <div class="row main">
-            <div class="panel-heading">
-                <div class="panel-title text-center">
-                    <div class="title">
-                        <p >START A </p>  
-                        <p style="color: red;">BUGHUNT</p> 
+    <script src="{% static "js/jquery.validate.js" %}"></script>
+    <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
+    <form role="form"
+          action="/hunt/"
+          method="post"
+          enctype="multipart/form-data"
+          class="hunt-form">
+        {% csrf_token %}
+        <div id="start-hunt-root">
+            <div class="row main">
+                <div class="panel-heading">
+                    <div class="panel-title text-center">
+                        <div class="title">
+                            <p>START A</p>
+                            <p style="color: red;">BUGHUNT</p>
+                        </div>
+                        <p style="font-weight: bold;">{% trans 'Enter URL, APP name or GPS location of issue' %}</p>
+                        <hr />
                     </div>
-                    <p style="font-weight: bold;">{% trans 'Enter URL, APP name or GPS location of issue' %}</p>
-                    <hr />
                 </div>
-            </div>
                 {% csrf_token %}
                 <div class="form-group">
-
                     <div class="input-container">
                         <i class="fa fa-bug icon" aria-hidden="true"></i>
-                        <input class="input-field url required" type="text" placeholder="Name of the bughunt" name="name">
+                        <input class="input-field url required"
+                               type="text"
+                               placeholder="Name of the bughunt"
+                               name="name">
                     </div>
-                    {% if form.url.errors %}
-                    <label id="url-error" class="error" for="url">{{ form.url.errors }}</label>
-                    {% endif %}
+                    {% if form.url.errors %}<label id="url-error" class="error" for="url">{{ form.url.errors }}</label>{% endif %}
                 </div>
                 <div class="form-group">
-
                     <div class="input-container">
                         <i class="fa fa-link icon" aria-hidden="true"></i>
-                        <input class="input-field url required" type="text" placeholder="http://example.com" name="url" 
-                            value="{{ form.url.value|default:"" }}">
+                        <input class="input-field url required"
+                               type="text"
+                               placeholder="http://example.com"
+                               name="url"
+                               value="{{ form.url.value|default:"" }}">
                     </div>
-                    {% if form.url.errors %}
-                    <label id="url-error" class="error" for="url">{{ form.url.errors }}</label>
-                    {% endif %}
+                    {% if form.url.errors %}<label id="url-error" class="error" for="url">{{ form.url.errors }}</label>{% endif %}
                 </div>
                 <div class="form-group">
                     <div class="input-container">
                         <i class="fa fa-file-picture-o icon" aria-hidden="true"></i>
-                        <input class="input-field url required" type="file" name="logo" style="width: 100%; border:1px solid #1f1f1f77">
+                        <input class="input-field url required"
+                               type="file"
+                               name="logo"
+                               style="width: 100%;
+                                      border:1px solid #1f1f1f77">
                     </div>
-                    {% if form.logo.errors %}
-                    <label id="url-error" class="error" for="url">{{ form.logo.errors }}</label>
-                    {% endif %}
+                    {% if form.logo.errors %}<label id="url-error" class="error" for="url">{{ form.logo.errors }}</label>{% endif %}
                 </div>
                 <div class="input-group">
                     <div class="input-container">
                         <i class="fa fa-pencil-square-o icon" aria-hidden="true"></i>
-                        <textarea data-required="true" name="description" id="description"
-                            data-intro="Description of Issue" data-step="2" class="input-field url required"
-                            rows="3" cols="100%" placeholder="Describe bug issue">
+                        <textarea data-required="true" name="description" id="description" data-intro="Description of Issue" data-step="2" class="input-field url required" rows="3" cols="100%" placeholder="Describe bug issue">
                         </textarea>
                     </div>
                 </div>
                 <div class="form-group">
                     <select name="plan" value="Flea" id="bughunt-select-plan">
-                        
                         <option value="Flea">{% trans "Flea Plan" %} $9.00 / {% trans 'Month' %}</option>
                         <option value="Ant">{% trans "Ant Plan" %} $99.00 / {% trans 'Month' %}</option>
                         <option value="Wasp">{% trans "Wasp Plan" %} $499.00 / {% trans 'Month' %}</option>
@@ -236,37 +238,39 @@
                     <strong>{% trans 'Grand Prize' %}:</strong>
                     <p>{% trans 'Max amout awarded to winner' %}</p>
                     <div>
-                        <input class="slider" type="text" name="prize" value="{{ form.prize.value|default:'100' }}"
-                            data-provide="slider" data-slider-min="100" data-slider-max="10000" data-slider-step="100"
-                            data-slider-value="{{ form.prize.value|default:'100' }}">
+                        <input class="slider"
+                               type="text"
+                               name="prize"
+                               value="{{ form.prize.value|default:'100' }}"
+                               data-provide="slider"
+                               data-slider-min="100"
+                               data-slider-max="10000"
+                               data-slider-step="100"
+                               data-slider-value="{{ form.prize.value|default:'100' }}">
                     </div>
                     {{ form.prize.errors }}
                 </div>
-
                 {% if not user.is_authenticated %}
-                <br><span class="text-danger"><a href="/accounts/login">*Login required</a></span>
+                    <br>
+                    <span class="text-danger"><a href="/accounts/login">*Login required</a></span>
                 {% else %}
-                <div class="form-group" id="bughunt-submit">
-                    <button type="submit">{% trans 'START BUGHUNT' %}!</button>
-                </div>
+                    <div class="form-group" id="bughunt-submit">
+                        <button type="submit">{% trans 'START BUGHUNT' %}!</button>
+                    </div>
                 {% endif %}
+            </div>
         </div>
-    </div>
-
-<h1 class="page-sub-header">{% env 'PROJECT_NAME' %} is 100% {% trans 'free to use' %}, {% trans 'Open Source and a non-commercial' %}, {% trans 'not for profit initiative' %}.</h1>
-
-
-</form>
+        <h1 class="page-sub-header">
+            {% env 'PROJECT_NAME' %} is 100% {% trans 'free to use' %}, {% trans 'Open Source and a non-commercial' %}, {% trans 'not for profit initiative' %}.
+        </h1>
+    </form>
 {% endblock %}
-
 {% block after_js %}
-<script src="{% static "js/bootstrap-slider.js" %}"></script>
-
-<script>
+    <script src="{% static "js/bootstrap-slider.js" %}"></script>
+    <script>
     {% comment %} $('.btn').on('click', function () {
         $(".hunt-form").valid();
-    }); {% endcomment %}
-
+}); {% endcomment %}
     function numberWithCommas(x) {
         var parts = x.toString().split(".");
         parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -279,5 +283,5 @@
             return '$' + numberWithCommas(value);
         }
     });
-</script>
+    </script>
 {% endblock %}

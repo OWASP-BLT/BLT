@@ -1,9 +1,8 @@
 {% extends "base.html" %}
 {% load gravatar %}
-{%load static%}
-
+{% load static %}
 {% block style %}
-<style>
+    <style>
 
     .container-min-height{
       min-height: 50vh;
@@ -121,58 +120,59 @@ select {
   outline: none;
 }
 
-</style>
-
+    </style>
 {% endblock %}
-
-{%block before_js%}
-<script async type="text/javascript" src="//cdn.carbonads.com/carbon.js?serve=CESDK2J7&placement=getbutterflycom" id="_carbonads_js"></script>
-{%endblock%}
-
+{% block before_js %}
+    <script async
+            type="text/javascript"
+            src="//cdn.carbonads.com/carbon.js?serve=CESDK2J7&placement=getbutterflycom"
+            id="_carbonads_js"></script>
+{% endblock %}
 {% block content %}
-{% include 'includes/sidenav.html' %}
-<div class="row">
-    <div class="col-lg-10" style="display: flex; justify-content: center; align-items: center;">
-        <h1 class="page-header">Monthly Leaderboard</h1> 
-        <p>
-        <input type="text" id="selection" value="">
-        </p>
-    </div>
-</div>
-<div class="row container-min-height">
-    <div class="col-lg-9">
-        <div class="list-group">
-            {%if not leaderboard%}
-                <p style="color: red;">No data for this month</p>
-            {%else%}
-                {% for leader in leaderboard %}
-                <div class="list-group-item">
-                    {% if leader.userprofile.avatar %}
-                    <img src="{{ leader.userprofile.avatar }}" class="img-responsive img-thumbnail profileimage">
-                    {% elif leader.socialaccount_set.all.0.get_avatar_url %}
-                    <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class="profileimage">
-                    {% else %}
-                    <img src="{% gravatar_url leader.email 50 %}" class="profileimage">
-                    {% endif %}
-                    <a href="/profile/{{ leader.username }}">{{ leader.username }}</a>
-                    <span class="pull-right badge">{{ leader.total_score }} Points</span>
-                    {% if leader.userprofile.winnings %}
-                    <span class="pull-right badge">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
-                    {% endif %}
-
-                    <span><kbd
-                            class="{{ leader.userprofile.get_title_display }} titleuser">{{ leader.userprofile.get_title_display }}</kbd></span>
-                </div>
-                {% endfor %}
-            {%endif%}
+    {% include 'includes/sidenav.html' %}
+    <div class="row">
+        <div class="col-lg-10"
+             style="display: flex;
+                    justify-content: center;
+                    align-items: center">
+            <h1 class="page-header">Monthly Leaderboard</h1>
+            <p>
+                <input type="text" id="selection" value="">
+            </p>
         </div>
     </div>
-</div>
+    <div class="row container-min-height">
+        <div class="col-lg-9">
+            <div class="list-group">
+                {% if not leaderboard %}
+                    <p style="color: red;">No data for this month</p>
+                {% else %}
+                    {% for leader in leaderboard %}
+                        <div class="list-group-item">
+                            {% if leader.userprofile.avatar %}
+                                <img src="{{ leader.userprofile.avatar }}"
+                                     class="img-responsive img-thumbnail profileimage">
+                            {% elif leader.socialaccount_set.all.0.get_avatar_url %}
+                                <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
+                                     class="profileimage">
+                            {% else %}
+                                <img src="{% gravatar_url leader.email 50 %}" class="profileimage">
+                            {% endif %}
+                            <a href="/profile/{{ leader.username }}">{{ leader.username }}</a>
+                            <span class="pull-right badge">{{ leader.total_score }} Points</span>
+                            {% if leader.userprofile.winnings %}
+                                <span class="pull-right badge">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
+                            {% endif %}
+                            <span><kbd class="{{ leader.userprofile.get_title_display }} titleuser">{{ leader.userprofile.get_title_display }}</kbd></span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
 {% endblock %}
-
-
 {% block after_js %}
-<script>
+    <script>
   function sanitizeInput(input) {
     var div = document.createElement('div');
     div.appendChild(document.createTextNode(input));
@@ -318,5 +318,4 @@ $(function() {
 });
 
     </script>
-
-{%endblock%}
+{% endblock %}

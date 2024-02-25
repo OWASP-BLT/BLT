@@ -1,7 +1,7 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
 {% block content %}
-<style>
+    <style>
   #banner {
  background:
    url("https://i.postimg.cc/FzSHSbhQ/img-soccer.jpg") no-repeat;
@@ -72,62 +72,53 @@ h5.card-title{
 
 }
 
-</style>
-<section>
-  {% include 'includes/user_sidenav.html'%}
-</section>
-
-<link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
-  <link href="{% static 'mdeditor/css/editormd.preview.css' %}" rel="stylesheet">
-                
-
-<main>
-  <!--banner-->
-  <article id="banner" class="jumbotron jumbotron-fluid">
-    <div class="font-italic pl-4 mt-4 text-light">
-      <h1 class="display-1 font-italic">
-        {{hunt.domain.company.name}}
-        <span class="badge-company badge-primary shadow">{{hunt.domain.name}}</span>
-      </h1>
-
-      <p class="lead mt-5">
-        {{hunt.name}} / {{ hunt.starts_on|date:'Y-m-d H:i' }} - {{ hunt.end_on|date:'Y-m-d H:i' }}
-      </p>
+    </style>
+    <section>
+        {% include 'includes/user_sidenav.html' %}
+    </section>
+    <link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
+    <link href="{% static 'mdeditor/css/editormd.preview.css' %}"
+          rel="stylesheet">
+    <main>
+        <!--banner-->
+        <article id="banner" class="jumbotron jumbotron-fluid">
+            <div class="font-italic pl-4 mt-4 text-light">
+                <h1 class="display-1 font-italic">
+                    {{ hunt.domain.company.name }}
+                    <span class="badge-company badge-primary shadow">{{ hunt.domain.name }}</span>
+                </h1>
+                <p class="lead mt-5">{{ hunt.name }} / {{ hunt.starts_on|date:'Y-m-d H:i' }} - {{ hunt.end_on|date:'Y-m-d H:i' }}</p>
+            </div>
+            {% if hunt_active %}
+                <a href="submittion">
+                    <button class="start-btn btn btn-danger">Start</button>
+                </a>
+            {% else %}
+                {% if hunt_completed %}
+                    <a href="results">
+                        <button class="start-btn btn btn-danger">View Results</button>
+                    </a>
+                {% else %}
+                    <button class="time-remaining-btn btn btn-danger">Time Remaining : {{ time_remaining }}</button>
+                {% endif %}
+            {% endif %}
+        </article>
+        <!--banner end-->
+    </main>
+    <div id="content">
+        <textarea>{{ hunt.description }}</textarea>
     </div>
-    {% if hunt_active %}
-    <a href="submittion">
-      <button class="start-btn btn btn-danger">Start</button>
-    </a>
-    {% else %}
-      {% if hunt_completed %}
-
-        <a href="results">
-          <button class="start-btn btn btn-danger">View Results</button>
-        </a>
-      {% else %}
-
-        <button class="time-remaining-btn btn btn-danger">Time Remaining : {{time_remaining}}</button>
-      {% endif %}
-    {% endif %}
-  </article>
-  <!--banner end-->
-
-</main>
-
- <div id="content"><textarea>{{ hunt.description }}</textarea></div>
- <div>Hunt URL : {{ hunt.domain.url }}</div>
-
-                  <script src="{% static 'mdeditor/js/jquery.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/editormd.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/marked.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/prettify.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/raphael.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/underscore.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/sequence-diagram.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/flowchart.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/jquery.flowchart.min.js' %}"></script>
-
-  <script>
+    <div>Hunt URL : {{ hunt.domain.url }}</div>
+    <script src="{% static 'mdeditor/js/jquery.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/editormd.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/marked.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/prettify.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/raphael.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/underscore.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/sequence-diagram.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/flowchart.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/jquery.flowchart.min.js' %}"></script>
+    <script>
   $(function () {
       editormd.markdownToHTML("content", {
           emoji           : true,
@@ -142,6 +133,5 @@ h5.card-title{
       })
   })
 
-</script>
-
+    </script>
 {% endblock %}

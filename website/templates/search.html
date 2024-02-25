@@ -2,51 +2,56 @@
 {% load gravatar %}
 {% load static %}
 {% load humanize %}
-
 {% block content %}
-
-
-<style>
+    <style>
   .container-min-height{
     min-height: 25vh;
   }
-</style>
-
+    </style>
     <div class="row container-min-height">
         <div class="col-md-8 col-md-offset-2">
-            <h1 class="text-center"><span class="search-header">Search Results for </span><span class="search-header-query">"{{query}}"</span></h1>
+            <h1 class="text-center">
+                <span class="search-header">Search Results for</span><span class="search-header-query">"{{ query }}"</span>
+            </h1>
             <hr>
             <form method="GET" action="." style="margin-block-end: 0px;">
                 <div style="display:flex" class="input-group search-page-bar">
-
-                           <!-- <div class="search"> -->
-                    <input type="text" class="form-control" name="query" style="height: 50px;width: 94.9%;border-right: none;"
-                           value="{% if type != 'label' %}{{ query }}{% endif %}" placeholder="Search for issues...">
-                           
-                           <span style="height:max-content;width: max-content;" class="input-group-btn">
-                                  <div class="selectdiv ">
-                               <select style="height:50px" class="form-control" name="type">
-                                   <option value="issue" selected="selected">Issue</option>
-                                   <option value="domain">Domain</option>
-                                   <option value="user">User</option>
-                                   <option value="label">Label</option>
-                               </select>
-                           </div>  
-                           </span>
-                           
-                        <button style="height: 50px;margin-left:2%" class="btn btn-default" type="submit"><i class="fa fa-search" aria-hidden="true"></i>
-                        </button>
-                           <!-- <input type="text"placeholder="Cari Ruang"> 
+                    <!-- <div class="search"> -->
+                    <input type="text"
+                           class="form-control"
+                           name="query"
+                           style="height: 50px;
+                                  width: 94.9%;
+                                  border-right: none"
+                           value="{% if type != 'label' %}{{ query }}{% endif %}"
+                           placeholder="Search for issues...">
+                    <span style="height:max-content;
+                                 width: max-content"
+                          class="input-group-btn">
+                        <div class="selectdiv ">
+                            <select style="height:50px" class="form-control" name="type">
+                                <option value="issue" selected="selected">Issue</option>
+                                <option value="domain">Domain</option>
+                                <option value="user">User</option>
+                                <option value="label">Label</option>
+                            </select>
+                        </div>
+                    </span>
+                    <button style="height: 50px;
+                                   margin-left:2%"
+                            class="btn btn-default"
+                            type="submit">
+                        <i class="fa fa-search" aria-hidden="true"></i>
+                    </button>
+                    <!-- <input type="text"placeholder="Cari Ruang">
                            <div class="button-src">
                                <button>cari</button>
                            </div> -->
-                        <!-- </div> -->
+                    <!-- </div> -->
                 </div>
             </form>
             {% if type %}
-                <script type="text/javascript">
-                    $('select').val("{{type}}");
-                </script>
+                <script type="text/javascript">$('select').val("{{type}}");</script>
             {% endif %}
         </div>
     </div>
@@ -64,7 +69,8 @@
                         {% for domain in domains %}
                             <div class="list-group-item">
                                 <a href="{{ domain.get_absolute_url }}">
-                                    <img src="{{ domain.get_logo }}" height="100"
+                                    <img src="{{ domain.get_logo }}"
+                                         height="100"
                                          onerror="this.onerror=null; this.style.display ='none';">
                                     <strong>{{ domain.name }}</strong>
                                 </a>
@@ -79,25 +85,37 @@
                             <div class="list-group-item flex">
                                 <div>
                                     {% if user.user.userprofile.avatar %}
-                                        <img src="{{ user.user.userprofile.avatar }}" width="50px" height="50px" class="img-responsive img-rounded" loading="lazy">
+                                        <img src="{{ user.user.userprofile.avatar }}"
+                                             width="50px"
+                                             height="50px"
+                                             class="img-responsive img-rounded"
+                                             loading="lazy">
                                     {% elif user.user.socialaccount_set.all.0.get_avatar_url %}
-                                        <img src="{{ user.user.socialaccount_set.all.0.get_avatar_url }}" width="100"
-                                            class="img-responsive img-rounded" loading="lazy">
+                                        <img src="{{ user.user.socialaccount_set.all.0.get_avatar_url }}"
+                                             width="100"
+                                             class="img-responsive img-rounded"
+                                             loading="lazy">
                                     {% else %}
-                                        <img src="{% static 'images/dummy-user.png' %}" width="50"
-                                            class="img-responsive img-rounded" loading="lazy">
+                                        <img src="{% static 'images/dummy-user.png' %}"
+                                             width="50"
+                                             class="img-responsive img-rounded"
+                                             loading="lazy">
                                     {% endif %}
                                     <a class="search-username" href="/profile/{{ user.user.username }}">{{ user.user.username }}</a>
                                 </div>
-                                 <div style="padding:0px 75px;">
+                                <div style="padding:0px 75px;">
                                     <label style="font-size: 15px;">User points :</label>
                                     {% if user.total_score is None %}
                                         <span style="font-size: 15px;">0</span> Point
                                     {% else %}
                                         <span style="font-size: 15px;">{{ user.total_score|floatformat:0 }}</span> Points
                                     {% endif %}
-                                 </div>
-                                 <a style="position: absolute;right: 22px;top: 14px;" href="/profile/{{ user.user.username }}" class="btn btn-danger btn-sm prizebtn">View Profile</a>
+                                </div>
+                                <a style="position: absolute;
+                                          right: 22px;
+                                          top: 14px"
+                                   href="/profile/{{ user.user.username }}"
+                                   class="btn btn-danger btn-sm prizebtn">View Profile</a>
                             </div>
                         {% endfor %}
                     </div>

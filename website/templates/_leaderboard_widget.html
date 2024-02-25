@@ -1,61 +1,54 @@
 {% load gravatar %}
 {% load humanize %}
-
 <div class="row-start-1 bug-container leaderboard-widget flex flex-col p-5 pt-3 bg-[white] m-1 w-[100%] row-span-2 rounded-[2.5rem]  border-[#e8e8e8] border-2 font-['Inter'] h-[630px]">
-    
     <div class="font-['Barlow_Semi_Condensed'] font-semibold text-[black] text-[25px] text-center mb-2">LEADERBOARD</div>
-
     <div class="bg-[#EAEAEA] font-semibold p-3 mt- rounded-2xl">
         The 1st Place Hunter for will receive
         <div class="bg-white p-2 text-[1.35rem] rounded-xl border-[#BF1919] border-2">
-            No sponsored prizes this month<br>
+            No sponsored prizes this month
+            <br>
             <div class="my-2 mt-3">
-                <a href="/sponsor" class="bg-red-500 text-white px-4 py-2 rounded text-xl border border-[#ac2925] hover:bg-[#c9302c] hover:border-[#761c19] hover:text-[#e8e8e8] rounded-lg"> Sponsor a Prize</a>
+                <a href="/sponsor"
+                   class="bg-red-500 text-white px-4 py-2 rounded text-xl border border-[#ac2925] hover:bg-[#c9302c] hover:border-[#761c19] hover:text-[#e8e8e8] rounded-lg"> Sponsor a Prize</a>
             </div>
         </div>
     </div>
-
     <div class="users-all h-full max-h-full overflow-y-auto my-3 font-['Barlow']">
         {% if not leaderboard %}
             Leaderboard has been reset for {% now "F" %}, be the first to find issues!
         {% endif %}
         {% for leader in leaderboard %}
-
-            <a href="/profile/{{ leader.username }}" class="flex flex-row h-[4rem] items-center my-2 mx-1 hover:bg-[#e8e8e8] rounded-2xl">
-
-                <span class="h-full w-[8rem] flex justify-center items-center scale-[0.65]">                            
+            <a href="/profile/{{ leader.username }}"
+               class="flex flex-row h-[4rem] items-center my-2 mx-1 hover:bg-[#e8e8e8] rounded-2xl">
+                <span class="h-full w-[8rem] flex justify-center items-center scale-[0.65]">
                     {% if leader.userprofile.avatar %}
-                    <img src="{{ leader.userprofile.avatar }}" class="profileimage object-cover">
+                        <img src="{{ leader.userprofile.avatar }}"
+                             class="profileimage object-cover">
                     {% elif user.socialaccount_set.all.0.get_avatar_url %}
-                    <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class="profileimage object-cover">
+                        <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
+                             class="profileimage object-cover">
                     {% else %}
-                    <img src="{% gravatar_url leader.email 50 %}" class="profileimage object-cover">
+                        <img src="{% gravatar_url leader.email 50 %}"
+                             class="profileimage object-cover">
                     {% endif %}
                 </span>
-                
-                <span class="w-full overflow-clip font-semibold text-[#500000bd] text-[18px] mb-2"> {{ leader.username }} </span>
-
-                <span class="rank me-2 w-[5.5rem] flex flex-row items-end text-black font-semibold h-[2rem] rounded-full 
-                    {% if forloop.counter == 1 %}bg-[gold]{% endif %}
-                    {% if forloop.counter == 2 %}bg-[#CDCDCD]{% endif %}
-                    {% if forloop.counter == 3 %}bg-[#F8BF95]{% endif %}
-                ">
-                    <span class="ms-auto text-[15px] mb-[-1.1px]"> {{ forloop.counter }}                 </span>
+                <span class="w-full overflow-clip font-semibold text-[#500000bd] text-[18px] mb-2">{{ leader.username }}</span>
+                <span class="rank me-2 w-[5.5rem] flex flex-row items-end text-black font-semibold h-[2rem] rounded-full {% if forloop.counter == 1 %}bg-[gold]{% endif %} {% if forloop.counter == 2 %}bg-[#CDCDCD]{% endif %} {% if forloop.counter == 3 %}bg-[#F8BF95]{% endif %} ">
+                    <span class="ms-auto text-[15px] mb-[-1.1px]">{{ forloop.counter }}</span>
                     <span class="me-auto text-[10px] mb-[0.8px]">{{ forloop.counter|ordinal|slice:"1:" }}</span>
                 </span>
-                
             </a>
         {% endfor %}
     </div>
-
     <div class="">
-        <a href="/leaderboard" class="btn btn-default btn-block submit_button p-2 rounded-2xl"> View All</a>
-        <a href="/leaderboard/monthly" class="btn btn-default btn-block submit_button p-2 rounded-2xl"> Filter Monthly</a>
-        <a href="/leaderboard/each-month" class="btn btn-default btn-block submit_button p-2 rounded-2xl"> View Monthly</a>
+        <a href="/leaderboard"
+           class="btn btn-default btn-block submit_button p-2 rounded-2xl">View All</a>
+        <a href="/leaderboard/monthly"
+           class="btn btn-default btn-block submit_button p-2 rounded-2xl">Filter Monthly</a>
+        <a href="/leaderboard/each-month"
+           class="btn btn-default btn-block submit_button p-2 rounded-2xl">View Monthly</a>
     </div>
-
 </div>
-
 {% comment %} positions the leaderboard rightmost {% endcomment %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {

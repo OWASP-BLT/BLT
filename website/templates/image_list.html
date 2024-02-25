@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Image List</title>
-</head>
-<body>
-
+    <head>
+        <title>Image List</title>
+    </head>
+    <body>
         {% for image_url in image_urls %}
-
-            <a href="https://console.cloud.google.com/storage/browser/_details/bhfiles/{{ image_url }}" target="_blank">            {{image_url}}</a>
-            <img src="{{bucket_url}}{{ image_url }}" height="500"></br>
+            <a href="https://console.cloud.google.com/storage/browser/_details/bhfiles/{{ image_url }}"
+               target="_blank">{{ image_url }}</a>
+            <img src="{{ bucket_url }}{{ image_url }}" height="500">
+        </br>
         <hr>
-        {% endfor %}
-
+    {% endfor %}
 </body>
 </html>

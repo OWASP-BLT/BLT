@@ -3,7 +3,7 @@
 {% load static %}
 {% load ratings %}
 {% block style %}
-<style>
+    <style>
   .modal {
     display: none;
     /* Hidden by default */
@@ -817,20 +817,25 @@
   [hidden] {
     display: none;
   }
-</style>
+    </style>
 {% endblock %}
-
 {% block content %}
-
-<link rel="stylesheet" href="{% static 'star-ratings/css/star-ratings.css' %}">
-<script type="text/javascript" src="{% static 'star-ratings/js/dist/star-ratings.min.js' %}"></script>
-<link link="link" href="https://fonts.googleapis.com/css?family=Titillium+Web" rel="stylesheet" />
-
-
-<link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css"
-  id="bs-default-stylesheet" />
-<link href="{% static 'css/app.min.css' %}" rel="stylesheet" type="text/css" id="app-default-stylesheet" />
-<style type="text/css">
+    <link rel="stylesheet"
+          href="{% static 'star-ratings/css/star-ratings.css' %}">
+    <script type="text/javascript"
+            src="{% static 'star-ratings/js/dist/star-ratings.min.js' %}"></script>
+    <link link="link"
+          href="https://fonts.googleapis.com/css?family=Titillium+Web"
+          rel="stylesheet" />
+    <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}"
+          rel="stylesheet"
+          type="text/css"
+          id="bs-default-stylesheet" />
+    <link href="{% static 'css/app.min.css' %}"
+          rel="stylesheet"
+          type="text/css"
+          id="app-default-stylesheet" />
+    <style type="text/css">
   /**
  * The CSS shown here will not be introduced in the Quickstart guide, but shows
  * how you can use CSS to style your Element's container.
@@ -1023,434 +1028,363 @@
       transform: scale(1);
     }
   }
-</style>
-<!-- Begin page -->
-<section>
-  {% include 'includes/user_sidenav.html'%}
-</section>
-<div class="overlay">
-  <div class="center">
-    <div class="dot-1"></div>
-    <div class="dot-2"></div>
-    <div class="dot-3"></div>
-  </div>
-</div>
-
-<div class="profile-body">
-  <div id="wrapper">
-
-    <!-- Topbar Start -->
-    <!-- end Topbar -->
-
-    <!-- ========== Left Sidebar Start ========== -->
-    <div class="left-side-menu">
-
-      <div class="h-100" data-simplebar>
-
-
-        <!--- Sidemenu -->
-        <div id="sidebar-menu" style="
-    margin-top: 50px;
-">
-
-          <ul id="side-menu">
-
-
-
-
-            <li>
-              <div style="width:150px;height:150px;border-radius:10px;margin-left:50px;">
-                {% if user.userprofile.avatar %}
-                <img src="{{ user.userprofile.avatar }}" style="width:140px;height:140px;border-radius:80px">
-                {% else %}
-                <img src="https://www.jamf.com/jamf-nation/img/default-avatars/generic-user-purple.png"
-                  style="width:140px;height:140px;border-radius:80px">
-                {% endif %}
-              </div>
-
-            </li>
-
-            <li>
-
-
-              <ul class="nav-second-level" style="
-    margin: 0;
-    padding: 0;
-    text-align: center;
-">
-
-                <li>
-                  <a href="#"><b>{{user.username|title}}</b></a>
-                </li>
-                <li>
-                  {% ratings user %}
-                </li>
-                <li>
-
-                  <div id="target_div">
-                    {% if request.user != user and request.user.is_authenticated %}
-                    {% if request.user.email in followers_list %}
-                    <a class="follow_unfollow btn btn-default" name="{{ user }}">Unfollow</a>
-                    {% else %}
-                    <a class="follow_unfollow btn btn-default" name="{{ user }}">Follow</a>
-                    {% endif %}
-                    {% endif %}
-
-                    <div class="status">
-                      <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post">
-                        <input type="hidden" name="cmd" value="_xclick">
-                        <input type="hidden" name="business" value="{{ project.paypal|default:" coderbounty@gmail.com"
-                          }}">
-                        <input type="hidden" name="item_name" value="tip for {{ user.username }}">
-                        <input type="hidden" name="currency_code" value="USD">
-                        <button type="submit" class="btn btn-danger">
-                          <i class="fa fa-money fa-lg"></i> Send a tip
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-                </li>
-
-                <li>
-                  <a href="#"><b>About {{user.username|title}}</b></a>
-                  <p>{{user_details.description }}</p>
-                </li>
-
-
-              </ul>
-            </li>
-
-            <li>
-              <i data-feather="book"></i>
-              <span><b>Current Tasks</b></span>
-              <div id="sidebarContacts">
-                <ul class="nav-second-level">
-                  <li>
-                    <a href="#">345 Open Bugs</a>
-                  </li>
-
-                  <li>
-                    <a href="#">200 Closed Bugs</a>
-                  </li>
-
-
-                </ul>
-              </div>
-            </li>
-
-          </ul>
-
+    </style>
+    <!-- Begin page -->
+    <section>
+        {% include 'includes/user_sidenav.html' %}
+    </section>
+    <div class="overlay">
+        <div class="center">
+            <div class="dot-1"></div>
+            <div class="dot-2"></div>
+            <div class="dot-3"></div>
         </div>
-        <!-- End Sidebar -->
-
-        <div class="clearfix"></div>
-
-      </div>
-      <!-- Sidebar -left -->
-
     </div>
-    <!-- Left Sidebar End -->
-
-    <!-- ============================================================== -->
-    <!-- Start Page Content here -->
-    <!-- ============================================================== -->
-
-    <div class="content-page" style="
-    margin-top: 0px;
-">
-      <div class="content">
-
-        <!-- Start Content-->
-        <div class="container-fluid">
-
-          <!-- start page title -->
-          <div class="row">
-            <div class="col-12">
-              <div class="page-title-box">
-                <div class="page-title-right">
-                  <form class="form-inline">
-                    <div class="form-group">
-                      <div class="input-group input-group-sm">
-                        <input type="text" class="form-control border" id="dash-daterange">
-                      </div>
+    <div class="profile-body">
+        <div id="wrapper">
+            <!-- Topbar Start -->
+            <!-- end Topbar -->
+            <!-- ========== Left Sidebar Start ========== -->
+            <div class="left-side-menu">
+                <div class="h-100" data-simplebar>
+                    <!--- Sidemenu -->
+                    <div id="sidebar-menu" style=" margin-top: 50px; ">
+                        <ul id="side-menu">
+                            <li>
+                                <div style="width:150px;height:150px;border-radius:10px;margin-left:50px;">
+                                    {% if user.userprofile.avatar %}
+                                        <img src="{{ user.userprofile.avatar }}"
+                                             style="width:140px;
+                                                    height:140px;
+                                                    border-radius:80px">
+                                    {% else %}
+                                        <img src="https://www.jamf.com/jamf-nation/img/default-avatars/generic-user-purple.png"
+                                             style="width:140px;
+                                                    height:140px;
+                                                    border-radius:80px">
+                                    {% endif %}
+                                </div>
+                            </li>
+                            <li>
+                                <ul class="nav-second-level"
+                                    style="margin: 0;
+                                           padding: 0;
+                                           text-align: center">
+                                    <li>
+                                        <a href="#"><b>{{ user.username|title }}</b></a>
+                                    </li>
+                                    <li>{% ratings user %}</li>
+                                    <li>
+                                        <div id="target_div">
+                                            {% if request.user != user and request.user.is_authenticated %}
+                                                {% if request.user.email in followers_list %}
+                                                    <a class="follow_unfollow btn btn-default" name="{{ user }}">Unfollow</a>
+                                                {% else %}
+                                                    <a class="follow_unfollow btn btn-default" name="{{ user }}">Follow</a>
+                                                {% endif %}
+                                            {% endif %}
+                                            <div class="status">
+                                                <form name="_xclick"
+                                                      action="https://www.paypal.com/cgi-bin/webscr"
+                                                      method="post">
+                                                    <input type="hidden" name="cmd" value="_xclick">
+                                                    <input type="hidden"
+                                                           name="business"
+                                                           value="{{ project.paypal|default:" coderbounty@gmail.com" }}">
+                                                    <input type="hidden" name="item_name" value="tip for {{ user.username }}">
+                                                    <input type="hidden" name="currency_code" value="USD">
+                                                    <button type="submit" class="btn btn-danger">
+                                                        <i class="fa fa-money fa-lg"></i> Send a tip
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <a href="#"><b>About {{ user.username|title }}</b></a>
+                                        <p>{{ user_details.description }}</p>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>
+                                <i data-feather="book"></i>
+                                <span><b>Current Tasks</b></span>
+                                <div id="sidebarContacts">
+                                    <ul class="nav-second-level">
+                                        <li>
+                                            <a href="#">345 Open Bugs</a>
+                                        </li>
+                                        <li>
+                                            <a href="#">200 Closed Bugs</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </li>
+                        </ul>
                     </div>
-                    <a href="javascript: void(0);" class="btn btn-blue btn-sm ml-2">
-                      <i class="fa fa-filter"></i>
-                    </a>
-                  </form>
+                    <!-- End Sidebar -->
+                    <div class="clearfix"></div>
                 </div>
-              </div>
+                <!-- Sidebar -left -->
             </div>
-          </div>
-          <!-- end page title -->
-
-          <div class="row">
-            <div class="col-md-6 col-xl-3">
-              <div class="widget-rounded-circle card-box">
+            <!-- Left Sidebar End -->
+            <!-- ============================================================== -->
+            <!-- Start Page Content here -->
+            <!-- ============================================================== -->
+            <div class="content-page" style=" margin-top: 0px; ">
+                <div class="content">
+                    <!-- Start Content-->
+                    <div class="container-fluid">
+                        <!-- start page title -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="page-title-box">
+                                    <div class="page-title-right">
+                                        <form class="form-inline">
+                                            <div class="form-group">
+                                                <div class="input-group input-group-sm">
+                                                    <input type="text" class="form-control border" id="dash-daterange">
+                                                </div>
+                                            </div>
+                                            <a href="javascript: void(0);" class="btn btn-blue btn-sm ml-2">
+                                                <i class="fa fa-filter"></i>
+                                            </a>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- end page title -->
+                        <div class="row">
+                            <div class="col-md-6 col-xl-3">
+                                <div class="widget-rounded-circle card-box">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="avatar-lg rounded-circle bg-soft-primary border-primary border">
+                                                <i class="fa fa-heart font-22 avatar-title text-primary"></i>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="text-right">
+                                                <h3 class="mt-1">
+                                                    <span data-plugin="counterup">2450</span>
+                                                </h3>
+                                                <p class="text-muted mb-1 text-truncate">Top Bug Reported</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- end row-->
+                                </div>
+                                <!-- end widget-rounded-circle-->
+                            </div>
+                            <!-- end col-->
+                            <div class="col-md-6 col-xl-3">
+                                <div class="widget-rounded-circle card-box">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="avatar-lg rounded-circle bg-soft-success border-success border">
+                                                <i class="fa fa-shopping-cart font-22 avatar-title text-success"></i>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="text-right">
+                                                <h3 class="mt-1">
+                                                    <span data-plugin="counterup">719</span>
+                                                </h3>
+                                                <p class="text-muted mb-1 text-truncate">Total Bug Fixed</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- end row-->
+                                </div>
+                                <!-- end widget-rounded-circle-->
+                            </div>
+                            <!-- end col-->
+                            {% if user == request.user %}
+                                <div class="col-md-6 col-xl-3">
+                                    <div class="widget-rounded-circle card-box">
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <div class="avatar-lg rounded-circle bg-soft-success border-success border">
+                                                    <i class="fa fa-money font-22 avatar-title text-success"></i>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="text-right">
+                                                    <h3 class="mt-1">
+                                                        <span data-plugin="counterup">{{ wallet.current_balance }} $</span>
+                                                    </h3>
+                                                    <p class="text-muted mb-1 text-truncate">
+                                                        <button class="btn btn-default" id="addBtn">Add Money</button>
+                                                    </p>
+                                                    <p class="text-muted mb-1 text-truncate">
+                                                        <button class="btn btn-default" id="withDrawBtn">Withdraw Money</button>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- end row-->
+                                    </div>
+                                    <!-- end widget-rounded-circle-->
+                                </div>
+                                <!-- end col-->
+                            {% endif %}
+                        </div>
+                        <!-- end widget-rounded-circle-->
+                    </div ---->
+                    <!-- end col-->
+                    <!-- end col-->
+                </div>
+                <!-- end row-->
                 <div class="row">
-                  <div class="col-6">
-                    <div class="avatar-lg rounded-circle bg-soft-primary border-primary border">
-                      <i class="fa fa-heart font-22 avatar-title text-primary"></i>
+                    <div class="col-xl-6">
+                        <div class="card-box">
+                            <div class="dropdown float-right">
+                                <a href="#"
+                                   class="dropdown-toggle arrow-none card-drop"
+                                   data-toggle="dropdown"
+                                   aria-expanded="false">
+                                    <i class="fa fa-ellipsis-v"></i>
+                                </a>
+                            </div>
+                            <h4 class="header-title mb-3">Recent Activity</h4>
+                            <div class="table-responsive">
+                                <table class="table table-borderless table-nowrap table-hover table-centered m-0">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Url</th>
+                                            <th>Details</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if activities %}
+                                            {% for activity in activities %}
+                                                <tr>
+                                                    <td>
+                                                        <h5 class="m-0 font-weight-normal">
+                                                            <a href="/domain/{{ activity.domain_name }}">{{ activity.domain_name }}</a>
+                                                        </h5>
+                                                    </td>
+                                                    <td>
+                                                        <a href="{{ activity.get_absolute_url }}">Submitted a Bug Report {{ activity.created|timesince }} ago</a>
+                                                    </td>
+                                                    <td>
+                                                    {{ activity.status }}</a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                            {% if activities %}
+                                <a href="/all_activity?user={{ user.username }}"
+                                   class="btn btn-default btn-block">View All
+                                Activity by {{ user.username }}</a>
+                            {% else %}
+                                <div class="text-center">No Activity Yet!</div>
+                            {% endif %}
+                        </div>
+                        <!-- end .table-responsive-->
                     </div>
-                  </div>
-                  <div class="col-6">
-
-
-                    <div class="text-right">
-                      <h3 class="mt-1"><span data-plugin="counterup">2450</span></h3>
-                      <p class="text-muted mb-1 text-truncate">Top Bug Reported</p>
+                    <!-- end card-box-->
+                </div>
+                <!-- end col -->
+                <div class="col-xl-6">
+                    <div class="card-box">
+                        <div class="dropdown float-right">
+                            <a href="#"
+                               class="dropdown-toggle arrow-none card-drop"
+                               data-toggle="dropdown"
+                               aria-expanded="false">
+                                <i class="fa fa-ellipsis-v"></i>
+                            </a>
+                        </div>
+                        <h4 class="header-title mb-3"></h4>
+                        <div class="table-responsive">
+                            <table class="table table-borderless table-hover table-nowrap table-centered m-0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Trading For</th>
+                                        <th>Corelation With S & P -</th>
+                                        <th>P/- Ration</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <h5 class="m-0 font-weight-normal">2 Years</h5>
+                                        </td>
+                                        <td>0.1</td>
+                                        <td>2:1</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                  </div>
-                </div> <!-- end row-->
-              </div> <!-- end widget-rounded-circle-->
-            </div> <!-- end col-->
-
-            <div class="col-md-6 col-xl-3">
-              <div class="widget-rounded-circle card-box">
-                <div class="row">
-                  <div class="col-6">
-                    <div class="avatar-lg rounded-circle bg-soft-success border-success border">
-                      <i class="fa fa-shopping-cart font-22 avatar-title text-success"></i>
-                    </div>
-                  </div>
-
-
-
-                  <div class="col-6">
-                    <div class="text-right">
-                      <h3 class="mt-1"> <span data-plugin="counterup">719</span></h3>
-                      <p class="text-muted mb-1 text-truncate">Total Bug Fixed</p>
-                    </div>
-                  </div>
-                </div> <!-- end row-->
-              </div> <!-- end widget-rounded-circle-->
-            </div> <!-- end col-->
-
-            {% if user == request.user %}
-            <div class="col-md-6 col-xl-3">
-              <div class="widget-rounded-circle card-box">
-                <div class="row">
-                  <div class="col-6">
-                    <div class="avatar-lg rounded-circle bg-soft-success border-success border">
-                      <i class="fa fa-money font-22 avatar-title text-success"></i>
-                    </div>
-                  </div>
-
-
-
-                  <div class="col-6">
-                    <div class="text-right">
-                      <h3 class="mt-1"> <span data-plugin="counterup">{{wallet.current_balance}} $</span></h3>
-                      <p class="text-muted mb-1 text-truncate"><button class="btn btn-default" id="addBtn">
-                          Add Money</button></p>
-                      <p class="text-muted mb-1 text-truncate"><button class="btn btn-default" id="withDrawBtn">
-                          Withdraw Money</button></p>
-                    </div>
-                  </div>
-
-                </div> <!-- end row-->
-              </div> <!-- end widget-rounded-circle-->
-            </div> <!-- end col-->
-            {% endif %}
-
-          </div> <!-- end widget-rounded-circle-->
-          </div----> <!-- end col-->
-
-          <!-- end col-->
-        </div>
-        <!-- end row-->
-
-
-        <div class="row">
-          <div class="col-xl-6">
-            <div class="card-box">
-              <div class="dropdown float-right">
-                <a href="#" class="dropdown-toggle arrow-none card-drop" data-toggle="dropdown" aria-expanded="false">
-                  <i class="fa fa-ellipsis-v"></i>
-                </a>
-
-              </div>
-
-              <h4 class="header-title mb-3">Recent Activity</h4>
-
-              <div class="table-responsive">
-                <table class="table table-borderless table-nowrap table-hover table-centered m-0">
-
-                  <thead class="thead-light">
-                    <tr>
-                      <th>Url</th>
-                      <th>Details</th>
-
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% if activities %}
-                    {% for activity in activities %}
-                    <tr>
-                      <td>
-                        <h5 class="m-0 font-weight-normal"><a href="/domain/{{ activity.domain_name }}">
-                            {{ activity.domain_name }}</a></h5>
-                      </td>
-
-                      <td>
-                        <a href="{{ activity.get_absolute_url }}">
-                          Submitted a Bug Report {{ activity.created|timesince }} ago
-                        </a>
-                      </td>
-
-
-
-                      <td>
-                        {{ activity.status }}</a>
-                      </td>
-                    </tr>
-                    {% endfor %}
-                    {% endif %}
-
-
-
-
-
-
-                  </tbody>
-                </table>
-
-
-                {% if activities %}
-                <a href="/all_activity?user={{ user.username }}" class="btn btn-default btn-block">View All
-                  Activity by {{ user.username }}</a>
-                {% else %}
-                <div class="text-center">No Activity Yet!</div>
-                {% endif %}
-              </div> <!-- end .table-responsive-->
-            </div> <!-- end card-box-->
-          </div> <!-- end col -->
-          <div class="col-xl-6">
-            <div class="card-box">
-              <div class="dropdown float-right">
-                <a href="#" class="dropdown-toggle arrow-none card-drop" data-toggle="dropdown" aria-expanded="false">
-                  <i class="fa fa-ellipsis-v"></i>
-                </a>
-
-              </div>
-
-              <h4 class="header-title mb-3"></h4>
-
-              <div class="table-responsive">
-                <table class="table table-borderless table-hover table-nowrap table-centered m-0">
-
-                  <thead class="thead-light">
-                    <tr>
-                      <th>Trading For</th>
-                      <th>Corelation With S & P - </th>
-                      <th>P/- Ration</th>
-
-
-                    </tr>
-                  </thead>
-                  <tbody>
-
-                    <tr>
-
-
-                      <td>
-                        <h5 class="m-0 font-weight-normal">2 Years</h5>
-
-                      </td>
-
-                      <td>
-                        0.1
-                      </td>
-
-                      <td>
-                        2:1
-                      </td>
-
-
-
-
-                    </tr>
-
-
-
-
-
-
-                  </tbody>
-                </table>
-              </div>
+                </div>
+                <!-- end col -->
             </div>
-          </div> <!-- end col -->
-
-
+            <!-- end row -->
         </div>
-        <!-- end row -->
-
-      </div> <!-- container -->
-
-    </div> <!-- content -->
-
-  </div>
+        <!-- container -->
+    </div>
+    <!-- content -->
+</div>
 </div>
 {% if user == request.user %}
-<div id="WithdrawModal" class="modal">
-
-  <!-- Modal content -->
-  <div class="wallet-modal-content">
-    <div class="wallet-modal-header">
-      <span class="close">&times;</span>
-      <h2>Withdraw Money</h2>
-    </div>
-    <form id="withdraw">
-      {% csrf_token %}
-      <div class="wallet-modal-body">
-        <input type="number" name="amount" id="amount" min="1" max="{{wallet.current_balance}}" step="any" />
-      </div>
-      <div class="wallet-modal-footer">
-        <input type="submit" class="btn btn-primary withdraw_button btn_5 btn-lg btn-danger" value="Withdraw" />
-      </div>
-    </form>
-  </div>
-
-
-</div>
-<div id="AddModal" class="modal">
-
-  <!-- Modal content -->
-  <div class="wallet-modal-content">
-    <div class="wallet-modal-header">
-      <span class="close">&times;</span>
-      <h2>Add Money</h2>
-    </div>
-    <script src="https://js.stripe.com/v3/"></script>
-
-    <form class="col-md-6" style="
-    left: 50%;
-    transform: translateX(-50%);" id="payment-form">
-      {% csrf_token %}
-      <label for="amount">
-        Enter Amount
-      </label>
-      <input type="number" name="amount" id="amount" min="1" step="any" />
-      <div class="">
-        <label for="card-element">
-          Credit or debit card
-        </label>
-        <div id="card-element">
-          <!-- A Stripe Element will be inserted here. -->
+    <div id="WithdrawModal" class="modal">
+        <!-- Modal content -->
+        <div class="wallet-modal-content">
+            <div class="wallet-modal-header">
+                <span class="close">&times;</span>
+                <h2>Withdraw Money</h2>
+            </div>
+            <form id="withdraw">
+                {% csrf_token %}
+                <div class="wallet-modal-body">
+                    <input type="number"
+                           name="amount"
+                           id="amount"
+                           min="1"
+                           max="{{ wallet.current_balance }}"
+                           step="any" />
+                </div>
+                <div class="wallet-modal-footer">
+                    <input type="submit"
+                           class="btn btn-primary withdraw_button btn_5 btn-lg btn-danger"
+                           value="Withdraw" />
+                </div>
+            </form>
         </div>
-
-        <!-- Used to display form errors. -->
-        <div id="card-errors" role="alert"></div>
-      </div>
-
-      <button>Submit Payment</button>
-    </form>
-  </div>
-
-
-</div>
+    </div>
+    <div id="AddModal" class="modal">
+        <!-- Modal content -->
+        <div class="wallet-modal-content">
+            <div class="wallet-modal-header">
+                <span class="close">&times;</span>
+                <h2>Add Money</h2>
+            </div>
+            <script src="https://js.stripe.com/v3/"></script>
+            <form class="col-md-6"
+                  style="left: 50%;
+                         transform: translateX(-50%)"
+                  id="payment-form">
+                {% csrf_token %}
+                <label for="amount">Enter Amount</label>
+                <input type="number" name="amount" id="amount" min="1" step="any" />
+                <div class="">
+                    <label for="card-element">Credit or debit card</label>
+                    <div id="card-element">
+                        <!-- A Stripe Element will be inserted here. -->
+                    </div>
+                    <!-- Used to display form errors. -->
+                    <div id="card-errors" role="alert"></div>
+                </div>
+                <button>Submit Payment</button>
+            </form>
+        </div>
+    </div>
 {% endif %}
 </div>
 <script type="text/javascript">
