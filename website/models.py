@@ -378,14 +378,13 @@ class Points(models.Model):
 
 
 class InviteFriend(models.Model):
-    sender = models.ForeignKey(User, on_delete=models.CASCADE)
-    recipient = models.EmailField()
-    sent = models.DateTimeField(auto_now_add=True, db_index=True)
+    sender = models.ForeignKey(User, related_name='sent_invites', on_delete=models.CASCADE)
+    recipients = models.ManyToManyField(User, related_name='received_invites', blank=True)
+    referral_code = models.CharField(max_length=100, default=uuid.uuid4, editable=False)
+    point_by_referral = models.IntegerField(default=0)
 
-    class Meta:
-        ordering = ("-sent",)
-        verbose_name = "invitation"
-        verbose_name_plural = "invitations"
+    def __str__(self):
+        return f"Invite from {self.sender}"
 
 
 def user_images_path(instance, filename):
