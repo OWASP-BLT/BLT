@@ -2,15 +2,7 @@ from captcha.fields import CaptchaField
 from django import forms
 from mdeditor.fields import MDTextFormField
 
-from .models import InviteFriend, UserProfile
-
-
-class FormInviteFriend(forms.ModelForm):
-    class Meta:
-        model = InviteFriend
-        fields = ["recipient"]
-        widgets = {"recipient": forms.TextInput(attrs={"class": "form-control"})}
-
+from .models import UserProfile
 
 class UserProfileForm(forms.ModelForm):
     class Meta:
