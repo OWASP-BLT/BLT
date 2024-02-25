@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0082_issue_reporter_ip_address"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
