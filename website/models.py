@@ -1,8 +1,8 @@
 import os
 import uuid
+import django.db.models.deletion
 from decimal import Decimal
 from urllib.parse import urlparse
-import django.db.models.deletion
 import requests
 from annoying.fields import AutoOneToOneField
 from captcha.fields import CaptchaField
