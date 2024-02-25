@@ -14,10 +14,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from .models import Issue, IssueScreenshot
 
-from unittest.mock import patch
-from django.urls import reverse
-from .views import GoogleLogin, GithubLogin
 from django.test import RequestFactory
+from django.urls import reverse
+from .views import GoogleLogin,GithubLogin
+from unittest.mock import patch,MagicMock
 
 os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 
@@ -162,18 +162,18 @@ class TestGoogleLogin(unittest.TestCase):
         request.session = {}
         view.request = request
 
-       
+
         def mock_reverse(url_name):
             if url_name == "google_callback":
                 return "http://example.com/accounts/google/login/callback/"
             else:
                 raise ValueError("Unexpected URL name")
 
-       
+
         def mock_build_absolute_uri(uri):
             return "http://example.com" + uri
 
-        
+
         with patch("django.urls.reverse", side_effect=mock_reverse):
             with patch("django.http.HttpRequest.build_absolute_uri", side_effect=mock_build_absolute_uri):
                 callback_url = view.callback_url
@@ -193,18 +193,18 @@ class TestGithubLogin(unittest.TestCase):
         request.session = {}
         view.request = request
 
-       
+
         def mock_reverse(url_name):
             if url_name == "github_callback":
                 return "http://example.com/accounts/github/login/callback/"
             else:
                 raise ValueError("Unexpected URL name")
 
-       
+
         def mock_build_absolute_uri(uri):
             return "http://example.com" + uri
 
-        
+
         with patch("django.urls.reverse", side_effect=mock_reverse):
             with patch("django.http.HttpRequest.build_absolute_uri", side_effect=mock_build_absolute_uri):
                 callback_url = view.callback_url
