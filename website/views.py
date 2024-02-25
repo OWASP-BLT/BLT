@@ -81,7 +81,7 @@ from website.models import (
     Company,
     IssueScreenshot
 )
-from .forms import FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm, QuickIssueForm
+from .forms import UserProfileForm, HuntForm, CaptchaForm, QuickIssueForm
 
 from decimal import Decimal
 from django.conf import settings
@@ -90,6 +90,8 @@ from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.http import HttpRequest
 from django.utils.timezone import now
+from django.contrib.sites.shortcuts import get_current_site
+from allauth.account.signals import user_signed_up
 
 def is_valid_https_url(url):
     validate = URLValidator(schemes=['https'])  # Only allow HTTPS URLs
@@ -2058,47 +2060,6 @@ def assign_issue_to_user(request, user, **kwargs):
         assigner.request = request
         assigner.process_issue(user, issue, created, domain)
 
-
-class CreateInviteFriend(CreateView):
-    template_name = "invite_friend.html"
-    model = InviteFriend
-    form_class = FormInviteFriend
-    success_url = reverse_lazy("invite_friend")
-
-    def form_valid(self, form):
-        from django.conf import settings
-        from django.contrib.sites.shortcuts import get_current_site
-
-        instance = form.save(commit=False)
-        instance.sender = self.request.user
-        instance.save()
-
-        site = get_current_site(self.request)
-
-        mail_status = send_mail(
-            "Inivtation to {site} from {user}".format(
-                site=site.name, user=self.request.user.username
-            ),
-            "You have been invited by {user} to join {site} community.".format(
-                user=self.request.user.username, site=site.name
-            ),
-            settings.DEFAULT_FROM_EMAIL,
-            [instance.recipient],
-        )
-
-        if (
-            mail_status
-            and InviteFriend.objects.filter(sender=self.request.user).count() == 2
-        ):
-            Points.objects.create(user=self.request.user, score=1)
-            InviteFriend.objects.filter(sender=self.request.user).delete()
-
-        messages.success(
-            self.request,
-            "An email has been sent to your friend. Keep inviting your friends and get points!",
-        )
-        return HttpResponseRedirect(self.success_url)
-
 @login_required(login_url="/accounts/login")
 def follow_user(request, user):
     if request.method == "GET":
@@ -3735,6 +3696,47 @@ class IssueView2(DetailView):
 
         return context
         
+@receiver(user_signed_up)
+def handle_user_signup(request, user, **kwargs):
+    referral_token = request.session.get('ref')
+    if referral_token:
+        try:
+            invite = InviteFriend.objects.get(referral_code=referral_token)
+            invite.recipients.add(user)
+            invite.point_by_referral += 2
+            invite.save()
+            reward_sender_with_points(invite.sender)
+            del request.session['ref']
+        except InviteFriend.DoesNotExist:
+            pass
+
+def reward_sender_with_points(sender):
+    # Create or update points for the sender
+    points, created = Points.objects.get_or_create(user=sender, defaults={'score': 0})
+    points.score += 2  # Reward 2 points for each successful referral signup
+    points.save()
+
+def referral_signup(request):
+    referral_token = request.GET.get('ref')
+    # check the referral token is present on invitefriend model or not and if present then set the referral token in the session
+    if referral_token:
+        try:
+            invite = InviteFriend.objects.get(referral_code=referral_token)
+            request.session['ref'] = referral_token
+        except InviteFriend.DoesNotExist:
+            messages.error(request, "Invalid referral token")
+            return redirect('account_signup')
+    return redirect('account_signup')
+
+
+def invite_friend(request):
+    current_site = get_current_site(request)
+    referral_code, created = InviteFriend.objects.get_or_create(sender=request.user)
+    referral_link = f"https://{current_site.domain}/referral/?ref={referral_code.referral_code}"
+    context = {
+        'referral_link': referral_link,
+    }
+    return render(request, 'invite_friend.html', context)
 
 # class CreateIssue(CronJobBase):
 #     RUN_EVERY_MINS = 1
