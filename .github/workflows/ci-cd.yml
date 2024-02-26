@@ -68,6 +68,8 @@ jobs:
           cache: 'poetry'
       - name: Install dependencies
         run: poetry install
+      - name: Install djlint
+        run: pip install djlint      
       - name: Linting company templates directory
         run: djlint --lint company/templates/
       - name: Linting website templates directory
