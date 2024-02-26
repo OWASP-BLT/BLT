@@ -1,22 +1,30 @@
 {% extends "base.html" %}
+{% block title %} invite friend {% endblock title %}
 {% block content %}
-    <form action="{% url 'invite_friend' %}" method="post" class="form-inline">
-        {% csrf_token %}
-        <div class="row">
-            {% for error in form.non_field_errors %}<div class="col-lg-6">{{ error }}</div>{% endfor %}
-        </div>
-        <div class="row">
-            <div class="col-lg-10">
-                {% if form.recipient.errors %}<div class="alert alert-danger">{{ form.recipient.errors }}</div>{% endif %}
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-10">
-                <h3 class="page-header">Invite 2 friends and get 1 point!</h3>
-                <label>Email:</label>
-                {{ form.recipient }}
-                <button type="submit" class="btn btn-danger text-black">Invite</button>
-            </div>
-        </div>
-    </form>
+{% include "includes/sidenav.html" %} 
+<div  class="mx-auto my-12 p-6  rounded-lg shadow-xl max-w-3xl">
+
+    <div class="mb-4">
+        <label for="recipient" class="block text-gray-700 text-2xl font-bold mb-2">Share & Earn</label>
+        <input class="form-control" type="text" value="{{ referral_link }}" id="referralLink" readonly>
+        <button onclick="copyReferralLink()" class="mt-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Copy</button> <span> or </span>
+            <a href="mailto:?subject=Join Me on BLT to Discover and Report Bugs!&body=Hi there!%0D%0A%0D%0AI've been using BLT, a platform where we can discover and report bugs across various applications and websites. It's been an exciting journey, and I believe you too can contribute significantly and benefit from it.%0D%0A%0D%0ABLT allows us to:%0D%0A- Explore and report bugs.%0D%0A- Earn rewards and recognition for our contributions.%0D%0A- Join a community of like-minded individuals passionate about improving software quality.%0D%0A%0D%0AI thought it would be something you're interested in exploring. You can sign up using the link below and start your journey with BLT today!%0D%0A%0D%0A{{ referral_link|urlencode }}%0D%0A%0D%0ALooking forward to seeing you on BLT and tackling challenges together.%0D%0A%0D%0ABest,%0D%0A{{ user.username|urlencode }}"><button class="inline-block bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg focus:outline-none focus:shadow-outline transition duration-150 ease-in-out"><i class="fas fa-envelope mr-2"></i>Send Mail</button></a>
+    </div>
+    <div class="flex items-center justify-between">
+        <p class="inline-block align-baseline font-bold text-base text-red-500 hover:text-red-800">
+            Invite a friend to join the site and earn 2 points!
+        </p>
+    </div>
+</div>
+{% endblock content %}
+{% block after_js %}
+<script>
+    function copyReferralLink() {
+        var copyText = document.getElementById("referralLink");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value);
+        alert("Copied to clipboard: " + copyText.value);
+    }
+</script>
 {% endblock %}
