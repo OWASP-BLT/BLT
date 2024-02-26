@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0082_issue_reporter_ip_address"),
         ("website", "0084_remove_issue_viewer_issue_viewer"),

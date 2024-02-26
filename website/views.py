@@ -33,6 +33,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import serializers
@@ -65,10 +66,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import DetailView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
-from django.core import serializers
-from django.conf import settings
-from django.contrib.auth.mixins import UserPassesTestMixin , LoginRequiredMixin
-from user_agents import parse
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
@@ -87,20 +84,15 @@ from website.models import (
     IssueScreenshot,
     Payment,
     Points,
-    Subscription,
-    Company,
-    IssueScreenshot,
     RequestIssueAccess,
+    Subscription,
     UserProfile,
     Wallet,
     Winner,
 )
 
-from .decorator import (
-    private_access_check
-)
-from .forms import CaptchaForm, FormInviteFriend, HuntForm, QuickIssueForm, UserProfileForm
-
+from .decorator import private_access_check
+from .forms import CaptchaForm, HuntForm, QuickIssueForm, UserProfileForm
 
 
 def is_valid_https_url(url):
@@ -353,131 +345,135 @@ def facebook_callback(request):
 
 
 class authenticate_handling(UserPassesTestMixin, LoginRequiredMixin):
-    def test_func(self , **kwargs):
-        pk  = self.kwargs.get('slug')
+    def test_func(self, **kwargs):
+        pk = self.kwargs.get("slug")
         issue = Issue.objects.get(id=pk)
         issue_user = issue.user
         issue_viewer = issue.viewer.all()
-        if issue.is_hidden :
-            if issue_user == self.request.user :
-                return True 
-            elif (self.request.user in issue_viewer ) :
-                return True 
-            else :
+        if issue.is_hidden:
+            if issue_user == self.request.user:
+                return True
+            elif self.request.user in issue_viewer:
+                return True
+            else:
                 return False
-        else :
+        else:
             return True
 
-@login_required(login_url="/accounts/login")
-@private_access_check()
-def private_issue(request , user_pk ):
-    activities = Issue.objects.filter(Q(user_id= user_pk)  & Q(is_hidden=True))
-    context = {
-        "activities" : activities , 
-        "user_pk": user_pk
-    }
-    return render(request , "private_issue.html" , context)
 
 @login_required(login_url="/accounts/login")
 @private_access_check()
-def grant_access(request , user_pk , issue_pk):
+def private_issue(request, user_pk):
+    activities = Issue.objects.filter(Q(user_id=user_pk) & Q(is_hidden=True))
+    context = {"activities": activities, "user_pk": user_pk}
+    return render(request, "private_issue.html", context)
+
+
+@login_required(login_url="/accounts/login")
+@private_access_check()
+def grant_access(request, user_pk, issue_pk):
     request_access = RequestIssueAccess.objects.filter(issue=issue_pk)
     issue = Issue.objects.get(id=issue_pk)
-    
-    if request.method=="POST":
+
+    if request.method == "POST":
         if request.POST.get("grant_access"):
-            if request.POST.get('select_user') != None:
-                selected_user = request.POST.get('select_user')
+            if request.POST.get("select_user") is not None:
+                selected_user = request.POST.get("select_user")
                 r = RequestIssueAccess.objects.get(user=selected_user)
-                try: 
+                try:
                     msg_plain = render_to_string(
-                        'email/granted_access.txt',
-                        {'name': r.user, 'issue_pk': issue_pk})
+                        "email/granted_access.txt", {"name": r.user, "issue_pk": issue_pk}
+                    )
                     msg_html = render_to_string(
-                        'email/granted_access.txt',
-                        {'name': r.user, 'issue_pk': issue_pk})
+                        "email/granted_access.txt", {"name": r.user, "issue_pk": issue_pk}
+                    )
 
-                    send_mail('Access Granted for Private Issue',
-                            msg_plain,
-                            settings.EMAIL_TO_STRING,
-                            [r.user.email],
-                            html_message=msg_html)
+                    send_mail(
+                        "Access Granted for Private Issue",
+                        msg_plain,
+                        settings.EMAIL_TO_STRING,
+                        [r.user.email],
+                        html_message=msg_html,
+                    )
 
-                    issue.viewer.add(selected_user) 
+                    issue.viewer.add(selected_user)
                     r.delete()
-                    messages.success( request , "Viewership Successfully granted")
+                    messages.success(request, "Viewership Successfully granted")
                     return redirect("/")
-                except Exception as e :
+                except Exception as e:
                     print(e)
-                    messages.error(request , "Email could not be sent. Please try again !")
+                    messages.error(request, "Email could not be sent. Please try again !")
             else:
-                messages.error(request , "Please select an option")
-        
-        elif request.POST.get("cancel"):
-            print(request.POST.get('select_viewer'))
+                messages.error(request, "Please select an option")
 
-            if request.POST.get('select_user') != None:
-                selected_user = request.POST.get('select_user')
+        elif request.POST.get("cancel"):
+            print(request.POST.get("select_viewer"))
+
+            if request.POST.get("select_user") is not None:
+                selected_user = request.POST.get("select_user")
                 request_access = RequestIssueAccess.objects.get(user=selected_user)
                 request_access.delete()
-                messages.success(request , "Request Declined")
-    
-            elif request.POST.get('select_viewer') != None:
-                selected_viewer = request.POST.get('select_viewer')
+                messages.success(request, "Request Declined")
+
+            elif request.POST.get("select_viewer") is not None:
+                selected_viewer = request.POST.get("select_viewer")
                 issue = Issue.objects.get(id=issue_pk)
                 issue.viewer.remove(selected_viewer)
-                messages.success(request , "Viewer Deleted")
+                messages.success(request, "Viewer Deleted")
 
-            else :
-                messages.error(request , "Please select an option")
+            else:
+                messages.error(request, "Please select an option")
 
-    context = {
-        "requesters" : request_access ,
-        "viewers": issue.viewer.all()
-    }
+    context = {"requesters": request_access, "viewers": issue.viewer.all()}
 
-    return render(request , "grant_access.html" , context)
+    return render(request, "grant_access.html", context)
+
 
 @login_required(login_url="/accounts/login")
-def request_access(request ,  issue_pk):
-
-    try :
+def request_access(request, issue_pk):
+    try:
         issue = Issue.objects.get(id=issue_pk)
-    except :
-        messages.error(request , "Issue Does not Exist")
+    except:
+        messages.error(request, "Issue Does not Exist")
         return redirect("/")
-    try :
-        RequestIssueAccess.objects.get(user=request.user , issue=issue_pk)
-        messages.success(request , "Request has ALready been sent Please Wait for approval")
+    try:
+        RequestIssueAccess.objects.get(user=request.user, issue=issue_pk)
+        messages.success(request, "Request has ALready been sent Please Wait for approval")
         return redirect("/")
     except:
-        if issue.is_hidden==True and (request.user not in issue.viewer.all()) :
-            if request.method == "POST" :
-                try: 
+        if issue.is_hidden is True and (request.user not in issue.viewer.all()):
+            if request.method == "POST":
+                try:
                     msg_plain = render_to_string(
-                        'email/request_access.txt',
-                        {'name': issue.user, 'requester': request.user, 'issue_pk': issue_pk})
+                        "email/request_access.txt",
+                        {"name": issue.user, "requester": request.user, "issue_pk": issue_pk},
+                    )
                     msg_html = render_to_string(
-                        'email/request_access.txt',
-                        {'name': issue.user, 'requester': request.user, 'issue_pk': issue_pk})
+                        "email/request_access.txt",
+                        {"name": issue.user, "requester": request.user, "issue_pk": issue_pk},
+                    )
 
-                    send_mail('Request Access for private issue',
-                            msg_plain,
-                            settings.EMAIL_TO_STRING,
-                            [issue.user.email],
-                            html_message=msg_html)
-                    messages.success( request , "Email request has been sent to owner")
+                    send_mail(
+                        "Request Access for private issue",
+                        msg_plain,
+                        settings.EMAIL_TO_STRING,
+                        [issue.user.email],
+                        html_message=msg_html,
+                    )
+                    messages.success(request, "Email request has been sent to owner")
                     message = request.POST.get("text-box")
                     print(message)
-                    request_access = RequestIssueAccess(issue = issue , user = request.user , message = message )
+                    request_access = RequestIssueAccess(
+                        issue=issue, user=request.user, message=message
+                    )
                     request_access.save()
                     return redirect("/")
                 except:
-                    messages.error(request , "Email could not be sent. Please try again !")
-            else : 
-                return render(request , "request_access.html")
-        else :
-            return redirect('issue_view' , slug=int(issue_pk))
+                    messages.error(request, "Email could not be sent. Please try again !")
+            else:
+                return render(request, "request_access.html")
+        else:
+            return redirect("issue_view", slug=int(issue_pk))
 
 
 class FacebookLogin(SocialLoginView):
@@ -1197,13 +1193,9 @@ class UserProfileDetailView(DetailView):
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
         )[0:10]
         context["profile_form"] = UserProfileForm()
-        context["total_open"] = Issue.objects.filter(
-            user=self.object, status="open"
-        ).count()
-        context["total_closed"] = Issue.objects.filter(
-            user=self.object, status="closed"
-        ).count()
-        context["private_issue"] = Issue.objects.filter(user=self.object , is_hidden=True).count()
+        context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
+        context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
+        context["private_issue"] = Issue.objects.filter(user=self.object, is_hidden=True).count()
         context["current_month"] = datetime.now().month
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -1240,8 +1232,8 @@ class UserProfileDetailView(DetailView):
             str(prof.user.email) for prof in user.userprofile.follower.all()
         ]
         context["bookmarks"] = user.userprofile.issue_saved.all()
-        context['issues_hidden'] = "checked" if user.userprofile.issues_hidden else "!checked"
-        context['user_pk'] = user.id
+        context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
+        context["user_pk"] = user.id
         return context
 
     @method_decorator(login_required)
@@ -1941,8 +1933,8 @@ class HuntCreate(CreateView):
             )
         return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HH7MNY6KJGZFW"
 
-      
-class IssueView(authenticate_handling ,DetailView):
+
+class IssueView(authenticate_handling, DetailView):
     model = Issue
     slug_field = "id"
     template_name = "issue.html"
@@ -2016,10 +2008,10 @@ class IssueView(authenticate_handling ,DetailView):
 
         return context
 
-    def handle_no_permission(self) :
-        try :
-            return super(IssueView2 , self).handle_no_permission()
-        except :
+    def handle_no_permission(self):
+        try:
+            return super(IssueView2, self).handle_no_permission()
+        except:
             return redirect("request_access/")
 
 
@@ -3727,7 +3719,7 @@ def subscribe_to_domains(request, pk):
         return JsonResponse("SUBSCRIBED", safe=False)
 
 
-class IssueView2(authenticate_handling , DetailView):
+class IssueView2(authenticate_handling, DetailView):
     model = Issue
     slug_field = "id"
     template_name = "issue2.html"
@@ -3813,12 +3805,13 @@ class IssueView2(authenticate_handling , DetailView):
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
 
         return context
-        
-    def handle_no_permission(self) :
-        try :
-            return super(IssueView2 , self).handle_no_permission()
-        except :
+
+    def handle_no_permission(self):
+        try:
+            return super(IssueView2, self).handle_no_permission()
+        except:
             return redirect("request_access/")
+
 
 @receiver(user_signed_up)
 def handle_user_signup(request, user, **kwargs):

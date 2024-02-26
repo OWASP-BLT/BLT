@@ -71,12 +71,8 @@ from website.views import (
     flag_issue2,
     github_callback,
     google_callback,
-    sponsor_view,
-    request_access,
-    grant_access,
-    DomainListView,
     like_issue2,
-    subscribe_to_domains
+    subscribe_to_domains,
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
@@ -288,7 +284,7 @@ urlpatterns = [
     ),
     # delete_comment
     path("issue2/comment/delete/", website.views.delete_comment, name="delete_comment"),
-    re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),    
+    re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
     re_path(r"^issue2/(?P<slug>\w+)/$", IssueView2.as_view(), name="issue_view2"),
     re_path(r"^follow/(?P<user>[^/]+)/", website.views.follow_user, name="follow_user"),
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
@@ -416,14 +412,26 @@ urlpatterns = [
     re_path(r"^ratings/", include("star_ratings.urls", namespace="ratings")),
     path("robots.txt", website.views.robots_txt),
     path("ads.txt", website.views.ads_txt),
-    re_path(r"^contributors/$",contributors_view,name="contributors"),
-    path("company/",include("company.urls")),
-    path("sponsor/",website.views.sponsor_view, name="sponsor"),
-    path("issue/<int:issue_pk>/request_access/" , website.views.request_access , name="issue_request_access"),
-    path("issue2/<int:issue_pk>/request_access/" , website.views.request_access , name="issue_request_access"),
-    path("private/<int:user_pk>/issue/" , website.views.private_issue , name="private_issue"),
-    path("private/<int:user_pk>/issue/<int:issue_pk>/grant_access/" , website.views.grant_access , name="grant_access"),
-    path("companies/", DomainListView.as_view() , name="domain_list")
+    re_path(r"^contributors/$", contributors_view, name="contributors"),
+    path("company/", include("company.urls")),
+    path("sponsor/", website.views.sponsor_view, name="sponsor"),
+    path(
+        "issue/<int:issue_pk>/request_access/",
+        website.views.request_access,
+        name="issue_request_access",
+    ),
+    path(
+        "issue2/<int:issue_pk>/request_access/",
+        website.views.request_access,
+        name="issue_request_access",
+    ),
+    path("private/<int:user_pk>/issue/", website.views.private_issue, name="private_issue"),
+    path(
+        "private/<int:user_pk>/issue/<int:issue_pk>/grant_access/",
+        website.views.grant_access,
+        name="grant_access",
+    ),
+    path("companies/", DomainListView.as_view(), name="domain_list"),
 ]
 
 if settings.DEBUG:

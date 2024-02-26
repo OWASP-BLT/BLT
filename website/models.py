@@ -250,9 +250,10 @@ class Issue(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     is_hidden = models.BooleanField(default=False)
-    rewarded = models.PositiveIntegerField(default=0) # money rewarded by the company
-    viewer = models.ManyToManyField(User , null=True , blank=True , related_name="viewer")
+    rewarded = models.PositiveIntegerField(default=0)  # money rewarded by the company
+    viewer = models.ManyToManyField(User, null=True, blank=True, related_name="viewer")
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
+
     def __unicode__(self):
         return self.description
 
@@ -289,7 +290,7 @@ class Issue(models.Model):
             + issue_link
         )
         return msg
-    
+
     def get_ocr(self):
         if self.ocr:
             return self.ocr
@@ -313,12 +314,12 @@ class Issue(models.Model):
 
     class Meta:
         ordering = ["-created"]
-    
+
 
 class RequestIssueAccess(models.Model):
-    issue = models.ForeignKey(Issue, null=True , blank=True , on_delete= models.CASCADE)
-    user = models.ForeignKey(User , null=True , blank=True , on_delete=models.CASCADE)
-    message = models.CharField(max_length=100 , null=True , blank = True)
+    issue = models.ForeignKey(Issue, null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    message = models.CharField(max_length=100, null=True, blank=True)
 
 
 class IssueScreenshot(models.Model):

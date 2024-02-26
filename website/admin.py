@@ -14,15 +14,11 @@ from website.models import (
     IssueScreenshot,
     Payment,
     Points,
-    Subscription,
-    CompanyAdmin,
-    Company,
-    IssueScreenshot,
-    HuntPrize,
     RequestIssueAccess,
+    Subscription,
     UserProfile,
     Wallet,
-    Winner
+    Winner,
 )
 
 
