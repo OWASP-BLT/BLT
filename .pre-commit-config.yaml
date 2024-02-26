@@ -29,4 +29,4 @@ repos:
     rev: v1.34.1
     hooks:
       - id: djlint
-        args: [--fix, --reformat, --lint, --check-templates]
+        args: [--reformat, --lint, --check-templates]
