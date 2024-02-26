@@ -35,7 +35,6 @@ from website.views import (
     AllIssuesView,
     CompanySettings,
     CreateHunt,
-    CreateInviteFriend,
     CustomObtainAuthToken,
     DomainDetailView,
     DomainList,
@@ -108,6 +107,8 @@ handler404 = "website.views.handler404"
 handler500 = "website.views.handler500"
 
 urlpatterns = [
+    path("invite-friend/", website.views.invite_friend, name="invite_friend"),
+    path("referral/", website.views.referral_signup, name="referral_signup"),
     path("captcha/", include("captcha.urls")),
     re_path(r"^auth/registration/", include("dj_rest_auth.registration.urls")),
     path(
@@ -329,13 +330,15 @@ urlpatterns = [
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
     re_path(r"^hunts/$", ListHunts.as_view(), name="hunts"),
     re_path(r"^invite/$", InviteCreate.as_view(template_name="invite.html")),
-    re_path(
-        r"^invite-friend/$",
-        login_required(CreateInviteFriend.as_view()),
-        name="invite_friend",
-    ),
     re_path(r"^terms/$", TemplateView.as_view(template_name="terms.html"), name="terms"),
     re_path(r"^about/$", TemplateView.as_view(template_name="about.html")),
+    re_path(r"^teams/$", TemplateView.as_view(template_name="teams.html")),
+    re_path(r"^projects/$", TemplateView.as_view(template_name="projects.html")),
+    re_path(r"^apps/$", TemplateView.as_view(template_name="apps.html")),
+    re_path(r"^deletions/$", TemplateView.as_view(template_name="deletions.html")),
+    re_path(r"^trademarks/$", TemplateView.as_view(template_name="trademarks.html")),
+    re_path(r"^bacon/$", TemplateView.as_view(template_name="bacon.html")),
+    re_path(r"^bltv/$", TemplateView.as_view(template_name="bltv.html")),
     re_path(r"^privacypolicy/$", TemplateView.as_view(template_name="privacy.html")),
     re_path(r"^stats/$", StatsDetailView.as_view(), name="stats"),
     re_path(r"^favicon\.ico$", favicon_view),
