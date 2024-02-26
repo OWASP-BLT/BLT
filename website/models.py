@@ -289,7 +289,7 @@ class Issue(models.Model):
             + issue_link
         )
         return msg
-
+    
     def get_ocr(self):
         if self.ocr:
             return self.ocr
