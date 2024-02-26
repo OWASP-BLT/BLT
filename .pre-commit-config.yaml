@@ -24,3 +24,9 @@ repos:
       - id: ruff
         args: [--fix]
       - id: ruff-format
+
+  - repo: https://github.com/djlint/djLint
+    rev: v0.5.4
+    hooks:
+      - id: djlint
+        args: [--fix, --reformat, --lint, --check-templates]
