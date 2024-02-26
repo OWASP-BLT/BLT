@@ -10,7 +10,7 @@
                 {% csrf_token %}
                 <div class="modal-content">
                     <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <button type="button" class="close" data-dismiss="modal">×</button>
                         <h4 class="modal-title">Edit Company</h4>
                     </div>
                     <div class="modal-body">
@@ -77,6 +77,7 @@
                                 </label>
                             {% else %}
                                 <input name="verify" type="checkbox">
+                            <label class="checkbox-inline col-sm-12">
                                 Verify
                             </label>
                         {% endif %}

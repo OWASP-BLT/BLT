@@ -34,9 +34,9 @@
                         <div class="list-group-item">
                             {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
                                 <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
-                                     height="50px">
+                                     height="50px" width="50px" alt="{{ usr.user.username }}">
                             {% else %}
-                                <img src="{% gravatar_url usr.user.email 50 %}">
+                                <img src="{% gravatar_url usr.user.email 50 %}" height="50px" width="50px" alt="{{ usr.user.username }}">
                             {% endif %}
                             <a href="/profile/{{ usr.user.username }}">{{ usr.user.username }}</a>
                         </div>

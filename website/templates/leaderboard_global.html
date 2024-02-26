@@ -57,33 +57,28 @@
 {% endblock %}
 {% block content %}
     {% include 'includes/sidenav.html' %}
-    <div class="row container-min-height"
-         style="display:flex;
-                justify-content:center">
-        <div class="col-lg-6"
-             style="display: flex;
-                    justify-content: center;
-                    align-items: center">
+    <div class="row container-min-height flex justify-center">
+        <div class="col-lg-6 flex justify-center items-center">
             <h1 class="page-header">Global Leaderboard</h1>
         </div>
     </div>
-    <div class="row" style="display:flex;justify-content:center">
+    <div class="row flex justify-center">
         <div class="col-md-8">
             <div class="list-group">
                 {% if not leaderboard %}
-                    <p style="color: red;">No data for this month</p>
+                    <p class="text-red-900">No data for this month</p>
                 {% else %}
                     {% for leader in leaderboard %}
                         <div class="list-group-item">
                             {% if leader.userprofile.avatar %}
                                 <img src="{{ leader.userprofile.avatar }}"
-                                     class="img-responsive img-thumbnail profileimage">
+                                     class="img-responsive img-thumbnail profileimage" alt="{{ leader.username }}" width="50px" height="50px">
                             {% elif leader.socialaccount_set.all.0.get_avatar_url %}
                                 <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
-                                     class="img-responsive img-thumbnail profileimage">
+                                     class="img-responsive img-thumbnail profileimage" alt="username" width="50px" height="50px">
                             {% else %}
                                 <img src="{% gravatar_url leader.email 50 %}"
-                                     class="img-responsive img-thumbnail profileimage">
+                                     class="img-responsive img-thumbnail profileimage" alt="username" width="50px" height="50px">
                             {% endif %}
                             <a href="/profile/{{ leader.username }}">{{ leader.username }}</a>
                             <span class="pull-right badge">{{ leader.total_score }} Points</span>

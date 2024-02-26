@@ -10,11 +10,9 @@ f
     {% load custom_tags %}
     <script src="{% static 'js/jquery.validate.js' %}"></script>
     <script src="{% static 'js/activity.js' %}"></script>
-    <div class="row"
+    <div class="row mt-[60px] ml-[10px]"
          data-intro="View latest activities here."
-         data-step="3"
-         style="margin-left: 10px;
-                margin-top: 60px">
+         data-step="3">
         <div class="col-md-8">
             <h1 class="page-sub-header">{% trans "Latest activity" %}</h1>
             <div class="list-group">
@@ -43,18 +41,15 @@ f
                 <div class="list-group">
                     {% if leaderboard %}
                         {% for leader in leaderboard %}
-                            <div class="list-group-item activity-strip flex overflow-hidden"
-                                 style="height: 80px;
-                                        display:flex;
-                                        border: 1px solid #DDDDDD">
+                            <div class="list-group-item activity-strip flex overflow-hidden h-[80px] border-1 border-gray-300">
                                 <span class="h-full w-1/3 flex justify-center items-center">
                                     {% if leader.userprofile.avatar %}
-                                        <img src="{{ leader.userprofile.avatar }}" class="profileimage">
+                                        <img src="{{ leader.userprofile.avatar }}" class="profileimage" alt="Profile Image" width="50" height="50">
                                     {% elif user.socialaccount_set.all.0.get_avatar_url %}
                                         <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
-                                             class="profileimage">
+                                             class="profileimage" alt="Profile Image" width="50" height="50">
                                     {% else %}
-                                        <img src="{% gravatar_url leader.email 50 %}" class="profileimage">
+                                        <img src="{% gravatar_url leader.email 50 %}" class="profileimage" alt="Profile Image" width="50" height="50">
                                     {% endif %}
                                 </span>
                                 <span class="h-full w-2/3 flex flex-col items-center justify-center  overflow-hidden">
@@ -227,7 +222,7 @@ f
                         <div class="w-[250px] h-[200px] p-5">
                             <img src="{{ server_url }}/media/{{ hunt.logo }}"
                                  class="w-full h-full object-fill"
-                                 alt="Bughunt Logo">
+                                 alt="Bughunt Logo" width="auto" height="auto">
                         </div>
                     </div>
                     <div class="flex flex-col w-[70%] h-full pt-7">

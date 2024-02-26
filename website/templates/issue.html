@@ -140,7 +140,7 @@
                         <i class="fa fa-eye"></i> {{ object.views }}
                     </span>
                 </span>
-                <div class="form form-inline" style="display:none">
+                <div class="form form-inline hidden">
                     {% csrf_token %}
                     <input type="text"
                            name="domain"
@@ -170,9 +170,7 @@
             <strong>Domain:</strong>
             <a href="{{ object.url }}" target="_new" class="issue-domain">{{ object.url }}</a>
             <div class="pull-right">
-                <div class="pull-right"
-                     style="margin-left: 5px;
-                            margin-bottom: 5px"
+                <div class="pull-right ml-[5px] mb-[5px]"
                      id="google_translate_element"></div>
                 <script type="text/javascript">
                 function googleTranslateElementInit() {
@@ -222,7 +220,7 @@
                                     <img src="{{ object.domain.get_logo }}"
                                          class="img-thumbnail"
                                          height="100"
-                                         width="100">
+                                         width="100" alt="{{ object.domain_title }}">
                                 </a>
                             </div>
                             <div class="col-xs-8">
@@ -252,20 +250,19 @@
                                             <img class="img-thumbnail"
                                                  height="100"
                                                  width="100"
-                                                 src="{{ object.user.socialaccount_set.all.0.get_avatar_url }}">
+                                                 src="{{ object.user.socialaccount_set.all.0.get_avatar_url }}" alt="{{ object.user.username }}">
                                         {% else %}
                                             <img class="img-thumbnail"
                                                  src="{% gravatar_url object.user.email 100 %}"
                                                  height="100"
-                                                 width="100">
+                                                 width="100" alt="{{ object.user.username }}">
                                         {% endif %}
                                     </a>
                                 {% else %}
-                                    <img class="img-thumbnail"
+                                    <img class="img-thumbnail img-responsive img-rounded"
                                          height="100"
                                          width="100"
-                                         src="{% static 'images/dummy-user.png' %}"
-                                         class="img-responsive img-rounded">
+                                         src="{% static 'images/dummy-user.png' %}" alt="User">
                                 {% endif %}
                             </div>
                             <div class="col-xs-8">
@@ -305,7 +302,7 @@
                                         <img src="{% static image_static %}"
                                              class="img-thumbnail"
                                              height="100"
-                                             width="100">
+                                             width="100" alt="browser">
                                     {% endwith %}
                                 {% endif %}
                             </div>
@@ -320,7 +317,7 @@
             </div>
             <div class="col-md-6">
                 <div class="panel panel-primary">
-                    <div class="panel-heading" style="height: 120px">
+                    <div class="panel-heading h-[120px]">
                         <div class="row">
                             <div class="col-xs-6">
                                 <div class="bug-info">
@@ -401,15 +398,13 @@
             <hr>
             {% if object.screenshot %}
                 <a href="{{ object.screenshot.url }}" data-lightbox="image">
-                    <img src="{{ object.screenshot.url }}" class="img-thumbnail">
+                    <img src="{{ object.screenshot.url }}" class="img-thumbnail" width="auto" height="auto" alt="screenshot">
                 </a>
             {% else %}
                 {% for screenshot in screenshots %}
                     <a href="{{ screenshot.image.url }}" data-lightbox="image">
                         <img src="{{ screenshot.image.url }}"
-                             class="img-thumbnail"
-                             style="margin-bottom: 10px !important;
-                                    border: 2px solid black">
+                             class="img-thumbnail mt-[10px] border-2 border-black" width="auto" height="auto" alt="screenshot">
                     </a>
                 {% endfor %}
             {% endif %}

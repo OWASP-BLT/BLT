@@ -176,7 +176,7 @@
                         {% if request.GET.hash %}
                         </br>
                         <img src="{{ MEDIA_URL }}uploads/{{ request.GET.hash }}.png"
-                             class="img-responsive img-thumbnail screenshot-hash">
+                             class="img-responsive img-thumbnail screenshot-hash" width="100%" height="100%" alt="screenshot">
                         <input type="hidden"
                                class="required"
                                name="screenshot-hash"
@@ -186,7 +186,7 @@
                         <span>
                             <input type="file"
                                    class="required"
-                                   id='${multipartFilePath}'
+                                   id="${multipartFilePath}"
                                    name="screenshot" />
                             <button class="btn btn-primary btn-block"
                                     data-intro="Upload a screenshot of the concerned page."
@@ -209,6 +209,7 @@
                     Report Bug <i class="fa fa-trophy" aria-hidden="true">+3</i>
                 </button>
             </div>
+          </div>
         </form>
         <table>
             {% if issue_list %}

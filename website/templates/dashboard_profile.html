@@ -1048,28 +1048,19 @@
             <div class="left-side-menu">
                 <div class="h-100" data-simplebar>
                     <!--- Sidemenu -->
-                    <div id="sidebar-menu" style=" margin-top: 50px; ">
+                    <div id="sidebar-menu" class="mt-[50px]">
                         <ul id="side-menu">
                             <li>
-                                <div style="width:150px;height:150px;border-radius:10px;margin-left:50px;">
+                                <div class="w-[150px] h-[150px] ml-[50px] rounded-xl">
                                     {% if user.userprofile.avatar %}
-                                        <img src="{{ user.userprofile.avatar }}"
-                                             style="width:140px;
-                                                    height:140px;
-                                                    border-radius:80px">
+                                        <img src="{{ user.userprofile.avatar }}" class="rounded-[80px]" width="140px" height="140px" alt="user avatar">
                                     {% else %}
-                                        <img src="https://www.jamf.com/jamf-nation/img/default-avatars/generic-user-purple.png"
-                                             style="width:140px;
-                                                    height:140px;
-                                                    border-radius:80px">
+                                        <img src="https://www.jamf.com/jamf-nation/img/default-avatars/generic-user-purple.png" class="rounded-[80px]" width="140px" height="140px" alt="user avatar">
                                     {% endif %}
                                 </div>
                             </li>
                             <li>
-                                <ul class="nav-second-level"
-                                    style="margin: 0;
-                                           padding: 0;
-                                           text-align: center">
+                                <ul class="nav-second-level m-0 p-0 text-center">
                                     <li>
                                         <a href="#"><b>{{ user.username|title }}</b></a>
                                     </li>
@@ -1131,7 +1122,7 @@
             <!-- ============================================================== -->
             <!-- Start Page Content here -->
             <!-- ============================================================== -->
-            <div class="content-page" style=" margin-top: 0px; ">
+            <div class="content-page mt-0">
                 <div class="content">
                     <!-- Start Content-->
                     <div class="container-fluid">
@@ -1270,7 +1261,7 @@
                                                         <a href="{{ activity.get_absolute_url }}">Submitted a Bug Report {{ activity.created|timesince }} ago</a>
                                                     </td>
                                                     <td>
-                                                    {{ activity.status }}</a>
+                                                    {{ activity.status }}
                                                 </td>
                                             </tr>
                                         {% endfor %}
@@ -1331,13 +1322,12 @@
     </div>
     <!-- content -->
 </div>
-</div>
 {% if user == request.user %}
     <div id="WithdrawModal" class="modal">
         <!-- Modal content -->
         <div class="wallet-modal-content">
             <div class="wallet-modal-header">
-                <span class="close">&times;</span>
+                <span class="close">×</span>
                 <h2>Withdraw Money</h2>
             </div>
             <form id="withdraw">
@@ -1362,18 +1352,16 @@
         <!-- Modal content -->
         <div class="wallet-modal-content">
             <div class="wallet-modal-header">
-                <span class="close">&times;</span>
+                <span class="close">×</span>
                 <h2>Add Money</h2>
             </div>
             <script src="https://js.stripe.com/v3/"></script>
-            <form class="col-md-6"
-                  style="left: 50%;
-                         transform: translateX(-50%)"
+            <form class="col-md-6 left-1/2 -translate-x-1/2"
                   id="payment-form">
                 {% csrf_token %}
                 <label for="amount">Enter Amount</label>
                 <input type="number" name="amount" id="amount" min="1" step="any" />
-                <div class="">
+                <div>
                     <label for="card-element">Credit or debit card</label>
                     <div id="card-element">
                         <!-- A Stripe Element will be inserted here. -->
@@ -1386,7 +1374,6 @@
         </div>
     </div>
 {% endif %}
-</div>
 <script type="text/javascript">
   // Create a Stripe client.
   var stripe = Stripe(

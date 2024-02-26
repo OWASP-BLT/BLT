@@ -171,16 +171,16 @@
         <div class="col-md-3">
             {% if user.userprofile.avatar %}
                 <img src="{{ user.userprofile.avatar }}"
-                     class="img-responsive img-thumbnail">
+                     class="img-responsive img-thumbnail" alt="avatar" width="50" height="50">
             {% else %}
                 <img src="{% gravatar_url user.email 200 %}"
-                     class="img-responsive img-thumbnail">
+                     class="img-responsive img-thumbnail" alt="avatar" width="50" height="50">
             {% endif %}
             {% if request.user == user %}
                 <button class="upload-btn">Edit Profile Pic</button>
                 <form method="post" action="." enctype="multipart/form-data">
                     {% csrf_token %}
-                    <input type="file" id='${multipartFilePath}' name="user_avatar" />
+                    <input type="file" id="${multipartFilePath}" name="user_avatar" />
                     <button type="submit" id="follow" class="btn btn-primary upload">
                         <span class="badge badge-avatar"></span> {% trans 'Upload' %}
                     </button>
@@ -219,7 +219,7 @@
                                name="item_name"
                                value="tip for {{ user.username }} on {% env 'DOMAIN_NAME' %}">
                         <input type="hidden" name="currency_code" value="USD">
-                        <button type="submit" class="btn btn-danger" style="color: black;">
+                        <button type="submit" class="btn btn-danger text-black">
                             <i class="fa fa-money fa-lg"></i> {% trans 'Send a tip' %}
                         </button>
                     </form>
@@ -298,9 +298,9 @@
                         {% for user in followers %}
                             <div class="list-group-item">
                                 {% if user.socialaccount_set.all.0.get_avatar_url %}
-                                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" height="50px">
+                                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" height="50px" width="50px" alt="avatar">
                                 {% else %}
-                                    <img src="{% gravatar_url user.email 50 %}">
+                                    <img src="{% gravatar_url user.email 50 %}" height="50px" width="50px" alt="avatar">
                                 {% endif %}
                                 <a href="/profile/{{ user.username }}">{{ user.username }}</a>
                             </div>
@@ -312,9 +312,9 @@
                         {% for user in following %}
                             <div class="list-group-item">
                                 {% if user.socialaccount_set.all.0.get_avatar_url %}
-                                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" height="50px">
+                                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" height="50px" width="50px" alt="avatar">
                                 {% else %}
-                                    <img src="{% gravatar_url user.email 50 %}">
+                                    <img src="{% gravatar_url user.email 50 %}" height="50px" width="50px" alt="avatar">
                                 {% endif %}
                                 <a href="/profile/{{ user.username }}">{{ user.username }}</a>
                             </div>
@@ -330,7 +330,7 @@
                                         name="{{ i.pk }}"
                                         data-dismiss="alert"
                                         aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
+                                    <span aria-hidden="true">×</span>
                                 </button>
                                 <a href="{{ i.get_absolute_url }}" class="list-group-item-heading">
                                     <strong>{{ i.description|truncatechars:50 }}</strong>
@@ -375,17 +375,18 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-3" style="padding: 0px">
+        <div class="col-lg-3 p-0">
             <div class="panel panel-default">
                 <div class="panel-heading text-capitalize">{{ user.username }}'s {% trans 'top bug findings' %}</div>
-                <div class="panel-body" style="padding: 0px">
+                <div class="panel-body p-0">
                     {% if websites %}
                         <div class="list-group scroll">
                             {% for website in websites %}
                                 <div class="list-group-item">
                                     <a href="/domain/{{ website.name }}">
-                                        <img src="http://www.{{ website.name }}/favicon.ico"
+                                        <img src="https://www.{{ website.name }}/favicon.ico"
                                              height="25"
+                                             width="25" alt="blt"
                                              onerror="this.onerror=null; this.style.display='none';">
                                     </a>
                                     <a href="/domain/{{ website.name }}">{{ website.name|truncatechars:15 }}</a>

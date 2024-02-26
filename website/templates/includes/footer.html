@@ -2,13 +2,12 @@
 {% load i18n %}
 {% load custom_tags %}
 {% comment %} 'img/logo_white.png' {% endcomment %}
-<footer class="bg-black text-white pt-12 pb-8 px-12 bottom-0 relative fixed t-0"
-        style="margin-top: 20px">
+<footer class="bg-black text-white pt-12 pb-8 px-12 bottom-0 relative fixed t-0 mt-5">
     <div class="mx-auto px-4 !container overflow-hidden flex flex-col lg:flex-row justify-between">
         <a href="/" class="block mr-4 w-1/2">
             <img src="{% logo 'WHITE' %}"
                  class="w-[200px] ml-4 lg:ml-0"
-                 alt="footer logo">
+                 alt="footer logo" width="200px" height="50px" />
         </a>
         <div class="w-2/3 block sm:flex text-2xl mt-6 lg:mt-0">
             <ul class="text-gray-700 list-none p-0 font-thin flex flex-col text-left w-full">
@@ -62,8 +61,7 @@
                     <a href="https://github.com/OWASP/BLT#readme"
                        class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Guides" %}</a>
                 </li>
-            </li>
-        </ul>
+            </ul>
         <div class="text-gray-700 flex flex-col w-full">
             <div class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">{% trans "Follow Us" %}</div>
             <div class="flex pl-4 justify-start mt-2">
@@ -97,7 +95,7 @@
                 <a class="w-10 h-10 block flex ml-5 rounded-[50px] p-[3px] items-center bg-gray-300 hover:bg-white no-underline"
                    href="{% env 'BLOG_URL' %}"
                    target="_new">
-                    <img src="{% static 'img/blog.svg' %}" alt="steemit" />
+                    <img src="{% static 'img/blog.svg' %}" alt="steemit" width="24" height="24" />
                 </a>
             </div>
         </div>

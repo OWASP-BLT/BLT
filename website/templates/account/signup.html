@@ -23,7 +23,7 @@
             <div class="p-5 bg-white md:flex-1">
                 <h3 class="my-4 text-2xl font-semibold text-gray-700">{% trans 'Account SignUp' %}</h3>
                 <form class="flex flex-col space-y-5 login"
-                      method="POST"
+                      method="post"
                       action="{% url 'account_signup' %}">
                     {% csrf_token %}
                     <div class="flex flex-col space-y-1">

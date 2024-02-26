@@ -6,23 +6,27 @@
         {% if bug.user.userprofile.avatar %}
             <img src="{{ bug.user.userprofile.avatar }}"
                  width="30"
+                 height="30"
                  class="h-[30px] object-cover img-responsive rounded-full"
-                 loading="lazy">
+                 loading="lazy" alt="user avatar">
         {% elif bug.user.socialaccount_set.all.0.get_avatar_url %}
             <img src="{{ bug.user.socialaccount_set.all.0.get_avatar_url }}"
                  width="30"
+                 height="30"
                  class="h-[30px] object-cover img-responsive rounded-full"
-                 loading="lazy">
+                 loading="lazy" alt="user avatar">
         {% elif bug.user.email %}
             <img src="{% gravatar_url bug.user.email 30 %}"
                  width="30"
+                 height="30"
                  class="h-[30px] object-cover img-responsive  rounded-full"
-                 loading="lazy">
+                 loading="lazy" alt="user avatar">
         {% else %}
             <img src="{% static 'images/dummy-user.png' %}"
                  width="30"
+                 height="30"
                  class="h-[30px] object-cover img-responsive rounded-full"
-                 loading="lazy">
+                 loading="lazy" alt="user avatar">
         {% endif %}
         {% if bug.user.username is not None %}
             <a href="/profile/{{ bug.user.username }}"
@@ -43,7 +47,7 @@
                 {% for bug_screenshot in bug_screenshots %}
                     <img class="bug-img h-[100%] w-[70px] object-contain"
                          src="{{ bug_screenshot.image.url }}"
-                         alt="">
+                         alt="bug screenshot" width="70px" height="100%">
                 {% endfor %}
             {% endif %}
         {% endfor %}
@@ -106,10 +110,9 @@
             <path d="M10.6283 8.53688C10.6283 9.55346 9.80425 10.3775 8.78766 10.3775C7.7711 10.3775 6.94702 9.55346 6.94702 8.53688C6.94702 7.52032 7.7711 6.69624 8.78766 6.69624C9.80425 6.69624 10.6283 7.52032 10.6283 8.53688Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round" />
             <path d="M4.21252 17.1226L7.7288 13.6063C8.35464 13.0587 9.26994 12.9987 9.96185 13.4601L10.4305 13.7724C11.0973 14.217 11.9754 14.1789 12.6013 13.6782L15.0384 11.7285C15.6596 11.2315 16.5249 11.1925 17.1853 11.6185C17.2584 11.6657 17.3236 11.7242 17.3852 11.7857L18.9129 13.3135" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
-        <a class="w-fit"
-           target="_blank"
+        <a target="_blank"
            href="https://twitter.com/intent/tweet?text=Bug Found on @{{ bug.domain_title }} - {{ bug.description }} Report: https://{% env 'FQDN' %}/issue2/{{ bug.id }}"
-           class="flex items-center px-10 h-14 rounded-xl font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
+           class="w-fit flex items-center px-10 h-14 rounded-xl font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
             <svg class="scale-125 m-3 ms-1"
                  width="23"
                  height="23"

@@ -3,6 +3,13 @@
 {% load tz_detect %}
 {% block style %}
     <style>
+  #create-hunt{
+    position: relative;
+    top: 105%;
+    left: 50%;
+    transform: translate(-50%, 0%);
+    width: 50%
+  }
   .row .col-md-6:nth-child(1) .panel {
     background-color: #F76B78;
   }
@@ -77,22 +84,17 @@
     <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.min.css" %}" />
     <link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.default-theme.min.css" %}" />
-    <form id="create-hunt"
-          style="position: relative;
-                 top: 105%;
-                 left: 50%;
-                 transform: translate(-50%, 0%);
-                 width: 50%">
+    <form id="create-hunt">
         {% csrf_token %}
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title">
-                    <span style="color:#000">START A</span> BUGHUNT
+                    <span class="text-black">START A</span> BUGHUNT
                 </h4>
                 <h6 class="modal-sub-title">Enter URL, App name or GPS location of issue</h6>
             </div>
             <div class="modal-body">
-                <div class="form-group col-sm-12" style=" padding: 0px; ">
+                <div class="form-group col-sm-12 p-0">
                     <input type="text"
                            name="name"
                            required

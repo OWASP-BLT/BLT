@@ -62,9 +62,8 @@
                                 <a href="/domain/{{ domain.domain_name }}">
                                     <img src="{{ domain.get_logo }}"
                                          alt="{{ domain.name }}"
-                                         style="width:80px"
-                                         onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
-                                    <img src="{% static 'img/logo-small-transparent.png' %}" class="alt-img">
+                                         onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';" width="80px" height="80px">
+                                    <img src="{% static 'img/logo-small-transparent.png' %}" class="alt-img" alt="No logo found" width="80px" height="80px">
                                 </a>
                             </td>
                             <td class="text-capitalize">{{ domain.get_name }}</td>

@@ -18,7 +18,7 @@
                             </div>
                         {% endif %}
                     </div>
-                    <form class="edit_form" style="display:none">
+                    <form class="edit_form hidden">
                         {% csrf_token %}
                         <div class="form-group">
                             <textarea class="form-control" required></textarea>
@@ -29,7 +29,7 @@
                     <div class="text-comment">{{ comment.text | safe }}</div>
                 </div>
             {% endif %}
-            <div class="child_comments" style="display:none">
+            <div class="child_comments hidden">
                 {% for child_comment in comment.children %}
                     <blockquote>
                         <div class="well comment">

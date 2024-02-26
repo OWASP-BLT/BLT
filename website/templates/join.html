@@ -25,6 +25,21 @@
     user-select: none;
   }
 
+  #payment-form{
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  #subscription_id{
+    height: 460px;
+    max-width: none;
+  }
+
+  #card-element-container{
+    left: 50%; 
+    transform: translateX(-50%);
+  }
+
   h1 {
     font-weight: 400;
     padding-top: 0;
@@ -391,8 +406,6 @@
     <div class="join-body">
         <div id="svg_wrap"></div>
         <form class="col-md-12"
-              style="left: 50%;
-                     transform: translateX(-50%)"
               id="payment-form">
             {% csrf_token %}
             <h1>Create Company</h1>
@@ -403,7 +416,7 @@
                 <input type="file" name="file" placeholder="Logo" />
                 <input type="email" name="email" placeholder="Email Address" />
             </section>
-            <section style="height: 460px;max-width: none;">
+            <section id="subscription_id">
                 <p>Subscription</p>
                 <div class="row">
                     <div class="col-md-4 col-lg-4 col-sm-4">
@@ -414,10 +427,10 @@
                                    class="card-input-element"
                                    checked />
                             <div class="panel panel-default card-input">
-                                <div class="panel-heading" style=" background-color: #DC4353; ">
+                                <div class="panel-heading text-red-900">
                                     <div class="row">
                                         <div class="pull-left image-subs">
-                                            <img src="{% static 'img/flea.svg' %}" width="100" height="100">
+                                            <img src="{% static 'img/flea.svg' %}" width="100" height="100" alt="flea">
                                         </div>
                                         <div class="col-xs-6 text-right pull-right plan-color">
                                             <div class="huge">Flea</div>
@@ -437,10 +450,10 @@
                 <label>
                     <input type="radio" value="ant" name="product" class="card-input-element" />
                     <div class="panel panel-default card-input">
-                        <div class="panel-heading" style=" background-color: #DC4353; ">
+                        <div class="panel-heading text-red-900">
                             <div class="row">
                                 <div class="pull-left image-subs">
-                                    <img src="{% static 'img/ant.svg' %}" width="100" height="100">
+                                    <img src="{% static 'img/ant.svg' %}" width="100" height="100" alt="ant">
                                 </div>
                                 <div class="col-xs-6 text-right pull-right plan-color">
                                     <div class="huge">Ant</div>
@@ -462,10 +475,10 @@
     <label>
         <input type="radio" value="wasp" name="product" class="card-input-element" />
         <div class="panel panel-default card-input">
-            <div class="panel-heading" style=" background-color: #DC4353; ">
+            <div class="panel-heading text-red-900">
                 <div class="row">
                     <div class="pull-left image-subs">
-                        <img src="{% static 'img/ant.svg' %}" width="100" height="100">
+                        <img src="{% static 'img/ant.svg' %}" width="100" height="100" alt="wasp">
                     </div>
                     <div class="col-xs-6 text-right pull-right plan-color">
                         <div class="huge">Wasp</div>
@@ -486,7 +499,7 @@
 </div>
 </div>
 </section>
-<section style="max-width: 500px;padding: 30px">
+<section class="p-8 max-w-[500px]">
     {% ifnotequal wallet.current_balance 0 %}
     <div class="formHolder wallet">
         <h3>Wallet</h3>
@@ -497,8 +510,8 @@
 <div class="formHolder card">
     <h3>Card</h3>
     <script src="https://js.stripe.com/v3/"></script>
-    <div class="col-md-12" style=" left: 50%; transform: translateX(-50%);">
-        <div class="">
+    <div class="col-md-12" id="card-element-container">
+        <div>
             <label for="card-element">Credit or debit card</label>
             <div id="card-element">
                 <!-- A Stripe Element will be inserted here. -->
@@ -525,8 +538,8 @@
         laborum.
     </p>
 </section>
-<div class="button" id="prev">&larr; Previous</div>
-<div class="button" id="next">Next &rarr;</div>
+<div class="button" id="prev">← Previous</div>
+<div class="button" id="next">Next →</div>
 <button class="button" id="submit">Agree and send application</button>
 </form>
 </div>

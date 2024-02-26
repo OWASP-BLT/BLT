@@ -180,9 +180,9 @@
                     <div class="panel-title text-center">
                         <div class="title">
                             <p>START A</p>
-                            <p style="color: red;">BUGHUNT</p>
+                            <p class="text-red-900">BUGHUNT</p>
                         </div>
-                        <p style="font-weight: bold;">{% trans 'Enter URL, APP name or GPS location of issue' %}</p>
+                        <p class="font-bold">{% trans 'Enter URL, APP name or GPS location of issue' %}</p>
                         <hr />
                     </div>
                 </div>
@@ -211,11 +211,9 @@
                 <div class="form-group">
                     <div class="input-container">
                         <i class="fa fa-file-picture-o icon" aria-hidden="true"></i>
-                        <input class="input-field url required"
+                        <input class="input-field url required w-full border-2 border-gray-300 p-2 rounded-md"
                                type="file"
-                               name="logo"
-                               style="width: 100%;
-                                      border:1px solid #1f1f1f77">
+                               name="logo">
                     </div>
                     {% if form.logo.errors %}<label id="url-error" class="error" for="url">{{ form.logo.errors }}</label>{% endif %}
                 </div>
