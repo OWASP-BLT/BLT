@@ -80,6 +80,7 @@ from blt import settings
 from rest_framework import permissions, routers
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from website.views  import generate_bch_qr
 from dj_rest_auth.registration.views import (
     SocialAccountListView,
     SocialAccountDisconnectView,
@@ -439,12 +440,12 @@ urlpatterns = [
     re_path(r"^contributors/$",contributors_view,name="contributors"),
     path("company/",include("company.urls")),
     path("sponsor/",website.views.sponsor_view, name="sponsor"),
-    path("companies/", DomainListView.as_view() , name="domain_list")
+    path("companies/", DomainListView.as_view() , name="domain_list"),
+    path('profile/user_name/generate-bch-qr/', website.views.generate_bch_qr, name='generate_bch_qr')
 ]
 
 if settings.DEBUG:
     import debug_toolbar
-
     urlpatterns = [
         re_path(r"^__debug__/", include(debug_toolbar.urls)),
     ] + urlpatterns

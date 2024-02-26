@@ -13,12 +13,16 @@ from datetime import datetime, timezone, timedelta
 from urllib.parse import urlparse, urlunparse
 from urllib.parse import urlsplit
 
+import qrcode
+from io import BytesIO
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import base64
 import requests
 import requests.exceptions
 import base64
 import six
 import uuid
-
 #from django_cron import CronJobBase, Schedule
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
@@ -90,6 +94,13 @@ from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.http import HttpRequest
 from django.utils.timezone import now
+
+
+from django.shortcuts import render
+from .forms import BitcoinAddressForm
+import qrcode
+from io import BytesIO
+from django.http import HttpResponse
 
 def is_valid_https_url(url):
     validate = URLValidator(schemes=['https'])  # Only allow HTTPS URLs
@@ -3849,3 +3860,31 @@ class IssueView2(DetailView):
 #                     headers=headers,
 #                 )
 #         mail.logout()
+
+@csrf_exempt
+def generate_bch_qr(request):
+    if request.method == 'POST':
+        user = request.user
+        profile = user.userprofile
+        address = profile.crypto_address
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(address)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffer = BytesIO()
+        img.save(buffer, format='PNG')
+        qr_image = buffer.getvalue()
+
+        # Encode the image data as base64
+        qr_image_base64 = base64.b64encode(qr_image).decode('utf-8')
+
+        # Return the base64-encoded image data as a JSON response
+        return JsonResponse({'qr_image': qr_image_base64})
+
+    return HttpResponseBadRequest()

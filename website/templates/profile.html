@@ -163,6 +163,15 @@
     .hide-issue-form {
         padding-top: 10px;
     }
+    dialog {
+    z-index: 10;
+    margin-top: 10px;
+    border: none;
+    border-radius: 1rem;
+    top: 200px; /* Adjust this value as needed */
+    left: 33px; 
+}
+
 </style>
 {% endblock %}
 
@@ -209,14 +218,16 @@
             {% endif %}
 
             <div class="status">
-                <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post">
+                <form id="qr-form">
+                    {% csrf_token %}
                     <input type="hidden" name="cmd" value="_xclick">
-                    <input type="hidden" name="business" value="{{ project.paypal|default:" coderbounty@gmail.com" }}">
+                    <input type="hidden" name="business" value="{{ project.BCH|default:"coderbounty@gmail.com" }}">
                     <input type="hidden" name="item_name" value="tip for {{ user.username }} on {% env 'DOMAIN_NAME' %}">
                     <input type="hidden" name="currency_code" value="USD">
-                    <button type="submit" class="btn btn-danger" style="color: black;">
-                        <i class="fa fa-money fa-lg"></i> {% trans 'Send a tip' %}
-                    </button>
+                    <button type="button" id="openModal" class="btn btn-danger" style="color: black;">Send a Tip</button>
+                    <dialog id="dialog">
+                        <img id="qrimage" src="" alt="QR Code">
+                    </dialog>
                 </form>
             </div>
         </div>
@@ -403,6 +414,37 @@
 </div>
 
 <script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", function(){
+    const csrfToken = '{{ csrf_token }}';
+    const openModalButton = document.getElementById('openModal');
+    const dialog = document.getElementById('dialog');
+    const qrImage = document.getElementById('qr-image');
+
+    openModalButton.addEventListener('click', function() {
+        fetch("{% url 'generate_bch_qr' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('QR code data:', data);
+            qrimage.src = 'data:image/png;base64,' + data.qr_image;
+            dialog.showModal();
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+        });
+    });
+});
+
     $(function () {
         $('.img-thumbnail, .upload-btn').on('mouseenter', function () {
             $('.upload-btn').show();
