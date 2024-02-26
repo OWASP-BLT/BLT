@@ -9,11 +9,11 @@ import urllib.parse
 import stripe
 import humanize
 from collections import deque
-from datetime import datetime, timezone, timedelta
-from urllib.parse import urlparse, urlunparse
-from urllib.parse import urlsplit
-from urllib.parse import quote , unquote
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal
+from urllib.parse import urlparse, urlsplit, urlunparse
 
+import humanize
 import requests
 import requests.exceptions
 import base64
@@ -3735,49 +3735,38 @@ class IssueView2(DetailView):
 
 
         return context
-        
+
+
 def trademark_search(request, **kwargs):
     if request.method == "POST":
-        slug =  request.POST.get('query')
-        return redirect('trademark_detailview' , slug=slug)
-    return render(request , "trademark_search.html" )
+        slug = request.POST.get("query")
+        return redirect("trademark_detailview", slug=slug)
+    return render(request, "trademark_search.html")
 
 
 def trademark_detailview(request, slug):
-    trademarkAvailable_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" %(slug)
+    trademarkAvailable_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (
+        slug
+    )
     headers = {
-        "x-rapidapi-host" : "uspto-trademark.p.rapidapi.com",
-        "x-rapidapi-key" : settings.USPTO_API
+        "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
+        "x-rapidapi-key": settings.USPTO_API,
     }
-    trademarkAvailable_response = requests.get(trademarkAvailable_url , headers = headers)
+    trademarkAvailable_response = requests.get(trademarkAvailable_url, headers=headers)
     ta_data = trademarkAvailable_response.json()
 
     if ta_data[0]["available"] == "no":
-
-        trademarkSearch_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" %(slug)
-        trademarkSearch_response = requests.get(trademarkSearch_url , headers = headers)
+        trademarkSearch_url = (
+            "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (slug)
+        )
+        trademarkSearch_response = requests.get(trademarkSearch_url, headers=headers)
         ts_data = trademarkSearch_response.json()
-        context = {
-            "count" : ts_data["count"],
-            "items" : ts_data["items"],
-            "query" : slug
-        }        
-    
-    else :
-        context = {
-            "available" : ta_data[0]["available"] 
-            }
+        context = {"count": ts_data["count"], "items": ts_data["items"], "query": slug}
 
-    return render(request , "trademark_detailview.html" , context )
+    else:
+        context = {"available": ta_data[0]["available"]}
 
-
-
-
-
-
-
-
-
+    return render(request, "trademark_detailview.html", context)
 
 
 # class CreateIssue(CronJobBase):
