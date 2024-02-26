@@ -4,6 +4,8 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <meta name="description" content="blt make company bug tracking easy">
+        <meta name="keywords" content="blt, bug, tracking, company, easy">
         <script src="https://cdn.tailwindcss.com"></script>
         <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"
@@ -20,12 +22,11 @@
         <div class="h-full bg-gray-200 p-8">
             <div class="bg-white rounded-lg shadow-xl pb-8">
                 <div class="w-full h-[250px]">
-                    <img {% if webshot %} src="{{ MEDIA_URL }}{{ webshot }}" {% else %} src="https://versohydraulic.com/bitrix/templates/aspro-allcorp/images/background.png" {% endif %}
-                         class="w-full h-full rounded-tl-lg rounded-tr-lg object-cover">
+                    <img src="{% if webshot %} {{ MEDIA_URL }}{{ webshot }} {% else %} https://versohydraulic.com/bitrix/templates/aspro-allcorp/images/background.png {% endif %} " class="w-full h-full rounded-tl-lg rounded-tr-lg object-cover" alt="domain image" width="100%" height="100%">
                 </div>
                 <div class="flex flex-col items-center -mt-20">
                     <img src="{{ MEDIA_URL }}{{ logo }}"
-                         class="w-40 h-40 border-4  rounded-full">
+                         class="w-40 h-40 border-4  rounded-full" width="160px" height="160px" alt="domain logo">
                     <div class="flex items-center space-x-2 mt-2">
                         <p class="text-2xl">{{ name }}</p>
                         <a href="{{ url }}" class="m-0 p-0">
@@ -284,7 +285,7 @@
                                            height: 414px;
                                            width: 828px"
                                     width="1656"
-                                    height="828"></canvas>
+                                    height="828" class="block h-[414px] w-[828px] box-border"></canvas>
                         </div>
                     </div>
                 </div>
@@ -300,7 +301,7 @@
                             <div class="flex justify-center items-center w-[40%]">
                                 <img class="w-32 h-32 rounded-lg"
                                      src="{{ server_url }}/media/{{ hunt.logo }}"
-                                     alt="">
+                                     alt="bughunt logo" width="128px" height="128px">
                             </div>
                             <div class="flex flex-col ml-5 w-[60%]">
                                 <p class="text-xl font-extrabold mt-6">Hunt 2.0</p>
@@ -324,7 +325,7 @@
                         {% for issue in latest_issues %}
                             <div class="w-full h-[200px] flex px-5 my-2 py-6 bg-white rounded-lg shadow-md hover:shadow-xl transition-all">
                                 <div class="w-[10%] mr-5 h-full flex items-center">
-                                    <img src="https://m.media-amazon.com/images/I/613zc8WKCNL.jpg" alt="">
+                                    <img src="https://m.media-amazon.com/images/I/613zc8WKCNL.jpg" alt="bug" width="100%" height="100%">
                                 </div>
                                 <div class="w-full h-full">
                                     <div class="flex justify-between items-center">
@@ -348,7 +349,7 @@
                                                href="{% url 'profile' issue.user__username %}">
                                                 <img class="mr-3 w-10 h-10 object-cover rounded-full hidden sm:block"
                                                      src="{{ MEDIA_URL }}{{ issue.user__userprofile__user_avatar }}"
-                                                     alt="avatar">
+                                                     alt="avatar" width="40px" height="40px">
                                                 <h1 class="text-gray-700 font-bold">{{ issue.user__username }}</h1>
                                             </a>
                                         </div>
@@ -384,7 +385,7 @@
                                class="flex flex-col items-center m-5 justify-center text-gray-800 hover:text-red-600"
                                title="View Profile">
                                 <img src="{{ MEDIA_URL }}{{ tester.user__userprofile__user_avatar }}"
-                                     class="w-[100px] rounded-full">
+                                     class="w-[100px] rounded-full" alt="tester avatar" width="100px" height="100px">
                                 <p class="text-center font-bold text-sm mt-1">{{ tester.user__username }}</p>
                                 <p class="text-xs text-gray-500 text-center">Reported {{ tester.count }} Bugs</p>
                             </a>

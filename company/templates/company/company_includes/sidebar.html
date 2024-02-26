@@ -4,7 +4,7 @@
             <div class="w-12 h-12 rounded-full border-[1px] border-gray-500 flex items-center justify-center">
                 <img src="{{ MEDIA_URL }}{{ company_obj.logo }}"
                      alt="company logo"
-                     class="object-fill rounded-full">
+                     class="object-fill rounded-full" width="40px" height="40px" />
             </div>
             <h2 class="sidebar__logo-header font-bold">{{ company_obj.name | slice:":15" | capfirst }}</h2>
         </div>
