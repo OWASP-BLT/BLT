@@ -96,10 +96,7 @@ from django.http import HttpRequest
 from django.utils.timezone import now
 
 
-from django.shortcuts import render
-from .forms import BitcoinAddressForm
 import qrcode
-from io import BytesIO
 from django.http import HttpResponse
 
 def is_valid_https_url(url):
@@ -3861,9 +3858,6 @@ class IssueView2(DetailView):
 #                 )
 #         mail.logout()
 
-from django.http import HttpResponse
-import qrcode
-from io import BytesIO
 
 @csrf_exempt
 def generate_bch_qr(request):

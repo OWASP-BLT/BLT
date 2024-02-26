@@ -221,7 +221,7 @@
                 <button type="button" id="openModal" class="btn btn-danger" style="color: black;">Send a Tip</button>
                 <dialog id="dialog">
                     <img id="qr-image" src="{% url 'generate_bch_qr' %}" alt="QR Code">
-                    <p id="bch-address">{{ request.user.userprofile.crypto_address }}</p>
+                    <p id="bch-address">BCH:{{request.user.userprofile.crypto_address }}</p>
                 </dialog>
             </div>
         </div>

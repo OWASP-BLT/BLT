@@ -28,6 +28,3 @@ class QuickIssueForm(forms.Form):
     url = forms.CharField()
     label = forms.CharField()
     description = forms.CharField()
-
-class BitcoinAddressForm(forms.Form):
-    pass
