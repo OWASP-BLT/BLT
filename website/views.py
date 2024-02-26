@@ -3861,9 +3861,13 @@ class IssueView2(DetailView):
 #                 )
 #         mail.logout()
 
+from django.http import HttpResponse
+import qrcode
+from io import BytesIO
+
 @csrf_exempt
 def generate_bch_qr(request):
-    if request.method == 'POST':
+    if request.method == 'GET':
         user = request.user
         profile = user.userprofile
         address = profile.crypto_address
@@ -3878,13 +3882,8 @@ def generate_bch_qr(request):
 
         img = qr.make_image(fill_color="black", back_color="white")
         buffer = BytesIO()
-        img.save(buffer, format='PNG')
+        img.save(buffer)
         qr_image = buffer.getvalue()
+        
+        return HttpResponse(qr_image, content_type='image/png')
 
-        # Encode the image data as base64
-        qr_image_base64 = base64.b64encode(qr_image).decode('utf-8')
-
-        # Return the base64-encoded image data as a JSON response
-        return JsonResponse({'qr_image': qr_image_base64})
-
-    return HttpResponseBadRequest()
