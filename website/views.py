@@ -22,7 +22,7 @@ import tweepy
 
 # from django_cron import CronJobBase, Schedule
 from allauth.account.models import EmailAddress
-from allauth.account.signals import user_logged_in
+from allauth.account.signals import user_logged_in, user_signed_up
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
@@ -34,6 +34,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.sites.shortcuts import get_current_site
 from django.core import serializers
 from django.core.exceptions import ValidationError
 from django.core.files import File
@@ -57,7 +58,7 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
@@ -95,16 +96,9 @@ from website.models import (
     Winner,
 )
 
-from decimal import Decimal
-from django.conf import settings
-from comments.models import Comment
-from django.core.validators import URLValidator
-from django.core.exceptions import ValidationError
 from .decorator import (
     private_access_check
 )
-from django.http import HttpRequest
-from django.utils.timezone import now
 from .forms import CaptchaForm, FormInviteFriend, HuntForm, QuickIssueForm, UserProfileForm
 
 
@@ -2229,44 +2223,6 @@ def assign_issue_to_user(request, user, **kwargs):
         assigner.process_issue(user, issue, created, domain)
 
 
-class CreateInviteFriend(CreateView):
-    template_name = "invite_friend.html"
-    model = InviteFriend
-    form_class = FormInviteFriend
-    success_url = reverse_lazy("invite_friend")
-
-    def form_valid(self, form):
-        from django.conf import settings
-        from django.contrib.sites.shortcuts import get_current_site
-
-        instance = form.save(commit=False)
-        instance.sender = self.request.user
-        instance.save()
-
-        site = get_current_site(self.request)
-
-        mail_status = send_mail(
-            "Inivtation to {site} from {user}".format(
-                site=site.name, user=self.request.user.username
-            ),
-            "You have been invited by {user} to join {site} community.".format(
-                user=self.request.user.username, site=site.name
-            ),
-            settings.DEFAULT_FROM_EMAIL,
-            [instance.recipient],
-        )
-
-        if mail_status and InviteFriend.objects.filter(sender=self.request.user).count() == 2:
-            Points.objects.create(user=self.request.user, score=1)
-            InviteFriend.objects.filter(sender=self.request.user).delete()
-
-        messages.success(
-            self.request,
-            "An email has been sent to your friend. Keep inviting your friends and get points!",
-        )
-        return HttpResponseRedirect(self.success_url)
-
-
 @login_required(login_url="/accounts/login")
 def follow_user(request, user):
     if request.method == "GET":
@@ -3863,6 +3819,54 @@ class IssueView2(authenticate_handling , DetailView):
             return super(IssueView2 , self).handle_no_permission()
         except :
             return redirect("request_access/")
+
+@receiver(user_signed_up)
+def handle_user_signup(request, user, **kwargs):
+    referral_token = request.session.get("ref")
+    if referral_token:
+        try:
+            invite = InviteFriend.objects.get(referral_code=referral_token)
+            invite.recipients.add(user)
+            invite.point_by_referral += 2
+            invite.save()
+            reward_sender_with_points(invite.sender)
+            del request.session["ref"]
+        except InviteFriend.DoesNotExist:
+            pass
+
+
+def reward_sender_with_points(sender):
+    # Create or update points for the sender
+    points, created = Points.objects.get_or_create(user=sender, defaults={"score": 0})
+    points.score += 2  # Reward 2 points for each successful referral signup
+    points.save()
+
+
+def referral_signup(request):
+    referral_token = request.GET.get("ref")
+    # check the referral token is present on invitefriend model or not and if present then set the referral token in the session
+    if referral_token:
+        try:
+            invite = InviteFriend.objects.get(referral_code=referral_token)
+            request.session["ref"] = referral_token
+        except InviteFriend.DoesNotExist:
+            messages.error(request, "Invalid referral token")
+            return redirect("account_signup")
+    return redirect("account_signup")
+
+
+def invite_friend(request):
+    # check if the user is authenticated or not
+    if not request.user.is_authenticated:
+        return redirect("account_login")
+    current_site = get_current_site(request)
+    referral_code, created = InviteFriend.objects.get_or_create(sender=request.user)
+    referral_link = f"https://{current_site.domain}/referral/?ref={referral_code.referral_code}"
+    context = {
+        "referral_link": referral_link,
+    }
+    return render(request, "invite_friend.html", context)
+
 
 # class CreateIssue(CronJobBase):
 #     RUN_EVERY_MINS = 1
