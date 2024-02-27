@@ -520,6 +520,6 @@ APP_KEY_SECRET = os.environ.get("APP_KEY_SECRET")
 ACCESS_TOKEN = os.environ.get("ACCESS_TOKEN")
 ACCESS_TOKEN_SECRET = os.environ.get("ACCESS_TOKEN_SECRET")
 
-# UPSTO
+# USPTO
 
 USPTO_API = os.environ.get("USPTO_API")
