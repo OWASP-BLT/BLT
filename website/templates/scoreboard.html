@@ -59,20 +59,20 @@
                     {% for domain in scoreboard %}
                         <tr>
                             <td height="80px">
-                                <a href="{% url 'domain' slug=domain.domain_name %}">
+                                <a href="">
                                     <img src="{{ domain.get_logo }}"
                                          alt="{{ domain.name }}"
                                          onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';" width="80px" height="80px">
                                     <img src="{% static 'img/logo-small-transparent.png' %}" class="alt-img" alt="No logo found" width="80px" height="80px">
                                 </a>
                             </td>
-                            <td class="text-capitalize">{{ domain.get_name }}</td>
+                            <td class="text-capitalize">{{ domain.name }}</td>
                             <td>{{ domain.open_issues|length }}</td>
                             <td>{{ domain.closed_issues|length }}</td>
                             <td class="text-capitalize">{{ domain.email_event }}</td>
                             <td>{{ domain.modified|timesince }} ago</td>
                             <td class="text-capitalize">
-                                <a href="{% url 'profile' slug=domain.top_tester.username %}">{{ domain.top_tester|default:"" }}</a>
+                                <a href="{% url 'profile' slug=domain.top_tester %}">{{ domain.top_tester|default:"" }}</a>
                             </td>
                         </tr>
                     {% endfor %}
