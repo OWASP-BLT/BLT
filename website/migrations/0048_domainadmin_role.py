@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('website', '0047_auto_20200613_0814'),
+        ("website", "0047_auto_20200613_0814"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='domainadmin',
-            name='role',
-            field=models.IntegerField(choices=[(0, 'Super Admin'), (1, 'Hunt Admin')], default=0),
+            model_name="domainadmin",
+            name="role",
+            field=models.IntegerField(choices=[(0, "Super Admin"), (1, "Hunt Admin")], default=0),
         ),
     ]

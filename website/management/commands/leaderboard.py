@@ -1,11 +1,11 @@
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
-from website.models import UserProfile, Issue
+from website.models import Issue, UserProfile
 
 
 class Command(BaseCommand):
-    help = 'Update user based on number of bugs'
+    help = "Update user based on number of bugs"
 
     def handle(self, *args, **options):
         all_user_prof = UserProfile.objects.all()
