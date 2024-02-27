@@ -93,6 +93,7 @@ from website.models import (
 
 from .forms import CaptchaForm, HuntForm, QuickIssueForm, UserProfileForm
 
+
 def is_valid_https_url(url):
     validate = URLValidator(schemes=["https"])  # Only allow HTTPS URLs
     try:
@@ -3827,10 +3828,10 @@ def invite_friend(request):
 #                 )
 #         mail.logout()
 
+
 @csrf_exempt
 def generate_bch_qr(request, username):
-    
-    if request.method == 'GET':
+    if request.method == "GET":
         try:
             user = User.objects.get(username=username)
             profile = user.userprofile
@@ -3848,11 +3849,10 @@ def generate_bch_qr(request, username):
             buffer = BytesIO()
             img.save(buffer)
             qr_image = buffer.getvalue()
-            return HttpResponse(qr_image, content_type='image/png')
+            return HttpResponse(qr_image, content_type="image/png")
         except User.DoesNotExist:
             return HttpResponse(status=404)  # User not found
         except Exception as e:
             return HttpResponse(status=500)  # Internal server error
     else:
         return HttpResponse(status=405)  # Method Not Allowed
-
