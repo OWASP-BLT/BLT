@@ -3829,6 +3829,7 @@ def invite_friend(request):
 
 @csrf_exempt
 def generate_bch_qr(request, username):
+    
     if request.method == 'GET':
         try:
             user = User.objects.get(username=username)
