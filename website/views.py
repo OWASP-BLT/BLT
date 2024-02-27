@@ -12,6 +12,7 @@ from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse, urlsplit, urlunparse
+from io import BytesIO
 
 import requests
 import requests.exceptions
