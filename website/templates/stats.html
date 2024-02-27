@@ -115,16 +115,6 @@
     var all_data = new Array(12).fill(0);
     var user_data = new Array(12).fill(0);
     var pie = new Array(7).fill(0);
-
-
-
-        {% for i in graph %}all_data[{{i.month}}] = {{i.c}};{% endfor %}
-
-        {% for i in user_graph %}user_data[{{i.month}}] = {{i.c}};{% endfor %}
-
-        {% for i in pie_chart %}
-            pie[{{i.label}}] = {{i.c}};
-        {% endfor %}
     var ctx = document.getElementById("myChart").getContext('2d');
     var myChart = new Chart(ctx, {
         type: 'bar',
