@@ -8,6 +8,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
+import qrcode
 from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -91,7 +92,6 @@ from website.models import (
 )
 
 from .forms import CaptchaForm, HuntForm, QuickIssueForm, UserProfileForm
-import qrcode
 
 def is_valid_https_url(url):
     validate = URLValidator(schemes=["https"])  # Only allow HTTPS URLs
