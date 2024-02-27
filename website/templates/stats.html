@@ -115,7 +115,7 @@
      data-all-data='[ {% for i in graph %}{"month": {{ i.month }}, "c": {{ i.c }} }{% if not forloop.last %},{% endif %}{% endfor %} ]'
      data-user-data='[ {% for i in user_graph %}{"month": {{ i.month }}, "c": {{ i.c }} }{% if not forloop.last %},{% endif %}{% endfor %} ]'
      data-pie-data='[ {% for i in pie_chart %}{"label": "{{ i.label }}", "c": {{ i.c }} }{% if not forloop.last %},{% endif %}{% endfor %} ]'></div>
-    <script type="text/javascript">
+    <!-- <script type="text/javascript">
     var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
     var all_data = new Array(12).fill(0);
     var user_data = new Array(12).fill(0);
@@ -267,5 +267,5 @@
             }]
         }
     });
-    </script>
+    </script> -->
 {% endblock content %}
