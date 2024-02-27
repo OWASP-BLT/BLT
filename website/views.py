@@ -8,14 +8,14 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-import qrcode
 from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from urllib.parse import urlparse, urlsplit, urlunparse
 from io import BytesIO
+from urllib.parse import urlparse, urlsplit, urlunparse
 
 import humanize
+import qrcode
 import requests
 import requests.exceptions
 import six
