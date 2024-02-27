@@ -1,13 +1,9 @@
 {% extends "base.html" %}
-{% load gravatar %}
-{% load static %}
-{% load humanize %}
-{% load custom_tags %}
 
 
 {% block content %}
 <div class="container mx-auto mt-8">
-    <h1 class="text-blue-500 text-3xl mb-6">This issue has been hidden by the user that reported it.</h1>
+    <h1 class="text-blue-500 mb-6 mt-8">This issue has been hidden by the user that reported it.</h1>
     <form method="POST" action="#">
         {% csrf_token %}
         <textarea id="text-box" name="text-box" rows="4" cols="30" class="w-full px-4 py-2 border border-gray-300 rounded mb-4">Could you please let me access this issue?</textarea>

@@ -9,15 +9,11 @@ from website.models import Issue
 def private_test_function(user, user_pk, issue_pk):
     try:
         issue = Issue.objects.get(id=issue_pk)
-        if user.pk == user_pk:
-            if issue.user.pk == user.pk:
-                return True
-        return False
+        if user.pk == user_pk and issue.user.pk == user.pk:
+            return True
 
     except:
-        if user.pk == user_pk:
-            return True
-        return False
+        return user.pk == user_pk
 
 
 def private_access_check(

@@ -347,18 +347,21 @@ def facebook_callback(request):
 class authenticate_handling(UserPassesTestMixin, LoginRequiredMixin):
     def test_func(self, **kwargs):
         pk = self.kwargs.get("slug")
-        issue = Issue.objects.get(id=pk)
-        issue_user = issue.user
-        issue_viewer = issue.viewer.all()
-        if issue.is_hidden:
-            if issue_user == self.request.user:
-                return True
-            elif self.request.user in issue_viewer:
-                return True
+        try:
+            issue = Issue.objects.get(id=pk)
+            issue_user = issue.user
+            issue_viewer = issue.viewer.all()
+            if issue.is_hidden:
+                if issue_user == self.request.user:
+                    return True
+                elif self.request.user in issue_viewer:
+                    return True
+                else:
+                    return False
             else:
-                return False
-        else:
-            return True
+                return True
+        except:
+            return False
 
 
 @login_required(login_url="/accounts/login")
@@ -379,7 +382,7 @@ def grant_access(request, user_pk, issue_pk):
         if request.POST.get("grant_access"):
             if request.POST.get("select_user") is not None:
                 selected_user = request.POST.get("select_user")
-                r = RequestIssueAccess.objects.get(user=selected_user)
+                r = RequestIssueAccess.objects.get(issue=issue_pk, user=selected_user)
                 try:
                     msg_plain = render_to_string(
                         "email/granted_access.txt", {"name": r.user, "issue_pk": issue_pk}
@@ -401,17 +404,14 @@ def grant_access(request, user_pk, issue_pk):
                     messages.success(request, "Viewership Successfully granted")
                     return redirect("/")
                 except Exception as e:
-                    print(e)
                     messages.error(request, "Email could not be sent. Please try again !")
             else:
                 messages.error(request, "Please select an option")
 
         elif request.POST.get("cancel"):
-            print(request.POST.get("select_viewer"))
-
             if request.POST.get("select_user") is not None:
                 selected_user = request.POST.get("select_user")
-                request_access = RequestIssueAccess.objects.get(user=selected_user)
+                request_access = RequestIssueAccess.objects.get(user=selected_user, issue=issue_pk)
                 request_access.delete()
                 messages.success(request, "Request Declined")
 
@@ -433,47 +433,48 @@ def grant_access(request, user_pk, issue_pk):
 def request_access(request, issue_pk):
     try:
         issue = Issue.objects.get(id=issue_pk)
-    except:
+        r = RequestIssueAccess.objects.filter(user=request.user, issue=issue_pk).exists()
+        if r is False:
+            if issue.is_hidden is True and (request.user not in issue.viewer.all()):
+                if request.method == "POST":
+                    try:
+                        msg_plain = render_to_string(
+                            "email/request_access.txt",
+                            {"name": issue.user, "requester": request.user, "issue_pk": issue_pk},
+                        )
+                        msg_html = render_to_string(
+                            "email/request_access.txt",
+                            {"name": issue.user, "requester": request.user, "issue_pk": issue_pk},
+                        )
+
+                        send_mail(
+                            "Request Access for private issue",
+                            msg_plain,
+                            settings.EMAIL_TO_STRING,
+                            [issue.user.email],
+                            html_message=msg_html,
+                        )
+                        messages.success(request, "Email request has been sent to owner")
+                        message = request.POST.get("text-box")
+                        print(message)
+                        request_access = RequestIssueAccess(
+                            issue=issue, user=request.user, message=message
+                        )
+                        request_access.save()
+                        return redirect("/")
+                    except:
+                        messages.error(request, "Email could not be sent. Please try again !")
+                else:
+                    return render(request, "request_access.html")
+            else:
+                return redirect("issue_view", slug=int(issue_pk))
+
+        messages.success(request, "Request has Already been sent Please Wait for approval")
+        return redirect("/")
+
+    except Issue.DoesNotExist:
         messages.error(request, "Issue Does not Exist")
         return redirect("/")
-    try:
-        RequestIssueAccess.objects.get(user=request.user, issue=issue_pk)
-        messages.success(request, "Request has ALready been sent Please Wait for approval")
-        return redirect("/")
-    except:
-        if issue.is_hidden is True and (request.user not in issue.viewer.all()):
-            if request.method == "POST":
-                try:
-                    msg_plain = render_to_string(
-                        "email/request_access.txt",
-                        {"name": issue.user, "requester": request.user, "issue_pk": issue_pk},
-                    )
-                    msg_html = render_to_string(
-                        "email/request_access.txt",
-                        {"name": issue.user, "requester": request.user, "issue_pk": issue_pk},
-                    )
-
-                    send_mail(
-                        "Request Access for private issue",
-                        msg_plain,
-                        settings.EMAIL_TO_STRING,
-                        [issue.user.email],
-                        html_message=msg_html,
-                    )
-                    messages.success(request, "Email request has been sent to owner")
-                    message = request.POST.get("text-box")
-                    print(message)
-                    request_access = RequestIssueAccess(
-                        issue=issue, user=request.user, message=message
-                    )
-                    request_access.save()
-                    return redirect("/")
-                except:
-                    messages.error(request, "Email could not be sent. Please try again !")
-            else:
-                return render(request, "request_access.html")
-        else:
-            return redirect("issue_view", slug=int(issue_pk))
 
 
 class FacebookLogin(SocialLoginView):
