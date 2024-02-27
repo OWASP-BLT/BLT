@@ -1,187 +1,755 @@
-  
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Cyber Security Dashboard</title>
-  <style>
-    body {
-      background-color: #161616;
-      color: #fff;
-      font-family: Arial, sans-serif;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cyber Security Dashboard</title>
+    <!-- CSS -->
+    
+    <style>
+      /* Base */
 
-    h1, h2, h3 {
-      color: #6ec1e4;
-    }
+*,
+*::after,
+*::before {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  font-family: "Time New Roman", sans-serif;
+}
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-    }
+body {
+  background: #ffffff;
+  color: #333333;
+}
 
-    .card {
-      background-color: #1e1e1e;
-      border-radius: 5px;
-      padding: 20px;
-      margin: 20px 0;
-      box-shadow: 0 5px 10px rgba(0,0,0,.3);
-    }
+html {
+  font-size: 62.5%; /* = 10px = 1rem */
+}
 
-    .card h2 {
-      margin-top: 0;
-    }
+.dashboard {
+  min-height: 100vh; /* Set minimum height to 100% of viewport height */
+  background: #000000;
+  display: flex;
+  overflow-x: hidden;
+}
 
-    .card ul {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
+.flex {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-    .card li {
-      margin-bottom: 10px;
-    }
+.flex-c {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
 
-    .traffic-chart {
-      width: 100%;
-      height: 300px;
-      background-color: #1e1e1e;
-      border-radius: 5px;
-      padding: 20px;
-      box-shadow: 0 5px 10px rgba(0,0,0,.3);
-    }
+.icon {
+  width: 5rem;
+  height: 5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.5rem;
+  cursor: pointer;
+  margin: 2.5rem 0;
+}
 
-    .user-chart {
-      width: 100%;
-      height: 400px;
-      background-color: #1e1e1e;
-      border-radius: 5px;
-      padding: 20px;
-      box-shadow: 0 5px 10px rgba(0,0,0,.3);
-    }
+.heading {
+  font-size: 1.8rem;
+  color: #fcfcfc;
+  font-weight: 500;
+  text-align: left;
+}
+/* End Base */
+/* Menu */
 
-    .compliance-chart {
-      width: 100%;
-      height: 200px;
-      background-color: #1e1e1e;
-      border-radius: 5px;
-      padding: 20px;
-      box-shadow: 0 5px 10px rgba(0,0,0,.3);
-    }
+.content {
+  flex: 1;
+  display: flex;
+}
 
-    .btn {
-      display: inline-block;
-      padding: 10px 20px;
-      background-color: #6ec1e4;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 5px;
-      margin-top: 10px;
-      box-shadow: 0 5px 10px rgba(0,0,0,.3);
-    }
+/* Main Content */
+.main-content {
+  flex: 1;
+  padding: 3rem;
+  width: calc(100% - 8rem); /* Set width to 100% minus padding of 3rem on each side */
+  overflow-y: auto;
+  color: #ffffff;
+}
 
-    .btn:hover {
-      background-color: #57a2be;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Cyber Security Dashboard</h1>
-    <div class="card">
-      <h2>Summary of Security Incidents</h2>
-      <ul>
-        <li>Incident #1 - Severity: High, Status: In Progress, Affected Systems: Server A, Server B</li>
-        <li>Incident #2 - Severity: Medium, Status: Resolved, Affected Systems: Desktop C, Laptop D</li>
-        <li>Incident #3 - Severity: Low, Status: Resolved, Affected Systems: Printer E</li>
-      </ul>
-      <a href="#" class="btn">View All Incidents</a>
-    </div>
-    <div class="card">
-      <h2>Threat Intelligence</h2>
-      <p>Real-time feed of the latest threat intelligence:</p>
-      <ul>
-       
+.head {
+  justify-content: space-between;
+}
+
+.head h1 {
+  flex: 1;
+  font-size: 3rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.box {
+  padding: 10px;
+  background: #2a2a2a;
+  font-size: 1.8rem;
+  font-weight: 500;
+  color: #e6e3e5;
+  cursor: pointer;
+}
+
+.box .angle {
+  margin-left: 10px;
+}
+
+.time-period {
+  margin-right: 2rem;
+}
+
+/* Stats */
+.stats {
+  background: #2a2a2a;
+  margin-top: 4rem;
+  padding: 2rem 1rem;
+  font-size: 1.6rem;
+  justify-content: space-between;
+}
+
+.stats-box {
+  min-height: 30rem;
+  padding: 2rem 1rem;
+}
+
+.stats-box .heading {
+  margin-bottom: 2rem;
+}
+
+.activity {
+  flex: 0 0 60%;
+}
+
+.traffic {
+  background: #2a2a2a;
+  width: 38%;
+}
+
+
+
+/* event activity */
+.event-stats {
+  justify-content: space-between;
+  margin-top: 2rem;
+}
+
+.event-stats .stats-box {
+  background: #2a2a2a;
+}
+
+.event-activity {
+  width: 38%;
+}
+
+.incident {
+  width: 60%;
+}
+
+.incident-events {
+  text-align: left;
+  font-size: 1.8rem;
+  padding: 7px 0;
+}
+
+.incident-events th {
+  background: #f3f3f3;
+  color: #2a2a2a;
+}
+
+.incident-events th,
+.incident-events td {
+  padding: 10px 8px;
+}
+
+.event-name {
+  justify-content: flex-start;
+}
+
+.event-name p {
+  margin-left: 10px;
+}
+
+.event-name .icon {
+  margin: 0;
+  background: #ff8bb4;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 3rem;
+}
+
+
+.cont{
+  display: flex;
+}
+.rop{
+  flex: 1;
+}
+.notices {
+  flex: 1;
+  margin-top: 4rem;
+}
+
+.notices .heading {
+  font-size: 1.8rem;
+  color: #ffffff;
+  font-weight: 500;
+  text-align: left;
+}
+
+.notices-container {
+  max-height: 200px; /* Set your desired height */
+  overflow-y: auto; /* Enable vertical scrolling */
+}
+
+.notice {
+  padding: 10px;
+  background: #2a2a2a;
+  font-size: 1.8rem;
+  font-weight: 500;
+  color: #e6e3e5;
+  margin-bottom: 10px;
+}
+
+/* End Profile */
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .dashboard {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+}
+
+@media (max-width: 1180px) {
+  html {
+    font-size: 50%;
+  }
+}
+
+@media (max-width: 1050px) {
+  html {
+    font-size: 50%;
+  }
+}
+
+@media (max-width: 1000px) {
+  .content {
+    flex-direction: column;
+  }
+
+  .profile {
+    width: 40%;
+    margin: 3rem auto;
+  }
+
+  .main-content {
+    width: 100%;
+  }
+
+  .title,
+  .upgrade {
+    display: none;
+  }
+
+  .activity {
+    justify-content: center;
+  }
+
+  .btn {
+    width: 60%;
+  }
+}
+
+@media (max-width: 850px) {
+  .menu {
+    width: 100%;
+    flex-direction: row;
+    position: absolute;
+    height: 80px;
+    min-height: 80px;
+  }
+
+  .navigation {
+    display: flex;
+  }
+
+  .navigation .icon {
+    margin: 0 10px;
+  }
+
+  .content {
+    margin-top: 85px;
+  }
+}
+
+@media (max-width: 750px) {
+  .stats {
+    flex-direction: column;
+    background: none;
+  }
 
   
-  <li>Malware attack detected on external network</li>
-    <li>Phishing attempt on employee email accounts</li>
-    <li>SQL injection attempt on web server</li>
-  </ul>
-  <a href="#" class="btn">View All Threats</a>
+  
+
+  .profile {
+    width: 60%;
+  }
+}
+
+@media (max-width: 650px) {
+  .navigation,
+  .settings {
+    display: none;
+  }
+
+  .menu {
+    justify-content: center;
+  }
+
+  .main-content {
+    padding: 1rem;
+  }
+
+  .event-stats {
+    flex-direction: column;
+  }
+
+  .event-activity,
+  .incident {
+    width: 95%;
+    padding: 2rem 4rem;
+    margin: 20px auto;
+  }
+
+  .event-activity {
+    width: 60%;
+  }
+}
+
+@media (max-width: 550px) {
+  .event-activity,
+  .incident {
+    width: 100%;
+  }
+
+  .event-name .icon {
+    display: none;
+  }
+
+  .profile {
+    width: 85%;
+  }
+
+  .menu {
+    min-height: 60px;
+    height: 60px;
+  }
+}
+
+@media (max-width: 300px) {
+  html {
+    font-size: 35%;
+  }
+}
+/* End  Responsive */
+    </style>
+  </head>
+  <body>
+    <!-- Dashboard -->
+    <div class="dashboard">
+      <!-- Menu -->
+      
+      <!-- End Menu -->
+
+      <div class="content">
+        <!-- Main Content -->
+        <div class="main-content">
+          <!-- Head -->
+          
+          <!-- End Head -->
+
+          <!-- Stats -->
+          <div class="stats flex">
+            <div class="stats-box activity" style="width: 600px; overflow-x: auto;">
+              <h1 class="heading" style="font-size: 3.5rem;">Compliance Monitoring</h1>
+              <canvas id="activity" style="width: 840px; height: 400px;"></canvas>
+            </div>
+
+            <div class="stats-box traffic">
+              <h2 class="heading" style="font-size: 3.5rem;">Network Traffic</h2>
+              <div class="traffic-amount flex-c">
+               
+                
+              </div>
+              <canvas id="traffic"></canvas>
+            </div>
+          </div>
+
+          <!-- event Stats -->
+          <div class="event-stats flex">
+            <div class="event-activity stats-box">
+              <h1 class="heading" style="font-size: 3.5rem;">User Behavior</h1>
+              <canvas id="events"></canvas>
+            </div>
+
+<div class="incident stats-box" style="overflow-x: auto;">
+    <h2 class="heading" style="font-size: 3.5rem;">Security Incident</h2>
+    <div style="width: 100%; height: 300px; overflow-y: auto;">
+        <table class="incident-events" height="100%" width="100%">
+            <tr>
+                <th>Date</th>
+                <th>Incident</th>
+                <th>Level</th>
+                <th>Status</th>
+            </tr>
+
+            <tr>
+                <td>68231</td>
+                <td>
+                    <div class="event-name flex">
+                        <div class="icon">
+                            
+                        </div>
+                        <p>Amazon Kindle 4th Gen</p>
+                    </div>
+                </td>
+                <td>$1900</td>
+                <td>351</td>
+            </tr>
+
+            <tr>
+                <td>68231</td>
+                <td>
+                    <div class="event-name flex">
+                        <div class="icon">
+                            
+                        </div>
+                        <p>Iphone 11 Pro</p>
+                    </div>
+                </td>
+                <td>$1300</td>
+                <td>121</td>
+            </tr>
+
+            <tr>
+                <td>68231</td>
+                <td>
+                    <div class="event-name flex">
+                        <div class="icon">
+                           
+                        </div>
+                        <p>Windows 11</p>
+                    </div>
+                </td>
+                <td>$180</td>
+                <td>195</td>
+            </tr>
+
+            <!-- Additional rows -->
+            <tr>
+                <td>68231</td>
+                <td>
+                    <div class="event-name flex">
+                        <div class="icon">
+                           
+                        </div>
+                        <p>Google Pixel 5</p>
+                    </div>
+                </td>
+                <td>$800</td>
+                <td>90</td>
+            </tr>
+
+            <tr>
+                <td>68231</td>
+                <td>
+                    <div class="event-name flex">
+                        <div class="icon">
+                            
+                        </div>
+                        <p>Samsung Galaxy S21</p>
+                    </div>
+                </td>
+                <td>$1000</td>
+                <td>145</td>
+            </tr>
+
+            <tr>
+                <td>68231</td>
+                <td>
+                    <div class="event-name flex">
+                        <div class="icon">
+                           
+                        </div>
+                        <p>Sony Playstation 5</p>
+                    </div>
+                </td>
+                <td>$500</td>
+                <td>75</td>
+            </tr>
+        </table>
+    </div>
 </div>
-<div class="card">
-  <h2>Network Traffic</h2>
-  <div class="traffic-chart"></div>
-  <p>Real-time graph of network traffic:</p>
-  <a href="#" class="btn">View All Traffic</a>
+
+
+
+          <!-- event Stats -->
+
+          <!-- End Stats -->
+        </div>
+        <!-- End Main Content -->
+        <div class="cont">
+        <div class="rop stats-box" style="overflow-x: auto; background-color: #2a2a2a; margin-top: 10px;">
+          <h2 class="heading" style="font-size: 3.5rem;">Vulnerability Details</h2>
+          <div style="width: 100%; height: 400px; overflow-y: auto;">
+              <table class="incident-events" height="100%" width="100%">
+                  <tr>
+                      <th>Date</th>
+                      <th>Incident</th>
+                      <th>Level</th>
+                      <th>Status</th>
+                      <th>Remedy</th>
+                  </tr>
+      
+                  <tr>
+                      <td>68231</td>
+                      <td>
+                          <div class="event-name flex">
+                              <div class="icon">
+                                  
+                              </div>
+                              <p>Amazon Kindle 4th Gen</p>
+                          </div>
+                      </td>
+                      <td>$1900</td>
+                      <td>351</td>
+                  </tr>
+      
+                  <tr>
+                      <td>68231</td>
+                      <td>
+                          <div class="event-name flex">
+                              <div class="icon">
+                                  
+                              </div>
+                              <p>Iphone 11 Pro</p>
+                          </div>
+                      </td>
+                      <td>$1300</td>
+                      <td>121</td>
+                  </tr>
+      
+                  <tr>
+                      <td>68231</td>
+                      <td>
+                          <div class="event-name flex">
+                              <div class="icon">
+                                 
+                              </div>
+                              <p>Windows 11</p>
+                          </div>
+                      </td>
+                      <td>$180</td>
+                      <td>195</td>
+                  </tr>
+      
+                  <!-- Additional rows -->
+                  <tr>
+                      <td>68231</td>
+                      <td>
+                          <div class="event-name flex">
+                              <div class="icon">
+                                  
+                              </div>
+                              <p>Google Pixel 5</p>
+                          </div>
+                      </td>
+                      <td>$800</td>
+                      <td>90</td>
+                  </tr>
+      
+                  <tr>
+                      <td>68231</td>
+                      <td>
+                          <div class="event-name flex">
+                              <div class="icon">
+                                  
+                              </div>
+                              <p>Samsung Galaxy S21</p>
+                          </div>
+                      </td>
+                      <td>$1000</td>
+                      <td>145</td>
+                  </tr>
+      
+                  <tr>
+                      <td>68231</td>
+                      <td>
+                          <div class="event-name flex">
+                              <div class="icon">
+                                 
+                              </div>
+                              <p>Sony Playstation 5</p>
+                          </div>
+                      </td>
+                      <td>$500</td>
+                      <td>75</td>
+                  </tr>
+              </table>
+          </div>
+          <!-- Notices Section -->
+<div class="notices">
+  <hr>
+  <br>
+  <h1 class="heading" style="font-size: 3.5rem;">Threat Intelligence</h1> <!-- Updated heading -->
+  <div class="notices-container">
+    <div class="notice">
+      <p>This is notice 1.</p>
+    </div>
+    <div class="notice">
+      <p>This is notice 2.</p>
+    </div>
+    <!-- Add more notices as needed -->
+    <div class="notice">
+      <p>This is notice 3.</p>
+    </div>
+    <div class="notice">
+      <p>This is notice 4.</p>
+    </div>
+    <div class="notice">
+      <p>This is notice 4.</p>
+    </div>
+    <div class="notice">
+      <p>This is notice 4.</p>
+    </div>
+    <div class="notice">
+      <p>This is notice 4.</p>
+    </div>
+    <!-- Add more notices as needed -->
+  </div>
 </div>
-<div class="card">
-  <h2>User Activity</h2>
-  <div class="user-chart"></div>
-  <p>Real-time graph of user activity:</p>
-  <a href="#" class="btn">View All Users</a>
-</div>
-<div class="card">
-  <h2>Compliance Status</h2>
-  <div class="compliance-chart"></div>
-  <p>Summary of compliance status:</p>
-  <ul>
-    <li>PCI DSS: Compliant</li>
-    <li>ISO 27001: Non-Compliant</li>
-    <li>GDPR: Compliant</li>
-  </ul>
-  <a href="#" class="btn">View All Compliance Reports</a>
-</div>
-</div>
-  <!-- Libraries -->
-  <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.26.0/dist/apexcharts.min.js"></script>
-  <!-- Scripts -->
-  <script>
-    // Traffic Chart
-    var trafficChart = new ApexCharts(document.querySelector(".traffic-chart"), {
-      series: [{
-        name: "Inbound Traffic",
-        data: [120, 150, 100, 180, 90, 200, 150, 250, 120, 180]
-      }, {
-        name: "Outbound Traffic",
-        data: [80, 100, 50, 120, 70, 150, 100, 200, 80, 120]
-      }],
-      chart: {
-        type: 'line',
-        height: 300,
-        zoom: {
-          enabled: false
+
+        </div>
+        
+      </div>
+    </div>
+    <!-- End Dashboard -->
+    <!-- Ion Icons Js -->
+    
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"
+    ></script>
+    <script
+      nomodule
+      src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.js"
+    ></script>
+
+    <!-- Chart JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- JS -->
+    
+      <script>
+        //  Graphs
+
+const activity = document.getElementById("activity").getContext('2d');
+const traffic = document.getElementById("traffic");
+const events = document.getElementById("events");
+Chart.defaults.color = "#ffffff";
+Chart.defaults.borderColor = "#ffffff";
+
+new Chart(activity, {
+  type: "bar",
+  data: {
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sep", "Oct", "Nov", "Dec"], // Adding more months
+    datasets: [
+      {
+        label: "My Revenue",
+        data: [380, 200, 500, 300, 150, 400, 100, 250, 350, 450, 550, 600], // Corresponding data for each month
+        backgroundColor: ["#3554b2"],
+        hoverBackgroundColor: "#4b78fe",
+      },
+    ],
+  },
+  options: {
+    responsive: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
+    scales: {
+      x: {
+        type: 'category',
+        offset: true,
+        grid: {
+          offset: true
         }
+      }
+    },
+  },
+});
+
+new Chart(traffic, {
+  type: "line",
+  data: {
+    labels: ["Jan", "Feb", "Mar", "Apr", "May"],
+    datasets: [
+      {
+        label: "My Revenue",
+        data: [380, 200, 500, 300, 150],
+        backgroundColor: ["#4b78fe"],
+        hoverBackgroundColor: "#3554b2",
       },
-      colors: ['#6ec1e4', '#57a2be'],
-      xaxis: {
-        categories: ['Feb 20', 'Feb 21', 'Feb 22', 'Feb 23', 'Feb 24', 'Feb 25', 'Feb 26', 'Feb 27', 'Feb 28', 'Mar 1'],
+    ],
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: false,
       },
-    });
+    },
+  },
+});
 
-    trafficChart.render();
-
-    // User Chart
-    var userChart = new ApexCharts(document.querySelector(".user-chart"), {
-      series: [{
-        name: "Active Users",
-        data: [100, 150, 200, 250, 300, 350, 400, 450, 500, 550]
-      }, {
-        name: "Inactive Users",
-        data: [50, 75, 100, 125, 150, 175, 200, 225, 250, 275]
-      }],
-      chart: {
-        type: 'line',
-        height: 400,
-        zoom: {
-          enabled: false
-        }
+new Chart(events, {
+  type: "doughnut",
+  data: {
+    labels: ["Benign Activities", "Suspicious Activities"],
+    datasets: [
+      {
+        label: "Behavior",
+        data: [380, 200],
+        backgroundColor: [
+          "rgb(4, 170, 109)",
+          "rgba(244,164,111, 1)",
+        ],
+        hoverBackgroundColor: "#4b78fe",
       },
-      colors: ['#6ec1e4', '#57a2be'],
-      xaxis: {
-        categories: ['Feb 20', 'Feb 21', 'Feb 22', 'Feb 23', 'Feb 24', 'Feb 25', 'Feb 26', 'Feb 27', 'Feb 
+    ],
+  },
+  options: {
+    responsive: true,
+  },
+});
 
-
-
+      </script>
+      
+      
+  </body>
+</html>
