@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load custom_tags %}
 {% load i18n %}
-{% block title %}Sponsors{% endblock %}
+{% block title %}Sponsors{% endblock title %}
 {% block content %}
     <div class="min-h-screen flex flex-col mx-4">
         <h1 class="text-4xl font-semibold my-8 mx-auto">Sponsor a Monthly Prize on BLT</h1>
@@ -125,4 +125,4 @@
         }
         getBCHBalance();
     </script>
-{% endblock %}
+{% endblock content %}

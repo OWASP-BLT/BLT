@@ -48,7 +48,7 @@
     }
 
     </style>
-{% endblock %}
+{% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div id="duplicate-container"
@@ -90,13 +90,13 @@
               class="w-[96%] bg-white rounded-2xl p-10 my-10 shadow-md">
             {% csrf_token %}
             <div class="w-full pb-12">
-                <p class="text-5xl font-semibold leading-7 text-gray-900">{% trans 'REPORT A BUG' %}</p>
+                <p class="text-5xl font-semibold leading-7 text-gray-900">{% trans "REPORT A BUG" %}</p>
                 <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div class="sm:col-span-5 flex items-center">
                         <div>
                             <label for="url"
                                    class="block text-2xl font-semibold leading-6 text-gray-900">
-                                {% trans 'DOMAIN URL' %}
+                                {% trans "DOMAIN URL" %}
                             </label>
                             <div class="mt-2">
                                 <input id="url"
@@ -126,7 +126,7 @@
                     </div>
                     <div class="h-full flex items-end w-full min-w-[150px]">
                         <a class="duplicates w-full h-[60%] min-h-[40px] rounded-md hover:text-white cursor-pointer hover:no-underline hover:shadow-form bg-red-500 hover:bg-red-700 items-center justify-center flex text-2xl font-semibold text-white outline-none">
-                            {% trans 'Check for Duplicates' %}
+                            {% trans "Check for Duplicates" %}
                         </a>
                     </div>
                 </div>
@@ -140,7 +140,7 @@
                     <div class="sm:col-span-5">
                         <label for="description"
                                class="block text-2xl font-semibold leading-6 text-gray-900">
-                            {% trans 'BUG TITLE' %}
+                            {% trans "BUG TITLE" %}
                         </label>
                         <div class="mt-2">
                             <input type="text"
@@ -158,7 +158,7 @@
                     <div class="sm:col-span-1 w-full min-w-[150px]">
                         <label for="label"
                                class="block text-2xl font-semibold leading-6 text-gray-900">
-                            {% trans 'BUG TYPE' %}
+                            {% trans "BUG TYPE" %}
                         </label>
                         <div class="mt-2">
                             <select name="label"
@@ -183,7 +183,7 @@
                     <div class="sm:col-span-1 w-full min-w-[150px]">
                         <label for="hunt"
                                class="block text-2xl font-semibold leading-6 text-gray-900">
-                            {% trans 'BUG HUNT' %}
+                            {% trans "BUG HUNT" %}
                         </label>
                         <div class="mt-2">
                             <select name="hunt"
@@ -192,7 +192,7 @@
                                     data-step="3"
                                     class="flex w-full placeholder:text-xl rounded-md border-0 py-4 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset">
                                 {% if not report_on_hunt %}
-                                    <option value="None">{% trans 'REPORT INDEPENDENTLY' %}</option>
+                                    <option value="None">{% trans "REPORT INDEPENDENTLY" %}</option>
                                 {% endif %}
                                 {% for hunt in hunts %}<option value="{{ hunt.id }}">{{ hunt.name }}</option>{% endfor %}
                             </select>
@@ -212,7 +212,7 @@
                                value="{{ request.GET.hash }}">
                     {% else %}
                         <div class="col-span-full">
-                            <label for="file" class="block text-2xl font-medium leading-6 text-gray-900">{% trans 'SCREENSHOTS' %}</label>
+                            <label for="file" class="block text-2xl font-medium leading-6 text-gray-900">{% trans "SCREENSHOTS" %}</label>
                             <div id="screenshot-container"
                                  class="mt-2 flex w-[350px] h-full items-center justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 text-red-500">
                                 <div class="text-center">
@@ -225,7 +225,7 @@
                                     <div class="mt-4 flex text-2xl leading-6 text-gray-600">
                                         <label for="screenshots"
                                                class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
-                                            <span class="text-red-600">{% trans 'Upload screenshots' %}</span>
+                                            <span class="text-red-600">{% trans "Upload screenshots" %}</span>
                                             <input id="screenshots"
                                                    name="screenshots"
                                                    type="file"
@@ -234,7 +234,7 @@
                                                    required
                                                    max="4" />
                                         </label>
-                                        <p class="pl-1">{% trans 'or drag and drop' %}</p>
+                                        <p class="pl-1">{% trans "or drag and drop" %}</p>
                                     </div>
                                     <p class="text-lg leading-5 text-gray-600">PNG, JPG, GIF up to 5 images</p>
                                 </div>
@@ -251,18 +251,18 @@
                 <div class="w-1/2">{% include "includes/md_editor.html" %}</div>
                 <div class="w-1/2 pl-10 mt-5">
                     <div class="flex w-full items-center justify-between">
-                        <h2 class="text-2xl font-semibold leading-7 text-gray-900">{% trans 'ADD TEAM MEMBERS' %}</h2>
+                        <h2 class="text-2xl font-semibold leading-7 text-gray-900">{% trans "ADD TEAM MEMBERS" %}</h2>
                         <button onclick="add_email_container()"
                                 type="button"
                                 class="w-[70px] h-[30px] mt-5 text-lg md:text-2xl md:w-[120px] md:h-[40px] md:mt-10 bg-red-500 text-white font-bold rounded-md hover:bg-red-600 transition-all">
-                            {% trans 'Add Email' %}
+                            {% trans "Add Email" %}
                         </button>
                     </div>
-                    <p class="mt-4 text-xl leading-6 text-gray-600">{% trans 'Team members should be bughunts users' %}.</p>
+                    <p class="mt-4 text-xl leading-6 text-gray-600">{% trans "Team members should be bughunts users" %}.</p>
                     <div class="mt-10 overflow-y-scroll" id="email-container">
                         <label for="team_members"
                                class="block text-2l font-medium leading-6 text-gray-900">
-                            {% trans 'Email address' %}
+                            {% trans "Email address" %}
                         </label>
                     </div>
                 </div>
@@ -277,7 +277,7 @@
                                class="w-7 h-7 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
                         <label for="default-checkbox"
                                class="w-full text-center  ml-4 mt-6 text-3xl  font-medium text-gray-900">
-                            {% trans 'Report Privately' %}
+                            {% trans "Report Privately" %}
                         </label>
                     </label>
                     <div class="captcha-form flex ml-10 flex-col w-full md:flex-row items-center">{{ captcha_form.captcha }}</div>
@@ -285,11 +285,11 @@
                 <div class="w-full flex justify-evenly md:justify-end">
                     <button type="button"
                             onclick="cancelForm()"
-                            class="text-md font-semibold leading-6 mr-10 text-gray-900">{% trans 'Cancel' %}</button>
+                            class="text-md font-semibold leading-6 mr-10 text-gray-900">{% trans "Cancel" %}</button>
                     <button type="submit"
                             name="reportbug_button"
                             class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500">
-                        {% trans 'Report' %}
+                        {% trans "Report" %}
                     </button>
                 </div>
             </div>
@@ -303,7 +303,7 @@
         <img src="" alt="image" class="w-full h-full" id="image-preview" width="100%" height="100%">
     </div>
 </div>
-{% endblock %}
+{% endblock content %}
 {% block after_js %}
     <script type="text/javascript">
 
@@ -473,4 +473,4 @@
     });
 
     </script>
-{% endblock %}
+{% endblock after_js %}

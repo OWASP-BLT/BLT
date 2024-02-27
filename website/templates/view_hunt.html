@@ -74,7 +74,7 @@ h5.card-title{
 
     </style>
     <section>
-        {% include 'includes/user_sidenav.html' %}
+        {% include "includes/user_sidenav.html" %}
     </section>
     <link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
     <link href="{% static 'mdeditor/css/editormd.preview.css' %}"
@@ -90,12 +90,12 @@ h5.card-title{
                 <p class="lead mt-5">{{ hunt.name }} / {{ hunt.starts_on|date:'Y-m-d H:i' }} - {{ hunt.end_on|date:'Y-m-d H:i' }}</p>
             </div>
             {% if hunt_active %}
-                <a href="submittion">
+                <a href="{% url 'submit_bug' %}">
                     <button class="start-btn btn btn-danger">Start</button>
                 </a>
             {% else %}
                 {% if hunt_completed %}
-                    <a href="results">
+                    <a href="{% url 'hunt_results' %}">
                         <button class="start-btn btn btn-danger">View Results</button>
                     </a>
                 {% else %}
@@ -134,4 +134,4 @@ h5.card-title{
   })
 
     </script>
-{% endblock %}
+{% endblock content %}
