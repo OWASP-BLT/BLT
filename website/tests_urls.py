@@ -5,8 +5,8 @@ import chromedriver_autoinstaller
 from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.urls import reverse
-from .models import Domain
 from selenium.webdriver.chrome.service import Service
+from .models import Domain
 
 os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 
