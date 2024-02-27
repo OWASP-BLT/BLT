@@ -6,7 +6,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.0/flowbite.min.js"
             integrity="sha384-SXh3DHBSUxvOFk7+R9qN3hv+DtgPJz4vQwOArU6zxWGnvtR1sy+XmzKUkNh2qWST"
             crossorigin="anonymous"></script>
-{% endblock %}
+{% endblock head %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-white">
@@ -76,7 +76,7 @@
                                     {% endif %}
                                 </div>
                                 <div class="flex flex-col justify-center">
-                                    <a href="/profile/{{ object.user.username }}">
+                                    <a href="{% url 'profile' slug=object.user.username %}">
                                         Reported By
                                         <span class="font-bold">{{ object.user.username|default_if_none:"Anonymous" }}</span>
                                     </a>
@@ -86,9 +86,9 @@
                                 </div>
                             </div>
                             <div class="w-full xl:w-[100%] mt-10 xl:mt-0 flex flex-wrap justify-between text-black">
-                                {% include 'includes/_likes2.html' %}
-                                {% include 'includes/_flags2.html' %}
-                                {% include 'includes/_bookmark2.html' %}
+                                {% include "includes/_likes2.html" %}
+                                {% include "includes/_flags2.html" %}
+                                {% include "includes/_bookmark2.html" %}
                                 <a target="_blank"
                                    href="https://twitter.com/intent/tweet?text=Bug Found on @{{ object.domain_title }} - {{ object.description }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}"
                                    class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
@@ -169,7 +169,7 @@
                                             <p class="text-3xl font-bold">Report Anonymously:</p>
                                             {% if object.user %}
                                                 <form method="post"
-                                                      action="/remove_user_from_issue/{{ object.id }}/"
+                                                      action="{% url 'remove_user_from_issue' id=object.id %}"
                                                       class="m-0 p-0">
                                                     {% csrf_token %}
                                                     <input type="hidden" name="token" value="{{ csrf_token }}" class="m-0 p-0" />
@@ -185,7 +185,7 @@
                                         <!-- add a delete button here like anonymous button -->
                                         <div class="w-full flex justify-between my-3">
                                             <p class="text-3xl font-bold">Delete Issue:</p>
-                                            <a href="/delete_issue/{{ object.id }}"
+                                            <a href="{% url 'delete_issue' id=object.id %}"
                                                onclick="return confirm('Are you sure you want to delete this issue?')">
                                                 <button class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">
                                                     Yes <i class="fa fa-check"></i>
@@ -205,7 +205,7 @@
                             <div class="w-full flex items-center">
                                 <div class="w-[90px] h-[90px] rounded-full object-fill flex flex-col  overflow-hidden">
                                     {% if browser_family %}
-                                        {% with 'img/browser-logos/'|add:browser_family|add:'/'|add:browser_family|add:'_64x64.png'|lower as image_static %}
+                                        {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as image_static %}
                                             <img class="w-full h-full object-cover"
                                                  src="{% static image_static %}"
                                                  alt="Browser Image" width="auto" height="auto">
@@ -239,7 +239,7 @@
                                      alt="Domain Logo" width="auto" height="auto">
                             </div>
                             <div class="full p-3 flex flex-col justify-center">
-                                <a class="font-bold text-3xl" href="/domain/{{ object.domain_name }}">Reported on {{ object.domain.name }}</a>
+                                <a class="font-bold text-3xl" href="{% url 'domain' slug=object.domain_name %}">Reported on {{ object.domain.name }}</a>
                                 <p class="text-2xl font-light">
                                     Total <span class="font-bold">{{ issue_count }}</span> bugs reported
                                 </p>
@@ -277,7 +277,7 @@
                                 {% endif %}
                             </div>
                             <div class="full p-3 flex flex-col justify-center">
-                                <a class="font-bold text-3xl" href="/profile/{{ object.user.username }}">Reported By {{ object.user.username|default_if_none:"Anonymous" }}</a>
+                                <a class="font-bold text-3xl" href="{% url 'profile' slug=object.user.username %}">Reported By {{ object.user.username|default_if_none:"Anonymous" }}</a>
                                 <p class="text-2xl font-light">
                                     Total points <span class="font-bold">{{ users_score }}</span>
                                 </p>
@@ -289,7 +289,7 @@
                     </div>
                 </div>
             </div>
-            {% include 'comments2.html' %}
+            {% include "comments2.html" %}
         </div>
     </div>
 </div>
@@ -494,4 +494,4 @@
         });
     });
 </script>
-{% endblock %}
+{% endblock content %}

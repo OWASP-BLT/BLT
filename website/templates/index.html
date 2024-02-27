@@ -17,10 +17,10 @@ f
             <h1 class="page-sub-header">{% trans "Latest activity" %}</h1>
             <div class="list-group">
                 {% for activity in activities %}
-                    {% include '_activity.html' %}
+                    {% include "_activity.html" %}
                 {% endfor %}
             </div>
-            <a href="/all_activity" class="btn btn-default btn-block">{% trans "View All Activity" %}</a>
+            <a href="{% url 'all_activity' %}" class="btn btn-default btn-block">{% trans "View All Activity" %}</a>
         </div>
         <div class="col-md-4">
             <div class="row">
@@ -32,7 +32,7 @@ f
                         <div class="box leaderboardbox">
                             <strong>{% trans "No sponsored prizes this month" %}</strong>
                         </br>
-                        <button href="/sponsor"
+                        <button href="{% url 'sponsor' %}"
                                 class="bg-red-500 text-white px-4 py-2 rounded text-xl border border-[#ac2925] hover:bg-[#c9302c] hover:border-[#761c19]">
                             {% trans "Sponsor a Prize" %}
                         </button>
@@ -53,7 +53,7 @@ f
                                     {% endif %}
                                 </span>
                                 <span class="h-full w-2/3 flex flex-col items-center justify-center  overflow-hidden">
-                                    <a href="/profile/{{ leader.username }}"
+                                    <a href="{% url 'profile' slug=leader.username %}"
                                        class="text-capitalize w-full h-1/2 font-bold text-2xl">{{ leader.username|truncatechars:20 }}</a>
                                     <span class=" w-full h-1/2 flex justify-start items-center gap-3">
                                         <div class="badge ">{{ leader.total_score }} {% trans "Points" %}</div>
@@ -67,10 +67,10 @@ f
                     {% trans "Leaderboard reset for" %} {% now "F" %}. {% trans "Be first to find issues" %}!
                 {% endif %}
             </div>
-            <a href="/leaderboard" class="btn btn-default btn-block submit_button">{% trans "View All" %}</a>
-            <a href="/leaderboard/monthly"
+            <a href="{% url 'leaderboard_global' %}" class="btn btn-default btn-block submit_button">{% trans "View All" %}</a>
+            <a href="{% url 'leaderboard_specific_month' %}"
                class="btn btn-default btn-block submit_button">{% trans "Filter Monthly" %}</a>
-            <a href="/leaderboard/each-month"
+            <a href="{% url 'leaderboard_eachmonth' %}"
                class="btn btn-default btn-block submit_button">{% trans "View Monthly" %}</a>
         </div>
     </div>
@@ -198,7 +198,7 @@ f
 {% if ended_hunts %}
     <p class="text-7xl text-center mb-8 font-sans text-[#B1B1B1]">{% trans "ENDED HUNTS" %}</p>
     <div class="w-full flex justify-center">
-        <a href="/"
+        <a href="{% url 'index' %}"
            class="px-8 py-3 bg-red-500 rounded-lg text-center text-white font-bold text-2xl">{% trans "View Ongoing Hunts" %}</a>
     </div>
 {% else %}
@@ -316,4 +316,4 @@ f
         window.location.href = relative_path;
     }
 </script>
-{% endblock %}
+{% endblock content %}

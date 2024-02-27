@@ -37,7 +37,7 @@
                             {% else %}
                                 <img src="{% gravatar_url usr.user.email 50 %}" height="50px" width="50px" alt="{{ usr.user.username }}">
                             {% endif %}
-                            <a href="/profile/{{ usr.user.username }}">{{ usr.user.username }}</a>
+                            <a href="{% url 'profile' slug=usr.user.username %}">{{ usr.user.username }}</a>
                         </div>
                     {% endfor %}
                 </div>

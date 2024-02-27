@@ -29,7 +29,7 @@
                  loading="lazy" alt="user avatar">
         {% endif %}
         {% if bug.user.username is not None %}
-            <a href="/profile/{{ bug.user.username }}"
+            <a href="{% url 'profile' slug=bug.user.username %}"
                class="whitespace-nowrap overflow-clip">{{ bug.user }}</a>
         {% else %}
             <span class="whitespace-nowrap overflow-clip">Anonymous</span>
@@ -39,7 +39,7 @@
         </div>
     </div>
     <div class="bug-desc py-2 h-[100%] font-['Barlow'] font-medium text-[#774343] text-3xl leading-10 overflow-clip">
-        <a href="/issue2/{{ bug.id }}">{{ bug.description|truncatechars:100 }}</a>
+        <a href="{% url 'issue_view2' slug=bug.id %}">{{ bug.description|truncatechars:100 }}</a>
     </div>
     <div class="bug-images h-[50px] flex flex-row justify-between px-3 my-2">
         {% for bug_key, bug_screenshots in bugs_screenshots.items %}

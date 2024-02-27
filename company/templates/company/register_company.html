@@ -8,7 +8,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="description" content="blt make company bug tracking easy">
         <meta name="keywords" content="blt, bug, tracking, company, easy">
-        <title>{% trans 'Register Company' %}</title>
+        <title>{% trans "Register Company" %}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap"
@@ -27,16 +27,16 @@
                   enctype="multipart/form-data"
                   class="w-[96%] bg-white rounded-2xl p-10 my-5 shadow-md">
                 <div class="w-full mb-5">
-                    <p class="text-gray-300 font-satoshi font-bold text-[35px]">{% trans 'Register Company' %}</p>
+                    <p class="text-gray-300 font-satoshi font-bold text-[35px]">{% trans "Register Company" %}</p>
                 </div>
                 {% csrf_token %}
                 <div class="pb-12">
-                    <h2 class="text-base font-semibold leading-7 text-gray-900">{% trans 'Company Information' %}</h2>
+                    <h2 class="text-base font-semibold leading-7 text-gray-900">{% trans "Company Information" %}</h2>
                     <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                         <div class="sm:col-span-3">
                             <label for="domain_name"
                                    class="block text-sm font-medium leading-6 text-gray-900">
-                                {% trans 'Company Name' %}
+                                {% trans "Company Name" %}
                             </label>
                             <div class="mt-2">
                                 <input type="text"
@@ -51,7 +51,7 @@
                         <div class="sm:col-span-3">
                             <label for="company_url"
                                    class="block text-sm font-medium leading-6 text-gray-900">
-                                {% trans 'Company Url' %}
+                                {% trans "Company Url" %}
                             </label>
                             <div class="mt-2">
                                 <input type="text"
@@ -66,7 +66,7 @@
                         <div class="sm:col-span-2 sm:col-start-1">
                             <label for="support_email"
                                    class="block text-sm font-medium leading-6 text-gray-900">
-                                {% trans 'Company Support Email (Optional)' %}
+                                {% trans "Company Support Email (Optional)" %}
                             </label>
                             <div class="mt-2">
                                 <input type="email"
@@ -80,7 +80,7 @@
                         <div class="sm:col-span-2">
                             <label for="twitter_url"
                                    class="block text-sm font-medium leading-6 text-gray-900">
-                                {% trans 'Company Twitter URL (Optional)' %}
+                                {% trans "Company Twitter URL (Optional)" %}
                             </label>
                             <div class="mt-2">
                                 <input type="text"
@@ -94,7 +94,7 @@
                         <div class="sm:col-span-2">
                             <label for="facebook_url"
                                    class="block text-sm font-medium leading-6 text-gray-900">
-                                {% trans 'Company Facebook URL (Optional)' %}
+                                {% trans "Company Facebook URL (Optional)" %}
                             </label>
                             <div class="mt-2">
                                 <input type="text"
@@ -112,7 +112,7 @@
                         <div class="col-span-full mb-5">
                             <label for="company_logo"
                                    class="block text-sm font-medium leading-6 text-gray-900">
-                                {% trans 'Company Logo' %}
+                                {% trans "Company Logo" %}
                             </label>
                             <div class="mt-2 flex items-center gap-x-3" id="previewLogo">
                                 <div id="previewLogoDiv"
@@ -123,7 +123,7 @@
                                 </div>
                                 <label for="logo"
                                        class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
-                                    <span class="text-red-600">{% trans 'Upload logo' %}</span>
+                                    <span class="text-red-600">{% trans "Upload logo" %}</span>
                                     <input id="logo"
                                            name="logo"
                                            type="file"
@@ -136,28 +136,28 @@
                     </div>
                 </div>
                 <div class="pb-12 mt-5">
-                    <h2 class="text-base font-semibold leading-7 text-gray-900">{% trans 'Company Managers' %}</h2>
+                    <h2 class="text-base font-semibold leading-7 text-gray-900">{% trans "Company Managers" %}</h2>
                     <p class="mt-1 text-sm leading-6 text-gray-600">
-                        {% trans 'Add Emails which will be allowed to add domains' %}.
+                        {% trans "Add Emails which will be allowed to add domains" %}.
                         <br>
-                        {% trans 'Email should be registerd user on bugheist' %}.
+                        {% trans "Email should be registerd user on bugheist" %}.
                     </p>
                     <button onclick="add_email_container()"
                             type="button"
                             class="w-[120px] h-[40px] bg-red-500 text-white font-bold rounded-md mt-2 hover:bg-red-600 transition-all">
-                        {% trans 'Add Email' %}
+                        {% trans "Add Email" %}
                     </button>
                     <div class="sm:col-span-4 mt-5" id="email-container">
-                        <label for="email" class="block text-sm font-medium leading-6 text-gray-900">{% trans 'Email address' %}</label>
+                        <label for="email" class="block text-sm font-medium leading-6 text-gray-900">{% trans "Email address" %}</label>
                     </div>
                 </div>
                 <div class="mt-6 flex items-center justify-end gap-x-6">
                     <button type="button"
                             onclick="cancelForm()"
-                            class="text-md font-semibold leading-6 text-gray-900">{% trans 'Cancel' %}</button>
+                            class="text-md font-semibold leading-6 text-gray-900">{% trans "Cancel" %}</button>
                     <button type="submit"
                             class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
-                        {% trans 'Save' %}
+                        {% trans "Save" %}
                     </button>
                 </div>
             </form>

@@ -41,9 +41,9 @@
         margin-left: 5px;
     }
     </style>
-{% endblock %}
+{% endblock style %}
 {% block content %}
-    {% include 'includes/sidenav.html' %}
+    {% include "includes/sidenav.html" %}
     <div class="row">
         <div class="col-lg-6 flex justify-center items-center">
             <h1 class="page-header">Monthly Leaderboard</h1>
@@ -73,7 +73,7 @@
                                     <img src="{% gravatar_url month.user.email 50 %}"
                                          class="img-responsive img-thumbnail profileimage" alt="username" width="50px" height="50px">
                                 {% endif %}
-                                <a href="/profile/{{ month.user.username }}">{{ month.user.username }}</a>
+                                <a href="{% url 'profile' slug=month.user.username %}">{{ month.user.username }}</a>
                                 <span class="pull-right badge">{{ month.user.total_score }} Points</span>
                                 {% if month.user.userprofile.winnings %}
                                     <span class="pull-right badge">${{ month.user.userprofile.winnings|default:""|floatformat }}</span>
@@ -86,4 +86,4 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

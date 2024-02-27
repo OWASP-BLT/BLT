@@ -27,7 +27,7 @@
         color: white;
     }
     </style>
-{% endblock %}
+{% endblock style %}
 {% block content %}
     <script src="{% static "js/jquery.tablesorter.js" %}"></script>
     <script>
@@ -59,7 +59,7 @@
                     {% for domain in scoreboard %}
                         <tr>
                             <td height="80px">
-                                <a href="/domain/{{ domain.domain_name }}">
+                                <a href="{% url 'domain' slug=domain.domain_name %}">
                                     <img src="{{ domain.get_logo }}"
                                          alt="{{ domain.name }}"
                                          onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';" width="80px" height="80px">
@@ -72,7 +72,7 @@
                             <td class="text-capitalize">{{ domain.email_event }}</td>
                             <td>{{ domain.modified|timesince }} ago</td>
                             <td class="text-capitalize">
-                                <a href="/profile/{{ domain.top_tester.username }}">{{ domain.top_tester|default:"" }}</a>
+                                <a href="{% url 'profile' slug=domain.top_tester.username %}">{{ domain.top_tester|default:"" }}</a>
                             </td>
                         </tr>
                     {% endfor %}
@@ -97,4 +97,4 @@
             </div>
         {% endif %}
     </div>
-{% endblock %}
+{% endblock content %}

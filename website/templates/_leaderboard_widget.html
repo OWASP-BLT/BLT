@@ -8,7 +8,7 @@
             No sponsored prizes this month
             <br>
             <div class="my-2 mt-3">
-                <a href="/sponsor"
+                <a href="{% url 'sponsor' %}"
                    class="bg-red-500 text-white px-4 py-2 rounded text-xl border border-[#ac2925] hover:bg-[#c9302c] hover:border-[#761c19] hover:text-[#e8e8e8] rounded-lg"> Sponsor a Prize</a>
             </div>
         </div>
@@ -18,7 +18,7 @@
             Leaderboard has been reset for {% now "F" %}, be the first to find issues!
         {% endif %}
         {% for leader in leaderboard %}
-            <a href="/profile/{{ leader.username }}"
+            <a href="{% url 'profile' slug=leader.username %}"
                class="flex flex-row h-[4rem] items-center my-2 mx-1 hover:bg-[#e8e8e8] rounded-2xl">
                 <span class="h-full w-[8rem] flex justify-center items-center scale-[0.65]">
                     {% if leader.userprofile.avatar %}
@@ -41,11 +41,11 @@
         {% endfor %}
     </div>
     <div>
-        <a href="/leaderboard"
+        <a href="{% url 'leaderboard_global' %}"
            class="btn btn-default btn-block submit_button p-2 rounded-2xl">View All</a>
-        <a href="/leaderboard/monthly"
+        <a href="{% url 'leaderboard_specific_month' %}"
            class="btn btn-default btn-block submit_button p-2 rounded-2xl">Filter Monthly</a>
-        <a href="/leaderboard/each-month"
+        <a href="{% url 'leaderboard_eachmonth' %}"
            class="btn btn-default btn-block submit_button p-2 rounded-2xl">View Monthly</a>
     </div>
 </div>

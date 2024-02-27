@@ -1,4 +1,4 @@
-{% extends 'company/company_dashboard_base.html' %}
+{% extends "company/company_dashboard_base.html" %}
 {% load static %}
 {% block title %}
     Edit Bughunt
@@ -278,7 +278,7 @@
             </div>
         </form>
     </div>
-{% endblock %}
+{% endblock body %}
 {% block js %}
     <script src="{% static 'company/js/hunt_controller.js' %}"></script>
-{% endblock %}
+{% endblock js %}

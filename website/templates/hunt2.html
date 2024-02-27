@@ -75,10 +75,10 @@
     right: 0;
   }
     </style>
-{% endblock %}
+{% endblock style %}
 {% block content %}
     <section>
-        {% include 'includes/company_sidenav.html' %}
+        {% include "includes/company_sidenav.html" %}
     </section>
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
@@ -188,7 +188,7 @@
     exportFormats: 'datepicker-2-res',
   });
     </script>
-{% endblock %}
+{% endblock content %}
 {% block after_js %}
     <script src="{% static "js/bootstrap-slider.js" %}"></script>
     <script>
@@ -209,4 +209,4 @@
     }
   });
     </script>
-{% endblock %}
+{% endblock after_js %}

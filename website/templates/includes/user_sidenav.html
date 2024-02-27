@@ -10,7 +10,7 @@
 <div class="sidebar">
     <ul class="nav nav-pills nav-stacked custom-nav">
         <li class="active">
-            <a href="/"><i class="lnr lnr-power-switch"></i><span>Home</span></a>
+            <a href="{% url 'index' %}"><i class="lnr lnr-power-switch"></i><span>Home</span></a>
         </li>
         <li>
             <a href="#"><i class="lnr lnr-train"></i> <span>Ongoing Hunts</span></a>
@@ -25,7 +25,7 @@
             <a href="#"><i class="lnr lnr-gift"></i> <span>Rewards</span></a>
         </li>
         <li>
-            <a href="/dashboard/user/profile/{{ user.username }}"><i class="lnr lnr-user"></i><span>Profile</span></a>
+            <a href="{% url 'user_profile' slug=user.username %}"><i class="lnr lnr-user"></i><span>Profile</span></a>
         </li>
     </ul>
 </div>

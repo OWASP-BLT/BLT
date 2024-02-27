@@ -164,12 +164,12 @@
     }
 
     </style>
-{% endblock %}
+{% endblock style %}
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
     <form role="form"
-          action="/hunt/"
+          action="{% url 'hunt' %}"
           method="post"
           enctype="multipart/form-data"
           class="hunt-form">
@@ -182,7 +182,7 @@
                             <p>START A</p>
                             <p class="text-red-900">BUGHUNT</p>
                         </div>
-                        <p class="font-bold">{% trans 'Enter URL, APP name or GPS location of issue' %}</p>
+                        <p class="font-bold">{% trans "Enter URL, APP name or GPS location of issue" %}</p>
                         <hr />
                     </div>
                 </div>
@@ -226,15 +226,15 @@
                 </div>
                 <div class="form-group">
                     <select name="plan" value="Flea" id="bughunt-select-plan">
-                        <option value="Flea">{% trans "Flea Plan" %} $9.00 / {% trans 'Month' %}</option>
-                        <option value="Ant">{% trans "Ant Plan" %} $99.00 / {% trans 'Month' %}</option>
-                        <option value="Wasp">{% trans "Wasp Plan" %} $499.00 / {% trans 'Month' %}</option>
-                        <option value="Scorpion">{% trans "Scorpion Plan" %} $1499.00 / {% trans 'Month' %}</option>
+                        <option value="Flea">{% trans "Flea Plan" %} $9.00 / {% trans "Month" %}</option>
+                        <option value="Ant">{% trans "Ant Plan" %} $99.00 / {% trans "Month" %}</option>
+                        <option value="Wasp">{% trans "Wasp Plan" %} $499.00 / {% trans "Month" %}</option>
+                        <option value="Scorpion">{% trans "Scorpion Plan" %} $1499.00 / {% trans "Month" %}</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <strong>{% trans 'Grand Prize' %}:</strong>
-                    <p>{% trans 'Max amout awarded to winner' %}</p>
+                    <strong>{% trans "Grand Prize" %}:</strong>
+                    <p>{% trans "Max amout awarded to winner" %}</p>
                     <div>
                         <input class="slider"
                                type="text"
@@ -248,27 +248,19 @@
                     </div>
                     {{ form.prize.errors }}
                 </div>
-                {% if not user.is_authenticated %}
-                    <br>
-                    <span class="text-danger"><a href="/accounts/login">*Login required</a></span>
-                {% else %}
-                    <div class="form-group" id="bughunt-submit">
-                        <button type="submit">{% trans 'START BUGHUNT' %}!</button>
-                    </div>
-                {% endif %}
+                <div class="form-group" id="bughunt-submit">
+                    <button type="submit">{% trans "START BUGHUNT" %}!</button>
+                </div>
             </div>
         </div>
         <h1 class="page-sub-header">
-            {% env 'PROJECT_NAME' %} is 100% {% trans 'free to use' %}, {% trans 'Open Source and a non-commercial' %}, {% trans 'not for profit initiative' %}.
+            {% env 'PROJECT_NAME' %} is 100% {% trans "free to use" %}, {% trans "Open Source and a non-commercial" %}, {% trans "not for profit initiative" %}.
         </h1>
     </form>
-{% endblock %}
+{% endblock content %}
 {% block after_js %}
-    <script src="{% static "js/bootstrap-slider.js" %}"></script>
+    <script src='{% static "js/bootstrap-slider.js" %}''></script>
     <script>
-    {% comment %} $('.btn').on('click', function () {
-        $(".hunt-form").valid();
-}); {% endcomment %}
     function numberWithCommas(x) {
         var parts = x.toString().split(".");
         parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -282,4 +274,4 @@
         }
     });
     </script>
-{% endblock %}
+{% endblock after_js %}

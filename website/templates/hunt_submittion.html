@@ -94,13 +94,13 @@
   }
     </style>
     <section>
-        {% include 'includes/user_sidenav.html' %}
+        {% include "includes/user_sidenav.html" %}
     </section>
-{% endblock %}
+{% endblock style %}
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <script src="{% static 'js/activity.js' %}"></script>
-    <form action="/dashboard/user/hunt/{{ hunt.pk }}/submittion/"
+    <form action="{% url 'submit_bug' hunt.pk %}"
           method="post"
           enctype="multipart/form-data">
       {% csrf_token %}
@@ -112,7 +112,7 @@
               </div>
           </div>
           <section>
-              {% include 'includes/user_sidenav.html' %}
+              {% include "includes/user_sidenav.html" %}
           </section>
           <div class="main-issue-form main-center">
               <form class="form-horizontal" method="post" action="#">
@@ -283,4 +283,4 @@
     });
   });
         </script>
-    {% endblock %}
+    {% endblock body %}

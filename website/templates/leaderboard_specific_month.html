@@ -121,15 +121,15 @@ select {
 }
 
     </style>
-{% endblock %}
+{% endblock style %}
 {% block before_js %}
     <script async
             type="text/javascript"
             src="//cdn.carbonads.com/carbon.js?serve=CESDK2J7&placement=getbutterflycom"
             id="_carbonads_js"></script>
-{% endblock %}
+{% endblock before_js %}
 {% block content %}
-    {% include 'includes/sidenav.html' %}
+    {% include "includes/sidenav.html" %}
     <div class="row">
         <div class="col-lg-10 flex justify-center items-center">
             <h1 class="page-header">Monthly Leaderboard</h1>
@@ -155,7 +155,7 @@ select {
                             {% else %}
                                 <img src="{% gravatar_url leader.email 50 %}" class="profileimage" alt="username" width="50px" height="50px">
                             {% endif %}
-                            <a href="/profile/{{ leader.username }}">{{ leader.username }}</a>
+                            <a href="{% url 'profile' slug=leader.username %}">{{ leader.username }}</a>
                             <span class="pull-right badge">{{ leader.total_score }} Points</span>
                             {% if leader.userprofile.winnings %}
                                 <span class="pull-right badge">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
@@ -167,7 +167,7 @@ select {
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}
 {% block after_js %}
     <script>
   function sanitizeInput(input) {
@@ -315,4 +315,4 @@ $(function() {
 });
 
     </script>
-{% endblock %}
+{% endblock after_js %}
