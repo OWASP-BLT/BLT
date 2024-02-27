@@ -118,7 +118,9 @@
                                     <img src="https://www.google.com/s2/favicons?sz=32&domain_url={{ domain.domain__name }}"
                                          alt="{{ domain.domain__name }}"
                                          class="cursor-pointer rounded-lg p-1 bg-gray-200 hover:bg-gray-300 hover:scale-110 transition duration-300 ease-in-out w-16 h-16"
-                                         onclick="fillUrl('{{ domain.domain__name }}')" width="64px" height="64px">
+                                         onclick="fillUrl('{{ domain.domain__name }}')"
+                                         width="64px"
+                                         height="64px">
                                     <!-- JavaScript function to fill URL -->
                                 {% endfor %}
                             </div>
@@ -204,7 +206,10 @@
                         {% if request.GET.hash %}
                         </br>
                         <img src="{{ MEDIA_URL }}uploads/{{ request.GET.hash }}.png"
-                             class="img-responsive img-thumbnail screenshot-hash" width="100%" height="100%" alt="screenshot">
+                             class="img-responsive img-thumbnail screenshot-hash"
+                             width="100%"
+                             height="100%"
+                             alt="screenshot">
                         <input type="hidden"
                                required
                                class="required"
@@ -300,13 +305,17 @@
      class="justify-center items-center w-[100vw] h-[100vh] z-30 fixed bg-gray-500 bg-opacity-50"
      hidden>
     <div class="bg-red-500 fixed w-[60%] h-[60%]">
-        <img src="" alt="image" class="w-full h-full" id="image-preview" width="100%" height="100%">
+        <img src=""
+             alt="image"
+             class="w-full h-full"
+             id="image-preview"
+             width="100%"
+             height="100%">
     </div>
 </div>
 {% endblock content %}
 {% block after_js %}
     <script type="text/javascript">
-
     const screenshots = document.getElementById('screenshots');
     let manage_div = document.getElementById("files_manage");
 

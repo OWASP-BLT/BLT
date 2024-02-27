@@ -32,8 +32,7 @@
                             </select>
                         </div>
                     </span>
-                    <button class="btn btn-default h-[50px] ml-[2%]"
-                            type="submit">
+                    <button class="btn btn-default h-[50px] ml-[2%]" type="submit">
                         <i class="fa fa-search" aria-hidden="true"></i>
                     </button>
                     <!-- <input type="text"placeholder="Cari Ruang">
@@ -64,7 +63,9 @@
                                 <a href="{{ domain.get_absolute_url }}">
                                     <img src="{{ domain.get_logo }}"
                                          height="100"
-                                         onerror="this.onerror=null; this.style.display ='none';" width="100" alt="{{ domain.name }}">
+                                         onerror="this.onerror=null; this.style.display ='none';"
+                                         width="100"
+                                         alt="{{ domain.name }}">
                                     <strong>{{ domain.name }}</strong>
                                 </a>
                             </div>
@@ -82,19 +83,25 @@
                                              width="50px"
                                              height="50px"
                                              class="img-responsive img-rounded"
-                                             loading="lazy" alt="{{ user.user.username }}">
+                                             loading="lazy"
+                                             alt="{{ user.user.username }}">
                                     {% elif user.user.socialaccount_set.all.0.get_avatar_url %}
                                         <img src="{{ user.user.socialaccount_set.all.0.get_avatar_url }}"
                                              width="100"
                                              class="img-responsive img-rounded"
-                                             loading="lazy" height="100" alt="user image">
+                                             loading="lazy"
+                                             height="100"
+                                             alt="user image">
                                     {% else %}
                                         <img src="{% static 'images/dummy-user.png' %}"
                                              width="50"
                                              class="img-responsive img-rounded"
-                                             loading="lazy" height="50" alt="user image">
+                                             loading="lazy"
+                                             height="50"
+                                             alt="user image">
                                     {% endif %}
-                                    <a class="search-username" href="{% url 'profile' slug=user.user.username %}">{{ user.user.username }}</a>
+                                    <a class="search-username"
+                                       href="{% url 'profile' slug=user.user.username %}">{{ user.user.username }}</a>
                                 </div>
                                 <div class="py-0 px-20">
                                     <label class="text-sm">User points :</label>

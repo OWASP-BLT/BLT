@@ -44,12 +44,23 @@ f
                             <div class="list-group-item activity-strip flex overflow-hidden h-[80px] border-1 border-gray-300">
                                 <span class="h-full w-1/3 flex justify-center items-center">
                                     {% if leader.userprofile.avatar %}
-                                        <img src="{{ leader.userprofile.avatar }}" class="profileimage" alt="Profile Image" width="50" height="50">
+                                        <img src="{{ leader.userprofile.avatar }}"
+                                             class="profileimage"
+                                             alt="Profile Image"
+                                             width="50"
+                                             height="50">
                                     {% elif user.socialaccount_set.all.0.get_avatar_url %}
                                         <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
-                                             class="profileimage" alt="Profile Image" width="50" height="50">
+                                             class="profileimage"
+                                             alt="Profile Image"
+                                             width="50"
+                                             height="50">
                                     {% else %}
-                                        <img src="{% gravatar_url leader.email 50 %}" class="profileimage" alt="Profile Image" width="50" height="50">
+                                        <img src="{% gravatar_url leader.email 50 %}"
+                                             class="profileimage"
+                                             alt="Profile Image"
+                                             width="50"
+                                             height="50">
                                     {% endif %}
                                 </span>
                                 <span class="h-full w-2/3 flex flex-col items-center justify-center  overflow-hidden">
@@ -67,7 +78,8 @@ f
                     {% trans "Leaderboard reset for" %} {% now "F" %}. {% trans "Be first to find issues" %}!
                 {% endif %}
             </div>
-            <a href="{% url 'leaderboard_global' %}" class="btn btn-default btn-block submit_button">{% trans "View All" %}</a>
+            <a href="{% url 'leaderboard_global' %}"
+               class="btn btn-default btn-block submit_button">{% trans "View All" %}</a>
             <a href="{% url 'leaderboard_specific_month' %}"
                class="btn btn-default btn-block submit_button">{% trans "Filter Monthly" %}</a>
             <a href="{% url 'leaderboard_eachmonth' %}"
@@ -222,7 +234,9 @@ f
                         <div class="w-[250px] h-[200px] p-5">
                             <img src="{{ server_url }}/media/{{ hunt.logo }}"
                                  class="w-full h-full object-fill"
-                                 alt="Bughunt Logo" width="auto" height="auto">
+                                 alt="Bughunt Logo"
+                                 width="auto"
+                                 height="auto">
                         </div>
                     </div>
                     <div class="flex flex-col w-[70%] h-full pt-7">

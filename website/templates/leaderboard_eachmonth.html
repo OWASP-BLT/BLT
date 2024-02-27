@@ -65,13 +65,22 @@
                             {% else %}
                                 {% if month.user.userprofile.avatar %}
                                     <img src="{{ month.user.userprofile.avatar }}"
-                                         class="img-responsive img-thumbnail profileimage" alt="{{ month.user.username }}" width="50px" height="50px">
+                                         class="img-responsive img-thumbnail profileimage"
+                                         alt="{{ month.user.username }}"
+                                         width="50px"
+                                         height="50px">
                                 {% elif user.socialaccount_set.all.0.get_avatar_url %}
                                     <img src="{{ month.user.socialaccount_set.all.0.get_avatar_url }}"
-                                         class="img-responsive img-thumbnail profileimage" alt="username" width="50px" height="50px">
+                                         class="img-responsive img-thumbnail profileimage"
+                                         alt="username"
+                                         width="50px"
+                                         height="50px">
                                 {% else %}
                                     <img src="{% gravatar_url month.user.email 50 %}"
-                                         class="img-responsive img-thumbnail profileimage" alt="username" width="50px" height="50px">
+                                         class="img-responsive img-thumbnail profileimage"
+                                         alt="username"
+                                         width="50px"
+                                         height="50px">
                                 {% endif %}
                                 <a href="{% url 'profile' slug=month.user.username %}">{{ month.user.username }}</a>
                                 <span class="pull-right badge">{{ month.user.total_score }} Points</span>

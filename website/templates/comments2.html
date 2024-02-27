@@ -37,11 +37,15 @@
                                 {% if comment.author_fk %}
                                     <img class="sm:mr-2 mr-1 sm:w-12 w-10 sm:h-12 h-10 rounded-full"
                                          src="{{ MEDIA_URL }}{{ comment.author_fk.user_avatar }}"
-                                         alt="{{ comment.author }} profile" width="40px" height="40px">
+                                         alt="{{ comment.author }} profile"
+                                         width="40px"
+                                         height="40px">
                                 {% else %}
                                     <img class="sm:mr-2 mr-1 sm:w-12 w-10 sm:h-12 h-10 rounded-full"
                                          src="{% static 'images/dummy-user.png' %}"
-                                         alt="User profile" width="40px" height="40px">
+                                         alt="User profile"
+                                         width="40px"
+                                         height="40px">
                                 {% endif %}
                                 {{ comment.author }}
                             </p>
@@ -114,7 +118,9 @@
                                     <p class="inline-flex items-center mr-3 text-md text-gray-900 ">
                                         <img class="mr-2 w-9 h-9 rounded-full"
                                              src="{{ MEDIA_URL }}{{ user.userprofile.user_avatar }}"
-                                             alt="Michael Gough" width="36px" height="36px">
+                                             alt="Michael Gough"
+                                             width="36px"
+                                             height="36px">
                                         {{ child_comment.author }}
                                     </p>
                                     <p class="text-md text-gray-600 ">

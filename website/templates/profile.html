@@ -171,10 +171,16 @@
         <div class="col-md-3">
             {% if user.userprofile.avatar %}
                 <img src="{{ user.userprofile.avatar }}"
-                     class="img-responsive img-thumbnail" alt="avatar" width="50" height="50">
+                     class="img-responsive img-thumbnail"
+                     alt="avatar"
+                     width="50"
+                     height="50">
             {% else %}
                 <img src="{% gravatar_url user.email 200 %}"
-                     class="img-responsive img-thumbnail" alt="avatar" width="50" height="50">
+                     class="img-responsive img-thumbnail"
+                     alt="avatar"
+                     width="50"
+                     height="50">
             {% endif %}
             {% if request.user == user %}
                 <button class="upload-btn">Edit Profile Pic</button>
@@ -298,9 +304,15 @@
                         {% for user in followers %}
                             <div class="list-group-item">
                                 {% if user.socialaccount_set.all.0.get_avatar_url %}
-                                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" height="50px" width="50px" alt="avatar">
+                                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
+                                         height="50px"
+                                         width="50px"
+                                         alt="avatar">
                                 {% else %}
-                                    <img src="{% gravatar_url user.email 50 %}" height="50px" width="50px" alt="avatar">
+                                    <img src="{% gravatar_url user.email 50 %}"
+                                         height="50px"
+                                         width="50px"
+                                         alt="avatar">
                                 {% endif %}
                                 <a href="{% url 'profile' slug=user.username %}">{{ user.username }}</a>
                             </div>
@@ -312,9 +324,15 @@
                         {% for user in following %}
                             <div class="list-group-item">
                                 {% if user.socialaccount_set.all.0.get_avatar_url %}
-                                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" height="50px" width="50px" alt="avatar">
+                                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
+                                         height="50px"
+                                         width="50px"
+                                         alt="avatar">
                                 {% else %}
-                                    <img src="{% gravatar_url user.email 50 %}" height="50px" width="50px" alt="avatar">
+                                    <img src="{% gravatar_url user.email 50 %}"
+                                         height="50px"
+                                         width="50px"
+                                         alt="avatar">
                                 {% endif %}
                                 <a href="{% url 'profile' slug=user.username %}">{{ user.username }}</a>
                             </div>
@@ -386,7 +404,8 @@
                                     <a href="{% url 'domain' slug=website.name %}">
                                         <img src="https://www.{{ website.name }}/favicon.ico"
                                              height="25"
-                                             width="25" alt="blt"
+                                             width="25"
+                                             alt="blt"
                                              onerror="this.onerror=null; this.style.display='none';">
                                     </a>
                                     <a href="{% url 'domain' slug=website.name %}">{{ website.name|truncatechars:15 }}</a>

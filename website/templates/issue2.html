@@ -63,16 +63,22 @@
                                         {% if object.user.userprofile.user_avatar %}
                                             <img class="w-full h-full object-cover"
                                                  src="{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}"
-                                                 alt="User Profile Logo" width="auto" height="auto">
+                                                 alt="User Profile Logo"
+                                                 width="auto"
+                                                 height="auto">
                                         {% else %}
                                             <img class="w-full h-full object-cover"
                                                  src="{% gravatar_url object.user.email 100 %}"
-                                                 alt="User Profile Logo" width="auto" height="auto">
+                                                 alt="User Profile Logo"
+                                                 width="auto"
+                                                 height="auto">
                                         {% endif %}
                                     {% else %}
                                         <img class="w-full h-full object-cover"
                                              src="{% static 'images/dummy-user.png' %}"
-                                             alt="User Profile Logo" width="auto" height="auto">
+                                             alt="User Profile Logo"
+                                             width="auto"
+                                             height="auto">
                                     {% endif %}
                                 </div>
                                 <div class="flex flex-col justify-center">
@@ -103,14 +109,18 @@
                                 <a href="{{ object.screenshot.url }}" data-lightbox="image">
                                     <img class="w-[500px] h-[250px] object-cover rounded-lg m-5"
                                          src="{{ object.screenshot.url }}"
-                                         alt="Image thumbnail" width="auto" height="auto">
+                                         alt="Image thumbnail"
+                                         width="auto"
+                                         height="auto">
                                 </a>
                             {% else %}
                                 {% for screenshot in screenshots %}
                                     <a href="{{ screenshot.image.url }}" data-lightbox="image">
                                         <img class="w-[500px] h-[250px] object-cover rounded-lg m-5"
                                              src="{{ screenshot.image.url }}"
-                                             alt="Screenshot" width="auto" height="auto">
+                                             alt="Screenshot"
+                                             width="auto"
+                                             height="auto">
                                     </a>
                                 {% endfor %}
                             {% endif %}
@@ -208,7 +218,9 @@
                                         {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as image_static %}
                                             <img class="w-full h-full object-cover"
                                                  src="{% static image_static %}"
-                                                 alt="Browser Image" width="auto" height="auto">
+                                                 alt="Browser Image"
+                                                 width="auto"
+                                                 height="auto">
                                         {% endwith %}
                                     {% endif %}
                                 </div>
@@ -236,10 +248,13 @@
                             <div class="w-[90px] h-[90px] rounded-full object-fill border-black border-[1px] flex flex-col  overflow-hidden">
                                 <img class="w-full h-full object-cover"
                                      src="{{ object.domain.get_logo }}"
-                                     alt="Domain Logo" width="auto" height="auto">
+                                     alt="Domain Logo"
+                                     width="auto"
+                                     height="auto">
                             </div>
                             <div class="full p-3 flex flex-col justify-center">
-                                <a class="font-bold text-3xl" href="{% url 'domain' slug=object.domain.name %}">Reported on {{ object.domain.name }}</a>
+                                <a class="font-bold text-3xl"
+                                   href="{% url 'domain' slug=object.domain.name %}">Reported on {{ object.domain.name }}</a>
                                 <p class="text-2xl font-light">
                                     Total <span class="font-bold">{{ issue_count }}</span> bugs reported
                                 </p>
@@ -264,20 +279,27 @@
                                     {% if object.user.userprofile.user_avatar %}
                                         <img class="w-full h-full object-cover"
                                              src="{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}"
-                                             alt="User Profile Logo" width="auto" height="auto">
+                                             alt="User Profile Logo"
+                                             width="auto"
+                                             height="auto">
                                     {% else %}
                                         <img class="w-full h-full object-cover"
                                              src="{% gravatar_url object.user.email 100 %}"
-                                             alt="User Profile Logo" width="auto" height="auto">
+                                             alt="User Profile Logo"
+                                             width="auto"
+                                             height="auto">
                                     {% endif %}
                                 {% else %}
                                     <img class="w-full h-full object-cover"
                                          src="{% static 'images/dummy-user.png' %}"
-                                         alt="User Profile Logo" width="auto" height="auto">
+                                         alt="User Profile Logo"
+                                         width="auto"
+                                         height="auto">
                                 {% endif %}
                             </div>
                             <div class="full p-3 flex flex-col justify-center">
-                                <a class="font-bold text-3xl" href="{% url 'profile' slug=object.user.username %}">Reported By {{ object.user.username|default_if_none:"Anonymous" }}</a>
+                                <a class="font-bold text-3xl"
+                                   href="{% url 'profile' slug=object.user.username %}">Reported By {{ object.user.username|default_if_none:"Anonymous" }}</a>
                                 <p class="text-2xl font-light">
                                     Total points <span class="font-bold">{{ users_score }}</span>
                                 </p>
@@ -303,7 +325,9 @@
                     <a href="">
                         <img src="{{ MEDIA_URL }}{{ issue.screenshots__image }}"
                              class="mb-5 rounded-lg object-fill h-[70%]"
-                             alt="Image 1" width="auto" height="auto">
+                             alt="Image 1"
+                             width="auto"
+                             height="auto">
                     </a>
                     <h2 class="mb-2 text-xl font-bold leading-tight text-gray-900 ">
                         <a href="{% url 'issue_view2' issue.id %}">{{ issue.description }}</a>

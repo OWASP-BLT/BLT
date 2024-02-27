@@ -15,10 +15,17 @@
                         <div class="online-top">
                             <div class="top-at">
                                 {% if request.user.userprofile.avatar %}
-                                    <img class="img-responsive" src="{{ request.user.userprofile.avatar }}" alt="avatar" width="100%" height="100%">
+                                    <img class="img-responsive"
+                                         src="{{ request.user.userprofile.avatar }}"
+                                         alt="avatar"
+                                         width="100%"
+                                         height="100%">
                                 {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
                                     <img class="img-responsive"
-                                         src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}" alt="avatar" width="100%" height="100%">
+                                         src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
+                                         alt="avatar"
+                                         width="100%"
+                                         height="100%">
                                 {% else %}
                                     {% gravatar request.user.email 20 %}
                                 {% endif %}

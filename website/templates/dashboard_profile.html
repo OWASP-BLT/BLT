@@ -3,23 +3,22 @@
 {% load static %}
 {% load ratings %}
 {% block style %}
-
-<link rel="stylesheet"
-href="{% static 'star-ratings/css/star-ratings.css' %}">
-<script type="text/javascript"
-  src="{% static 'star-ratings/js/dist/star-ratings.min.js' %}"></script>
-<link link="link"
-href="https://fonts.googleapis.com/css?family=Titillium+Web"
-rel="stylesheet" />
-<link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}"
-rel="stylesheet"
-type="text/css"
-id="bs-default-stylesheet" />
-<link href="{% static 'css/app.min.css' %}"
-rel="stylesheet"
-type="text/css"
-id="app-default-stylesheet" />
-<style type="text/css">
+    <link rel="stylesheet"
+          href="{% static 'star-ratings/css/star-ratings.css' %}">
+    <script type="text/javascript"
+            src="{% static 'star-ratings/js/dist/star-ratings.min.js' %}"></script>
+    <link link="link"
+          href="https://fonts.googleapis.com/css?family=Titillium+Web"
+          rel="stylesheet" />
+    <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}"
+          rel="stylesheet"
+          type="text/css"
+          id="bs-default-stylesheet" />
+    <link href="{% static 'css/app.min.css' %}"
+          rel="stylesheet"
+          type="text/css"
+          id="app-default-stylesheet" />
+    <style type="text/css">
 /**
 * The CSS shown here will not be introduced in the Quickstart guide, but shows
 * how you can use CSS to style your Element's container.
@@ -212,7 +211,7 @@ box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
 transform: scale(1);
 }
 }
-</style>
+    </style>
     <style>
   .modal {
     display: none;
@@ -1054,9 +1053,17 @@ transform: scale(1);
                             <li>
                                 <div class="w-[150px] h-[150px] ml-[50px] rounded-xl">
                                     {% if user.userprofile.avatar %}
-                                        <img src="{{ user.userprofile.avatar }}" class="rounded-[80px]" width="140px" height="140px" alt="user avatar">
+                                        <img src="{{ user.userprofile.avatar }}"
+                                             class="rounded-[80px]"
+                                             width="140px"
+                                             height="140px"
+                                             alt="user avatar">
                                     {% else %}
-                                        <img src="https://www.jamf.com/jamf-nation/img/default-avatars/generic-user-purple.png" class="rounded-[80px]" width="140px" height="140px" alt="user avatar">
+                                        <img src="https://www.jamf.com/jamf-nation/img/default-avatars/generic-user-purple.png"
+                                             class="rounded-[80px]"
+                                             width="140px"
+                                             height="140px"
+                                             alt="user avatar">
                                     {% endif %}
                                 </div>
                             </li>
@@ -1261,121 +1268,118 @@ transform: scale(1);
                                                     <td>
                                                         <a href="{{ activity.get_absolute_url }}">Submitted a Bug Report {{ activity.created|timesince }} ago</a>
                                                     </td>
-                                                    <td>
-                                                    {{ activity.status }}
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    {% endif %}
-                                </tbody>
-                            </table>
-                            {% if activities %}
-                                <a href='{% url "all_activity" %}?user={{ user.username }}'
-                                   class="btn btn-default btn-block">View All
-                                Activity by {{ user.username }}</a>
-                            {% else %}
-                                <div class="text-center">No Activity Yet!</div>
-                            {% endif %}
+                                                    <td>{{ activity.status }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                                {% if activities %}
+                                    <a href='{% url "all_activity" %}?user={{ user.username }}'
+                                       class="btn btn-default btn-block">View All
+                                    Activity by {{ user.username }}</a>
+                                {% else %}
+                                    <div class="text-center">No Activity Yet!</div>
+                                {% endif %}
+                            </div>
+                            <!-- end .table-responsive-->
                         </div>
-                        <!-- end .table-responsive-->
+                        <!-- end card-box-->
                     </div>
-                    <!-- end card-box-->
-                </div>
-                <!-- end col -->
-                <div class="col-xl-6">
-                    <div class="card-box">
-                        <div class="dropdown float-right">
-                            <a href="#"
-                               class="dropdown-toggle arrow-none card-drop"
-                               data-toggle="dropdown"
-                               aria-expanded="false">
-                                <i class="fa fa-ellipsis-v"></i>
-                            </a>
+                    <!-- end col -->
+                    <div class="col-xl-6">
+                        <div class="card-box">
+                            <div class="dropdown float-right">
+                                <a href="#"
+                                   class="dropdown-toggle arrow-none card-drop"
+                                   data-toggle="dropdown"
+                                   aria-expanded="false">
+                                    <i class="fa fa-ellipsis-v"></i>
+                                </a>
+                            </div>
+                            <h4 class="header-title mb-3"></h4>
+                            <div class="table-responsive">
+                                <table class="table table-borderless table-hover table-nowrap table-centered m-0">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Trading For</th>
+                                            <th>Corelation With S & P -</th>
+                                            <th>P/- Ration</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <h5 class="m-0 font-weight-normal">2 Years</h5>
+                                            </td>
+                                            <td>0.1</td>
+                                            <td>2:1</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <h4 class="header-title mb-3"></h4>
-                        <div class="table-responsive">
-                            <table class="table table-borderless table-hover table-nowrap table-centered m-0">
-                                <thead class="thead-light">
-                                    <tr>
-                                        <th>Trading For</th>
-                                        <th>Corelation With S & P -</th>
-                                        <th>P/- Ration</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <h5 class="m-0 font-weight-normal">2 Years</h5>
-                                        </td>
-                                        <td>0.1</td>
-                                        <td>2:1</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                    </div>
+                    <!-- end col -->
+                </div>
+                <!-- end row -->
+            </div>
+            <!-- container -->
+        </div>
+        <!-- content -->
+    </div>
+    {% if user == request.user %}
+        <div id="WithdrawModal" class="modal">
+            <!-- Modal content -->
+            <div class="wallet-modal-content">
+                <div class="wallet-modal-header">
+                    <span class="close">×</span>
+                    <h2>Withdraw Money</h2>
+                </div>
+                <form id="withdraw">
+                    {% csrf_token %}
+                    <div class="wallet-modal-body">
+                        <input type="number"
+                               name="amount"
+                               id="amount"
+                               min="1"
+                               max="{{ wallet.current_balance }}"
+                               step="any" />
+                    </div>
+                    <div class="wallet-modal-footer">
+                        <input type="submit"
+                               class="btn btn-primary withdraw_button btn_5 btn-lg btn-danger"
+                               value="Withdraw" />
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div id="AddModal" class="modal">
+            <!-- Modal content -->
+            <div class="wallet-modal-content">
+                <div class="wallet-modal-header">
+                    <span class="close">×</span>
+                    <h2>Add Money</h2>
+                </div>
+                <script src="https://js.stripe.com/v3/"></script>
+                <form class="col-md-6 left-1/2 -translate-x-1/2" id="payment-form">
+                    {% csrf_token %}
+                    <label for="amount">Enter Amount</label>
+                    <input type="number" name="amount" id="amount" min="1" step="any" />
+                    <div>
+                        <label for="card-element">Credit or debit card</label>
+                        <div id="card-element">
+                            <!-- A Stripe Element will be inserted here. -->
                         </div>
+                        <!-- Used to display form errors. -->
+                        <div id="card-errors" role="alert"></div>
                     </div>
-                </div>
-                <!-- end col -->
+                    <button>Submit Payment</button>
+                </form>
             </div>
-            <!-- end row -->
         </div>
-        <!-- container -->
-    </div>
-    <!-- content -->
-</div>
-{% if user == request.user %}
-    <div id="WithdrawModal" class="modal">
-        <!-- Modal content -->
-        <div class="wallet-modal-content">
-            <div class="wallet-modal-header">
-                <span class="close">×</span>
-                <h2>Withdraw Money</h2>
-            </div>
-            <form id="withdraw">
-                {% csrf_token %}
-                <div class="wallet-modal-body">
-                    <input type="number"
-                           name="amount"
-                           id="amount"
-                           min="1"
-                           max="{{ wallet.current_balance }}"
-                           step="any" />
-                </div>
-                <div class="wallet-modal-footer">
-                    <input type="submit"
-                           class="btn btn-primary withdraw_button btn_5 btn-lg btn-danger"
-                           value="Withdraw" />
-                </div>
-            </form>
-        </div>
-    </div>
-    <div id="AddModal" class="modal">
-        <!-- Modal content -->
-        <div class="wallet-modal-content">
-            <div class="wallet-modal-header">
-                <span class="close">×</span>
-                <h2>Add Money</h2>
-            </div>
-            <script src="https://js.stripe.com/v3/"></script>
-            <form class="col-md-6 left-1/2 -translate-x-1/2"
-                  id="payment-form">
-                {% csrf_token %}
-                <label for="amount">Enter Amount</label>
-                <input type="number" name="amount" id="amount" min="1" step="any" />
-                <div>
-                    <label for="card-element">Credit or debit card</label>
-                    <div id="card-element">
-                        <!-- A Stripe Element will be inserted here. -->
-                    </div>
-                    <!-- Used to display form errors. -->
-                    <div id="card-errors" role="alert"></div>
-                </div>
-                <button>Submit Payment</button>
-            </form>
-        </div>
-    </div>
-{% endif %}
-<script type="text/javascript">
+    {% endif %}
+    <script type="text/javascript">
   // Create a Stripe client.
   var stripe = Stripe(
     'pk_test_51HFiXMFf0OkkOVnDkNs4opFLqM0Sx5GA6Pedf63uGzG1gHhumFYHEOLfCA7yzZwXUpjaa5j9ZhS1yciNhouYCMh400pSx5ZEx6');
@@ -1466,8 +1470,8 @@ transform: scale(1);
     // Submit the form
     // form.submit();
   }
-</script>
-<script>
+    </script>
+    <script>
   // Get the modal
   var withdrawmodal = document.getElementById("WithdrawModal");
   var addmodal = document.getElementById("AddModal");
@@ -1508,10 +1512,10 @@ transform: scale(1);
       addmodal.style.display = "none";
     }
   }
-</script>
-<script>
+    </script>
+    <script>
   document.getElementsByClassName("star-ratings-rating-average")[0].style.display = "none";
   document.getElementsByClassName("star-ratings-rating-count")[0].style.display = "none";
   document.getElementsByClassName("star-ratings-rating-user")[0].style.display = "none";
-</script>
+    </script>
 {% endblock content %}

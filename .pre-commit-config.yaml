@@ -26,4 +26,6 @@ repos:
   - repo: https://github.com/djlint/djLint
     rev: v1.34.1
     hooks:
+      - id: djlint-reformat-django
+        files: ^company/templates/|^website/templates/
       - id: djlint-django

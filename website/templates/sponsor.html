@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% load custom_tags %}
 {% load i18n %}
-{% block title %}Sponsors{% endblock title %}
+{% block title %}
+    Sponsors
+{% endblock title %}
 {% block content %}
     <div class="min-h-screen flex flex-col mx-4">
         <h1 class="text-4xl font-semibold my-8 mx-auto">Sponsor a Monthly Prize on BLT</h1>
@@ -10,9 +12,15 @@
             <div class="flex flex-row my-10">
                 <img src="../static/images/bch qr.png"
                      alt="bch qr"
-                     class="w-1/2 h-1/2 mx-5" width="50%" height="50%" />
+                     class="w-1/2 h-1/2 mx-5"
+                     width="50%"
+                     height="50%" />
                 <div class="w-full">
-                    <img src="../static/images/bch gold block.png" alt="bch qr" class="w-2/3 mx-5" width="66%" height="66%" />
+                    <img src="../static/images/bch gold block.png"
+                         alt="bch qr"
+                         class="w-2/3 mx-5"
+                         width="66%"
+                         height="66%" />
                     <div class="flex flex-col font-semibold">
                         <span id="balanceDisplay">Current Balance:</span>
                     </div>

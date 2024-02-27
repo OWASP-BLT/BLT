@@ -8,25 +8,29 @@
                  width="30"
                  height="30"
                  class="h-[30px] object-cover img-responsive rounded-full"
-                 loading="lazy" alt="user avatar">
+                 loading="lazy"
+                 alt="user avatar">
         {% elif bug.user.socialaccount_set.all.0.get_avatar_url %}
             <img src="{{ bug.user.socialaccount_set.all.0.get_avatar_url }}"
                  width="30"
                  height="30"
                  class="h-[30px] object-cover img-responsive rounded-full"
-                 loading="lazy" alt="user avatar">
+                 loading="lazy"
+                 alt="user avatar">
         {% elif bug.user.email %}
             <img src="{% gravatar_url bug.user.email 30 %}"
                  width="30"
                  height="30"
                  class="h-[30px] object-cover img-responsive  rounded-full"
-                 loading="lazy" alt="user avatar">
+                 loading="lazy"
+                 alt="user avatar">
         {% else %}
             <img src="{% static 'images/dummy-user.png' %}"
                  width="30"
                  height="30"
                  class="h-[30px] object-cover img-responsive rounded-full"
-                 loading="lazy" alt="user avatar">
+                 loading="lazy"
+                 alt="user avatar">
         {% endif %}
         {% if bug.user.username is not None %}
             <a href="{% url 'profile' slug=bug.user.username %}"
@@ -47,7 +51,9 @@
                 {% for bug_screenshot in bug_screenshots %}
                     <img class="bug-img h-[100%] w-[70px] object-contain"
                          src="{{ bug_screenshot.image.url }}"
-                         alt="bug screenshot" width="70px" height="100%">
+                         alt="bug screenshot"
+                         width="70px"
+                         height="100%">
                 {% endfor %}
             {% endif %}
         {% endfor %}

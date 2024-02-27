@@ -4,8 +4,12 @@
 {% load socialaccount %}
 {% providers_media_js %}
 {% load custom_tags %}
-{% block title %}Bug on {{ object.domain_title }} - {{ object.description }}{% endblock title %}
-{% block og_title %}Bug on {{ object.domain_title }}{% endblock og_title %}
+{% block title %}
+    Bug on {{ object.domain_title }} - {{ object.description }}
+{% endblock title %}
+{% block og_title %}
+    Bug on {{ object.domain_title }}
+{% endblock og_title %}
 {% block og_image %}
     {% if object.screenshot %}
         {{ object.screenshot.url }}
@@ -13,8 +17,12 @@
         {{ screenshots.0.image.url }}
     {% endif %}
 {% endblock og_image %}
-{% block og_description %}{{ object.description }}{% endblock og_description %}
-{% block description %}{{ object.description }}{% endblock description %}
+{% block og_description %}
+    {{ object.description }}
+{% endblock og_description %}
+{% block description %}
+    {{ object.description }}
+{% endblock description %}
 {% block style %}
     <style>
     .alt-img {
@@ -170,8 +178,7 @@
             <strong>Domain:</strong>
             <a href="{{ object.url }}" target="_new" class="issue-domain">{{ object.url }}</a>
             <div class="pull-right">
-                <div class="pull-right ml-[5px] mb-[5px]"
-                     id="google_translate_element"></div>
+                <div class="pull-right ml-[5px] mb-[5px]" id="google_translate_element"></div>
                 <script type="text/javascript">
                 function googleTranslateElementInit() {
                   new google.translate.TranslateElement({pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element');
@@ -220,7 +227,8 @@
                                     <img src="{{ object.domain.get_logo }}"
                                          class="img-thumbnail"
                                          height="100"
-                                         width="100" alt="{{ object.domain_title }}">
+                                         width="100"
+                                         alt="{{ object.domain_title }}">
                                 </a>
                             </div>
                             <div class="col-xs-8">
@@ -250,19 +258,22 @@
                                             <img class="img-thumbnail"
                                                  height="100"
                                                  width="100"
-                                                 src="{{ object.user.socialaccount_set.all.0.get_avatar_url }}" alt="{{ object.user.username }}">
+                                                 src="{{ object.user.socialaccount_set.all.0.get_avatar_url }}"
+                                                 alt="{{ object.user.username }}">
                                         {% else %}
                                             <img class="img-thumbnail"
                                                  src="{% gravatar_url object.user.email 100 %}"
                                                  height="100"
-                                                 width="100" alt="{{ object.user.username }}">
+                                                 width="100"
+                                                 alt="{{ object.user.username }}">
                                         {% endif %}
                                     </a>
                                 {% else %}
                                     <img class="img-thumbnail img-responsive img-rounded"
                                          height="100"
                                          width="100"
-                                         src="{% static 'images/dummy-user.png' %}" alt="User">
+                                         src="{% static 'images/dummy-user.png' %}"
+                                         alt="User">
                                 {% endif %}
                             </div>
                             <div class="col-xs-8">
@@ -302,7 +313,8 @@
                                         <img src="{% static image_static %}"
                                              class="img-thumbnail"
                                              height="100"
-                                             width="100" alt="browser">
+                                             width="100"
+                                             alt="browser">
                                     {% endwith %}
                                 {% endif %}
                             </div>
@@ -398,13 +410,20 @@
             <hr>
             {% if object.screenshot %}
                 <a href="{{ object.screenshot.url }}" data-lightbox="image">
-                    <img src="{{ object.screenshot.url }}" class="img-thumbnail" width="auto" height="auto" alt="screenshot">
+                    <img src="{{ object.screenshot.url }}"
+                         class="img-thumbnail"
+                         width="auto"
+                         height="auto"
+                         alt="screenshot">
                 </a>
             {% else %}
                 {% for screenshot in screenshots %}
                     <a href="{{ screenshot.image.url }}" data-lightbox="image">
                         <img src="{{ screenshot.image.url }}"
-                             class="img-thumbnail mt-[10px] border-2 border-black" width="auto" height="auto" alt="screenshot">
+                             class="img-thumbnail mt-[10px] border-2 border-black"
+                             width="auto"
+                             height="auto"
+                             alt="screenshot">
                     </a>
                 {% endfor %}
             {% endif %}
@@ -454,7 +473,6 @@
             integrity="sha384-TTjj1KxpUMxMChPbgmSWLlfEep0/67X86v9lnJMkldzkQGHZNAhZRgE9owovIRyz"
             crossorigin="anonymous"></script>
     <script type="text/javascript">
-    
     function embedded_image_markdown(markdownText) {
         const image = /\$\[img[1-5]\]/g;
         const screenshotDiv = document.querySelectorAll("#screenshot-wrapper img");

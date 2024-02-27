@@ -77,24 +77,22 @@
                                 </label>
                             {% else %}
                                 <input name="verify" type="checkbox">
-                            <label class="checkbox-inline col-sm-12">
-                                Verify
-                            </label>
-                        {% endif %}
+                                <label class="checkbox-inline col-sm-12">Verify</label>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <input type="submit"
+                               class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
+                               value="Change" />
+                        <input type="reset"
+                               data-dismiss="modal"
+                               class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
+                               value="Reset" />
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <input type="submit"
-                           class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
-                           value="Change" />
-                    <input type="reset"
-                           data-dismiss="modal"
-                           class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
-                           value="Reset" />
-                </div>
-            </div>
-        </form>
-        <div class="clearfix"></div>
+            </form>
+            <div class="clearfix"></div>
+        </div>
     </div>
-</div>
 {% endblock content %}

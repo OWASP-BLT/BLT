@@ -122,9 +122,7 @@
 
         {% for i in user_graph %}user_data[{{i.month}}] = {{i.c}};{% endfor %}
 
-        {% for i in pie_chart %}
-            pie[{{i.label}}] = {{i.c}};
-        {% endfor %}
+        {% for i in pie_chart %}pie[{{i.label}}] = {{i.c}};{% endfor %}
     var ctx = document.getElementById("myChart").getContext('2d');
     var myChart = new Chart(ctx, {
         type: 'bar',

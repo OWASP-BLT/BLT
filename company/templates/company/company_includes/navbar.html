@@ -31,7 +31,9 @@
                     {% if request.user.userprofile.user_avatar %}
                         <img src="{{ MEDIA_URL }}{{ request.user.userprofile.user_avatar }}"
                              alt="company logo"
-                             class="w-10 h-10 object-fill rounded-full border-[1px] border-gray-500" width="40px" height="40px" />
+                             class="w-10 h-10 object-fill rounded-full border-[1px] border-gray-500"
+                             width="40px"
+                             height="40px" />
                     {% else %}
                         <svg class="user-image"
                              width="24"

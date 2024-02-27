@@ -23,13 +23,22 @@
                 <span class="h-full w-[8rem] flex justify-center items-center scale-[0.65]">
                     {% if leader.userprofile.avatar %}
                         <img src="{{ leader.userprofile.avatar }}"
-                             class="profileimage object-cover" width="50px" height="50px" alt="user avatar">
+                             class="profileimage object-cover"
+                             width="50px"
+                             height="50px"
+                             alt="user avatar">
                     {% elif user.socialaccount_set.all.0.get_avatar_url %}
                         <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
-                             class="profileimage object-cover" width="50px" height="50px" alt="user avatar">
+                             class="profileimage object-cover"
+                             width="50px"
+                             height="50px"
+                             alt="user avatar">
                     {% else %}
                         <img src="{% gravatar_url leader.email 50 %}"
-                             class="profileimage object-cover" width="50px" height="50px" alt="user avatar">
+                             class="profileimage object-cover"
+                             width="50px"
+                             height="50px"
+                             alt="user avatar">
                     {% endif %}
                 </span>
                 <span class="w-full overflow-clip font-semibold text-[#500000bd] text-[18px] mb-2">{{ leader.username }}</span>

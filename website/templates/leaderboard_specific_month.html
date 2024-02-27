@@ -3,7 +3,6 @@
 {% load static %}
 {% block style %}
     <style>
-
     .container-min-height{
       min-height: 50vh;
     }
@@ -148,12 +147,22 @@ select {
                         <div class="list-group-item">
                             {% if leader.userprofile.avatar %}
                                 <img src="{{ leader.userprofile.avatar }}"
-                                     class="img-responsive img-thumbnail profileimage" alt="{{ leader.username }}" width="50px" height="50px">
+                                     class="img-responsive img-thumbnail profileimage"
+                                     alt="{{ leader.username }}"
+                                     width="50px"
+                                     height="50px">
                             {% elif leader.socialaccount_set.all.0.get_avatar_url %}
                                 <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
-                                     class="profileimage" alt="username" width="50px" height="50px">
+                                     class="profileimage"
+                                     alt="username"
+                                     width="50px"
+                                     height="50px">
                             {% else %}
-                                <img src="{% gravatar_url leader.email 50 %}" class="profileimage" alt="username" width="50px" height="50px">
+                                <img src="{% gravatar_url leader.email 50 %}"
+                                     class="profileimage"
+                                     alt="username"
+                                     width="50px"
+                                     height="50px">
                             {% endif %}
                             <a href="{% url 'profile' slug=leader.username %}">{{ leader.username }}</a>
                             <span class="pull-right badge">{{ leader.total_score }} Points</span>

@@ -61,15 +61,21 @@
                     </svg>
                 </button>
                 <!-- Logo -->
-                <a href="{% url 'index' %}" class="flex flex-col ms-2 md:me-24 items-center">
+                <a href="{% url 'index' %}"
+                   class="flex flex-col ms-2 md:me-24 items-center">
                     <img src="{% logo 'TRANSPARENT' %}"
-                         class="!max-w-[130px] lg:max-w-[200px]" alt="Bug Bounty Logo" width="100%" height="100%">
+                         class="!max-w-[130px] lg:max-w-[200px]"
+                         alt="Bug Bounty Logo"
+                         width="100%"
+                         height="100%">
                     <p class="text-center inline-block text-xl pl-1 mb-0">{% trans "Report Issues, Win Prizes" %}</p>
                 </a>
             </div>
             <!-- Search Bar  -->
             <div class="column items-center gap-[8px] w-0 overflow-clip lg:w-fit lg:flex w-0 h-0 lg:w-[auto] lg:h-[auto]">
-                <form class="relative px-[34px] mb-0" action="{% url 'search' %}" method="get">
+                <form class="relative px-[34px] mb-0"
+                      action="{% url 'search' %}"
+                      method="get">
                     <i class="fa fa-search absolute left-[13px] top-[6.4px] text-[#9CA3AF] z-10"></i>
                     <input type="text"
                            name="query"
@@ -92,10 +98,16 @@
                             type="button">
                         {% if request.user.userprofile.avatar %}
                             <img src="{{ request.user.userprofile.avatar }}"
-                                 class="h-[30px] w-[30px] rounded-full " alt="User Avatar" width="30" height="30">
+                                 class="h-[30px] w-[30px] rounded-full "
+                                 alt="User Avatar"
+                                 width="30"
+                                 height="30">
                         {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
                             <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
-                                 class="h-[30px] w-[30px] rounded-full " alt="User Avatar" width="30" height="30">
+                                 class="h-[30px] w-[30px] rounded-full "
+                                 alt="User Avatar"
+                                 width="30"
+                                 height="30">
                         {% else %}
                             {% gravatar request.user.email 30 '' 'gravatar rounded-full' %}
                         {% endif %}

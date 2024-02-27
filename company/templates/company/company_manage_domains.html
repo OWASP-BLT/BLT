@@ -27,7 +27,9 @@
                                 <div class="flex-shrink-0">
                                     <img class="w-8 h-8 rounded-full"
                                          src="{{ MEDIA_URL }}{{ domain.logo }}"
-                                         alt="Domain Logo" width="32px" height="32px">
+                                         alt="Domain Logo"
+                                         width="32px"
+                                         height="32px">
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-gray-900 truncate">{{ domain.name | capfirst }}</p>
@@ -37,7 +39,8 @@
                                     <a href="{% url 'view_domain' domain.id %}">View</a>
                                     <form id="deleteForm"
                                           action="{% url 'add_domain' company %}?domain={{ domain.id }}"
-                                          method="post" class="inline">
+                                          method="post"
+                                          class="inline">
                                         {% csrf_token %}
                                         <input type="hidden" name="_method" value="delete">
                                     </form>
