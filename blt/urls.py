@@ -416,6 +416,7 @@ urlpatterns = [
     path("company/", include("company.urls")),
     path("sponsor/", website.views.sponsor_view, name="sponsor"),
     path("companies/", DomainListView.as_view(), name="domain_lists"),
+    path('domain/<slug:slug>/', views.domain_view, name='domain'),
 ]
 
 if settings.DEBUG:
