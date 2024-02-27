@@ -110,22 +110,17 @@
             <canvas id="issueChart"></canvas>
         </div>
     </div>
+    <div id="chart-data" class="hidden"
+     data-months='["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"]'
+     data-all-data='[ {% for i in graph %}{"month": {{ i.month }}, "c": {{ i.c }} }{% if not forloop.last %},{% endif %}{% endfor %} ]'
+     data-user-data='[ {% for i in user_graph %}{"month": {{ i.month }}, "c": {{ i.c }} }{% if not forloop.last %},{% endif %}{% endfor %} ]'
+     data-pie-data='[ {% for i in pie_chart %}{"label": "{{ i.label }}", "c": {{ i.c }} }{% if not forloop.last %},{% endif %}{% endfor %} ]'></div>
     <script type="text/javascript">
-    var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
-    var all_data = new Array(12).fill(0);
-    var user_data = new Array(12).fill(0);
-    var pie = new Array(7).fill(0);
-    {% for i in graph %}
-    all_data[{{ i.month|add:"-1" }}] = {{ i.c }};  // Assuming i.month is 1-indexed in Django
-    {% endfor %}
-
-    {% for i in user_graph %}
-    user_data[{{ i.month|add:"-1" }}] = {{ i.c }};
-    {% endfor %}
-
-    {% for i in pie_chart %}
-    pie[{{ i.label }}] = {{ i.c }};  // Ensure i.label is correctly mapped if it's an index
-    {% endfor %}
+    const dataElement = document.getElementById('chart-data');
+    const allMonths = JSON.parse(dataElement.getAttribute('data-months'));
+    const allData = JSON.parse(dataElement.getAttribute('data-all-data'));
+    const userData = JSON.parse(dataElement.getAttribute('data-user-data'));
+    const pieData = JSON.parse(dataElement.getAttribute('data-pie-data'));
     var ctx = document.getElementById("myChart").getContext('2d');
     var myChart = new Chart(ctx, {
         type: 'bar',
