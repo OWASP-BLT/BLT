@@ -11,10 +11,11 @@ import uuid
 from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from urllib.parse import urlparse, urlsplit, urlunparse
 from io import BytesIO
+from urllib.parse import urlparse, urlsplit, urlunparse
 
 import humanize
+import qrcode
 import requests
 import requests.exceptions
 import six
@@ -91,7 +92,6 @@ from website.models import (
 )
 
 from .forms import CaptchaForm, HuntForm, QuickIssueForm, UserProfileForm
-import qrcode
 
 def is_valid_https_url(url):
     validate = URLValidator(schemes=["https"])  # Only allow HTTPS URLs
@@ -3827,27 +3827,32 @@ def invite_friend(request):
 #                 )
 #         mail.logout()
 
-
 @csrf_exempt
-def generate_bch_qr(request):
+def generate_bch_qr(request, username):
     if request.method == 'GET':
-        user = request.user
-        profile = user.userprofile
-        address = profile.crypto_address
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(address)
-        qr.make(fit=True)
+        try:
+            user = User.objects.get(username=username)
+            profile = user.userprofile
+            address = profile.crypto_address
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(address)
+            qr.make(fit=True)
 
-        img = qr.make_image(fill_color="black", back_color="white")
-        buffer = BytesIO()
-        img.save(buffer)
-        qr_image = buffer.getvalue()
-        
-        return HttpResponse(qr_image, content_type='image/png')
-    
-    return HttpResponse(status=405)
+            img = qr.make_image(fill_color="black", back_color="white")
+            buffer = BytesIO()
+            img.save(buffer)
+            qr_image = buffer.getvalue()
+
+            return HttpResponse(qr_image, content_type='image/png')
+        except User.DoesNotExist:
+            return HttpResponse(status=404)  # User not found
+        except Exception as e:
+            return HttpResponse(status=500)  # Internal server error
+    else:
+        return HttpResponse(status=405)  # Method Not Allowed
+
