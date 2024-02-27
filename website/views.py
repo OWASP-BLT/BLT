@@ -3829,9 +3829,9 @@ def invite_friend(request):
 
 
 @csrf_exempt
-def generate_bch_qr(request):
+def generate_bch_qr(request, username):
     if request.method == "GET":
-        user = request.user
+        user = get_object_or_404(User, username=username)
         profile = user.userprofile
         address = profile.crypto_address
         qr = qrcode.QRCode(
@@ -3847,7 +3847,6 @@ def generate_bch_qr(request):
         buffer = BytesIO()
         img.save(buffer)
         qr_image = buffer.getvalue()
-        
+
         return HttpResponse(qr_image, content_type='image/png')
-    
     return HttpResponse(status=405)

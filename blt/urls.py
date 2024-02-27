@@ -416,7 +416,7 @@ urlpatterns = [
     path("company/", include("company.urls")),
     path("sponsor/", website.views.sponsor_view, name="sponsor"),
     path("companies/", DomainListView.as_view(), name="domain_list"),
-    path("generate-bch-qr/", website.views.generate_bch_qr, name="generate_bch_qr"),
+    path("generate-bch-qr/<str:username>/", website.views.generate_bch_qr, name="generate_bch_qr"),
 ]
 
 if settings.DEBUG:
