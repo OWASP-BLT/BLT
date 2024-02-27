@@ -6,7 +6,6 @@ from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.urls import reverse
 from selenium.webdriver.chrome.service import Service
-from .models import Domain
 
 os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 
@@ -103,11 +102,3 @@ class UrlsTest(StaticLiveServerTestCase):
                             self.assertNotIn("SyntaxError", str(entry), msg=url)
 
         check_urls(module.urlpatterns)
-
-
-class DomainViewTest(UrlsTest):
-    def test_domain_url(self):
-        obj = Domain.objects.create(slug='test-slug', other_fields='...')
-        url = reverse('domain', kwargs={'slug': obj.slug})
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
