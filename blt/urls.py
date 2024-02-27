@@ -412,10 +412,16 @@ urlpatterns = [
     re_path(r"^ratings/", include("star_ratings.urls", namespace="ratings")),
     path("robots.txt", website.views.robots_txt),
     path("ads.txt", website.views.ads_txt),
+    re_path(r"^contributors/$", contributors_view, name="contributors"),
+    path("company/", include("company.urls")),
+    path("sponsor/", website.views.sponsor_view, name="sponsor"),
+    path("companies/", DomainListView.as_view(), name="domain_list"),
+    path('generate-bch-qr/', website.views.generate_bch_qr, name='generate_bch_qr')
 ]
 
 if settings.DEBUG:
     import debug_toolbar
+
     urlpatterns = [
         re_path(r"^__debug__/", include(debug_toolbar.urls)),
     ] + urlpatterns
