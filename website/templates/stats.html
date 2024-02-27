@@ -115,6 +115,17 @@
     var all_data = new Array(12).fill(0);
     var user_data = new Array(12).fill(0);
     var pie = new Array(7).fill(0);
+    {% for i in graph %}
+    all_data[{{ i.month|add:"-1" }}] = {{ i.c }};  // Assuming i.month is 1-indexed in Django
+    {% endfor %}
+
+    {% for i in user_graph %}
+    user_data[{{ i.month|add:"-1" }}] = {{ i.c }};
+    {% endfor %}
+
+    {% for i in pie_chart %}
+    pie[{{ i.label }}] = {{ i.c }};  // Ensure i.label is correctly mapped if it's an index
+    {% endfor %}
     var ctx = document.getElementById("myChart").getContext('2d');
     var myChart = new Chart(ctx, {
         type: 'bar',
