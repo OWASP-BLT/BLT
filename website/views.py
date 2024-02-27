@@ -3849,9 +3849,7 @@ def generate_bch_qr(request, username):
             buffer = BytesIO()
             img.save(buffer)
             qr_image = buffer.getvalue()
-            
-            response=HttpResponse(qr_image, content_type="image/png")
-            return response
+            return HttpResponse(qr_image, content_type="image/png")
         except User.DoesNotExist:
             return HttpResponse(status=404)  # User not found
         except Exception as e:
