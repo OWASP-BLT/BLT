@@ -14,10 +14,14 @@ from decimal import Decimal
 from urllib.parse import urlparse, urlsplit, urlunparse
 from io import BytesIO
 
+import humanize
 import requests
 import requests.exceptions
 import six
+import stripe
+import tweepy
 
+# from django_cron import CronJobBase, Schedule
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in, user_signed_up
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
