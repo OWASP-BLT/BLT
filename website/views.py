@@ -3830,7 +3830,7 @@ def invite_friend(request):
 
 @csrf_exempt
 def generate_bch_qr(request):
-    if request.method == 'GET':
+    if request.method == "GET":
         user = request.user
         profile = user.userprofile
         address = profile.crypto_address
