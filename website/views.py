@@ -3853,4 +3853,5 @@ def generate_bch_qr(request):
         qr_image = buffer.getvalue()
         
         return HttpResponse(qr_image, content_type='image/png')
-
+    
+    return HttpResponse(status=405)
