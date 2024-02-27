@@ -1,9 +1,10 @@
 import os
-import unittest
+from unittest.mock import patch
+
 import chromedriver_autoinstaller
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import LiveServerTestCase, TestCase
+from django.test import LiveServerTestCase, RequestFactory, TestCase
 from django.test.utils import override_settings
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -12,11 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from .models import Issue, IssueScreenshot
-
-from unittest.mock import patch
-from django.urls import reverse
-from django.test import RequestFactory, TestCase
-from .views import GoogleLogin, GithubLogin
+from .views import GithubLogin, GoogleLogin
 
 os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 
@@ -151,6 +148,7 @@ class HideImage(TestCase):
             if "hidden" not in filename:
                 self.assertFalse(True, "files rename failed")
 
+
 class TestGoogleLogin(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
@@ -171,10 +169,13 @@ class TestGoogleLogin(TestCase):
             return "http://example.com" + uri
 
         with patch("django.urls.reverse", side_effect=mock_reverse):
-            with patch("django.http.HttpRequest.build_absolute_uri", side_effect=mock_build_absolute_uri):
+            with patch(
+                "django.http.HttpRequest.build_absolute_uri", side_effect=mock_build_absolute_uri
+            ):
                 callback_url = view.callback_url
 
         self.assertEqual(callback_url, "http://example.com/accounts/google/login/callback/")
+
 
 class TestGithubLogin(TestCase):
     def setUp(self):
@@ -196,7 +197,9 @@ class TestGithubLogin(TestCase):
             return "http://example.com" + uri
 
         with patch("django.urls.reverse", side_effect=mock_reverse):
-            with patch("django.http.HttpRequest.build_absolute_uri", side_effect=mock_build_absolute_uri):
+            with patch(
+                "django.http.HttpRequest.build_absolute_uri", side_effect=mock_build_absolute_uri
+            ):
                 callback_url = view.callback_url
 
         self.assertEqual(callback_url, "http://example.com/accounts/github/login/callback/")
