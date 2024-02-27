@@ -91,11 +91,7 @@ from website.models import (
 )
 
 from .forms import CaptchaForm, HuntForm, QuickIssueForm, UserProfileForm
-
-
-
 import qrcode
-from django.http import HttpResponse
 
 def is_valid_https_url(url):
     validate = URLValidator(schemes=["https"])  # Only allow HTTPS URLs
