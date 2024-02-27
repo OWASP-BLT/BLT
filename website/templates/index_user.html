@@ -90,7 +90,7 @@ img {
 }
     </style>
     <section>
-        {% include 'includes/user_sidenav.html' %}
+        {% include "includes/user_sidenav.html" %}
     </section>
     <div>
         {% if upcoming_hunts %}
@@ -108,7 +108,7 @@ img {
                                 <div class="card_content">
                                     <h2 class="card_title">{{ hunt.name }}</h2>
                                     <p class="card_text">{{ hunt.domain.name }}, {{ hunt.domain.company.name }} - Starts on {{ hunt.starts_on }}</p>
-                                    <a href="/dashboard/user/hunt/{{ hunt.pk }}">
+                                    <a href="{% url 'view_hunt' hunt.pk %}">
                                         <button class="btn card_btn">Read More</button>
                                     </a>
                                 </div>
@@ -136,7 +136,7 @@ img {
                                 <div class="card_content">
                                     <h2 class="card_title">{{ hunt.name }}</h2>
                                     <p class="card_text">{{ hunt.domain.name }}, {{ hunt.domain.company.name }} - Already Started</p>
-                                    <a href="/dashboard/user/hunt/{{ hunt.pk }}">
+                                    <a href="{% url 'view_hunt' hunt.pk %}">
                                         <button class="btn card_btn">Read More</button>
                                     </a>
                                 </div>
@@ -164,7 +164,7 @@ img {
                                 <div class="card_content">
                                     <h2 class="card_title">{{ hunt.name }}</h2>
                                     <p class="card_text">{{ hunt.domain.name }}, {{ hunt.domain.company.name }} - Ended on {{ hunt.end_on }}</p>
-                                    <a href="/dashboard/user/hunt/{{ hunt.pk }}">
+                                    <a href="{% url 'view_hunt' hunt.pk %}">
                                         <button class="btn card_btn">Read More</button>
                                     </a>
                                 </div>
@@ -176,4 +176,4 @@ img {
             </div>
         {% endif %}
     </div>
-{% endblock %}
+{% endblock content %}

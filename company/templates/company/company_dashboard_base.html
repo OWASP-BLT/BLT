@@ -8,7 +8,7 @@
         <meta name="description" content="blt make company bug tracking easy">
         <meta name="keywords" content="blt, bug, tracking, company, easy">
         <title>
-            {% block title %}{% endblock %}
+            {% block title %}{% endblock title %}
         </title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,14 +21,14 @@
               crossorigin="anonymous"
               referrerpolicy="no-referrer" />
         <script src="https://cdn.tailwindcss.com"></script>
-        {% block tags %}{% endblock %}
+        {% block tags %}{% endblock tags %}
     </head>
     <body>
         <div class="container max-w-full min-w-full">
             {% include "company/company_includes/sidebar.html" %}
             <main class="main-content w-[100vw]">
                 {% include "company/company_includes/navbar.html" %}
-                {% block body %}{% endblock %}
+                {% block body %}{% endblock body %}
                 {% if messages %}
                     {% for message in messages %}
                         {% if message.level_tag == 'error' %}
@@ -93,7 +93,7 @@
             </main>
         </div>
     </body>
-    {% block js %}{% endblock %}
+    {% block js %}{% endblock js %}
     <script>
 
     function removeErrors(){

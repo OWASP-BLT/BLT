@@ -55,10 +55,10 @@
                             <i class="group-hover:text-white scale-150 m-3 fa-brands fa-dribbble fa-lg cursor-pointer transition duration-200 hover:text-gray-400"></i>
                         </a>
                     </div>
-                    <a href="/contributors/?contributor={{ contributor.id }}"
+                    <a href="{% url 'contributors' %}?contributor={{ contributor.id }}"
                        class="w-[150px] h-[40px] rounded-md shadow-md bg-red-500 text-white flex justify-center items-center mt-10 no-underline hover:text-white group-hover:bg-white group-hover:text-red-500 font-bold">More Info</a>
                 </div>
             {% endfor %}
         </div>
     </div>
-{% endblock %}
+{% endblock natural_content %}

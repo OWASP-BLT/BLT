@@ -53,7 +53,7 @@
             {% if issues %}
                 <div class="col-md-8 col-md-offset-2">
                     {% for activity in issues %}
-                        {% include '_activity.html' %}
+                        {% include "_activity.html" %}
                     {% endfor %}
                 </div>
             {% elif domains %}
@@ -94,7 +94,7 @@
                                              class="img-responsive img-rounded"
                                              loading="lazy" height="50" alt="user image">
                                     {% endif %}
-                                    <a class="search-username" href="/profile/{{ user.user.username }}">{{ user.user.username }}</a>
+                                    <a class="search-username" href="{% url 'profile' slug=user.user.username %}">{{ user.user.username }}</a>
                                 </div>
                                 <div class="py-0 px-20">
                                     <label class="text-sm">User points :</label>
@@ -104,7 +104,7 @@
                                         <span class="text-sm">{{ user.total_score|floatformat:0 }}</span> Points
                                     {% endif %}
                                 </div>
-                                <a href="/profile/{{ user.user.username }}"
+                                <a href="{% url 'profile' slug=user.user.username %}"
                                    class="btn btn-danger btn-sm prizebtn absolute right-[22px] top-[14px]">View Profile</a>
                             </div>
                         {% endfor %}
@@ -117,4 +117,4 @@
             {% endif %}
         </div>
     {% endif %}
-{% endblock %}
+{% endblock content %}

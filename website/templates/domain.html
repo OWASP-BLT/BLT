@@ -57,7 +57,7 @@
         margin-bottom: 100px;
     }
     </style>
-{% endblock %}
+{% endblock style %}
 {% block content %}
     <script type="text/javascript" src="{% static 'js/Chart.bundle.min.js' %}"></script>
     <div class="jumbotron">
@@ -127,7 +127,7 @@
                 <div role="tabpanel" class="tab-pane active" id="open">
                     <div class="list-group">
                         {% for activity in opened %}
-                            {% include '_activity.html' %}
+                            {% include "_activity.html" %}
                         {% endfor %}
                     </div>
                     <div class="text-center">
@@ -144,7 +144,7 @@
                 <div role="tabpanel" class="tab-pane" id="closed">
                     <div class="list-group">
                         {% for activity in closed %}
-                            {% include '_activity.html' %}
+                            {% include "_activity.html" %}
                         {% endfor %}
                     </div>
                     <div class="text-center">
@@ -173,7 +173,7 @@
                             {% else %}
                                 <img src="{% gravatar_url leader.email 50 %}" width="50" height="50" alt="{{ leader.username }}">
                             {% endif %}
-                            <a href="/profile/{{ leader.username }}">{{ leader.username }}</a>
+                            <a href="{% url 'profile' slug=leader.username %}">{{ leader.username }}</a>
                             <span class="badge">{{ leader.total }} bug{{ leader.total|pluralize }}</span>
                         </div>
                     {% endfor %}
@@ -290,4 +290,4 @@
         }
     });
     </script>
-{% endblock %}
+{% endblock content %}

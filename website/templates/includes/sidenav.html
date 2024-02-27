@@ -31,45 +31,45 @@
                     <div class="w-8 mr-4">
                         <i class="fa fa-exclamation-circle" id="icon"></i>
                     </div>
-                    <a href="/" ><span class="text">Issues</span></a>
+                    <a href="{% url 'index' %}" ><span class="text">Issues</span></a>
                 </li>
                 <li class="flex items-center p-4 border-b">
                     <div class="w-8 mr-4">
                         <i class="fa fa-institution" id="icon"></i>
                     </div>
                     <div class="content-container">
-                        <a href="/companies" ><span class="text">Companies</span></a>
+                        <a href="{% url 'domain_lists' %}" ><span class="text">Companies</span></a>
                     </div>
                 </li>
                 <li class="flex items-center p-4 border-b">
                     <div class="w-8 mr-4">
                         <i class="fa fa-trophy" id="icon"></i>
                     </div>
-                    <a href="/leaderboard" ><span class="text">Users</span></a>
+                    <a href="{% url 'leaderboard_global' %}" ><span class="text">Users</span></a>
                 </li>
                 <li class="flex items-center p-4 border-b">
                     <div class="w-8 mr-4">
                         <i class="fa fa-users" id="icon"></i>
                     </div>
-                    <a href="/teams" ><span class="text">Teams</span></a>
+                    <a href="{% url 'teams' %}" ><span class="text">Teams</span></a>
                 </li>
                 <li class="flex items-center p-4 border-b">
                     <div class="w-8 mr-4">
                         <i class="fa fa-bug" aria-hidden="true" id="icon"></i>
                     </div>
-                    <a href="/hunts" class="text"><span >Hunts</span></a>
+                    <a href="{% url 'hunts' %}" class="text"><span >Hunts</span></a>
                 </li>
                 <li class="flex items-center p-4 border-b">
                     <div class="w-8 mr-4">
                         <i class="fa fa-cubes" id="icon"></i>
                     </div>
-                    <a href="/projects" ><span class="text">Projects</span></a>
+                    <a href="{% url 'projects' %}" ><span class="text">Projects</span></a>
                 </li>
                 <li class="flex items-center p-4 border-b">
                     <div class="w-8 mr-4">
                         <i class="fa fa-file-code-o" id="icon"></i>
                     </div>
-                    <a href="/apps" ><span class="text">Apps</span></a>
+                    <a href="{% url 'apps' %}" ><span class="text">Apps</span></a>
                 </li>
             </ul>
             <ul class="space-y-3 font-medium text-3xl mt-8 mb-0">
@@ -80,25 +80,25 @@
                     <div class="w-8 mr-4">
                         <i class="fa fa-trash" id="icon"></i>
                     </div>
-                    <a href="/deletions" ><span class="text">Deletions</span></a>
+                    <a href="{% url 'deletions' %}" ><span class="text">Deletions</span></a>
                 </li>
                 <li class="flex items-center p-4 border-b">
                     <div class="w-8 mr-4">
                         <i class="fa fa-trademark" id="icon"></i>
                     </div>
-                    <a href="/trademarks" ><span class="text">Trademarks</span></a>
+                    <a href="{% url 'trademarks' %}" ><span class="text">Trademarks</span></a>
                 </li>
                 <li class="flex items-center p-4 border-b">
                     <div class="w-8 mr-4">
                         <i class="fa-solid fa-bacon" id="icon"></i>
                     </div>
-                    <a href="/bacon" ><span class="text">BACON</span></a>
+                    <a href="{% url 'bacon' %}" ><span class="text">BACON</span></a>
                 </li>
                 <li class="flex items-center p-4 border-b">
                     <div class="w-8 mr-4">
                         <i class="fa fa-tv" id="icon"></i>
                     </div>
-                    <a href="/bltv" ><span class="text">BLTV</span></a>
+                    <a href="{% url 'bltv' %}" ><span class="text">BLTV</span></a>
                 </li>
             </ul>
             <button class="w-full mt-8"
@@ -126,19 +126,19 @@
                     <div class="w-8 mr-4">
                         <i class="fa fa-code" aria-hidden="true" id="icon"></i>
                     </div>
-                    <a href="/contributors" class="text"><span >Contributors</span></a>
+                    <a href="{% url 'contributors' %}" class="text"><span >Contributors</span></a>
                 </li>
                 <li class="flex items-center p-4 border-b">
                     <div class="w-8 mr-4">
                         <i class="fa fa-info" id="icon"></i>
                     </div>
-                    <a href="/about" ><span class="text">About Us</span></a>
+                    <a href="{% url 'about' %}" ><span class="text">About Us</span></a>
                 </li>
                 <li class="flex items-center p-4 border-b">
                     <div class="w-8 mr-4">
                         <i class="fa-solid fa-file-contract" id="icon"></i>
                     </div>
-                    <a href="/terms" class="text"><span >Terms</span></a>
+                    <a href="{% url 'terms' %}" class="text"><span >Terms</span></a>
                 </li>
                 <li class="flex items-center p-4 border-b">
                     <div class="w-8 mr-4">

@@ -58,11 +58,11 @@
     margin-top: 30px;
   }
     </style>
-{% endblock %}
+{% endblock style %}
 {% block content %}
     {% localtime on %}
     <section>
-        {% include 'includes/company_sidenav.html' %}
+        {% include "includes/company_sidenav.html" %}
     </section>
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
@@ -167,43 +167,6 @@
   var starts_on = new Date("{{ hunt.starts_on.isoformat }}")
   var end_on = new Date("{{ hunt.end_on.isoformat }}")
   console.log(starts_on.getTimezoneOffset())
-  // if(starts_on.getTimezoneOffset()!=0){
-  //     var new_starts_on = new Date(starts_on.getTime()+starts_on.getTimezoneOffset()*60*1000);
-  //     var new_end_on = new Date(end_on.getTime()+end_on.getTimezoneOffset()*60*1000);
-  //       var offset_hour = starts_on.getTimezoneOffset() / 60;
-  //       var offset_minute = starts_on.getTimezoneOffset() % 60;
-  //       var hours = starts_on.getHours();
-  //       var minutes = starts_on.getMinutes();
-  //         console.log(hours - offset_hour)
-
-  //       new_starts_on.setHours(hours - offset_hour);
-  //         console.log(new_starts_on)
-  //       new_starts_on.setMinutes(minutes - offset_minute);
-
-  //       var offset_hour = end_on.getTimezoneOffset() / 60;
-  //       var offset_minute = end_on.getTimezoneOffset() % 60;
-  //       var hours = end_on.getHours();
-  //       var minutes = end_on.getMinutes();
-  //       new_end_on.setHours(hours - offset_hour);
-  //       new_end_on.setMinutes(minutes - offset_minute);
-  //       var Datepicker1 = MtrDatepickerDemo.init({
-  //           target: 'datepicker-1',
-  //           timestamp: new_starts_on.getTime()-10*60000,
-  //           future: true,
-  //         }, {
-  //           exportFormats: 'datepicker-1-res',
-  //         });
-  //         var Datepicker2 = MtrDatepickerDemo.init({
-  //           target: 'datepicker-2',
-  //           timestamp: new_end_on.getTime()-10*60000,
-  //           future: true,
-  //         }, {
-  //           exportFormats: 'datepicker-2-res',
-  //         });
-  //         console.log(new_starts_on)
-  //         console.log(new_end_on)
-  //   }
-  //   else{
   console.log(starts_on)
   console.log(end_on)
   var Datepicker1 = MtrDatepickerDemo.init({
@@ -224,7 +187,7 @@
     </script>
     <!-- {% tz_detect %} -->
 {% endlocaltime %}
-{% endblock %}
+{% endblock content %}
 {% block after_js %}
     <script src="{% static "js/bootstrap-slider.js" %}"></script>
     <script>
@@ -245,4 +208,4 @@
     }
   });
     </script>
-{% endblock %}
+{% endblock after_js %}

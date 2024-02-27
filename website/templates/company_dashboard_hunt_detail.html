@@ -2,7 +2,7 @@
 {% load static %}
 {% block content %}
     <section>
-        {% include 'includes/company_sidenav.html' %}
+        {% include "includes/company_sidenav.html" %}
     </section>
     <link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
     <link href="{% static 'mdeditor/css/editormd.preview.css' %}"
@@ -30,7 +30,7 @@
         </div>
     </div>
     <div class="modal-footer">
-        <a href="/dashboard/company/hunt/{{ hunt.pk }}/edit">
+        <a href="{% url 'company_dashboard_hunt_edit' pk=hunt.pk %}">
             <input type="submit"
                    class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
                    value="Edit" />
@@ -61,4 +61,4 @@
   })
 
     </script>
-{% endblock %}
+{% endblock content %}

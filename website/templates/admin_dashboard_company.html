@@ -2,7 +2,7 @@
 {% load static %}
 {% block content %}
     <section>
-        {% include 'includes/admin_sidenav.html' %}
+        {% include "includes/admin_sidenav.html" %}
     </section>
     <div>
         <div class="col_3">
@@ -11,10 +11,10 @@
                     <a href="#" class="list-group-item active">Company</a>
                     {% for company in companys %}
                         {% if company.is_active %}
-                            <a href="/dashboard/admin/company/{{ company.pk }}"
+                            <a href="{% url 'admin_company_dashboard_detail' pk=company.pk %}"
                                class="list-group-item">{{ company.name }}</a>
                         {% else %}
-                            <a href="/dashboard/admin/company/{{ company.pk }}"
+                            <a href="{% url 'admin_company_dashboard_detail' pk=company.pk %}"
                                class="list-group-item list-group-item-danger ">{{ company.name }}</a>
                         {% endif %}
                     {% endfor %}
@@ -99,4 +99,4 @@
         data-target="#addDomainModal">
     <i class="lnr lnr-plus-circle"> </i>
 </button>
-{% endblock %}
+{% endblock content %}

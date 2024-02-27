@@ -10,18 +10,18 @@
                        class="hover:no-underline text-white hover:text-white">{% env 'PROJECT_NAME' %}</a>
                 </div>
                 <p class="mt-6 font-normal text-center text-white text-xl md:mt-0">
-                    {% env 'PROJECT_NAME' %} {% trans 'is a bug logging tool to report issues and get points, companies are held accountable' %}.
+                    {% env 'PROJECT_NAME' %} {% trans "is a bug logging tool to report issues and get points, companies are held accountable" %}.
                 </p>
                 <p class="flex flex-col items-center justify-center text-sm mt-10 text-center">
-                    <span>{% trans 'Already have an account' %}?</span>
-                    <a href="{% url 'account_login' %}" class="underline text-white">{% trans 'Login' %}!</a>
+                    <span>{% trans "Already have an account" %}?</span>
+                    <a href="{% url 'account_login' %}" class="underline text-white">{% trans "Login" %}!</a>
                 </p>
                 <p class="mt-6 text-sm text-center text-white">
-                    {% trans 'Read our' %} <a href="{% url 'terms' %}" class="underline">{% trans 'terms' %}</a> {% trans 'and' %} <a href="{% url 'terms' %}" class="underline">{% trans 'conditions' %}</a>
+                    {% trans "Read our" %} <a href="{% url 'terms' %}" class="underline">{% trans "terms" %}</a> {% trans "and" %} <a href="{% url 'terms' %}" class="underline">{% trans "conditions" %}</a>
                 </p>
             </div>
             <div class="p-5 bg-white md:flex-1">
-                <h3 class="my-4 text-2xl font-semibold text-gray-700">{% trans 'Account SignUp' %}</h3>
+                <h3 class="my-4 text-2xl font-semibold text-gray-700">{% trans "Account SignUp" %}</h3>
                 <form class="flex flex-col space-y-5 login"
                       method="post"
                       action="{% url 'account_signup' %}">
@@ -72,7 +72,7 @@
                         <button type="submit"
                                 name="signup_button"
                                 class="px-4 py-2 w-[30%] h-[28px] text-lg font-semibold text-white transition-colors duration-300 bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4">
-                            {% trans 'Sign Up' %}
+                            {% trans "Sign Up" %}
                         </button>
                     </div>
                     {% if form.errors %}
@@ -86,4 +86,4 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock natural_content %}

@@ -2,7 +2,7 @@
 {% load static %}
 {% block content %}
     <section>
-        {% include 'includes/company_sidenav.html' %}
+        {% include "includes/company_sidenav.html" %}
     </section>
     <div>
         <div class="col_3">
@@ -10,7 +10,7 @@
                 {% for domain in domains %}
                     <div class="col-md-3 widget widget1">
                         <div class="r3_counter_box">
-                            <a href="/dashboard/company/domain/{{ domain.pk }}"><i class="fa fa-pencil"></i></a>
+                            <a href="{% url 'company_dashboard_domain_detail' domain.pk %}"><i class="fa fa-pencil"></i></a>
                             <div class="stats">
                                 <h5>{{ domain.name }}</h5>
                                 <div class="hunt">
@@ -90,4 +90,4 @@
         data-target="#addDomainModal">
     <i class="lnr lnr-plus-circle"> </i>
 </button>
-{% endblock %}
+{% endblock content %}

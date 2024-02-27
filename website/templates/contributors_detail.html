@@ -5,7 +5,7 @@
           integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
           crossorigin="anonymous"
           referrerpolicy="no-referrer" />
-    <a href="/contributors"
+    <a href="{% url 'contributors' %}"
        class="flex top-[100px] left-10 fixed w-[30px] h-[30px] bg-red-500 justify-center item-center rounded-[50px] hover:bg-red-700 hover:shadow-md no-underline">
         <i class="text-white scale-150 m-3 fa-sharp fa-solid fa-arrow-left cursor-pointer transition duration-200"></i>
     </a>
@@ -50,4 +50,4 @@
             </div>
         </div>
     </section>
-{% endblock %}
+{% endblock natural_content %}

@@ -12,18 +12,18 @@
                        class="hover:no-underline text-white hover:text-white">{% env 'PROJECT_NAME' %}</a>
                 </div>
                 <p class="mt-6 font-normal text-center text-white text-xl md:mt-0">
-                    {% env 'PROJECT_NAME' %} {% trans 'is a bug logging tool to report issues and get points, companies are held accountable' %}.
+                    {% env 'PROJECT_NAME' %} {% trans "is a bug logging tool to report issues and get points, companies are held accountable" %}.
                 </p>
                 <p class="flex flex-col items-center justify-center text-sm mt-10 text-center">
                     <span>{% trans "Don't have an account" %}?</span>
-                    <a href="{% url 'account_signup' %}" class="underline text-white">{% trans 'Get Started' %}!</a>
+                    <a href="{% url 'account_signup' %}" class="underline text-white">{% trans "Get Started" %}!</a>
                 </p>
                 <p class="mt-6 text-sm text-center text-white">
-                    {% trans 'Read our' %} <a href="{% url 'terms' %}" class="underline text-white">{% trans 'terms' %}</a> {% trans 'and' %} <a href="{% url 'terms' %}" class="underline text-white">{% trans 'conditions' %}</a>
+                    {% trans "Read our" %} <a href="{% url 'terms' %}" class="underline text-white">{% trans "terms" %}</a> {% trans "and" %} <a href="{% url 'terms' %}" class="underline text-white">{% trans "conditions" %}</a>
                 </p>
             </div>
             <div class="p-5 bg-white md:flex-1">
-                <h3 class="my-4 text-2xl font-semibold text-gray-700">{% trans 'Account Login' %}</h3>
+                <h3 class="my-4 text-2xl font-semibold text-gray-700">{% trans "Account Login" %}</h3>
                 <form class="flex flex-col space-y-5 login"
                       method="post"
                       action="{% url 'account_login' %}">
@@ -59,7 +59,7 @@
                         <button type="submit"
                                 name="login_button"
                                 class="px-4 py-2 w-[100%] h-[28px] text-lg font-semibold text-white transition-colors duration-300 bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4">
-                            {% trans 'Log in' %}
+                            {% trans "Log in" %}
                         </button>
                     </div>
                     {% if form.errors %}
@@ -72,7 +72,7 @@
                     <div class="flex flex-col space-y-5">
                         <span class="flex items-center justify-center space-x-2">
                             <span class="h-px bg-gray-400 w-14"></span>
-                            <span class="font-normal text-gray-500">{% trans 'or login with' %}</span>
+                            <span class="font-normal text-gray-500">{% trans "or login with" %}</span>
                             <span class="h-px bg-gray-400 w-14"></span>
                         </span>
                         <div class="flex flex-col space-y-4">
@@ -117,4 +117,4 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock natural_content %}
