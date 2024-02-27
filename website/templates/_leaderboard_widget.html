@@ -1,7 +1,7 @@
 {% load gravatar %}
 {% load humanize %}
 
-<div class="row-start-1 bug-container leaderboard-widget flex flex-col p-5 pt-3 bg-[white] m-1 w-[100%] row-span-2 rounded-[2.5rem]  border-[#e8e8e8] border-2 font-['Inter'] h-[630px]">
+<div class="row-start-1 bug-container leaderboard-widget flex flex-col p-5 pt-3 bg-[white] m-1 w-[120%] row-span-2 rounded-[2.5rem]  border-[#e8e8e8] border-2 font-['Inter'] h-[630px]">
     
     <div class="font-['Barlow_Semi_Condensed'] font-semibold text-[black] text-[25px] text-center mb-2">LEADERBOARD</div>
 
@@ -45,6 +45,13 @@
                 </span>
                 
             </a>
+            <div>
+                <button type="button" id="openModal" class="btn btn-danger w-full" style="color: black;">Send a Tip</button>
+                <dialog id="dialog">
+                    <img id="qr-image" src="{% url 'generate_bch_qr' %}" alt="QR Code">
+                    <p id="bch-address">BCH: {{ request.user.userprofile.crypto_address }}</p>
+                </dialog>
+            </div>
         {% endfor %}
     </div>
 
@@ -58,6 +65,14 @@
 
 {% comment %} positions the leaderboard rightmost {% endcomment %}
 <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const openModalButton = document.getElementById('openModal');
+        const dialog = document.getElementById('dialog');
+
+        openModalButton.addEventListener('click', function() {
+            dialog.showModal();
+        });
+    });
     document.addEventListener('DOMContentLoaded', function() {
       const grid = document.querySelector('.hero-bugs-container');
       const child = document.querySelector('.leaderboard-widget');
