@@ -77,7 +77,7 @@
 
     {% if available %}
         <div class="tm-wrapper">
-            <img  id="tm-logo" src="../static/img/TM.png">
+            <img  id="tm-logo" src="{% static 'img/TM.png' %}">
             <p>available !</p>
             <div id="tm-text">Trademark is available for Registration</div>
             <button id="back-button"><a href="{% url 'index' %}">Back</a></button>
