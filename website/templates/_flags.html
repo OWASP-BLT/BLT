@@ -1,5 +1,4 @@
 {% load gravatar %}
-
 {% if request.user.is_authenticated %}
     <a class="btn btn-info btn-xs flag_unflag" name="{{ object.pk }}">
         <i class="fa fa-flag"></i> Flag {{ flags }}
@@ -9,9 +8,6 @@
         <i class="fa fa-flag"></i> Flag {{ flags }}
     </button>
 {% endif %}
-
-
-
 <div id="flagedBy" class="modal" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -20,14 +16,20 @@
                 {% for usr in flagers %}
                     <div class="list-group-item">
                         {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
-                            <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}" height="50px">
+                            <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
+                                 height="50px"
+                                 width="50px"
+                                 alt="user avatar">
                         {% else %}
-                            <img src="{% gravatar_url usr.user.email 50 %}">
+                            <img src="{% gravatar_url usr.user.email 50 %}"
+                                 height="50px"
+                                 width="50px"
+                                 alt="user avatar">
                         {% endif %}
-                        <a href="/profile/{{ usr.user.username }}">{{ usr.user.username }}</a>
+                        <a href="{% url 'profile' slug=usr.user.username %}">{{ usr.user.username }}</a>
                     </div>
                 {% endfor %}
             </div>
         </div>
     </div>
-</div> 
+</div>

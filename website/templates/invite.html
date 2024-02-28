@@ -4,17 +4,21 @@
     <div class="row">
         <div class="col-lg-10">
             {% if exists %}
-                <p>Click <a
-                        href="mailto:{{ email }}?subject=A bug on {{ domain.name}}&body=first line\nsecond line\nthird line %3Cimg+src%3D%27newiibwhite.gif%27++%2F%3E">this
-                    link</a> to open the email in your mail program. If you use Gmail, you can use this extension.</p>
+                <p>
+                    Click <a href="mailto:{{ email }}?subject=A bug on {{ domain.name }}&body=first line\nsecond line\nthird line %3Cimg+src%3D%27newiibwhite.gif%27++%2F%3E">this
+                    link</a> to open the email in your mail program. If you use Gmail, you can use this extension.
+                </p>
             {% endif %}
-            <h1>{% trans 'Invite a company and get +5 points when they join' %}</h1>
+            <h1>{% trans "Invite a company and get +5 points when they join" %}</h1>
             <label>Email:</label>
-            <form role="form" action="/invite/" method="post" class="form-inline">
+            <form role="form"
+                  action="{% url 'invite' %}"
+                  method="post"
+                  class="form-inline">
                 {% csrf_token %}
                 <input class="form-control" type="text" name="email">
                 <button type="submit" class="btn btn-danger">Invite</button>
             </form>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

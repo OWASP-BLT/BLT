@@ -1,12 +1,12 @@
 {% load gravatar %}
-
 <div id="like_unlike_root" class="flex justify-between">
-
     {% if request.user.is_authenticated %}
         <!-- <a class="btn btn-info btn-xs like_unlike" name="{{ object.pk }}">
             <i class="fa fa-thumbs-up"></i> {{ likes }}
         </a> -->
-        <button name="{{ object.pk }}" type="submit" class="like_unlike flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
+        <button name="{{ object.pk }}"
+                type="submit"
+                class="like_unlike flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
             <i class="fa-regular fa-thumbs-up text-2xl mr-2"> </i>
             <p id="total_likes">{{ likes }} Upvotes</p>
         </button>
@@ -14,16 +14,17 @@
         <!-- <button class="btn btn-info btn-xs" disabled>
             <i class="fa fa-thumbs-up"></i> {{ likes }}
         </button> -->
-        <button disabled class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold bg-gray-200 m-5 xl:m-0">
+        <button disabled
+                class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold bg-gray-200 m-5 xl:m-0">
             <i class="fa-regular fa-thumbs-up text-2xl mr-2"> </i>
             <p>{{ likes }} Upvotes</p>
         </button>
     {% endif %}
-
     {% if likes %}
-        <a href="#likedBy" class="flex items-center justify-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0 xl:ml-2 liked-by" data-toggle="modal">Liked By</a>
+        <a href="#likedBy"
+           class="flex items-center justify-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0 xl:ml-2 liked-by"
+           data-toggle="modal">Liked By</a>
     {% endif %}
-
     <div id="likedBy" class="modal" role="dialog">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -32,11 +33,17 @@
                     {% for usr in likers %}
                         <div class="list-group-item">
                             {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
-                                <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}" height="50px">
+                                <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
+                                     height="50px"
+                                     width="50px"
+                                     alt="{{ usr.user.username }}">
                             {% else %}
-                                <img src="{% gravatar_url usr.user.email 50 %}">
+                                <img src="{% gravatar_url usr.user.email 50 %}"
+                                     height="50px"
+                                     width="50px"
+                                     alt="{{ usr.user.username }}">
                             {% endif %}
-                            <a href="/profile/{{ usr.user.username }}">{{ usr.user.username }}</a>
+                            <a href="{% url 'profile' slug=usr.user.username %}">{{ usr.user.username }}</a>
                         </div>
                     {% endfor %}
                 </div>
@@ -44,8 +51,7 @@
         </div>
     </div>
 </div>
-    <script>
-    
+<script>
         function like_unlike_handler(e){
             e.preventDefault();
             var issue_pk = $(this).attr('name');
@@ -63,4 +69,4 @@
     
         // Attach the click event handler
         $('body').on('click', '.like_unlike', like_unlike_handler);
-    </script>
+</script>

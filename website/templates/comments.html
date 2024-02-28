@@ -2,59 +2,62 @@
     {% for comment in all_comment %}
         {% if comment.parent is None %}
             <blockquote>
-            <div class="well comment -ml-11  ">
-                <div class="comment-actions flex-col space-y-5 p-5">
-                    <strong><a href="{{ comment.author_url }}">{{ comment.author }}</a></strong>
-                    &nbsp;commented &nbsp;<div class="date">{{ comment.created_date | timesince }} ago</div>
-                    {% if user.username == comment.author %}
-                    <div class="lg:flex-row">
-                        <a class="btn btn-xs btn-primary reply_comment lg:h-12 lg:p-2"
-                           name="{{ comment.pk }}">{{ comment.children | length }} replies</a>
-                        <a class="btn btn-xs btn-primary edit_comment lg:h-12 lg:p-2" name="{{ comment.pk }}">Edit</a>
-                        <a class="btn btn-xs btn-danger del_comment lg:h-12 lg:p-2" name="{{ comment.pk }}">Delete</a>
-                    </div>
-                    {% endif %}
-                </div>
-                <form class="edit_form" style="display:none">
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <textarea class="form-control" required></textarea>
-                    </div>
-                    <button class="btn btn-primary" type="submit">Update</button>
-                    <button class="btn btn-default cancel-comment-edit">Cancel</button>
-                </form>
-                <div class="text-comment">{{ comment.text | safe }}</div>
-            </div>
-        {% endif %}
-
-    <div class="child_comments" style="display:none">
-        {% for child_comment in comment.children %}
-            <blockquote>
-                <div class="well comment">
-                    <div class="comment-actions">
-                        <strong><a href="{{ comment.author_url }}">{{ child_comment.author }}</a></strong>
-                        &nbsp;replied &nbsp;<div class="date">{{ child_comment.created_date | timesince }} ago</div>
+                <div class="well comment -ml-11  ">
+                    <div class="comment-actions flex-col space-y-5 p-5">
+                        <strong><a href="{{ comment.author_url }}">{{ comment.author }}</a></strong>
+                        &nbsp;commented &nbsp;
+                        <div class="date">{{ comment.created_date | timesince }} ago</div>
                         {% if user.username == comment.author %}
-                            <a class="btn btn-xs btn-danger del_comment" name="{{ child_comment.pk }}">Delete</a>
+                            <div class="lg:flex-row">
+                                <a class="btn btn-xs btn-primary reply_comment lg:h-12 lg:p-2"
+                                   name="{{ comment.pk }}">{{ comment.children | length }} replies</a>
+                                <a class="btn btn-xs btn-primary edit_comment lg:h-12 lg:p-2"
+                                   name="{{ comment.pk }}">Edit</a>
+                                <a class="btn btn-xs btn-danger del_comment lg:h-12 lg:p-2"
+                                   name="{{ comment.pk }}">Delete</a>
+                            </div>
                         {% endif %}
                     </div>
-                    <div class="text-comment">{{ child_comment.text | safe }}</div>
+                    <form class="edit_form hidden">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <textarea class="form-control" required></textarea>
+                        </div>
+                        <button class="btn btn-primary" type="submit">Update</button>
+                        <button class="btn btn-default cancel-comment-edit">Cancel</button>
+                    </form>
+                    <div class="text-comment">{{ comment.text | safe }}</div>
                 </div>
-            </blockquote>
-        {% endfor %}
-
-        {% if comment.parent is None %}
-            <form class="reply_form">
-                {% csrf_token %}
-                <div class="form-group">
-                    <textarea class="form-control"></textarea>
-                </div>
-                <button class="btn btn-primary" type="submit" value="{{ comment.pk }}">Add Reply</button>
-                <button class="btn btn-default cancel-comment-reply">Cancel</button>
-            </form>
-        {% endif %}
-    </div>
-    </blockquote>
+            {% endif %}
+            <div class="child_comments hidden">
+                {% for child_comment in comment.children %}
+                    <blockquote>
+                        <div class="well comment">
+                            <div class="comment-actions">
+                                <strong><a href="{{ comment.author_url }}">{{ child_comment.author }}</a></strong>
+                                &nbsp;replied &nbsp;
+                                <div class="date">{{ child_comment.created_date | timesince }} ago</div>
+                                {% if user.username == comment.author %}
+                                    <a class="btn btn-xs btn-danger del_comment"
+                                       name="{{ child_comment.pk }}">Delete</a>
+                                {% endif %}
+                            </div>
+                            <div class="text-comment">{{ child_comment.text | safe }}</div>
+                        </div>
+                    </blockquote>
+                {% endfor %}
+                {% if comment.parent is None %}
+                    <form class="reply_form">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <textarea class="form-control"></textarea>
+                        </div>
+                        <button class="btn btn-primary" type="submit" value="{{ comment.pk }}">Add Reply</button>
+                        <button class="btn btn-default cancel-comment-reply">Cancel</button>
+                    </form>
+                {% endif %}
+            </div>
+        </blockquote>
     {% empty %}
     {% endfor %}
 </div>

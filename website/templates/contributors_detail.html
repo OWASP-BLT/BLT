@@ -1,56 +1,55 @@
-{% extends "base.html" %} 
-
+{% extends "base.html" %}
 {% block natural_content %}
-<link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
-    integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
-    crossorigin="anonymous"
-    referrerpolicy="no-referrer"
-  />
-
-<a href="/contributors" class="flex top-[100px] left-10 fixed w-[30px] h-[30px] bg-red-500 justify-center item-center rounded-[50px] hover:bg-red-700 hover:shadow-md no-underline">
-  <i class="text-white scale-150 m-3 fa-sharp fa-solid fa-arrow-left cursor-pointer transition duration-200"></i>
-</a>
-<section class="text-gray-700 body-font overflow-hidden bg-white">
-    <div class="container px-5 py-24 mx-auto">
-      <div class="lg:w-4/5 mx-auto flex flex-wrap">
-        
-        <img alt="ecommerce" class="lg:w-1/2 w-full object-cover object-center rounded border border-gray-200" src="{{contributor.img}}">
-        
-        <div class="lg:w-1/2 w-full lg:pl-10 lg:py-6 mt-6 lg:mt-0">
-          <p class="text-6xl font-bold" >{{contributor.name}}</p>
-          <p class="text-4xl text-brown-800 mt-5 italic font-light">{{contributor.repository}}</p>
-          <div class="w-full h-1 bg-red-500"></div>
-          <p class="text-3xl font-bold mt-8">{{contributor.location}}</p>
-          {% if contributor.long_description == "" %}
-            <p class="mt-10 text-3xl font-medium">{{contributor.short_description}}</p>
-          {% else %}
-            <p class="mt-10 text-3xl font-medium">{{contributor.long_description}}</p>
-          {% endif %}
-          <div
-                class="flex gap-3 w-auto h-5 mt-10"
-                >
-                <a href="{{contributor.twitter}}" target="_blank" rel="noopener noreferrer">
-                    <i
-                    class="scale-150 m-3 fa-brands fa-x-twitter fa-lg cursor-pointer transition duration-100 hover:text-red-500"
-                    ></i>
-                </a>
-                <a href="{{contributor.linkedin}}" target="_blank" rel="noopener noreferrer">
-                    <i
-                    class="scale-150 m-3 fa-brands fa-linkedin fa-lg cursor-pointer transition duration-100 hover:text-red-500"
-                    ></i>
-                </a>
-                <a href="{{contributor.website}}" target="_blank" rel="noopener noreferrer">
-                    <i
-                    class="scale-150 m-3 fa-brands fa-dribbble fa-lg cursor-pointer transition duration-100 hover:text-red-500"
-                    ></i>
-                </a>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
+          integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer" />
+    <a href="{% url 'contributors' %}"
+       class="flex top-[100px] left-10 fixed w-[30px] h-[30px] bg-red-500 justify-center item-center rounded-[50px] hover:bg-red-700 hover:shadow-md no-underline">
+        <i class="text-white scale-150 m-3 fa-sharp fa-solid fa-arrow-left cursor-pointer transition duration-200"></i>
+    </a>
+    <section class="text-gray-700 body-font overflow-hidden bg-white">
+        <div class="container px-5 py-24 mx-auto">
+            <div class="lg:w-4/5 mx-auto flex flex-wrap">
+                <img alt="ecommerce"
+                     class="lg:w-1/2 w-full object-cover object-center rounded border border-gray-200"
+                     src="{{ contributor.img }}"
+                     width="100%"
+                     height="100%">
+                <div class="lg:w-1/2 w-full lg:pl-10 lg:py-6 mt-6 lg:mt-0">
+                    <p class="text-6xl font-bold">{{ contributor.name }}</p>
+                    <p class="text-4xl text-brown-800 mt-5 italic font-light">{{ contributor.repository }}</p>
+                    <div class="w-full h-1 bg-red-500"></div>
+                    <p class="text-3xl font-bold mt-8">{{ contributor.location }}</p>
+                    {% if contributor.long_description == "" %}
+                        <p class="mt-10 text-3xl font-medium">{{ contributor.short_description }}</p>
+                    {% else %}
+                        <p class="mt-10 text-3xl font-medium">{{ contributor.long_description }}</p>
+                    {% endif %}
+                    <div class="flex gap-3 w-auto h-5 mt-10">
+                        <a href="{{ contributor.twitter }}"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            <i class="scale-150 m-3 fa-brands fa-x-twitter fa-lg cursor-pointer transition duration-100 hover:text-red-500"></i>
+                        </a>
+                        <a href="{{ contributor.linkedin }}"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            <i class="scale-150 m-3 fa-brands fa-linkedin fa-lg cursor-pointer transition duration-100 hover:text-red-500"></i>
+                        </a>
+                        <a href="{{ contributor.website }}"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            <i class="scale-150 m-3 fa-brands fa-dribbble fa-lg cursor-pointer transition duration-100 hover:text-red-500"></i>
+                        </a>
+                    </div>
+                    <button onclick="alert('Bitcoin Cash Addr: ' + '{{ contributor.bch_addr }}')"
+                            class="w-[150px] h-[40px] rounded-md shadow-md bg-red-500 text-white flex justify-center items-center mt-20 no-underline font-bold">
+                        Donate Bitcoin
+                    </button>
                 </div>
-                <button onclick="alert('Bitcoin Cash Addr: ' + '{{contributor.bch_addr}}')" class="w-[150px] h-[40px] rounded-md shadow-md bg-red-500 text-white flex justify-center items-center mt-20 no-underline font-bold">Donate Bitcoin</button>
             </div>
         </div>
-      </div>
-    </div>
-  </section>
-{% endblock %}
+    </section>
+{% endblock natural_content %}

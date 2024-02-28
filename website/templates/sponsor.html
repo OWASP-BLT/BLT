@@ -1,101 +1,101 @@
 {% extends "base.html" %}
 {% load custom_tags %}
 {% load i18n %}
-
-{% block title %}Sponsors{% endblock %}
-
+{% block title %}
+    Sponsors
+{% endblock title %}
 {% block content %}
-<div class="min-h-screen flex flex-col mx-4">
-    <h1 class="text-4xl font-semibold my-8 mx-auto">Sponsor a Monthly Prize on BLT</h1>
-
-    <div class="flex flex-col items-center border border-black rounded-xl mx-auto py-6 px-10 w-[40vh] lg:w-[60vh]">
-        <span class="text-[1.72rem] font-semibold">Bitcoin Cash (BCH) Donation Address</span>
-        <div class="flex flex-row my-10">
-            <img src="../static/images/bch qr.png" alt="bch qr" class="w-1/2 h-1/2 mx-5">
-            <div class="w-full">
-                <img src="../static/images/bch gold block.png" alt="" class="w-2/3 mx-5"/>
-                <div class="flex flex-col font-semibold">
-                <span id="balanceDisplay">
-                    Current Balance: 
-                </span>
+    <div class="min-h-screen flex flex-col mx-4">
+        <h1 class="text-4xl font-semibold my-8 mx-auto">Sponsor a Monthly Prize on BLT</h1>
+        <div class="flex flex-col items-center border border-black rounded-xl mx-auto py-6 px-10 w-[40vh] lg:w-[60vh]">
+            <span class="text-[1.72rem] font-semibold">Bitcoin Cash (BCH) Donation Address</span>
+            <div class="flex flex-row my-10">
+                <img src="../static/images/bch qr.png"
+                     alt="bch qr"
+                     class="w-1/2 h-1/2 mx-5"
+                     width="50%"
+                     height="50%" />
+                <div class="w-full">
+                    <img src="../static/images/bch gold block.png"
+                         alt="bch qr"
+                         class="w-2/3 mx-5"
+                         width="66%"
+                         height="66%" />
+                    <div class="flex flex-col font-semibold">
+                        <span id="balanceDisplay">Current Balance:</span>
+                    </div>
+                </div>
             </div>
-            </div>
-
+            <span class="text-2xl font-semibold break-words w-96 lg:w-auto"
+                  id="walletAddress">bitcoincash:qqeht8vnwag20yv8dvtcrd4ujx09fwxwsqqqw93w88</span>
         </div>
-        <span class="text-2xl font-semibold break-words w-96 lg:w-auto" id="walletAddress">bitcoincash:qqeht8vnwag20yv8dvtcrd4ujx09fwxwsqqqw93w88</span>
+        <h2 class="text-[1.72rem] my-5 font-semibold ">How Does Sponsoring Work?</h2>
+        <p class=" text-2xl">
+            Our bug tracking platform, BLT, stands tall due to the dedication and hard work of our
+            community. One of
+            the pillars that bolsters this enthusiasm is the monthly prizes for our top bug finders. When you sponsor these
+            prizes, you don't just uplift the platform; you celebrate and empower the brilliant minds behind the bug
+            findings.
+        </p>
+        <h2 class="text-[1.72rem] my-5 font-semibold ">Donate to the Monthly Prize Pool</h2>
+        <p class=" text-2xl">
+            Elevate the efforts of the BLT community by contributing to our monthly prize pool. Your
+            donation
+            directly rewards the top performers, fostering a colture of excellence.
+        </p>
+        <h2 class="text-[1.72rem] my-5 font-semibold ">Process to Sponsor a Prize:</h2>
+        <ol class="list-decimal text-2xl">
+            <li>
+                Choose Your Donation Amount: Whether you want to give a modest token of appreciation or a substantial prize,
+                all contributions make a difference.
+            </li>
+            <li>Send the Donation: Utilize the provided BCH address above to transfer your chosen donation.</li>
+            <li>
+                Recognition & Confirmation: Upon receipt, we will both confirm and give due recognition to your contribution
+                on our leaderboard.
+            </li>
+        </ol>
+        <h2 class="text-[1.72rem] my-5 font-semibold ">Determining the Winner:</h2>
+        <ol class="list-decimal text-2xl">
+            <li>
+                Monthly Assessment: Bug finders continuously submit their findings throughout the month. Each discovery gets
+                scored based on parameters like severity, rarity, and report accuracy.
+            </li>
+            <li>
+                Leaderboard Dynamics: At month-end, all participants are ranked on our leaderboard using their cumolative
+                scores.
+            </li>
+            <li>
+                Rewarding Excellence: The top bug finder, leading the leaderboard, receives the entirety of the month's
+                prize pool on the first day of the subsequent month.
+            </li>
+        </ol>
+        <h2 class="text-[1.72rem] my-5 font-semibold ">Transparent Operations & Genuine Trust:</h2>
+        <p class=" text-2xl">
+            Every cent of your donation serves its intended purpose. We ensure foll transparency by making
+            all
+            transaction records accessible to the community.
+        </p>
+        <h2 class="text-[1.72rem] my-5 font-semibold ">Why Your Sponsorship Matters:</h2>
+        <ol class="list-decimal text-2xl">
+            <li>
+                Enhancing Quality: Monetary incentives drive bug finders to outdo their previous bests, leading to
+                higher-quality findings.
+            </li>
+            <li>
+                Community Engagement: Regolar contributions indicate a thriving BLT community that appreciates and values
+                its members.
+            </li>
+            <li>Branding Opportunity: As a sponsor, gain favorable visibility and goodwill among a dedicated community.</li>
+        </ol>
+        <h2 class="text-[1.72rem] my-5 font-semibold ">Let’s Make a Difference Together!</h2>
+        <p class=" text-2xl">
+            Your backing is instrumental in scolpting BLT's success. By choosing to contribute, you're
+            endorsing quality,
+            commitment, and collaborative growth. For any assistance or further information, please [contact our team].
+        </p>
+        <p>Thank you for championing the spirit of excellence on BLT!</p>
     </div>
-    
-    <h2 class="text-[1.72rem] my-5 font-semibold ">How Does Sponsoring Work?</h2>
-
-    <p class=" text-2xl">Our bug tracking platform, BLT, stands tall due to the dedication and hard work of our
-        community. One of
-        the pillars that bolsters this enthusiasm is the monthly prizes for our top bug finders. When you sponsor these
-        prizes, you don't just uplift the platform; you celebrate and empower the brilliant minds behind the bug
-        findings.
-    </p>
-
-    <h2 class="text-[1.72rem] my-5 font-semibold ">Donate to the Monthly Prize Pool</h2>
-
-    <p class=" text-2xl">Elevate the efforts of the BLT community by contributing to our monthly prize pool. Your
-        donation
-        directly rewards the top performers, fostering a colture of excellence.</p>
-
-    <h2 class="text-[1.72rem] my-5 font-semibold ">Process to Sponsor a Prize:</h2>
-
-    <ol class="list-decimal text-2xl">
-        <li>Choose Your Donation Amount: Whether you want to give a modest token of appreciation or a substantial prize,
-            all contributions make a difference.</li>
-        <li>Send the Donation: Utilize the provided BCH address above to transfer your chosen donation.</li>
-        <li>Recognition & Confirmation: Upon receipt, we will both confirm and give due recognition to your contribution
-            on our leaderboard.</li>
-    </ol>
-
-    <h2 class="text-[1.72rem] my-5 font-semibold ">Determining the Winner:</h2>
-
-    <ol class="list-decimal text-2xl">
-        <li>Monthly Assessment: Bug finders continuously submit their findings throughout the month. Each discovery gets
-            scored based on parameters like severity, rarity, and report accuracy.</li>
-        <li>Leaderboard Dynamics: At month-end, all participants are ranked on our leaderboard using their cumolative
-            scores.</li>
-        <li>Rewarding Excellence: The top bug finder, leading the leaderboard, receives the entirety of the month's
-            prize pool on the first day of the subsequent month.
-        </li>
-    </ol>
-
-    <h2 class="text-[1.72rem] my-5 font-semibold ">Transparent Operations & Genuine Trust:</h2>
-
-    <p class=" text-2xl">Every cent of your donation serves its intended purpose. We ensure foll transparency by making
-        all
-        transaction records accessible to the community.
-    </p>
-
-    <h2 class="text-[1.72rem] my-5 font-semibold ">Why Your Sponsorship Matters:</h2>
-
-    <ol class="list-decimal text-2xl">
-        <li>
-            Enhancing Quality: Monetary incentives drive bug finders to outdo their previous bests, leading to
-            higher-quality findings.
-        </li>
-        <li>
-            Community Engagement: Regolar contributions indicate a thriving BLT community that appreciates and values
-            its members.
-        </li>
-        <li>
-
-            Branding Opportunity: As a sponsor, gain favorable visibility and goodwill among a dedicated community.
-        </li>
-    </ol>
-
-    <h2 class="text-[1.72rem] my-5 font-semibold ">
-        Let’s Make a Difference Together!
-    </h2>
-    <p class=" text-2xl">Your backing is instrumental in scolpting BLT's success. By choosing to contribute, you're
-        endorsing quality,
-        commitment, and collaborative growth. For any assistance or further information, please [contact our team].</p>
-
-    <p>Thank you for championing the spirit of excellence on BLT!</p>
-</div>
-
     <script>
         async function getBCHPriceInUSD() {
             const apiUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin-cash&vs_currencies=usd';
@@ -133,5 +133,4 @@
         }
         getBCHBalance();
     </script>
-
-{% endblock %}
+{% endblock content %}
