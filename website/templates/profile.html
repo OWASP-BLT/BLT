@@ -3,9 +3,8 @@
 {% load static %}
 {% load custom_tags %}
 {% load i18n %}
-
 {% block style %}
-<style>
+    <style>
     a {
         color: inherit;
         text-decoration: inherit;
@@ -163,10 +162,8 @@
     .hide-issue-form {
         padding-top: 10px;
     }
-
-</style>
-{% endblock %}
-
+    </style>
+{% endblock style %}
 {% block content %}
 <script type="text/javascript" src="{% static 'js/Chart.bundle.min.js' %}"></script>
 <div class="row">
@@ -208,7 +205,6 @@
             <a class="follow_unfollow btn btn-default" name="{{ user }}">{% trans 'Follow' %}</a>
             {% endif %}
             {% endif %}
-
             <div class="status">
                 <button type="button" id="openModal" class="btn btn-danger" style="color: black;">Send a Tip</button>
                 <dialog id="dialog">
@@ -400,7 +396,6 @@
 </div>
 
 <script type="text/javascript">
-
     document.addEventListener("DOMContentLoaded", function() {
         const openModalButton = document.getElementById('openModal');
         const dialog = document.getElementById('dialog');
@@ -409,7 +404,6 @@
             dialog.showModal();
         });
     });
-   
 
     $(function () {
         $('.img-thumbnail, .upload-btn').on('mouseenter', function () {
