@@ -1,35 +1,56 @@
 <script src="https://cdn.tailwindcss.com"></script>
-
 <div class="w-full p-4">
-
-  <div class="w-full h-full bg-white rounded-lg shadow-lg p-4">
-    <div class="w-full flex flex-col items-center justify-between mb-4 md:flex-row md:justify-between">
-      <h1 class="text-gray-700 text-2xl font-semibold">BUG DESCRIPTION</h1>
-      <div class="w-full flex justify-around mt-5 md:justify-end md:mt-0">
-        <button id="boldButton" type="button" class="text-sm px-3 py-2 md:text-2xl m-1 md:px-6 md:py-3 font-semibold bg-gray-500 text-white rounded-md">Bold</button>
-        <button id="italicButton" type="button" class="text-sm px-3 py-2 md:text-2xl m-1 md:px-6 md:py-3 font-semibold bg-gray-500 text-white rounded-md">Italic</button>
-        <button id="imageButton" type="button" class="text-sm px-3 py-2 md:text-2xl m-1 md:px-6 md:py-3 font-semibold bg-gray-500 text-white rounded-md">Add Image</button>
-        <button id="linkButton" type="button" class="text-sm px-3 py-2 md:text-2xl m-1 md:px-6 md:py-3 font-semibold bg-gray-500 text-white rounded-md">Add Link</button>
-        <button id="previewButton" type="button" class="text-sm px-3 py-2 md:text-2xl m-1 md:px-6 md:py-3 font-semibold bg-red-500 text-white rounded-md">Preview</button>
-        <button id="editButton" type="button" class="text-sm px-3 py-2 md:text-2xl m-1 md:px-6 md:py-3 font-semibold bg-red-500 text-white rounded-md hidden">Edit</button>
-      </div>
+    <div class="w-full h-full bg-white rounded-lg shadow-lg p-4">
+        <div class="w-full flex flex-col items-center justify-between mb-4 md:flex-row md:justify-between">
+            <h1 class="text-gray-700 text-2xl font-semibold">BUG DESCRIPTION</h1>
+            <div class="w-full flex justify-around mt-5 md:justify-end md:mt-0">
+                <button id="boldButton"
+                        type="button"
+                        class="text-sm px-3 py-2 md:text-2xl m-1 md:px-6 md:py-3 font-semibold bg-gray-500 text-white rounded-md">
+                    Bold
+                </button>
+                <button id="italicButton"
+                        type="button"
+                        class="text-sm px-3 py-2 md:text-2xl m-1 md:px-6 md:py-3 font-semibold bg-gray-500 text-white rounded-md">
+                    Italic
+                </button>
+                <button id="imageButton"
+                        type="button"
+                        class="text-sm px-3 py-2 md:text-2xl m-1 md:px-6 md:py-3 font-semibold bg-gray-500 text-white rounded-md">
+                    Add Image
+                </button>
+                <button id="linkButton"
+                        type="button"
+                        class="text-sm px-3 py-2 md:text-2xl m-1 md:px-6 md:py-3 font-semibold bg-gray-500 text-white rounded-md">
+                    Add Link
+                </button>
+                <button id="previewButton"
+                        type="button"
+                        class="text-sm px-3 py-2 md:text-2xl m-1 md:px-6 md:py-3 font-semibold bg-red-500 text-white rounded-md">
+                    Preview
+                </button>
+                <button id="editButton"
+                        type="button"
+                        class="text-sm px-3 py-2 md:text-2xl m-1 md:px-6 md:py-3 font-semibold bg-red-500 text-white rounded-md hidden">
+                    Edit
+                </button>
+            </div>
+        </div>
+        <div class="flex">
+            <textarea id="markdownInput"
+                      name="markdown_description"
+                      class="flex-1 h-[200px] bg-gray-200 text-2xl resize-none border border-gray-300 rounded-md p-5"
+                      placeholder="Enter your markdown here..."></textarea>
+            <div id="previewContainer"
+                 class="h-[200px] flex-1 bg-white rounded-md p-4 hidden">
+                <div id="markdownPreview"></div>
+            </div>
+        </div>
     </div>
-    <div class="flex">
-      <textarea id="markdownInput" name="markdown_description"
-        class="flex-1 h-[200px] bg-gray-200 text-2xl resize-none border border-gray-300 rounded-md p-5"
-        placeholder="Enter your markdown here..."></textarea>
-      <div id="previewContainer" class="h-[200px] flex-1 bg-white rounded-md p-4 hidden">
-        <div id="markdownPreview"></div>
-      </div>
-    </div>
-  </div>
 </div>
-
-
-
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.0/showdown.min.js"
-  integrity="sha384-KpuxVjTC2hfOkg5KV3jSdx1eA6xy0PGS0wNfDrwf4sZBnZdzlIsnkH+LzLkavmH7" crossorigin="anonymous"></script>
+        integrity="sha384-KpuxVjTC2hfOkg5KV3jSdx1eA6xy0PGS0wNfDrwf4sZBnZdzlIsnkH+LzLkavmH7"
+        crossorigin="anonymous"></script>
 <script>
   const converter = new showdown.Converter({ parseImgDimensions: true });
 

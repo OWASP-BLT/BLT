@@ -1,24 +1,21 @@
 {% load gravatar %}
-
 <div class="like_unlike_root flex justify-between">
-
     {% if request.user.is_authenticated %}
         {% if bookmarked %}
-            <button name="{{ object.pk }}" class="bookmark flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
+            <button name="{{ object.pk }}"
+                    class="bookmark flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
                 <i class="fa-solid fa-bookmark text-2xl mr-2"> </i>
                 <p id="bookmark_val">Bookmarked</p>
             </button>
         {% else %}
-            <button name="{{ object.pk }}" class="bookmark flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
+            <button name="{{ object.pk }}"
+                    class="bookmark flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
                 <i class="fa-regular fa-bookmark text-2xl mr-2"> </i>
                 <p id="bookmark_val">Bookmark</p>
             </button>
         {% endif %}
     {% endif %}
-        
-
-    <script>       
-    
+    <script>
         function bookmark_handler(e){
             e.preventDefault();
             var issue_pk = $(this).attr('name');

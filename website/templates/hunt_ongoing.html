@@ -1,29 +1,30 @@
 {% extends "base_dashboard_domain.html" %}
 {% load static %}
 {% block content %}
-
-
-                 <div>
-                    <div class="col_3">
-                        <h3 class="text-left blank1">Ongoing Hunts</h3>  
-                           {% if hunts %}
-                            {% for hunt in hunts %}                
-                              <div class="col-md-3 widget widget1">
-                                <div class="r3_counter_box">
-                                    <i class="fa fa-mail-forward"></i>
-                                    <div class="stats">
-                                      <h5>{{hunt.url}}</h5>
-                                      <div class="hunt">
-                                        <p>{{hunt.prize}}<span>$</span></p>
-                                      </div>
-                                    </div>
+    <div>
+        <div class="col_3">
+            <h3 class="text-left blank1">Ongoing Hunts</h3>
+            {% if hunts %}
+                {% for hunt in hunts %}
+                    <div class="col-md-3 widget widget1">
+                        <div class="r3_counter_box">
+                            <i class="fa fa-mail-forward"></i>
+                            <div class="stats">
+                                <h5>{{ hunt.url }}</h5>
+                                <div class="hunt">
+                                    <p>
+                                        {{ hunt.prize }}<span>$</span>
+                                    </p>
                                 </div>
                             </div>
-                            {% endfor %}
-                        {% else %}
-                            </br> no ongoing hunts !
-                        {% endif %}   
-                        <div class="clearfix"> </div>
+                        </div>
                     </div>
-                </div>
-{% endblock %}
+                {% endfor %}
+            {% else %}
+            </br>
+            no ongoing hunts !
+        {% endif %}
+        <div class="clearfix"></div>
+    </div>
+</div>
+{% endblock content %}

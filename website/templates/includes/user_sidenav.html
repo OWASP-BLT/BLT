@@ -7,18 +7,25 @@
         background-color: black;
     }
 </style>
-
 <div class="sidebar">
-
     <ul class="nav nav-pills nav-stacked custom-nav">
-        <li class="active"><a href="/"><i class="lnr lnr-power-switch"></i><span>Home</span></a></li>
-        <li><a href="#"><i class="lnr lnr-train"></i> <span>Ongoing Hunts</span></a></li>
-        <li><a href="#"><i class="lnr lnr-spell-check"></i> <span>Previous Hunts</span></a></li>
-        <li><a href="#"><i class="lnr lnr-diamond"></i> <span>Wallet</span></a></li>
-        <li><a href="#"><i class="lnr lnr-gift"></i> <span>Rewards</span></a></li>
-        <li><a href="/dashboard/user/profile/{{user.username}}"><i class="lnr lnr-user"></i><span>Profile</span></a></li>
+        <li class="active">
+            <a href="{% url 'index' %}"><i class="lnr lnr-power-switch"></i><span>Home</span></a>
+        </li>
+        <li>
+            <a href="#"><i class="lnr lnr-train"></i> <span>Ongoing Hunts</span></a>
+        </li>
+        <li>
+            <a href="#"><i class="lnr lnr-spell-check"></i> <span>Previous Hunts</span></a>
+        </li>
+        <li>
+            <a href="#"><i class="lnr lnr-diamond"></i> <span>Wallet</span></a>
+        </li>
+        <li>
+            <a href="#"><i class="lnr lnr-gift"></i> <span>Rewards</span></a>
+        </li>
+        <li>
+            <a href="{% url 'user_profile' slug=user.username %}"><i class="lnr lnr-user"></i><span>Profile</span></a>
+        </li>
     </ul>
-
 </div>
-
-

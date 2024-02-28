@@ -1,11 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
-    <div style="font-family: 'Arial';">
+    <div class="font-serif">
         <center>
             <h1>The Page you are looking for can't be found.</h1>
-            {% if exception %}
-                Error message: {{ exception }}
-            {% endif %}
+            {% if exception %}Error message: {{ exception }}{% endif %}
         </center>
     </div>
-{% endblock %}
+{% endblock content %}
