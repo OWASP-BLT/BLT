@@ -1,7 +1,5 @@
 import os
 
-import unittest
-
 import chromedriver_autoinstaller
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -18,9 +16,11 @@ from .models import Issue, IssueScreenshot
 os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 
 from unittest.mock import patch
-from django.urls import reverse
+
 from django.test import RequestFactory, TestCase
-from .views import GoogleLogin, GithubLogin
+
+from .views import GithubLogin, GoogleLogin
+
 
 class MySeleniumTests(LiveServerTestCase):
     fixtures = ["initial_data.json"]
