@@ -221,7 +221,9 @@
                     <dialog id="dialog">
                         <img id="qr-image"
                              src="{% url 'generate_bch_qr' username=user.username %}"
-                             alt="QR Code">
+                             alt="QR Code"
+                             width="300"
+                             height="300">
                         <p id="bch-address" style="color: aliceblue;">BCH: {{ user.userprofile.crypto_address }}</p>
                     </dialog>
                 </div>
