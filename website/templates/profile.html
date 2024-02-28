@@ -165,237 +165,243 @@
     </style>
 {% endblock style %}
 {% block content %}
-<script type="text/javascript" src="{% static 'js/Chart.bundle.min.js' %}"></script>
-<div class="row">
-    <h1 class="page-header text-capitalize">{{ user.username }}</h1>
-    <div class="col-md-3">
-        {% if user.userprofile.avatar %}
-        <img src="{{ user.userprofile.avatar }}" class="img-responsive img-thumbnail">
-        {% else %}
-        <img src="{% gravatar_url user.email 200 %}" class="img-responsive img-thumbnail">
-        {% endif %}
-        {% if request.user == user %}
-        <button class="upload-btn">Edit Profile Pic</button>
-        <form method="post" action="." enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type="file" id='${multipartFilePath}' name="user_avatar" />
-            <button type="submit" id="follow" class="btn btn-primary upload">
-                <span class="badge badge-avatar"></span> {% trans 'Upload' %}
-            </button>
-        </form>
-        {% endif %}
-        <kbd class="{{ user.userprofile.get_title_display }} text-uppercase title">
-            {{ user.userprofile.get_title_display }}
-        </kbd>
-        {% if request.user == user %}
-        <div class="hide-issue-form">
-            <form action="." method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <input type="checkbox" id="hide_user_issues" name="issues_hidden" {{ issues_hidden }}>
-                <label for="hide_user_issues">{% trans 'Hide all issues' %}</label>
-                <button type="submit" class="btn issue-hide-btn">{% trans 'OK' %}</button>
-            </form>
-        </div>
-        {% endif %}
-        <div id="target_div">
-            {% if request.user != user and request.user.is_authenticated %}
-            {% if request.user.email in followers_list %}
-            <a class="follow_unfollow btn btn-default" name="{{ user }}">{% trans 'Unfollow' %}</a>
+    <script type="text/javascript" src="{% static 'js/Chart.bundle.min.js' %}"></script>
+    <div class="row">
+        <h1 class="page-header text-capitalize">{{ user.username }}</h1>
+        <div class="col-md-3">
+            {% if user.userprofile.avatar %}
+                <img src="{{ user.userprofile.avatar }}"
+                     class="img-responsive img-thumbnail"
+                     alt="avatar"
+                     width="50"
+                     height="50">
             {% else %}
-            <a class="follow_unfollow btn btn-default" name="{{ user }}">{% trans 'Follow' %}</a>
+                <img src="{% gravatar_url user.email 200 %}"
+                     class="img-responsive img-thumbnail"
+                     alt="avatar"
+                     width="50"
+                     height="50">
             {% endif %}
+            {% if request.user == user %}
+                <button class="upload-btn">Edit Profile Pic</button>
+                <form method="post" action="." enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="file" id="${multipartFilePath}" name="user_avatar" />
+                    <button type="submit" id="follow" class="btn btn-primary upload">
+                        <span class="badge badge-avatar"></span> {% trans "Upload" %}
+                    </button>
+                </form>
             {% endif %}
-            <div class="status">
-                <button type="button" id="openModal" class="btn btn-danger" style="color: black;">Send a Tip</button>
-                <dialog id="dialog">
-                    <img id="qr-image" src="{% url 'generate_bch_qr' username=user.username %}" alt="QR Code">
-                    <p id="bch-address" style="color: aliceblue;">BCH: {{ user.userprofile.crypto_address }}</p>
-                </dialog>
-            </div>
-        </div>
-        <div class="icon-block">
-            <kbd class="fa fa-cogs">
-                <a href="/label_activity?user={{ user.username }}&label=General">
-                    {% trans 'General' %} {{ bug_type_0 | length }}
-                </a>
+            <kbd class="{{ user.userprofile.get_title_display }} text-uppercase title">
+                {{ user.userprofile.get_title_display }}
             </kbd>
-            <kbd class="fa fa-exclamation-triangle">
-                <a href="/label_activity?user={{ user.username }}&label=Number">
-                    {% trans 'Number' %} {{ bug_type_1 | length }}
-                </a>
-            </kbd>
-        </div>
-        <div class="icon-block">
-            <kbd class="fa fa-trophy">
-                <a href="/label_activity?user={{ user.username }}&label=Functional">
-                    {% trans 'Functional' %} {{ bug_type_2 | length }}
-                </a>
-            </kbd>
-            <kbd class="fa fa-flash">
-                <a href="/label_activity?user={{ user.username }}&label=Performance">
-                    {% trans 'Performance' %} {{ bug_type_3 | length }}</a>
-            </kbd>
-        </div>
-        <div class="icon-block">
-            <kbd class="fa fa-lock">
-                <a href="/label_activity?user={{ user.username }}&label=Security">
-                    {% trans 'Security' %} {{ bug_type_4 | length }}
-                </a>
-            </kbd>
-            <kbd class="fa fa-eraser">
-                <a href="/label_activity?user={{ user.username }}&label=Typo">
-                    {% trans 'Typo' %} {{ bug_type_5 | length }}
-                </a>
-            </kbd>
-        </div>
-        <div class="icon-block">
-            <kbd class="fa fa-code">
-                <a href="/label_activity?user={{ user.username }}&label=Design">
-                    {% trans 'Design' %} {{ bug_type_6 | length }}
-                </a>
-            </kbd>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <ul class="nav nav-tabs nav-justified" role="tablist">
-            <li role="presentation" class="active">
-                <a href="#home" aria-controls="home" role="tab" data-toggle="tab">{% trans 'Stats' %}</a>
-            </li>
-            <li role="presentation">
-                <a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">{% trans 'Followers' %}
-                    [{{ followers|length }}]</a>
-            </li>
-            <li role="presentation">
-                <a href="#messages" aria-controls="messages" role="tab" data-toggle="tab">{% trans 'Following' %}
-                    [{{ following|length }}]</a>
-            </li>
-            <li role="presentation">
-                <a href="#settings" aria-controls="settings" role="tab" data-toggle="tab">{% trans 'Bookmarks' %}
-                    [{{ bookmarks|length }}]</a>
-            </li>
-        </ul>
-        <div class="tab-content">
-            <div role="tabpanel" class="tab-pane active" id="home">
-                {% if activities %}
-                <canvas id="myChart" width="400" height="350"></canvas>
-                {% else %}
-                <div class="alert alert-info" role="alert">
-                    <span class="fa fa-info-circle"></span>
-                    <strong>{% trans 'No Bug Reported' %}!</strong>
+            {% if request.user == user %}
+                <div class="hide-issue-form">
+                    <form action="." method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="checkbox" id="hide_user_issues" name="issues_hidden" {{ issues_hidden }}>
+                        <label for="hide_user_issues">{% trans "Hide all issues" %}</label>
+                        <button type="submit" class="btn issue-hide-btn">{% trans "OK" %}</button>
+                    </form>
                 </div>
+            {% endif %}
+            <div id="target_div">
+                {% if request.user != user and request.user.is_authenticated %}
+                    {% if request.user.email in followers_list %}
+                        <a class="follow_unfollow btn btn-default" name="{{ user }}">{% trans "Unfollow" %}</a>
+                    {% else %}
+                        <a class="follow_unfollow btn btn-default" name="{{ user }}">{% trans "Follow" %}</a>
+                    {% endif %}
                 {% endif %}
+                <div class="status">
+                    <button type="button" id="openModal" class="btn btn-danger" style="color: black;">Send a Tip</button>
+                    <dialog id="dialog">
+                        <img id="qr-image" src="{% url 'generate_bch_qr' username=user.username %}" alt="QR Code">
+                        <p id="bch-address" style="color: aliceblue;">BCH: {{ user.userprofile.crypto_address }}</p>
+                    </dialog>
+                </div>
             </div>
-            <div role="tabpanel" class="tab-pane" id="profile">
+            <div class="icon-block">
+                <kbd class="fa fa-cogs">
+                    <a href="/label_activity?user={{ user.username }}&label=General">
+                        {% trans 'General' %} {{ bug_type_0 | length }}
+                    </a>
+                </kbd>
+                <kbd class="fa fa-exclamation-triangle">
+                    <a href="/label_activity?user={{ user.username }}&label=Number">
+                        {% trans 'Number' %} {{ bug_type_1 | length }}
+                    </a>
+                </kbd>
+            </div>
+            <div class="icon-block">
+                <kbd class="fa fa-trophy">
+                    <a href="/label_activity?user={{ user.username }}&label=Functional">
+                        {% trans 'Functional' %} {{ bug_type_2 | length }}
+                    </a>
+                </kbd>
+                <kbd class="fa fa-flash">
+                    <a href="/label_activity?user={{ user.username }}&label=Performance">
+                        {% trans 'Performance' %} {{ bug_type_3 | length }}</a>
+                </kbd>
+            </div>
+            <div class="icon-block">
+                <kbd class="fa fa-lock">
+                    <a href="/label_activity?user={{ user.username }}&label=Security">
+                        {% trans 'Security' %} {{ bug_type_4 | length }}
+                    </a>
+                </kbd>
+                <kbd class="fa fa-eraser">
+                    <a href="/label_activity?user={{ user.username }}&label=Typo">
+                        {% trans 'Typo' %} {{ bug_type_5 | length }}
+                    </a>
+                </kbd>
+            </div>
+            <div class="icon-block">
+                <kbd class="fa fa-code">
+                    <a href="/label_activity?user={{ user.username }}&label=Design">
+                        {% trans 'Design' %} {{ bug_type_6 | length }}
+                    </a>
+                </kbd>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+                <li role="presentation" class="active">
+                    <a href="#home" aria-controls="home" role="tab" data-toggle="tab">{% trans 'Stats' %}</a>
+                </li>
+                <li role="presentation">
+                    <a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">{% trans 'Followers' %}
+                        [{{ followers|length }}]</a>
+                </li>
+                <li role="presentation">
+                    <a href="#messages" aria-controls="messages" role="tab" data-toggle="tab">{% trans 'Following' %}
+                        [{{ following|length }}]</a>
+                </li>
+                <li role="presentation">
+                    <a href="#settings" aria-controls="settings" role="tab" data-toggle="tab">{% trans 'Bookmarks' %}
+                        [{{ bookmarks|length }}]</a>
+                </li>
+            </ul>
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="home">
+                    {% if activities %}
+                    <canvas id="myChart" width="400" height="350"></canvas>
+                    {% else %}
+                    <div class="alert alert-info" role="alert">
+                        <span class="fa fa-info-circle"></span>
+                        <strong>{% trans 'No Bug Reported' %}!</strong>
+                    </div>
+                    {% endif %}
+                </div>
+                <div role="tabpanel" class="tab-pane" id="profile">
+                    <div class="list-group">
+                        {% for user in followers %}
+                        <div class="list-group-item">
+                            {% if user.socialaccount_set.all.0.get_avatar_url %}
+                            <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" height="50px">
+                            {% else %}
+                            <img src="{% gravatar_url user.email 50 %}">
+                            {% endif %}
+                            <a href="/profile/{{ user.username }}">{{ user.username }}</a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="messages">
+                    <div class="list-group">
+                        {% for user in following %}
+                        <div class="list-group-item">
+                            {% if user.socialaccount_set.all.0.get_avatar_url %}
+                            <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" height="50px">
+                            {% else %}
+                            <img src="{% gravatar_url user.email 50 %}">
+                            {% endif %}
+                            <a href="/profile/{{ user.username }}">{{ user.username }}</a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="settings">
+                    <div class="list-group">
+                        {% for i in bookmarks %}
+                        <div class="list-group-item">
+                            <button type="button" class="close" name="{{ i.pk }}" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            <a href="{{ i.get_absolute_url }}" class="list-group-item-heading">
+                                <strong>{{ i.description|truncatechars:50 }}</strong>
+                            </a>
+                            <span class="badge text-capitalize">{{ i.status }}</span>
+                            <p class="list-group-item-text">{{ i.user }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="icon-block">
+                <kbd class="fa fa-trophy"> {% trans 'Bugs Reported' %} {{ total_bugs }}</kbd>
+                <kbd class="fa fa-star"> {% trans 'Points' %} {{ my_score|default:0 }}</kbd>
+                <a href="/label_activity?user={{ user.username }}&label=open">
+                    <kbd class="fa fa-bug"> {% trans 'Open Issues' %} {{ total_open }}</kbd>
+                </a>
+                <a href="/label_activity?user={{ user.username }}&label=closed">
+                    <kbd class="fa fa-code-fork"> {% trans 'Closed Issues' %} {{ total_closed }}</kbd>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-9">
+            <div class="panel panel-default">
+                <div class="panel-heading text-capitalize">
+                    {{ user.username }}'s {% trans 'activity' %}
+                </div>
+                <div class="panel-body">
+                    {% if activities %}
+                    <div class="list-group">
+                        {% for activity in activities %}
+                        {% include '_activity.html' %}
+                        {% endfor %}
+                    </div>
+                    <a href="/all_activity?user={{ user.username }}" class="btn btn-default btn-block">{% trans 'View All Activity by' %} {{ user.username }}</a>
+                    {% else %}
+                    <div class="text-center">{% trans 'No Activity Yet' %}!</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
 
-                <div class="list-group">
-                    {% for user in followers %}
-                    <div class="list-group-item">
-                        {% if user.socialaccount_set.all.0.get_avatar_url %}
-                        <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" height="50px">
-                        {% else %}
-                        <img src="{% gravatar_url user.email 50 %}">
-                        {% endif %}
-                        <a href="/profile/{{ user.username }}">{{ user.username }}</a>
-                    </div>
-                    {% endfor %}
+        <div class="col-lg-3" style="padding: 0px">
+            <div class="panel panel-default">
+                <div class="panel-heading text-capitalize">
+                    {{ user.username }}'s {% trans 'top bug findings' %}
                 </div>
-            </div>
-            <div role="tabpanel" class="tab-pane" id="messages">
-                <div class="list-group">
-                    {% for user in following %}
-                    <div class="list-group-item">
-                        {% if user.socialaccount_set.all.0.get_avatar_url %}
-                        <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}" height="50px">
-                        {% else %}
-                        <img src="{% gravatar_url user.email 50 %}">
-                        {% endif %}
-                        <a href="/profile/{{ user.username }}">{{ user.username }}</a>
+                <div class="panel-body" style="padding: 0px">
+                    {% if websites %}
+                    <div class="list-group scroll">
+                        {% for website in websites %}
+                        <div class="list-group-item">
+                            <a href="/domain/{{ website.name }}">
+                                <img src="http://www.{{ website.name }}/favicon.ico" height="25"
+                                    onerror="this.onerror=null; this.style.display='none';">
+                            </a>
+                            <a href="/domain/{{ website.name }}">{{ website.name|truncatechars:15 }}</a>
+                            <span class="label label-default pull-right">
+                                {{ website.total }} Bug{{ website.total|pluralize }}
+                            </span>
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
-                </div>
-            </div>
-            <div role="tabpanel" class="tab-pane" id="settings">
-                <div class="list-group">
-                    {% for i in bookmarks %}
-                    <div class="list-group-item">
-                        <button type="button" class="close" name="{{ i.pk }}" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                        <a href="{{ i.get_absolute_url }}" class="list-group-item-heading">
-                            <strong>{{ i.description|truncatechars:50 }}</strong>
-                        </a>
-                        <span class="badge text-capitalize">{{ i.status }}</span>
-                        <p class="list-group-item-text">{{ i.user }}</p>
-                    </div>
-                    {% endfor %}
+                    {% else %}
+                    <div class="text-center">{% trans 'Nothing Found' %}</div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="icon-block">
-            <kbd class="fa fa-trophy"> {% trans 'Bugs Reported' %} {{ total_bugs }}</kbd>
-            <kbd class="fa fa-star"> {% trans 'Points' %} {{ my_score|default:0 }}</kbd>
-            <a href="/label_activity?user={{ user.username }}&label=open">
-                <kbd class="fa fa-bug"> {% trans 'Open Issues' %} {{ total_open }}</kbd>
-            </a>
-            <a href="/label_activity?user={{ user.username }}&label=closed">
-                <kbd class="fa fa-code-fork"> {% trans 'Closed Issues' %} {{ total_closed }}</kbd>
-            </a>
-        </div>
-    </div>
-</div>
-<div class="row">
-    <div class="col-lg-9">
-        <div class="panel panel-default">
-            <div class="panel-heading text-capitalize">
-                {{ user.username }}'s {% trans 'activity' %}
-            </div>
-            <div class="panel-body">
-                {% if activities %}
-                <div class="list-group">
-                    {% for activity in activities %}
-                    {% include '_activity.html' %}
-                    {% endfor %}
-                </div>
-                <a href="/all_activity?user={{ user.username }}" class="btn btn-default btn-block">{% trans 'View All Activity by' %} {{ user.username }}</a>
-                {% else %}
-                <div class="text-center">{% trans 'No Activity Yet' %}!</div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-3" style="padding: 0px">
-        <div class="panel panel-default">
-            <div class="panel-heading text-capitalize">
-                {{ user.username }}'s {% trans 'top bug findings' %}
-            </div>
-            <div class="panel-body" style="padding: 0px">
-                {% if websites %}
-                <div class="list-group scroll">
-                    {% for website in websites %}
-                    <div class="list-group-item">
-                        <a href="/domain/{{ website.name }}">
-                            <img src="http://www.{{ website.name }}/favicon.ico" height="25"
-                                onerror="this.onerror=null; this.style.display='none';">
-                        </a>
-                        <a href="/domain/{{ website.name }}">{{ website.name|truncatechars:15 }}</a>
-                        <span class="label label-default pull-right">
-                            {{ website.total }} Bug{{ website.total|pluralize }}
-                        </span>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="text-center">{% trans 'Nothing Found' %}</div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-
-<script type="text/javascript">
+    <script type="text/javascript">
     document.addEventListener("DOMContentLoaded", function() {
         const openModalButton = document.getElementById('openModal');
         const dialog = document.getElementById('dialog');
