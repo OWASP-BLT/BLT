@@ -414,7 +414,7 @@
     <script type="text/javascript">
     document.getElementById('openModal').addEventListener('click', function() {
         var address = "{{ user.userprofile.crypto_address }}";
-        var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?data=bitcoincash:" + address + "&size=300x300";
+        var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?data=bitcoincash:" + address + "&size=400x400";
         document.getElementById('qr-image').src = qrUrl;
         document.getElementById('dialog').showModal();
     });
