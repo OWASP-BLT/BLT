@@ -4,30 +4,28 @@
         <h2 class="text-xl lg:text-3xl font-bold text-gray-900 ">Comments ({{ all_comment | length }})</h2>
     </div>
     {% if user.is_authenticated %}
-    <form class="mb-6" id="comments">
-        {% csrf_token %}
-        <div class="py-2 px-4 mb-4 bg-white rounded-lg rounded-t-lg border border-gray-200 ">
-            <label for="comment" class="sr-only">Your comment</label>
-            <input type="text" id="replying_to_input" hidden>
-            <div id="replying_to_root">
-                
+        <form class="mb-6" id="comments">
+            {% csrf_token %}
+            <div class="py-2 px-4 mb-4 bg-white rounded-lg rounded-t-lg border border-gray-200 ">
+                <label for="comment" class="sr-only">Your comment</label>
+                <input type="text" id="replying_to_input" hidden>
+                <div id="replying_to_root"></div>
+                <div id="add_update_label"></div>
+                <textarea id="comment"
+                          rows="6"
+                          name="comment"
+                          class="py-5 px-2 w-full text-xl text-gray-900 border-none focus:outline-none"
+                          placeholder="Write a comment..."
+                          required></textarea>
             </div>
-            <div id="add_update_label">
-                
-            </div>
-            <textarea id="comment" rows="6"
-                name="comment"
-                class="py-5 px-2 w-full text-xl text-gray-900 border-none focus:outline-none"
-                placeholder="Write a comment..." required></textarea>
-        </div>
-        <button type="button"
-            id="post_comment_btn"
-            class="inline-flex items-center py-2.5 px-4 text-xl xl:text-2xl font-medium text-center text-white bg-red-700 rounded-lg  hover:bg-red-800">
-            Post comment
-        </button>
-    </form>
+            <button type="button"
+                    id="post_comment_btn"
+                    class="inline-flex items-center py-2.5 px-4 text-xl xl:text-2xl font-medium text-center text-white bg-red-700 rounded-lg  hover:bg-red-800">
+                Post comment
+            </button>
+        </form>
     {% else %}
-    <div class="items-center text-3xl text-gray-900 mb-6">To comment, please sign in.</div>
+        <div class="items-center text-3xl text-gray-900 mb-6">To comment, please sign in.</div>
     {% endif %}
     <div class="comment_group">
         {% for comment in all_comment %}
@@ -37,54 +35,58 @@
                         <div class="grid grid-cols-9 items-center justify-between">
                             <p class="sm:col-start-1 sm:col-span-4 col-span-5 sm:order-1 items-center inline-flex sm:text-3xl text-2xl text-gray-900 ">
                                 {% if comment.author_fk %}
-                                
-                                    <img
-                                        class="sm:mr-2 mr-1 sm:w-12 w-10 sm:h-12 h-10 rounded-full"
-                                        src="{{ MEDIA_URL }}{{ comment.author_fk.user_avatar }}"
-                                        alt="{{ comment.author }} profile">
-                                
+                                    <img class="sm:mr-2 mr-1 sm:w-12 w-10 sm:h-12 h-10 rounded-full"
+                                         src="{{ MEDIA_URL }}{{ comment.author_fk.user_avatar }}"
+                                         alt="{{ comment.author }} profile"
+                                         width="40px"
+                                         height="40px">
                                 {% else %}
-                                    <img
-                                        class="sm:mr-2 mr-1 sm:w-12 w-10 sm:h-12 h-10 rounded-full"
-                                        src="{% static 'images/dummy-user.png' %}"
-                                        alt="User profile">
+                                    <img class="sm:mr-2 mr-1 sm:w-12 w-10 sm:h-12 h-10 rounded-full"
+                                         src="{% static 'images/dummy-user.png' %}"
+                                         alt="User profile"
+                                         width="40px"
+                                         height="40px">
                                 {% endif %}
                                 {{ comment.author }}
                             </p>
-                            <p class="sm:col-start-5 col-start-1 sm:col-span-3 col-span-9 sm:order-2 order-3 text-xl sm:text-2xl text-gray-600 mr-2"><time pubdate datetime="2022-02-08"
-                                    title="February 8th, 2022">commented {{ comment.created_date | timesince }} ago</time></p>
-                            
-                            <button onclick="add_reply('{{ comment.id }}','{{ comment.author }}')" class="sm:col-start-8 col-start-7 sm:col-span-3 col-span-4 sm:order-3 order-2 w-[70px] h-10 sm:text-xl text-lg rounded-lg border-[1px] border-gray-400 sm:ml-0 ml-[2.3rem]">
+                            <p class="sm:col-start-5 col-start-1 sm:col-span-3 col-span-9 sm:order-2 order-3 text-xl sm:text-2xl text-gray-600 mr-2">
+                                <time pubdate datetime="2022-02-08" title="February 8th, 2022">commented {{ comment.created_date | timesince }} ago</time>
+                            </p>
+                            <button onclick="add_reply('{{ comment.id }}','{{ comment.author }}')"
+                                    class="sm:col-start-8 col-start-7 sm:col-span-3 col-span-4 sm:order-3 order-2 w-[70px] h-10 sm:text-xl text-lg rounded-lg border-[1px] border-gray-400 sm:ml-0 ml-[2.3rem]">
                                 <i class="fa-solid fa-reply text-gray-500"></i>
                                 Reply
                             </button>
                         </div>
                         {% if user.username == comment.author %}
-                            <button id="dropdownComment1Button" data-dropdown-toggle="dropdownComment{{ comment.id }}"
-                                class="inline-flex items-center p-2 text-md font-medium text-center text-gray-400 bg-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-50   "
-                                type="button">
-                                <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
-                                    xmlns="http://www.w3.org/2000/svg">
-                                    <path
-                                        d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z">
-                                    </path>
+                            <button id="dropdownComment1Button"
+                                    data-dropdown-toggle="dropdownComment{{ comment.id }}"
+                                    class="inline-flex items-center p-2 text-md font-medium text-center text-gray-400 bg-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-50   "
+                                    type="button">
+                                <svg class="w-6 h-6"
+                                     aria-hidden="true"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
                                 </svg>
                                 <span class="sr-only">Comment settings</span>
                             </button>
                             <!-- Dropdown menu -->
                             <div id="dropdownComment{{ comment.id }}"
-                                class="hidden z-10 w-36 bg-white rounded divide-y divide-gray-100 shadow  ">
+                                 class="hidden z-10 w-36 bg-white rounded divide-y divide-gray-100 shadow  ">
                                 <ul class="py-1 text-lg text-gray-700 "
                                     aria-labelledby="dropdownMenuIconHorizontalButton">
                                     <li>
-                                        <a class="block py-2 px-4 hover:bg-gray-100 edit_comment cursor-pointer" data-name="{{comment.id}}">Edit</a>
+                                        <a class="block py-2 px-4 hover:bg-gray-100 edit_comment cursor-pointer"
+                                           data-name="{{ comment.id }}">Edit</a>
                                     </li>
                                     <li>
-                                        <a class="block py-2 px-4 hover:bg-gray-100 del_comment_issue2 cursor-pointer" data-name="{{ comment.id }}">Delete</a>
+                                        <a class="block py-2 px-4 hover:bg-gray-100 del_comment_issue2 cursor-pointer"
+                                           data-name="{{ comment.id }}">Delete</a>
                                     </li>
                                     <li>
-                                        <a href="#"
-                                            class="block py-2 px-4 hover:bg-gray-100  ">Report</a>
+                                        <a href="#" class="block py-2 px-4 hover:bg-gray-100  ">Report</a>
                                     </li>
                                 </ul>
                             </div>
@@ -93,56 +95,67 @@
                     <p class="text-2xl main_text">{{ comment.text | safe }}</p>
                     <div class="flex items-center mt-4 space-x-4">
                         <button type="button"
-                            onclick="see_replies('{{ comment.id }}','{{ comment.user }}')"
-                            class="flex items-center text-xl text-gray-500 hover:underline ">
-                            <svg aria-hidden="true" class="mr-1 w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                                onclick="see_replies('{{ comment.id }}','{{ comment.user }}')"
+                                class="flex items-center text-xl text-gray-500 hover:underline ">
+                            <svg aria-hidden="true"
+                                 class="mr-1 w-7 h-7"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                                </path>
+                            </svg>
                             {{ comment.children | length }} Replies
                         </button>
                     </div>
                 </article>
-                <div class="w-full" id="comment_replies_{{comment.id}}" hidden>
-
+                <div class="w-full" id="comment_replies_{{ comment.id }}" hidden>
                     {% for child_comment in comment.children %}
-                    
                         <article class="p-6 pt-0 mb-6 ml-6 lg:ml-12 text-base bg-white rounded-lg">
                             <footer class="flex justify-between items-center mb-2">
                                 <div class="flex items-center">
                                     <p class="inline-flex items-center mr-3 text-md text-gray-900 ">
-                                        <img
-                                            class="mr-2 w-9 h-9 rounded-full"
-                                            src="{{ MEDIA_URL }}{{ user.userprofile.user_avatar }}"
-                                            alt="Michael Gough">
+                                        <img class="mr-2 w-9 h-9 rounded-full"
+                                             src="{{ MEDIA_URL }}{{ user.userprofile.user_avatar }}"
+                                             alt="Michael Gough"
+                                             width="36px"
+                                             height="36px">
                                         {{ child_comment.author }}
                                     </p>
-                                    <p class="text-md text-gray-600 "><time pubdate datetime="2022-02-08"
-                                            title="February 8th, 2022">{{ child_comment.created_date | timesince }} ago</time></p>
+                                    <p class="text-md text-gray-600 ">
+                                        <time pubdate datetime="2022-02-08" title="February 8th, 2022">{{ child_comment.created_date | timesince }} ago</time>
+                                    </p>
                                 </div>
                                 {% if user.username == child_comment.author %}
-                                    <button id="dropdownComment1Button" data-dropdown-toggle="dropdownComment{{ child_comment.id }}"
-                                        class="inline-flex items-center p-2 text-md font-medium text-center text-gray-400 bg-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-50   "
-                                        type="button">
-                                        <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z">
-                                            </path>
+                                    <button id="dropdownComment1Button"
+                                            data-dropdown-toggle="dropdownComment{{ child_comment.id }}"
+                                            class="inline-flex items-center p-2 text-md font-medium text-center text-gray-400 bg-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-50   "
+                                            type="button">
+                                        <svg class="w-6 h-6"
+                                             aria-hidden="true"
+                                             fill="currentColor"
+                                             viewBox="0 0 20 20"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
                                         </svg>
                                         <span class="sr-only">Comment settings</span>
                                     </button>
                                     <!-- Dropdown menu -->
                                     <div id="dropdownComment{{ child_comment.id }}"
-                                        class="hidden z-10 w-36 bg-white rounded divide-y divide-gray-100 shadow  ">
+                                         class="hidden z-10 w-36 bg-white rounded divide-y divide-gray-100 shadow  ">
                                         <ul class="py-1 text-lg text-gray-700 "
                                             aria-labelledby="dropdownMenuIconHorizontalButton">
                                             <li>
-                                                <a class="block py-2 px-4 hover:bg-gray-100 edit_comment cursor-pointer" data-name="{{child_comment.id}}">Edit</a>
+                                                <a class="block py-2 px-4 hover:bg-gray-100 edit_comment cursor-pointer"
+                                                   data-name="{{ child_comment.id }}">Edit</a>
                                             </li>
                                             <li>
-                                                <a class="block py-2 px-4 hover:bg-gray-100 del_comment_issue2 cursor-pointer" data-name="{{ child_comment.id }}">Delete</a>
+                                                <a class="block py-2 px-4 hover:bg-gray-100 del_comment_issue2 cursor-pointer"
+                                                   data-name="{{ child_comment.id }}">Delete</a>
                                             </li>
                                             <li>
-                                                <a href="#"
-                                                    class="block py-2 px-4 hover:bg-gray-100  ">Report</a>
+                                                <a href="#" class="block py-2 px-4 hover:bg-gray-100  ">Report</a>
                                             </li>
                                         </ul>
                                     </div>
@@ -150,26 +163,19 @@
                             </footer>
                             <p class="text-xl main_text">{{ child_comment.text | safe }}</p>
                             <!-- <div class="flex items-center mt-4 space-x-4">
-                                <button type="button"
-                                    class="flex items-center text-md text-gray-500 hover:underline ">
+                                <button type="button" class="flex items-center text-md text-gray-500 hover:underline ">
                                     <svg aria-hidden="true" class="mr-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
                                     {{ child_comment.children | length }} Replies
                                 </button>
-                            </div> -->
-
-
+</div> -->
                         </article>
-                    
                     {% endfor %}
-
                 </div>
-
             {% endif %}
         {% empty %}
         {% endfor %}
     </div>
     <script>
-
         function remove_reply(){
             document.getElementById("replying_to_cont").remove();
             document.getElementById("replying_to_input").value = "";

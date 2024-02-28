@@ -1,9 +1,7 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
 {% block content %}
-<style type="text/css">
-    
-
+    <style type="text/css">
 img {
   height: auto;
   max-width: 100%;
@@ -83,33 +81,37 @@ img {
   margin-bottom: 1.25rem;    
   font-weight: 400;
 }
-</style>
-  <section>
-    {% include 'includes/company_sidenav.html' %}
-  </section>
-
-  {% if hunts %}
+    </style>
+    <section>
+        {% include "includes/company_sidenav.html" %}
+    </section>
+    {% if hunts %}
         <div class="col_3">
-            <h3 class="text-left blank1">Previous Hunt</h3>                        
-              <ul class="cards">
+            <h3 class="text-left blank1">Previous Hunt</h3>
+            <ul class="cards">
                 {% for hunt in hunts %}
                     <li class="cards_item">
-                      <div class="card">
-                        {% if hunt.logo %}
-                        <div class="card_image"><img src="{{hunt.logo}}"></div>
-                        {% endif %}
-                        <div class="card_content">
-                          <h2 class="card_title">{{hunt.name}}</h2>
-                          <p class="card_text">{{hunt.domain.name}}, {{hunt.domain.company.name}} - Starts on {{hunt.starts_on}}</p>
-                          <a href="/dashboard/company/hunt/previous/{{hunt.pk}}">
-                            <button class="btn card_btn">Read More</button>
-                          </a>
+                        <div class="card">
+                            {% if hunt.logo %}
+                                <div class="card_image">
+                                    <img src="{{ hunt.logo }}"
+                                         alt="{{ hunt.name }}"
+                                         width="100%"
+                                         height="100%">
+                                </div>
+                            {% endif %}
+                            <div class="card_content">
+                                <h2 class="card_title">{{ hunt.name }}</h2>
+                                <p class="card_text">{{ hunt.domain.name }}, {{ hunt.domain.company.name }} - Starts on {{ hunt.starts_on }}</p>
+                                <a href="{% url 'company_hunt_results' hunt.pk %}">
+                                    <button class="btn card_btn">Read More</button>
+                                </a>
+                            </div>
                         </div>
-                      </div>
-                    </li>    
+                    </li>
                 {% endfor %}
-              </ul>
-            <div class="clearfix"> </div>
+            </ul>
+            <div class="clearfix"></div>
         </div>
     {% endif %}
-{% endblock %}
+{% endblock content %}

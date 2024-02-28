@@ -1,52 +1,51 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
 {% block content %}
-<section>
-  {% include 'includes/company_sidenav.html' %}
-</section>
-<link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
-  <link href="{% static 'mdeditor/css/editormd.preview.css' %}" rel="stylesheet">
-                <div>
-                    <div class="col_3">               
-                              <form id="add-or-update-domain">
-                  {% csrf_token %}
-                  <div class="modal-content">
+    <section>
+        {% include "includes/company_sidenav.html" %}
+    </section>
+    <link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
+    <link href="{% static 'mdeditor/css/editormd.preview.css' %}"
+          rel="stylesheet">
+    <div>
+        <div class="col_3">
+            <form id="add-or-update-domain">
+                {% csrf_token %}
+                <div class="modal-content">
                     <div class="modal-header">
-                      <h4 class="modal-title">{{hunt.name}}</h4>
+                        <h4 class="modal-title">{{ hunt.name }}</h4>
                     </div>
-                     <div class="modal-body">
-                      <div>
-                        <div id="content"><textarea>{{ hunt.description }}</textarea></div>
-                      </div>
-                      <div>
-                        Starting Time : {{ hunt.starts_on|date:'Y-m-d H:i' }}
-                      </div>
-                      <div>
-                        Ending Time : {{ hunt.end_on|date:'Y-m-d H:i' }}
-                      </div>
-                    </div>
-                  </div>
-                </form>
-                        <div class="clearfix"> </div>
+                    <div class="modal-body">
+                        <div>
+                            <div id="content">
+                                <textarea>{{ hunt.description }}</textarea>
+                            </div>
+                        </div>
+                        <div>Starting Time : {{ hunt.starts_on|date:'Y-m-d H:i' }}</div>
+                        <div>Ending Time : {{ hunt.end_on|date:'Y-m-d H:i' }}</div>
                     </div>
                 </div>
-
-                    <div class="modal-footer">
-                      <a href="/dashboard/company/hunt/{{hunt.pk}}/edit" >
-                        <input type="submit"  class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button" value="Edit" />
-                      </a>
-                    </div>
-                  <script src="{% static 'mdeditor/js/jquery.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/editormd.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/marked.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/prettify.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/raphael.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/underscore.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/sequence-diagram.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/flowchart.min.js' %}"></script>
-  <script src="{% static 'mdeditor/js/lib/jquery.flowchart.min.js' %}"></script>
-
-  <script>
+            </form>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <a href="{% url 'company_dashboard_hunt_edit' pk=hunt.pk %}">
+            <input type="submit"
+                   class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
+                   value="Edit" />
+        </a>
+    </div>
+    <script src="{% static 'mdeditor/js/jquery.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/editormd.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/marked.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/prettify.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/raphael.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/underscore.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/sequence-diagram.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/flowchart.min.js' %}"></script>
+    <script src="{% static 'mdeditor/js/lib/jquery.flowchart.min.js' %}"></script>
+    <script>
   $(function () {
       editormd.markdownToHTML("content", {
           emoji           : true,
@@ -61,6 +60,5 @@
       })
   })
 
-</script>
-
-{% endblock %}
+    </script>
+{% endblock content %}

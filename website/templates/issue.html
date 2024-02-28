@@ -4,24 +4,27 @@
 {% load socialaccount %}
 {% providers_media_js %}
 {% load custom_tags %}
-{% block title %}Bug on {{ object.domain_title }} - {{ object.description }}{% endblock %}
-{% block og_title %}Bug on {{ object.domain_title }}{% endblock %}
-
+{% block title %}
+    Bug on {{ object.domain_title }} - {{ object.description }}
+{% endblock title %}
+{% block og_title %}
+    Bug on {{ object.domain_title }}
+{% endblock og_title %}
 {% block og_image %}
-
     {% if object.screenshot %}
         {{ object.screenshot.url }}
-
     {% else %}
         {{ screenshots.0.image.url }}
     {% endif %}
-
-{% endblock %}
-
-{% block og_description %}{{ object.description }}{% endblock %}
-{% block description %}{{ object.description }}{% endblock %}
+{% endblock og_image %}
+{% block og_description %}
+    {{ object.description }}
+{% endblock og_description %}
+{% block description %}
+    {{ object.description }}
+{% endblock description %}
 {% block style %}
-<style>
+    <style>
     .alt-img {
         padding-top: 25px;
         width: 75px;
@@ -127,310 +130,349 @@
     
     
 
-</style>
-{% endblock %}
+    </style>
+{% endblock style %}
 {% block content %}
-<script type="text/javascript" src="{% static "js/clipboard.min.js" %}"></script>
-<script type="text/javascript" src="{% static "js/lightbox.min.js" %}"></script>
-<script type="text/javascript" src="{% static "js/issue.js" %}"></script>
-<script src="{% static "js/jquery.atwho.js" %}"></script>
-<script src="{% static "js/jquery.caret.js" %}"></script>
-<link href="{% static "css/jquery.atwho.css" %}" rel="stylesheet">
-
-<div class="row">
-    <div class="col-lg-12">
-        <h3 class="page-header">
-            <span class="editables">
-                <span class="issue-desc">{{ object.description }}</span>
-                <span class="pull-right">
-                    <i class="fa fa-eye"></i> {{ object.views }}
+    <script type="text/javascript" src="{% static "js/clipboard.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/lightbox.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/issue.js" %}"></script>
+    <script src="{% static "js/jquery.atwho.js" %}"></script>
+    <script src="{% static "js/jquery.caret.js" %}"></script>
+    <link href="{% static "css/jquery.atwho.css" %}" rel="stylesheet">
+    <div class="row">
+        <div class="col-lg-12">
+            <h3 class="page-header">
+                <span class="editables">
+                    <span class="issue-desc">{{ object.description }}</span>
+                    <span class="pull-right">
+                        <i class="fa fa-eye"></i> {{ object.views }}
+                    </span>
                 </span>
-            </span>
-            <div class="form form-inline" style="display:none">
-                {% csrf_token %}
-                <input type="text" name="domain" placeholder="Domain" class="form-control" value="" required>
-                <input type="text" name="description" placeholder="Bug Description" class="form-control" value=""
-                    required>
-                <select name="label" class="form-control" required>
-                    <option value="0">General</option>
-                    <option value="1">Number error</option>
-                    <option value="2">Functional</option>
-                    <option value="3">Performance</option>
-                    <option value="4">Security</option>
-                    <option value="5">Typo</option>
-                    <option value="6">Design</option>
-                </select>
-                <button class="btn btn-success save-issue">Save</button>
-                <button class="btn btn-default cancel-edit">Cancel</button>
-            </div>
-            
-        </h3>
-        <strong>Domain:</strong>
-
-        <a href="{{ object.url }}" target="_new" class="issue-domain">{{ object.url }}</a>
-        
-
-       
-        <div class="pull-right">
-            <div class="pull-right"  style="margin-left: 5px; margin-bottom: 5px;" id="google_translate_element"></div>
-            <script type="text/javascript">
+                <div class="form form-inline hidden">
+                    {% csrf_token %}
+                    <input type="text"
+                           name="domain"
+                           placeholder="Domain"
+                           class="form-control"
+                           value=""
+                           required>
+                    <input type="text"
+                           name="description"
+                           placeholder="Bug Description"
+                           class="form-control"
+                           value=""
+                           required>
+                    <select name="label" class="form-control" required>
+                        <option value="0">General</option>
+                        <option value="1">Number error</option>
+                        <option value="2">Functional</option>
+                        <option value="3">Performance</option>
+                        <option value="4">Security</option>
+                        <option value="5">Typo</option>
+                        <option value="6">Design</option>
+                    </select>
+                    <button class="btn btn-success save-issue">Save</button>
+                    <button class="btn btn-default cancel-edit">Cancel</button>
+                </div>
+            </h3>
+            <strong>Domain:</strong>
+            <a href="{{ object.url }}" target="_new" class="issue-domain">{{ object.url }}</a>
+            <div class="pull-right">
+                <div class="pull-right ml-[5px] mb-[5px]" id="google_translate_element"></div>
+                <script type="text/javascript">
                 function googleTranslateElementInit() {
                   new google.translate.TranslateElement({pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element');
                 }
-            </script>
-                
-            <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-            <button class="btn btn-primary btn-xs copy-btn" data-clipboard-text="{{ object.description }}">
-                <i class="glyphicon glyphicon-copy"></i> Copy Title
-            </button>
-            
-            <span class="like_dislike_buttons">
-                {% include '_likes_and_dislikes.html' %}
-            </span>
-            <span class="flag_btn">
-                {% include '_flags.html' %}
-            </span>
-
-            {% if request.user.is_authenticated %}
-                <span>
-                    <a class="bookmark btn btn-success btn-xs" name="{{ object.pk }}">
-                        <i class="fa fa-bookmark-o"></i> Bookmark
+                </script>
+                <script type="text/javascript"
+                        src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+                <button class="btn btn-primary btn-xs copy-btn"
+                        data-clipboard-text="{{ object.description }}">
+                    <i class="glyphicon glyphicon-copy"></i> Copy Title
+                </button>
+                <span class="like_dislike_buttons">{% include "_likes_and_dislikes.html" %}</span>
+                <span class="flag_btn">{% include "_flags.html" %}</span>
+                {% if request.user.is_authenticated %}
+                    <span>
+                        <a class="bookmark btn btn-success btn-xs" name="{{ object.pk }}">
+                            <i class="fa fa-bookmark-o"></i> Bookmark
+                        </a>
+                    </span>
+                {% endif %}
+                <a class="tweet-btn fa fa-x-twitter btn btn-xs tweet-btn"
+                   href="https://twitter.com/intent/tweet?text=Bug on @{{ object.domain_title }} - {{ object.description }}"
+                   data-size="small">Tweet</a>
+                <span class="fb-share-button"
+                      data-layout="button_count"
+                      data-size="small"
+                      data-mobile-iframe="true">
+                    <a href="https://www.facebook.com/sharer/sharer.php?u=https://{% env 'FQDN' %}/issue/{{ object.id }}"
+                       class="fb-xfbml-parse-ignore btn btn-primary btn-xs fb-btn"
+                       target="_blank">
+                        <i class="fa fa-facebook fa-white"></i> Share
                     </a>
                 </span>
-            {% endif %}
-            
-            <a class="tweet-btn fa fa-x-twitter btn btn-xs tweet-btn"
-                href="https://twitter.com/intent/tweet?text=Bug on @{{ object.domain_title }} - {{ object.description }}"
-                data-size="small"> Tweet</a>
-            <span class="fb-share-button"
-                data-layout="button_count" data-size="small" data-mobile-iframe="true">
-                <a href="https://www.facebook.com/sharer/sharer.php?u=https://{% env 'FQDN' %}/issue/{{ object.id }}" class="fb-xfbml-parse-ignore btn btn-primary btn-xs fb-btn" target="_blank">
-                    <i class="fa fa-facebook fa-white"></i> Share
-                </a>
-            </span>
-        </div>
-        <hr>
-    </div>
-</div>
-
-<div class="jumbotron">
-    <div class="row">
-        <div class="col-md-6">
-            <div class="panel panel-red">
-                <div class="panel-heading">
-                    <div class="row">
-                        <div class="col-xs-4">
-                            <a href="/domain/{{ object.domain_name }}">
-                                <img src="{{ object.domain.get_logo }}" class="img-thumbnail" height="100" width="100">
-                            </a>
-                        </div>
-                        <div class="col-xs-8">
-                            <h3>Reported on {{ object.domain_name }}</h3>
-                            <h4>Total # of issues reported = {{ issue_count }}</h4>
-                            <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
-                                <input type="hidden" name="cmd" value="_s-xclick">
-                                <input type="hidden" name="hosted_button_id" value="SC7E9NRCWHGTL">
-                                <input type="hidden" name="hcustom" value="{{ domian.name }}">
-                                <button type="submit" class="btn btn-primary btn-xs pull-right">
-                                    Subscribe to {{ object.domain_title }} bugs
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
             </div>
-        </div>
-        <div class="col-md-6">
-            <div class="panel panel-green">
-                <div class="panel-heading">
-                    <div class="row">
-                        <div class="col-xs-4">
-                            {% if object.user.username %}
-                            <a href="/profile/{{ object.user.username }}">
-                                {% if object.user.socialaccount_set.all.0.get_avatar_url %}
-                                <img class="img-thumbnail" height="100" width="100"
-                                    src="{{ object.user.socialaccount_set.all.0.get_avatar_url }}">
-                                {% else %}
-                                <img class="img-thumbnail" src="{% gravatar_url object.user.email 100 %}" height="100"
-                                    width="100">
-                                {% endif %}
-                            </a>
-                            {% else %}
-                            <img class="img-thumbnail" height="100" width="100"
-                            src="{% static 'images/dummy-user.png' %}" class="img-responsive img-rounded">
-                            {% endif %}
-                        </div>
-                        <div class="col-xs-8">
-                            {% if not object.user %}
-                            <h3>Anonymously reported</h3>
-                            {% else %}
-                            <h3>Reported by {{ object.user.username|default_if_none:"Anonymous" }}</h3>
-                            {% endif %}
-                            {% if object.user.username %}
-                            <h4>Total Points of {{ object.user.username }} = {{ users_score }}</h4>
-
-                            <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post">
-                                <input type="hidden" name="cmd" value="_xclick">
-                                <input type="hidden" name="business" value="coderbounty@gmail.com">
-                                <input type="hidden" name="item_name"
-                                    value="tip for {{ object.user.username }} on {% env 'DOMAIN_NAME' %} bug # {{ object.id }}">
-                                <input type="hidden" name="currency_code" value="USD">
-                                <button type="submit" class="btn btn-primary btn-xs pull-right">
-                                    Send a Tip
-                                </button>
-                            </form>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <hr>
         </div>
     </div>
-    <div class="row">
-        <div class="col-md-6">
-            <div class="panel panel-purple">
-                <div class="panel-heading">
-                    <div class="row">
-                        <div class="col-xs-4">
-                            {% if browser_family %}
-                            {% with 'img/browser-logos/'|add:browser_family|add:'/'|add:browser_family|add:'_64x64.png'|lower as image_static %}
-                            <img src="{% static image_static %}" class="img-thumbnail" height="100" width="100">
-                            {% endwith %}
-                            {% endif %}
-                        </div>
-                        <div class="col-xs-8">
-                            <h4>Browser Version: {{ browser_version }}</h4>
-                            <h4>Operating System: {{ os_family }}</h4>
-                            <h4>OS Version: {{ os_version }}</h4>
+    <div class="jumbotron">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="panel panel-red">
+                    <div class="panel-heading">
+                        <div class="row">
+                            <div class="col-xs-4">
+                                <a href="{% url 'domain' slug=object.domain_name %}">
+                                    <img src="{{ object.domain.get_logo }}"
+                                         class="img-thumbnail"
+                                         height="100"
+                                         width="100"
+                                         alt="{{ object.domain_title }}">
+                                </a>
+                            </div>
+                            <div class="col-xs-8">
+                                <h3>Reported on {{ object.domain_name }}</h3>
+                                <h4>Total # of issues reported = {{ issue_count }}</h4>
+                                <form action="https://www.paypal.com/cgi-bin/webscr"
+                                      method="post"
+                                      target="_top">
+                                    <input type="hidden" name="cmd" value="_s-xclick">
+                                    <input type="hidden" name="hosted_button_id" value="SC7E9NRCWHGTL">
+                                    <input type="hidden" name="hcustom" value="{{ domian.name }}">
+                                    <button type="submit" class="btn btn-primary btn-xs pull-right">Subscribe to {{ object.domain_title }} bugs</button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-6">
-            <div class="panel panel-primary">
-                <div class="panel-heading" style="height: 120px">
-                    <div class="row">
-                        <div class="col-xs-6">
-                            <div class="bug-info">
-                                <strong>Bug Type:</strong>
-                                <span class="label label-info bug-label">{{ object.get_label_display }}</span>
-                            </div>
-                            <div class="bug-info">
-                                <strong>Status:</strong>
-                                <span class="label label-{% if object.status == 'open' %}success{% else %}danger{% endif %} text-capitalize status">{{object.status }}</span>
-                                {% if request.user.is_authenticated %}
-                                <a class="btn btn-default btn-xs edit-issue-status btn_issclose" id="issue_stat">Click
-                                    to 
-                                    {% if object.status == "open" %}Close{% else %}Open{% endif %}</a>
-                                {% endif %}
-                            </div>
-                            <div class="bug-info">
-                                <strong>Added on:</strong>
-                                <span class="label label-info btn_addedon">{{ object.created }}</span>
-                            </div>
-                        </div>
-                        <div class="col-xs-6 operations">
-                            {% if object.domain.github %}
-                                {% if object.github_url %}
-                                    <a href="{{ object.github_url }}" target="_new" class="btn btn-warning btn-xs">View
-                                        on Github</a>
-                                {% else %}
-                                    {% if request.user.is_superuser or request.user == object.user %}
-                                        {% if object.screenshot %}
-                                            <a href="{{ object.domain.github }}/issues/new?title={{ object.description|urlencode }}&body=![0]({{ object.screenshot.url }})%20http://{% env 'FQDN' %}/issue/{{ object.id }}"></a>
-                                        
+            <div class="col-md-6">
+                <div class="panel panel-green">
+                    <div class="panel-heading">
+                        <div class="row">
+                            <div class="col-xs-4">
+                                {% if object.user.username %}
+                                    <a href="{% url 'profile' slug=object.user.username %}">
+                                        {% if object.user.socialaccount_set.all.0.get_avatar_url %}
+                                            <img class="img-thumbnail"
+                                                 height="100"
+                                                 width="100"
+                                                 src="{{ object.user.socialaccount_set.all.0.get_avatar_url }}"
+                                                 alt="{{ object.user.username }}">
                                         {% else %}
-                                            {% if screenshots %}
-                                                <a href="{{ object.domain.github }}/issues/new?title={{ object.description|urlencode }}&body=![0]({{ screenshots.0.image.url }})%20http://{% env 'FQDN' %}/issue/{{ object.id }}"></a>
+                                            <img class="img-thumbnail"
+                                                 src="{% gravatar_url object.user.email 100 %}"
+                                                 height="100"
+                                                 width="100"
+                                                 alt="{{ object.user.username }}">
+                                        {% endif %}
+                                    </a>
+                                {% else %}
+                                    <img class="img-thumbnail img-responsive img-rounded"
+                                         height="100"
+                                         width="100"
+                                         src="{% static 'images/dummy-user.png' %}"
+                                         alt="User">
+                                {% endif %}
+                            </div>
+                            <div class="col-xs-8">
+                                {% if not object.user %}
+                                    <h3>Anonymously reported</h3>
+                                {% else %}
+                                    <h3>Reported by {{ object.user.username|default_if_none:"Anonymous" }}</h3>
+                                {% endif %}
+                                {% if object.user.username %}
+                                    <h4>Total Points of {{ object.user.username }} = {{ users_score }}</h4>
+                                    <form name="_xclick"
+                                          action="https://www.paypal.com/cgi-bin/webscr"
+                                          method="post">
+                                        <input type="hidden" name="cmd" value="_xclick">
+                                        <input type="hidden" name="business" value="coderbounty@gmail.com">
+                                        <input type="hidden"
+                                               name="item_name"
+                                               value="tip for {{ object.user.username }} on {% env 'DOMAIN_NAME' %} bug # {{ object.id }}">
+                                        <input type="hidden" name="currency_code" value="USD">
+                                        <button type="submit" class="btn btn-primary btn-xs pull-right">Send a Tip</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="panel panel-purple">
+                    <div class="panel-heading">
+                        <div class="row">
+                            <div class="col-xs-4">
+                                {% if browser_family %}
+                                    {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as image_static %}
+                                        <img src="{% static image_static %}"
+                                             class="img-thumbnail"
+                                             height="100"
+                                             width="100"
+                                             alt="browser">
+                                    {% endwith %}
+                                {% endif %}
+                            </div>
+                            <div class="col-xs-8">
+                                <h4>Browser Version: {{ browser_version }}</h4>
+                                <h4>Operating System: {{ os_family }}</h4>
+                                <h4>OS Version: {{ os_version }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="panel panel-primary">
+                    <div class="panel-heading h-[120px]">
+                        <div class="row">
+                            <div class="col-xs-6">
+                                <div class="bug-info">
+                                    <strong>Bug Type:</strong>
+                                    <span class="label label-info bug-label">{{ object.get_label_display }}</span>
+                                </div>
+                                <div class="bug-info">
+                                    <strong>Status:</strong>
+                                    <span class="label label-{% if object.status == 'open' %}success{% else %}danger{% endif %} text-capitalize status">{{ object.status }}</span>
+                                    {% if request.user.is_authenticated %}
+                                        <a class="btn btn-default btn-xs edit-issue-status btn_issclose"
+                                           id="issue_stat">Click
+                                            to
+                                            {% if object.status == "open" %}
+                                                Close
+                                            {% else %}
+                                                Open
                                             {% endif %}
-                                        {%endif%}
+                                        </a>
+                                    {% endif %}
+                                </div>
+                                <div class="bug-info">
+                                    <strong>Added on:</strong>
+                                    <span class="label label-info btn_addedon">{{ object.created }}</span>
+                                </div>
+                            </div>
+                            <div class="col-xs-6 operations">
+                                {% if object.domain.github %}
+                                    {% if object.github_url %}
+                                        <a href="{{ object.github_url }}"
+                                           target="_new"
+                                           class="btn btn-warning btn-xs">View
+                                        on Github</a>
+                                    {% else %}
+                                        {% if request.user.is_superuser or request.user == object.user %}
+                                            {% if object.screenshot %}
+                                                <a href="{{ object.domain.github }}/issues/new?title={{ object.description|urlencode }}&body=![0]({{ object.screenshot.url }})%20http://{% env 'FQDN' %}/issue/{{ object.id }}"></a>
+                                            {% else %}
+                                                {% if screenshots %}
+                                                    <a href="{{ object.domain.github }}/issues/new?title={{ object.description|urlencode }}&body=![0]({{ screenshots.0.image.url }})%20http://{% env 'FQDN' %}/issue/{{ object.id }}"></a>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endif %}
                                     {% endif %}
                                 {% endif %}
-                            {% endif %}
-                            {% if request.user.is_superuser or request.user == object.user %}
-                                <a class="btn btn-info btn-xs edit-issue">Edit Issue</a>
-                                <a href="/delete_issue/{{ object.id }}"
-                                    onclick="return confirm('Are you sure you want to delete this issue?')"
-                                    class="btn btn-danger btn-xs">Delete Issue</a>
-                                {% if object.user %}
-                                <form method="post" action="/remove_user_from_issue/{{ object.id }}/" class="m-0 p-0">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="token" value="{{ csrf_token }}" class="m-0 p-0"/>
-                                    <!-- Other form fields go here if needed -->
-                                    <button type="submit" class="btn btn-info btn-xs report-anonymously" 
-                                            onclick="return confirm('Are you sure you want to report it anonymously?')">
-                                        Report Anonymously
-                                    </button>
-                                </form>
+                                {% if request.user.is_superuser or request.user == object.user %}
+                                    <a class="btn btn-info btn-xs edit-issue">Edit Issue</a>
+                                    <a href="{% url 'delete_issue' id=object.id %}"
+                                       onclick="return confirm('Are you sure you want to delete this issue?')"
+                                       class="btn btn-danger btn-xs">Delete Issue</a>
+                                    {% if object.user %}
+                                        <form method="post"
+                                              action="{% url 'remove_user_from_issue' id=object.id %}"
+                                              class="m-0 p-0">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="token" value="{{ csrf_token }}" class="m-0 p-0" />
+                                            <!-- Other form fields go here if needed -->
+                                            <button type="submit"
+                                                    class="btn btn-info btn-xs report-anonymously"
+                                                    onclick="return confirm('Are you sure you want to report it anonymously?')">
+                                                Report Anonymously
+                                            </button>
+                                        </form>
+                                    {% endif %}
                                 {% endif %}
-                            {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-<h1 class="section-heading">Description</h1>
-<div id="markdown-content"></div>
-
-<div class="row">
-    <div id="screenshot-wrapper" class="col-md-6">
-        <h4 class="section-heading">Screenshots:</h4>
-        <hr>
-        {% if object.screenshot %}
-            <a href="{{ object.screenshot.url }}" data-lightbox="image">
-                <img src="{{ object.screenshot.url }}" class="img-thumbnail">
-            </a>
-        {% else %}
-            {% for screenshot in screenshots %}
-                <a href="{{ screenshot.image.url }}" data-lightbox="image">
-                    <img src="{{ screenshot.image.url }}" class="img-thumbnail" style="margin-bottom: 10px !important; border: 2px solid black">
+    <h1 class="section-heading">Description</h1>
+    <div id="markdown-content"></div>
+    <div class="row">
+        <div id="screenshot-wrapper" class="col-md-6">
+            <h4 class="section-heading">Screenshots:</h4>
+            <hr>
+            {% if object.screenshot %}
+                <a href="{{ object.screenshot.url }}" data-lightbox="image">
+                    <img src="{{ object.screenshot.url }}"
+                         class="img-thumbnail"
+                         width="auto"
+                         height="auto"
+                         alt="screenshot">
                 </a>
-            {% endfor %}
-        {% endif %}
-        <hr>
-    </div>
-    {% if object.get_ocr %}
-    <div class="col-lg-12">
-        <h4>OCR Results:</h4> {{ object.get_ocr }}
-        <hr>
-    </div>
-    {% endif %}
-</div>
-
-<div class="row">
-    <div class="col-md-6">
-        <h3>Comments:</h3>
-        {% if all_comment %}
-        <div id="target_div">
-            {% include 'comments.html' %}
+            {% else %}
+                {% for screenshot in screenshots %}
+                    <a href="{{ screenshot.image.url }}" data-lightbox="image">
+                        <img src="{{ screenshot.image.url }}"
+                             class="img-thumbnail mt-[10px] border-2 border-black"
+                             width="auto"
+                             height="auto"
+                             alt="screenshot">
+                    </a>
+                {% endfor %}
+            {% endif %}
+            <hr>
         </div>
-        {% else %}
-        <div id="target_div">
-        <p>No comment added yet. Be the first to comment!</p>
-        </div>
-        {% endif %}
-        {% if user.is_authenticated %}
-        <form id="comments">
-            {% csrf_token %}
-            <div class="form-group">
-                <input type="hidden" name="issue_pk" id="issue_pk" value="{{ issue.pk }}">
-                <textarea placeholder="Comment" class="form-control" id="text_comment" name="text_comment" rows="3"
-                    required></textarea>
+        {% if object.get_ocr %}
+            <div class="col-lg-12">
+                <h4>OCR Results:</h4>
+                {{ object.get_ocr }}
+                <hr>
             </div>
-            <div class="alert alert-danger hidden" role="alert">
-                <strong>Oh snap!</strong> Cannot comment just newlines and spaces. Please add text.
-            </div>
-            <button id="comment_submit" class="btn btn-small hover:bg-sky-600" type="submit">Add Comment</button>
-        </form>
         {% endif %}
     </div>
-</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.1/showdown.min.js" integrity="sha384-TTjj1KxpUMxMChPbgmSWLlfEep0/67X86v9lnJMkldzkQGHZNAhZRgE9owovIRyz" crossorigin="anonymous"></script>
-<script type="text/javascript">
-    
+    <div class="row">
+        <div class="col-md-6">
+            <h3>Comments:</h3>
+            {% if all_comment %}
+                <div id="target_div">{% include "comments.html" %}</div>
+            {% else %}
+                <div id="target_div">
+                    <p>No comment added yet. Be the first to comment!</p>
+                </div>
+            {% endif %}
+            {% if user.is_authenticated %}
+                <form id="comments">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <input type="hidden" name="issue_pk" id="issue_pk" value="{{ issue.pk }}">
+                        <textarea placeholder="Comment"
+                                  class="form-control"
+                                  id="text_comment"
+                                  name="text_comment"
+                                  rows="3"
+                                  required></textarea>
+                    </div>
+                    <div class="alert alert-danger hidden" role="alert">
+                        <strong>Oh snap!</strong> Cannot comment just newlines and spaces. Please add text.
+                    </div>
+                    <button id="comment_submit"
+                            class="btn btn-small hover:bg-sky-600"
+                            type="submit">Add Comment</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.1/showdown.min.js"
+            integrity="sha384-TTjj1KxpUMxMChPbgmSWLlfEep0/67X86v9lnJMkldzkQGHZNAhZRgE9owovIRyz"
+            crossorigin="anonymous"></script>
+    <script type="text/javascript">
     function embedded_image_markdown(markdownText) {
         const image = /\$\[img[1-5]\]/g;
         const screenshotDiv = document.querySelectorAll("#screenshot-wrapper img");
@@ -642,5 +684,5 @@
             }
         });
     });
-</script>
-{% endblock %}
+    </script>
+{% endblock content %}

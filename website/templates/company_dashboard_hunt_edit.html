@@ -3,7 +3,7 @@
 <!-- {% load tz_detect %} -->
 <!-- {% load tz %} -->
 {% block style %}
-<style>
+    <style>
   .row .col-md-6:nth-child(1) .panel {
     background-color: #F76B78;
   }
@@ -57,132 +57,116 @@
   .hunt-form .form-group {
     margin-top: 30px;
   }
-</style>
-{% endblock %}
-
+    </style>
+{% endblock style %}
 {% block content %}
-{% localtime on %}
-<section>
-  {% include 'includes/company_sidenav.html' %}
-</section>
-<script src="{% static "js/jquery.validate.js" %}"></script>
-<link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
-<link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.min.css" %}" />
-<link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.default-theme.min.css" %}" />
-
-<form id="update-hunt">
-  {% csrf_token%}
-  <div class="modal-content">
-    <div class="modal-header">
-      <button type="button" class="close" data-dismiss="modal">&times;</button>
-      <h4 class="modal-title">Edit Hunt</h4>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" name="id" value="{{hunt.pk}}" />
-      <div class="form-group">
-        <label for="name">Name:</label>
-        <input type="text" name="name" required class="form-control" id="name" value="{{hunt.name}}">
-      </div>
-
-      {{hunt_form.media}}
-      {{date_form.media}}
-      {{hunt_form.as_p}}
-      <div class="form-group col-sm-6">
-        <label for="name">Start Date/Time :
-          <div id="datepicker-1-res" class="hidden"></div></label>
-        <div id="datepicker-1"></div>
-      </div>
-      <div class="form-group col-sm-6">
-        <label for="name">End Date/Time :
-          <div id="datepicker-2-res" class="hidden"></div></label>
-        <div id="datepicker-2"></div>
-      </div>
-      <div class="form-group">
-        <select name="domain" class="form-control" id="domain">
-          {% for domain in domains %}
-          <option>{{domain.id}} - {{domain.name}}</option>
-          {% endfor %}
-        </select>
-      </div>
-      Prizes
-      <div class="form-group col-sm-12 winner_prize">
-        <label class="label_prize col-sm-4 col-md-4" for="prize_winner">
-          <input name="prize_winner" type="Number" placeholder="Winner" class="form-control" disabled />
-          <div>$</div>
-        </label>
-        <label class="label_prize col-sm-4 col-md-4" for="prize_runner">
-          <input placeholder="Runner's Up" name="prize_runner" type="Number" class="form-control" disabled />
-          <div>$</div>
-        </label>
-        <label class="label_prize col-sm-4 col-md-4" for="prize_second_runner">
-          <input placeholder="2nd Runner's Up" name="prize_second_runner" type="Number" class="form-control" disabled />
-          <div>$</div>
-        </label>
-      </div>
-      <label class="checkbox-inline">
-        {% if hunt.is_published  %}
-        <input name="publish" type="checkbox" checked="" value="true">Publish (If Not Published, the Hunt Will be saved
-        as a draft)
-        {% endif %}
-        {% if not hunt.is_published %}
-        <input name="publish" type="checkbox" value="true">Publish (If Not Published, the Hunt Will be saved as a draft)
-        {% endif %}
-        }
-      </label>
-    </div>
-    <div class="modal-footer">
-      <input type="submit" class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button" value="Change" />
-      <input type="reset" data-dismiss="modal" class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button" value="Reset
-    {{hunt.starts_on.isoformat}}" />
-    </div>
-  </div>
-</form>
-<script type="text/javascript" src="{% static "js/mtr-datepicker-timezones.js" %}"></script>
-<script type="text/javascript" src="{% static "js/mtr-datepicker.js" %}"></script>
-<script type="text/javascript" src="{% static "js/dt.js" %}"></script>
-
-<script type="text/javascript">
+    {% localtime on %}
+    <section>
+        {% include "includes/company_sidenav.html" %}
+    </section>
+    <script src="{% static "js/jquery.validate.js" %}"></script>
+    <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.min.css" %}" />
+    <link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.default-theme.min.css" %}" />
+    <form id="update-hunt">
+        {% csrf_token %}
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">×</button>
+                <h4 class="modal-title">Edit Hunt</h4>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" name="id" value="{{ hunt.pk }}" />
+                <div class="form-group">
+                    <label for="name">Name:</label>
+                    <input type="text"
+                           name="name"
+                           required
+                           class="form-control"
+                           id="name"
+                           value="{{ hunt.name }}">
+                </div>
+                {{ hunt_form.media }}
+                {{ date_form.media }}
+                {{ hunt_form.as_p }}
+                <div class="form-group col-sm-6">
+                    <label for="name">
+                        Start Date/Time :
+                        <div id="datepicker-1-res" class="hidden"></div>
+                    </label>
+                    <div id="datepicker-1"></div>
+                </div>
+                <div class="form-group col-sm-6">
+                    <label for="name">
+                        End Date/Time :
+                        <div id="datepicker-2-res" class="hidden"></div>
+                    </label>
+                    <div id="datepicker-2"></div>
+                </div>
+                <div class="form-group">
+                    <select name="domain" class="form-control" id="domain">
+                        {% for domain in domains %}<option>{{ domain.id }} - {{ domain.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                Prizes
+                <div class="form-group col-sm-12 winner_prize">
+                    <label class="label_prize col-sm-4 col-md-4" for="prize_winner">
+                        <input name="prize_winner"
+                               type="Number"
+                               placeholder="Winner"
+                               class="form-control"
+                               disabled />
+                        <div>$</div>
+                    </label>
+                    <label class="label_prize col-sm-4 col-md-4" for="prize_runner">
+                        <input placeholder="Runner's Up"
+                               name="prize_runner"
+                               type="Number"
+                               class="form-control"
+                               disabled />
+                        <div>$</div>
+                    </label>
+                    <label class="label_prize col-sm-4 col-md-4" for="prize_second_runner">
+                        <input placeholder="2nd Runner's Up"
+                               name="prize_second_runner"
+                               type="Number"
+                               class="form-control"
+                               disabled />
+                        <div>$</div>
+                    </label>
+                </div>
+                <label class="checkbox-inline">
+                    {% if hunt.is_published %}
+                        <input name="publish" type="checkbox" checked="" value="true">
+                        Publish (If Not Published, the Hunt Will be saved
+                        as a draft)
+                    {% endif %}
+                    {% if not hunt.is_published %}
+                        <input name="publish" type="checkbox" value="true">
+                        Publish (If Not Published, the Hunt Will be saved as a draft)
+                    {% endif %}
+                    }
+                </label>
+            </div>
+            <div class="modal-footer">
+                <input type="submit"
+                       class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
+                       value="Change" />
+                <input type="reset"
+                       data-dismiss="modal"
+                       class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
+                       value="Reset {{ hunt.starts_on.isoformat }}" />
+            </div>
+        </div>
+    </form>
+    <script type="text/javascript" src="{% static "js/mtr-datepicker-timezones.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/mtr-datepicker.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/dt.js" %}"></script>
+    <script type="text/javascript">
   var dateNow = new Date();
   var starts_on = new Date("{{ hunt.starts_on.isoformat }}")
   var end_on = new Date("{{ hunt.end_on.isoformat }}")
   console.log(starts_on.getTimezoneOffset())
-  // if(starts_on.getTimezoneOffset()!=0){
-  //     var new_starts_on = new Date(starts_on.getTime()+starts_on.getTimezoneOffset()*60*1000);
-  //     var new_end_on = new Date(end_on.getTime()+end_on.getTimezoneOffset()*60*1000);
-  //       var offset_hour = starts_on.getTimezoneOffset() / 60;
-  //       var offset_minute = starts_on.getTimezoneOffset() % 60;
-  //       var hours = starts_on.getHours();
-  //       var minutes = starts_on.getMinutes();
-  //         console.log(hours - offset_hour)
-
-  //       new_starts_on.setHours(hours - offset_hour);
-  //         console.log(new_starts_on)
-  //       new_starts_on.setMinutes(minutes - offset_minute);
-
-  //       var offset_hour = end_on.getTimezoneOffset() / 60;
-  //       var offset_minute = end_on.getTimezoneOffset() % 60;
-  //       var hours = end_on.getHours();
-  //       var minutes = end_on.getMinutes();
-  //       new_end_on.setHours(hours - offset_hour);
-  //       new_end_on.setMinutes(minutes - offset_minute);
-  //       var Datepicker1 = MtrDatepickerDemo.init({
-  //           target: 'datepicker-1',
-  //           timestamp: new_starts_on.getTime()-10*60000,
-  //           future: true,
-  //         }, {
-  //           exportFormats: 'datepicker-1-res',
-  //         });
-  //         var Datepicker2 = MtrDatepickerDemo.init({
-  //           target: 'datepicker-2',
-  //           timestamp: new_end_on.getTime()-10*60000,
-  //           future: true,
-  //         }, {
-  //           exportFormats: 'datepicker-2-res',
-  //         });
-  //         console.log(new_starts_on)
-  //         console.log(new_end_on)
-  //   }
-  //   else{
   console.log(starts_on)
   console.log(end_on)
   var Datepicker1 = MtrDatepickerDemo.init({
@@ -200,15 +184,13 @@
     exportFormats: 'datepicker-2-res',
   });
   // }
-</script>
-<!-- {% tz_detect %} -->
+    </script>
+    <!-- {% tz_detect %} -->
 {% endlocaltime %}
-{% endblock %}
-
+{% endblock content %}
 {% block after_js %}
-<script src="{% static "js/bootstrap-slider.js" %}"></script>
-
-<script>
+    <script src="{% static "js/bootstrap-slider.js" %}"></script>
+    <script>
   $('.btn').on('click', function () {
     $(".hunt-form").valid();
   });
@@ -225,5 +207,5 @@
       return '$' + numberWithCommas(value);
     }
   });
-</script>
-{% endblock %}
+    </script>
+{% endblock after_js %}

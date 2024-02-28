@@ -1,21 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js" integrity="sha384-GP2+CwBlakZSDJUr+E4JvbxpM75i1i8+RKkieQxzuyDZLG+5105E1OfHIjzcXyWH" crossorigin="anonymous"></script>
-
-    <meta charset="UTF-8">
-    
-    <link rel="stylesheet" href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" />
-    <link rel="stylesheet" href="https://unpkg.com/@tailwindcss/typography@0.2.x/dist/typography.min.css"/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.59.2/lib/codemirror.min.css" />
-    <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <meta name="description" content="{{ hunt_obj.name }}">
+        <meta name="keywords" content="{{ hunt_obj.name }},BugHunt">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"
+                integrity="sha384-GP2+CwBlakZSDJUr+E4JvbxpM75i1i8+RKkieQxzuyDZLG+5105E1OfHIjzcXyWH"
+                crossorigin="anonymous"></script>
+        <meta charset="UTF-8">
+        <link rel="stylesheet"
+              href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" />
+        <link rel="stylesheet"
+              href="https://unpkg.com/@tailwindcss/typography@0.2.x/dist/typography.min.css" />
+        <link rel="stylesheet"
+              href="https://cdn.jsdelivr.net/npm/codemirror@5.59.2/lib/codemirror.min.css" />
+        <link rel="preconnect" href="https://fonts.gstatic.com">
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+              rel="stylesheet">
+        <style>
         .cursive {
             font-family: 'Nanum Pen Script', cursive;
         }
@@ -49,404 +55,408 @@
         .cm-s-default .cm-variable-2 {
             color: rgb(31, 41, 55);
         }
-    </style>
-
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
-        integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
-        crossorigin="anonymous"
-        referrerpolicy="no-referrer"
-    />
-    <title>Domain Info</title>
-</head>
-<body>
-
-    <div class="h-full bg-gray-200 p-8">
-        <div class="bg-white rounded-lg shadow-xl pb-8">
-            <div class="w-full h-[250px]">
-                <img 
-                    {% if hunt_obj.banner %} 
-                        src="{{ MEDIA_URL }}{{ hunt_obj.banner }}" 
-                    {% else %} 
-                        src="https://versohydraulic.com/bitrix/templates/aspro-allcorp/images/background.png" 
-                    {% endif %} 
-                    class="w-full h-full rounded-tl-lg rounded-tr-lg object-cover"
-                    >
-            </div>
-            <div class="flex flex-col items-center -mt-20">
-                <img src="{{ MEDIA_URL }}{{ hunt_obj.logo }}" class="w-40 h-40 border-4  rounded-full">
-                <div class="flex items-center space-x-2 mt-2">
-                    <p class="text-2xl">{{ hunt_obj.name }}</p>
-                    <a href="{{ hunt_obj.url }}" class="m-0 p-0">
-                      <i class="fa-sharp fa-solid fa-arrow-up-right-from-square fa-lg text-[#596780] hover:text-black"></i>   
-                    </a>
+        </style>
+        <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
+              integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
+              crossorigin="anonymous"
+              referrerpolicy="no-referrer" />
+        <title>Domain Info</title>
+    </head>
+    <body>
+        <div class="h-full bg-gray-200 p-8">
+            <div class="bg-white rounded-lg shadow-xl pb-8">
+                <div class="w-full h-[250px]">
+                    {% with banner_src=hunt_obj.banner|default:"https://versohydraulic.com/bitrix/templates/aspro-allcorp/images/background.png" %}
+                        <img src="{{ MEDIA_URL }}{{ banner_src }}"
+                             class="w-full h-full rounded-tl-lg rounded-tr-lg object-cover"
+                             width="100%"
+                             height="100%"
+                             alt="banner">
+                    {% endwith %}
                 </div>
-            </div>
-            <div class="flex-1 flex flex-col items-center lg:items-end justify-end px-8 mt-2">
-                <div class="flex items-center space-x-4 mt-2">
-                    {% if is_hunt_manager and not hunt_obj.result_published %}
-                        <a href="{% url 'end_bughunt' hunt_obj.id %}" class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
-                            <i class="fa-sharp fa-solid fa-bug fa-lg text-white"></i>   
-                            <span>End Bughunt</span>
+                <div class="flex flex-col items-center -mt-20">
+                    <img src="{{ MEDIA_URL }}{{ hunt_obj.logo }}"
+                         class="w-40 h-40 border-4  rounded-full"
+                         width="100"
+                         height="100"
+                         alt="logo">
+                    <div class="flex items-center space-x-2 mt-2">
+                        <p class="text-2xl">{{ hunt_obj.name }}</p>
+                        <a href="{{ hunt_obj.url }}" class="m-0 p-0">
+                            <i class="fa-sharp fa-solid fa-arrow-up-right-from-square fa-lg text-[#596780] hover:text-black"></i>
                         </a>
-                    {% elif not is_hunt_manager and not hunt_obj.result_published %}
-                        <button class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
-                        <i class="fa-sharp fa-solid fa-bell fa-lg text-white"></i>   
-                            <span>Subscribe</span>
-                        </button>
-                        <a href="{% url 'report' %}?hunt={{ hunt_obj.id }}" class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
-                            <i class="fa-sharp fa-solid fa-bug fa-lg text-white"></i>   
-                            <span>Submit Bug</span>
-                        </a>
-                    {% endif %}
+                    </div>
                 </div>
-            </div>
-        </div>
-
-        <div class="my-4 flex flex-col 2xl:flex-row space-y-4 2xl:space-y-0 2xl:space-x-4">
-            <div class="w-full flex flex-col 2xl:w-1/3">
-                <div class="flex-1 bg-white rounded-lg shadow-xl p-8">
-                    <h4 class="text-xl text-gray-900 font-bold">BugHunt Info</h4>
-                    <ul class="mt-2 text-gray-700">
-                        <li class="flex border-y py-2 my-2">
-                            <span class="font-bold w-24">Hunt:</span>
-                            <span class="text-gray-700">{{ hunt_obj.name }}</span>
-                        </li>
-                        <li class="flex border-b py-2 my-2">
-                            <span class="font-bold w-24">Url</span>
-                            <span class="text-gray-700">{{ hunt_obj.url }}</span>
-                        </li>
-                        <li class="flex border-b py-2 my-2">
-                          <span class="font-bold w-24">Domain</span>
-                          <span class="text-gray-700">{{ hunt_obj.domain.name }}</span>
-                        </li>
-                        <li class="flex border-b py-2 my-2">
-                          <span class="font-bold w-24">Starts On:</span>
-                          <span class="text-gray-700">{{ hunt_obj.starts_on.day }} / {{ hunt_obj.starts_on.month }} / {{ hunt_obj.starts_on.year }}</span>
-                        </li>
-                        <li class="flex border-b py-2 my-2">
-                            <span class="font-bold w-24">Ends On:</span>
-                            <span class="text-gray-700">{{ hunt_obj.end_on.day }} / {{ hunt_obj.end_on.month }} / {{ hunt_obj.end_on.year }}</span>
-                        </li>
-                        <li class="flex border-b py-2 my-2">
-                            <span class="font-bold w-24">Status:</span>
-                            
-                            {% if hunt_obj.result_published %} 
-                                <span class="text-red-500 font-bold">ENDED</span> 
-                            {% else %} 
-                                <span class="text-green-500 font-bold">ONGOING</span>    
-                            {% endif %}
-                            </span>
-                          </li>
-                    </ul>
-                </div>
-                <div class="flex-1 bg-white rounded-lg shadow-xl mt-4 p-8">
-                    <h4 class="text-xl text-gray-900 font-bold">Activity log</h4>
-                    <div class="relative px-4">
-                        <div class="absolute h-full border border-dashed border-opacity-20 border-secondary"></div>
-
-                        <!-- start::Timeline item -->
-                        <div class="flex items-center w-full my-6 -ml-1.5">
-                            <div class="w-1/12 z-10">
-                                <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
-                            </div>
-                            <div class="w-11/12">
-                                <p class="text-sm">Profile informations changed.</p>
-                                <p class="text-xs text-gray-500">3 min ago</p>
-                            </div>
-                        </div>
-                        <!-- end::Timeline item -->
-
-                        <!-- start::Timeline item -->
-                        <div class="flex items-center w-full my-6 -ml-1.5">
-                            <div class="w-1/12 z-10">
-                                <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
-                            </div>
-                            <div class="w-11/12">
-                                <p class="text-sm">
-                                    Connected with <a href="#" class="text-red-600 font-bold">Colby Covington</a>.</p>
-                                <p class="text-xs text-gray-500">15 min ago</p>
-                            </div>
-                        </div>
-                        <!-- end::Timeline item -->
-
-                        <!-- start::Timeline item -->
-                        <div class="flex items-center w-full my-6 -ml-1.5">
-                            <div class="w-1/12 z-10">
-                                <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
-                            </div>
-                            <div class="w-11/12">
-                                <p class="text-sm">Invoice <a href="#" class="text-red-600 font-bold">#4563</a> was created.</p>
-                                <p class="text-xs text-gray-500">57 min ago</p>
-                            </div>
-                        </div>
-                        <!-- end::Timeline item -->
-
-                        <!-- start::Timeline item -->
-                        <div class="flex items-center w-full my-6 -ml-1.5">
-                            <div class="w-1/12 z-10">
-                                <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
-                            </div>
-                            <div class="w-11/12">
-                                <p class="text-sm">
-                                    Message received from <a href="#" class="text-red-600 font-bold">Cecilia Hendric</a>.</p>
-                                <p class="text-xs text-gray-500">1 hour ago</p>
-                            </div>
-                        </div>
-                        <!-- end::Timeline item -->
-
-                        <!-- start::Timeline item -->
-                        <div class="flex items-center w-full my-6 -ml-1.5">
-                            <div class="w-1/12 z-10">
-                                <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
-                            </div>
-                            <div class="w-11/12">
-                                <p class="text-sm">New order received <a href="#" class="text-red-600 font-bold">#OR9653</a>.</p>
-                                <p class="text-xs text-gray-500">2 hours ago</p>
-                            </div>
-                        </div>
-                        <!-- end::Timeline item -->
-
-                        <!-- start::Timeline item -->
-                        <div class="flex items-center w-full my-6 -ml-1.5">
-                            <div class="w-1/12 z-10">
-                                <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
-                            </div>
-                            <div class="w-11/12">
-                                <p class="text-sm">
-                                    Message received from <a href="#" class="text-red-600 font-bold">Jane Stillman</a>.</p>
-                                <p class="text-xs text-gray-500">2 hours ago</p>
-                            </div>
-                        </div>
-                        <!-- end::Timeline item -->
+                <div class="flex-1 flex flex-col items-center lg:items-end justify-end px-8 mt-2">
+                    <div class="flex items-center space-x-4 mt-2">
+                        {% if is_hunt_manager and not hunt_obj.result_published %}
+                            <a href="{% url 'end_bughunt' hunt_obj.id %}"
+                               class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
+                                <i class="fa-sharp fa-solid fa-bug fa-lg text-white"></i>
+                                <span>End Bughunt</span>
+                            </a>
+                        {% elif not is_hunt_manager and not hunt_obj.result_published %}
+                            <button class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
+                                <i class="fa-sharp fa-solid fa-bell fa-lg text-white"></i>
+                                <span>Subscribe</span>
+                            </button>
+                            <a href="{% url 'report' %}?hunt={{ hunt_obj.id }}"
+                               class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
+                                <i class="fa-sharp fa-solid fa-bug fa-lg text-white"></i>
+                                <span>Submit Bug</span>
+                            </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
-
-            <div class="flex flex-col w-full 2xl:w-2/3">
-
-                <div class="flex flex-col w-full">
+            <div class="my-4 flex flex-col 2xl:flex-row space-y-4 2xl:space-y-0 2xl:space-x-4">
+                <div class="w-full flex flex-col 2xl:w-1/3">
                     <div class="flex-1 bg-white rounded-lg shadow-xl p-8">
-                        <h4 class="text-xl text-gray-900 font-bold">Statistics</h4>
-                        
-                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-4">
-                            <div class="px-6 py-6 bg-gray-100 border border-gray-300 rounded-lg shadow-xl">
-                                <div class="flex items-center justify-between">
-                                    <span class="font-bold text-sm text-indigo-600">Total Rewarded</span>
+                        <h4 class="text-xl text-gray-900 font-bold">BugHunt Info</h4>
+                        <ul class="mt-2 text-gray-700">
+                            <li class="flex border-y py-2 my-2">
+                                <span class="font-bold w-24">Hunt:</span>
+                                <span class="text-gray-700">{{ hunt_obj.name }}</span>
+                            </li>
+                            <li class="flex border-b py-2 my-2">
+                                <span class="font-bold w-24">Url</span>
+                                <span class="text-gray-700">{{ hunt_obj.url }}</span>
+                            </li>
+                            <li class="flex border-b py-2 my-2">
+                                <span class="font-bold w-24">Domain</span>
+                                <span class="text-gray-700">{{ hunt_obj.domain.name }}</span>
+                            </li>
+                            <li class="flex border-b py-2 my-2">
+                                <span class="font-bold w-24">Starts On:</span>
+                                <span class="text-gray-700">{{ hunt_obj.starts_on.day }} / {{ hunt_obj.starts_on.month }} / {{ hunt_obj.starts_on.year }}</span>
+                            </li>
+                            <li class="flex border-b py-2 my-2">
+                                <span class="font-bold w-24">Ends On:</span>
+                                <span class="text-gray-700">{{ hunt_obj.end_on.day }} / {{ hunt_obj.end_on.month }} / {{ hunt_obj.end_on.year }}</span>
+                            </li>
+                            <li class="flex border-b py-2 my-2">
+                                <span class="font-bold w-24">Status:</span>
+                                {% if hunt_obj.result_published %}
+                                    <span class="text-red-500 font-bold">ENDED</span>
+                                {% else %}
+                                    <span class="text-green-500 font-bold">ONGOING</span>
+                                {% endif %}
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="flex-1 bg-white rounded-lg shadow-xl mt-4 p-8">
+                        <h4 class="text-xl text-gray-900 font-bold">Activity log</h4>
+                        <div class="relative px-4">
+                            <div class="absolute h-full border border-dashed border-opacity-20 border-secondary"></div>
+                            <!-- start::Timeline item -->
+                            <div class="flex items-center w-full my-6 -ml-1.5">
+                                <div class="w-1/12 z-10">
+                                    <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
                                 </div>
-                                <div class="flex items-center justify-between mt-6">
-                                    <div>
-                                        <svg class="w-12 h-12 p-2.5 bg-indigo-400 bg-opacity-20 rounded-full text-indigo-600 border border-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <div class="w-11/12">
+                                    <p class="text-sm">Profile informations changed.</p>
+                                    <p class="text-xs text-gray-500">3 min ago</p>
+                                </div>
+                            </div>
+                            <!-- end::Timeline item -->
+                            <!-- start::Timeline item -->
+                            <div class="flex items-center w-full my-6 -ml-1.5">
+                                <div class="w-1/12 z-10">
+                                    <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
+                                </div>
+                                <div class="w-11/12">
+                                    <p class="text-sm">
+                                        Connected with <a href="#" class="text-red-600 font-bold">Colby Covington</a>.
+                                    </p>
+                                    <p class="text-xs text-gray-500">15 min ago</p>
+                                </div>
+                            </div>
+                            <!-- end::Timeline item -->
+                            <!-- start::Timeline item -->
+                            <div class="flex items-center w-full my-6 -ml-1.5">
+                                <div class="w-1/12 z-10">
+                                    <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
+                                </div>
+                                <div class="w-11/12">
+                                    <p class="text-sm">
+                                        Invoice <a href="#" class="text-red-600 font-bold">#4563</a> was created.
+                                    </p>
+                                    <p class="text-xs text-gray-500">57 min ago</p>
+                                </div>
+                            </div>
+                            <!-- end::Timeline item -->
+                            <!-- start::Timeline item -->
+                            <div class="flex items-center w-full my-6 -ml-1.5">
+                                <div class="w-1/12 z-10">
+                                    <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
+                                </div>
+                                <div class="w-11/12">
+                                    <p class="text-sm">
+                                        Message received from <a href="#" class="text-red-600 font-bold">Cecilia Hendric</a>.
+                                    </p>
+                                    <p class="text-xs text-gray-500">1 hour ago</p>
+                                </div>
+                            </div>
+                            <!-- end::Timeline item -->
+                            <!-- start::Timeline item -->
+                            <div class="flex items-center w-full my-6 -ml-1.5">
+                                <div class="w-1/12 z-10">
+                                    <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
+                                </div>
+                                <div class="w-11/12">
+                                    <p class="text-sm">
+                                        New order received <a href="#" class="text-red-600 font-bold">#OR9653</a>.
+                                    </p>
+                                    <p class="text-xs text-gray-500">2 hours ago</p>
+                                </div>
+                            </div>
+                            <!-- end::Timeline item -->
+                            <!-- start::Timeline item -->
+                            <div class="flex items-center w-full my-6 -ml-1.5">
+                                <div class="w-1/12 z-10">
+                                    <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
+                                </div>
+                                <div class="w-11/12">
+                                    <p class="text-sm">
+                                        Message received from <a href="#" class="text-red-600 font-bold">Jane Stillman</a>.
+                                    </p>
+                                    <p class="text-xs text-gray-500">2 hours ago</p>
+                                </div>
+                            </div>
+                            <!-- end::Timeline item -->
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col w-full 2xl:w-2/3">
+                    <div class="flex flex-col w-full">
+                        <div class="flex-1 bg-white rounded-lg shadow-xl p-8">
+                            <h4 class="text-xl text-gray-900 font-bold">Statistics</h4>
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-4">
+                                <div class="px-6 py-6 bg-gray-100 border border-gray-300 rounded-lg shadow-xl">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-bold text-sm text-indigo-600">Total Rewarded</span>
                                     </div>
-                                    <div class="flex flex-col">
-                                        <div class="flex items-end">
-                                            <span class="text-2xl 2xl:text-3xl font-bold">${{ stats.total_rewarded }}</span>
+                                    <div class="flex items-center justify-between mt-6">
+                                        <div>
+                                            <svg class="w-12 h-12 p-2.5 bg-indigo-400 bg-opacity-20 rounded-full text-indigo-600 border border-indigo-600"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                                </path>
+                                            </svg>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <div class="flex items-end">
+                                                <span class="text-2xl 2xl:text-3xl font-bold">${{ stats.total_rewarded }}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="px-6 py-6 bg-gray-100 border border-gray-300 rounded-lg shadow-xl">
-                                <div class="flex items-center justify-between">
-                                    <span class="font-bold text-sm text-green-600">Total Bugs</span>
-                                </div>
-                                <div class="flex items-center justify-between mt-6">
-                                    <div>
-                                        <svg class="w-12 h-12 p-2.5 bg-green-400 bg-opacity-20 rounded-full text-green-600 border border-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                <div class="px-6 py-6 bg-gray-100 border border-gray-300 rounded-lg shadow-xl">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-bold text-sm text-green-600">Total Bugs</span>
                                     </div>
-                                    <div class="flex flex-col">
-                                        <div class="flex items-end">
-                                            <span class="text-2xl 2xl:text-3xl font-bold">{{ stats.total_bugs }}</span>
+                                    <div class="flex items-center justify-between mt-6">
+                                        <div>
+                                            <svg class="w-12 h-12 p-2.5 bg-green-400 bg-opacity-20 rounded-full text-green-600 border border-green-600"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
+                                                </path>
+                                            </svg>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <div class="flex items-end">
+                                                <span class="text-2xl 2xl:text-3xl font-bold">{{ stats.total_bugs }}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="px-6 py-6 bg-gray-100 border border-gray-300 rounded-lg shadow-xl">
-                                <div class="flex items-center justify-between">
-                                    <span class="font-bold text-sm text-red-600">Accepted Bugs</span>
-                                </div>
-                                <div class="flex items-center justify-between mt-6">
-                                    <div>
-                                        <svg class="w-12 h-12 p-2.5 bg-red-400 bg-opacity-20 rounded-full text-red-600 border border-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                <div class="px-6 py-6 bg-gray-100 border border-gray-300 rounded-lg shadow-xl">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-bold text-sm text-red-600">Accepted Bugs</span>
                                     </div>
-                                    <div class="flex flex-col">
-                                        <div class="flex items-end">
-                                            <span class="text-2xl 2xl:text-3xl font-bold">{{ stats.total_bug_accepted }}</span>
+                                    <div class="flex items-center justify-between mt-6">
+                                        <div>
+                                            <svg class="w-12 h-12 p-2.5 bg-red-400 bg-opacity-20 rounded-full text-red-600 border border-red-600"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
+                                                </path>
+                                            </svg>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <div class="flex items-end">
+                                                <span class="text-2xl 2xl:text-3xl font-bold">{{ stats.total_bug_accepted }}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="bg-white w-full h-full my-5 p-5 rounded-lg">
-                        
-                    <div class="w-full flex justify-between">
-                        <h4 class="text-xl text-gray-900 font-bold mb-5">BUGHUNT WINNERS</h4>
-                    </div>
-        
-                    <div class="relative overflow-x-auto shadow-md sm:rounded-lg max-h-[550px] overflow-y-scroll">
-                        <div class="flex items-center justify-between pb-4 bg-white">
-                            <div>
-                                <button id="dropdownActionButton" data-dropdown-toggle="dropdownAction" class="inline-flex items-center text-gray-500 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-medium rounded-lg text-sm px-3 py-1.5" type="button">
-                                    <span class="sr-only">Action button</span>
-                                    Action
-                                    <svg class="w-2.5 h-2.5 ml-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
-                                    </svg>
-                                </button>
-                                <!-- Dropdown menu -->
-                                <div id="dropdownAction" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
-                                    <ul class="py-1 text-sm text-gray-700" aria-labelledby="dropdownActionButton">
-                                        <li>
-                                            <a href="#" class="block px-4 py-2 hover:bg-gray-100 ">Reward</a>
-                                        </li>
-                                        <li>
-                                            <a href="#" class="block px-4 py-2 hover:bg-gray-100 ">Promote</a>
-                                        </li>
-                                        <li>
-                                            <a href="#" class="block px-4 py-2 hover:bg-gray-100 ">Activate account</a>
-                                        </li>
-                                    </ul>
-                                    <div class="py-1">
-                                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 ">Delete User</a>
+                    <div class="bg-white w-full h-full my-5 p-5 rounded-lg">
+                        <div class="w-full flex justify-between">
+                            <h4 class="text-xl text-gray-900 font-bold mb-5">BUGHUNT WINNERS</h4>
+                        </div>
+                        <div class="relative overflow-x-auto shadow-md sm:rounded-lg max-h-[550px] overflow-y-scroll">
+                            <div class="flex items-center justify-between pb-4 bg-white">
+                                <div>
+                                    <button id="dropdownActionButton"
+                                            data-dropdown-toggle="dropdownAction"
+                                            class="inline-flex items-center text-gray-500 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-medium rounded-lg text-sm px-3 py-1.5"
+                                            type="button">
+                                        <span class="sr-only">Action button</span>
+                                        Action
+                                        <svg class="w-2.5 h-2.5 ml-2.5"
+                                             aria-hidden="true"
+                                             xmlns="http://www.w3.org/2000/svg"
+                                             fill="none"
+                                             viewBox="0 0 10 6">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4" />
+                                        </svg>
+                                    </button>
+                                    <!-- Dropdown menu -->
+                                    <div id="dropdownAction"
+                                         class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
+                                        <ul class="py-1 text-sm text-gray-700"
+                                            aria-labelledby="dropdownActionButton">
+                                            <li>
+                                                <a href="#" class="block px-4 py-2 hover:bg-gray-100 ">Reward</a>
+                                            </li>
+                                            <li>
+                                                <a href="#" class="block px-4 py-2 hover:bg-gray-100 ">Promote</a>
+                                            </li>
+                                            <li>
+                                                <a href="#" class="block px-4 py-2 hover:bg-gray-100 ">Activate account</a>
+                                            </li>
+                                        </ul>
+                                        <div class="py-1">
+                                            <a href="#"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 ">Delete User</a>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <label for="table-search" class="sr-only">Search</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                    <svg class="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
-                                    </svg>
+                                <label for="table-search" class="sr-only">Search</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                        <svg class="w-4 h-4 text-gray-500"
+                                             aria-hidden="true"
+                                             xmlns="http://www.w3.org/2000/svg"
+                                             fill="none"
+                                             viewBox="0 0 20 20">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+                                        </svg>
+                                    </div>
+                                    <input type="text"
+                                           id="table-search-users"
+                                           class="block p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 "
+                                           placeholder="Search for users">
                                 </div>
-                                <input type="text" id="table-search-users" class="block p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 " placeholder="Search for users">
                             </div>
+                            <table class="w-full text-sm text-left text-gray-500">
+                                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">Name</th>
+                                        <th scope="col" class="px-6 py-3">Position</th>
+                                        <th scope="col" class="px-6 py-3">Accepted Bugs</th>
+                                        <th scope="col" class="px-6 py-3">View Bugs</th>
+                                    </tr>
+                                </thead>
+                                {% if not hunt_obj.result_published %}
+                                    <div class="w-full flex my-5 justify-center">
+                                        <p class="text-red-500">No winners announced yet</p>
+                                    </div>
+                                {% else %}
+                                    <tbody>
+                                        {% for winner in bughunt_leaderboard|slice:":4" %}
+                                            <tr class="bg-white border-b">
+                                                <th scope="row"
+                                                    class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap">
+                                                    <img class="w-10 h-10 rounded-full"
+                                                         src="data:image/jpeg;base64,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"
+                                                         alt="Jese image"
+                                                         width="40px"
+                                                         height="40px">
+                                                    <div class="pl-3">
+                                                        <div class="text-base font-semibold">{{ winner.user__username }}</div>
+                                                    </div>
+                                                </th>
+                                                <td class="px-6 py-4">WINNER</td>
+                                                <td class="px-6 py-4">
+                                                    <div class="flex items-center">10</div>
+                                                </td>
+                                                <td class="px-6 py-4">
+                                                    <a href="#" class="font-medium text-blue-600 hover:underline">View Bugs</a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        {% for runner in bughunt_leaderboard|slice:"4:" %}
+                                            <tr class="bg-white border-b">
+                                                <th scope="row"
+                                                    class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap">
+                                                    <img class="w-10 h-10 rounded-full"
+                                                         src="data:image/jpeg;base64,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"
+                                                         alt="Jese image"
+                                                         width="40px"
+                                                         height="40px">
+                                                    <div class="pl-3">
+                                                        <div class="text-base font-semibold">Neil Sims</div>
+                                                        <div class="font-normal text-gray-500">neil.sims@flowbite.com</div>
+                                                    </div>
+                                                </th>
+                                                <td class="px-6 py-4">RUNNER UP</td>
+                                                <td class="px-6 py-4">
+                                                    <div class="flex items-center">10</div>
+                                                </td>
+                                                <td class="px-6 py-4">
+                                                    <a href="#" class="font-medium text-blue-600 hover:underline">View Bugs</a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                {% endif %}
+                            </table>
                         </div>
-                        <table class="w-full text-sm text-left text-gray-500">
-                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3">
-                                        Name
-                                    </th>
-                                    <th scope="col" class="px-6 py-3">
-                                        Position
-                                    </th>
-                                    <th scope="col" class="px-6 py-3">
-                                        Accepted Bugs
-                                    </th>
-                                    <th scope="col" class="px-6 py-3">
-                                        View Bugs
-                                    </th>
-                                </tr>
-                            </thead>
-                            {% if not hunt_obj.result_published %}
-                            <div class="w-full flex my-5 justify-center">
-                                <p class="text-red-500">No winners announced yet</p>
-                            </div>
-                            {% else %}
-                            
-                                <tbody>
-                                    {% for winner in bughunt_leaderboard|slice:":4" %}
-                                        <tr class="bg-white border-b">
-                                            <th scope="row" class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap">
-                                                <img class="w-10 h-10 rounded-full" src="data:image/jpeg;base64,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" alt="Jese image">
-                                                <div class="pl-3">
-                                                    <div class="text-base font-semibold">{{ winner.user__username }}</div>
-                                                </div>  
-                                            </th>
-                                            <td class="px-6 py-4">
-                                                WINNER
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <div class="flex items-center">
-                                                    10
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <a href="#" class="font-medium text-blue-600 hover:underline">View Bugs</a>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                    {% for runner in bughunt_leaderboard|slice:"4:" %}
-                                        <tr class="bg-white border-b">
-                                            <th scope="row" class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap">
-                                                <img class="w-10 h-10 rounded-full" src="data:image/jpeg;base64,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" alt="Jese image">
-                                                <div class="pl-3">
-                                                    <div class="text-base font-semibold">Neil Sims</div>
-                                                    <div class="font-normal text-gray-500">neil.sims@flowbite.com</div>
-                                                </div>  
-                                            </th>
-                                            <td class="px-6 py-4">
-                                                RUNNER UP
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <div class="flex items-center">
-                                                    10
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <a href="#" class="font-medium text-blue-600 hover:underline">View Bugs</a>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            {% endif %}
-                        </table>
-                    </div>
-        
-        
-                </div>
-            </div>
-            
-        </div>
-
-        <div class="bg-white w-full p-10 my-5 rounded-lg shadow-md">
-            <div class="w-full flex justify-between">
-                <h4 class="text-xl text-gray-900 font-bold mb-5">Description</h4>
-            </div>
-            
-            <div class="w-full">
-            
-                <div
-                    x-data="markdown()"
-                    x-init="
-                        convertHtmlToMarkdown();
-                        codeMirrorEditor = CodeMirror.fromTextArea($refs.input, {
-                            mode: 'markdown',
-                            theme: 'default',
-                            lineWrapping: true
-                        });
-
-                        codeMirrorEditor.setValue(content);
-                        codeMirrorEditor.setSize('100%', height);
-                        setTimeout(function() {
-                            codeMirrorEditor.refresh();
-                        }, 1);
-
-                        codeMirrorEditor.on('change', () => content = codeMirrorEditor.getValue())
-                    "
-                    class="relative"
-                    x-cloak
-                >
-                    <div class="bg-gray-50 border border-b-0 border-gray-300 top-0 left-0 right-0 block rounded-t-md">
-                        <button type="button" id="mdPreview" class="py-2 px-4 inline-block text-gray-400 font-semibold" :class="{ 'text-indigo-600': tab === 'preview' && showConvertedMarkdown === true }" x-on:click.prevent="tab = 'preview'; convertedMarkdown()">See Description</button>
-                    </div>
-
-                    <div x-show="showConvertedMarkdown">
-                        <div x-html="convertedContent" class="w-full prose max-w-none prose-indigo leading-6 rounded-b-md shadow-sm border border-gray-300 p-5 bg-white overflow-y-auto" :style="`height: ${height}; max-width: 100%`"></div>
                     </div>
                 </div>
-
-            </div>            
-        </div>
-        
-        <div class="bg-white w-full p-10 my-5 rounded-lg shadow-md">
-            <div class="w-full flex justify-between">
-                <h4 class="text-xl text-gray-900 font-bold mb-5">Rewards</h4>
             </div>
-            <div class="flex justify-start w-full overflow-x-scroll">
-                    
+            <div class="bg-white w-full p-10 my-5 rounded-lg shadow-md">
+                <div class="w-full flex justify-between">
+                    <h4 class="text-xl text-gray-900 font-bold mb-5">Description</h4>
+                </div>
+                <div class="w-full">
+                    <div x-data="markdown()"
+                         x-init=" convertHtmlToMarkdown(); codeMirrorEditor = CodeMirror.fromTextArea($refs.input, { mode: 'markdown', theme: 'default', lineWrapping: true });  codeMirrorEditor.setValue(content); codeMirrorEditor.setSize('100%', height); setTimeout(function() { codeMirrorEditor.refresh(); }, 1);  codeMirrorEditor.on('change', () => content = codeMirrorEditor.getValue()) "
+                         class="relative"
+                         x-cloak>
+                        <div class="bg-gray-50 border border-b-0 border-gray-300 top-0 left-0 right-0 block rounded-t-md">
+                            <button type="button"
+                                    id="mdPreview"
+                                    class="py-2 px-4 inline-block text-gray-400 font-semibold"
+                                    :class="{ 'text-indigo-600': tab === 'preview' && showConvertedMarkdown === true }"
+                                    x-on:click.prevent="tab = 'preview'; convertedMarkdown()">See Description</button>
+                        </div>
+                        <div x-show="showConvertedMarkdown">
+                            <div x-html="convertedContent"
+                                 class="w-full prose max-w-none prose-indigo leading-6 rounded-b-md shadow-sm border border-gray-300 p-5 bg-white overflow-y-auto"
+                                 :style="`height: ${height}; max-width: 100%`"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white w-full p-10 my-5 rounded-lg shadow-md">
+                <div class="w-full flex justify-between">
+                    <h4 class="text-xl text-gray-900 font-bold mb-5">Rewards</h4>
+                </div>
+                <div class="flex justify-start w-full overflow-x-scroll">
                     {% for reward in rewards %}
                         <div class="min-w-[400px] w-full max-w-sm p-4 m-5 bg-white border border-gray-200 rounded-lg shadow-md sm:p-8">
                             <h5 class="mb-4 text-xl font-medium text-gray-700">{{ reward.name }}</h5>
@@ -456,8 +466,12 @@
                             </div>
                             <ul role="list" class="space-y-5 my-7">
                                 <li class="flex space-x-3 items-center">
-                                    <svg class="flex-shrink-0 w-4 h-4 text-red-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z"/>
+                                    <svg class="flex-shrink-0 w-4 h-4 text-red-600"
+                                         aria-hidden="true"
+                                         xmlns="http://www.w3.org/2000/svg"
+                                         fill="currentColor"
+                                         viewBox="0 0 20 20">
+                                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
                                     </svg>
                                     {% if reward.valid_submissions_eligible %}
                                         <span class="text-base font-normal leading-tight text-gray-500">Each Accepted Bug will recieve ${{ reward.value }}</span>
@@ -467,97 +481,115 @@
                                 </li>
                                 {% if reward.prize_in_crypto %}
                                     <li class="flex space-x-3 items-center">
-                                        <svg class="flex-shrink-0 w-4 h-4 text-red-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z"/>
+                                        <svg class="flex-shrink-0 w-4 h-4 text-red-600"
+                                             aria-hidden="true"
+                                             xmlns="http://www.w3.org/2000/svg"
+                                             fill="currentColor"
+                                             viewBox="0 0 20 20">
+                                            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
                                         </svg>
                                         <span class="text-base font-normal leading-tight text-gray-500">Prize paid in cryptocurrency</span>
                                     </li>
                                 {% endif %}
                             </ul>
-                            <button type="button" class="text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-200 font-medium rounded-lg text-lg px-5 py-1.5 inline-flex justify-center w-1/2 text-center">MORE INFO</button>
+                            <button type="button"
+                                    class="text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-200 font-medium rounded-lg text-lg px-5 py-1.5 inline-flex justify-center w-1/2 text-center">
+                                MORE INFO
+                            </button>
                         </div>
                     {% endfor %}
+                </div>
             </div>
-        </div>
-
-    
-        <div class="w-full flex justify-between min-h-[80vh] flex-col md:flex-row">
-            <div class="flex flex-col w-full md:w-[80%] mr-5 items-start bg-white rounded-xl p-5 overflow-x-hidden overflow-y-scroll">
-                
-              <div class="w-full flex justify-between">
-                  <h4 class="text-xl text-gray-900 font-bold mb-5">Latest Bugs Reported</h4>
-                  <a href="" class="text-md text-blue-600">View all</a>
-              </div>
-              {% if latest_issues|length > 0 %}
-    
-                {% for issue in latest_issues %}
-                <div class="w-full h-[200px] flex px-5 my-2 py-6 bg-white rounded-lg shadow-md hover:shadow-xl transition-all">
-                    <div class="w-[10%] mr-5 h-full flex items-center">
-                        <img src="https://m.media-amazon.com/images/I/613zc8WKCNL.jpg" alt="">
+            <div class="w-full flex justify-between min-h-[80vh] flex-col md:flex-row">
+                <div class="flex flex-col w-full md:w-[80%] mr-5 items-start bg-white rounded-xl p-5 overflow-x-hidden overflow-y-scroll">
+                    <div class="w-full flex justify-between">
+                        <h4 class="text-xl text-gray-900 font-bold mb-5">Latest Bugs Reported</h4>
+                        <a href="" class="text-md text-blue-600">View all</a>
                     </div>
-                    <div class="w-full h-full">
-                        <div class="flex justify-between items-center">
-                            <span class="font-light text-gray-600">Reported to {{ issue.domain__name }} on {{ issue.created__day }}/{{ issue.created__month }}/{{ issue.created__year }}</span>
-                            <div>
-                            <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#{{ issue.label }}</a>
-                            <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#{{ issue.status }}</a>
-                            {% if issue.verified %}
-                                <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#Accepted</a>
-                                <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500"># ${{ issue.rewarded }}</a>
-                            {% endif %}
-    
+                    {% if latest_issues|length > 0 %}
+                        {% for issue in latest_issues %}
+                            <div class="w-full h-[200px] flex px-5 my-2 py-6 bg-white rounded-lg shadow-md hover:shadow-xl transition-all">
+                                <div class="w-[10%] mr-5 h-full flex items-center">
+                                    <img src="https://m.media-amazon.com/images/I/613zc8WKCNL.jpg"
+                                         alt=""
+                                         width="100%"
+                                         height="100%">
+                                </div>
+                                <div class="w-full h-full">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-light text-gray-600">Reported to {{ issue.domain__name }} on {{ issue.created__day }}/{{ issue.created__month }}/{{ issue.created__year }}</span>
+                                        <div>
+                                            <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#{{ issue.label }}</a>
+                                            <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#{{ issue.status }}</a>
+                                            {% if issue.verified %}
+                                                <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#Accepted</a>
+                                                <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500"># ${{ issue.rewarded }}</a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <a class="text-xl text-black font-bold hover:text-gray-700"
+                                           href="{% url 'issue_view' issue.id %}">{{ issue.description }}</a>
+                                    </div>
+                                    <div class="flex justify-between items-center mt-4">
+                                        <div>
+                                            <a class="flex items-center"
+                                               href="{% url 'profile' issue.user__username %}">
+                                                <img class="mr-3 w-10 h-10 object-cover rounded-full hidden sm:block"
+                                                     src="{{ MEDIA_URL }}{{ issue.user__userprofile__user_avatar }}"
+                                                     alt="avatar"
+                                                     width="40px"
+                                                     height="40px">
+                                                <h1 class="text-gray-700 font-bold">{{ issue.user__username }}</h1>
+                                            </a>
+                                        </div>
+                                        <a class="text-blue-600 hover:underline"
+                                           href="{% url 'issue_view' issue.id %}">Read more</a>
+                                    </div>
+                                </div>
                             </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center">
+                            <p class="text-xl text-red-500">No bugs reported</p>
                         </div>
-                        <div class="mt-2">
-                            <a class="text-xl text-black font-bold hover:text-gray-700" href="{% url 'issue_view' issue.id %}">{{ issue.description }}</a>
-                        </div>
-                        <div class="flex justify-between items-center mt-4">
-                        <div>
-                            <a class="flex items-center" href="{% url 'profile' issue.user__username %}">
-                                <img class="mr-3 w-10 h-10 object-cover rounded-full hidden sm:block" src="{{ MEDIA_URL }}{{ issue.user__userprofile__user_avatar }}" alt="avatar">
-                                <h1 class="text-gray-700 font-bold">{{ issue.user__username }}</h1>
-                            </a>
-                        </div>
-                            <a class="text-blue-600 hover:underline" href="{% url 'issue_view' issue.id %}">Read more</a>
-                        </div>
-                    </div>
+                    {% endif %}
                 </div>
-                {% endfor %}
-    
-                {% else %}
-                    <div class="w-full h-full flex items-center justify-center">
-                        <p class="text-xl text-red-500">No bugs reported</p>
+                <div class="bg-white rounded-lg shadow-xl p-8 w-full mt-5 md:w-[20%] md:mt-0 overflow-y-scroll">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xl text-gray-900 font-bold">Top Testers ({{ top_testers | length }})</h4>
+                        <a href="#" title="View All">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-6 w-6 text-gray-500 hover:text-gray-700"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z">
+                                </path>
+                            </svg>
+                        </a>
                     </div>
-                {% endif %}
-            </div>
-    
-            <div class="bg-white rounded-lg shadow-xl p-8 w-full mt-5 md:w-[20%] md:mt-0 overflow-y-scroll">
-                <div class="flex items-center justify-between">
-                    <h4 class="text-xl text-gray-900 font-bold">Top Testers ({{ top_testers | length }})</h4>
-                    <a href="#" title="View All">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500 hover:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path>
-                        </svg>
-                    </a>
-                </div>
-                <div class="flex flex-wrap justify-between mt-10">
-                    
+                    <div class="flex flex-wrap justify-between mt-10">
                         {% for tester in top_testers %}
-                            <a href="{% url 'profile' tester.user__username %}" class="flex flex-col items-center m-5 justify-center text-gray-800 hover:text-red-600" title="View Profile">
+                            <a href="{% url 'profile' tester.user__username %}"
+                               class="flex flex-col items-center m-5 justify-center text-gray-800 hover:text-red-600"
+                               title="View Profile">
                                 <div class="w-[100px] h-[100px] rounded-full border-[1px] border-gray-500 overflow-hidden flex items-center justify-center">
-                                    <img src="{{MEDIA_URL}}{{ tester.user__userprofile__user_avatar }}" class="object-cover">
+                                    <img src="{{ MEDIA_URL }}{{ tester.user__userprofile__user_avatar }}"
+                                         class="object-cover"
+                                         width="100%"
+                                         height="100%"
+                                         alt="Avatar">
                                 </div>
                                 <p class="text-center font-bold text-sm mt-1">{{ tester.user__username }}</p>
                                 <p class="text-xs text-gray-500 text-center">Reported {{ tester.count }} Bugs</p>
                             </a>
                         {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <script>
-
+        <script>
             const DATA_SET_VERTICAL_BAR_CHART_1 = JSON.parse('{{ monthly_activity_chart | safe }}');
 
             const labels_vertical_bar_chart = ['January', 'February', 'Mart', 'April', 'May', 'Jun', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -595,9 +627,8 @@
                 configVerticalBarChart
             );
         </script>
-</body>
+    </body>
 </html>
-
 <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/codemirror@5.59.2/lib/codemirror.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/codemirror@5.59.2/mode/markdown/markdown.js"></script>
@@ -647,7 +678,7 @@
                     </code></pre>
                     <p>Or inline code like <code>var foo = &#39;bar&#39;;</code>.</p>
                     <p>Or an image of bears</p>
-                    <p><img src="http://placebear.com/200/200" alt="bears"></p>
+                    <p><img src="http://placebear.com/200/200" width="100%" height="100%" alt="bears"></p>
                     <p>The end ...</p>
                 `);
             }
