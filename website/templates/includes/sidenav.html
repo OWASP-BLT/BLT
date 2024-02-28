@@ -1,5 +1,5 @@
 <aside id="sidebar"
-       class="tracking-tight fixed top-0 left-0 z-40 w-[230px] h-screen pt-[70px] transition-transform -translate-x-full bg-white lg:translate-x-0 no-scrollbar"
+       class="tracking-tight fixed top-0 left-0 z-40 w-[210px] h-screen pt-[70px] transition-transform -translate-x-full bg-white lg:translate-x-0 no-scrollbar"
        aria-label="Sidebar">
     <style>
 		.no-scrollbar::-webkit-scrollbar {
@@ -24,9 +24,9 @@
         }
 	
     </style>
-    <div class="h-full px-11 overflow-y-auto bg-white flex flex-col justify-between no-scrollbar mt-6">
+    <div class="h-full px-11 overflow-y-auto bg-white flex flex-col justify-between no-scrollbar ">
         <div>
-            <ul class="space-y-3 font-medium text-3xl mt-6 mb-0">
+            <ul class="space-y-3 font-medium text-2xl mt-6 mb-0">
                 <li class="flex items-center p-2">
                     <div class="w-8 mr-4">
                         <i class="fa fa-exclamation-circle" id="icon"></i>
@@ -72,7 +72,7 @@
                     <a href="{% url 'apps' %}"><span class="text">Apps</span></a>
                 </li>
             </ul>
-            <ul class="space-y-2 font-medium text-3xl mt-6 mb-0">
+            <ul class="space-y-2 font-medium text-2xl mt-1">
                 <li class="mb-[-6px] ms-[1px]">
                     <span class="font-bold text-[#AAA] text-[1.2rem] tracking-wide">EXPERIMENTAL</span>
                 </li>
@@ -101,27 +101,10 @@
                     <a href="{% url 'bltv' %}"><span class="text">BLTV</span></a>
                 </li>
             </ul>
-            <button class="w-full mt-5"
-                    onclick="(document.getElementById('menu-more-section').classList.toggle('max-h-[200px]'), document.getElementById('menu-more-dropdown').classList.toggle('rotate-[180deg]'))">
-                <span class="font-bold text-[#AAA] text-[1.2rem] tracking-wide flex flex-row items-center justify-between w-full">
-                    MORE
-                    <svg class="hs-dropdown-open:rotate-180 w-6 h-6 transition rotate-[360deg]"
-                         id="menu-more-dropdown"
-                         xmlns="http://www.w3.org/2000/svg"
-                         width="24"
-                         height="24"
-                         viewBox="0 0 24 24"
-                         fill="none"
-                         stroke="currentColor"
-                         stroke-width="3.5"
-                         stroke-linecap="round"
-                         stroke-linejoin="round">
-                        <path d="m6 9 6 6 6-6" />
-                    </svg>
-                </span>
-            </button>
-            <ul class="space-y-2 font-medium text-3xl mt-1 overflow-clip transition-[max-height] duration-[250ms] max-h-0"
-                id="menu-more-section">
+            <ul class="space-y-2 font-medium text-2xl mt-1">
+                <li class="mb-[-6px] ms-[1px]">
+                    <span class="font-bold text-[#AAA] text-[1.2rem] tracking-wide">MORE</span>
+                </li>
                 <li class="flex items-center p-2">
                     <div class="w-8 mr-4">
                         <i class="fa fa-code" aria-hidden="true" id="icon"></i>
@@ -148,9 +131,9 @@
                 </li>
             </ul>
         </div>
-        <ul class="space-y-3 font-semibold text-3xl flex-end mb-[20px] mt-[20px]">
+        <ul class="space-y-2 flex-end mb-[5px] mt-[5px]">
             <li class="opacity-90 transition hover:opacity-100">
-                <a class="bg-gray-100 w-full inline-flex py-3 px-5 rounded-2xl items-center transition hover:bg-gray-200 focus:outline-none cursor-pointer hover:text-black">
+                <a class="bg-gray-100 inline-flex py-3 px-5 rounded-2xl items-center transition hover:bg-gray-200 focus:outline-none cursor-pointer hover:text-black">
                     <svg xmlns="http://www.w3.org/2000/svg"
                          fill="currentColor"
                          class="w-9 h-9"
@@ -159,14 +142,13 @@
                         </path>
                     </svg>
                     <span class="ml-4 flex items-start flex-col leading-none">
-                        <span class="text-base text-gray-600 mb-[-1px]">GET IT ON</span>
                         <span class="title-font tracking-tight font-semibold mb-[3px]">Google Play</span>
                     </span>
                 </a>
             </li>
             <li class="opacity-90 transition hover:opacity-100">
                 <a href="https://apps.apple.com/us/app/owasp-blt/id6448071954"
-                   class="bg-gray-100 w-full inline-flex py-3 px-5 rounded-2xl items-center transition hover:bg-gray-200 focus:outline-none cursor-pointer hover:text-black">
+                   class="bg-gray-100 inline-flex py-3 px-5 rounded-2xl items-center transition hover:bg-gray-200 focus:outline-none cursor-pointer hover:text-black">
                     <svg xmlns="http://www.w3.org/2000/svg"
                          fill="currentColor"
                          class="w-9 h-9"
@@ -177,7 +159,6 @@
                         </path>
                     </svg>
                     <span class="ml-4 flex items-start flex-col leading-none">
-                        <span class="text-base text-gray-600 mb-[-1px]">Download on the</span>
                         <span class="title-font tracking-tight font-semibold mb-[3px]">App Store</span>
                     </span>
                 </a>
