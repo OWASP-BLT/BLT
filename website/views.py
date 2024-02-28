@@ -11,9 +11,11 @@ import uuid
 from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+from io import BytesIO
 from urllib.parse import urlparse, urlsplit, urlunparse
 
 import humanize
+import qrcode
 import requests
 import requests.exceptions
 import six
@@ -3825,3 +3827,32 @@ def invite_friend(request):
 #                     headers=headers,
 #                 )
 #         mail.logout()
+
+
+@csrf_exempt
+def generate_bch_qr(request, username):
+    if request.method == "GET":
+        try:
+            user = User.objects.get(username=username)
+            profile = user.userprofile
+            address = profile.crypto_address
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(address)
+            qr.make(fit=True)
+
+            img = qr.make_image(fill_color="black", back_color="white")
+            buffer = BytesIO()
+            img.save(buffer)
+            qr_image = buffer.getvalue()
+            return HttpResponse(qr_image, content_type="image/png")
+        except User.DoesNotExist:
+            return HttpResponse(status=404)  # User not found
+        except Exception as e:
+            return HttpResponse(status=500)  # Internal server error
+    else:
+        return HttpResponse(status=405)  # Method Not Allowed

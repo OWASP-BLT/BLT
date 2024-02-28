@@ -214,22 +214,13 @@
                     {% endif %}
                 {% endif %}
                 <div class="status">
-                    <form name="_xclick"
-                          action="https://www.paypal.com/cgi-bin/webscr"
-                          method="post">
-                        <input type="hidden" name="cmd" value="_xclick">
-                        <input type="hidden"
-                               name="business"
-                               value="{{ project.paypal|default:" coderbounty@gmail.com" }}">
-                        <input type="hidden"
-                               name="item_name"
-                               value="tip for {{ user.username }} on {% env 'DOMAIN_NAME' %}">
-                        <input type="hidden" name="currency_code" value="USD">
-                        <button type="submit" class="btn btn-danger text-black">
-                            <i class="fa fa-money fa-lg"></i> {% trans "Send a tip" %}
-                        </button>
-                    </form>
+                    <button type="button" id="openModal" class="btn btn-danger" style="color: black;">Send a Tip</button>
+                    <dialog id="dialog">
+                        <img id="qr-image" src="{% url 'generate_bch_qr' username=user.username %}" alt="QR Code">
+                        <p id="bch-address" style="color: aliceblue;">BCH: {{ user.userprofile.crypto_address }}</p>
+                    </dialog>
                 </div>
+            </div>
             </div>
             <div class="icon-block">
                 <kbd class="fa fa-cogs">
@@ -421,6 +412,15 @@
         </div>
     </div>
     <script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", function() {
+        const openModalButton = document.getElementById('openModal');
+        const dialog = document.getElementById('dialog');
+
+        openModalButton.addEventListener('click', function() {
+            dialog.showModal();
+        });
+    });
+    
     $(function () {
         $('.img-thumbnail, .upload-btn').on('mouseenter', function () {
             $('.upload-btn').show();
