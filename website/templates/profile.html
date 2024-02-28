@@ -221,7 +221,6 @@
                     </dialog>
                 </div>
             </div>
-            </div>
             <div class="icon-block">
                 <kbd class="fa fa-cogs">
                     <a href="{% url 'all_activitys' %}?user={{ user.username }}&label=General">{% trans "General" %} {{ bug_type_0 | length }}</a>
@@ -420,7 +419,7 @@
             dialog.showModal();
         });
     });
-    
+
     $(function () {
         $('.img-thumbnail, .upload-btn').on('mouseenter', function () {
             $('.upload-btn').show();
