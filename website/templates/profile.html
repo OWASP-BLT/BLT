@@ -364,17 +364,17 @@
     </div>
     <div class="col-md-3">
         <div class="icon-block">
-            <kbd class="fa fa-trophy"> {% trans 'Bugs Reported' %} {{ total_bugs }}</kbd>
-            <kbd class="fa fa-star"> {% trans 'Points' %} {{ my_score|default:0 }}</kbd>
-            <a href="/label_activity?user={{ user.username }}&label=open">
-                <kbd class="fa fa-bug"> {% trans 'Open Issues' %} {{ total_open }}</kbd>
+            <kbd class="fa fa-trophy"> {% trans "Bugs Reported" %} {{ total_bugs }}</kbd>
+            <kbd class="fa fa-star"> {% trans "Points" %} {{ my_score|default:0 }}</kbd>
+            <a href="{% url 'all_activitys' %}?user={{ user.username }}&label=open">
+                <kbd class="fa fa-bug"> {% trans "Open Issues" %} {{ total_open }}</kbd>
             </a>
-            <a href="/label_activity?user={{ user.username }}&label=closed">
-                <kbd class="fa fa-code-fork"> {% trans 'Closed Issues' %} {{ total_closed }}</kbd>
+            <a href="{% url 'all_activitys' %}?user={{ user.username }}&label=closed">
+                <kbd class="fa fa-code-fork"> {% trans "Closed Issues" %} {{ total_closed }}</kbd>
             </a>
             {% if user_pk == request.user.id %}
                 <a href="{% url 'private_issue' user_pk=user_pk %}">
-                    <kbd class="fa fa-user-secret"> {% trans 'Private Issues' %} {{ private_issue }}</kbd>
+                    <kbd class="fa fa-user-secret"> {% trans "Private Issues" %} {{ private_issue }}</kbd>
                 </a>
             {% endif %}
         </div>
