@@ -415,7 +415,7 @@ urlpatterns = [
     re_path(r"^contributors/$", contributors_view, name="contributors"),
     path("company/", include("company.urls")),
     path("sponsor/", website.views.sponsor_view, name="sponsor"),
-    path("companies/", DomainListView.as_view(), name="domain_list"),
+    path("companies/", DomainListView.as_view(), name="domain_lists"),
     path("generate-bch-qr/<str:username>/", website.views.generate_bch_qr, name="generate_bch_qr"),
 ]
 
