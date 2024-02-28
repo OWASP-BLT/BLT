@@ -1,118 +1,116 @@
 {% extends "base.html" %}
 {% load static %}
-
 {% block style %}
-<style>
+    <style>
     .charts {
         margin-bottom: 50px;
     }
-</style>
-{% endblock %}
-
+    </style>
+{% endblock style %}
 {% block content %}
-<script type="text/javascript" src="{% static 'js/Chart.bundle.min.js' %}"></script>
-<div class="row">
-    <div class="col-lg-12">
-        <h1 class="page-header">Stats</h1>
+    <script type="text/javascript" src="{% static 'js/Chart.bundle.min.js' %}"></script>
+    <div class="row">
+        <div class="col-lg-12">
+            <h1 class="page-header">Stats</h1>
+        </div>
     </div>
-</div>
-<div class="row">
-    <div class="col-lg-4 col-md-6">
-        <div class="panel panel-primary">
-            <div class="panel-heading">
-                <div class="row">
-                    <div class="col-xs-3">
-                        <i class="fa fa-bug fa-5x"></i>
+    <div class="row">
+        <div class="col-lg-4 col-md-6">
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-xs-3">
+                            <i class="fa fa-bug fa-5x"></i>
+                        </div>
+                        <div class="col-xs-9 text-right">
+                            <h1>{{ bug_count }} Bugs</h1>
+                        </div>
                     </div>
-                    <div class="col-xs-9 text-right">
-                        <h1>{{ bug_count }} Bugs</h1>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="panel panel-green">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-xs-3">
+                            <i class="fa fa-user fa-5x"></i>
+                        </div>
+                        <div class="col-xs-9 text-right">
+                            <h3>{{ user_count }} Users</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="panel panel-yellow">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-xs-3">
+                            <i class="fa fa-bullseye fa-5x"></i>
+                        </div>
+                        <div class="col-xs-9 text-right">
+                            <h3>{{ hunt_count }} Hunts</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="panel panel-red">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-xs-3">
+                            <i class="fa fa-support fa-5x"></i>
+                        </div>
+                        <div class="col-xs-9 text-right">
+                            <h3>{{ domain_count }} Domains</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6">
+            <div class="panel panel-purple">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-xs-3">
+                            <i class="fa fa-chrome fa-5x"></i>
+                        </div>
+                        <div class="col-xs-9 text-right">
+                            <h3>{{ extension_users }} Extension Users</h3>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6">
-        <div class="panel panel-green">
-            <div class="panel-heading">
-                <div class="row">
-                    <div class="col-xs-3">
-                        <i class="fa fa-user fa-5x"></i>
-                    </div>
-                    <div class="col-xs-9 text-right">
-                        <h3>{{ user_count }} Users</h3>
-                    </div>
-                </div>
-            </div>
+    <div class="row charts">
+        <div class="col-lg-12">
+            <h1 class="page-header">Monthly Summary</h1>
+        </div>
+        <div class="col-lg-10 col-lg-offset-1">
+            <canvas id="myChart" width="100" height="50"></canvas>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6">
-        <div class="panel panel-yellow">
-            <div class="panel-heading">
-                <div class="row">
-                    <div class="col-xs-3">
-                        <i class="fa fa-bullseye fa-5x"></i>
-                    </div>
-                    <div class="col-xs-9 text-right">
-                        <h3>{{ hunt_count }} Hunts</h3>
-                    </div>
-                </div>
-            </div>
+    <div class="row charts">
+        <div class="col-lg-12">
+            <h1 class="page-header">Monthly Signups</h1>
+        </div>
+        <div class="col-lg-10 col-lg-offset-1">
+            <canvas id="myUserChart" width="100" height="50"></canvas>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6">
-        <div class="panel panel-red">
-            <div class="panel-heading">
-                <div class="row">
-                    <div class="col-xs-3">
-                        <i class="fa fa-support fa-5x"></i>
-                    </div>
-                    <div class="col-xs-9 text-right">
-                        <h3>{{ domain_count }} Domains</h3>
-                    </div>
-                </div>
-            </div>
+    <div class="row charts">
+        <div class="col-lg-12">
+            <h1 class="page-header">Issue Distribution</h1>
+        </div>
+        <div class="col-lg-6 col-lg-offset-3">
+            <canvas id="issueChart"></canvas>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6">
-        <div class="panel panel-purple">
-            <div class="panel-heading">
-                <div class="row">
-                    <div class="col-xs-3">
-                        <i class="fa fa-chrome fa-5x"></i>
-                    </div>
-                    <div class="col-xs-9 text-right">
-                        <h3>{{ extension_users }} Extension Users</h3>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="row charts">
-    <div class="col-lg-12">
-        <h1 class="page-header">Monthly Summary</h1>
-    </div>
-    <div class="col-lg-10 col-lg-offset-1">
-        <canvas id="myChart" width="100" height="50"></canvas>
-    </div>
-</div>
-<div class="row charts">
-    <div class="col-lg-12">
-        <h1 class="page-header">Monthly Signups</h1>
-    </div>
-    <div class="col-lg-10 col-lg-offset-1">
-        <canvas id="myUserChart" width="100" height="50"></canvas>
-    </div>
-</div>
-<div class="row charts">
-    <div class="col-lg-12">
-        <h1 class="page-header">Issue Distribution</h1>
-    </div>
-    <div class="col-lg-6 col-lg-offset-3">
-        <canvas id="issueChart"></canvas>
-    </div>
-</div>
-<script type="text/javascript">
+    <script type="text/javascript">
     var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
     var all_data = new Array(12).fill(0);
     var user_data = new Array(12).fill(0);
@@ -120,17 +118,11 @@
 
 
 
-        {% for i in graph %}
-            all_data[{{i.month}}] = {{i.c}};
-        {% endfor %}
+        {% for i in graph %}all_data[{{i.month}}] = {{i.c}};{% endfor %}
 
-        {% for i in user_graph %}
-            user_data[{{i.month}}] = {{i.c}};
-        {% endfor %}
+        {% for i in user_graph %}user_data[{{i.month}}] = {{i.c}};{% endfor %}
 
-        {% for i in pie_chart %}
-            pie[{{i.label}}] = {{i.c}};
-        {% endfor %}
+        {% for i in pie_chart %}pie[{{i.label}}] = {{i.c}};{% endfor %}
     var ctx = document.getElementById("myChart").getContext('2d');
     var myChart = new Chart(ctx, {
         type: 'bar',
@@ -273,5 +265,5 @@
             }]
         }
     });
-</script>
-{% endblock %}
+    </script>
+{% endblock content %}

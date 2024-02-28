@@ -3,7 +3,7 @@
 {% load gravatar %}
 {% load i18n %}
 {% block style %}
-<style>
+    <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Slab:wght@400;700&display=swap');
 
   html {
@@ -23,6 +23,21 @@
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+  }
+
+  #payment-form{
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  #subscription_id{
+    height: 460px;
+    max-width: none;
+  }
+
+  #card-element-container{
+    left: 50%; 
+    transform: translateX(-50%);
   }
 
   h1 {
@@ -382,180 +397,154 @@
       transform: scale(1);
     }
   }
-</style>
-{% endblock %}
-
+    </style>
+{% endblock style %}
 {% block content %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/velocity/1.2.1/velocity.min.js" integrity="sha384-WT0CC+OrC0vGKpxNQInSyfMeKWFIpgiHtnV9HsqN0g6n9urfDfEUQJZFpT0t9P4U" crossorigin="anonymous"></script>
-
-<div class="join-body">
-  <div id="svg_wrap"></div>
-  <form class="col-md-12" style="
-    left: 50%;
-    transform: translateX(-50%);" id="payment-form">
-    {% csrf_token %}
-    <h1>Create Company</h1>
-    <section>
-      <p>Company information</p>
-      <input type="text" name="company" placeholder="Company's Name" />
-      <input type="url" name="url" placeholder="Website" />
-      <input type="file" name="file" placeholder="Logo" />
-      <input type="email" name="email" placeholder="Email Address" />
-    </section>
-
-    <section style="height: 460px;max-width: none;">
-      <p>Subscription</p>
-      <div class="row">
-
-        <div class="col-md-4 col-lg-4 col-sm-4">
-
-          <label>
-            <input type="radio" value="flea" name="product" class="card-input-element" checked />
-
-            <div class="panel panel-default card-input">
-              <div class="panel-heading" style="
-    background-color: #DC4353;
-">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/velocity/1.2.1/velocity.min.js"
+            integrity="sha384-WT0CC+OrC0vGKpxNQInSyfMeKWFIpgiHtnV9HsqN0g6n9urfDfEUQJZFpT0t9P4U"
+            crossorigin="anonymous"></script>
+    <div class="join-body">
+        <div id="svg_wrap"></div>
+        <form class="col-md-12" id="payment-form">
+            {% csrf_token %}
+            <h1>Create Company</h1>
+            <section>
+                <p>Company information</p>
+                <input type="text" name="company" placeholder="Company's Name" />
+                <input type="url" name="url" placeholder="Website" />
+                <input type="file" name="file" placeholder="Logo" />
+                <input type="email" name="email" placeholder="Email Address" />
+            </section>
+            <section id="subscription_id">
+                <p>Subscription</p>
                 <div class="row">
-                  <div class="pull-left image-subs">
-                    <img src="{% static 'img/flea.svg' %}" width="100" height="100">
-                  </div>
-                  <div class="col-xs-6 text-right pull-right plan-color">
-                    <div class="huge">Flea</div>
-                    <span class="plan-style">$9</span> / month
-                  </div>
-                </div>
-              </div>
-              <div class="panel-body">
-                <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i>
-                  {% trans "Featured on Homepage" %}</span>
-                <span class="pull-right"></span>
-              </div>
+                    <div class="col-md-4 col-lg-4 col-sm-4">
+                        <label>
+                            <input type="radio"
+                                   value="flea"
+                                   name="product"
+                                   class="card-input-element"
+                                   checked />
+                            <div class="panel panel-default card-input">
+                                <div class="panel-heading text-red-900">
+                                    <div class="row">
+                                        <div class="pull-left image-subs">
+                                            <img src="{% static 'img/flea.svg' %}" width="100" height="100" alt="flea">
+                                        </div>
+                                        <div class="col-xs-6 text-right pull-right plan-color">
+                                            <div class="huge">Flea</div>
+                                            <span class="plan-style">$9</span> / month
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="panel-body">
+                                <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i>
+                            {% trans "Featured on Homepage" %}</span>
+                            <span class="pull-right"></span>
+                        </div>
+                    </div>
+                </label>
             </div>
-
-          </label>
-
-        </div>
-        <div class="col-md-4 col-lg-4 col-sm-4">
-
-          <label>
-            <input type="radio" value="ant" name="product" class="card-input-element" />
-
-            <div class="panel panel-default card-input">
-              <div class="panel-heading" style="
-    background-color: #DC4353;
-">
-                <div class="row">
-                  <div class="pull-left image-subs">
-                    <img src="{% static 'img/ant.svg' %}" width="100" height="100">
-                  </div>
-                  <div class="col-xs-6 text-right pull-right plan-color">
-                    <div class="huge">Ant</div>
-                    <span class="plan-style">$99</span> / month
-                  </div>
-                </div>
-              </div>
-              <div class="panel-body">
-                <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i>
-                  {% trans "Featured on Homepage" %}</span></br>
+            <div class="col-md-4 col-lg-4 col-sm-4">
+                <label>
+                    <input type="radio" value="ant" name="product" class="card-input-element" />
+                    <div class="panel panel-default card-input">
+                        <div class="panel-heading text-red-900">
+                            <div class="row">
+                                <div class="pull-left image-subs">
+                                    <img src="{% static 'img/ant.svg' %}" width="100" height="100" alt="ant">
+                                </div>
+                                <div class="col-xs-6 text-right pull-right plan-color">
+                                    <div class="huge">Ant</div>
+                                    <span class="plan-style">$99</span> / month
+                                </div>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                        <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i>
+                    {% trans "Featured on Homepage" %}</span>
+                </br>
                 <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %}
                 </span>
-              </div>
             </div>
-          </label>
-
         </div>
-        <div class="col-md-4 col-lg-4 col-sm-4">
-
-          <label>
-            <input type="radio" value="wasp" name="product" class="card-input-element" />
-
-            <div class="panel panel-default card-input">
-              <div class="panel-heading" style="
-    background-color: #DC4353;
-">
+    </label>
+</div>
+<div class="col-md-4 col-lg-4 col-sm-4">
+    <label>
+        <input type="radio" value="wasp" name="product" class="card-input-element" />
+        <div class="panel panel-default card-input">
+            <div class="panel-heading text-red-900">
                 <div class="row">
-                  <div class="pull-left image-subs">
-                    <img src="{% static 'img/ant.svg' %}" width="100" height="100">
-                  </div>
-                  <div class="col-xs-6 text-right pull-right plan-color">
-                    <div class="huge">Wasp</div>
-                    <span class="plan-style">$499</span> / month
-                  </div>
+                    <div class="pull-left image-subs">
+                        <img src="{% static 'img/ant.svg' %}" width="100" height="100" alt="wasp">
+                    </div>
+                    <div class="col-xs-6 text-right pull-right plan-color">
+                        <div class="huge">Wasp</div>
+                        <span class="plan-style">$499</span> / month
+                    </div>
                 </div>
-              </div>
-              <div class="panel-body">
-                <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i>
-                  {% trans "Featured on Homepage" %}</span></br>
-                <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %}
-                </span>
-                <span class="pull-left announce"><i class="fa fa-globe"></i> {% trans "Announced to Users" %}</span>
-              </div>
             </div>
-          </label>
-
-        </div>
-      </div>
-
-    </section>
-
-    <section style="max-width: 500px;padding: 30px">
-      {% ifnotequal wallet.current_balance 0 %}
-      <div class="formHolder wallet">
+            <div class="panel-body">
+            <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i>
+        {% trans "Featured on Homepage" %}</span>
+    </br>
+    <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %}
+    </span>
+    <span class="pull-left announce"><i class="fa fa-globe"></i> {% trans "Announced to Users" %}</span>
+</div>
+</div>
+</label>
+</div>
+</div>
+</section>
+<section class="p-8 max-w-[500px]">
+    {% ifnotequal wallet.current_balance 0 %}
+    <div class="formHolder wallet">
         <h3>Wallet</h3>
-        Current Balance : {{wallet.current_balance}}$
-        <div type="submit" class="btn btn-sm btn-link cardButton" id="showcard">Use Card </div>
-
-      </div>
-      {% endifnotequal %}
-      <div class="formHolder card">
-
-        <h3>Card</h3>
-        <script src="https://js.stripe.com/v3/"></script>
-
-        <div class="col-md-12" style="
-    left: 50%;
-    transform: translateX(-50%);">
-
-          <div class="">
-            <label for="card-element">
-              Credit or debit card
-            </label>
+        Current Balance : {{ wallet.current_balance }}$
+        <div type="submit" class="btn btn-sm btn-link cardButton" id="showcard">Use Card</div>
+    </div>
+{% endifnotequal %}
+<div class="formHolder card">
+    <h3>Card</h3>
+    <script src="https://js.stripe.com/v3/"></script>
+    <div class="col-md-12" id="card-element-container">
+        <div>
+            <label for="card-element">Credit or debit card</label>
             <div id="card-element">
-              <!-- A Stripe Element will be inserted here. -->
+                <!-- A Stripe Element will be inserted here. -->
             </div>
-
             <!-- Used to display form errors. -->
             <div id="card-errors" role="alert"></div>
-          </div>
-
-          <button>Submit Payment</button>
         </div>
-
-        {% ifnotequal wallet.current_balance 0 %}
-        <div type="submit" class="btn btn-sm btn-link newAccButton" id="showwallet"> Use Wallet</div>
-        {% endifnotequal %}
-      </div>
-    </section>
-
-    <section>
-      <p>General condtitions</p>
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
+        <button>Submit Payment</button>
+    </div>
+    {% ifnotequal wallet.current_balance 0 %}
+    <div type="submit"
+         class="btn btn-sm btn-link newAccButton"
+         id="showwallet">Use Wallet</div>
+{% endifnotequal %}
+</div>
+</section>
+<section>
+    <p>General condtitions</p>
+    <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
         magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
         consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
         pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
-        laborum.</p>
-    </section>
-
-    <div class="button" id="prev">&larr; Previous</div>
-    <div class="button" id="next">Next &rarr;</div>
-    <button class="button" id="submit">Agree and send application</button>
-  </form>
+        laborum.
+    </p>
+</section>
+<div class="button" id="prev">← Previous</div>
+<div class="button" id="next">Next →</div>
+<button class="button" id="submit">Agree and send application</button>
+</form>
 </div>
-{% endblock %}
-
+{% endblock content %}
 {% block after_js %}
-<script type="text/javascript">
+    <script type="text/javascript">
   // Create a Stripe client.
   var paymentType = 'card';
   var showcard = document.getElementById('showcard');
@@ -676,8 +665,8 @@
     // Submit the form
     // form.submit();
   }
-</script>
-<script type="text/javascript">
+    </script>
+    <script type="text/javascript">
   $('document').ready(function () {
     $('#cardButton, #walletButton').click(function () {
 
@@ -790,8 +779,8 @@
     });
 
   });
-</script>
-<script type="text/javascript">
+    </script>
+    <script type="text/javascript">
   $(document).ready(function () {
     var base_color = "rgb(230,230,230)";
     var active_color = "rgb(237, 40, 70)";
@@ -808,9 +797,7 @@
 
     var svgWidth = length * 200 + 24;
     $("#svg_wrap").html(
-      '<svg version="1.1" id="svg_form_time" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 ' +
-      svgWidth +
-      ' 24" xml:space="preserve"></svg>'
+      '<svg version="1.1" id="svg_form_time" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 ' + svgWidth + ' 24" xml:space="preserve"></svg>'
     );
 
     function makeSVG(tag, attrs) {
@@ -894,5 +881,5 @@
     });
 
   });
-</script>
-{% endblock %}
+    </script>
+{% endblock after_js %}

@@ -2,13 +2,12 @@
 {% load static %}
 {% load custom_tags %}
 {% block content %}
-    <div style="font-family: 'Arial';">
+    <div class="font-serif">
         <center>
             <h1>SERVER ERROR</h1>
-            {% if exception %}
-                Error message: {{ exception }}
-            {% endif %}
-            <br>Refresh the page or report it <a><span class="errors">here</span></a>.
+            {% if exception %}Error message: {{ exception }}{% endif %}
+            <br>
+            Refresh the page or report it <a><span class="errors">here</span></a>.
         </center>
     </div>
     <script type="text/javascript">
@@ -21,4 +20,4 @@
             });
         });
     </script>
-{% endblock %}
+{% endblock content %}

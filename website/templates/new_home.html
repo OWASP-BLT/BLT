@@ -1,7 +1,6 @@
 {% extends "base.html" %}
-
 {% block content %}
-{% include "includes/sidenav.html" %}
+    {% include "includes/sidenav.html" %}
     <style>
         .hero-bugs-container {
             grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
@@ -11,26 +10,21 @@
         Find bugs, earn points, prize and cash!
     </div>
     <div class="flex flex-col sm:flex-row">
-    
         <div class="flex-1">
             <div class="hero-bugs-container grid grid-cols-1 sm:grid-cols-2 gap-4 mx-4 my-2.5">
                 <!-- Report Section -->
                 <section class="z-10">
-                    {% include '_report_widget.html' %}
+                    {% include "_report_widget.html" %}
                 </section>
-                
                 <!-- Bugs Section -->
                 {% for bug in bugs %}
-                    {% include '_bug.html' %}
+                    {% include "_bug.html" %}
                 {% endfor %}
             </div>
         </div>
-    
         <div class="w-full mt-4  sm:w-[20%] sm:mt-0 sm:order-2 ">
             <!-- Leaderboard Widget -->
-            <div class="mx-4 mr-10 ">
-                {% include '_leaderboard_widget.html' %}
-            </div>
+            <div class="mx-4 mr-10 ">{% include "_leaderboard_widget.html" %}</div>
         </div>
     </div>
     <script>
@@ -89,17 +83,19 @@
             {% endif %}
             {% for num in bugs.paginator.page_range %}
                 {% if num == bugs.number %}
-                    <button class="btn btn-default" disabled>{{num}}</button>
+                    <button class="btn btn-default" disabled>{{ num }}</button>
                 {% elif num > bugs.number|add:"-5" and num < bugs.number|add:"5" %}
-                    <a href="?page={{ num }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}" class="btn btn-default">{{num}}</a>
+                    <a href="?page={{ num }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
+                       class="btn btn-default">{{ num }}</a>
                 {% endif %}
             {% endfor %}
             {% if bugs.has_next %}
-                <a href="?page={{ bugs.paginator.num_pages }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}" class="btn btn-default">Last</a>
+                <a href="?page={{ bugs.paginator.num_pages }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
+                   class="btn btn-default">Last</a>
             {% else %}
                 <button class="btn btn-default" disabled>Last</button>
             {% endif %}
             <div>Page {{ bugs.number }} of {{ bugs.paginator.num_pages }}</div>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

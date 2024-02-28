@@ -1,16 +1,22 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Image List</title>
-</head>
-<body>
-
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="Image List">
+        <meta name="keywords" content="image, list">
+        <title>Image List</title>
+    </head>
+    <body>
         {% for image_url in image_urls %}
-
-            <a href="https://console.cloud.google.com/storage/browser/_details/bhfiles/{{ image_url }}" target="_blank">            {{image_url}}</a>
-            <img src="{{bucket_url}}{{ image_url }}" height="500"></br>
+            <a href="https://console.cloud.google.com/storage/browser/_details/bhfiles/{{ image_url }}"
+               target="_blank">{{ image_url }}</a>
+            <img src="{{ bucket_url }}{{ image_url }}"
+                 height="500"
+                 width="500"
+                 alt="image">
+        </br>
         <hr>
-        {% endfor %}
-
+    {% endfor %}
 </body>
 </html>
