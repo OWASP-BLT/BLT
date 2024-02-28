@@ -432,7 +432,7 @@ urlpatterns = [
         website.views.grant_access,
         name="grant_access",
     ),
-    path("companies/", DomainListView.as_view(), name="domain_list"),
+    path("companies/", DomainListView.as_view(), name="domain_lists"),
 ]
 
 if settings.DEBUG:

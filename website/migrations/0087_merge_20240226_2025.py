@@ -6,7 +6,6 @@ from django.db import migrations
 class Migration(migrations.Migration):
     dependencies = [
         ("website", "0083_alter_invitefriend_options_and_more"),
-        ("website", "0086_rename_requestaccess_requestissueaccess"),
     ]
 
     operations = []
