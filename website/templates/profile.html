@@ -217,8 +217,7 @@
                 <div class="status">
                     <button type="button" id="openModal" class="btn btn-danger">Send a Tip</button>
                     <dialog id="dialog">
-                        <img id="qr-image"
-                             src="{% url 'generate_bch_qr' username=user.username %}"
+                        <img id="qr-image" 
                              alt="QR Code"
                              width="300"
                              height="300">
@@ -416,13 +415,11 @@
         </div>
     </div>
     <script type="text/javascript">
-    document.addEventListener("DOMContentLoaded", function() {
-        const openModalButton = document.getElementById('openModal');
-        const dialog = document.getElementById('dialog');
-
-        openModalButton.addEventListener('click', function() {
-            dialog.showModal();
-        });
+    document.getElementById('openModal').addEventListener('click', function() {
+        var address = "{{ user.userprofile.crypto_address }}";
+        var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?data=bitcoincash:" + address + "&size=300x300";
+        document.getElementById('qr-image').src = qrUrl;
+        document.getElementById('dialog').showModal();
     });
 
     $(function () {
