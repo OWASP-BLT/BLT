@@ -19,8 +19,7 @@
         {% endif %}
         {% for leader in leaderboard %}
             <div class="flex flex-row h-[4rem] items-center my-2 mx-1 hover:bg-[#e8e8e8] rounded-2xl">
-
-                <a href="{% url 'profile' slug=leader.username %}" 
+                <a href="{% url 'profile' slug=leader.username %}"
                    class="h-full w-[8rem] flex justify-center items-center scale-[0.65] relative">
                     {% if leader.userprofile.avatar %}
                         <img src="{{ leader.userprofile.avatar }}"
