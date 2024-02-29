@@ -3712,7 +3712,6 @@ def invite_friend(request):
     return render(request, "invite_friend.html", context)
 
 def trademark_search(request, **kwargs):
-    print(request.method)
     if request.method == "POST":
         slug = request.POST.get("query")
         return redirect("trademark_detailview", slug=slug)
@@ -3723,22 +3722,22 @@ def trademark_detailview(request, slug):
     if settings.USPTO_API is None:
         return HttpResponse("API KEY NOT SETUP")
     
-    trademarkAvailable_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (
+    Trademark_Available_URL = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (
         slug
     )
     headers = {
         "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
         "x-rapidapi-key": settings.USPTO_API,
     }
-    trademarkAvailable_response = requests.get(trademarkAvailable_url, headers=headers)
-    ta_data = trademarkAvailable_response.json()
+    Trademark_Available_Response = requests.get(Trademark_Available_URL, headers=headers)
+    ta_data = Trademark_Available_Response.json()
 
     if ta_data[0]["available"] == "no":
-        trademarkSearch_url = (
+        Trademark_Search_URL = (
             "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (slug)
         )
-        trademarkSearch_response = requests.get(trademarkSearch_url, headers=headers)
-        ts_data = trademarkSearch_response.json()
+        Trademark_Search_Response = requests.get(Trademark_Search_URL, headers=headers)
+        ts_data = Trademark_Search_Response.json()
         context = {"count": ts_data["count"], "items": ts_data["items"], "query": slug}
 
     else:
