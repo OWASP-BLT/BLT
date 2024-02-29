@@ -3722,22 +3722,22 @@ def trademark_detailview(request, slug):
     if settings.USPTO_API is None:
         return HttpResponse("API KEY NOT SETUP")
     
-    Trademark_Available_URL = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (
+    trademark_available_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (
         slug
     )
     headers = {
         "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
         "x-rapidapi-key": settings.USPTO_API,
     }
-    Trademark_Available_Response = requests.get(Trademark_Available_URL, headers=headers)
-    ta_data = Trademark_Available_Response.json()
+    trademark_available_response = requests.get(trademark_available_url, headers=headers)
+    ta_data = trademark_available_response.json()
 
     if ta_data[0]["available"] == "no":
-        Trademark_Search_URL = (
+        trademark_search_url = (
             "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (slug)
         )
-        Trademark_Search_Response = requests.get(Trademark_Search_URL, headers=headers)
-        ts_data = Trademark_Search_Response.json()
+        trademark_search_response = requests.get(trademark_search_url, headers=headers)
+        ts_data = trademark_search_response.json()
         context = {"count": ts_data["count"], "items": ts_data["items"], "query": slug}
 
     else:
