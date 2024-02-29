@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
-
 {% block content %}
-    {% include 'includes/sidenav.html' %}
+    {% include "includes/sidenav.html" %}
     <head>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Gravitas+One&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Gravitas+One&display=swap"
+              rel="stylesheet">
     </head>
     <style>
         .table-auto{
@@ -74,19 +74,24 @@
         }
 
     </style>
-
     {% if available %}
         <div class="tm-wrapper">
-            <img  id="tm-logo" src="{% static 'img/TM.png' %}">
+            <img id="tm-logo"
+                 height="300"
+                 width="400"
+                 alt="trademark available"
+                 src="{% static 'img/TM.png' %}">
             <p>available !</p>
             <div id="tm-text">Trademark is available for Registration</div>
-            <button id="back-button"><a href="{% url 'index' %}">Back</a></button>
-            <button id="more-button"><a href="{% url 'trademark_search' %}">Search More</a></button>
+            <button id="back-button">
+                <a href="{% url 'index' %}">Back</a>
+            </button>
+            <button id="more-button">
+                <a href="{% url 'trademark_search' %}">Search More</a>
+            </button>
         </div>
     {% else %}
-        <p class="text-gray-300 my-3 font-satoshi font-bold text-[25px]">
-            {{count}} results found for {{query}}
-        </p>
+        <p class="text-gray-300 my-3 font-satoshi font-bold text-[25px]">{{ count }} results found for {{ query }}</p>
         <table class="table-auto border-collapse w-full">
             <thead class="font-bold italic text-opacity-25 bg-gray-200">
                 <tr>
@@ -115,29 +120,19 @@
                             <td class="px-4 py-2">{{ owner.owner_label }}</td>
                             <td class="px-4 py-2">{{ owner.name }}</td>
                             <td class="px-4 py-2">
-                            {{ owner.address1 }} 
-                            {{ owner.address2 }}, 
-                            {{ owner.city }}, 
-                            {{ owner.state }}, 
-                            {{ owner.country }}, 
-                            {{ owner.postcode }}
+                                {{ owner.address1 }}
+                                {{ owner.address2 }},
+                                {{ owner.city }},
+                                {{ owner.state }},
+                                {{ owner.country }},
+                                {{ owner.postcode }}
                             </td>
                             <td class="px-4 py-2">
-                                <div class="status_label 
-                                {% if item.status_label == 'Live/Pending' %} 
-                                bg-yellow-600
-                                {% elif item.status_label == 'Live/Registered' %} 
-                                bg-green-600
-                                {% elif item.status_label == 'Dead/Abandoned' %}
-                                bg-red-600
-                                {% else %}
-                                bg-sky-600
-                                {% endif %} ">
-                                    {{ item.status_label }} 
-                                </div> <br>
-                                <div class="type_label">
-                                    {{ owner.legal_entity_type_label }}
+                                <div class="status_label {% if item.status_label == 'Live/Pending' %} bg-yellow-600 {% elif item.status_label == 'Live/Registered' %} bg-green-600 {% elif item.status_label == 'Dead/Abandoned' %} bg-red-600 {% else %} bg-sky-600 {% endif %} ">
+                                    {{ item.status_label }}
                                 </div>
+                                <br>
+                                <div class="type_label">{{ owner.legal_entity_type_label }}</div>
                             </td>
                         </tr>
                     {% endfor %}
@@ -145,6 +140,4 @@
             </tbody>
         </table>
     {% endif %}
-
-{% endblock %}
-
+{% endblock content %}

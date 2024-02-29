@@ -1,13 +1,13 @@
+import base64
 import json
 import os
 import random
 import re
 import time
-import urllib.request
 import urllib.error
 import urllib.parse
-import stripe
-import humanize
+import urllib.request
+import uuid
 from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -16,82 +16,81 @@ from urllib.parse import urlparse, urlsplit, urlunparse
 import humanize
 import requests
 import requests.exceptions
-import base64
 import six
-import uuid
+import stripe
+import tweepy
 
 #from django_cron import CronJobBase, Schedule
 #from django_cron import CronJobBase, Schedule
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
+from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
+from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from bs4 import BeautifulSoup
-from django.db.transaction import atomic
+from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core import serializers
+from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.urls import reverse, reverse_lazy
-from django.db.models import Sum, Count, Q
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.core.validators import URLValidator
+from django.db.models import Count, Q, Sum
 from django.db.models.functions import ExtractMonth
+from django.db.transaction import atomic
 from django.dispatch import receiver
-from django.http import Http404,JsonResponse,HttpResponseRedirect,HttpResponse,HttpResponseNotFound, HttpResponseBadRequest
-from django.shortcuts import render, redirect, get_object_or_404
+from django.http import (
+    Http404,
+    HttpRequest,
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+    JsonResponse,
+)
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
+from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
-from django.views.generic import DetailView, TemplateView, ListView, View
+from django.views.generic import DetailView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
-from django.core import serializers
-from django.conf import settings
-
-from user_agents import parse
 from rest_framework.authtoken.models import Token
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
-from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
-from dj_rest_auth.registration.views import SocialLoginView
-from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
-from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
-from allauth.socialaccount.providers.oauth2.client import OAuth2Client
-from dj_rest_auth.registration.views import SocialConnectView
-from blt import settings
 from rest_framework.authtoken.views import ObtainAuthToken
-import tweepy
+from rest_framework.response import Response
+from user_agents import parse
 
-
-from website.models import (
-
-    Winner,
-    Payment,
-    Wallet,
-    Issue,
-    Points,
-    Hunt,
-    Domain,
-    InviteFriend,
-    UserProfile,
-    IP,
-    CompanyAdmin,
-    Subscription,
-    Company,
-    IssueScreenshot
-)
-from .forms import FormInviteFriend, UserProfileForm, HuntForm, CaptchaForm, QuickIssueForm
-
-from decimal import Decimal
-from django.conf import settings
+from blt import settings
 from comments.models import Comment
-from django.core.validators import URLValidator
-from django.core.exceptions import ValidationError
-from django.http import HttpRequest
-from django.utils.timezone import now
+from website.models import (
+    IP,
+    Company,
+    CompanyAdmin,
+    Domain,
+    Hunt,
+    InviteFriend,
+    Issue,
+    IssueScreenshot,
+    Payment,
+    Points,
+    Subscription,
+    UserProfile,
+    Wallet,
+    Winner,
+)
+
+from .forms import CaptchaForm, FormInviteFriend, HuntForm, QuickIssueForm, UserProfileForm
+
 
 def is_valid_https_url(url):
     validate = URLValidator(schemes=['https'])  # Only allow HTTPS URLs
@@ -444,9 +443,9 @@ def company_dashboard(request, template="index_company.html"):
         if not company_admin.is_active:
             return HttpResponseRedirect("/")
         hunts = Hunt.objects.filter(is_published=True, domain=company_admin.domain)
-        upcoming_hunt = list()
-        ongoing_hunt = list()
-        previous_hunt = list()
+        upcoming_hunt = []
+        ongoing_hunt = []
+        previous_hunt = []
         for hunt in hunts:
             if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
                 upcoming_hunt.append(hunt)
@@ -508,9 +507,9 @@ def admin_dashboard(request, template="admin_home.html"):
 @login_required(login_url="/accounts/login")
 def user_dashboard(request, template="index_user.html"):
     hunts = Hunt.objects.filter(is_published=True)
-    upcoming_hunt = list()
-    ongoing_hunt = list()
-    previous_hunt = list()
+    upcoming_hunt = []
+    ongoing_hunt = []
+    previous_hunt = []
     for hunt in hunts:
         if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
             upcoming_hunt.append(hunt)
@@ -634,7 +633,7 @@ class IssueBaseCreate(object):
                 name = "support"
                 domain.email = email_to
                 domain.save()
-            if tokenauth == False:
+            if tokenauth is False:
                 msg_plain = render_to_string(
                     "email/bug_added.txt",
                     {
@@ -768,7 +767,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         initial = super(IssueCreate, self).get_initial()
         if self.request.POST.get("screenshot-hash"):
             initial["screenshot"] = (
-                "uploads\/" + self.request.POST.get("screenshot-hash") + ".png"
+                "uploads/" + self.request.POST.get("screenshot-hash") + ".png"
             )
         return initial
 
@@ -981,9 +980,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
 
             if domain.github and os.environ.get("GITHUB_ACCESS_TOKEN"):
-                from giturlparse import parse
                 import json
+
                 import requests
+                from giturlparse import parse
 
                 github_url = (
                     domain.github.replace("https", "git").replace("http", "git") + ".git"
@@ -1359,7 +1359,7 @@ def delete_issue(request, id):
     if request.user.is_superuser or request.user == issue.user:
         issue.delete()
         messages.success(request, "Issue deleted")
-    if tokenauth == True:
+    if tokenauth is True:
         return JsonResponse("Deleted", safe=False)
     else:
         return redirect("/")
@@ -1780,7 +1780,8 @@ class EachmonthLeaderboardView(LeaderboardBase,ListView):
 
         year = self.request.GET.get("year")
 
-        if not year: year = datetime.now().year
+        if not year: 
+            year = datetime.now().year
 
         if isinstance(year,str) and not year.isdigit():
         if isinstance(year,str) and not year.isdigit():
@@ -1833,8 +1834,10 @@ class SpecificMonthLeaderboardView(LeaderboardBase,ListView):
         month = self.request.GET.get("month")
         year = self.request.GET.get("year")
 
-        if not month: month = datetime.now().month
-        if not year: year = datetime.now().year
+        if not month: 
+            month = datetime.now().month
+        if not year: 
+            year = datetime.now().year
 
         if isinstance(month,str) and not month.isdigit():
         if isinstance(month,str) and not month.isdigit():
@@ -2234,8 +2237,8 @@ def get_email_from_domain(domain_name):
             elif not link.startswith("http"):
                 link = path + link
             if (
-                not link in new_urls
-                and not link in processed_urls
+                link not in new_urls
+                and link not in processed_urls
                 and link.find(domain_name) > 0
             ):
                 new_urls.append(link)
@@ -2595,7 +2598,7 @@ def get_client_ip(request):
 
 
 def get_score(request):
-    users = list()
+    users = []
     temp_users = (
         User.objects.annotate(total_score=Sum("points__score"))
         .order_by("-total_score")
@@ -2603,7 +2606,7 @@ def get_score(request):
     )
     rank_user = 1
     for each in temp_users.all():
-        temp = dict()
+        temp = {}
         temp["rank"] = rank_user
         temp["id"] = each.id
         temp["User"] = each.username
@@ -2788,12 +2791,11 @@ def contributors(request):
 
 
 def get_scoreboard(request):
-    from PIL import Image
 
-    scoreboard = list()
+    scoreboard = []
     temp_domain = Domain.objects.all()
     for each in temp_domain:
-        temp = dict()
+        temp = {}
         temp["name"] = each.name
         temp["open"] = len(each.open_issues)
         temp["closed"] = len(each.closed_issues)
@@ -2805,13 +2807,13 @@ def get_scoreboard(request):
             temp["top"] = each.top_tester.username
         scoreboard.append(temp)
     paginator = Paginator(scoreboard, 10)
-    domain_list = list()
+    domain_list = []
     for data in scoreboard:
         domain_list.append(data)
     count = (Paginator(scoreboard, 10).count) % 10
     for i in range(10 - count):
         domain_list.append(None)
-    temp = dict()
+    temp = {}
     temp["name"] = None
     domain_list.append(temp)
     paginator = Paginator(domain_list, 10)
@@ -3122,7 +3124,7 @@ class UpcomingHunts(TemplateView):
                 hunts = self.model.objects.filter(
                     is_published=True, domain=domain_admin.domain
                 )
-            new_hunt = list()
+            new_hunt = []
             for hunt in hunts:
                 if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
                     new_hunt.append(hunt)
@@ -3149,7 +3151,7 @@ class OngoingHunts(TemplateView):
                 hunts = self.model.objects.filter(
                     is_published=True, domain=domain_admin.domain
                 )
-            new_hunt = list()
+            new_hunt = []
             for hunt in hunts:
                 if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
                     new_hunt.append(hunt)
@@ -3176,7 +3178,7 @@ class PreviousHunts(TemplateView):
                 hunts = self.model.objects.filter(
                     is_published=True, domain=domain_admin.domain
                 )
-            new_hunt = list()
+            new_hunt = []
             for hunt in hunts:
                 if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
                     pass
@@ -3575,7 +3577,7 @@ def withdraw(request):
             stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
             if wallet.account_id:
                 account = stripe.Account.retrieve(wallet.account_id)
-                if account.payouts_enabled == True:
+                if account.payouts_enabled is True:
                     balance = stripe.Balance.retrieve()
                     if balance.available[0].amount > payment.value * 100:
                         stripe.Transfer.create(
@@ -3664,7 +3666,7 @@ def stripe_connected(request, username):
 
     stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
     account = stripe.Account.retrieve(wallet.account_id)
-    if account.payouts_enabled == True:
+    if account.payouts_enabled is True:
         payment = Payment.objects.get(wallet=wallet, active=True)
         balance = stripe.Balance.retrieve()
         if balance.available[0].amount > payment.value * 100:
@@ -4289,7 +4291,7 @@ class IssueView2(DetailView):
 
 
 def trademark_search(request, **kwargs):
-    if request.method == "POST":
+    if request.method == "post":
         slug = request.POST.get("query")
         return redirect("trademark_detailview", slug=slug)
     return render(request, "trademark_search.html")
