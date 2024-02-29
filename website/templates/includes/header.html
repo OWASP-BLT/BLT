@@ -42,8 +42,8 @@
 </script>
 <nav class="fixed top-0 z-50 w-full bg-white border-b border-[#F7F7F7] border-b-2 px-4 ">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center justify-start rtl:justify-end">
+        <div class="flex flex-row items-center justify-end">
+            <div class="flex items-center justify-start rtl:justify-end basis-2/6">
                 <!-- Ham Menu -->
                 <button id="hamburger-button"
                         data-drawer-target="logo-sidebar"
@@ -72,7 +72,7 @@
                 </a>
             </div>
             <!-- Search Bar  -->
-            <div class="column items-center gap-[8px] w-0 overflow-clip lg:w-fit lg:flex w-0 h-0 lg:w-[auto] lg:h-[auto]">
+            <div class="column items-center gap-[8px] w-0 overflow-clip lg:w-fit lg:flex w-0 h-0 lg:w-[auto] lg:h-[auto] basis-3/6 justify-end">
                 <form class="relative px-[34px] mb-0"
                       action="{% url 'search' %}"
                       method="get">
@@ -168,9 +168,9 @@
             </li>
         {% else %}
             <!-- Sign up and Log in Buttons -->
-            <div class="lg:!flex h-[80px] justify-center items-center">
+            <div class="lg:!flex h-[80px] justify-center items-center basis-1/6">
                 <a href="{% url 'account_signup' %}"
-                   class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
+                   class="h-[38px] px-[20px] py-[8px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
                 {% trans "Signup" %}</a>
                 <a href="{% url 'account_login' %}"
                    data-toggle="modal"
