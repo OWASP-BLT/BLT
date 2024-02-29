@@ -3712,7 +3712,8 @@ def invite_friend(request):
     return render(request, "invite_friend.html", context)
 
 def trademark_search(request, **kwargs):
-    if request.method == "post":
+    print(request.method)
+    if request.method == "POST":
         slug = request.POST.get("query")
         return redirect("trademark_detailview", slug=slug)
     return render(request, "trademark_search.html")

@@ -2,12 +2,6 @@
 {% load static %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Gravitas+One&display=swap"
-              rel="stylesheet">
-    </head>
     <style>
         .table-auto{
             margin-right:70px ;
@@ -29,7 +23,6 @@
             background-color: #FFFFFF;
             border-radius: 30px;
             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-            font-family: "Gravitas One", serif;
             font-weight: 400;
             font-style: normal;
         }
@@ -42,14 +35,15 @@
         }
         .tm-wrapper p{
             position: absolute;
-            left: 154px;
+            left: 194px;
             top: 252px;
             font-size: 30px;
+            font-weight: 1000;
         }
         #tm-text{
             position: absolute;
-            left: 28px;
-            top: 316px;
+            left: 88px;
+            top: 313px;
             font-size: 20px;
             opacity: 80%;
             text-align: center;
@@ -62,6 +56,7 @@
             position: absolute;
             left: 0px;
             top: 400px;
+            font-weight: 1000;
         }
         #more-button{
             background-color: #D92D2D;
@@ -71,6 +66,7 @@
             position: absolute;
             right: 0px;
             top: 400px;
+            font-weight: 1000;
         }
 
     </style>
@@ -81,7 +77,7 @@
                  width="196px"
                  alt="Trademark available Image"
                  src="{% static 'img/TM.png' %}">
-            <p>available !</p>
+            <p>Available !</p>
             <div id="tm-text">Trademark is available for Registration</div>
             <button id="back-button">
                 <a href="{% url 'index' %}">Back</a>
@@ -91,7 +87,7 @@
             </button>
         </div>
     {% else %}
-        <p class="text-gray-300 my-3 font-satoshi font-bold text-[25px]">{{ count }} results found for {{ query }}</p>
+        <p class="text-gray-300 my-6 font-satoshi font-bold text-[25px]">{{ count }} results found for {{ query }}</p>
         <table class="table-auto border-collapse w-full">
             <thead class="font-bold italic text-opacity-25 bg-gray-200">
                 <tr>
