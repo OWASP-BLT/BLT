@@ -18,9 +18,8 @@
             Leaderboard has been reset for {% now "F" %}, be the first to find issues!
         {% endif %}
         {% for leader in leaderboard %}
-            <a href="{% url 'profile' slug=leader.username %}"
-               class="flex flex-row h-[4rem] items-center my-2 mx-1 hover:bg-[#e8e8e8] rounded-2xl">
-                <span class="h-full w-[8rem] flex justify-center items-center scale-[0.65]">
+            <div class="flex flex-row h-[4rem] items-center my-2 mx-1 hover:bg-[#e8e8e8] rounded-2xl">
+                <a href="{% url 'profile' slug=leader.username %}" class="h-full w-[8rem] flex justify-center items-center scale-[0.65] relative">
                     {% if leader.userprofile.avatar %}
                         <img src="{{ leader.userprofile.avatar }}"
                              class="profileimage object-cover"
@@ -40,15 +39,16 @@
                              height="50px"
                              alt="user avatar">
                     {% endif %}
-                </span>
-                <span class="w-full overflow-clip font-semibold text-[#500000bd] text-[18px] mb-2">{{ leader.username }}</span>
-                <span class="rank me-2 w-[5.5rem] flex flex-row items-end text-black font-semibold h-[2rem] rounded-full {% if forloop.counter == 1 %}bg-[gold]{% endif %} {% if forloop.counter == 2 %}bg-[#CDCDCD]{% endif %} {% if forloop.counter == 3 %}bg-[#F8BF95]{% endif %} ">
-                    <span class="ms-auto text-[15px] mb-[-1.1px]">{{ forloop.counter }}</span>
-                    <span class="me-auto text-[10px] mb-[0.8px]">{{ forloop.counter|ordinal|slice:"1:" }}</span>
-                </span>
-            </a>
-            <div>
-                <button type="button" id="openModal" class="btn btn-danger w-full">Send a Tip</button>
+                    {% if forloop.counter == 1 %}
+                        <i class="fas fa-medal text-[gold] text-4xl absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2"></i>
+                    {% elif forloop.counter == 2 %}
+                        <i class="fas fa-medal text-[silver] text-4xl absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2"></i>
+                    {% elif forloop.counter == 3 %}
+                        <i class="fas fa-medal text-[bronze] text-4xl absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2"></i>
+                    {% endif %}
+                </a>
+                <span class="w-full overflow-clip font-semibold text-[#500000bd] text-[12px] mb-2">{{ leader.username }}</span>
+                <button type="button" id="openModal" class="btn btn-danger">TIP:<i class="fab fa-btc"></i></button>
                 <dialog id="dialog">
                     <img id="qr-image" alt="QR Code" height="400" width="400">
                     <p id="bch-address">BCH: {{ leader.userprofile.crypto_address }}</p>
