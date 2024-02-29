@@ -3711,6 +3711,39 @@ def invite_friend(request):
     }
     return render(request, "invite_friend.html", context)
 
+def trademark_search(request, **kwargs):
+    if request.method == "post":
+        slug = request.POST.get("query")
+        return redirect("trademark_detailview", slug=slug)
+    return render(request, "trademark_search.html")
+
+
+def trademark_detailview(request, slug):
+    if settings.USPTO_API is None:
+        return HttpResponse("API KEY NOT SETUP")
+    
+    trademarkAvailable_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (
+        slug
+    )
+    headers = {
+        "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
+        "x-rapidapi-key": settings.USPTO_API,
+    }
+    trademarkAvailable_response = requests.get(trademarkAvailable_url, headers=headers)
+    ta_data = trademarkAvailable_response.json()
+
+    if ta_data[0]["available"] == "no":
+        trademarkSearch_url = (
+            "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (slug)
+        )
+        trademarkSearch_response = requests.get(trademarkSearch_url, headers=headers)
+        ts_data = trademarkSearch_response.json()
+        context = {"count": ts_data["count"], "items": ts_data["items"], "query": slug}
+
+    else:
+        context = {"available": ta_data[0]["available"]}
+
+    return render(request, "trademark_detailview.html", context)
 
 # class CreateIssue(CronJobBase):
 #     RUN_EVERY_MINS = 1
