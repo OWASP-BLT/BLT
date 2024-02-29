@@ -19,7 +19,8 @@
         {% endif %}
         {% for leader in leaderboard %}
             <div class="flex flex-row h-[4rem] items-center my-2 mx-1 hover:bg-[#e8e8e8] rounded-2xl">
-                <a href="{% url 'profile' slug=leader.username %}" class="h-full w-[8rem] flex justify-center items-center scale-[0.65] relative">
+                <a href="{% url 'profile' slug=leader.username %}" 
+                   class="h-full w-[8rem] flex justify-center items-center scale-[0.65] relative">
                     {% if leader.userprofile.avatar %}
                         <img src="{{ leader.userprofile.avatar }}"
                              class="profileimage object-cover"
@@ -48,7 +49,9 @@
                     {% endif %}
                 </a>
                 <span class="w-full overflow-clip font-semibold text-[#500000bd] text-[12px] mb-2">{{ leader.username }}</span>
-                <button type="button" id="openModal" class="btn btn-danger">TIP:<i class="fab fa-btc"></i></button>
+                <button type="button" id="openModal" class="btn btn-danger">
+                    TIP:<i class="fab fa-btc"></i>
+                </button>
                 <dialog id="dialog">
                     <img id="qr-image" alt="QR Code" height="400" width="400">
                     <p id="bch-address">BCH: {{ leader.userprofile.crypto_address }}</p>
