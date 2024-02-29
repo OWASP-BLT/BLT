@@ -23,29 +23,29 @@
                    class="h-full w-[8rem] flex justify-center items-center scale-[0.65] relative">
                     {% if leader.userprofile.avatar %}
                         <img src="{{ leader.userprofile.avatar }}"
-                             class="profileimage object-cover"
-                             width="50px"
-                             height="50px"
+                             class="h-[30px] object-cover img-responsive rounded-full"
+                             width="30"
+                             height="30"
                              alt="user avatar">
                     {% elif user.socialaccount_set.all.0.get_avatar_url %}
                         <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
-                             class="profileimage object-cover"
-                             width="50px"
-                             height="50px"
+                             class="h-[30px] object-cover img-responsive rounded-full"
+                             width="30"
+                             height="30"
                              alt="user avatar">
                     {% else %}
                         <img src="{% gravatar_url leader.email 50 %}"
-                             class="profileimage object-cover"
-                             width="50px"
-                             height="50px"
+                             class="h-[30px] object-cover img-responsive rounded-full"
+                             width="30"
+                             height="30"
                              alt="user avatar">
                     {% endif %}
                     {% if forloop.counter == 1 %}
-                        <i class="fas fa-medal text-[gold] text-4xl absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2"></i>
+                        <i class="fas fa-medal text-[gold] text-2xl absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2"></i>
                     {% elif forloop.counter == 2 %}
-                        <i class="fas fa-medal text-[silver] text-4xl absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2"></i>
+                        <i class="fas fa-medal text-[silver] text-2xl absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2"></i>
                     {% elif forloop.counter == 3 %}
-                        <i class="fas fa-medal text-[bronze] text-4xl absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2"></i>
+                        <i class="fas fa-medal text-[bronze] text-2xl absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2"></i>
                     {% endif %}
                 </a>
                 <span class="w-full overflow-clip font-semibold text-[#500000bd] text-[12px] mb-2">{{ leader.username }}</span>
