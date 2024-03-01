@@ -1,4 +1,4 @@
-name: Auto approve PRs by dependabot
+name: Approve dependabot
 
 # Trigger the workflow on pull request
 on: pull_request_target
