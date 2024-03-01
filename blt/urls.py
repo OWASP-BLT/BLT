@@ -336,7 +336,6 @@ urlpatterns = [
     re_path(r"^projects/$", TemplateView.as_view(template_name="projects.html"), name="projects"),
     re_path(r"^apps/$", TemplateView.as_view(template_name="apps.html"), name="apps"),
     re_path(r"^deletions/$", TemplateView.as_view(template_name="deletions.html"), name="deletions"),
-    re_path(r"^trademarks/$", TemplateView.as_view(template_name="trademarks.html"), name="trademarks"),
     re_path(r"^bacon/$", TemplateView.as_view(template_name="bacon.html"), name="bacon"),
     re_path(r"^bltv/$", TemplateView.as_view(template_name="bltv.html"), name="bltv"),
     re_path(r"^privacypolicy/$", TemplateView.as_view(template_name="privacy.html"), name="privacy"),
@@ -416,6 +415,12 @@ urlpatterns = [
     path("company/", include("company.urls")),
     path("sponsor/", website.views.sponsor_view, name="sponsor"),
     path("companies/", DomainListView.as_view(), name="domain_lists"),
+    path("trademarks/", website.views.trademark_search, name="trademark_search"),
+    re_path(
+        r"^trademarks/query=(?P<slug>[\w\s]+)",
+        website.views.trademark_detailview,
+        name="trademark_detailview",
+    ),
 ]
 
 if settings.DEBUG:

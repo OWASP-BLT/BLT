@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <style>
+        .table-auto{
+            margin-right:70px ;
+        }
+        .status_label {
+            border-radius: 30px;
+            text-align: center;
+            color: white;
+        }
+        .type_label{
+            color: blueviolet;
+        }
+        .tm-wrapper{
+            position: relative;
+            left : 350px;
+            top : 80px;
+            height: 470px;
+            width: 500px;
+            background-color: #FFFFFF;
+            border-radius: 30px;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+            font-weight: 400;
+            font-style: normal;
+        }
+        #tm-logo{
+            height: 175px;
+            width: 196px;
+            position: absolute;
+            left: 152px;
+            top: 71px;
+        }
+        .tm-wrapper p{
+            position: absolute;
+            left: 194px;
+            top: 252px;
+            font-size: 30px;
+            font-weight: 1000;
+        }
+        #tm-text{
+            position: absolute;
+            left: 88px;
+            top: 313px;
+            font-size: 20px;
+            opacity: 80%;
+            text-align: center;
+        }
+        #back-button{
+            background-color: #FF9191;
+            height: 70px;
+            width: 250px;
+            border-radius: 0px 0px 0px 30px;
+            position: absolute;
+            left: 0px;
+            top: 400px;
+            font-weight: 1000;
+        }
+        #more-button{
+            background-color: #D92D2D;
+            height: 70px;
+            width: 250px;
+            border-radius: 0px 0px 30px 0px;
+            position: absolute;
+            right: 0px;
+            top: 400px;
+            font-weight: 1000;
+        }
+
+    </style>
+    {% if available %}
+        <div class="tm-wrapper">
+            <img id="tm-logo"
+                 height="175px"
+                 width="196px"
+                 alt="Trademark available Image"
+                 src="{% static 'img/TM.png' %}">
+            <p>Available !</p>
+            <div id="tm-text">Trademark is available for Registration</div>
+            <button id="back-button">
+                <a href="{% url 'index' %}">Back</a>
+            </button>
+            <button id="more-button">
+                <a href="{% url 'trademark_search' %}">Search More</a>
+            </button>
+        </div>
+    {% else %}
+        <p class="text-gray-300 my-6 font-satoshi font-bold text-[25px]">{{ count }} results found for {{ query }}</p>
+        <table class="table-auto border-collapse w-full">
+            <thead class="font-bold italic text-opacity-25 bg-gray-200">
+                <tr>
+                    <th class="px-4 py-2">Name</th>
+                    <th class="px-4 py-2">Registration No</th>
+                    <th class="px-4 py-2">Serial No</th>
+                    <th class="px-4 py-2">Filing Date</th>
+                    <th class="px-4 py-2">Registration Date</th>
+                    <th class="px-4 py-2">Expiry Date</th>
+                    <th class="px-4 py-2">Owner Label</th>
+                    <th class="px-4 py-2">Owner Name</th>
+                    <th class="px-4 py-2">Owner Address</th>
+                    <th class="px-4 py-2">Labels</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                    {% for owner in item.owners %}
+                        <tr class="border">
+                            <td class="px-4 py-2 font-bold ">{{ item.keyword }}</td>
+                            <td class="px-4 py-2">{{ item.registration_number }}</td>
+                            <td class="px-4 py-2">{{ item.serial_number }}</td>
+                            <td class="px-4 py-2 min-h-2">{{ item.filing_date }}</td>
+                            <td class="px-4 py-2">{{ item.registration_date }}</td>
+                            <td class="px-4 py-2">{{ item.expiration_date }}</td>
+                            <td class="px-4 py-2">{{ owner.owner_label }}</td>
+                            <td class="px-4 py-2">{{ owner.name }}</td>
+                            <td class="px-4 py-2">
+                                {{ owner.address1 }}
+                                {{ owner.address2 }},
+                                {{ owner.city }},
+                                {{ owner.state }},
+                                {{ owner.country }},
+                                {{ owner.postcode }}
+                            </td>
+                            <td class="px-4 py-2">
+                                <div class="status_label {% if item.status_label == 'Live/Pending' %} bg-yellow-600 {% elif item.status_label == 'Live/Registered' %} bg-green-600 {% elif item.status_label == 'Dead/Abandoned' %} bg-red-600 {% else %} bg-sky-600 {% endif %} ">
+                                    {{ item.status_label }}
+                                </div>
+                                <br>
+                                <div class="type_label">{{ owner.legal_entity_type_label }}</div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock content %}
