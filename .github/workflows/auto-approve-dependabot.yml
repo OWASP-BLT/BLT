@@ -7,6 +7,7 @@ jobs:
   autoapprove:
     name: Auto-Approve a PR by dependabot
     runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]' || github.actor == 'dependabot'
     steps:
       - name: Auto approve
         uses: cognitedata/auto-approve-dependabot-action@v3.0.1
