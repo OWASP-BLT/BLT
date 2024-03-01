@@ -1,4 +1,4 @@
-name: Auto Assign Issues
+name: Auto Assign
 
 on:
   issue_comment:
