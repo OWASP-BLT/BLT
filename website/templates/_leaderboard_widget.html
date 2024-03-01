@@ -18,35 +18,53 @@
             Leaderboard has been reset for {% now "F" %}, be the first to find issues!
         {% endif %}
         {% for leader in leaderboard %}
-            <a href="{% url 'profile' slug=leader.username %}"
-               class="flex flex-row h-[4rem] items-center my-2 mx-1 hover:bg-[#e8e8e8] rounded-2xl">
-                <span class="h-full w-[8rem] flex justify-center items-center scale-[0.65]">
+            <div class="flex flex-row h-[4rem] items-center my-2 mx-1 hover:bg-[#e8e8e8] rounded-2xl">
+                <a href="{% url 'profile' slug=leader.username %}"
+                   class="h-full w-[8rem] flex justify-center items-center scale-[0.65] relative">
                     {% if leader.userprofile.avatar %}
                         <img src="{{ leader.userprofile.avatar }}"
-                             class="profileimage object-cover"
-                             width="50px"
-                             height="50px"
+                             class="h-[30px] object-cover img-responsive rounded-full"
+                             width="30"
+                             height="30"
                              alt="user avatar">
                     {% elif user.socialaccount_set.all.0.get_avatar_url %}
                         <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
-                             class="profileimage object-cover"
-                             width="50px"
-                             height="50px"
+                             class="h-[30px] object-cover img-responsive rounded-full"
+                             width="30"
+                             height="30"
                              alt="user avatar">
                     {% else %}
                         <img src="{% gravatar_url leader.email 50 %}"
-                             class="profileimage object-cover"
-                             width="50px"
-                             height="50px"
+                             class="h-[30px] object-cover img-responsive rounded-full"
+                             width="30"
+                             height="30"
                              alt="user avatar">
                     {% endif %}
-                </span>
-                <span class="w-full overflow-clip font-semibold text-[#500000bd] text-[18px] mb-2">{{ leader.username }}</span>
-                <span class="rank me-2 w-[5.5rem] flex flex-row items-end text-black font-semibold h-[2rem] rounded-full {% if forloop.counter == 1 %}bg-[gold]{% endif %} {% if forloop.counter == 2 %}bg-[#CDCDCD]{% endif %} {% if forloop.counter == 3 %}bg-[#F8BF95]{% endif %} ">
-                    <span class="ms-auto text-[15px] mb-[-1.1px]">{{ forloop.counter }}</span>
-                    <span class="me-auto text-[10px] mb-[0.8px]">{{ forloop.counter|ordinal|slice:"1:" }}</span>
-                </span>
-            </a>
+                    {% if forloop.counter == 1 %}
+                        <i class="fas fa-medal text-[gold] text-2xl absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2"></i>
+                    {% elif forloop.counter == 2 %}
+                        <i class="fas fa-medal text-[silver] text-2xl absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2"></i>
+                    {% elif forloop.counter == 3 %}
+                        <i class="fas fa-medal text-[bronze] text-2xl absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2"></i>
+                    {% endif %}
+                </a>
+                <span class="w-full overflow-clip font-semibold text-[#500000bd] text-[12px] mb-2">{{ leader.username }}</span>
+                <button type="button" id="openModal" class="btn btn-danger text-black">
+                    TIP:<i class="fab fa-btc"></i>
+                </button>
+                <dialog id="dialog">
+                    <img id="qr-image" alt="QR Code" height="400" width="500">
+                    <p id="bch-address">
+                        BCH:
+                        {% if leader.userprofile.crypto_address %}
+                            {{ leader.userprofile.crypto_address }}
+                        {% else %}
+                            User has not entered a BCH address - your tip will go to the leaderboard fund
+                        {% endif %}
+                    </p>
+                    <button id="close" class="btn btn-danger w-full">Close</button>
+                </dialog>
+            </div>
         {% endfor %}
     </div>
     <div>
@@ -60,6 +78,19 @@
 </div>
 {% comment %} positions the leaderboard rightmost {% endcomment %}
 <script>
+    document.getElementById('openModal').addEventListener('click', function() {
+        var address = "{{ leader.userprofile.crypto_address }}";
+        console.log("{{ leader.userprofile.crypto_address }}");
+        if (address == '') {
+            address = "qqeht8vnwag20yv8dvtcrd4ujx09fwxwsqqqw93w88";
+        }
+        var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?data=bitcoincash:" + address + "&size=400x500";
+        document.getElementById('qr-image').src = qrUrl;
+        document.getElementById('dialog').showModal();
+        document.getElementById('close').addEventListener('click',function(){
+            document.getElementById('dialog').close();
+        });
+    });
     document.addEventListener('DOMContentLoaded', function() {
       const grid = document.querySelector('.hero-bugs-container');
       const child = document.querySelector('.leaderboard-widget');
