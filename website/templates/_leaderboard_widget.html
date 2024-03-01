@@ -53,13 +53,15 @@
                     TIP:<i class="fab fa-btc"></i>
                 </button>
                 <dialog id="dialog">
-                    <img id="qr-image" alt="QR Code" height="400" width="500">
+                    <img id="qr-image" alt="QR Code" height="300" width="300">
                     <p id="bch-address">
                         BCH:
                         {% if leader.userprofile.crypto_address %}
                             {{ leader.userprofile.crypto_address }}
                         {% else %}
-                            User has not entered a BCH address - your tip will go to the leaderboard fund
+                            User has not entered a BCH address:
+                            <br>
+                            Your tip will go to the leaderboard fund
                         {% endif %}
                     </p>
                     <button id="close" class="btn btn-danger w-full">Close</button>
@@ -80,11 +82,10 @@
 <script>
     document.getElementById('openModal').addEventListener('click', function() {
         var address = "{{ leader.userprofile.crypto_address }}";
-        console.log("{{ leader.userprofile.crypto_address }}");
         if (address == '') {
             address = "qqeht8vnwag20yv8dvtcrd4ujx09fwxwsqqqw93w88";
         }
-        var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?data=bitcoincash:" + address + "&size=400x500";
+        var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?data=bitcoincash:" + address + "&size=300x300";
         document.getElementById('qr-image').src = qrUrl;
         document.getElementById('dialog').showModal();
         document.getElementById('close').addEventListener('click',function(){
