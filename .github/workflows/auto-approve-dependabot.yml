@@ -5,7 +5,7 @@ on: pull_request_target
 
 jobs:
   autoapprove:
-    name: Auto-Approve a PR by dependabot
+    name: Approve dependabot
     runs-on: ubuntu-latest
     if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]' || github.actor == 'dependabot'
     steps:
