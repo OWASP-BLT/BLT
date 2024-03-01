@@ -82,10 +82,17 @@
                                     {% endif %}
                                 </div>
                                 <div class="flex flex-col justify-center">
-                                    <a href="{% url 'profile' slug=object.user.username %}">
-                                        Reported By
-                                        <span class="font-bold">{{ object.user.username|default_if_none:"Anonymous" }}</span>
-                                    </a>
+                                    {% if object.user.username %}
+                                        <a href="{% url 'profile' slug=object.user.username %}">
+                                            Reported By
+                                            <span class="font-bold">{{ object.user.username }}</span>
+                                        </a>
+                                    {% else %}
+                                        <a href="">
+                                            Reported By
+                                            <span class="font-bold">Anonymous</span>
+                                        </a>
+                                    {% endif %}
                                     <p class="text-xl text-gray-600">
                                         Report viewed by <i class="fa fa-eye"></i> <span class="font-bold">{{ object.views }} users</span>
                                     </p>
@@ -298,8 +305,12 @@
                                 {% endif %}
                             </div>
                             <div class="full p-3 flex flex-col justify-center">
-                                <a class="font-bold text-3xl"
-                                   href="{% url 'profile' slug=object.user.username %}">Reported By {{ object.user.username|default_if_none:"Anonymous" }}</a>
+                                {% if object.user.username %}
+                                    <a class="font-bold text-3xl"
+                                       href="{% url 'profile' slug=object.user.username %}">Reported By {{ object.user.username }}</a>
+                                {% else %}
+                                    <a class="font-bold text-3xl" href="">Reported By Anonymous</a>
+                                {% endif %}
                                 <p class="text-2xl font-light">
                                     Total points <span class="font-bold">{{ users_score }}</span>
                                 </p>
