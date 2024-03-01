@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
+    trademarks
+{% endblock title %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <style>
+    #query{
+        position: relative;
+        top: 40px;
+        left: 172px;
+        background-color: #E4E4E4;
+        border-style: outset;
+        border-radius: 40px;
+        width: 659px;
+        height: 44px;
+    }
+    .search_input{
+        width: 100%;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+    .search_input:focus{
+        outline: none;
+        border-color: #f2f2f2; /* Change border color on focus */
+    }
+    #search_button{
+        width: 231px;
+        height: 53px;
+        background-color: #FF4D4D;
+        position: relative;
+        border-radius: 30px;
+        top: 118px;
+        right: 260px;
+        font-size: medium;
+        font-weight: bold;
+        color: #f2f2f2;
+    }
+    #search_button:hover{
+        outline: none;
+        border-color: #f2f2f2; /* Change border color on focus */
+        box-shadow: 0 0 5px #e93232; /* Add a shadow on focus */
+    }
+
+    .trademark-logo{
+        position: relative;
+        margin-top: 100px;
+        left: 184px;
+        top: 37px;
+        width: 663px;
+        height: 185px;
+    }
+    .tm-wrapper{
+        position: relative;
+        left: 181px;
+        top: 0px;
+        height: 446px;
+        width: 961px;
+        background-color: #FFFFFF;
+        border-radius: 30px;
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+        font-weight: 200;
+        font-style: normal;
+    }
+    .tm-wrapper p{
+        font-size: 13px;
+        position: absolute;
+        left: 292px;
+        top: 374px;
+        opacity: 60%;
+    }
+
+    </style>
+    <div class="tm-wrapper">
+        <img class="trademark-logo"
+             alt="Trademark Search Image"
+             height="185px"
+             width="663px"
+             src="{% static 'img/tm-search.png' %}">
+        <form method="post" class="search-container" role="search" id="form">
+            {% csrf_token %}
+            <input class="search_input"
+                   type="search"
+                   id="query"
+                   name="query"
+                   placeholder="Search...">
+            <button id="search_button" type="submit">Search</button>
+        </form>
+        <p>This data is fetched from United States Patent and Trademark Office</p>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var form = document.getElementById('form');
+        var searchInput = document.getElementById('query'); // Corrected ID
+        var searchButton = document.getElementById('search_button');
+        
+        form.addEventListener('submit', function(event) {
+            if (searchInput.value.trim() === '') {
+                event.preventDefault(); // Prevent the form from submitting
+            }
+        });
+    });
+
+    </script>
+{% endblock content %}
