@@ -23,7 +23,8 @@
                 <li class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">{% trans "Company" %}</li>
                 <li>
                     <a href="https://github.com/OWASP/BLT/releases"
-                       class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Features" %}</a>
+                       class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline"
+                       rel="noopener noreferrer">{% trans "Features" %}</a>
                 </li>
                 <li>
                     <a href="{% url 'stats' %}"
@@ -53,15 +54,18 @@
                 <li class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">{% trans "Get Started" %}</li>
                 <li>
                     <a href="https://{% env 'FQDN' %}/swagger/"
-                       class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Developer API" %}</a>
+                       class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline"
+                       rel="noopener noreferrer">{% trans "Developer API" %}</a>
                 </li>
                 <li>
                     <a href="https://github.com/OWASP/BLT/blob/main/Setup.md"
-                       class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Documentation" %}</a>
+                       class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline"
+                       rel="noopener noreferrer">{% trans "Documentation" %}</a>
                 </li>
                 <li>
                     <a href="https://github.com/OWASP/BLT#readme"
-                       class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Guides" %}</a>
+                       class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline"
+                       rel="noopener noreferrer">{% trans "Guides" %}</a>
                 </li>
             </ul>
             <div class="text-gray-700 flex flex-col w-full">
@@ -69,7 +73,8 @@
                 <div class="flex pl-4 justify-start mt-2">
                     <a class="block flex items-center text-gray-300 hover:text-white mr-6 no-underline"
                        href="{% env 'FACEBOOK_URL' %}"
-                       target="_new">
+                       target="_new"
+                       rel="noopener noreferrer">
                         <svg viewBox="0 0 24 24"
                              class="fill-current w-10 h-10"
                              xmlns="http://www.w3.org/2000/svg">
@@ -78,7 +83,8 @@
                     </a>
                     <a class="block flex items-center text-gray-300 hover:text-white mr-6 no-underline"
                        href="{% env 'TWITTER_URL' %}"
-                       target="_new">
+                       target="_new"
+                       rel="noopener noreferrer">
                         <svg viewBox="0 0 24 24"
                              class="fill-current w-10 h-10"
                              xmlns="http://www.w3.org/2000/svg">
@@ -87,7 +93,8 @@
                     </a>
                     <a class="block flex items-center text-gray-300 hover:text-white no-underline"
                        href="{% env 'GITHUB_URL' %}"
-                       target="_new">
+                       target="_new"
+                       rel="noopener noreferrer">
                         <svg viewBox="0 0 24 24"
                              class="fill-current w-10 h-10"
                              xmlns="http://www.w3.org/2000/svg">
@@ -96,7 +103,8 @@
                     </a>
                     <a class="w-10 h-10 block flex ml-5 rounded-[50px] p-[3px] items-center bg-gray-300 hover:bg-white no-underline"
                        href="{% env 'BLOG_URL' %}"
-                       target="_new">
+                       target="_new"
+                       rel="noopener noreferrer">
                         <img src="{% static 'img/blog.svg' %}"
                              alt="steemit"
                              width="24"
@@ -110,7 +118,8 @@
         <p>
             {% trans "Powered by" %}
             <a class="text-[#327BB7]"
-               href="https://owasp.org/www-project-bug-logging-tool/">OWASP Bug Logging Tool</a>
+               href="https://owasp.org/www-project-bug-logging-tool/"
+               rel="noopener noreferrer">OWASP Bug Logging Tool</a>
         </p>
         <form id="footerForm"
               class="flex items-center ml-4"
