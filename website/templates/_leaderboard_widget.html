@@ -53,8 +53,16 @@
                     TIP:<i class="fab fa-btc"></i>
                 </button>
                 <dialog id="dialog">
-                    <img id="qr-image" alt="QR Code" height="400" width="400">
-                    <p id="bch-address">BCH: {{ leader.userprofile.crypto_address }}</p>
+                    <img id="qr-image" alt="QR Code" height="400" width="500">
+                    <p id="bch-address">
+                        BCH:
+                        {% if leader.userprofile.crypto_address %}
+                            {{ leader.userprofile.crypto_address }}
+                        {% else %}
+                            User has not entered a BCH address - your tip will go to the leaderboard fund
+                        {% endif %}
+                    </p>
+                    <button id="close" class="btn btn-danger w-full">Close</button>
                 </dialog>
             </div>
         {% endfor %}
@@ -72,9 +80,16 @@
 <script>
     document.getElementById('openModal').addEventListener('click', function() {
         var address = "{{ leader.userprofile.crypto_address }}";
-        var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?data=bitcoincash:" + address + "&size=400x400";
+        console.log("{{ leader.userprofile.crypto_address }}");
+        if (address == '') {
+            address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
+        }
+        var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?data=bitcoincash:" + address + "&size=400x500";
         document.getElementById('qr-image').src = qrUrl;
         document.getElementById('dialog').showModal();
+        document.getElementById('close').addEventListener('click',function(){
+            document.getElementById('dialog').close();
+        });
     });
     document.addEventListener('DOMContentLoaded', function() {
       const grid = document.querySelector('.hero-bugs-container');
