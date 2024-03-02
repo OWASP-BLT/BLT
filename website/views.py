@@ -2347,7 +2347,7 @@ def issue_count(request):
 def contributors(request):
     contributors_file_path = os.path.join(settings.BASE_DIR, "contributors.json")
 
-    with open(contributors_file_path, "r") as file:
+    with open(contributors_file_path, "r",encoding='utf-8', errors='replace') as file:
         content = file.read()
 
     contributors_data = json.loads(content)
@@ -3874,4 +3874,5 @@ def update_bch_address(request):
     else:
         messages.error(request, 'Invalid request method.')
     
-    return redirect('profile', username=request.user.username)
+    username = request.user.username if request.user.username else 'default_username'
+    return redirect(reverse('profile', args=[username]))
