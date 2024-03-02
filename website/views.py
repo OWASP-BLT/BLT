@@ -3570,7 +3570,7 @@ def handler500(request, exception=None):
 def contributors_view(request, *args, **kwargs):
     contributors_file_path = os.path.join(settings.BASE_DIR, "contributors.json")
 
-    with open(contributors_file_path, "r") as file:
+    with open(contributors_file_path, "r", encoding='utf-8') as file:
         content = file.read()
 
     contributors = json.loads(content)
