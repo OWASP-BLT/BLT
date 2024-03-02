@@ -1,10 +1,10 @@
 name: CI/CD
 
 on:
-  - merge_group
-  - pull_request
-  - push
-  - workflow_dispatch
+  merge_group:
+  pull_request:
+  push:
+  workflow_dispatch:
 
 env:
   FORCE_COLOR: 1
@@ -19,6 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions: 
       issues: write
+      pull-requests: write
+      contents: write
+      actions: write
+
     steps:
       - name: Check out Repository
         uses: actions/checkout@v4
@@ -31,11 +35,13 @@ jobs:
 
   code-ql:
     name: Run CodeQL
-    needs:
-      - pre-commit
+    needs: pre-commit
     runs-on: ubuntu-latest
-    permissions: 
-      issues: write
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
     strategy:
       fail-fast: false
       matrix:
@@ -57,20 +63,23 @@ jobs:
 
   test:
     name: Run Tests
-    needs:
-      - code-ql
+    needs: code-ql
     runs-on: ubuntu-latest
-    permissions: 
+    permissions:
       issues: write
+      pull-requests: write
+      contents: write
+      actions: write
+
     steps:
       - uses: nanasess/setup-chromedriver@v2
       - uses: actions/checkout@v2
-      - name: Set up Python 3.11.2
-        run: pipx install poetry
-      - uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
           python-version: 3.11.2
-          cache: 'poetry'
+      - name: Install Poetry
+        run: pip install poetry
       - name: Install dependencies
         run: poetry install
       - name: Collect static files
