@@ -3858,3 +3858,21 @@ def trademark_detailview(request, slug):
 #                     headers=headers,
 #                 )
 #         mail.logout()
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+@csrf_exempt
+def update_bch_address(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        new_address = data.get('new_address')
+        if new_address:
+            user_profile = request.user.userprofile
+            user_profile.crypto_address = new_address
+            user_profile.save()
+            return JsonResponse({'message': 'BCH Address updated successfully'})
+        else:
+            return JsonResponse({'error': 'New address is empty'}, status=400)
+    else:
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
