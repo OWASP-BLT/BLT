@@ -19,6 +19,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions: 
       issues: write
+      pull-requests: write
+      contents: write
+      actions: write
+
+
     steps:
       - name: Check out Repository
         uses: actions/checkout@v4
@@ -34,8 +39,12 @@ jobs:
     needs:
       - pre-commit
     runs-on: ubuntu-latest
-    permissions: 
+    permissions:
       issues: write
+      pull-requests: write
+      contents: write
+      actions: write
+
     strategy:
       fail-fast: false
       matrix:
@@ -60,8 +69,12 @@ jobs:
     needs:
       - code-ql
     runs-on: ubuntu-latest
-    permissions: 
+    permissions:
       issues: write
+      pull-requests: write
+      contents: write
+      actions: write
+
     steps:
       - uses: nanasess/setup-chromedriver@v2
       - uses: actions/checkout@v2
