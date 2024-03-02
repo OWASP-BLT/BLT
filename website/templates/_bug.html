@@ -60,81 +60,79 @@
     </div>
     <div class="bug-actions h-[45px] flex flex-row justify-between">
         <div class="flex flex-row items-center">
-        <button {% if not user.is_authenticated %}disabled{% endif %}
-                onclick="like_unlike_handler(event,{{ bug.id }})">
-            <svg id="likeSvg{{ bug.id }}"
-                 class="scale-125 m-3"
-                 width="23"
-                 height="23"
-                 viewBox="0 0 23 23"
-                 fill="none"
-                 xmlns="http://www.w3.org/2000/svg">
-                <path d="M7.46692 9.45723V18.6604" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round">
-                </path>
-                <path d="M16.0815 18.6604H7.46693H3.78564V9.4572H7.46693L12.2485 3.87867C12.7023 3.34933 13.4161 3.12177 14.0925 3.29086L14.1362 3.3018C15.3711 3.61052 15.9274 5.04941 15.2214 6.10849L12.9889 9.4572H17.1859C18.3474 9.4572 19.2186 10.5198 18.9908 11.6588L17.8864 17.1807C17.7143 18.0411 16.9589 18.6604 16.0815 18.6604Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round">
-                </path>
-            </svg>
-        </button>
-        <span id="likes_count">0</span>
-        {% with user_issue_upvoted_list=user.userprofile.issue_upvoted.all %}
-            {% if user_issue_upvoted_list and bug in user_issue_upvoted_list %}
-                <script>
+            <button {% if not user.is_authenticated %}disabled{% endif %}
+                    onclick="like_unlike_handler(event,{{ bug.id }})">
+                <svg id="likeSvg{{ bug.id }}"
+                     class="scale-125 m-3"
+                     width="23"
+                     height="23"
+                     viewBox="0 0 23 23"
+                     fill="none"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path d="M7.46692 9.45723V18.6604" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round">
+                    </path>
+                    <path d="M16.0815 18.6604H7.46693H3.78564V9.4572H7.46693L12.2485 3.87867C12.7023 3.34933 13.4161 3.12177 14.0925 3.29086L14.1362 3.3018C15.3711 3.61052 15.9274 5.04941 15.2214 6.10849L12.9889 9.4572H17.1859C18.3474 9.4572 19.2186 10.5198 18.9908 11.6588L17.8864 17.1807C17.7143 18.0411 16.9589 18.6604 16.0815 18.6604Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round">
+                    </path>
+                </svg>
+            </button>
+            <span id="likes_count">0</span>
+            {% with user_issue_upvoted_list=user.userprofile.issue_upvoted.all %}
+                {% if user_issue_upvoted_list and bug in user_issue_upvoted_list %}
+                    <script>
                     $(document).ready(function () {
                         $('#likeSvg{{bug.id}}').find('path').attr('fill', '#a11010');
                         getVoteCount({{bug.id}});
                     });
-                </script>
-            {% endif %}
-        {% endwith %}
-        <button {% if not user.is_authenticated %}disabled{% endif %}
-            onclick="dislike_handler(event,{{ bug.id }})">
-            <svg id="dislikeSvg{{ bug.id }}" 
-            class="scale-125 m-3" 
-            width="23" 
-            height="23" 
-            viewBox="0 0 23 23" 
-            fill="none" 
-            xmlns="http://www.w3.org/2000/svg">
-                <path d="M 7.467 12.439 L 7.467 3.236" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round" style=""/>
-                <path d="M 16.081 3.236 L 7.467 3.236 L 3.786 3.236 L 3.786 12.439 L 7.467 12.439 L 12.249 18.018 C 12.702 18.547 13.416 18.774 14.093 18.605 L 14.136 18.594 C 15.371 18.286 15.927 16.847 15.221 15.788 L 12.989 12.439 L 17.186 12.439 C 18.347 12.439 19.219 11.376 18.991 10.237 L 17.886 4.716 C 17.714 3.855 16.959 3.236 16.081 3.236 Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round" style=""/>
-            </svg>
-        </button>
-        <span id="dislikes_count">0</span>
-
-        {% with user_issue_downvoted_list=user.userprofile.issue_downvoted.all %}
-            {% if user_issue_downvoted_list and bug in user_issue_downvoted_list %}
-                <script>
+                    </script>
+                {% endif %}
+            {% endwith %}
+            <button {% if not user.is_authenticated %}disabled{% endif %}
+                    onclick="dislike_handler(event,{{ bug.id }})">
+                <svg id="dislikeSvg{{ bug.id }}"
+                     class="scale-125 m-3"
+                     width="23"
+                     height="23"
+                     viewBox="0 0 23 23"
+                     fill="none"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path d="M 7.467 12.439 L 7.467 3.236" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round" style="" />
+                    <path d="M 16.081 3.236 L 7.467 3.236 L 3.786 3.236 L 3.786 12.439 L 7.467 12.439 L 12.249 18.018 C 12.702 18.547 13.416 18.774 14.093 18.605 L 14.136 18.594 C 15.371 18.286 15.927 16.847 15.221 15.788 L 12.989 12.439 L 17.186 12.439 C 18.347 12.439 19.219 11.376 18.991 10.237 L 17.886 4.716 C 17.714 3.855 16.959 3.236 16.081 3.236 Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round" style="" />
+                </svg>
+            </button>
+            <span id="dislikes_count">0</span>
+            {% with user_issue_downvoted_list=user.userprofile.issue_downvoted.all %}
+                {% if user_issue_downvoted_list and bug in user_issue_downvoted_list %}
+                    <script>
                     $(document).ready(function () {
                         $('#dislikeSvg{{bug.id}}').find('path').attr('fill', '#a11010');
                         getVoteCount({{bug.id}});
                     });
-                </script>
-            {% endif %}
-        {% endwith %}
-        <button {% if not user.is_authenticated %}disabled{% endif %}
-                onclick="flag_unflag_handler(event,{{ bug.id }})">
-            <svg id="flagSvg{{ bug.id }}"
-                 class="scale-125 m-3 "
-                 width="23"
-                 height="23"
-                 viewBox="0 0 23 23"
-                 fill="none"
-                 xmlns="http://www.w3.org/2000/svg">
-                <path d="M4.06152 19.5808V13.1385V3.93531" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round" />
-                <path d="M4.06152 3.93531H18.7867L14.1851 8.53692L18.7867 13.1385H4.06152" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-        </button>
-        {% with user_issue_flagged_list=user.userprofile.issue_flaged.all %}
-            {% if user_issue_flagged_list and bug in user_issue_flagged_list %}
-                <script>
+                    </script>
+                {% endif %}
+            {% endwith %}
+            <button {% if not user.is_authenticated %}disabled{% endif %}
+                    onclick="flag_unflag_handler(event,{{ bug.id }})">
+                <svg id="flagSvg{{ bug.id }}"
+                     class="scale-125 m-3 "
+                     width="23"
+                     height="23"
+                     viewBox="0 0 23 23"
+                     fill="none"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4.06152 19.5808V13.1385V3.93531" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M4.06152 3.93531H18.7867L14.1851 8.53692L18.7867 13.1385H4.06152" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </button>
+            {% with user_issue_flagged_list=user.userprofile.issue_flaged.all %}
+                {% if user_issue_flagged_list and bug in user_issue_flagged_list %}
+                    <script>
                         $(document).ready(function () {
                             $('#flagSvg{{bug.id}}').find('path').attr('fill', '#a11010');
                         });
-                </script>
-            {% endif %}
-        {% endwith %}
-
-    </div>
+                    </script>
+                {% endif %}
+            {% endwith %}
+        </div>
         <a target="_blank"
            href="https://twitter.com/intent/tweet?text=Bug Found on @{{ bug.domain_title }} - {{ bug.description }} Report: https://{% env 'FQDN' %}/issue2/{{ bug.id }}"
            class="w-fit flex items-center px-2 h-14 rounded-xl font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0 "

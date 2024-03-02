@@ -67,14 +67,14 @@ from website.views import (
     UserProfileDetailsView,
     UserProfileDetailView,
     contributors_view,
+    dislike_issue2,
     facebook_callback,
     flag_issue2,
     github_callback,
     google_callback,
     like_issue2,
     subscribe_to_domains,
-    dislike_issue2,
-    vote_count
+    vote_count,
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
