@@ -437,7 +437,7 @@
     </div>
     <script type="text/javascript">
     document.getElementById('openModal').addEventListener('click', function() {
-        var address = "{{ user.userprofile.crypto_address }}";
+        var address = "{{ request.user.userprofile.crypto_address }}";
         if (address == '' || address == "None") {
             address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
         }
