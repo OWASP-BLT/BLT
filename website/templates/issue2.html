@@ -340,11 +340,8 @@
                              alt="Image 1"
                              width="auto"
                              height="auto">
-                        <h2 class="mb-2 text-xl font-bold leading-tight text-gray-900 ">
-                            {{ issue.description }}
-                        </h2>
-                        <P
-                        class="inline-flex items-center font-medium underline underline-offset-4 text-primary-600 hover:no-underline">
+                        <h2 class="mb-2 text-xl font-bold leading-tight text-gray-900 ">{{ issue.description }}</h2>
+                        <p class="inline-flex items-center font-medium underline underline-offset-4 text-primary-600 hover:no-underline">
                             Read in {{ issue.markdown_description|length|divide:200 }} minutes
                         </P>
                     </a>
