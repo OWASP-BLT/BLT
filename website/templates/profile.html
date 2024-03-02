@@ -206,6 +206,20 @@
                     </form>
                 </div>
             {% endif %}
+            {% if request.user == user %}
+                <div id="update-overlay">
+                    <form method="post"
+                          action="{% url 'update_bch_address' %}"
+                          id="update-form">
+                        {% csrf_token %}
+                        <input type="text"
+                               id="new-bch-address"
+                               name="new_address"
+                               placeholder="Enter new BCH address">
+                        <button type="submit" class="btn btn-primary text-black">Save</button>
+                    </form>
+                </div>
+            {% endif %}
             <div id="target_div">
                 {% if request.user != user and request.user.is_authenticated %}
                     {% if request.user.email in followers_list %}
@@ -215,10 +229,20 @@
                     {% endif %}
                 {% endif %}
                 <div class="status">
-                    <button type="button" id="openModal" class="btn btn-danger">Send a Tip</button>
+                    <button type="button" id="openModal" class="btn btn-danger text-black">Send a Tip</button>
                     <dialog id="dialog">
-                        <img id="qr-image" alt="QR Code" width="400" height="400">
-                        <p id="bch-address">BCH: {{ user.userprofile.crypto_address }}</p>
+                        <img id="qr-image" alt="QR Code" height="300" width="400">
+                        <p id="bch-address">
+                            BCH:
+                            {% if user.userprofile.crypto_address %}
+                                {{ user.userprofile.crypto_address }}
+                            {% else %}
+                                User has not entered a BCH address:
+                                <br>
+                                Your tip will go to the leaderboard fund
+                            {% endif %}
+                        </p>
+                        <button id="close" class="btn-danger w-full">Close</button>
                     </dialog>
                 </div>
             </div>
@@ -414,9 +438,15 @@
     <script type="text/javascript">
     document.getElementById('openModal').addEventListener('click', function() {
         var address = "{{ user.userprofile.crypto_address }}";
-        var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?data=bitcoincash:" + address + "&size=400x400";
+        if (address == '' || address == "None") {
+            address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
+        }
+        var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?data=bitcoincash:" + address + "&size=400x300";
         document.getElementById('qr-image').src = qrUrl;
         document.getElementById('dialog').showModal();
+        document.getElementById('close').addEventListener('click',function(){
+            document.getElementById('dialog').close();
+        });
     });
 
     $(function () {
