@@ -3866,7 +3866,7 @@ def update_bch_address(request):
                 user_profile = request.user.userprofile
                 user_profile.crypto_address = new_address
                 user_profile.save()
-                return redirect(reverse('profile', args=[request.user.username]))
+                messages.success(request, 'BCH Address updated successfully.')
             except Exception as e:
-                return redirect(reverse('profile', args=[request.user.username]))
+                messages.error(request, 'Failed to update BCH Address.')
     return redirect(reverse('profile', args=[request.user.username]))
