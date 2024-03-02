@@ -1,4 +1,4 @@
-name: Auto Assign Issues
+name: Auto Assign
 
 on:
   issue_comment:
@@ -10,8 +10,10 @@ on:
 jobs:
   auto-assign:
     runs-on: ubuntu-latest
+    permissions: 
+      issues: write
     steps:
       - name: Assign Issues
-        uses: OWASP/BLT-Action@main
+        uses: OWASP-BLT/BLT-Action@main
         with:
             repo-token: ${{ secrets.GITHUB_TOKEN }}
