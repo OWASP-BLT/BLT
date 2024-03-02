@@ -10,6 +10,8 @@ on:
 jobs:
   auto-assign:
     runs-on: ubuntu-latest
+    permissions: 
+      issues: write
     steps:
       - name: Assign Issues
         uses: OWASP-BLT/BLT-Action@main

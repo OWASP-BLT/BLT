@@ -2382,7 +2382,7 @@ def issue_count(request):
 def contributors(request):
     contributors_file_path = os.path.join(settings.BASE_DIR, "contributors.json")
 
-    with open(contributors_file_path, "r") as file:
+    with open(contributors_file_path, "r",encoding='utf-8', errors='replace') as file:
         content = file.read()
 
     contributors_data = json.loads(content)
@@ -3461,7 +3461,7 @@ def handler500(request, exception=None):
 def contributors_view(request, *args, **kwargs):
     contributors_file_path = os.path.join(settings.BASE_DIR, "contributors.json")
 
-    with open(contributors_file_path, "r") as file:
+    with open(contributors_file_path, "r", encoding='utf-8') as file:
         content = file.read()
 
     contributors = json.loads(content)
@@ -3893,3 +3893,21 @@ def trademark_detailview(request, slug):
 #                     headers=headers,
 #                 )
 #         mail.logout()
+def update_bch_address(request):
+    if request.method == 'POST':
+        new_address = request.POST.get('new_address')
+        if new_address:
+            try:
+                user_profile = request.user.userprofile
+                user_profile.crypto_address = new_address
+                user_profile.save()
+                messages.success(request, 'BCH Address updated successfully.')
+            except Exception as e:
+                messages.error(request, 'Failed to update BCH Address.')
+        else:
+            messages.error(request, 'Please provide a valid BCH Address.')
+    else:
+        messages.error(request, 'Invalid request method.')
+    
+    username = request.user.username if request.user.username else 'default_username'
+    return redirect(reverse('profile', args=[username]))
