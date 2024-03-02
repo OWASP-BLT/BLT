@@ -3869,4 +3869,7 @@ def update_bch_address(request):
                 messages.success(request, 'BCH Address updated successfully.')
             except Exception as e:
                 messages.error(request, 'Failed to update BCH Address.')
-    return redirect(reverse('profile', args=[request.user.username]))
+    if request.user.is_authenticated:
+        return redirect(reverse('profile', args=[request.user.username]))
+    else:
+        return redirect('login')  # Or any other URL for non-authenticated users
