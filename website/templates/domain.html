@@ -194,7 +194,9 @@
         <div class="col-lg-3 col-md-3 ">
             {% if domain.webshot %}
                 <div class="col-lg-12">
-                    <a href="https://{{ domain.url }}" target="_new">
+                    <a href="https://{{ domain.url }}"
+                       rel="noopener noreferrer"
+                       target="_new">
                         <img src="{{ domain.webshot.url }}"
                              width="100%"
                              height="100%"
