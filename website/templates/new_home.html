@@ -36,17 +36,39 @@
                 url: '/like_issue2/' + issue_pk + '/',
                 data: {},
                 success: function (data) {
-                    // Toggle the color of the SVG
+
                     var svg = $('#likeSvg' + issue_pk);
+                    var currentColor = svg.find('path').attr('fill');
+                    
+                    if (currentColor === '#a11010') {
+                        svg.find('path').attr('fill', ''); 
+                    } else {
+                        svg.find('path').attr('fill', '#a11010');
+                    }
+
+                    getVoteCount(issue_pk);
+                },
+            });
+        }
+        function dislike_handler(e,issue_pk){
+            e.preventDefault();
+            var issue_pk = issue_pk;
+            $.ajax({
+                type: 'GET',
+                url: '/dislike_issue2/' + issue_pk + '/',
+                data: {},
+                success: function (data) {
+                    console.log(data)
+                    var svg = $('#dislikeSvg' + issue_pk);
                     var currentColor = svg.find('path').attr('fill');
     
                     if (currentColor === '#a11010') {
-                        // Change to default color
-                        svg.find('path').attr('fill', ''); // Set to default color
+                        svg.find('path').attr('fill', ''); 
                     } else {
-                        // Change to full red
                         svg.find('path').attr('fill', '#a11010');
                     }
+
+                    getVoteCount(issue_pk);
                 },
             });
         }
@@ -70,6 +92,19 @@
                         svg.find('path').attr('fill', '#a11010');
                     }
                 },
+            });
+        }
+        function getVoteCount(issue_pk) {
+            $.ajax({
+                url: `/vote_count/${issue_pk}/`,  // Adjust the URL as needed
+                type: 'GET',
+                success: function(response) {
+                    $('#likes_count').text(response.likes);
+                    $('#dislikes_count').text(response.dislikes);
+                },
+                error: function(error) {
+                    console.log(error);
+                }
             });
         }
     </script>
