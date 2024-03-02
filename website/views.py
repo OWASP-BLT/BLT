@@ -91,6 +91,36 @@ from website.models import (
 
 from .forms import CaptchaForm, HuntForm, QuickIssueForm, UserProfileForm
 
+WHITELISTED_IMAGE_TYPES = {
+    'jpeg': 'image/jpeg',
+    'jpg': 'image/jpeg',
+    'png': 'image/png'
+}
+
+
+def image_validator(img):
+    try:
+        filesize = img.file.size
+    except:
+        filesize = img.size
+    print(img)
+    extension = img.name.split('.')[-1]
+    print(extension)
+    content_type = img.content_type
+    print(content_type)
+    megabyte_limit = 3.0
+    if not extension or extension.lower() not in WHITELISTED_IMAGE_TYPES.keys():
+        error = "Invalid image types"
+        return error
+    elif filesize > megabyte_limit * 1024 * 1024:
+        error =  "Max file size is %sMB" % str(megabyte_limit)
+        return error
+
+    elif content_type not in WHITELISTED_IMAGE_TYPES.values():
+        error= "invalid image content-type"
+        return error
+    else:
+        return True
 
 def is_valid_https_url(url):
     validate = URLValidator(schemes=["https"])  # Only allow HTTPS URLs
@@ -831,11 +861,16 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 obj.delete()
                 return HttpResponseRedirect("/report/")
             for screenshot in self.request.FILES.getlist("screenshots"):
-                filename = screenshot.name
-                extension = filename.split(".")[-1]
-                screenshot.name = (filename + str(uuid.uuid4()))[:90] + "." + extension
-                default_storage.save(f"screenshots/{screenshot.name}", screenshot)
-                IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}", issue=obj)
+                img_valid = image_validator(screenshot)
+                if img_valid is True:
+                    filename = screenshot.name
+                    extension = filename.split(".")[-1]
+                    screenshot.name = (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
+                    default_storage.save(f"screenshots/{screenshot.name}", screenshot)
+                    IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}", issue=obj)
+                else:
+                    messages.error(self.request , img_valid)
+                    return HttpResponseRedirect("/report/")
 
             obj_screenshots = IssueScreenshot.objects.filter(issue_id=obj.id)
             screenshot_text = ""
@@ -2347,7 +2382,7 @@ def issue_count(request):
 def contributors(request):
     contributors_file_path = os.path.join(settings.BASE_DIR, "contributors.json")
 
-    with open(contributors_file_path, "r") as file:
+    with open(contributors_file_path, "r",encoding='utf-8', errors='replace') as file:
         content = file.read()
 
     contributors_data = json.loads(content)
@@ -3881,3 +3916,21 @@ def trademark_detailview(request, slug):
 #                     headers=headers,
 #                 )
 #         mail.logout()
+def update_bch_address(request):
+    if request.method == 'POST':
+        new_address = request.POST.get('new_address')
+        if new_address:
+            try:
+                user_profile = request.user.userprofile
+                user_profile.crypto_address = new_address
+                user_profile.save()
+                messages.success(request, 'BCH Address updated successfully.')
+            except Exception as e:
+                messages.error(request, 'Failed to update BCH Address.')
+        else:
+            messages.error(request, 'Please provide a valid BCH Address.')
+    else:
+        messages.error(request, 'Invalid request method.')
+    
+    username = request.user.username if request.user.username else 'default_username'
+    return redirect(reverse('profile', args=[username]))
