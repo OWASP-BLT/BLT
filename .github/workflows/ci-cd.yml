@@ -72,14 +72,14 @@ jobs:
       actions: write
 
     steps:
-      - uses: actions/checkout@v2
       - uses: nanasess/setup-chromedriver@v2
-      - name: Set up Python 3.11.2
+      - uses: actions/checkout@v2
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11.2
-          cache: 'poetry'
-      - run: pipx install poetry
+      - name: Install Poetry
+        run: pip install poetry
       - name: Install dependencies
         run: poetry install
       - name: Collect static files
