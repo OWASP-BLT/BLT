@@ -334,19 +334,19 @@
         <div class="grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
             {% for issue in more_issues %}
                 <article class="max-w-xs h-[100%]">
-                    <a href="">
+                    <a href="{% url 'issue_view2' slug=issue.id %}">
                         <img src="{{ MEDIA_URL }}{{ issue.screenshots__image }}"
                              class="mb-5 rounded-lg object-fill h-[70%]"
                              alt="Image 1"
                              width="auto"
                              height="auto">
-                    </a>
-                    <h2 class="mb-2 text-xl font-bold leading-tight text-gray-900 ">
-                        <a href="{% url 'issue_view2' issue.id %}">{{ issue.description }}</a>
-                    </h2>
-                    <a href="#"
-                       class="inline-flex items-center font-medium underline underline-offset-4 text-primary-600 hover:no-underline">
-                        Read in {{ issue.markdown_description|length|divide:200 }} minutes
+                        <h2 class="mb-2 text-xl font-bold leading-tight text-gray-900 ">
+                            {{ issue.description }}
+                        </h2>
+                        <P
+                        class="inline-flex items-center font-medium underline underline-offset-4 text-primary-600 hover:no-underline">
+                            Read in {{ issue.markdown_description|length|divide:200 }} minutes
+                        </P>
                     </a>
                 </article>
             {% endfor %}
@@ -531,3 +531,4 @@
     });
 </script>
 {% endblock content %}
+%}
