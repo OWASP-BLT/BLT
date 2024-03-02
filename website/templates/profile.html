@@ -213,7 +213,9 @@
             {% if request.user == user %}
                 <button id="update-btn" class="btn btn-danger">Update BCH Address</button>
                 <div id="update-overlay">
-                    <form method="post" action="{% url 'update_bch_address' %}" id="update-form">
+                    <form method="post"
+                          action="{% url 'update_bch_address' %}"
+                          id="update-form">
                         {% csrf_token %}
                         <input type="text"
                                id="new-bch-address"
