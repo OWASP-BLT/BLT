@@ -1,28 +1,27 @@
 name: CI/CD
 
 on:
-  push:
+  merge_group:
   pull_request:
+  push:
   workflow_dispatch:
 
 env:
   FORCE_COLOR: 1
 
-concurrency: 
-  group: ${{ github.workflow }}-${{ github.ref }}
+concurrency:
   cancel-in-progress: true
-
-permissions:
-  contents: read
-  issues: write
-  pull-requests: write
-  actions: write
-  # Note: Adjust the permissions above as necessary. The 'contents: read' permission is typically required for CodeQL analysis.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
 jobs:
   pre-commit:
     name: Run pre-commit
     runs-on: ubuntu-latest
+    permissions: 
+      issues: write
+      pull-requests: write
+      contents: write
+      actions: write
 
     steps:
       - name: Check out Repository
@@ -38,6 +37,10 @@ jobs:
     name: Run CodeQL
     needs: pre-commit
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
 
     strategy:
       fail-fast: false
@@ -62,17 +65,23 @@ jobs:
     name: Run Tests
     needs: code-ql
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: write
+      actions: write
 
     steps:
       - uses: actions/checkout@v2
       - uses: nanasess/setup-chromedriver@v2
-      - name: Set up Python
+      - name: Set up Python 3.11.2
         uses: actions/setup-python@v4
         with:
           python-version: 3.11.2
           cache: 'poetry'
+      - run: pipx install poetry
       - name: Install dependencies
-        run: pip install poetry && poetry install
+        run: poetry install
       - name: Collect static files
         run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
