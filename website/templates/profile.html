@@ -215,12 +215,14 @@
                 <div id="update-overlay">
                     <form method="post" action="/update_bch_address/" id="update-form">
                         {% csrf_token %}
-                        <input type="text" id="new-bch-address" name="new_address" placeholder="Enter new BCH address">
+                        <input type="text"
+                               id="new-bch-address"
+                               name="new_address"
+                               placeholder="Enter new BCH address">
                         <button type="submit" class="btn btn-primary">Save</button>
                     </form>
                 </div>
             {% endif %}
-
             <div id="target_div">
                 {% if request.user != user and request.user.is_authenticated %}
                     {% if request.user.email in followers_list %}
@@ -437,7 +439,6 @@
         </div>
     </div>
     <script type="text/javascript">
-    
     $(function () {
         $('#update-btn').on('click', function () {
             $('#update-overlay').show();
