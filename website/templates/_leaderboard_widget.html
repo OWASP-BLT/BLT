@@ -49,7 +49,10 @@
                     {% endif %}
                 </a>
                 <span class="w-full overflow-clip font-semibold text-[#500000bd] text-[12px] mb-2">{{ leader.username }}</span>
-                <button type="button" id="openModal-{{ leader.id }}" class="btn btn-danger text-black" onclick="openModal('{{ leader.userprofile.crypto_address }}', '{{ leader.id }}')">
+                <button type="button"
+                        id="openModal-{{ leader.id }}"
+                        class="btn btn-danger text-black"
+                        onclick="openModal('{{ leader.userprofile.crypto_address }}', '{{ leader.id }}')">
                     TIP:<i class="fab fa-btc"></i>
                 </button>
                 <dialog id="dialog-{{ leader.id }}">
