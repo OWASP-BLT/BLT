@@ -49,12 +49,12 @@
                     {% endif %}
                 </a>
                 <span class="w-full overflow-clip font-semibold text-[#500000bd] text-[12px] mb-2">{{ leader.username }}</span>
-                <button type="button" id="openModal" class="btn btn-danger text-black">
+                <button type="button" id="openModal-{{ leader.id }}" class="btn btn-danger text-black" onclick="openModal('{{ leader.userprofile.crypto_address }}', '{{ leader.id }}')">
                     TIP:<i class="fab fa-btc"></i>
                 </button>
-                <dialog id="dialog">
-                    <img id="qr-image" alt="QR Code" height="300" width="300">
-                    <p id="bch-address">
+                <dialog id="dialog-{{ leader.id }}">
+                    <img id="qr-image-{{ leader.id }}" alt="QR Code" height="300" width="400">
+                    <p id="bch-address-{{ leader.id }}">
                         BCH:
                         {% if leader.userprofile.crypto_address %}
                             {{ leader.userprofile.crypto_address }}
@@ -64,7 +64,7 @@
                             Your tip will go to the leaderboard fund
                         {% endif %}
                     </p>
-                    <button id="close" class="btn btn-danger w-full">Close</button>
+                    <button id="close-{{ leader.id }}" class="btn btn-danger w-full">Close</button>
                 </dialog>
             </div>
         {% endfor %}
@@ -80,18 +80,17 @@
 </div>
 {% comment %} positions the leaderboard rightmost {% endcomment %}
 <script>
-    document.getElementById('openModal').addEventListener('click', function() {
-        var address = "{{ leader.userprofile.crypto_address }}";
+    function openModal(address, userId) {
         if (address == '') {
             address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
         }
-        var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?data=bitcoincash:" + address + "&size=300x300";
-        document.getElementById('qr-image').src = qrUrl;
-        document.getElementById('dialog').showModal();
-        document.getElementById('close').addEventListener('click',function(){
-            document.getElementById('dialog').close();
+        var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?data=bitcoincash:" + address + "&size=400x300";
+        document.getElementById('qr-image-' + userId).src = qrUrl;
+        document.getElementById('dialog-' + userId).showModal();
+        document.getElementById('close-' + userId).addEventListener('click',function(){
+            document.getElementById('dialog-' + userId).close();
         });
-    });
+    }
     document.addEventListener('DOMContentLoaded', function() {
       const grid = document.querySelector('.hero-bugs-container');
       const child = document.querySelector('.leaderboard-widget');
