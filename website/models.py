@@ -329,15 +329,28 @@ class IssueScreenshot(models.Model):
         Issue, on_delete=models.CASCADE, related_name="screenshots"
     )
 
+    # def delete(self, *args, **kwargs):
+    #     if self.image:
+    #         # Delete the image file
+    #         storage = self.image.storage
+    #         name = (
+    #             self.image.name
+    #         )  # Use .name to get the relative file path in the storage system
+    #         storage.delete(name)
+    #     super(IssueScreenshot, self).delete(*args, **kwargs)
+
+    from google.cloud import storage
+    from django.conf import settings
+
     def delete(self, *args, **kwargs):
         if self.image:
-            # Delete the image file
             storage = self.image.storage
-            name = (
-                self.image.name
-            )  # Use .name to get the relative file path in the storage system
-            storage.delete(name)
-        super(IssueScreenshot, self).delete(*args, **kwargs)
+            client = storage.Client()
+            bucket = client.bucket(settings.GS_BUCKET_NAME)
+            blob = bucket.blob(self.image.name)
+            blob.delete()
+
+        super().delete(*args, **kwargs)
 
 
 @receiver(post_save, sender=Issue)
