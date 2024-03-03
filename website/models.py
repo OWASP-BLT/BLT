@@ -7,7 +7,6 @@ import requests
 from annoying.fields import AutoOneToOneField
 from captcha.fields import CaptchaField
 from colorthief import ColorThief
-from google.cloud import storage
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -17,6 +16,7 @@ from django.db import models
 from django.db.models import Count
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from google.cloud import storage
 from mdeditor.fields import MDTextField
 from PIL import Image
 from rest_framework.authtoken.models import Token
