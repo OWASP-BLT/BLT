@@ -1,4 +1,11 @@
 {% load gravatar %}
+<style>
+    .bottom-right {
+        position: absolute;
+        bottom: 10px;
+        right: 15px;
+    }
+</style>
 {% if request.user.is_authenticated %}
     <a class="btn btn-info btn-xs like_unlike" name="{{ object.pk }}">
         <i class="fa fa-thumbs-up"></i> {{ likes }}
@@ -76,4 +83,12 @@
             </div>
         </div>
     </div>
+</div>
+<div class="bottom-right">
+    <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/_likes_and_dislikes.html">
+        <i class="fab fa-github"></i>
+    </a>
+    <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=340%3A209&t=OZnfXHD7sfzkaLm1-1">
+        <i class="fab fa-figma"></i>
+    </a>
 </div>

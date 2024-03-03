@@ -5,6 +5,13 @@
     Social Feeds
 {% endblock title %}
 {% block content %}
+<style>
+    .bottom-right {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+    }
+</style>
     <div class="row">
         <div class="col-lg-12">
             <a class="twitter-timeline"
@@ -13,5 +20,13 @@
                rel="noopener noreferrer"></a>
             <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
         </div>
+    </div>
+    <div class="bottom-right">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/social.html">
+            <i class="fab fa-github"></i>
+        </a>
+        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=472%3A147&t=pqxWpF3hcYxjEDrs-1">
+            <i class="fab fa-figma"></i>
+        </a>
     </div>
 {% endblock content %}

@@ -162,11 +162,23 @@
             font-size: 3rem;
         }
     }
-
+    .bottom-right {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+    }    
     </style>
 {% endblock style %}
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
+    <div class="bottom-right">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/hunt.html">
+            <i class="fab fa-github"></i>
+        </a>
+        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=488%3A1341&t=pqxWpF3hcYxjEDrs-1">
+            <i class="fab fa-figma"></i>
+        </a>
+    </div>
     <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
     <form role="form"
           action="{% url 'hunt' %}"

@@ -86,6 +86,11 @@ img {
   margin-bottom: 1.25rem;    
   font-weight: 400;
 }
+.bottom-right {
+  position: absolute;
+  bottom: 10px;
+  right: 15px;
+}    
     </style>
     <section>
         {% include "includes/user_sidenav.html" %}
@@ -182,5 +187,13 @@ img {
                 <div class="clearfix"></div>
             </div>
         {% endif %}
+    </div>
+    <div class="bottom-right">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/index_user.html">
+            <i class="fab fa-github"></i>
+        </a>
+        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=488%3A1350&t=pqxWpF3hcYxjEDrs-1">
+            <i class="fab fa-figma"></i>
+        </a>
     </div>
 {% endblock content %}
