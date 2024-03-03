@@ -360,7 +360,7 @@ urlpatterns = [
     re_path(
         r"^profile/(?P<slug>[^/]+)/$", UserProfileDetailView.as_view(), name="profile"
     ),
-    re_path(r"^domain/(?P<slug>[^/]+)/$", DomainDetailView.as_view(), name="domain"),
+    re_path(r"^domain/(?P<slug>.+)/$", DomainDetailView.as_view(), name="domain"),
     re_path(
         r"^.well-known/acme-challenge/(?P<token>[^/]+)/$",
         website.views.find_key,

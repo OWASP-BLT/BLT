@@ -1377,6 +1377,9 @@ class DomainDetailView(ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(DomainDetailView, self).get_context_data(*args, **kwargs)
+        # remove any arguments from the slug
+        self.kwargs["slug"] = self.kwargs["slug"].split("?")[0]
+
         context["domain"] = get_object_or_404(Domain, name=self.kwargs["slug"])
 
         parsed_url = urlparse("http://" + self.kwargs["slug"])
