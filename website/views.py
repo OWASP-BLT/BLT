@@ -807,7 +807,13 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         raise Exception
             except:
                 messages.error(request, "Domain does not exist")
-                return HttpResponseRedirect("/report/")
+
+                captcha_form = CaptchaForm(request.POST)
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": captcha_form},
+                )
 
         return super().post(request, *args, **kwargs)
 
@@ -826,7 +832,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             messages.error(
                 self.request, "You have reached your issue creation limit for today."
             )
-            return HttpResponseRedirect("/report/")
+            return render(self.request, "report.html", {"form": self.get_form()})
         form.instance.reporter_ip_address = reporter_ip
 
         @atomic
@@ -844,7 +850,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
             captcha_form = CaptchaForm(self.request.POST)
             if not captcha_form.is_valid() and not settings.TESTING:
                 messages.error(self.request, "Invalid Captcha!")
-                return HttpResponseRedirect("/report/")
+
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": captcha_form},
+                )
 
             clean_domain = (
                 obj.domain_name.replace("www.", "")
@@ -890,7 +901,11 @@ class IssueCreate(IssueBaseCreate, CreateView):
             if len(self.request.FILES.getlist("screenshots")) > 5:
                 messages.error(self.request, "Max limit of 5 images!")
                 obj.delete()
-                return HttpResponseRedirect("/report/")
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": captcha_form},
+                )
             for screenshot in self.request.FILES.getlist("screenshots"):
                 img_valid = image_validator(screenshot)
                 if img_valid is True:
@@ -905,7 +920,11 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     )
                 else:
                     messages.error(self.request, img_valid)
-                    return HttpResponseRedirect("/report/")
+                    return render(
+                        self.request,
+                        "report.html",
+                        {"form": self.get_form(), "captcha_form": captcha_form},
+                    )
 
             obj_screenshots = IssueScreenshot.objects.filter(issue_id=obj.id)
             screenshot_text = ""
