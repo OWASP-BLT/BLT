@@ -18,13 +18,6 @@
             <li>
                 <a href="{% url 'newhome' %}">New Home</a>
             </li>
-            <!-- Authentication and User Management -->
-            <li>
-                <a href="{% url 'invite_friend' %}">Invite Friend</a>
-            </li>
-            <li>
-                <a href="{% url 'referral_signup' %}">Referral Signup</a>
-            </li>
             <li>
                 <a href="{% url 'facebook_login' %}">Facebook Login</a>
             </li>
@@ -35,34 +28,7 @@
                 <a href="{% url 'google_login' %}">Google Login</a>
             </li>
             <li>
-                <a href="{% url 'social_account_list' %}">Social Account List</a>
-            </li>
-            <!-- Company Dashboard -->
-            <li>
-                <a href="{% url 'company_dashboar_home' %}">Company Dashboard Home</a>
-            </li>
-            <li>
-                <a href="{% url 'add_or_update_domain' %}">Add or Update Domain</a>
-            </li>
-            <!-- User Dashboard -->
-            <li>
-                <a href="{% url 'user' %}">User Dashboard</a>
-            </li>
-            <!-- Hunts -->
-            <li>
-                <a href="{% url 'create_hunt' %}">Create Hunt</a>
-            </li>
-            <li>
                 <a href="{% url 'draft_hunts' %}">Draft Hunts</a>
-            </li>
-            <li>
-                <a href="{% url 'upcoming_hunts' %}">Upcoming Hunts</a>
-            </li>
-            <li>
-                <a href="{% url 'previous_hunts' %}">Previous Hunts</a>
-            </li>
-            <li>
-                <a href="{% url 'ongoing_hunts' %}">Ongoing Hunts</a>
             </li>
             <li>
                 <a href="{% url 'domain_list' %}">Domain List</a>
@@ -91,6 +57,45 @@
             </li>
             <li>
                 <a href="{% url 'scoreboard' %}">Scoreboard</a>
+            </li>
+            <hr>
+            <h3>Requires Login</h3>
+            <li>
+                <a href="{% url 'upcoming_hunts' %}">Upcoming Hunts</a>
+            </li>
+            <li>
+                <a href="{% url 'create_hunt' %}">Create Hunt</a>
+            </li>
+            <li>
+                <a href="{% url 'user' %}">User Dashboard</a>
+            </li>
+            <li>
+                <a href="{% url 'company_dashboar_home' %}">Company Dashboard Home</a>
+            </li>
+            <li>
+                <a href="{% url 'add_or_update_domain' %}">Add or Update Domain</a>
+            </li>
+            <li>
+                <a href="{% url 'ongoing_hunts' %}">Ongoing Hunts</a>
+            </li>
+            <li>
+                <a href="{% url 'domain_list' %}">Domain List</a>
+            </li>
+            <li>
+                <a href="{% url 'previous_hunts' %}">Previous Hunts</a>
+            </li>
+            <hr>
+            <h3>Needs data (todo)</h3>
+            <li>
+                <a href="{% url 'referral_signup' %}">Referral Signup</a>
+            </li>
+            <hr>
+            <h3>API</h3>
+            <li>
+                <a href="{% url 'invite_friend' %}">Invite Friend</a>
+            </li>
+            <li>
+                <a href="{% url 'social_account_list' %}">Social Account List</a>
             </li>
         </ul>
     </body>

@@ -378,7 +378,7 @@ urlpatterns = [
     re_path(r"^accounts/", include("allauth.urls")),
     re_path(
         r"^sitemap/$",
-        TemplateView.as_view(template_name="sitemap.html"),
+        website.views.sitemap,
         name="sitemap",
     ),
     re_path(
