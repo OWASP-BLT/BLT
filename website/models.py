@@ -339,9 +339,6 @@ class IssueScreenshot(models.Model):
     #         storage.delete(name)
     #     super(IssueScreenshot, self).delete(*args, **kwargs)
 
-    from google.cloud import storage
-    from django.conf import settings
-
     def delete(self, *args, **kwargs):
         if self.image:
             storage = self.image.storage
