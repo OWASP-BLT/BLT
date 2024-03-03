@@ -47,6 +47,12 @@
         }
     }
 
+    .bottom-right {
+            position: absolute;
+            bottom: 0px;
+            right: 0px;
+    }
+
     </style>
 {% endblock style %}
 {% block content %}
@@ -312,6 +318,9 @@
              width="100%"
              height="100%">
     </div>
+</div>
+<div class="bottom-right">
+    <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/report.html" class="btn btn-primary">Edit on GitHub</a>
 </div>
 {% endblock content %}
 {% block after_js %}

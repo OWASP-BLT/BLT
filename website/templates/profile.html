@@ -163,6 +163,11 @@
         padding-top: 10px;
     }
     
+    .bottom-right {
+            position: absolute;
+            bottom: 0px;
+            right: 0px;
+    }
     </style>
 {% endblock style %}
 {% block content %}
@@ -434,6 +439,9 @@
                 </div>
             </div>
         </div>
+    </div>
+    <div class="bottom-right">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/profile.html" class="btn btn-primary">Edit on GitHub</a>
     </div>
     <script type="text/javascript">
     document.getElementById('openModal').addEventListener('click', function() {

@@ -5,6 +5,12 @@
         .hero-bugs-container {
             grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
         }
+
+        .bottom-right {
+            position: absolute;
+            bottom: 0px;
+            right: 0px;
+    }
     </style>
     <div class="font-['Barlow'] text-[#2B2B2B] text-5xl tracking-wide font-semibold mb-0 mt-10 ms-[4.3%] mx-auto">
         Find bugs, earn points, prize and cash!
@@ -97,5 +103,8 @@
             {% endif %}
             <div>Page {{ bugs.number }} of {{ bugs.paginator.num_pages }}</div>
         </div>
+    </div>
+    <div class="bottom-right">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/new_home.html" class="btn btn-primary">Edit on GitHub</a>
     </div>
 {% endblock content %}
