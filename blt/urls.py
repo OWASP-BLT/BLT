@@ -421,6 +421,7 @@ urlpatterns = [
         website.views.trademark_detailview,
         name="trademark_detailview",
     ),
+    path("update_bch_address/",website.views.update_bch_address,name="update_bch_address"),
 ]
 
 if settings.DEBUG:

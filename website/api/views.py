@@ -33,7 +33,7 @@ from website.serializers import (
     IssueSerializer,
     UserProfileSerializer,
 )
-from website.views import LeaderboardBase
+from website.views import LeaderboardBase, image_validator
 
 # API's
 
@@ -193,11 +193,17 @@ class IssueViewSet(viewsets.ModelViewSet):
         issue = Issue.objects.filter(id=data["id"]).first()
 
         for screenshot in self.request.FILES.getlist("screenshots"):
-            filename = screenshot.name
-            extension = filename.split(".")[-1]
-            screenshot.name = (filename + str(uuid.uuid4()))[:90] + "." + extension
-            default_storage.save(f"screenshots/{screenshot.name}", screenshot)
-            IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}", issue=issue)
+            img_valid = image_validator(screenshot)
+            if img_valid is True:
+                filename = screenshot.name
+                extension = filename.split(".")[-1]
+                screenshot.name = (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
+                default_storage.save(f"screenshots/{screenshot.name}", screenshot)
+                IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}")
+            else:
+                return Response(
+                    {"error": img_valid}, status=status.HTTP_400_BAD_REQUEST
+                )
 
         return Response(self.get_issue_info(request, issue))
 
