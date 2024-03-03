@@ -1,28 +1,19 @@
 {% extends "base.html" %}
-{% load gravatar %}
-{% load static %}
-{% load humanize %}
-{% load custom_tags %}
 {% block content %}
-    <style>
-        .bottom-right {
-            position: absolute;
-            bottom: 10px;
-            right: 15px;
-        }
-    </style>
     <div class="w-4/5 lg:w-1/2">
         {% include "mobile_privacy.html" %}
         <h1 class="text-4xl sm:text-5xl lg:text-6xl my-10">
-            Bugheist is 100% free to use, Open Source and a non-commercial, not for profit initiative.
+            BLT is 100% free to use, Open Source and a non-commercial, not for profit initiative.
         </h1>
     </div>
-    <div class="bottom-right">
-        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/privacy.html">
-            <i class="fab fa-github"></i>
-        </a>
-        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=513%3A772&t=pqxWpF3hcYxjEDrs-1">
-            <i class="fab fa-figma"></i>
-        </a>
-    </div>
+    {% block edit_link %}
+        <div class="bottom-right">
+            <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/privacy.html">
+                <i class="fab fa-github"></i>
+            </a>
+            <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=513%3A772&t=pqxWpF3hcYxjEDrs-1">
+                <i class="fab fa-figma"></i>
+            </a>
+        </div>
+    {% endblock edit_link %}
 {% endblock content %}

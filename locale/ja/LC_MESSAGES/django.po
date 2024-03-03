@@ -93,9 +93,9 @@ msgstr "ドメインを追加できる電子メールを追加"
 
 #: company/templates/company/register_company.html:182
 #, fuzzy
-#| msgid "Email should be registered user on bugheist"
-msgid "Email should be registerd user on bugheist"
-msgstr "電子メールはbugheistの登録ユーザーである必要があります"
+#| msgid "Email should be registered user on BLT"
+msgid "Email should be registerd user on BLT"
+msgstr "電子メールはBLTの登録ユーザーである必要があります"
 
 #: company/templates/company/register_company.html:186
 #: website/templates/report.html:286
