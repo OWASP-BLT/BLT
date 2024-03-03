@@ -7,6 +7,7 @@ import requests
 from annoying.fields import AutoOneToOneField
 from captcha.fields import CaptchaField
 from colorthief import ColorThief
+from google.cloud import storage
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -341,7 +342,6 @@ class IssueScreenshot(models.Model):
 
     def delete(self, *args, **kwargs):
         if self.image:
-            storage = self.image.storage
             client = storage.Client()
             bucket = client.bucket(settings.GS_BUCKET_NAME)
             blob = bucket.blob(self.image.name)
