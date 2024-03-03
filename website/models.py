@@ -55,7 +55,9 @@ class Company(models.Model):
     facebook = models.URLField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
-    subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.CASCADE)
+    subscription = models.ForeignKey(
+        Subscription, null=True, blank=True, on_delete=models.CASCADE
+    )
     is_active = models.BooleanField(default=False)
 
     def __str__(self):
@@ -63,7 +65,9 @@ class Company(models.Model):
 
 
 class Domain(models.Model):
-    company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
+    company = models.ForeignKey(
+        Company, null=True, blank=True, on_delete=models.CASCADE
+    )
     managers = models.ManyToManyField(User, related_name="user_domains")
     name = models.CharField(max_length=255, unique=True)
     url = models.URLField()
@@ -202,7 +206,9 @@ class HuntPrize(models.Model):
     hunt = models.ForeignKey(Hunt, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
     value = models.PositiveIntegerField(default=0)
-    no_of_eligible_projects = models.PositiveIntegerField(default=1)  # no of winner in this prize
+    no_of_eligible_projects = models.PositiveIntegerField(
+        default=1
+    )  # no of winner in this prize
     valid_submissions_eligible = models.BooleanField(
         default=False
     )  # all valid submissions are winners in this prize
@@ -225,7 +231,9 @@ class Issue(models.Model):
         (7, "Server Down"),
     )
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    team_members = models.ManyToManyField(User, related_name="reportmembers", blank=True)
+    team_members = models.ManyToManyField(
+        User, related_name="reportmembers", blank=True
+    )
     hunt = models.ForeignKey(Hunt, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     url = models.URLField()
@@ -284,7 +292,8 @@ class Issue(models.Model):
             + self.domain_title
             + spacer
             + self.description[
-                : 140 - (len(prefix) + len(self.domain_title) + len(spacer) + len(issue_link))
+                : 140
+                - (len(prefix) + len(self.domain_title) + len(spacer) + len(issue_link))
             ]
             + issue_link
         )
@@ -317,12 +326,15 @@ class Issue(models.Model):
 
 class IssueScreenshot(models.Model):
     image = models.ImageField(upload_to="screenshots", validators=[validate_image])
-    issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
+    issue = models.ForeignKey(
+        Issue, on_delete=models.CASCADE, related_name="screenshots"
+    )
 
     def delete(self, *args, **kwargs):
         if self.image:
-            if os.path.isfile(self.image.path):
-                os.remove(self.image.path)
+            # Delete the image file
+            storage, path = self.image.storage, self.image.path
+            storage.delete(path)
         super(IssueScreenshot, self).delete(*args, **kwargs)
 
 
@@ -374,8 +386,12 @@ class Points(models.Model):
 
 
 class InviteFriend(models.Model):
-    sender = models.ForeignKey(User, related_name="sent_invites", on_delete=models.CASCADE)
-    recipients = models.ManyToManyField(User, related_name="received_invites", blank=True)
+    sender = models.ForeignKey(
+        User, related_name="sent_invites", on_delete=models.CASCADE
+    )
+    recipients = models.ManyToManyField(
+        User, related_name="received_invites", blank=True
+    )
     referral_code = models.CharField(max_length=100, default=uuid.uuid4, editable=False)
     point_by_referral = models.IntegerField(default=0)
 
@@ -398,20 +414,32 @@ class UserProfile(models.Model):
         (3, "Gold"),
         (4, "Platinum"),
     )
-    follows = models.ManyToManyField("self", related_name="follower", symmetrical=False, blank=True)
-    user = AutoOneToOneField("auth.user", related_name="userprofile", on_delete=models.CASCADE)
+    follows = models.ManyToManyField(
+        "self", related_name="follower", symmetrical=False, blank=True
+    )
+    user = AutoOneToOneField(
+        "auth.user", related_name="userprofile", on_delete=models.CASCADE
+    )
     user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
     title = models.IntegerField(choices=title, default=0)
     description = models.TextField(blank=True, null=True)
-    winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    winnings = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
     issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
-    issue_downvoted = models.ManyToManyField(Issue, blank=True, related_name="downvoted")
+    issue_downvoted = models.ManyToManyField(
+        Issue, blank=True, related_name="downvoted"
+    )
     issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
     issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
     issues_hidden = models.BooleanField(default=False)
 
-    subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains")
-    subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users")
+    subscribed_domains = models.ManyToManyField(
+        Domain, related_name="user_subscribed_domains"
+    )
+    subscribed_users = models.ManyToManyField(
+        User, related_name="user_subscribed_users"
+    )
     crypto_address = models.CharField(max_length=100, null=True, blank=True)
 
     def avatar(self, size=36):
@@ -460,7 +488,9 @@ class CompanyAdmin(models.Model):
     )
     role = models.IntegerField(choices=role, default=0)
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
+    company = models.ForeignKey(
+        Company, null=True, blank=True, on_delete=models.CASCADE
+    )
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
 
