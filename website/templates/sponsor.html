@@ -110,7 +110,7 @@
         }
 
         async function getBCHBalance() {
-            const walletAddress = document.getElementById("walletAddress").value;
+            const walletAddress = document.getElementById("walletAddress").innerHTML;
             const apiUrl = `https://api.blockchair.com/bitcoin-cash/dashboards/address/${walletAddress}`;
 
             try {
