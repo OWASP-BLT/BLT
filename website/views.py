@@ -4090,4 +4090,5 @@ def update_bch_address(request):
 
 
 def sitemap(request):
-    return render(request, "sitemap.html")
+    random_domain = Domain.objects.order_by("?").first()
+    return render(request, "sitemap.html", {"random_domain": random_domain})

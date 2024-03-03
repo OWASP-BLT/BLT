@@ -91,14 +91,16 @@
         {% comment %} block with no bootstrap wrappers {% endcomment %}
         {% block natural_content %}
         {% endblock natural_content %}
-        <div class="bottom-right">
-            <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/base.html">
-                <i class="fab fa-github"></i>
-            </a>
-            <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=340%3A209&t=pqxWpF3hcYxjEDrs-1">
-                <i class="fab fa-figma"></i>
-            </a>
-        </div>
+        {% block edit_link %}
+            <div class="bottom-right">
+                <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/base.html">
+                    <i class="fab fa-github"></i>
+                </a>
+                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=340%3A209&t=pqxWpF3hcYxjEDrs-1">
+                    <i class="fab fa-figma"></i>
+                </a>
+            </div>
+        {% endblock edit_link %}
     </body>
     <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
     <script src="{% static 'js/ui.js' %}"></script>
