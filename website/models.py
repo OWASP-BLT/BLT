@@ -316,7 +316,6 @@ class Issue(models.Model):
         self.user = None
         self.save()
 
-    @property
     def get_absolute_url(self):
         return "/issue/" + str(self.id)
 
@@ -333,8 +332,11 @@ class IssueScreenshot(models.Model):
     def delete(self, *args, **kwargs):
         if self.image:
             # Delete the image file
-            storage, path = self.image.storage, self.image.path
-            storage.delete(path)
+            storage = self.image.storage
+            name = (
+                self.image.name
+            )  # Use .name to get the relative file path in the storage system
+            storage.delete(name)
         super(IssueScreenshot, self).delete(*args, **kwargs)
 
 
