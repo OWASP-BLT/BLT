@@ -1003,7 +1003,17 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     },
                 )
                 response = r.json()
-                obj.github_url = response["html_url"]
+                try:
+                    obj.github_url = response["html_url"]
+                except KeyError:
+                    send_mail(
+                        "Error in github issue creation, check your github settings",
+                        "Error in github issue creation, check your github settings",
+                        settings.EMAIL_TO_STRING,
+                        [domain.email],
+                        fail_silently=True,
+                    )
+                    pass
                 obj.save()
 
             if not (self.request.user.is_authenticated or tokenauth):
@@ -2436,17 +2446,17 @@ def update_comment(request, issue_pk, comment_pk):
     return render(request, "comments2.html", context)
 
 
+@login_required(login_url="/accounts/login")
 def delete_comment(request):
     int_issue_pk = int(request.POST["issue_pk"])
-    issue = Issue.objects.get(pk=int_issue_pk)
-    all_comment = Comment.objects.filter(issue=issue)
+    issue = get_object_or_404(Issue, pk=int_issue_pk)
     if request.method == "POST":
         comment = Comment.objects.get(
             pk=int(request.POST["comment_pk"]), author=request.user.username
         )
         comment.delete()
     context = {
-        "all_comment": Comment.objects.filter(issue__id=int_issue_pk).order_by(
+        "all_comments": Comment.objects.filter(issue__id=int_issue_pk).order_by(
             "-created_date"
         ),
         "object": issue,
