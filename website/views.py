@@ -3587,7 +3587,6 @@ def like_issue2(request, issue_pk):
             html_message=msg_html,
         )
 
-    userprof.save()
     total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
     context["object"] = issue
     context["likes"] = total_votes
@@ -3606,7 +3605,6 @@ def dislike_issue2(request, issue_pk):
         userprof.issue_downvoted.remove(issue)
     else:
         userprof.issue_downvoted.add(issue)
-    userprof.save()
     total_votes = UserProfile.objects.filter(issue_downvoted=issue).count()
     context["object"] = issue
     context["dislikes"] = total_votes
