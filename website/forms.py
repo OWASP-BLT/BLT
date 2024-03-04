@@ -10,10 +10,6 @@ class UserProfileForm(forms.ModelForm):
         model = UserProfile
         fields = ("user_avatar",)
 
-class UserDeactivateForm(forms.Form):
-    deactivate = forms.BooleanField(required=True)
-
-
 class UserDeleteForm(forms.Form):
     delete = forms.BooleanField(required=True)
 

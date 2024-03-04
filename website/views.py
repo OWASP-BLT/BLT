@@ -90,14 +90,7 @@ from website.models import (
     Winner,
 )
 
-from .forms import (
-    CaptchaForm,
-    HuntForm,
-    QuickIssueForm,
-    UserDeactivateForm,
-    UserDeleteForm,
-    UserProfileForm,
-)
+from .forms import CaptchaForm, HuntForm, QuickIssueForm, UserDeleteForm, UserProfileForm
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
@@ -544,24 +537,6 @@ def find_key(request, token):
             n = k.replace("ACME_TOKEN_", "")
             return HttpResponse(os.environ.get("ACME_KEY_%s" % n))
     raise Http404("Token or key does not exist")
-
-class UserDeactivateView(LoginRequiredMixin, View):
-    """
-    Deactivates the currently signed-in user by setting is_active to False.
-    """
-    def get(self, request, *args, **kwargs):
-        form = UserDeactivateForm()
-        return render(request, 'user_deactivation.html', {'form': form})
-
-    def post(self, request, *args, **kwargs):
-        form = UserDeactivateForm(request.POST)
-        if form.is_valid():
-            request.user.is_active = False
-            request.user.save()
-            logout(request)
-            messages.success(request, 'Account successfully deactivated')
-            return redirect(reverse('index'))
-        return render(request, 'user_deactivation.html', {'form': form})
 
 
 class UserDeleteView(LoginRequiredMixin, View):
