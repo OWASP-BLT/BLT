@@ -58,6 +58,9 @@
             <li>
                 <a href="{% url 'scoreboard' %}">Scoreboard</a>
             </li>
+            <li>
+                <a href="{% url 'bltv' %}">BLTV</a>
+            </li>
             <hr>
             <h3>Requires Login</h3>
             <li>
@@ -84,6 +87,15 @@
             <li>
                 <a href="{% url 'previous_hunts' %}">Previous Hunts</a>
             </li>
+            <li>
+                <a href="{% url 'report' %}">Report</a>
+            </li>
+            <li>
+                <a href="{% url 'trademark_search' %}">Trademark</a>
+            </li>
+            <li>
+                <a href="{% url 'trademark_detailview' random_trademark %}">Trademark Detail / {{ random_trademark }}</a>
+            </li>
             <hr>
             <h3>Needs data (todo)</h3>
             <li>
@@ -99,6 +111,12 @@
             </li>
             <li>
                 <a href="{% url 'social_account_list' %}">Social Account List</a>
+            </li>
+            <li>
+                <a href="{% url 'leaderbaord' %}">Leaderboard</a>
+            </li>
+            <li>
+                <a href="{% url 'api_contributor' %}"></a>
             </li>
         </ul>
     </body>
