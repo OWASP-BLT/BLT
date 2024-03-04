@@ -10,6 +10,8 @@ class UserProfileForm(forms.ModelForm):
         model = UserProfile
         fields = ("user_avatar",)
 
+class UserDeleteForm(forms.Form):
+    delete = forms.BooleanField(required=True)
 
 class HuntForm(forms.Form):
     content = MDTextFormField()
