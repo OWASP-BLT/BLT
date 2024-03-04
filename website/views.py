@@ -31,8 +31,9 @@ from bs4 import BeautifulSoup
 from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import serializers
@@ -89,7 +90,14 @@ from website.models import (
     Winner,
 )
 
-from .forms import CaptchaForm, HuntForm, QuickIssueForm, UserProfileForm
+from .forms import (
+    CaptchaForm,
+    HuntForm,
+    QuickIssueForm,
+    UserDeactivateForm,
+    UserDeleteForm,
+    UserProfileForm,
+)
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
@@ -103,11 +111,9 @@ def image_validator(img):
         filesize = img.file.size
     except:
         filesize = img.size
-    print(img)
+    
     extension = img.name.split(".")[-1]
-    print(extension)
     content_type = img.content_type
-    print(content_type)
     megabyte_limit = 3.0
     if not extension or extension.lower() not in WHITELISTED_IMAGE_TYPES.keys():
         error = "Invalid image types"
@@ -539,6 +545,42 @@ def find_key(request, token):
             return HttpResponse(os.environ.get("ACME_KEY_%s" % n))
     raise Http404("Token or key does not exist")
 
+class UserDeactivateView(LoginRequiredMixin, View):
+    """
+    Deactivates the currently signed-in user by setting is_active to False.
+    """
+    def get(self, request, *args, **kwargs):
+        form = UserDeactivateForm()
+        return render(request, 'user_deactivation.html', {'form': form})
+
+    def post(self, request, *args, **kwargs):
+        form = UserDeactivateForm(request.POST)
+        if form.is_valid():
+            request.user.is_active = False
+            request.user.save()
+            logout(request)
+            messages.success(request, 'Account successfully deactivated')
+            return redirect(reverse('index'))
+        return render(request, 'user_deactivation.html', {'form': form})
+
+
+class UserDeleteView(LoginRequiredMixin, View):
+    """
+    Deletes the currently signed-in user and all associated data.
+    """
+    def get(self, request, *args, **kwargs):
+        form = UserDeleteForm()
+        return render(request, 'user_deletion.html', {'form': form})
+
+    def post(self, request, *args, **kwargs):
+        form = UserDeleteForm(request.POST)
+        if form.is_valid():
+            user = request.user
+            logout(request)
+            user.delete()
+            messages.success(request, 'Account successfully deleted')
+            return redirect(reverse('index'))
+        return render(request, 'user_deletion.html', {'form': form})
 
 class IssueBaseCreate(object):
     def form_valid(self, form):
