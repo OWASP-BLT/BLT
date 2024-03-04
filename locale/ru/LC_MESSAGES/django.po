@@ -94,10 +94,10 @@ msgstr ""
 
 #: company/templates/company/register_company.html:182
 #, fuzzy
-#| msgid "Email should be registered user on bugheist"
-msgid "Email should be registerd user on bugheist"
+#| msgid "Email should be registered user on BLT"
+msgid "Email should be registerd user on BLT"
 msgstr ""
-"Электронная почта должна быть зарегистрированным пользователем на bugheist"
+"Электронная почта должна быть зарегистрированным пользователем на BLT"
 
 #: company/templates/company/register_company.html:186
 #: website/templates/report.html:286

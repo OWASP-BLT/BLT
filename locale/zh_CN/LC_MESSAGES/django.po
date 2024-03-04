@@ -92,9 +92,9 @@ msgstr "添加允许添加域的电子邮件"
 
 #: company/templates/company/register_company.html:182
 #, fuzzy
-#| msgid "Email should be registered user on bugheist"
-msgid "Email should be registerd user on bugheist"
-msgstr "电子邮件应为bugheist上注册的用户"
+#| msgid "Email should be registered user on BLT"
+msgid "Email should be registerd user on BLT"
+msgstr "电子邮件应为BLT上注册的用户"
 
 #: company/templates/company/register_company.html:186
 #: website/templates/report.html:286

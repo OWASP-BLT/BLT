@@ -3,6 +3,21 @@
     Add Domain
 {% endblock title %}
 {% block body %}
+    <style>
+    .bottom-right {
+        position: absolute;
+        bottom: 10px;
+        right: 15px;
+    }
+    </style>
+    <div class="bottom-right">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/company/templates/company/company_manage_roles.html">
+            <i class="fab fa-github"></i>
+        </a>
+        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
+            <i class="fab fa-figma"></i>
+        </a>
+    </div>
     <div class="bg-[#F3F5F7] h-full flex flex-col items-center">
         <div class="flex items-center md:justify-between w-full md:h-max mt-5 flex-col md:flex-row">
             <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Roles</p>
@@ -63,7 +78,7 @@
                     <h2 class="text-base font-semibold leading-7 text-gray-900">Domain Managers</h2>
                     <p class="mt-1 text-sm leading-6 text-gray-600">
                         Add Emails which will be allowed to start hunts and manage reported bugs.
-                        Email should be domain mail and should be registerd user on bugheist.
+                        Email should be domain mail and should be registerd user on BLT.
                     </p>
                     <div class="sm:col-span-3 my-5">
                         <div class="mt-2">

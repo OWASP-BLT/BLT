@@ -10,7 +10,7 @@
         <div class="flex flex-col items-center border border-black rounded-xl mx-auto py-6 px-10 w-[40vh] lg:w-[60vh]">
             <span class="text-[1.72rem] font-semibold">Bitcoin Cash (BCH) Donation Address</span>
             <div class="flex flex-row my-10">
-                <img src="../static/images/bch qr.png"
+                <img src="https://api.qrserver.com/v1/create-qr-code/?data=bitcoincash:qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc"
                      alt="bch qr"
                      class="w-1/2 h-1/2 mx-5"
                      width="50%"
@@ -110,7 +110,7 @@
         }
 
         async function getBCHBalance() {
-            const walletAddress = document.getElementById("walletAddress").value;
+            const walletAddress = document.getElementById("walletAddress").innerHTML;
             const apiUrl = `https://api.blockchair.com/bitcoin-cash/dashboards/address/${walletAddress}`;
 
             try {
