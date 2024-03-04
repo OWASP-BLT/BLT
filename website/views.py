@@ -3550,9 +3550,12 @@ def flag_issue2(request, issue_pk):
 def like_issue2(request, issue_pk):
     context = {}
     issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
-    if userprof in UserProfile.objects.filter(issue_upvoted=issue):
+
+    if UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists():
+        userprof.issue_downvoted.remove(issue)
+    if UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists():
         userprof.issue_upvoted.remove(issue)
     else:
         userprof.issue_upvoted.add(issue)
@@ -3594,9 +3597,12 @@ def like_issue2(request, issue_pk):
 def dislike_issue2(request, issue_pk):
     context = {}
     issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
-    if userprof in UserProfile.objects.filter(issue_downvoted=issue):
+    
+    if UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists():
+        userprof.issue_upvoted.remove(issue)
+    if UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists():
         userprof.issue_downvoted.remove(issue)
     else:
         userprof.issue_downvoted.add(issue)

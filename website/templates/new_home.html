@@ -37,13 +37,15 @@
                 data: {},
                 success: function (data) {
 
-                    var svg = $('#likeSvg' + issue_pk);
-                    var currentColor = svg.find('path').attr('fill');
+                    var likesvg = $('#likeSvg' + issue_pk);
+                    var dislikesvg = $('#dislikeSvg' + issue_pk);
+                    var currentColor = likesvg.find('path').attr('fill');
                     
                     if (currentColor === '#a11010') {
-                        svg.find('path').attr('fill', ''); 
+                        likesvg.find('path').attr('fill', ''); 
                     } else {
-                        svg.find('path').attr('fill', '#a11010');
+                        likesvg.find('path').attr('fill', '#a11010');
+                        dislikesvg.find('path').attr('fill', ''); 
                     }
 
                     getVoteCount(issue_pk);
@@ -58,14 +60,15 @@
                 url: '/dislike_issue2/' + issue_pk + '/',
                 data: {},
                 success: function (data) {
-                    console.log(data)
-                    var svg = $('#dislikeSvg' + issue_pk);
-                    var currentColor = svg.find('path').attr('fill');
+                    var likesvg = $('#likeSvg' + issue_pk);
+                    var dislikesvg = $('#dislikeSvg' + issue_pk);
+                    var currentColor = dislikesvg.find('path').attr('fill');
     
                     if (currentColor === '#a11010') {
-                        svg.find('path').attr('fill', ''); 
+                        dislikesvg.find('path').attr('fill', ''); 
                     } else {
-                        svg.find('path').attr('fill', '#a11010');
+                        dislikesvg.find('path').attr('fill', '#a11010');
+                        likesvg.find('path').attr('fill', ''); 
                     }
 
                     getVoteCount(issue_pk);
