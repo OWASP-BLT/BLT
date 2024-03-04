@@ -93,9 +93,9 @@ msgstr "वे ईमेल जो डोमेन जोड़ने की अ
 
 #: company/templates/company/register_company.html:182
 #, fuzzy
-#| msgid "Email should be registered user on bugheist"
-msgid "Email should be registerd user on bugheist"
-msgstr "ईमेल bugheist पर पंजीकृत उपयोगकर्ता होना चाहिए"
+#| msgid "Email should be registered user on BLT"
+msgid "Email should be registerd user on BLT"
+msgstr "ईमेल BLT पर पंजीकृत उपयोगकर्ता होना चाहिए"
 
 #: company/templates/company/register_company.html:186
 #: website/templates/report.html:286

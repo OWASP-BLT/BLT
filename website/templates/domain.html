@@ -56,10 +56,23 @@
         margin-top: 50px;
         margin-bottom: 100px;
     }
+    .bottom-right {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+    }
     </style>
 {% endblock style %}
 {% block content %}
     <script type="text/javascript" src="{% static 'js/Chart.bundle.min.js' %}"></script>
+    <div class="bottom-right">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/domain.html">
+            <i class="fab fa-github"></i>
+        </a>
+        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=488%3A1342&t=pqxWpF3hcYxjEDrs-1">
+            <i class="fab fa-figma"></i>
+        </a>
+    </div>
     <div class="jumbotron">
         <div class="row">
             <div class="col-lg-10 col-md-10 header">

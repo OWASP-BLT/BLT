@@ -10,6 +10,13 @@ f
     {% load custom_tags %}
     <script src="{% static 'js/jquery.validate.js' %}"></script>
     <script src="{% static 'js/activity.js' %}"></script>
+    <style>
+        .bottom-right {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+          }    
+    </style>
     <div class="row mt-[60px] ml-[10px]"
          data-intro="View latest activities here."
          data-step="3">
@@ -324,6 +331,14 @@ f
             {% env 'PROJECT_NAME' %} is 100% {% trans "free to use" %}, {% trans "Open Source and a non-commercial" %}, {% trans "not for profit initiative" %}.
         </h1>
     </div>
+</div>
+<div class="bottom-right">
+    <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/index .html">
+        <i class="fab fa-github"></i>
+    </a>
+    <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=340%3A209&t=3CLUaUp9CEZj9ASY-1">
+        <i class="fab fa-figma"></i>
+    </a>
 </div>
 <script>
     function example(relative_path){

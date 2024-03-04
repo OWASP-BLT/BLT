@@ -5,17 +5,20 @@
         .hero-bugs-container {
             grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
         }
+
+        .bottom-right {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+        }
     </style>
-    <div class="font-['Barlow'] text-[#2B2B2B] text-5xl tracking-wide font-semibold mb-0 mt-10 ms-[4.3%] mx-auto">
-        Find bugs, earn points, prize and cash!
-    </div>
-    <div class="flex flex-col sm:flex-row">
+    <div class="flex flex-col sm:flex-row mt-[35px]">
         <div class="flex-1">
             <div class="hero-bugs-container grid grid-cols-1 sm:grid-cols-2 gap-4 mx-4 my-2.5">
                 <!-- Report Section -->
-                <section class="z-10">
+                <!-- <section class="z-10">
                     {% include "_report_widget.html" %}
-                </section>
+                </section> -->
                 <!-- Bugs Section -->
                 {% for bug in bugs %}
                     {% include "_bug.html" %}
@@ -135,5 +138,13 @@
             {% endif %}
             <div>Page {{ bugs.number }} of {{ bugs.paginator.num_pages }}</div>
         </div>
+    </div>
+    <div class="bottom-right">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/new_home.html">
+            <i class="fab fa-github"></i>
+        </a>
+        <a href="https://www.figma.com/file/JE0QlQ95FVpk0wG9HyFw4D/BLT-Website?type=design&node-id=0%3A1&mode=design&t=glf1ydd0YzYzsUJh-1">
+            <i class="fab fa-figma"></i>
+        </a>
     </div>
 {% endblock content %}
