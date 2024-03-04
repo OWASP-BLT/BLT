@@ -24,6 +24,14 @@ jobs:
       actions: write
 
     steps:
+      - name: Cache pre-commit hooks
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pre-commit  # Adjust the path based on where pre-commit stores its hooks.
+          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pre-commit-
+
       - name: Check out Repository
         uses: actions/checkout@v4
       - name: Set up Python
@@ -43,7 +51,7 @@ jobs:
       contents: read
 
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         language:
           - 'javascript'
@@ -72,6 +80,17 @@ jobs:
       actions: write
 
     steps:
+      - name: Get Poetry cache
+        id: poetry-cache
+        run: echo "::set-output name=dir::$(poetry config cache-dir)"
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.poetry-cache.outputs.dir }}
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
       - uses: nanasess/setup-chromedriver@v2
       - uses: actions/checkout@v2
       - name: Set up Python

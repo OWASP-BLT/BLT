@@ -84,7 +84,7 @@
                 </form>
                 <a href="{% url 'report' %}"
                    class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[20px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
-                    {% trans "Report a Bug" %}
+                    {% trans "Report an Issue" %}
                 </a>
                 <a href="{% url 'hunts' %}"
                    class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[20px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
@@ -125,7 +125,9 @@
                             </a>
                         </li>
                         <li>
-                            <a href="{% env 'EXTENSION_URL' %}" target="_new">
+                            <a href="{% env 'EXTENSION_URL' %}"
+                               target="_new"
+                               rel="noopener noreferrer">
                                 <i class="fa fa-chrome fa-fw"></i>
                                 {% trans "Add to chrome" %}
                             </a>
