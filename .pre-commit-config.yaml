@@ -22,7 +22,10 @@ repos:
     rev: v0.1.13
     hooks:
       - id: ruff
-        args: [--fix]
+        args: 
+          - --fix
+      - id: ruff-format
+
   - repo: https://github.com/djlint/djLint
     rev: v1.34.1
     hooks:
