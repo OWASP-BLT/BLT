@@ -168,6 +168,53 @@
             bottom: 10px;
             right: 15px;
     }
+    #update-overlay{
+        display: flex;
+        gap:2px;
+    }
+
+    .wallet-selection {
+    display: flex;
+    gap: 2px;
+    }
+
+    .crypto-button {
+    padding: 10px;
+    margin-bottom: 0.5px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    width: 20px; 
+    height: 20px;
+    }
+
+    .crypto-button[data-crypto="Ethereum"] {
+    background-color: #627eea;
+    color: #fff;
+    }
+
+    .crypto-button[data-crypto="Bitcoin"] {
+    background-color: #f2a900;
+    color: #fff;
+    }
+
+    .crypto-button[data-crypto="BitcoinCash"] {
+    background-color: #4cca47;
+    color: #fff;
+    }
+
+    .btn-save {
+    padding: 5px 5px; /* Adjust padding as needed */
+    font-size: 7px; /* Adjust font size as needed */
+    width: auto; /* Allow the button to shrink to fit content */
+    }
+
+    #crypto-name,#crypto-address{
+    text-align: center;
+    }
     </style>
 {% endblock style %}
 {% block content %}
@@ -213,16 +260,27 @@
             {% endif %}
             {% if request.user == user %}
                 <div id="update-overlay">
+                    <div class="wallet-selection">
+                        <button class="crypto-button" data-crypto="Bitcoin"><i class="fa-brands fa-btc"></i></button>
+                        <button class="crypto-button" data-crypto="Ethereum"><i class="fa-brands fa-ethereum"></i></button>
+                        <button class="crypto-button" data-crypto="BitcoinCash"><i class="fa-brands fa-btc"></i></button>
+                    </div>
+                    <div>
                     <form method="post"
                           action="{% url 'update_bch_address' %}"
                           id="update-form">
                         {% csrf_token %}
+                        <input type="hidden"
+                               id="selected-crypto"
+                               name="selected_crypto"
+                               value="">
                         <input type="text"
-                               id="new-bch-address"
+                               id="new-crypto-address"
                                name="new_address"
-                               placeholder="Enter new BCH address">
-                        <button type="submit" class="btn btn-primary text-black">Save</button>
+                               placeholder="Enter new Bitcoin address">
+                        <button type="submit" class="btn btn-primary text-black btn-save">Save</button>
                     </form>
+                    </div>
                 </div>
             {% endif %}
             <div id="target_div">
@@ -236,20 +294,14 @@
                 <div class="status">
                     <button type="button" id="openModal" class="btn btn-danger text-black">Send a Tip</button>
                     <dialog id="dialog">
-                        <img id="qr-image" alt="QR Code" height="300" width="400">
-                        <p id="bch-address">
-                            BCH:
-                            {% if user.userprofile.crypto_address %}
-                                {{ user.userprofile.crypto_address }}
-                            {% else %}
-                                User has not entered a BCH address:
-                                <br>
-                                Your tip will go to the leaderboard fund
-                            {% endif %}
-                        </p>
+                        <div id="slideshow">
+                            <img id="qr-image" alt="QR Code" height="300" width="400">
+                            <p id="crypto-name">Bitcoin</p>
+                            <p id="crypto-address"></p>
+                        </div>
                         <button id="close" class="btn-danger w-full">Close</button>
                     </dialog>
-                </div>
+                </div>                
             </div>
             <div class="icon-block">
                 <kbd class="fa fa-cogs">
@@ -449,16 +501,49 @@
         </a>
     </div>
     <script type="text/javascript">
-    document.getElementById('openModal').addEventListener('click', function() {
-        var address = "{{ user.userprofile.crypto_address }}";
-        if (address == '' || address == "None") {
-            address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
-        }
-        var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?data=bitcoincash:" + address + "&size=400x300";
-        document.getElementById('qr-image').src = qrUrl;
-        document.getElementById('dialog').showModal();
+    document.addEventListener('DOMContentLoaded', function() {
+        const cryptoOptions = [
+            { name: 'Bitcoin', address: '{{ user.userprofile.btc_address }}' },
+            { name: 'Ethereum', address: '{{ user.userprofile.eth_address }}' },
+            { name: 'Bitcoin Cash', address: '{{ user.userprofile.bch_address }}' }
+        ];
+
+        let currentIndex = 0;
+        const updateSlide = () => {
+            const { name, address } = cryptoOptions[currentIndex];
+            document.getElementById('crypto-name').textContent = name;
+            document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+            document.getElementById('crypto-address').textContent = `${address}`;
+        };
+
+        updateSlide();
+
+        document.getElementById('openModal').addEventListener('click', function() {
+            document.getElementById('dialog').showModal();
+        });
+
         document.getElementById('close').addEventListener('click',function(){
             document.getElementById('dialog').close();
+        });
+
+        document.getElementById('dialog').addEventListener('click', function() {
+            currentIndex = (currentIndex + 1) % cryptoOptions.length;
+            updateSlide();
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const cryptoButtons = document.querySelectorAll('.crypto-button');
+        const newCryptoAddressInput = document.getElementById('new-crypto-address');
+        const selectedCryptoInput = document.getElementById('selected-crypto');
+
+        cryptoButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const crypto = this.getAttribute('data-crypto');
+                selectedCryptoInput.value = crypto;  // Set the selected cryptocurrency value
+                newCryptoAddressInput.placeholder = `Enter new ${crypto} address`;
+                document.getElementById('crypto-name').textContent = crypto;
+            });
         });
     });
 

@@ -4093,17 +4093,23 @@ def trademark_detailview(request, slug):
 #         mail.logout()
 def update_bch_address(request):
     if request.method == "POST":
+        selected_crypto = request.POST.get("selected_crypto")
         new_address = request.POST.get("new_address")
-        if new_address:
+        if selected_crypto and new_address:
             try:
                 user_profile = request.user.userprofile
-                user_profile.crypto_address = new_address
+                if selected_crypto == "Bitcoin":
+                    user_profile.btc_address = new_address
+                elif selected_crypto == "Ethereum":
+                    user_profile.eth_address = new_address
+                elif selected_crypto == "BitcoinCash":
+                    user_profile.bch_address = new_address
                 user_profile.save()
-                messages.success(request, "BCH Address updated successfully.")
+                messages.success(request,f"{selected_crypto} Address updated successfully.")
             except Exception as e:
-                messages.error(request, "Failed to update BCH Address.")
+                messages.error(request,f"Failed to update {selected_crypto} Address.")
         else:
-            messages.error(request, "Please provide a valid BCH Address.")
+            messages.error(request, f"Please provide a valid {selected_crypto}  Address.")
     else:
         messages.error(request, "Invalid request method.")
 
