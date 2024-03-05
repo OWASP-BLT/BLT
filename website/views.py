@@ -31,8 +31,9 @@ from bs4 import BeautifulSoup
 from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import serializers
@@ -89,7 +90,7 @@ from website.models import (
     Winner,
 )
 
-from .forms import CaptchaForm, HuntForm, QuickIssueForm, UserProfileForm
+from .forms import CaptchaForm, HuntForm, QuickIssueForm, UserDeleteForm, UserProfileForm
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
@@ -103,11 +104,9 @@ def image_validator(img):
         filesize = img.file.size
     except:
         filesize = img.size
-    print(img)
+
     extension = img.name.split(".")[-1]
-    print(extension)
     content_type = img.content_type
-    print(content_type)
     megabyte_limit = 3.0
     if not extension or extension.lower() not in WHITELISTED_IMAGE_TYPES.keys():
         error = "Invalid image types"
@@ -135,9 +134,7 @@ def is_valid_https_url(url):
 def rebuild_safe_url(url):
     parsed_url = urlparse(url)
     # Rebuild the URL with scheme, netloc, and path only
-    return urlunparse(
-        (parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", "")
-    )
+    return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", ""))
 
 
 # @cache_page(60 * 60 * 24)
@@ -167,9 +164,7 @@ def index(request, template="index.html"):
 
     activity_screenshots = {}
     for activity in Issue.objects.all():
-        activity_screenshots[activity] = IssueScreenshot.objects.filter(
-            issue=activity
-        ).first()
+        activity_screenshots[activity] = IssueScreenshot.objects.filter(issue=activity).first()
 
     top_companies = (
         Issue.objects.values("domain__name")
@@ -186,9 +181,7 @@ def index(request, template="index.html"):
     if request.user.is_anonymous:
         activities = Issue.objects.exclude(Q(is_hidden=True))[0:10]
     else:
-        activities = Issue.objects.exclude(
-            Q(is_hidden=True) & ~Q(user_id=request.user.id)
-        )[0:10]
+        activities = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:10]
 
     top_hunts = Hunt.objects.values(
         "id",
@@ -208,9 +201,9 @@ def index(request, template="index.html"):
     if latest_hunts_filter is not None:
         top_hunts = top_hunts.filter(result_published=True).order_by("-created")[:3]
     else:
-        top_hunts = top_hunts.filter(
-            is_published=True, result_published=False
-        ).order_by("-created")[:3]
+        top_hunts = top_hunts.filter(is_published=True, result_published=False).order_by(
+            "-created"
+        )[:3]
 
     context = {
         "server_url": request.build_absolute_uri("/"),
@@ -485,9 +478,7 @@ def admin_company_dashboard(request, template="admin_dashboard_company.html"):
 
 
 @login_required(login_url="/accounts/login")
-def admin_company_dashboard_detail(
-    request, pk, template="admin_dashboard_company_detail.html"
-):
+def admin_company_dashboard_detail(request, pk, template="admin_dashboard_company_detail.html"):
     user = request.user
     if user.is_superuser:
         if not user.is_active:
@@ -538,6 +529,26 @@ def find_key(request, token):
             n = k.replace("ACME_TOKEN_", "")
             return HttpResponse(os.environ.get("ACME_KEY_%s" % n))
     raise Http404("Token or key does not exist")
+
+
+class UserDeleteView(LoginRequiredMixin, View):
+    """
+    Deletes the currently signed-in user and all associated data.
+    """
+
+    def get(self, request, *args, **kwargs):
+        form = UserDeleteForm()
+        return render(request, "user_deletion.html", {"form": form})
+
+    def post(self, request, *args, **kwargs):
+        form = UserDeleteForm(request.POST)
+        if form.is_valid():
+            user = request.user
+            logout(request)
+            user.delete()
+            messages.success(request, "Account successfully deleted")
+            return redirect(reverse("index"))
+        return render(request, "user_deletion.html", {"form": form})
 
 
 class IssueBaseCreate(object):
@@ -716,9 +727,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 self.request.POST._mutable = True
             self.request.POST["url"] = json_data["url"]
             self.request.POST["description"] = json_data["description"]
-            self.request.POST["markdown_description"] = json_data[
-                "markdown_description"
-            ]
+            self.request.POST["markdown_description"] = json_data["markdown_description"]
             self.request.POST["file"] = json_data["file"]
             self.request.POST["label"] = json_data["label"]
             self.request.POST["token"] = json_data["token"]
@@ -748,9 +757,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         TypeError("invalid_image")
 
                     # Generate file name:
-                    file_name = str(uuid.uuid4())[
-                        :12
-                    ]  # 12 characters are more than enough.
+                    file_name = str(uuid.uuid4())[:12]  # 12 characters are more than enough.
                     # Get the file name extension:
                     extension = imghdr.what(file_name, decoded_file)
                     extension = "jpg" if extension == "jpeg" else extension
@@ -768,9 +775,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             tokenauth = False
         initial = super(IssueCreate, self).get_initial()
         if self.request.POST.get("screenshot-hash"):
-            initial["screenshot"] = (
-                "uploads\/" + self.request.POST.get("screenshot-hash") + ".png"
-            )
+            initial["screenshot"] = "uploads\/" + self.request.POST.get("screenshot-hash") + ".png"
         return initial
 
     def post(self, request, *args, **kwargs):
@@ -829,9 +834,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         ).count()
 
         if recent_issues_count >= limit:
-            messages.error(
-                self.request, "You have reached your issue creation limit for today."
-            )
+            messages.error(self.request, "You have reached your issue creation limit for today.")
             return render(self.request, "report.html", {"form": self.get_form()})
         form.instance.reporter_ip_address = reporter_ip
 
@@ -858,9 +861,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 )
 
             clean_domain = (
-                obj.domain_name.replace("www.", "")
-                .replace("https://", "")
-                .replace("http://", "")
+                obj.domain_name.replace("www.", "").replace("https://", "").replace("http://", "")
             )
             domain = Domain.objects.filter(name=clean_domain).first()
 
@@ -880,9 +881,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             obj.save()
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):
-                p = Points.objects.create(
-                    user=self.request.user, domain=domain, score=1
-                )
+                p = Points.objects.create(user=self.request.user, domain=domain, score=1)
                 messages.success(self.request, "Domain added! + 1")
 
             if self.request.POST.get("screenshot-hash"):
@@ -911,9 +910,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 if img_valid is True:
                     filename = screenshot.name
                     extension = filename.split(".")[-1]
-                    screenshot.name = (
-                        (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
-                    )
+                    screenshot.name = (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
                     default_storage.save(f"screenshots/{screenshot.name}", screenshot)
                     IssueScreenshot.objects.create(
                         image=f"screenshots/{screenshot.name}", issue=obj
@@ -939,9 +936,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             ] + [self.request.user.id]
             for member_id in team_members_id:
                 if member_id is None:
-                    team_members_id.remove(
-                        member_id
-                    )  # remove None values if user not exists
+                    team_members_id.remove(member_id)  # remove None values if user not exists
             obj.team_members.set(team_members_id)
 
             obj.save()
@@ -961,12 +956,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 user_prof.save()
 
             if tokenauth:
-                total_issues = Issue.objects.filter(
-                    user=User.objects.get(id=token.user_id)
-                ).count()
-                user_prof = UserProfile.objects.get(
-                    user=User.objects.get(id=token.user_id)
-                )
+                total_issues = Issue.objects.filter(user=User.objects.get(id=token.user_id)).count()
+                user_prof = UserProfile.objects.get(user=User.objects.get(id=token.user_id))
                 if total_issues <= 10:
                     user_prof.title = 1
                 elif total_issues <= 50:
@@ -986,10 +977,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 import requests
                 from giturlparse import parse
 
-                github_url = (
-                    domain.github.replace("https", "git").replace("http", "git")
-                    + ".git"
-                )
+                github_url = domain.github.replace("https", "git").replace("http", "git") + ".git"
                 p = parse(github_url)
 
                 url = "https://api.github.com/repos/%s/%s/issues" % (p.owner, p.repo)
@@ -1016,10 +1004,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 r = requests.post(
                     url,
                     json.dumps(issue),
-                    headers={
-                        "Authorization": "token "
-                        + os.environ.get("GITHUB_ACCESS_TOKEN")
-                    },
+                    headers={"Authorization": "token " + os.environ.get("GITHUB_ACCESS_TOKEN")},
                 )
                 response = r.json()
                 try:
@@ -1041,9 +1026,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 self.request.session["domain"] = domain.id
                 login_url = reverse("account_login")
                 messages.success(self.request, "Bug added!")
-                return HttpResponseRedirect(
-                    "{}?next={}".format(login_url, redirect_url)
-                )
+                return HttpResponseRedirect("{}?next={}".format(login_url, redirect_url))
 
             if tokenauth:
                 self.process_issue(
@@ -1160,25 +1143,19 @@ class UserProfileDetailView(DetailView):
         user = self.object
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
         context["my_score"] = list(
-            Points.objects.filter(user=self.object)
-            .aggregate(total_score=Sum("score"))
-            .values()
+            Points.objects.filter(user=self.object).aggregate(total_score=Sum("score")).values()
         )[0]
         context["websites"] = (
             Domain.objects.filter(issue__user=self.object)
             .annotate(total=Count("issue"))
             .order_by("-total")
         )
-        context["activities"] = Issue.objects.filter(
-            user=self.object, hunt=None
-        ).exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
+        context["activities"] = Issue.objects.filter(user=self.object, hunt=None).exclude(
+            Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+        )[0:10]
         context["profile_form"] = UserProfileForm()
-        context["total_open"] = Issue.objects.filter(
-            user=self.object, status="open"
-        ).count()
-        context["total_closed"] = Issue.objects.filter(
-            user=self.object, status="closed"
-        ).count()
+        context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
+        context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
         context["current_month"] = datetime.now().month
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -1193,9 +1170,7 @@ class UserProfileDetailView(DetailView):
             .annotate(c=Count("id"))
             .order_by()
         )
-        context["total_bugs"] = Issue.objects.filter(
-            user=self.object, hunt=None
-        ).count()
+        context["total_bugs"] = Issue.objects.filter(user=self.object, hunt=None).count()
         for i in range(0, 7):
             context["bug_type_" + str(i)] = Issue.objects.filter(
                 user=self.object, hunt=None, label=str(i)
@@ -1217,16 +1192,12 @@ class UserProfileDetailView(DetailView):
             str(prof.user.email) for prof in user.userprofile.follower.all()
         ]
         context["bookmarks"] = user.userprofile.issue_saved.all()
-        context["issues_hidden"] = (
-            "checked" if user.userprofile.issues_hidden else "!checked"
-        )
+        context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
         return context
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        form = UserProfileForm(
-            request.POST, request.FILES, instance=request.user.userprofile
-        )
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
         if request.FILES.get("user_avatar") and form.is_valid():
             form.save()
         else:
@@ -1258,9 +1229,7 @@ class UserProfileDetailsView(DetailView):
         user = self.object
         context = super(UserProfileDetailsView, self).get_context_data(**kwargs)
         context["my_score"] = list(
-            Points.objects.filter(user=self.object)
-            .aggregate(total_score=Sum("score"))
-            .values()
+            Points.objects.filter(user=self.object).aggregate(total_score=Sum("score")).values()
         )[0]
         context["websites"] = (
             Domain.objects.filter(issue__user=self.object)
@@ -1269,17 +1238,13 @@ class UserProfileDetailsView(DetailView):
         )
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["activities"] = Issue.objects.filter(
-            user=self.object, hunt=None
-        ).exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
+        context["activities"] = Issue.objects.filter(user=self.object, hunt=None).exclude(
+            Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+        )[0:10]
         context["profile_form"] = UserProfileForm()
-        context["total_open"] = Issue.objects.filter(
-            user=self.object, status="open"
-        ).count()
+        context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
         context["user_details"] = UserProfile.objects.get(user=self.object)
-        context["total_closed"] = Issue.objects.filter(
-            user=self.object, status="closed"
-        ).count()
+        context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
         context["current_month"] = datetime.now().month
         context["graph"] = (
             Issue.objects.filter(user=self.object, hunt=None)
@@ -1318,9 +1283,7 @@ class UserProfileDetailsView(DetailView):
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        form = UserProfileForm(
-            request.POST, request.FILES, instance=request.user.userprofile
-        )
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
         if form.is_valid():
             form.save()
         return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
@@ -1478,9 +1441,7 @@ class StatsDetailView(TemplateView):
             .annotate(c=Count("id"))
             .order_by()
         )
-        context["pie_chart"] = (
-            Issue.objects.values("label").annotate(c=Count("label")).order_by()
-        )
+        context["pie_chart"] = Issue.objects.values("label").annotate(c=Count("label")).order_by()
         return context
 
 
@@ -1495,9 +1456,9 @@ class AllIssuesView(ListView):
                 Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
             )
         else:
-            self.activities = Issue.objects.filter(
-                user__username=username, hunt=None
-            ).exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+            self.activities = Issue.objects.filter(user__username=username, hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+            )
         return self.activities
 
     def get_context_data(self, *args, **kwargs):
@@ -1606,9 +1567,7 @@ class LeaderboardBase:
             data = data.filter(points__created__year=year)
 
         if year and month:
-            data = data.filter(
-                Q(points__created__year=year) & Q(points__created__month=month)
-            )
+            data = data.filter(Q(points__created__year=year) & Q(points__created__month=month))
 
         data = (
             data.annotate(total_score=Sum("points__score"))
@@ -1671,9 +1630,7 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
     template_name = "leaderboard_eachmonth.html"
 
     def get_context_data(self, *args, **kwargs):
-        context = super(EachmonthLeaderboardView, self).get_context_data(
-            *args, **kwargs
-        )
+        context = super(EachmonthLeaderboardView, self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -1724,9 +1681,7 @@ class SpecificMonthLeaderboardView(LeaderboardBase, ListView):
     template_name = "leaderboard_specific_month.html"
 
     def get_context_data(self, *args, **kwargs):
-        context = super(SpecificMonthLeaderboardView, self).get_context_data(
-            *args, **kwargs
-        )
+        context = super(SpecificMonthLeaderboardView, self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -1761,9 +1716,7 @@ class ScoreboardView(ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(ScoreboardView, self).get_context_data(*args, **kwargs)
-        companies = sorted(
-            Domain.objects.all(), key=lambda t: t.open_issues.count(), reverse=True
-        )
+        companies = sorted(Domain.objects.all(), key=lambda t: t.open_issues.count(), reverse=True)
 
         # companies = Domain.objects.all().order_by("-open_issues")
         paginator = Paginator(companies, self.paginate_by)
@@ -1805,9 +1758,9 @@ def search(request, template="search.html"):
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(
-                Q(description__icontains=query), hunt=None
-            ).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20],
+            "issues": Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=request.user.id)
+            )[0:20],
         }
     elif stype == "domain":
         context = {
@@ -1827,9 +1780,9 @@ def search(request, template="search.html"):
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(
-                Q(label__icontains=query), hunt=None
-            ).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20],
+            "issues": Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=request.user.id)
+            )[0:20],
         }
 
     if request.user.is_authenticated:
@@ -1858,13 +1811,13 @@ def search_issues(request, template="search.html"):
         query = query[6:]
     if stype == "issue" or stype is None:
         if request.user.is_anonymous:
-            issues = Issue.objects.filter(
-                Q(description__icontains=query), hunt=None
-            ).exclude(Q(is_hidden=True))[0:20]
+            issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
+                Q(is_hidden=True)
+            )[0:20]
         else:
-            issues = Issue.objects.filter(
-                Q(description__icontains=query), hunt=None
-            ).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20]
+            issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=request.user.id)
+            )[0:20]
 
         context = {
             "query": query,
@@ -1875,26 +1828,26 @@ def search_issues(request, template="search.html"):
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(
-                Q(domain__name__icontains=query), hunt=None
-            ).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20],
+            "issues": Issue.objects.filter(Q(domain__name__icontains=query), hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=request.user.id)
+            )[0:20],
         }
     if stype == "user" or stype is None:
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(
-                Q(user__username__icontains=query), hunt=None
-            ).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20],
+            "issues": Issue.objects.filter(Q(user__username__icontains=query), hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=request.user.id)
+            )[0:20],
         }
 
     if stype == "label" or stype is None:
         context = {
             "query": query,
             "type": stype,
-            "issues": Issue.objects.filter(
-                Q(label__icontains=query), hunt=None
-            ).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:20],
+            "issues": Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=request.user.id)
+            )[0:20],
         }
 
     if request.user.is_authenticated:
@@ -1915,9 +1868,7 @@ class HuntCreate(CreateView):
 
         domain, created = Domain.objects.get_or_create(
             name=self.request.POST.get("url").replace("www.", ""),
-            defaults={
-                "url": "http://" + self.request.POST.get("url").replace("www.", "")
-            },
+            defaults={"url": "http://" + self.request.POST.get("url").replace("www.", "")},
         )
         self.object.domain = domain
 
@@ -1928,11 +1879,17 @@ class HuntCreate(CreateView):
         # return reverse('start_hunt')
 
         if self.request.POST.get("plan") == "Ant":
-            return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TSZ84RQZ8RKKC"
+            return (
+                "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TSZ84RQZ8RKKC"
+            )
         if self.request.POST.get("plan") == "Wasp":
-            return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E3EELQQ6JLXKY"
+            return (
+                "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E3EELQQ6JLXKY"
+            )
         if self.request.POST.get("plan") == "Scorpion":
-            return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=9R3LPM3ZN8KCC"
+            return (
+                "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=9R3LPM3ZN8KCC"
+            )
         return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HH7MNY6KJGZFW"
 
 
@@ -1955,9 +1912,7 @@ class IssueView(DetailView):
         try:
             if self.request.user.is_authenticated:
                 try:
-                    objectget = IP.objects.get(
-                        user=self.request.user, issuenumber=self.object.id
-                    )
+                    objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
                     self.object.save()
                 except:
                     ipdetails.save()
@@ -1997,16 +1952,12 @@ class IssueView(DetailView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["issue_count"] = Issue.objects.filter(
-            url__contains=self.object.domain_name
-        ).count()
+        context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context["all_comment"] = self.object.comments.all
         context["all_users"] = User.objects.all()
         context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
         context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
-        context["dislikes"] = UserProfile.objects.filter(
-            issue_downvoted=self.object
-        ).count()
+        context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
         context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
 
         context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
@@ -2092,11 +2043,7 @@ def get_email_from_domain(domain_name):
                 link = base_url + link
             elif not link.startswith("http"):
                 link = path + link
-            if (
-                link not in new_urls
-                and link not in processed_urls
-                and link.find(domain_name) > 0
-            ):
+            if link not in new_urls and link not in processed_urls and link.find(domain_name) > 0:
                 new_urls.append(link)
 
     for email in emails:
@@ -2188,9 +2135,7 @@ def UpdateIssue(request):
         mailer = settings.EMAIL_TO_STRING
         email_to = issue.user.email
         send_mail(subject, msg_plain, mailer, [email_to], html_message=msg_html)
-        send_mail(
-            subject, msg_plain, mailer, [issue.domain.email], html_message=msg_html
-        )
+        send_mail(subject, msg_plain, mailer, [issue.domain.email], html_message=msg_html)
         issue.save()
         return HttpResponse("Updated")
 
@@ -2379,21 +2324,11 @@ def get_score(request):
         temp["rank"] = rank_user
         temp["id"] = each.id
         temp["User"] = each.username
-        temp["score"] = Points.objects.filter(user=each.id).aggregate(
-            total_score=Sum("score")
-        )
-        temp["image"] = list(
-            UserProfile.objects.filter(user=each.id).values("user_avatar")
-        )[0]
-        temp["title_type"] = list(
-            UserProfile.objects.filter(user=each.id).values("title")
-        )[0]
-        temp["follows"] = list(
-            UserProfile.objects.filter(user=each.id).values("follows")
-        )[0]
-        temp["savedissue"] = list(
-            UserProfile.objects.filter(user=each.id).values("issue_saved")
-        )[0]
+        temp["score"] = Points.objects.filter(user=each.id).aggregate(total_score=Sum("score"))
+        temp["image"] = list(UserProfile.objects.filter(user=each.id).values("user_avatar"))[0]
+        temp["title_type"] = list(UserProfile.objects.filter(user=each.id).values("title"))[0]
+        temp["follows"] = list(UserProfile.objects.filter(user=each.id).values("follows"))[0]
+        temp["savedissue"] = list(UserProfile.objects.filter(user=each.id).values("issue_saved"))[0]
         rank_user = rank_user + 1
         users.append(temp)
     return JsonResponse(users, safe=False)
@@ -2442,9 +2377,7 @@ def comment_on_issue(request, issue_pk):
             )
 
     context = {
-        "all_comment": Comment.objects.filter(issue__id=issue_pk).order_by(
-            "-created_date"
-        ),
+        "all_comment": Comment.objects.filter(issue__id=issue_pk).order_by("-created_date"),
         "object": issue,
     }
 
@@ -2460,9 +2393,7 @@ def update_comment(request, issue_pk, comment_pk):
         comment.save()
 
     context = {
-        "all_comment": Comment.objects.filter(issue__id=issue_pk).order_by(
-            "-created_date"
-        ),
+        "all_comment": Comment.objects.filter(issue__id=issue_pk).order_by("-created_date"),
         "object": issue,
     }
     return render(request, "comments2.html", context)
@@ -2478,9 +2409,7 @@ def delete_comment(request):
         )
         comment.delete()
     context = {
-        "all_comments": Comment.objects.filter(issue__id=int_issue_pk).order_by(
-            "-created_date"
-        ),
+        "all_comments": Comment.objects.filter(issue__id=int_issue_pk).order_by("-created_date"),
         "object": issue,
     }
     return render(request, "comments2.html", context)
@@ -2656,14 +2585,10 @@ class CreateHunt(TemplateView):
                     )
                 else:
                     start_date = start_date - (
-                        timedelta(
-                            hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
-                        )
+                        timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
                     )
                     end_date = end_date - (
-                        timedelta(
-                            hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
-                        )
+                        timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
                     )
                 hunt.starts_on = start_date
                 hunt.prize_winner = Decimal(request.POST["prize_winner"])
@@ -2730,15 +2655,11 @@ class ListHunts(TemplateView):
             hunts = hunts.filter(Q(name__icontains=search))
 
         if start_date != "" and start_date is not None:
-            start_date = datetime.strptime(start_date, "%m/%d/%Y").strftime(
-                "%Y-%m-%d %H:%M"
-            )
+            start_date = datetime.strptime(start_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
             hunts = hunts.filter(starts_on__gte=start_date)
 
         if end_date != "" and end_date is not None:
-            end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime(
-                "%Y-%m-%d %H:%M"
-            )
+            end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
             hunts = hunts.filter(end_on__gte=end_date)
 
         if domain != "Select Domain" and domain is not None:
@@ -2773,9 +2694,7 @@ class DraftHunts(TemplateView):
             if domain_admin.role == 0:
                 hunt = self.model.objects.filter(is_published=False)
             else:
-                hunt = self.model.objects.filter(
-                    is_published=False, domain=domain_admin.domain
-                )
+                hunt = self.model.objects.filter(is_published=False, domain=domain_admin.domain)
             context = {"hunts": hunt}
             return render(request, self.template_name, context)
         except:
@@ -2797,9 +2716,7 @@ class UpcomingHunts(TemplateView):
             if domain_admin.role == 0:
                 hunts = self.model.objects.filter(is_published=True)
             else:
-                hunts = self.model.objects.filter(
-                    is_published=True, domain=domain_admin.domain
-                )
+                hunts = self.model.objects.filter(is_published=True, domain=domain_admin.domain)
             new_hunt = []
             for hunt in hunts:
                 if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
@@ -2824,9 +2741,7 @@ class OngoingHunts(TemplateView):
             if domain_admin.role == 0:
                 hunts = self.model.objects.filter(is_published=True)
             else:
-                hunts = self.model.objects.filter(
-                    is_published=True, domain=domain_admin.domain
-                )
+                hunts = self.model.objects.filter(is_published=True, domain=domain_admin.domain)
             new_hunt = []
             for hunt in hunts:
                 if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
@@ -2851,9 +2766,7 @@ class PreviousHunts(TemplateView):
             if domain_admin.role == 0:
                 hunts = self.model.objects.filter(is_published=True)
             else:
-                hunts = self.model.objects.filter(
-                    is_published=True, domain=domain_admin.domain
-                )
+                hunts = self.model.objects.filter(is_published=True, domain=domain_admin.domain)
             new_hunt = []
             for hunt in hunts:
                 if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
@@ -2869,9 +2782,7 @@ class PreviousHunts(TemplateView):
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        form = UserProfileForm(
-            request.POST, request.FILES, instance=request.user.userprofile
-        )
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
         if form.is_valid():
             form.save()
         return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
@@ -2909,9 +2820,7 @@ class CompanySettings(TemplateView):
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        form = UserProfileForm(
-            request.POST, request.FILES, instance=request.user.userprofile
-        )
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
         if form.is_valid():
             form.save()
         return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
@@ -2933,9 +2842,7 @@ def update_role(request):
                     elif request.POST["role@" + value] == "9":
                         domain_admin.is_active = False
                     if request.POST["domain@" + value] != "":
-                        domain_admin.domain = Domain.objects.get(
-                            pk=request.POST["domain@" + value]
-                        )
+                        domain_admin.domain = Domain.objects.get(pk=request.POST["domain@" + value])
                     else:
                         domain_admin.domain = None
                     domain_admin.save()
@@ -3029,9 +2936,7 @@ def add_or_update_company(request):
             except:
                 company.is_active = False
             try:
-                company.subscription = Subscription.objects.get(
-                    name=request.POST["subscription"]
-                )
+                company.subscription = Subscription.objects.get(name=request.POST["subscription"])
             except:
                 pass
             try:
@@ -3108,9 +3013,7 @@ def add_or_update_domain(request):
 
 
 @login_required(login_url="/accounts/login")
-def company_dashboard_domain_detail(
-    request, pk, template="company_dashboard_domain_detail.html"
-):
+def company_dashboard_domain_detail(request, pk, template="company_dashboard_domain_detail.html"):
     user = request.user
     domain_admin = CompanyAdmin.objects.get(user=request.user)
     try:
@@ -3126,17 +3029,13 @@ def company_dashboard_domain_detail(
 
 
 @login_required(login_url="/accounts/login")
-def company_dashboard_hunt_detail(
-    request, pk, template="company_dashboard_hunt_detail.html"
-):
+def company_dashboard_hunt_detail(request, pk, template="company_dashboard_hunt_detail.html"):
     hunt = get_object_or_404(Hunt, pk=pk)
     return render(request, template, {"hunt": hunt})
 
 
 @login_required(login_url="/accounts/login")
-def company_dashboard_hunt_edit(
-    request, pk, template="company_dashboard_hunt_edit.html"
-):
+def company_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_edit.html"):
     if request.method == "GET":
         hunt = get_object_or_404(Hunt, pk=pk)
         domain_admin = CompanyAdmin.objects.get(user=request.user)
@@ -3168,9 +3067,7 @@ def company_dashboard_hunt_edit(
         if domain_admin.role == 1:
             if hunt.domain != domain_admin.domain:
                 return HttpResponse("failed")
-        hunt.domain = Domain.objects.get(
-            pk=(request.POST["domain"]).split("-")[0].replace(" ", "")
-        )
+        hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
         tzsign = 1
         offset = request.POST["tzoffset"]
         if int(offset) < 0:
@@ -3261,9 +3158,7 @@ def withdraw(request):
                         + request.user.username,
                         type="account_onboarding",
                     )
-                    return JsonResponse(
-                        {"redirect": account_links.url, "status": "success"}
-                    )
+                    return JsonResponse({"redirect": account_links.url, "status": "success"})
             else:
                 account = stripe.Account.create(
                     type="express",
@@ -3278,9 +3173,7 @@ def withdraw(request):
                     + request.user.username,
                     type="account_onboarding",
                 )
-                return JsonResponse(
-                    {"redirect": account_links.url, "status": "success"}
-                )
+                return JsonResponse({"redirect": account_links.url, "status": "success"})
         return JsonResponse({"status": "error"})
 
 
@@ -3412,9 +3305,7 @@ def view_hunt(request, pk, template="view_hunt.html"):
     if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
         hunt_active = False
         hunt_completed = False
-        time_remaining = humanize.naturaltime(
-            datetime.now(timezone.utc) - hunt.starts_on
-        )
+        time_remaining = humanize.naturaltime(datetime.now(timezone.utc) - hunt.starts_on)
     elif ((hunt.end_on - datetime.now(timezone.utc)).total_seconds()) < 0:
         hunt_active = False
         hunt_completed = True
@@ -3456,9 +3347,7 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
                 issue_list = Issue.objects.filter(user=request.user, hunt=hunt).exclude(
                     Q(is_hidden=True) & ~Q(user_id=request.user.id)
                 )
-                return render(
-                    request, template, {"hunt": hunt, "issue_list": issue_list}
-                )
+                return render(request, template, {"hunt": hunt, "issue_list": issue_list})
             parsed_url = urlparse(url)
             if parsed_url.scheme == "":
                 url = "https://" + url
@@ -3467,9 +3356,7 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
                 issue_list = Issue.objects.filter(user=request.user, hunt=hunt).exclude(
                     Q(is_hidden=True) & ~Q(user_id=request.user.id)
                 )
-                return render(
-                    request, template, {"hunt": hunt, "issue_list": issue_list}
-                )
+                return render(request, template, {"hunt": hunt, "issue_list": issue_list})
             label = request.POST["label"]
             if request.POST.get("file"):
                 if isinstance(request.POST.get("file"), six.string_types):
@@ -3502,9 +3389,7 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
                         file_extension,
                     )
 
-                    request.FILES["screenshot"] = ContentFile(
-                        decoded_file, name=complete_file_name
-                    )
+                    request.FILES["screenshot"] = ContentFile(decoded_file, name=complete_file_name)
             issue = Issue()
             issue.label = label
             issue.url = url
@@ -3516,9 +3401,7 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
                 issue_list = Issue.objects.filter(user=request.user, hunt=hunt).exclude(
                     Q(is_hidden=True) & ~Q(user_id=request.user.id)
                 )
-                return render(
-                    request, template, {"hunt": hunt, "issue_list": issue_list}
-                )
+                return render(request, template, {"hunt": hunt, "issue_list": issue_list})
             issue.hunt = hunt
             issue.save()
             issue_list = Issue.objects.filter(user=request.user, hunt=hunt).exclude(
@@ -3612,9 +3495,7 @@ def company_hunt_results(request, pk, template="company_hunt_results.html"):
                     wallet.deposit(hunt.prize_runner)
                     wallet.save()
                 if winner.second_runner:
-                    wallet, created = Wallet.objects.get_or_create(
-                        user=winner.second_runner
-                    )
+                    wallet, created = Wallet.objects.get_or_create(user=winner.second_runner)
                     wallet.deposit(hunt.prize_second_runner)
                     wallet.save()
             winner.prize_distributed = True
@@ -3657,9 +3538,7 @@ def contributors_view(request, *args, **kwargs):
         if contributor is None:
             return HttpResponseNotFound("Contributor not found")
 
-        return render(
-            request, "contributors_detail.html", context={"contributor": contributor}
-        )
+        return render(request, "contributors_detail.html", context={"contributor": contributor})
 
     context = {"contributors": contributors}
 
@@ -3780,9 +3659,7 @@ def subscribe_to_domains(request, pk):
     if domain is None:
         return JsonResponse("ERROR", safe=False, status=400)
 
-    already_subscribed = request.user.userprofile.subscribed_domains.filter(
-        pk=domain.id
-    ).exists()
+    already_subscribed = request.user.userprofile.subscribed_domains.filter(pk=domain.id).exists()
 
     if already_subscribed:
         request.user.userprofile.subscribed_domains.remove(domain)
@@ -3814,9 +3691,7 @@ class IssueView2(DetailView):
         try:
             if self.request.user.is_authenticated:
                 try:
-                    objectget = IP.objects.get(
-                        user=self.request.user, issuenumber=self.object.id
-                    )
+                    objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
                     self.object.save()
                 except:
                     ipdetails.save()
@@ -3855,9 +3730,7 @@ class IssueView2(DetailView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["issue_count"] = Issue.objects.filter(
-            url__contains=self.object.domain_name
-        ).count()
+        context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context["all_comment"] = self.object.comments.all().order_by("-created_date")
         context["all_users"] = User.objects.all()
         context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
@@ -3873,11 +3746,9 @@ class IssueView2(DetailView):
         context["subscribed_to_domain"] = False
 
         if isinstance(self.request.user, User):
-            context["subscribed_to_domain"] = (
-                self.object.domain.user_subscribed_domains.filter(
-                    pk=self.request.user.userprofile.id
-                ).exists()
-            )
+            context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
+                pk=self.request.user.userprofile.id
+            ).exists()
 
         if isinstance(self.request.user, User):
             context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(
@@ -3930,9 +3801,7 @@ def invite_friend(request):
         return redirect("account_login")
     current_site = get_current_site(request)
     referral_code, created = InviteFriend.objects.get_or_create(sender=request.user)
-    referral_link = (
-        f"https://{current_site.domain}/referral/?ref={referral_code.referral_code}"
-    )
+    referral_link = f"https://{current_site.domain}/referral/?ref={referral_code.referral_code}"
     context = {
         "referral_link": referral_link,
     }
@@ -3950,22 +3819,19 @@ def trademark_detailview(request, slug):
     if settings.USPTO_API is None:
         return HttpResponse("API KEY NOT SETUP")
 
-    trademark_available_url = (
-        "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (slug)
+    trademark_available_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (
+        slug
     )
     headers = {
         "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
         "x-rapidapi-key": settings.USPTO_API,
     }
-    trademark_available_response = requests.get(
-        trademark_available_url, headers=headers
-    )
+    trademark_available_response = requests.get(trademark_available_url, headers=headers)
     ta_data = trademark_available_response.json()
 
     if ta_data[0]["available"] == "no":
         trademark_search_url = (
-            "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active"
-            % (slug)
+            "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (slug)
         )
         trademark_search_response = requests.get(trademark_search_url, headers=headers)
         ts_data = trademark_search_response.json()
