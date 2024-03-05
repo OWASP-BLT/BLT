@@ -276,12 +276,8 @@ urlpatterns = [
     re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
     re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
-    path(
-        "domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"
-    ),
-    re_path(
-        r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"
-    ),
+    path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
+    re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
     re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
     re_path(
