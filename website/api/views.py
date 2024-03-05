@@ -201,9 +201,7 @@ class IssueViewSet(viewsets.ModelViewSet):
                 default_storage.save(f"screenshots/{screenshot.name}", screenshot)
                 IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}")
             else:
-                return Response(
-                    {"error": img_valid}, status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({"error": img_valid}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(self.get_issue_info(request, issue))
 
