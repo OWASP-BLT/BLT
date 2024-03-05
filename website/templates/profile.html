@@ -261,25 +261,28 @@
             {% if request.user == user %}
                 <div id="update-overlay">
                     <div class="wallet-selection">
-                        <button class="crypto-button" data-crypto="Bitcoin"><i class="fa-brands fa-btc"></i></button>
-                        <button class="crypto-button" data-crypto="Ethereum"><i class="fa-brands fa-ethereum"></i></button>
-                        <button class="crypto-button" data-crypto="BitcoinCash"><i class="fa-brands fa-btc"></i></button>
+                        <button class="crypto-button" data-crypto="Bitcoin">
+                            <i class="fa-brands fa-btc"></i>
+                        </button>
+                        <button class="crypto-button" data-crypto="Ethereum">
+                            <i class="fa-brands fa-ethereum"></i>
+                        </button>
+                        <button class="crypto-button" data-crypto="BitcoinCash">
+                            <i class="fa-brands fa-btc"></i>
+                        </button>
                     </div>
                     <div>
-                    <form method="post"
-                          action="{% url 'update_bch_address' %}"
-                          id="update-form">
-                        {% csrf_token %}
-                        <input type="hidden"
-                               id="selected-crypto"
-                               name="selected_crypto"
-                               value="">
-                        <input type="text"
-                               id="new-crypto-address"
-                               name="new_address"
-                               placeholder="Enter new Bitcoin address">
-                        <button type="submit" class="btn btn-primary text-black btn-save">Save</button>
-                    </form>
+                        <form method="post"
+                              action="{% url 'update_bch_address' %}"
+                              id="update-form">
+                            {% csrf_token %}
+                            <input type="hidden" id="selected-crypto" name="selected_crypto" value="">
+                            <input type="text"
+                                   id="new-crypto-address"
+                                   name="new_address"
+                                   placeholder="Enter new Bitcoin address">
+                            <button type="submit" class="btn btn-primary text-black btn-save">Save</button>
+                        </form>
                     </div>
                 </div>
             {% endif %}
@@ -301,7 +304,7 @@
                         </div>
                         <button id="close" class="btn-danger w-full">Close</button>
                     </dialog>
-                </div>                
+                </div>
             </div>
             <div class="icon-block">
                 <kbd class="fa fa-cogs">
