@@ -3971,9 +3971,9 @@ def update_bch_address(request):
                 elif selected_crypto == "BitcoinCash":
                     user_profile.bch_address = new_address
                 user_profile.save()
-                messages.success(request,f"{selected_crypto} Address updated successfully.")
+                messages.success(request, f"{selected_crypto} Address updated successfully.")
             except Exception as e:
-                messages.error(request,f"Failed to update {selected_crypto} Address.")
+                messages.error(request, f"Failed to update {selected_crypto} Address.")
         else:
             messages.error(request, f"Please provide a valid {selected_crypto}  Address.")
     else:

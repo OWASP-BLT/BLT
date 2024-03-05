@@ -424,7 +424,7 @@ class UserProfile(models.Model):
     issues_hidden = models.BooleanField(default=False)
 
     subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains")
-    subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users")    
+    subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users")
     btc_address = models.CharField(max_length=100, blank=True, null=True)
     bch_address = models.CharField(max_length=100, blank=True, null=True)
     eth_address = models.CharField(max_length=100, blank=True, null=True)
