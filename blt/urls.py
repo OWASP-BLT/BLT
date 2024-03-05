@@ -68,12 +68,14 @@ from website.views import (
     UserProfileDetailsView,
     UserProfileDetailView,
     contributors_view,
+    dislike_issue2,
     facebook_callback,
     flag_issue2,
     github_callback,
     google_callback,
     like_issue2,
     subscribe_to_domains,
+    vote_count,
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
@@ -269,7 +271,13 @@ urlpatterns = [
     ),
     re_path(r"^flag_issue/(?P<issue_pk>\d+)/$", website.views.flag_issue, name="flag_issue"),
     re_path(r"^like_issue2/(?P<issue_pk>\d+)/$", like_issue2, name="like_issue2"),
+    re_path(r"^dislike_issue2/(?P<issue_pk>\d+)/$", dislike_issue2, name="dislike_issue2"),
     re_path(r"^flag_issue2/(?P<issue_pk>\d+)/$", flag_issue2, name="flag_issue2"),
+    re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
+    path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
+    re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
+    path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
+    re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
     re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
     re_path(
