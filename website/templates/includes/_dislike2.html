@@ -1,0 +1,32 @@
+<div id="dislike_root" class="flex justify-between">
+    {% if request.user.is_authenticated %}
+        <button name="{{ object.pk }}"
+                type="submit"
+                class="dislike flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0">
+            <i class="fa-regular fa-thumbs-down text-2xl mr-2"> </i>
+            <p id="total_dislikes">{{ dislikes }} Downvotes</p>
+        </button>
+    {% else %}
+        <button disabled
+                class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold bg-gray-200 m-5 xl:m-0">
+            <i class="fa-regular fa-thumbs-down text-2xl mr-2"> </i>
+            <p>{{ dislikes }} Downvotes</p>
+        </button>
+    {% endif %}
+</div>
+<script>
+        function dislike_handler(e){
+            e.preventDefault();
+            var issue_pk = $(this).attr('name');
+            $.ajax({
+                type: 'GET',
+                url: '/dislike_issue2/' + issue_pk + '/',
+                data: {},
+                success: function (data) {
+                    $('#dislike_root').html(data);
+                },
+            });
+            $('body').off('click', '.dislike', dislike_handler);
+        }
+        $('body').on('click', '.dislike', dislike_handler);
+</script>
