@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <meta name="description" content="Add your meta description here">
         <meta name="keywords" content="Add your meta keywords here">
@@ -11,558 +11,422 @@
     <body>
         <h1>Sitemap</h1>
         <ul>
-            <!-- Home -->
+            <h2>General</h2>
             <li>
-                <a href="{% url 'index' %}">Home</a>
+                <a href="{% url 'index' %}">Index</a>
             </li>
             <li>
                 <a href="{% url 'newhome' %}">New Home</a>
             </li>
             <li>
-                <a href="{% url 'facebook_login' %}">Facebook Login</a>
+                <a href="{% url 'delete' %}">Account Delete</a>
             </li>
             <li>
-                <a href="{% url 'github_login' %}">GitHub Login</a>
+                <a href="{% url 'invite_friend' %}">Invite Friend</a>
             </li>
             <li>
-                <a href="{% url 'google_login' %}">Google Login</a>
+                <a href="{% url 'referral_signup' %}">Referral Signup</a>
             </li>
             <li>
-                <a href="{% url 'draft_hunts' %}">Draft Hunts</a>
+                <a href="{% url 'show_bughunt' 1 %}">Show Bughunt</a>
             </li>
             <li>
-                <a href="{% url 'domain_list' %}">Domain List</a>
+                <a href="{% url 'follow_user' random_domain %}">Follow User</a>
             </li>
-            <!-- Additional Links -->
             <li>
-                <a href="{% url 'about' %}">About</a>
+                <a href="{% url 'all_activity' %}">All Activity</a>
+            </li>
+            <li>
+                <a href="{% url 'leaderboard_global' %}">Leaderboard Global</a>
+            </li>
+            <li>
+                <a href="{% url 'leaderboard_specific_month' %}">Leaderboard Specific Month</a>
+            </li>
+            <li>
+                <a href="{% url 'leaderboard_eachmonth' %}">Leaderboard Each Month</a>
+            </li>
+            <li>
+                <a href="{% url 'profile' random_domain %}">Profile</a>
+            </li>
+            <li>
+                <a href="{% url 'domain' random_domain %}">Domain</a>
+            </li>
+            <li>
+                <a href="{% url 'account_profile' %}">Account Profile</a>
+            </li>
+            <li>
+                <a href="{% url 'start_hunt' %}">Start Hunt</a>
+            </li>
+            <li>
+                <a href="{% url 'hunt' %}">Hunt</a>
+            </li>
+            <li>
+                <a href="{% url 'hunts' %}">Hunts</a>
+            </li>
+            <li>
+                <a href="{% url 'invite' %}">Invite</a>
             </li>
             <li>
                 <a href="{% url 'terms' %}">Terms</a>
             </li>
             <li>
-                <a href="{% url 'privacy' %}">Privacy Policy</a>
+                <a href="{% url 'about' %}">About</a>
             </li>
             <li>
                 <a href="{% url 'teams' %}">Teams</a>
             </li>
             <li>
-                <a href="{% url 'leaderboard_global' %}">Global Leaderboard</a>
+                <a href="{% url 'projects' %}">Projects</a>
+            </li>
+            <li>
+                <a href="{% url 'apps' %}">Apps</a>
+            </li>
+            <li>
+                <a href="{% url 'deletions' %}">Deletions</a>
+            </li>
+            <li>
+                <a href="{% url 'bacon' %}">Bacon</a>
+            </li>
+            <li>
+                <a href="{% url 'bltv' %}">BLTV</a>
+            </li>
+            <li>
+                <a href="{% url 'privacy' %}">Privacy</a>
+            </li>
+            <li>
+                <a href="{% url 'stats' %}">Stats</a>
+            </li>
+            <li>
+                <a href="{% url 'social' %}">Scoials</a>
             </li>
             <li>
                 <a href="{% url 'search' %}">Search</a>
             </li>
             <li>
+                <a href="{% url 'contributors' %}">Contributors</a>
+            </li>
+            <li>
+                <a href="{% url 'sponsor' %}">Sponsors</a>
+            </li>
+            <li>
+                <a href="{% url 'trademark_search' %}">Trademark Search</a>
+            </li>
+            <li>
+                <a href="{% url 'trademark_detailview' random_domain %}">Trademark Detailview</a>
+            </li>
+            <hr>
+            <h2>Issue</h2>
+            <li>
+                <a href="{% url 'issue' %}">Issue</a>
+            </li>
+            <li>
                 <a href="{% url 'report' %}">Report Issue</a>
             </li>
             <li>
-                <a href="{% url 'scoreboard' %}">Scoreboard</a>
+                <a href="{% url 'issue_view' 1 %}">Issue View // 1</a>
             </li>
             <li>
-                <a href="{% url 'bltv' %}">BLTV</a>
+                <a href="{% url 'add_comment' %}">Issue add Comment</a>
+            </li>
+            <li>
+                <a href="{% url 'edit_comment' 1 %}">Edit Comment // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'reply_comment' 1 %}">Reply Comment // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'like_issue' 1 %}">Like Issue // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'dislike_issue' 1 %}">Dislike Issue // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'flag_issue' 1 %}">Flag Issue // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'edit_issue' %}">Issue Edit</a>
+            </li>
+            <li>
+                <a href="{% url 'save_issue' 1 %}">Save Issue // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'unsave_issue' 1 %}">Unsave Issue // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'comment_on_issue' 1 %}">Comment on Issue // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'update_comment' 1 1 %}">Update Comment // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'delete_issue' 1 %}">Delete Issue // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'remove_user_from_issue' 1 %}">Remove User From Issue // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'update_issue' %}">Update Issue</a>
             </li>
             <hr>
-            <h3>Requires Login</h3>
             <li>
-                <a href="{% url 'upcoming_hunts' %}">Upcoming Hunts</a>
+                <a href="{% url 'issue_view2' 1 %}">View Issue 2 // 1</a>
             </li>
             <li>
-                <a href="{% url 'create_hunt' %}">Create Hunt</a>
+                <a href="{% url 'like_issue2' 1 %}">Like Issue 2 // 1</a>
             </li>
+            <li>
+                <a href="{% url 'flag_issue2' 1 %}">Flag Issue 2 // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'delete_comment' %}">Delete Comment</a>
+            </li>
+            <hr>
+            <h2>Company</h2>
+            <li>
+                <a href="{% url 'register_company' %}">Register Company</a>
+            </li>
+            <li>
+                <a href="{% url 'domain_lists' %}">Domain View</a>
+            </li>
+            <li>
+                <a href="{% url 'subscribe_to_domains' 1 %}">Subscribe To Domains</a>
+            </li>
+            <hr>
+            <li>
+                <a href="{% url 'company_view' %}">Dashboard</a>
+            </li>
+            <li>
+                <a href="{% url 'company_dashboard_home' %}">Dashboard Home</a>
+            </li>
+            <li>
+                <a href="{% url 'admin_company_dashboard' %}">Admin Company Dashboard</a>
+            </li>
+            <li>
+                <a href="{% url 'add_or_update_company' %}">Add or Update Company Dashboard</a>
+            </li>
+            <li>
+                <a href="{% url 'company_dashboard_domain_detail' 1 %}">Company Dashboard Domain Detail</a>
+            </li>
+            <li>
+                <a href="{% url 'company_dashboard_hunt_detail' 1 %}">Company Dashboard Hunt Detail</a>
+            </li>
+            <li>
+                <a href="{% url 'company_dashboard_hunt_edit' 1 %}">Company Dashboard Hunt Edit</a>
+            </li>
+            <li>
+                <a href="{% url 'admin_company_dashboard_detail' 1 %}">Admin Company Dashboard Detail</a>
+            </li>
+            <li>
+                <a href="{% url 'create_hunt' %}">Company Dashboard Hunt Create</a>
+            </li>
+            <li>
+                <a href="{% url 'draft_hunts' %}">Company Dashboard Draft Hunt</a>
+            </li>
+            <li>
+                <a href="{% url 'upcoming_hunts' %}">Company Dashboard Upcoming Hunt</a>
+            </li>
+            <li>
+                <a href="{% url 'previous_hunts' %}">Company Dashboard Previous Hunt</a>
+            </li>
+            <li>
+                <a href="{% url 'company_hunt_results' 1 %}">Company Dashboard Hunt Results</a>
+            </li>
+            <li>
+                <a href="{% url 'ongoing_hunts' %}">Company Dashboard Ongoing Hunt</a>
+            </li>
+            <li>
+                <a href="{% url 'domain_list' %}">Company Dashboard Domains</a>
+            </li>
+            <li>
+                <a href="{% url 'company-settings' %}">Company Dashboard Settings</a>
+            </li>
+            <li>
+                <a href="{% url 'join' %}">join</a>
+            </li>
+            <li>
+                <a href="{% url 'update-role' %}">Company Dashboard settings Update Role</a>
+            </li>
+            <li>
+                <a href="{% url 'add-role' %}">Company Dashboard settings Add Role</a>
+            </li>
+            <li>
+                <a href="{% url 'company_view' %}">Dashboard</a>
+            </li>
+            <li>
+                <a href="{% url 'company_analytics' 1 %}">Dashboard Analytics</a>
+            </li>
+            <li>
+                <a href="{% url 'company_manage_bugs' 1 %}">Dashboard Manage bugs</a>
+            </li>
+            <li>
+                <a href="{% url 'company_manage_domains' 1 %}">Dashboard Manage Domains</a>
+            </li>
+            <li>
+                <a href="{% url 'company_manage_roles' 1 %}">Dashboard Manage Roles</a>
+            </li>
+            <li>
+                <a href="{% url 'company_manage_bughunts' 1 %}">Dashboard Manage Bughunts</a>
+            </li>
+            <li>
+                <a href="{% url 'end_bughunt' 1 %}">Dashboard End Bughunts</a>
+            </li>
+            <li>
+                <a href="{% url 'add_bughunt' 1 %}">Dashboard Add Bughunts</a>
+            </li>
+            <li>
+                <a href="{% url 'add_domain' 1 %}">Dashboard Add Domain</a>
+            </li>
+            <li>
+                <a href="{% url 'view_domain' 1 %}">Dashboard View Domain</a>
+            </li>
+            <hr>
+            <h2>API</h2>
+            <li>
+                <a href="{% url 'get_score' %}">Get UserScore</a>
+            </li>
+            <li>
+                <a href="{% url 'url_check' %}">Url Check</a>
+            </li>
+            <li>
+                <a href="{% url 'hunt_details' %}">Hunt Details</a>
+            </li>
+            <li>
+                <a href="{% url 'api_scoreboard' %}">API Scoreboard</a>
+            </li>
+            <li>
+                <a href="{% url 'api_invite_friend' %}">API Invite Friend</a>
+            </li>
+            <li>
+                <a href="{% url 'leaderboard' %}">leaderboard</a>
+            </li>
+            <li>
+                <a href="{% url 'api_like_issue' 1 %}">Like Issue</a>
+            </li>
+            <li>
+                <a href="{% url 'api_flag_issue' 1 %}">Flag Issue</a>
+            </li>
+            <li>
+                <a href="{% url 'search_issues' %}">Seach Issues</a>
+            </li>
+            <li>
+                <a href="{% url 'create_wallet' %}">Create Wallet</a>
+            </li>
+            <li>
+                <a href="{% url 'api_count' %}">API count</a>
+            </li>
+            <li>
+                <a href="{% url 'hunts_detail_v2' %}">Hunt Details V2</a>
+            </li>
+            <li>
+                <a href="{% url 'issuecreate' %}">Issue Create</a>
+            </li>
+            <li>
+                <a href="{% url 'delete_api_issue' 1 %}">API Delete Issue</a>
+            </li>
+            <li>
+                <a href="{% url 'remove_api_user_from_issue' 1 %}">Remove API User From Issue</a>
+            </li>
+            <li>
+                <a href="{% url 'update_api_issue' %}">Update API Issue</a>
+            </li>
+            <li>
+                <a href="{% url 'api_scoreboard' %}">API Scoreboard</a>
+            </li>
+            <li>
+                <a href="{% url 'api_terms' %}">API Mobile Terms</a>
+            </li>
+            <li>
+                <a href="{% url 'api_about' %}">API About</a>
+            </li>
+            <li>
+                <a href="{% url 'api_privacypolicy' %}">API Privacy Policy</a>
+            </li>
+            <li>
+                <a href="{% url 'api_scoreboard' %}">API Scoreboard</a>
+            </li>
+            <li>
+                <a href="{% url 'api_scoreboard' %}">API Scoreboard</a>
+            </li>
+            <hr>
+            <h2>User Dashboard</h2>
             <li>
                 <a href="{% url 'user' %}">User Dashboard</a>
             </li>
             <li>
-                <a href="{% url 'company_dashboar_home' %}">Company Dashboard Home</a>
+                <a href="{% url 'addbalance' %}">User Dashboard Addbalance</a>
             </li>
             <li>
-                <a href="{% url 'add_or_update_domain' %}">Add or Update Domain</a>
+                <a href="{% url 'withdraw' %}">User Dashboard Withdraw</a>
             </li>
             <li>
-                <a href="{% url 'ongoing_hunts' %}">Ongoing Hunts</a>
+                <a href="{% url 'stripe_connected' 1 %}">User Dashboard Stripe connected</a>
             </li>
             <li>
-                <a href="{% url 'domain_list' %}">Domain List</a>
+                <a href="{% url 'view_hunt' 1 %}">User Dashboard View Hunt</a>
             </li>
             <li>
-                <a href="{% url 'previous_hunts' %}">Previous Hunts</a>
+                <a href="{% url 'submit_bug' 1 %}">User Dashboard Submit Bug</a>
             </li>
             <li>
-                <a href="{% url 'report' %}">Report</a>
+                <a href="{% url 'hunt_results' 1 %}">User Dashboard Hunt Results</a>
             </li>
             <li>
-                <a href="{% url 'trademark_search' %}">Trademark</a>
-            </li>
-            <li>
-                <a href="{% url 'trademark_detailview' random_trademark %}">Trademark Detail / {{ random_trademark }}</a>
+                <a href="{% url 'user_profile' 1 %}">User Dashboard Profile</a>
             </li>
             <hr>
-            <h3>Needs data (todo)</h3>
             <li>
-                <a href="{% url 'referral_signup' %}">Referral Signup</a>
-            </li>
-            <li>
-                <a href="{% url 'domain' random_domain %}">Domain / {{ random_domain }}</a>
+                <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
             </li>
             <hr>
-            <h3>API</h3>
+            <h2>Essential Components</h2>
             <li>
-                <a href="{% url 'invite_friend' %}">Invite Friend</a>
+                <a href="{% url 'password_reset_confirm' 1 1 %}">Password Reset Confirm</a>
+            </li>
+            <li>
+                <a href="{% url 'facebook_login' %}">Facebook Login</a>
+            </li>
+            <li>
+                <a href="{% url 'github_login' %}">Github Login</a>
+            </li>
+            <li>
+                <a href="{% url 'google_login' %}">Google Login</a>
+            </li>
+            <li>
+                <a href="{% url 'github_callback' %}">Github Callback</a>
+            </li>
+            <li>
+                <a href="{% url 'google_callback' %}">Google Callback</a>
+            </li>
+            <li>
+                <a href="{% url 'facebook_callback' %}">Facebook Callback</a>
+            </li>
+            <li>
+                <a href="{% url 'facebook_connect' %}">Facebook Conect</a>
+            </li>
+            <li>
+                <a href="{% url 'github_connect' %}">Github Connect</a>
             </li>
             <li>
                 <a href="{% url 'social_account_list' %}">Social Account List</a>
             </li>
             <li>
-                <a href="{% url 'leaderbaord' %}">Leaderboard</a>
+                <a href="{% url 'social_account_disconnect' 1 %}">Social Account Disconnect</a>
             </li>
             <li>
-                <a href="{% url 'api_contributor' %}"></a>
+                <a href="{% url 'schema-swagger-ui' %}">Schema Swagger UI</a>
+            </li>
+            <li>
+                <a href="{% url 'schema-redoc' %}">Schema Redoc</a>
+            </li>
+            <li>
+                <a href="{% url 'inbound_event_webhook_callback' %}">inbound event webhook callback</a>
+            </li>
+            <li>
+                <a href="{% url 'update_bch_address' %}">Update BCH Address</a>
+            </li>
+            <li>
+                <a href="{% url 'post_error' %}">Error</a>
             </li>
         </ul>
     </body>
 </html>
-<!--
-            company/templates/company/domain_detail.html
-            company/templates/company/view_domain.html
-            company/templates/company/company_dashboard_base.html
-            company/templates/company/add_domain.html
-            company/templates/company/bughunt/view_bughunt.html
-            company/templates/company/bughunt/company_manage_bughunts.html
-            company/templates/company/bughunt/edit_bughunt.html
-            company/templates/company/bughunt/add_bughunt.html
-            company/templates/company/register_company.html
-            company/templates/company/company_manage_domains.html
-            company/templates/company/company_manage_bugs.html
-            company/templates/company/company_manage_roles.html
-            company/templates/company/company_analytics.html
-            company/templates/company/company_includes/sidebar.html
-            company/templates/company/company_includes/navbar.html
-            company/templates/company/company_includes/md_editor.html
-            html/dashboard.html
-            html/team.html
-            website/static/img/browser-logos/browser.html
-            website/templates/leaderboard_specific_month.html
-            website/templates/join.html
-            website/templates/image_list.html
-            website/templates/base_admin.html
-            website/templates/hunt_upcoming.html
-            website/templates/company_hunt_results.html
-            website/templates/terms.html
-            website/templates/hunt_drafts.html
-            website/templates/social.html
-            website/templates/admin_home.html
-            website/templates/create_hunt.html
-            website/templates/hunt_ongoing.html
-            website/templates/index-new.html
-            website/templates/index_company.html
-            website/templates/hunt_submittion.html
-            website/templates/account/logout.html
-            website/templates/account/login.html
-            website/templates/account/password_change.html
-            website/templates/account/password_reset.html
-            website/templates/account/signup.html
-            website/templates/account/password_reset_from_key.html
-            website/templates/base_dashboard_company.html
-            website/templates/hunt.html
-            website/templates/includes/footer.html
-            website/templates/includes/navbar.html
-            website/templates/includes/md_editor.html
-            website/templates/contributors_detail.html
-            website/templates/contributors.html
-            website/templates/mobile_privacy.html
-            website/templates/mobile_about.html
-            website/templates/admin_dashboard_company.html
-            website/templates/company_domain_lists.html
-            website/templates/admin_dashboard_company_detail.html
-            website/templates/stats.html
-            website/templates/privacy.html
-            website/templates/base_dashboard_user.html
-            website/templates/registration/password_reset_email.html
-            website/templates/500.html
-            website/templates/profile.html
-            website/templates/mobile_terms.html
-            website/templates/scoreboard.html
-            website/templates/hunt_previous.html
-            website/templates/404.html
-            website/templates/company_settings.html
-            website/templates/index_user.html
-            website/templates/domain.html
-            website/templates/search.html
-            website/templates/hunt_results.html
-            website/templates/issue.html
-            website/templates/leaderboard_eachmonth.html
-            website/templates/base.html
-            website/templates/list_view.html
-            website/templates/dashboard_profile.html
-            website/templates/about.html
-            website/templates/invite_friend.html
-            website/templates/company_dashboard_hunt_edit.html
-            website/templates/index.html
-            website/templates/report.html
-            website/templates/leaderboard_global.html
-            website/templates/hunt2.html
-            website/templates/view_hunt.html
-            website/templates/invite.html
-            website/templates/company_dashboard_hunt_detail.html
-            website/templates/comments.html
-            partials:
-            website/templates/_activity.html
-            website/templates/_flags.html
-            website/templates/_likes.html
-
-
-
-  
-urlpatterns = [
-    path("invite-friend/", website.views.invite_friend, name="invite_friend"),
-    path("referral/", website.views.referral_signup, name="referral_signup"),
-    path("captcha/", include("captcha.urls")),
-    re_path(r"^auth/registration/", include("dj_rest_auth.registration.urls")),
-    path(
-        "rest-auth/password/reset/confirm/<str:uidb64>/<str:token>",
-        PasswordResetConfirmView.as_view(),
-        name="password_reset_confirm",
-    ),
-    re_path(r"^auth/", include("dj_rest_auth.urls")),
-    re_path("auth/facebook", FacebookLogin.as_view(), name="facebook_login"),
-    path("accounts/", include("allauth.urls")),
-    path("auth/github/", GithubLogin.as_view(), name="github_login"),
-    path("auth/google/", GoogleLogin.as_view(), name="google_login"),
-    path("accounts/github/login/callback/", github_callback, name="github_callback"),
-    path("accounts/google/login/callback/", google_callback, name="google_callback"),
-    path("accounts/facebook/login/callback/", facebook_callback, name="facebook_callback"),
-    re_path(r"^auth/facebook/connect/$", FacebookConnect.as_view(), name="facebook_connect"),
-    re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
-    re_path(r"^auth/google/connect/$", GoogleConnect.as_view(), name="google_connect"),
-    path("auth/github/url/", github_views.oauth2_login),
-    path("auth/google/url/", google_views.oauth2_login),
-    path("auth/facebook/url/", facebook_views.oauth2_callback),
-    path("socialaccounts/", SocialAccountListView.as_view(), name="social_account_list"),
-    path(
-        "socialaccounts/<int:pk>/disconnect/",
-        SocialAccountDisconnectView.as_view(),
-        name="social_account_disconnect",
-    ),
-    re_path(
-        r"^swagger(?P<format>\.json|\.yaml)$",
-        schema_view.without_ui(cache_timeout=0),
-        name="schema-json",
-    ),
-    re_path(
-        r"^swagger/$",
-        schema_view.with_ui("swagger", cache_timeout=0),
-        name="schema-swagger-ui",
-    ),
-    re_path(r"^redoc/$", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
-    re_path(r"^newhome/$", website.views.index, name="newhome"),
-    re_path(
-        r"^dashboard/company/$",
-        website.views.company_dashboard,
-        name="company_dashboar_home",
-    ),
-    re_path(
-        r"^dashboard/user/profile/addbalance$",
-        website.views.addbalance,
-        name="addbalance",
-    ),
-    re_path(r"^dashboard/user/profile/withdraw$", website.views.withdraw, name="withdraw"),
-    re_path(
-        r"^dashboard/user/stripe/connected/(?P<username>[^/]+)/$",
-        website.views.stripe_connected,
-        name="stripe_connected",
-    ),
-    re_path(r"^dashboard/admin$", website.views.admin_dashboard, name="admin_dashboard"),
-    re_path(
-        r"^dashboard/admin/company$",
-        website.views.admin_company_dashboard,
-        name="admin_company_dashboard",
-    ),
-    re_path(
-        r"^dashboard/admin/company/addorupdate$",
-        website.views.add_or_update_company,
-        name="add_or_update_company",
-    ),
-    re_path(
-        r"^dashboard/company/domain/addorupdate$",
-        website.views.add_or_update_domain,
-        name="add_or_update_domain",
-    ),
-    path(
-        "dashboard/company/domain/<int:pk>/",
-        website.views.company_dashboard_domain_detail,
-        name="company_dashboard_domain_detail",
-    ),
-    path(
-        "dashboard/company/hunt/<int:pk>/",
-        website.views.company_dashboard_hunt_detail,
-        name="company_dashboard_hunt_detail",
-    ),
-    path("dashboard/user/hunt/<int:pk>/", website.views.view_hunt, name="view_hunt"),
-    path(
-        "dashboard/user/hunt/<int:pk>/submittion/",
-        website.views.submit_bug,
-        name="submit_bug",
-    ),
-    path(
-        "dashboard/user/hunt/<int:pk>/results/",
-        website.views.hunt_results,
-        name="hunt_results",
-    ),
-    path(
-        "dashboard/company/hunt/<int:pk>/edit",
-        website.views.company_dashboard_hunt_edit,
-        name="company_dashboard_hunt_edit",
-    ),
-    path(
-        "dashboard/admin/company/<int:pk>/",
-        website.views.admin_company_dashboard_detail,
-        name="admin_company_dashboard_detail",
-    ),
-    re_path(r"^dashboard/company/hunt/create$", CreateHunt.as_view(), name="create_hunt"),
-    path("hunt/<int:pk>", ShowBughuntView.as_view(), name="show_bughunt"),
-    re_path(r"^dashboard/company/hunt/drafts$", DraftHunts.as_view(), name="draft_hunts"),
-    re_path(
-        r"^dashboard/company/hunt/upcoming$",
-        UpcomingHunts.as_view(),
-        name="upcoming_hunts",
-    ),
-    re_path(
-        r"^dashboard/company/hunt/previous$",
-        PreviousHunts.as_view(),
-        name="previous_hunts",
-    ),
-    path(
-        "dashboard/company/hunt/previous/<int:pk>/",
-        website.views.company_hunt_results,
-        name="company_hunt_results",
-    ),
-    re_path(
-        r"^dashboard/company/hunt/ongoing$",
-        OngoingHunts.as_view(),
-        name="ongoing_hunts",
-    ),
-    re_path(r"^dashboard/company/domains$", DomainList.as_view(), name="domain_list"),
-    re_path(
-        r"^dashboard/company/settings$",
-        CompanySettings.as_view(),
-        name="company-settings",
-    ),
-    re_path(r"^join$", JoinCompany.as_view(), name="join"),
-    re_path(
-        r"^dashboard/company/settings/role/update$",
-        website.views.update_role,
-        name="update-role",
-    ),
-    re_path(
-        r"^dashboard/company/settings/role/add$",
-        website.views.add_role,
-        name="add-role",
-    ),
-    re_path(r"^dashboard/user/$", website.views.user_dashboard, name="user"),
-    re_path(
-        r"^dashboard/user/profile/(?P<slug>[^/]+)/$",
-        UserProfileDetailsView.as_view(),
-        name="user_profile",
-    ),
-    path(settings.ADMIN_URL + "/", admin.site.urls),
-    re_path(r"^like_issue/(?P<issue_pk>\d+)/$", website.views.like_issue, name="like_issue"),
-    re_path(
-        r"^dislike_issue/(?P<issue_pk>\d+)/$", website.views.dislike_issue, name="dislike_issue"
-    ),
-    re_path(r"^flag_issue/(?P<issue_pk>\d+)/$", website.views.flag_issue, name="flag_issue"),
-    re_path(r"^like_issue2/(?P<issue_pk>\d+)/$", like_issue2, name="like_issue2"),
-    re_path(r"^flag_issue2/(?P<issue_pk>\d+)/$", flag_issue2, name="flag_issue2"),
-    path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
-    re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
-    re_path(
-        r"^unsave_issue/(?P<issue_pk>\d+)/$",
-        website.views.unsave_issue,
-        name="unsave_issue",
-    ),
-    re_path(r"^issue/edit/$", website.views.IssueEdit, name="edit_issue"),
-    re_path(r"^issue/update/$", website.views.UpdateIssue, name="update_issue"),
-    path("issue/<str:issue_pk>/comment/", website.views.comment_on_issue, name="comment_on_issue"),
-    # UPDATE COMMENT
-    path(
-        "issue/<str:issue_pk>/comment/update/<str:comment_pk>/",
-        website.views.update_comment,
-        name="update_comment",
-    ),
-    # delete_comment
-    path("issue2/comment/delete/", website.views.delete_comment, name="delete_comment"),
-    re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
-    re_path(r"^issue2/(?P<slug>\w+)/$", IssueView2.as_view(), name="issue_view2"),
-    re_path(r"^follow/(?P<user>[^/]+)/", website.views.follow_user, name="follow_user"),
-    re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
-    re_path(r"^label_activity/$", SpecificIssuesView.as_view(), name="all_activitys"),
-    re_path(r"^leaderboard/$", GlobalLeaderboardView.as_view(), name="leaderboard_global"),
-    re_path(
-        r"^leaderboard/monthly/$",
-        SpecificMonthLeaderboardView.as_view(),
-        name="leaderboard_specific_month",
-    ),
-    re_path(
-        r"^leaderboard/each-month/$",
-        EachmonthLeaderboardView.as_view(),
-        name="leaderboard_eachmonth",
-    ),
-    re_path(r"^api/v1/issue/like/(?P<id>\w+)/$", LikeIssueApiView.as_view(), name="like_issue"),
-    re_path(r"^api/v1/issue/flag/(?P<id>\w+)/$", FlagIssueApiView.as_view(), name="flag_issue"),
-    re_path(r"^api/v1/leaderboard/$", LeaderboardApiViewSet.as_view(), name="leaderboard"),
-    re_path(r"^api/v1/invite_friend/", InviteFriendApiViewset.as_view(), name="invite_friend"),
-    re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
-    re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
-    re_path(
-        r"^upload/(?P<time>[^/]+)/(?P<hash>[^/]+)/",
-        UploadCreate.as_view(),
-        name="upload",
-    ),
-    re_path(r"^profile/(?P<slug>[^/]+)/$", UserProfileDetailView.as_view(), name="profile"),
-    re_path(r"^domain/(?P<slug>[^/]+)/$", DomainDetailView.as_view(), name="domain"),
-    re_path(
-        r"^.well-known/acme-challenge/(?P<token>[^/]+)/$",
-        website.views.find_key,
-        name="find_key",
-    ),
-    re_path(r"^accounts/profile/", website.views.profile, name="account_profile"),
-    re_path(r"^delete_issue/(?P<id>\w+)/$", website.views.delete_issue, name="delete_issue"),
-    re_path(
-        r"^remove_user_from_issue/(?P<id>\w+)/$",
-        website.views.remove_user_from_issue,
-        name="remove_user_from_issue",
-    ),
-    re_path(r"^accounts/", include("allauth.urls")),
-    re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html"), name="start_hunt"),
-    re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
-    re_path(r"^hunts/$", ListHunts.as_view(), name="hunts"),
-    re_path(r"^invite/$", InviteCreate.as_view(template_name="invite.html"), name="invite"),
-    re_path(r"^terms/$", TemplateView.as_view(template_name="terms.html"), name="terms"),
-    re_path(r"^about/$", TemplateView.as_view(template_name="about.html"), name="about"),
-    re_path(r"^teams/$", TemplateView.as_view(template_name="teams.html"), name="teams"),
-    re_path(r"^projects/$", TemplateView.as_view(template_name="projects.html"), name="projects"),
-    re_path(r"^apps/$", TemplateView.as_view(template_name="apps.html"), name="apps"),
-    re_path(r"^deletions/$", TemplateView.as_view(template_name="deletions.html"), name="deletions"),
-    re_path(r"^bacon/$", TemplateView.as_view(template_name="bacon.html"), name="bacon"),
-    re_path(r"^bltv/$", TemplateView.as_view(template_name="bltv.html"), name="bltv"),
-    re_path(r"^privacypolicy/$", TemplateView.as_view(template_name="privacy.html"), name="privacy"),
-    re_path(r"^stats/$", StatsDetailView.as_view(), name="stats"),
-    re_path(r"^favicon\.ico$", favicon_view),
-    re_path(
-        r"^sendgrid_webhook/$",
-        csrf_exempt(InboundParseWebhookView.as_view()),
-        name="inbound_event_webhook_callback",
-    ),
-    re_path(r"^issue/comment/add/$", comments.views.add_comment, name="add_comment"),
-    re_path(r"^issue/comment/delete/$", comments.views.delete_comment, name="delete_comment"),
-    re_path(r"^comment/autocomplete/$", comments.views.autocomplete, name="autocomplete"),
-    re_path(
-        r"^issue/(?P<pk>\d+)/comment/edit/$",
-        comments.views.edit_comment,
-        name="edit_comment",
-    ),
-    re_path(
-        r"^issue/(?P<pk>\d+)/comment/reply/$",
-        comments.views.reply_comment,
-        name="reply_comment",
-    ),
-    re_path(r"^social/$", TemplateView.as_view(template_name="social.html"), name="social"),
-    re_path(r"^search/$", website.views.search, name="search"),
-    re_path(r"^report/$", IssueCreate.as_view(), name="report"),
-    re_path(r"^i18n/", include("django.conf.urls.i18n")),
-    re_path(r"^api/v1/", include(router.urls)),
-    re_path(r"^api/v1/stats/$", StatsApiViewset.as_view(), name="get_score"),
-    re_path(r"^api/v1/urlcheck/$", UrlCheckApiViewset.as_view(), name="url_check"),
-    re_path(r"^api/v1/hunt/$", BugHuntApiViewset.as_view(), name="hunt_details"),
-    re_path(r"^api/v2/hunts/$", BugHuntApiViewsetV2.as_view(), name="hunts_detail_v2"),
-    re_path(r"^api/v1/userscore/$", website.views.get_score, name="get_score"),
-    re_path(r"^authenticate/", CustomObtainAuthToken.as_view()),
-    re_path(r"^api/v1/createwallet/$", website.views.create_wallet, name="create_wallet"),
-    re_path(r"^api/v1/count/$", website.views.issue_count, name="api_count"),
-    re_path(r"^api/v1/contributors/$", website.views.contributors, name="api_contributor"),
-    re_path(
-        r"^api/v1/createissues/$",
-        csrf_exempt(IssueCreate.as_view()),
-        name="issuecreate",
-    ),
-    re_path(r"^api/v1/search/$", csrf_exempt(website.views.search_issues), name="search_issues"),
-    re_path(
-        r"^api/v1/delete_issue/(?P<id>\w+)/$",
-        csrf_exempt(website.views.delete_issue),
-        name="delete_api_issue",
-    ),
-    re_path(
-        r"^api/v1/remove_user_from_issue/(?P<id>\w+)/$",
-        csrf_exempt(website.views.remove_user_from_issue),
-        name="remove_api_user_from_issue",
-    ),
-    re_path(
-        r"^api/v1/issue/update/$", csrf_exempt(website.views.UpdateIssue), name="update_api_issue"
-    ),
-    re_path(r"^api/v1/scoreboard/$", website.views.get_scoreboard, name="api_scoreboard"),
-    re_path(
-        r"^api/v1/terms/$",
-        csrf_exempt(TemplateView.as_view(template_name="mobile_terms.html")),
-    ),
-    re_path(
-        r"^api/v1/about/$",
-        csrf_exempt(TemplateView.as_view(template_name="mobile_about.html")),
-    ),
-    re_path(
-        r"^api/v1/privacypolicy/$",
-        csrf_exempt(TemplateView.as_view(template_name="mobile_privacy.html")),
-    ),
-    re_path(r"^error/", website.views.throw_error, name="post_error"),
-    re_path(r"^tz_detect/", include("tz_detect.urls")),
-    # re_path(r"^tellme/", include("tellme.urls")),
-    re_path(r"^ratings/", include("star_ratings.urls", namespace="ratings")),
-    path("robots.txt", website.views.robots_txt),
-    path("ads.txt", website.views.ads_txt),
-    re_path(r"^contributors/$", contributors_view, name="contributors"),
-    path("company/", include("company.urls")),
-    path("sponsor/", website.views.sponsor_view, name="sponsor"),
-    path("companies/", DomainListView.as_view(), name="domain_lists"),
-    path("trademarks/", website.views.trademark_search, name="trademark_search"),
-    re_path(
-        r"^trademarks/query=(?P<slug>[\w\s]+)",
-        website.views.trademark_detailview,
-        name="trademark_detailview",
-    ),
-    path("update_bch_address/",website.views.update_bch_address,name="update_bch_address"),
-]
-
-
-urlpatterns = [
-    path("", RegisterCompanyView.as_view(), name="register_company"),
-    path("dashboard/", company_view, name="company_view"),
-    path(
-        "<str:company>/dashboard/analytics/",
-        CompanyDashboardAnalyticsView.as_view(),
-        name="company_analytics",
-    ),
-    path(
-        "<str:company>/dashboard/bugs/",
-        CompanyDashboardManageBugsView.as_view(),
-        name="company_manage_bugs",
-    ),
-    path(
-        "<str:company>/dashboard/domains/",
-        CompanyDashboardManageDomainsView.as_view(),
-        name="company_manage_domains",
-    ),
-    path(
-        "<str:company>/dashboard/roles/",
-        CompanyDashboardManageRolesView.as_view(),
-        name="company_manage_roles",
-    ),
-    path(
-        "<str:company>/dashboard/bughunts/",
-        CompanyDashboardManageBughuntView.as_view(),
-        name="company_manage_bughunts",
-    ),
-    path("dashboard/end_bughunt/<int:pk>", EndBughuntView.as_view(), name="end_bughunt"),
-    path("<str:company>/dashboard/add_bughunt/", AddHuntView.as_view(), name="add_bughunt"),
-    path("<str:company>/dashboard/add_domain/", AddDomainView.as_view(), name="add_domain"),
-    path("domain/<int:pk>/", login_required(DomainView.as_view()), name="view_domain"),
-]
-
-            -->
