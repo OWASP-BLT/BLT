@@ -1,10 +1,10 @@
 {% load gravatar %}
 {% load humanize %}
-    <style>
+<style>
     #crypto-name,#crypto-address{
     text-align: center;
     }
-    </style>
+</style>
 <div class="row-start-1 bug-container leaderboard-widget flex flex-col p-5 pt-3 bg-[white] m-1 w-[100%] row-span-2 rounded-[2.5rem]  border-[#e8e8e8] border-2 font-['Inter'] h-[630px]">
     <div class="font-['Barlow_Semi_Condensed'] font-semibold text-[black] text-[25px] text-center mb-2">LEADERBOARD</div>
     <div class="bg-[#EAEAEA] font-semibold p-3 mt- rounded-2xl">
@@ -57,7 +57,7 @@
                 <button type="button"
                         id="openModal-{{ leader.id }}"
                         class="btn btn-danger text-black"
-                        onclick="openModal('{{ leader.userprofile.btc_address}}','{{ leader.userprofile.eth_address}}','{{ leader.userprofile.bch_address}}', '{{ leader.id }}')">
+                        onclick="openModal('{{ leader.userprofile.btc_address }}','{{ leader.userprofile.eth_address }}','{{ leader.userprofile.bch_address }}', '{{ leader.id }}')">
                     TIP:<i class="fab fa-btc"></i>
                 </button>
                 <dialog id="dialog-{{ leader.id }}">
