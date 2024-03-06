@@ -1894,79 +1894,79 @@ class HuntCreate(CreateView):
         return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HH7MNY6KJGZFW"
 
 
-class IssueView(DetailView):
-    model = Issue
-    slug_field = "id"
-    template_name = "issue.html"
+# class IssueView(DetailView):
+#     model = Issue
+#     slug_field = "id"
+#     template_name = "issue.html"
 
-    def get(self, request, *args, **kwargs):
-        ipdetails = IP()
-        try:
-            id = int(self.kwargs["slug"])
-        except ValueError:
-            return HttpResponseNotFound("Invalid ID: ID must be an integer")
+#     def get(self, request, *args, **kwargs):
+#         ipdetails = IP()
+#         try:
+#             id = int(self.kwargs["slug"])
+#         except ValueError:
+#             return HttpResponseNotFound("Invalid ID: ID must be an integer")
 
-        self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
-        ipdetails.user = self.request.user
-        ipdetails.address = get_client_ip(request)
-        ipdetails.issuenumber = self.object.id
-        try:
-            if self.request.user.is_authenticated:
-                try:
-                    objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
-                    self.object.save()
-                except:
-                    ipdetails.save()
-                    self.object.views = (self.object.views or 0) + 1
-                    self.object.save()
-            else:
-                try:
-                    objectget = IP.objects.get(
-                        address=get_client_ip(request), issuenumber=self.object.id
-                    )
-                    self.object.save()
-                except Exception as e:
-                    print(e)
-                    messages.error(self.request, "That issue was not found 2." + str(e))
-                    ipdetails.save()
-                    self.object.views = (self.object.views or 0) + 1
-                    self.object.save()
-        except Exception as e:
-            print(e)
-            messages.error(self.request, "That issue was not found 1." + str(e))
-            return redirect("/")
-        return super(IssueView, self).get(request, *args, **kwargs)
+#         self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
+#         ipdetails.user = self.request.user
+#         ipdetails.address = get_client_ip(request)
+#         ipdetails.issuenumber = self.object.id
+#         try:
+#             if self.request.user.is_authenticated:
+#                 try:
+#                     objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
+#                     self.object.save()
+#                 except:
+#                     ipdetails.save()
+#                     self.object.views = (self.object.views or 0) + 1
+#                     self.object.save()
+#             else:
+#                 try:
+#                     objectget = IP.objects.get(
+#                         address=get_client_ip(request), issuenumber=self.object.id
+#                     )
+#                     self.object.save()
+#                 except Exception as e:
+#                     print(e)
+#                     messages.error(self.request, "That issue was not found 2." + str(e))
+#                     ipdetails.save()
+#                     self.object.views = (self.object.views or 0) + 1
+#                     self.object.save()
+#         except Exception as e:
+#             print(e)
+#             messages.error(self.request, "That issue was not found 1." + str(e))
+#             return redirect("/")
+#         return super(IssueView, self).get(request, *args, **kwargs)
 
-    def get_context_data(self, **kwargs):
-        context = super(IssueView, self).get_context_data(**kwargs)
-        if self.object.user_agent:
-            user_agent = parse(self.object.user_agent)
-            context["browser_family"] = user_agent.browser.family
-            context["browser_version"] = user_agent.browser.version_string
-            context["os_family"] = user_agent.os.family
-            context["os_version"] = user_agent.os.version_string
-        context["users_score"] = list(
-            Points.objects.filter(user=self.object.user)
-            .aggregate(total_score=Sum("score"))
-            .values()
-        )[0]
+#     def get_context_data(self, **kwargs):
+#         context = super(IssueView, self).get_context_data(**kwargs)
+#         if self.object.user_agent:
+#             user_agent = parse(self.object.user_agent)
+#             context["browser_family"] = user_agent.browser.family
+#             context["browser_version"] = user_agent.browser.version_string
+#             context["os_family"] = user_agent.os.family
+#             context["os_version"] = user_agent.os.version_string
+#         context["users_score"] = list(
+#             Points.objects.filter(user=self.object.user)
+#             .aggregate(total_score=Sum("score"))
+#             .values()
+#         )[0]
 
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
-        context["all_comment"] = self.object.comments.all
-        context["all_users"] = User.objects.all()
-        context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
-        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
-        context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
-        context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
+#         if self.request.user.is_authenticated:
+#             context["wallet"] = Wallet.objects.get(user=self.request.user)
+#         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
+#         context["all_comment"] = self.object.comments.all
+#         context["all_users"] = User.objects.all()
+#         context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
+#         context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
+#         context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
+#         context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
 
-        context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
-        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
+#         context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
+#         context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
 
-        context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
+#         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
 
-        return context
+#         return context
 
 
 @login_required(login_url="/accounts/login")
@@ -3790,6 +3790,95 @@ class IssueView2(DetailView):
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
 
         return context
+
+class IssueView3(DetailView):
+    model = Issue
+    slug_field = "id"
+    template_name = "issue3.html"
+
+    def get(self, request, *args, **kwargs):
+        ipdetails = IP()
+        try:
+            id = int(self.kwargs["slug"])
+        except ValueError:
+            return HttpResponseNotFound("Invalid ID: ID must be an integer")
+
+        self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
+        ipdetails.user = self.request.user
+        ipdetails.address = get_client_ip(request)
+        ipdetails.issuenumber = self.object.id
+        try:
+            if self.request.user.is_authenticated:
+                try:
+                    objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
+                    self.object.save()
+                except:
+                    ipdetails.save()
+                    self.object.views = (self.object.views or 0) + 1
+                    self.object.save()
+            else:
+                try:
+                    objectget = IP.objects.get(
+                        address=get_client_ip(request), issuenumber=self.object.id
+                    )
+                    self.object.save()
+                except:
+                    ipdetails.save()
+                    self.object.views = (self.object.views or 0) + 1
+                    self.object.save()
+        except Exception as e:
+            print(e)
+            # TODO: this is only an error for ipv6 currently and doesn't require us to redirect the user - we'll sort this out later
+            # messages.error(self.request, "That issue was not found."+str(e))
+            # return redirect("/")
+        return super(IssueView3, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(IssueView3, self).get_context_data(**kwargs)
+        if self.object.user_agent:
+            user_agent = parse(self.object.user_agent)
+            context["browser_family"] = user_agent.browser.family
+            context["browser_version"] = user_agent.browser.version_string
+            context["os_family"] = user_agent.os.family
+            context["os_version"] = user_agent.os.version_string
+        context["users_score"] = list(
+            Points.objects.filter(user=self.object.user)
+            .aggregate(total_score=Sum("score"))
+            .values()
+        )[0]
+
+        if self.request.user.is_authenticated:
+            context["wallet"] = Wallet.objects.get(user=self.request.user)
+        context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
+        context["all_comment"] = self.object.comments.all().order_by("-created_date")
+        context["all_users"] = User.objects.all()
+        context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
+        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
+        context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
+        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
+        context["more_issues"] = (
+            Issue.objects.filter(user=self.object.user)
+            .exclude(id=self.object.id)
+            .values("id", "description", "markdown_description", "screenshots__image")
+            .order_by("views")[:4]
+        )
+        context["subscribed_to_domain"] = False
+
+        if isinstance(self.request.user, User):
+            context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
+                pk=self.request.user.userprofile.id
+            ).exists()
+
+        if isinstance(self.request.user, User):
+            context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(
+                pk=self.object.id
+            ).exists()
+
+        context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
+
+        return context
+
+
 
 
 @receiver(user_signed_up)
