@@ -22,6 +22,7 @@ environ.Env.read_env()
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
 
 # Check the current hostname and adjust PROJECT_NAME and DOMAIN_NAME accordingly
 current_hostname = socket.gethostname()
@@ -107,7 +108,13 @@ INSTALLED_APPS = (
     "captcha",
     "dj_rest_auth",
     "dj_rest_auth.registration",
+    "django_crontab",
 )
+
+CRONJOBS = [
+    ('0 3 */7 * *', 'django.core.management.call_command', ['fetch_contributor_stats']),
+]
+
 
 
 # CRON_CLASSES = ["website.views.CreateIssue"]

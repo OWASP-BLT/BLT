@@ -8,7 +8,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-from collections import deque
+from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse, urlsplit, urlunparse
@@ -77,6 +77,7 @@ from website.models import (
     IP,
     Company,
     CompanyAdmin,
+    ContributorStats,
     Domain,
     Hunt,
     InviteFriend,
@@ -3612,12 +3613,9 @@ def flag_issue2(request, issue_pk):
 def like_issue2(request, issue_pk):
     context = {}
     issue_pk = int(issue_pk)
-    issue = get_object_or_404(Issue, pk=issue_pk)
+    issue = Issue.objects.get(pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
-
-    if UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists():
-        userprof.issue_downvoted.remove(issue)
-    if UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists():
+    if userprof in UserProfile.objects.filter(issue_upvoted=issue):
         userprof.issue_upvoted.remove(issue)
     else:
         userprof.issue_upvoted.add(issue)
@@ -3649,39 +3647,11 @@ def like_issue2(request, issue_pk):
             html_message=msg_html,
         )
 
+    userprof.save()
     total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
     context["object"] = issue
     context["likes"] = total_votes
     return render(request, "includes/_likes2.html", context)
-
-
-@login_required(login_url="/accounts/login")
-def dislike_issue2(request, issue_pk):
-    context = {}
-    issue_pk = int(issue_pk)
-    issue = get_object_or_404(Issue, pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
-
-    if UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists():
-        userprof.issue_upvoted.remove(issue)
-    if UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists():
-        userprof.issue_downvoted.remove(issue)
-    else:
-        userprof.issue_downvoted.add(issue)
-    total_votes = UserProfile.objects.filter(issue_downvoted=issue).count()
-    context["object"] = issue
-    context["dislikes"] = total_votes
-    return render(request, "includes/_dislike2.html", context)
-
-
-@login_required(login_url="/accounts/login")
-def vote_count(request, issue_pk):
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
-
-    total_upvotes = UserProfile.objects.filter(issue_upvoted=issue).count()
-    total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
-    return JsonResponse({"likes": total_upvotes, "dislikes": total_downvotes})
 
 
 @login_required(login_url="/accounts/login")
@@ -4011,3 +3981,31 @@ def update_bch_address(request):
 def sitemap(request):
     random_domain = Domain.objects.order_by("?").first()
     return render(request, "sitemap.html", {"random_domain": random_domain})
+
+
+class ContributorStatsView(TemplateView):
+    template_name = "contributor_stats.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Fetch all contributor stats records
+        stats = ContributorStats.objects.all()
+
+        # Convert the stats to a dictionary format expected by the template
+        user_stats = {stat.username: {
+            "commits": stat.commits,
+            "issues_opened": stat.issues_opened,
+            "issues_closed": stat.issues_closed,
+            "assigned_issues": stat.assigned_issues,
+            "prs": stat.prs,
+            "comments": stat.comments
+        } for stat in stats}
+
+        context["user_stats"] = user_stats
+        context["owner"] = "OWASP-BLT"  # Update as necessary
+        context["repo"] = "BLT"        # Update as necessary
+        context["start_date"] = (datetime.now().date() - timedelta(days=7)).isoformat()
+        context["end_date"] = datetime.now().date().isoformat()
+
+        return context
