@@ -299,7 +299,7 @@
                     <dialog id="dialog">
                         <div id="slideshow">
                             <img id="qr-image" alt="QR Code" height="300" width="400">
-                            <p id="crypto-name">Bitcoin</p>
+                            <p id="crypto-name" class="text-black">Bitcoin</p>
                             <p id="crypto-address"></p>
                         </div>
                         <button id="close" class="btn-danger w-full">Close</button>
@@ -519,11 +519,19 @@
 
         let currentIndex = 0;
         const updateSlide = () => {
-            const { name, address } = cryptoOptions[currentIndex];
-            document.getElementById('crypto-name').textContent = name;
-            document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
-            document.getElementById('crypto-address').textContent = `${address}`;
-        };
+            let { name, address } = cryptoOptions[currentIndex];
+            if (address == '' || address == 'None') {
+                address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
+                document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+                document.getElementById('crypto-name').textContent = "No address: Tip will go to the leaderboard fund.";
+                document.getElementById('crypto-address').textContent = `BCH: ${address}`;
+            }
+            else{
+                document.getElementById('crypto-name').textContent = name;
+                document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+                document.getElementById('crypto-address').textContent = `${address}`;
+            }
+        }
 
         updateSlide();
 

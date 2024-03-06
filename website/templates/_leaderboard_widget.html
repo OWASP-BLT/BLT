@@ -1,5 +1,10 @@
 {% load gravatar %}
 {% load humanize %}
+    <style>
+    #crypto-name,#crypto-address{
+    text-align: center;
+    }
+    </style>
 <div class="row-start-1 bug-container leaderboard-widget flex flex-col p-5 pt-3 bg-[white] m-1 w-[100%] row-span-2 rounded-[2.5rem]  border-[#e8e8e8] border-2 font-['Inter'] h-[630px]">
     <div class="font-['Barlow_Semi_Condensed'] font-semibold text-[black] text-[25px] text-center mb-2">LEADERBOARD</div>
     <div class="bg-[#EAEAEA] font-semibold p-3 mt- rounded-2xl">
@@ -52,21 +57,15 @@
                 <button type="button"
                         id="openModal-{{ leader.id }}"
                         class="btn btn-danger text-black"
-                        onclick="openModal('{{ leader.userprofile.crypto_address }}', '{{ leader.id }}')">
+                        onclick="openModal('{{ leader.userprofile.btc_address}}','{{ leader.userprofile.eth_address}}','{{ leader.userprofile.bch_address}}', '{{ leader.id }}')">
                     TIP:<i class="fab fa-btc"></i>
                 </button>
                 <dialog id="dialog-{{ leader.id }}">
-                    <img id="qr-image-{{ leader.id }}" alt="QR Code" height="300" width="400">
-                    <p id="bch-address-{{ leader.id }}">
-                        BCH:
-                        {% if leader.userprofile.crypto_address %}
-                            {{ leader.userprofile.crypto_address }}
-                        {% else %}
-                            User has not entered a BCH address:
-                            <br>
-                            Your tip will go to the leaderboard fund
-                        {% endif %}
-                    </p>
+                    <div id="slideshow-{{ leader.id }}" class="slideshow">
+                        <img id="qr-image-{{ leader.id }}" alt="QR Code" height="300" width="400">
+                        <p id="crypto-name-{{ leader.id }}"></p>
+                        <p id="crypto-address-{{ leader.id }}"></p>
+                    </div>
                     <button id="close-{{ leader.id }}" class="btn btn-danger w-full">Close</button>
                 </dialog>
             </div>
@@ -83,17 +82,44 @@
 </div>
 {% comment %} positions the leaderboard rightmost {% endcomment %}
 <script>
-    function openModal(address, userId) {
-        if (address == '') {
-            address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
-        }
-        var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?data=bitcoincash:" + address + "&size=400x300";
-        document.getElementById('qr-image-' + userId).src = qrUrl;
-        document.getElementById('dialog-' + userId).showModal();
-        document.getElementById('close-' + userId).addEventListener('click',function(){
+    const openModal = (btc, eth, bch, userId) => {
+        const cryptoOptions = [
+        { name: 'Bitcoin', address: btc },
+        { name: 'Ethereum', address: eth },
+        { name: 'Bitcoin Cash', address: bch }
+        ];
+        let currentIndex = 0;
+        const updateSlide = () => {
+            let { name, address } = cryptoOptions[currentIndex];
+            if (address == '' || address == 'None') {
+                address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
+                document.getElementById('qr-image-'+userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+                document.getElementById('crypto-name-' + userId).textContent = "No address: Tip will go to the leaderboard fund.";
+                document.getElementById('crypto-address-'+userId).textContent = `BCH: ${address}`;
+            }
+            else{
+            document.getElementById('crypto-name-' + userId).textContent = name;
+            document.getElementById('qr-image-' + userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+            document.getElementById('crypto-address-' + userId).textContent = `${address}`;
+            }
+        };
+
+        updateSlide();
+
+        document.getElementById('openModal-' + userId).addEventListener('click', function() {
+            document.getElementById('dialog-' + userId).showModal();
+        });
+
+        document.getElementById('close-' + userId).addEventListener('click', function() {
             document.getElementById('dialog-' + userId).close();
         });
-    }
+
+        document.getElementById('dialog-' + userId).addEventListener('click', function() {
+            currentIndex = (currentIndex + 1) % cryptoOptions.length;
+            updateSlide();
+        });
+    };
+    
     document.addEventListener('DOMContentLoaded', function() {
       const grid = document.querySelector('.hero-bugs-container');
       const child = document.querySelector('.leaderboard-widget');
