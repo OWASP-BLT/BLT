@@ -3613,9 +3613,12 @@ def flag_issue2(request, issue_pk):
 def like_issue2(request, issue_pk):
     context = {}
     issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
-    if userprof in UserProfile.objects.filter(issue_upvoted=issue):
+
+    if UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists():
+        userprof.issue_downvoted.remove(issue)
+    if UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists():
         userprof.issue_upvoted.remove(issue)
     else:
         userprof.issue_upvoted.add(issue)
@@ -3647,11 +3650,39 @@ def like_issue2(request, issue_pk):
             html_message=msg_html,
         )
 
-    userprof.save()
     total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
     context["object"] = issue
     context["likes"] = total_votes
     return render(request, "includes/_likes2.html", context)
+
+
+@login_required(login_url="/accounts/login")
+def dislike_issue2(request, issue_pk):
+    context = {}
+    issue_pk = int(issue_pk)
+    issue = get_object_or_404(Issue, pk=issue_pk)
+    userprof = UserProfile.objects.get(user=request.user)
+
+    if UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists():
+        userprof.issue_upvoted.remove(issue)
+    if UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists():
+        userprof.issue_downvoted.remove(issue)
+    else:
+        userprof.issue_downvoted.add(issue)
+    total_votes = UserProfile.objects.filter(issue_downvoted=issue).count()
+    context["object"] = issue
+    context["dislikes"] = total_votes
+    return render(request, "includes/_dislike2.html", context)
+
+
+@login_required(login_url="/accounts/login")
+def vote_count(request, issue_pk):
+    issue_pk = int(issue_pk)
+    issue = Issue.objects.get(pk=issue_pk)
+
+    total_upvotes = UserProfile.objects.filter(issue_upvoted=issue).count()
+    total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
+    return JsonResponse({"likes": total_upvotes, "dislikes": total_downvotes})
 
 
 @login_required(login_url="/accounts/login")
