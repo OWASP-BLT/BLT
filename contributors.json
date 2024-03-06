@@ -54,6 +54,19 @@
     },
     {
         "id":5,
+        "img":"https://avatars.githubusercontent.com/u/69814108?v=4",
+        "name":"Bishal Das",
+        "repository":"BLT Core",
+        "short_description":"Full Stack Developer",
+        "long_description":"",
+        "location":"Indore, India",
+        "twitter":"",
+        "linkedin":"https://www.linkedin.com/in/bishal-das-bd/",
+        "website":"https://github.com/CodeWithBishal/",
+        "bch_addr":""
+    },
+    {
+        "id":6,
         "img":"https://avatars.githubusercontent.com/u/47253186?v=4",
         "name":"Pulkit Agrawal",
         "repository":"BLT Core",
@@ -66,7 +79,7 @@
         "bch_addr":""
     },
     {
-        "id":6,
+        "id":7,
         "img":"https://avatars.githubusercontent.com/u/65587505?v=4",
         "name":"Amrit Prakash",
         "repository":"BLT Flutter",
@@ -79,7 +92,7 @@
         "bch_addr":""
     },
      {
-        "id":7,
+        "id":8,
         "img":"https://avatars.githubusercontent.com/u/16963976?v=4",
         "name":"Mohit Anand",
         "repository":"",
@@ -92,7 +105,7 @@
         "bch_addr":""
     },
     {
-        "id":8,
+        "id":9,
         "img":"https://avatars.githubusercontent.com/u/11073943?v=4",
         "name":"Sourav Badami",
         "repository":"",
@@ -105,7 +118,7 @@
         "bch_addr":""
     },
     {
-        "id":9,
+        "id":10,
         "img":"https://avatars.githubusercontent.com/u/22706287?v=4",
         "name":"S Rahul Badami",
         "repository":"",
@@ -118,7 +131,7 @@
         "bch_addr":""
     },
     {
-        "id":10,
+        "id":11,
         "img":"https://avatars.githubusercontent.com/u/17125030?v=4",
         "name":"Siddharth Goyal",
         "repository":"",
@@ -131,7 +144,7 @@
         "bch_addr":""
     },
     {
-        "id":11,
+        "id":12,
         "img":"https://avatars.githubusercontent.com/u/20015262?v=4",
         "name":"Neethu Mariya Joy",
         "repository":"",
@@ -144,7 +157,7 @@
         "bch_addr":""
     },
     {
-        "id":12,
+        "id":13,
         "img":"https://avatars.githubusercontent.com/u/128622481?v=4",
         "name":"DonnieBLT",
         "repository":"",
@@ -157,7 +170,7 @@
         "bch_addr":""
     },
     {
-        "id":13,
+        "id":14,
         "img":"https://avatars.githubusercontent.com/u/44541855?v=4",
         "name":"Ankit Choudhary",
         "repository":"",
@@ -170,7 +183,7 @@
         "bch_addr":""
     },
      {
-        "id":14,
+        "id":15,
         "img":"https://avatars.githubusercontent.com/u/103092293?v=4",
         "name":"Cody Ross",
         "repository":"",
@@ -183,7 +196,7 @@
         "bch_addr":""
     },
     {
-        "id":15,
+        "id":16,
         "img":"https://avatars.githubusercontent.com/u/53966291?v=4",
         "name":"Mrigank Anand",
         "repository":"",
@@ -196,7 +209,7 @@
         "bch_addr":""
     },
     {
-        "id":16,
+        "id":17,
         "img":"https://avatars.githubusercontent.com/u/55937724?v=4",
         "name":"Sparsh Agrawal",
         "repository":"",
@@ -209,7 +222,7 @@
         "bch_addr":""
     },
     {
-        "id":17,
+        "id":18,
         "img":"https://avatars.githubusercontent.com/u/99071926?v=4",
         "name":"Kej-r03",
         "repository":"",
@@ -222,7 +235,7 @@
         "bch_addr":""
     },
     {
-        "id":18,
+        "id":19,
         "img":"https://avatars.githubusercontent.com/u/81790585?v=4",
         "name":"Bhawna",
         "repository":"",
@@ -235,7 +248,7 @@
         "bch_addr":""
     },
     {
-        "id":19,
+        "id":20,
         "img":"https://avatars.githubusercontent.com/u/17159160?v=4",
         "name":"Rohit Lodha",
         "repository":"",
@@ -248,7 +261,7 @@
         "bch_addr":""
     },
     {
-        "id":20,
+        "id":21,
         "img":"https://avatars.githubusercontent.com/u/89926834?v=4",
         "name":"Manish Bisht",
         "repository":"",
