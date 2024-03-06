@@ -8,7 +8,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-from collections import defaultdict, deque
+from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse, urlsplit, urlunparse
@@ -4024,18 +4024,21 @@ class ContributorStatsView(TemplateView):
         stats = ContributorStats.objects.all()
 
         # Convert the stats to a dictionary format expected by the template
-        user_stats = {stat.username: {
-            "commits": stat.commits,
-            "issues_opened": stat.issues_opened,
-            "issues_closed": stat.issues_closed,
-            "assigned_issues": stat.assigned_issues,
-            "prs": stat.prs,
-            "comments": stat.comments
-        } for stat in stats}
+        user_stats = {
+            stat.username: {
+                "commits": stat.commits,
+                "issues_opened": stat.issues_opened,
+                "issues_closed": stat.issues_closed,
+                "assigned_issues": stat.assigned_issues,
+                "prs": stat.prs,
+                "comments": stat.comments
+            }
+            for stat in stats
+        }
 
         context["user_stats"] = user_stats
-        context["owner"] = "OWASP-BLT"  # Update as necessary
-        context["repo"] = "BLT"        # Update as necessary
+        context["owner"] = "OWASP-BLT"
+        context["repo"] = "BLT"
         context["start_date"] = (datetime.now().date() - timedelta(days=7)).isoformat()
         context["end_date"] = datetime.now().date().isoformat()
 

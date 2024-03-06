@@ -112,7 +112,7 @@ INSTALLED_APPS = (
 )
 
 CRONJOBS = [
-    ('0 3 */7 * *', 'django.core.management.call_command', ['fetch_contributor_stats']),
+    ("0 3 */7 * *", "django.core.management.call_command", ["fetch_contributor_stats"]),
 ]
 
 
