@@ -116,7 +116,6 @@ CRONJOBS = [
 ]
 
 
-
 # CRON_CLASSES = ["website.views.CreateIssue"]
 
 MIDDLEWARE = (

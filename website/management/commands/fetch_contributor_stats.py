@@ -1,8 +1,10 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
+
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
+
 from website.models import ContributorStats  # Adjust this to your actual model path
 
 
@@ -73,7 +75,7 @@ class Command(BaseCommand):
             url = f"https://api.github.com/repos/{owner}/{repo}/commits?since={since}&per_page=500"
         elif data_type == "comments":
             url = f"https://api.github.com/repos/{owner}/{repo}/issues/comments?since={since}&per_page=200"
-        
+
         response = requests.get(url, headers=headers)
         items = response.json()
 

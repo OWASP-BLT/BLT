@@ -4031,7 +4031,7 @@ class ContributorStatsView(TemplateView):
                 "issues_closed": stat.issues_closed,
                 "assigned_issues": stat.assigned_issues,
                 "prs": stat.prs,
-                "comments": stat.comments
+                "comments": stat.comments,
             }
             for stat in stats
         }
