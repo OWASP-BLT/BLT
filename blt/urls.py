@@ -156,7 +156,7 @@ urlpatterns = [
     re_path(
         r"^dashboard/company/$",
         website.views.company_dashboard,
-        name="company_dashboar_home",
+        name="company_dashboard_home",
     ),
     re_path(
         r"^dashboard/user/profile/addbalance$",
@@ -319,18 +319,18 @@ urlpatterns = [
     re_path(
         r"^api/v1/issue/like/(?P<id>\w+)/$",
         LikeIssueApiView.as_view(),
-        name="like_issue",
+        name="api_like_issue",
     ),
     re_path(
         r"^api/v1/issue/flag/(?P<id>\w+)/$",
         FlagIssueApiView.as_view(),
-        name="flag_issue",
+        name="api_flag_issue",
     ),
     re_path(r"^api/v1/leaderboard/$", LeaderboardApiViewSet.as_view(), name="leaderboard"),
     re_path(
         r"^api/v1/invite_friend/",
         InviteFriendApiViewset.as_view(),
-        name="invite_friend",
+        name="api_invite_friend",
     ),
     re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
@@ -447,14 +447,17 @@ urlpatterns = [
     re_path(
         r"^api/v1/terms/$",
         csrf_exempt(TemplateView.as_view(template_name="mobile_terms.html")),
+        name="api_terms",
     ),
     re_path(
         r"^api/v1/about/$",
         csrf_exempt(TemplateView.as_view(template_name="mobile_about.html")),
+        name="api_about",
     ),
     re_path(
         r"^api/v1/privacypolicy/$",
         csrf_exempt(TemplateView.as_view(template_name="mobile_privacy.html")),
+        name="api_privacypolicy",
     ),
     re_path(r"^error/", website.views.throw_error, name="post_error"),
     re_path(r"^tz_detect/", include("tz_detect.urls")),
