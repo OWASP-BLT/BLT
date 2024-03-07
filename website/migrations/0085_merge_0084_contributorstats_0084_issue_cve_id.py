@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
     dependencies = [
         ("website", "0084_contributorstats"),
-        ("website", "0084_issue_cve_no"),
+        ("website", "0084_issue_cve_id"),
     ]
 
     operations = []
