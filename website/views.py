@@ -3791,6 +3791,7 @@ class IssueView2(DetailView):
 
         return context
 
+
 class IssueView3(DetailView):
     model = Issue
     slug_field = "id"
@@ -3877,8 +3878,6 @@ class IssueView3(DetailView):
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
 
         return context
-
-
 
 
 @receiver(user_signed_up)

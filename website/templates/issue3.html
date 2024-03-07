@@ -1,32 +1,28 @@
 {% extends "base.html" %}
 {% load custom_tags %}
 {% block metaTags %}
-<title>
-    {% block title %} BLT Issue - {{ object.description }} {% endblock title %}
-</title>
-<meta name="description" content="{{ object.markdown_description|escapejs }}">
-{% if object.user.username %}
-<meta name="author" content="{{ object.user.username }}">
-<meta name="author" content="{{ object.user.username }}">
-{% else %}
-<meta name="author" content="Anonymous">
-<meta name="author" content="Anonymous">
-{% endif %}
-<meta property="og:title" content="{% block og_title %}{{ object.description }}{% endblock og_title %}" />
-{% for screenshot in screenshots %}
-<meta property="og:image" content="https://blt.owasp.org{% block og_image %}{{ screenshot.image.url }}{% endblock og_image %}" />
-{% endfor %}
-<meta property="og:description" content="{{ object.markdown_description|escapejs }}" />
-<meta name="keywords" content="{% block keywords %}BLT, bug, tracking, company, easy{% endblock keywords %}">
+        <title>
+            {% block title %} BLT Issue - {{ object.description }} {% endblock title %}
+        </title>
+        <meta name="description" content="{{ object.markdown_description|escapejs }}">
+        {% if object.user.username %}
+        <meta name="author" content="{{ object.user.username }}">
+        {% else %}
+        <meta name="author" content="Anonymous">
+        {% endif %}
+        <meta property="og:title" content="{% block og_title %}{{ object.description }}{% endblock og_title %}" />
+        {% for screenshot in screenshots %}
+        <meta property="og:image" content="https://blt.owasp.org{% block og_image %}{{ screenshot.image.url }}{% endblock og_image %}" />
+        {% endfor %}
+        <meta property="og:description" content="{{ object.markdown_description|escapejs }}" />
+        <meta name="keywords" content="{% block keywords %}BLT, bug, tracking, company, easy{% endblock keywords %}">
 
-{% comment %} TODO: change to update  {% endcomment %}
-<link rel="canonical" href="https://blt.owasp.org/issue3/{{ object.id }}">
-<meta property="og:url" content="https://blt.owasp.org/issue3/{{ object.id }}" />
+        {% comment %} TODO: change to update  {% endcomment %}
+        <link rel="canonical" href="https://blt.owasp.org/issue3/{{ object.id }}">
+        <meta property="og:url" content="https://blt.owasp.org/issue3/{{ object.id }}" />
 
-
-
-<meta property="og:type" content="website" />
-<meta name="robots" content="index, follow"> 
+        <meta property="og:type" content="website" />
+        <meta name="robots" content="index, follow"> 
 {% endblock metaTags %}
 {% load static %}
 {% load gravatar %}
