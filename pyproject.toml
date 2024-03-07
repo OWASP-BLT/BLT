@@ -62,7 +62,6 @@ webdriver-manager = "^4.0.1"
 pillow = "^10.2.0"
 chromedriver-autoinstaller = "^0.6.4"
 sentry-sdk = "^1.40.5"
-django-crontab = "^0.7.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"
