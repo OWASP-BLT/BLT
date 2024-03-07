@@ -519,3 +519,17 @@ class Payment(models.Model):
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
     value = models.DecimalField(max_digits=6, decimal_places=2)
     active = models.BooleanField(default=True)
+
+
+class ContributorStats(models.Model):
+    username = models.CharField(max_length=255, unique=True)
+    commits = models.IntegerField(default=0)
+    issues_opened = models.IntegerField(default=0)
+    issues_closed = models.IntegerField(default=0)
+    prs = models.IntegerField(default=0)
+    comments = models.IntegerField(default=0)
+    assigned_issues = models.IntegerField(default=0)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.username
