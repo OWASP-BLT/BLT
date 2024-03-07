@@ -367,7 +367,11 @@ urlpatterns = [
     re_path(r"^terms/$", TemplateView.as_view(template_name="terms.html"), name="terms"),
     re_path(r"^about/$", TemplateView.as_view(template_name="about.html"), name="about"),
     re_path(r"^teams/$", TemplateView.as_view(template_name="teams.html"), name="teams"),
-    re_path(r"^googleplayapp/$", TemplateView.as_view(template_name="coming_soon.html"), name="googleplayapp"),
+    re_path(
+        r"^googleplayapp/$",
+        TemplateView.as_view(template_name="coming_soon.html"),
+        name="googleplayapp",
+    ),
     re_path(
         r"^projects/$",
         TemplateView.as_view(template_name="projects.html"),
