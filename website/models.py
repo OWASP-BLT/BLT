@@ -16,6 +16,7 @@ from django.db import models
 from django.db.models import Count
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from google.cloud import storage
 from mdeditor.fields import MDTextField
 from PIL import Image
 from rest_framework.authtoken.models import Token
@@ -308,7 +309,6 @@ class Issue(models.Model):
         self.user = None
         self.save()
 
-    @property
     def get_absolute_url(self):
         return "/issue/" + str(self.id)
 
@@ -326,11 +326,24 @@ class IssueScreenshot(models.Model):
     image = models.ImageField(upload_to="screenshots", validators=[validate_image])
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
 
+    # def delete(self, *args, **kwargs):
+    #     if self.image:
+    #         # Delete the image file
+    #         storage = self.image.storage
+    #         name = (
+    #             self.image.name
+    #         )  # Use .name to get the relative file path in the storage system
+    #         storage.delete(name)
+    #     super(IssueScreenshot, self).delete(*args, **kwargs)
+
     def delete(self, *args, **kwargs):
         if self.image:
-            if os.path.isfile(self.image.path):
-                os.remove(self.image.path)
-        super(IssueScreenshot, self).delete(*args, **kwargs)
+            client = storage.Client()
+            bucket = client.bucket(settings.GS_BUCKET_NAME)
+            blob = bucket.blob(self.image.name)
+            blob.delete()
+
+        super().delete(*args, **kwargs)
 
 
 @receiver(post_save, sender=Issue)
@@ -511,3 +524,17 @@ class Payment(models.Model):
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
     value = models.DecimalField(max_digits=6, decimal_places=2)
     active = models.BooleanField(default=True)
+
+
+class ContributorStats(models.Model):
+    username = models.CharField(max_length=255, unique=True)
+    commits = models.IntegerField(default=0)
+    issues_opened = models.IntegerField(default=0)
+    issues_closed = models.IntegerField(default=0)
+    prs = models.IntegerField(default=0)
+    comments = models.IntegerField(default=0)
+    assigned_issues = models.IntegerField(default=0)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.username

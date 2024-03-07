@@ -21,6 +21,21 @@
         <script src="https://cdn.tailwindcss.com"></script>
     </head>
     <body>
+        <style>
+            .bottom-right {
+                position: absolute;
+                bottom: 10px;
+                right: 15px;
+            }
+        </style>
+        <div class="bottom-right">
+            <a href="https://github.com/OWASP-BLT/BLT/blob/main/company/templates/company/register_company.html">
+                <i class="fab fa-github"></i>
+            </a>
+            <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
+                <i class="fab fa-figma"></i>
+            </a>
+        </div>
         <div class="bg-[#F3F5F7] flex flex-col items-center">
             <form method='post'
                   action="#"
@@ -140,7 +155,7 @@
                     <p class="mt-1 text-sm leading-6 text-gray-600">
                         {% trans "Add Emails which will be allowed to add domains" %}.
                         <br>
-                        {% trans "Email should be registerd user on bugheist" %}.
+                        {% trans "Email should be registerd user on BLT" %}.
                     </p>
                     <button onclick="add_email_container()"
                             type="button"

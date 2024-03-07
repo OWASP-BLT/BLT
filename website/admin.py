@@ -7,6 +7,7 @@ from import_export.admin import ImportExportModelAdmin
 from website.models import (
     Company,
     CompanyAdmin,
+    ContributorStats,
     Domain,
     Hunt,
     HuntPrize,
@@ -63,7 +64,14 @@ class PaymentResource(resources.ModelResource):
 
 
 class WinnerAdmin(admin.ModelAdmin):
-    list_display = ("id", "hunt", "winner", "runner", "second_runner", "prize_distributed")
+    list_display = (
+        "id",
+        "hunt",
+        "winner",
+        "runner",
+        "second_runner",
+        "prize_distributed",
+    )
 
 
 class WalletAdmin(admin.ModelAdmin):
@@ -72,6 +80,11 @@ class WalletAdmin(admin.ModelAdmin):
 
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ("id", "wallet", "value", "active")
+
+
+class ImageInline(admin.TabularInline):
+    model = IssueScreenshot
+    extra = 1
 
 
 class IssueAdmin(admin.ModelAdmin):
@@ -87,6 +100,8 @@ class IssueAdmin(admin.ModelAdmin):
         "created",
         "modified",
     )
+    search_fields = ["url", "description", "domain__name", "user__username"]
+    inlines = [ImageInline]
 
 
 class HuntAdmin(admin.ModelAdmin):
@@ -128,7 +143,13 @@ class CompanyUserAdmin(ImportExportModelAdmin):
 
 class SubscriptionAdmin(ImportExportModelAdmin):
     resource_class = SubscriptionResource
-    list_display = ("name", "charge_per_month", "hunt_per_domain", "number_of_domains", "feature")
+    list_display = (
+        "name",
+        "charge_per_month",
+        "hunt_per_domain",
+        "number_of_domains",
+        "feature",
+    )
 
 
 class CompanyAdmins(ImportExportModelAdmin):
@@ -147,7 +168,14 @@ class CompanyAdmins(ImportExportModelAdmin):
 
 
 class PointsAdmin(admin.ModelAdmin):
-    list_display = ("user", "short_description", "domain", "score", "created", "modified")
+    list_display = (
+        "user",
+        "short_description",
+        "domain",
+        "score",
+        "created",
+        "modified",
+    )
 
     def short_description(self, obj):
         return truncatechars(obj.issue, 100)
@@ -169,6 +197,8 @@ class UserAdmin(ImportExportModelAdmin):
         "is_staff",
     )
 
+
+admin.site.register(ContributorStats)
 
 admin.site.register(UserProfile)
 admin.site.register(User, UserAdmin)

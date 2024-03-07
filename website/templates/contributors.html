@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block natural_content %}
+{% block style %}
     <style type="text/tailwindcss">
     @layer components {
       .card {
@@ -14,7 +14,10 @@
           integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA=="
           crossorigin="anonymous"
           referrerpolicy="no-referrer" />
-    <div class="container my-20  py-8 w-[100vw] min-h-[100vh]">
+{% endblock style %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container py-8 min-h-[100vh]">
         <div class="flex flex-col text-center gap-4 mb-10 p-4">
             <div class="w-[full] h-max flex flex-col items-center">
                 <p class="text-7xl mb-5 font-bold">Meet our Community Members</p>
@@ -64,4 +67,4 @@
             {% endfor %}
         </div>
     </div>
-{% endblock natural_content %}
+{% endblock content %}

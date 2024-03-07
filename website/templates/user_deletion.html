@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load i18n %}
+f
+{% block content %}
+    <h2 class="mt-10">Delete your account</h2>
+    <hr>
+    <form action="." method="post" class="padding">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="btn btn-primary" type="submit" name="action">{% trans "Confirm" %}</button>
+    </form>
+{% endblock content %}

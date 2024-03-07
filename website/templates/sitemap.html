@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta name="description" content="Add your meta description here">
+        <meta name="keywords" content="Add your meta keywords here">
+        <title>Sitemap</title>
+    </head>
+    <head>
+        <title>Sitemap</title>
+    </head>
+    <body>
+        <h1>Sitemap</h1>
+        <ul>
+            <h2>General</h2>
+            <li>
+                <a href="{% url 'index' %}">Index</a>
+            </li>
+            <li>
+                <a href="{% url 'newhome' %}">New Home</a>
+            </li>
+            <li>
+                <a href="{% url 'delete' %}">Account Delete</a>
+            </li>
+            <li>
+                <a href="{% url 'invite_friend' %}">Invite Friend</a>
+            </li>
+            <li>
+                <a href="{% url 'referral_signup' %}">Referral Signup</a>
+            </li>
+            <li>
+                <a href="{% url 'show_bughunt' 1 %}">Show Bughunt</a>
+            </li>
+            <li>
+                <a href="{% url 'follow_user' random_domain %}">Follow User</a>
+            </li>
+            <li>
+                <a href="{% url 'all_activity' %}">All Activity</a>
+            </li>
+            <li>
+                <a href="{% url 'leaderboard_global' %}">Leaderboard Global</a>
+            </li>
+            <li>
+                <a href="{% url 'leaderboard_specific_month' %}">Leaderboard Specific Month</a>
+            </li>
+            <li>
+                <a href="{% url 'leaderboard_eachmonth' %}">Leaderboard Each Month</a>
+            </li>
+            <li>
+                <a href="{% url 'profile' random_domain %}">Profile</a>
+            </li>
+            <li>
+                <a href="{% url 'domain' random_domain %}">Domain</a>
+            </li>
+            <li>
+                <a href="{% url 'account_profile' %}">Account Profile</a>
+            </li>
+            <li>
+                <a href="{% url 'start_hunt' %}">Start Hunt</a>
+            </li>
+            <li>
+                <a href="{% url 'hunt' %}">Hunt</a>
+            </li>
+            <li>
+                <a href="{% url 'hunts' %}">Hunts</a>
+            </li>
+            <li>
+                <a href="{% url 'invite' %}">Invite</a>
+            </li>
+            <li>
+                <a href="{% url 'terms' %}">Terms</a>
+            </li>
+            <li>
+                <a href="{% url 'about' %}">About</a>
+            </li>
+            <li>
+                <a href="{% url 'teams' %}">Teams</a>
+            </li>
+            <li>
+                <a href="{% url 'projects' %}">Projects</a>
+            </li>
+            <li>
+                <a href="{% url 'apps' %}">Apps</a>
+            </li>
+            <li>
+                <a href="{% url 'deletions' %}">Deletions</a>
+            </li>
+            <li>
+                <a href="{% url 'bacon' %}">Bacon</a>
+            </li>
+            <li>
+                <a href="{% url 'bltv' %}">BLTV</a>
+            </li>
+            <li>
+                <a href="{% url 'privacy' %}">Privacy</a>
+            </li>
+            <li>
+                <a href="{% url 'stats' %}">Stats</a>
+            </li>
+            <li>
+                <a href="{% url 'social' %}">Scoials</a>
+            </li>
+            <li>
+                <a href="{% url 'search' %}">Search</a>
+            </li>
+            <li>
+                <a href="{% url 'contributors' %}">Contributors</a>
+            </li>
+            <li>
+                <a href="{% url 'sponsor' %}">Sponsors</a>
+            </li>
+            <li>
+                <a href="{% url 'trademark_search' %}">Trademark Search</a>
+            </li>
+            <li>
+                <a href="{% url 'trademark_detailview' random_domain %}">Trademark Detailview</a>
+            </li>
+            <hr>
+            <h2>Issue</h2>
+            <li>
+                <a href="{% url 'issue' %}">Issue</a>
+            </li>
+            <li>
+                <a href="{% url 'report' %}">Report Issue</a>
+            </li>
+            <li>
+                <a href="{% url 'issue_view' 1 %}">Issue View // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'add_comment' %}">Issue add Comment</a>
+            </li>
+            <li>
+                <a href="{% url 'edit_comment' 1 %}">Edit Comment // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'reply_comment' 1 %}">Reply Comment // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'like_issue' 1 %}">Like Issue // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'dislike_issue' 1 %}">Dislike Issue // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'flag_issue' 1 %}">Flag Issue // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'edit_issue' %}">Issue Edit</a>
+            </li>
+            <li>
+                <a href="{% url 'save_issue' 1 %}">Save Issue // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'unsave_issue' 1 %}">Unsave Issue // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'comment_on_issue' 1 %}">Comment on Issue // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'update_comment' 1 1 %}">Update Comment // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'delete_issue' 1 %}">Delete Issue // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'remove_user_from_issue' 1 %}">Remove User From Issue // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'update_issue' %}">Update Issue</a>
+            </li>
+            <hr>
+            <li>
+                <a href="{% url 'issue_view2' 1 %}">View Issue 2 // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'like_issue2' 1 %}">Like Issue 2 // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'flag_issue2' 1 %}">Flag Issue 2 // 1</a>
+            </li>
+            <li>
+                <a href="{% url 'delete_comment' %}">Delete Comment</a>
+            </li>
+            <hr>
+            <h2>Company</h2>
+            <li>
+                <a href="{% url 'register_company' %}">Register Company</a>
+            </li>
+            <li>
+                <a href="{% url 'domain_lists' %}">Domain View</a>
+            </li>
+            <li>
+                <a href="{% url 'subscribe_to_domains' 1 %}">Subscribe To Domains</a>
+            </li>
+            <hr>
+            <li>
+                <a href="{% url 'company_view' %}">Dashboard</a>
+            </li>
+            <li>
+                <a href="{% url 'company_dashboard_home' %}">Dashboard Home</a>
+            </li>
+            <li>
+                <a href="{% url 'admin_company_dashboard' %}">Admin Company Dashboard</a>
+            </li>
+            <li>
+                <a href="{% url 'add_or_update_company' %}">Add or Update Company Dashboard</a>
+            </li>
+            <li>
+                <a href="{% url 'company_dashboard_domain_detail' 1 %}">Company Dashboard Domain Detail</a>
+            </li>
+            <li>
+                <a href="{% url 'company_dashboard_hunt_detail' 1 %}">Company Dashboard Hunt Detail</a>
+            </li>
+            <li>
+                <a href="{% url 'company_dashboard_hunt_edit' 1 %}">Company Dashboard Hunt Edit</a>
+            </li>
+            <li>
+                <a href="{% url 'admin_company_dashboard_detail' 1 %}">Admin Company Dashboard Detail</a>
+            </li>
+            <li>
+                <a href="{% url 'create_hunt' %}">Company Dashboard Hunt Create</a>
+            </li>
+            <li>
+                <a href="{% url 'draft_hunts' %}">Company Dashboard Draft Hunt</a>
+            </li>
+            <li>
+                <a href="{% url 'upcoming_hunts' %}">Company Dashboard Upcoming Hunt</a>
+            </li>
+            <li>
+                <a href="{% url 'previous_hunts' %}">Company Dashboard Previous Hunt</a>
+            </li>
+            <li>
+                <a href="{% url 'company_hunt_results' 1 %}">Company Dashboard Hunt Results</a>
+            </li>
+            <li>
+                <a href="{% url 'ongoing_hunts' %}">Company Dashboard Ongoing Hunt</a>
+            </li>
+            <li>
+                <a href="{% url 'domain_list' %}">Company Dashboard Domains</a>
+            </li>
+            <li>
+                <a href="{% url 'company-settings' %}">Company Dashboard Settings</a>
+            </li>
+            <li>
+                <a href="{% url 'join' %}">join</a>
+            </li>
+            <li>
+                <a href="{% url 'update-role' %}">Company Dashboard settings Update Role</a>
+            </li>
+            <li>
+                <a href="{% url 'add-role' %}">Company Dashboard settings Add Role</a>
+            </li>
+            <li>
+                <a href="{% url 'company_view' %}">Dashboard</a>
+            </li>
+            <li>
+                <a href="{% url 'company_analytics' 1 %}">Dashboard Analytics</a>
+            </li>
+            <li>
+                <a href="{% url 'company_manage_bugs' 1 %}">Dashboard Manage bugs</a>
+            </li>
+            <li>
+                <a href="{% url 'company_manage_domains' 1 %}">Dashboard Manage Domains</a>
+            </li>
+            <li>
+                <a href="{% url 'company_manage_roles' 1 %}">Dashboard Manage Roles</a>
+            </li>
+            <li>
+                <a href="{% url 'company_manage_bughunts' 1 %}">Dashboard Manage Bughunts</a>
+            </li>
+            <li>
+                <a href="{% url 'end_bughunt' 1 %}">Dashboard End Bughunts</a>
+            </li>
+            <li>
+                <a href="{% url 'add_bughunt' 1 %}">Dashboard Add Bughunts</a>
+            </li>
+            <li>
+                <a href="{% url 'add_domain' 1 %}">Dashboard Add Domain</a>
+            </li>
+            <li>
+                <a href="{% url 'view_domain' 1 %}">Dashboard View Domain</a>
+            </li>
+            <hr>
+            <h2>API</h2>
+            <li>
+                <a href="{% url 'get_score' %}">Get UserScore</a>
+            </li>
+            <li>
+                <a href="{% url 'url_check' %}">Url Check</a>
+            </li>
+            <li>
+                <a href="{% url 'hunt_details' %}">Hunt Details</a>
+            </li>
+            <li>
+                <a href="{% url 'api_scoreboard' %}">API Scoreboard</a>
+            </li>
+            <li>
+                <a href="{% url 'api_invite_friend' %}">API Invite Friend</a>
+            </li>
+            <li>
+                <a href="{% url 'leaderboard' %}">leaderboard</a>
+            </li>
+            <li>
+                <a href="{% url 'api_like_issue' 1 %}">Like Issue</a>
+            </li>
+            <li>
+                <a href="{% url 'api_flag_issue' 1 %}">Flag Issue</a>
+            </li>
+            <li>
+                <a href="{% url 'search_issues' %}">Seach Issues</a>
+            </li>
+            <li>
+                <a href="{% url 'create_wallet' %}">Create Wallet</a>
+            </li>
+            <li>
+                <a href="{% url 'api_count' %}">API count</a>
+            </li>
+            <li>
+                <a href="{% url 'hunts_detail_v2' %}">Hunt Details V2</a>
+            </li>
+            <li>
+                <a href="{% url 'issuecreate' %}">Issue Create</a>
+            </li>
+            <li>
+                <a href="{% url 'delete_api_issue' 1 %}">API Delete Issue</a>
+            </li>
+            <li>
+                <a href="{% url 'remove_api_user_from_issue' 1 %}">Remove API User From Issue</a>
+            </li>
+            <li>
+                <a href="{% url 'update_api_issue' %}">Update API Issue</a>
+            </li>
+            <li>
+                <a href="{% url 'api_scoreboard' %}">API Scoreboard</a>
+            </li>
+            <li>
+                <a href="{% url 'api_terms' %}">API Mobile Terms</a>
+            </li>
+            <li>
+                <a href="{% url 'api_about' %}">API About</a>
+            </li>
+            <li>
+                <a href="{% url 'api_privacypolicy' %}">API Privacy Policy</a>
+            </li>
+            <li>
+                <a href="{% url 'api_scoreboard' %}">API Scoreboard</a>
+            </li>
+            <hr>
+            <h2>User Dashboard</h2>
+            <li>
+                <a href="{% url 'user' %}">User Dashboard</a>
+            </li>
+            <li>
+                <a href="{% url 'addbalance' %}">User Dashboard Addbalance</a>
+            </li>
+            <li>
+                <a href="{% url 'withdraw' %}">User Dashboard Withdraw</a>
+            </li>
+            <li>
+                <a href="{% url 'stripe_connected' 1 %}">User Dashboard Stripe connected</a>
+            </li>
+            <li>
+                <a href="{% url 'view_hunt' 1 %}">User Dashboard View Hunt</a>
+            </li>
+            <li>
+                <a href="{% url 'submit_bug' 1 %}">User Dashboard Submit Bug</a>
+            </li>
+            <li>
+                <a href="{% url 'hunt_results' 1 %}">User Dashboard Hunt Results</a>
+            </li>
+            <li>
+                <a href="{% url 'user_profile' 1 %}">User Dashboard Profile</a>
+            </li>
+            <hr>
+            <li>
+                <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+            </li>
+            <hr>
+            <h2>Essential Components</h2>
+            <li>
+                <a href="{% url 'password_reset_confirm' 1 1 %}">Password Reset Confirm</a>
+            </li>
+            <li>
+                <a href="{% url 'facebook_login' %}">Facebook Login</a>
+            </li>
+            <li>
+                <a href="{% url 'github_login' %}">Github Login</a>
+            </li>
+            <li>
+                <a href="{% url 'google_login' %}">Google Login</a>
+            </li>
+            <li>
+                <a href="{% url 'github_callback' %}">Github Callback</a>
+            </li>
+            <li>
+                <a href="{% url 'google_callback' %}">Google Callback</a>
+            </li>
+            <li>
+                <a href="{% url 'facebook_callback' %}">Facebook Callback</a>
+            </li>
+            <li>
+                <a href="{% url 'facebook_connect' %}">Facebook Conect</a>
+            </li>
+            <li>
+                <a href="{% url 'github_connect' %}">Github Connect</a>
+            </li>
+            <li>
+                <a href="{% url 'social_account_list' %}">Social Account List</a>
+            </li>
+            <li>
+                <a href="{% url 'social_account_disconnect' 1 %}">Social Account Disconnect</a>
+            </li>
+            <li>
+                <a href="{% url 'schema-swagger-ui' %}">Schema Swagger UI</a>
+            </li>
+            <li>
+                <a href="{% url 'schema-redoc' %}">Schema Redoc</a>
+            </li>
+            <li>
+                <a href="{% url 'inbound_event_webhook_callback' %}">inbound event webhook callback</a>
+            </li>
+            <li>
+                <a href="{% url 'update_bch_address' %}">Update BCH Address</a>
+            </li>
+            <li>
+                <a href="{% url 'post_error' %}">Error</a>
+            </li>
+        </ul>
+    </body>
+</html>

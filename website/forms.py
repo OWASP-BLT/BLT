@@ -11,6 +11,10 @@ class UserProfileForm(forms.ModelForm):
         fields = ("user_avatar",)
 
 
+class UserDeleteForm(forms.Form):
+    delete = forms.BooleanField(required=True)
+
+
 class HuntForm(forms.Form):
     content = MDTextFormField()
     start_date = forms.DateTimeField(

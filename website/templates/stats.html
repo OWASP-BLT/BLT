@@ -5,6 +5,12 @@
     .charts {
         margin-bottom: 50px;
     }
+
+    .bottom-right {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+    }
     </style>
 {% endblock style %}
 {% block content %}
@@ -109,6 +115,14 @@
         <div class="col-lg-6 col-lg-offset-3">
             <canvas id="issueChart"></canvas>
         </div>
+    </div>
+    <div class="bottom-right">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/stats.html">
+            <i class="fab fa-github"></i>
+        </a>
+        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=1309%3A656&t=pqxWpF3hcYxjEDrs-1   ">
+            <i class="fab fa-figma"></i>
+        </a>
     </div>
     <script type="text/javascript">
     var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];

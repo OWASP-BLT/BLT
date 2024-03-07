@@ -31,7 +31,7 @@ from bs4 import BeautifulSoup
 from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
@@ -77,6 +77,7 @@ from website.models import (
     IP,
     Company,
     CompanyAdmin,
+    ContributorStats,
     Domain,
     Hunt,
     InviteFriend,
@@ -92,7 +93,36 @@ from website.models import (
 )
 
 from .decorator import private_access_check
-from .forms import CaptchaForm, HuntForm, QuickIssueForm, UserProfileForm
+from .forms import CaptchaForm, HuntForm, QuickIssueForm, UserDeleteForm, UserProfileForm
+
+WHITELISTED_IMAGE_TYPES = {
+    "jpeg": "image/jpeg",
+    "jpg": "image/jpeg",
+    "png": "image/png",
+}
+
+
+def image_validator(img):
+    try:
+        filesize = img.file.size
+    except:
+        filesize = img.size
+
+    extension = img.name.split(".")[-1]
+    content_type = img.content_type
+    megabyte_limit = 3.0
+    if not extension or extension.lower() not in WHITELISTED_IMAGE_TYPES.keys():
+        error = "Invalid image types"
+        return error
+    elif filesize > megabyte_limit * 1024 * 1024:
+        error = "Max file size is %sMB" % str(megabyte_limit)
+        return error
+
+    elif content_type not in WHITELISTED_IMAGE_TYPES.values():
+        error = "invalid image content-type"
+        return error
+    else:
+        return True
 
 
 def is_valid_https_url(url):
@@ -637,6 +667,26 @@ def find_key(request, token):
     raise Http404("Token or key does not exist")
 
 
+class UserDeleteView(LoginRequiredMixin, View):
+    """
+    Deletes the currently signed-in user and all associated data.
+    """
+
+    def get(self, request, *args, **kwargs):
+        form = UserDeleteForm()
+        return render(request, "user_deletion.html", {"form": form})
+
+    def post(self, request, *args, **kwargs):
+        form = UserDeleteForm(request.POST)
+        if form.is_valid():
+            user = request.user
+            logout(request)
+            user.delete()
+            messages.success(request, "Account successfully deleted")
+            return redirect(reverse("index"))
+        return render(request, "user_deletion.html", {"form": form})
+
+
 class IssueBaseCreate(object):
     def form_valid(self, form):
         score = 3
@@ -708,10 +758,19 @@ class IssueBaseCreate(object):
                 if obj.is_hidden:
                     pass
                 else:
-                    blt_url = "https://" + "%s/issue/%d" % (settings.DOMAIN_NAME, obj.id)
+                    blt_url = "https://" + "%s/issue/%d" % (
+                        settings.DOMAIN_NAME,
+                        obj.id,
+                    )
                     auth.create_tweet(
                         text='An Issue "%s" has been reported on %s by %s on %s.\n Have look here %s'
-                        % (obj.description, domain, user, settings.PROJECT_NAME, blt_url)
+                        % (
+                            obj.description,
+                            domain,
+                            user,
+                            settings.PROJECT_NAME,
+                            blt_url,
+                        )
                     )
             except Exception as e:
                 print(e)
@@ -889,7 +948,13 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         raise Exception
             except:
                 messages.error(request, "Domain does not exist")
-                return HttpResponseRedirect("/report/")
+
+                captcha_form = CaptchaForm(request.POST)
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": captcha_form},
+                )
 
         return super().post(request, *args, **kwargs)
 
@@ -906,7 +971,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
         if recent_issues_count >= limit:
             messages.error(self.request, "You have reached your issue creation limit for today.")
-            return HttpResponseRedirect("/report/")
+            return render(self.request, "report.html", {"form": self.get_form()})
         form.instance.reporter_ip_address = reporter_ip
 
         @atomic
@@ -924,7 +989,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
             captcha_form = CaptchaForm(self.request.POST)
             if not captcha_form.is_valid() and not settings.TESTING:
                 messages.error(self.request, "Invalid Captcha!")
-                return HttpResponseRedirect("/report/")
+
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": captcha_form},
+                )
 
             clean_domain = (
                 obj.domain_name.replace("www.", "").replace("https://", "").replace("http://", "")
@@ -952,7 +1022,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             if self.request.POST.get("screenshot-hash"):
                 reopen = default_storage.open(
-                    "uploads\/" + self.request.POST.get("screenshot-hash") + ".png", "rb"
+                    "uploads\/" + self.request.POST.get("screenshot-hash") + ".png",
+                    "rb",
                 )
                 django_file = File(reopen)
                 obj.screenshot.save(
@@ -965,13 +1036,28 @@ class IssueCreate(IssueBaseCreate, CreateView):
             if len(self.request.FILES.getlist("screenshots")) > 5:
                 messages.error(self.request, "Max limit of 5 images!")
                 obj.delete()
-                return HttpResponseRedirect("/report/")
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": captcha_form},
+                )
             for screenshot in self.request.FILES.getlist("screenshots"):
-                filename = screenshot.name
-                extension = filename.split(".")[-1]
-                screenshot.name = (filename + str(uuid.uuid4()))[:90] + "." + extension
-                default_storage.save(f"screenshots/{screenshot.name}", screenshot)
-                IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}", issue=obj)
+                img_valid = image_validator(screenshot)
+                if img_valid is True:
+                    filename = screenshot.name
+                    extension = filename.split(".")[-1]
+                    screenshot.name = (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
+                    default_storage.save(f"screenshots/{screenshot.name}", screenshot)
+                    IssueScreenshot.objects.create(
+                        image=f"screenshots/{screenshot.name}", issue=obj
+                    )
+                else:
+                    messages.error(self.request, img_valid)
+                    return render(
+                        self.request,
+                        "report.html",
+                        {"form": self.get_form(), "captcha_form": captcha_form},
+                    )
 
             obj_screenshots = IssueScreenshot.objects.filter(issue_id=obj.id)
             screenshot_text = ""
@@ -1057,7 +1143,17 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     headers={"Authorization": "token " + os.environ.get("GITHUB_ACCESS_TOKEN")},
                 )
                 response = r.json()
-                obj.github_url = response["html_url"]
+                try:
+                    obj.github_url = response["html_url"]
+                except KeyError:
+                    send_mail(
+                        "Error in github issue creation, check your github settings",
+                        "Error in github issue creation, check your github settings",
+                        settings.EMAIL_TO_STRING,
+                        [domain.email],
+                        fail_silently=True,
+                    )
+                    pass
                 obj.save()
 
             if not (self.request.user.is_authenticated or tokenauth):
@@ -1382,6 +1478,9 @@ class DomainDetailView(ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(DomainDetailView, self).get_context_data(*args, **kwargs)
+        # remove any arguments from the slug
+        self.kwargs["slug"] = self.kwargs["slug"].split("?")[0]
+
         context["domain"] = get_object_or_404(Domain, name=self.kwargs["slug"])
 
         parsed_url = urlparse("http://" + self.kwargs["slug"])
@@ -1644,7 +1743,6 @@ class LeaderboardBase:
 
 
 class GlobalLeaderboardView(LeaderboardBase, ListView):
-
     """
     Returns: All users:score data in descending order
     """
@@ -1662,7 +1760,6 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
 
 class EachmonthLeaderboardView(LeaderboardBase, ListView):
-
     """
     Returns: Grouped user:score data in months for current year
     """
@@ -1714,7 +1811,6 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
 
 
 class SpecificMonthLeaderboardView(LeaderboardBase, ListView):
-
     """
     Returns: leaderboard for filtered month and year requested in the query
     """
@@ -2447,17 +2543,17 @@ def update_comment(request, issue_pk, comment_pk):
     return render(request, "comments2.html", context)
 
 
+@login_required(login_url="/accounts/login")
 def delete_comment(request):
     int_issue_pk = int(request.POST["issue_pk"])
-    issue = Issue.objects.get(pk=int_issue_pk)
-    all_comment = Comment.objects.filter(issue=issue)
+    issue = get_object_or_404(Issue, pk=int_issue_pk)
     if request.method == "POST":
         comment = Comment.objects.get(
             pk=int(request.POST["comment_pk"]), author=request.user.username
         )
         comment.delete()
     context = {
-        "all_comment": Comment.objects.filter(issue__id=int_issue_pk).order_by("-created_date"),
+        "all_comments": Comment.objects.filter(issue__id=int_issue_pk).order_by("-created_date"),
         "object": issue,
     }
     return render(request, "comments2.html", context)
@@ -2491,7 +2587,7 @@ def issue_count(request):
 def contributors(request):
     contributors_file_path = os.path.join(settings.BASE_DIR, "contributors.json")
 
-    with open(contributors_file_path, "r") as file:
+    with open(contributors_file_path, "r", encoding="utf-8", errors="replace") as file:
         content = file.read()
 
     contributors_data = json.loads(content)
@@ -3570,7 +3666,7 @@ def handler500(request, exception=None):
 def contributors_view(request, *args, **kwargs):
     contributors_file_path = os.path.join(settings.BASE_DIR, "contributors.json")
 
-    with open(contributors_file_path, "r", encoding='utf-8') as file:
+    with open(contributors_file_path, "r", encoding="utf-8") as file:
         content = file.read()
 
     contributors = json.loads(content)
@@ -3660,9 +3756,12 @@ def flag_issue2(request, issue_pk):
 def like_issue2(request, issue_pk):
     context = {}
     issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
+    issue = get_object_or_404(Issue, pk=issue_pk)
     userprof = UserProfile.objects.get(user=request.user)
-    if userprof in UserProfile.objects.filter(issue_upvoted=issue):
+
+    if UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists():
+        userprof.issue_downvoted.remove(issue)
+    if UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists():
         userprof.issue_upvoted.remove(issue)
     else:
         userprof.issue_upvoted.add(issue)
@@ -3694,11 +3793,39 @@ def like_issue2(request, issue_pk):
             html_message=msg_html,
         )
 
-    userprof.save()
     total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
     context["object"] = issue
     context["likes"] = total_votes
     return render(request, "includes/_likes2.html", context)
+
+
+@login_required(login_url="/accounts/login")
+def dislike_issue2(request, issue_pk):
+    context = {}
+    issue_pk = int(issue_pk)
+    issue = get_object_or_404(Issue, pk=issue_pk)
+    userprof = UserProfile.objects.get(user=request.user)
+
+    if UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists():
+        userprof.issue_upvoted.remove(issue)
+    if UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists():
+        userprof.issue_downvoted.remove(issue)
+    else:
+        userprof.issue_downvoted.add(issue)
+    total_votes = UserProfile.objects.filter(issue_downvoted=issue).count()
+    context["object"] = issue
+    context["dislikes"] = total_votes
+    return render(request, "includes/_dislike2.html", context)
+
+
+@login_required(login_url="/accounts/login")
+def vote_count(request, issue_pk):
+    issue_pk = int(issue_pk)
+    issue = Issue.objects.get(pk=issue_pk)
+
+    total_upvotes = UserProfile.objects.filter(issue_upvoted=issue).count()
+    total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
+    return JsonResponse({"likes": total_upvotes, "dislikes": total_downvotes})
 
 
 @login_required(login_url="/accounts/login")
@@ -3861,6 +3988,7 @@ def invite_friend(request):
     }
     return render(request, "invite_friend.html", context)
 
+
 def trademark_search(request, **kwargs):
     if request.method == "POST":
         slug = request.POST.get("query")
@@ -3871,7 +3999,7 @@ def trademark_search(request, **kwargs):
 def trademark_detailview(request, slug):
     if settings.USPTO_API is None:
         return HttpResponse("API KEY NOT SETUP")
-    
+
     trademark_available_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (
         slug
     )
@@ -3895,6 +4023,7 @@ def trademark_detailview(request, slug):
 
     return render(request, "trademark_detailview.html", context)
 
+
 # class CreateIssue(CronJobBase):
 #     RUN_EVERY_MINS = 1
 
@@ -3913,6 +4042,7 @@ def trademark_detailview(request, slug):
 #         mail.select("inbox")  # connect to inbox.
 #         typ, data = mail.search(None, "ALL", "UNSEEN")
 #         import email
+
 
 #         for num in data[0].split():
 #             image = False
@@ -4008,3 +4138,57 @@ def trademark_detailview(request, slug):
 #                     headers=headers,
 #                 )
 #         mail.logout()
+def update_bch_address(request):
+    if request.method == "POST":
+        new_address = request.POST.get("new_address")
+        if new_address:
+            try:
+                user_profile = request.user.userprofile
+                user_profile.crypto_address = new_address
+                user_profile.save()
+                messages.success(request, "BCH Address updated successfully.")
+            except Exception as e:
+                messages.error(request, "Failed to update BCH Address.")
+        else:
+            messages.error(request, "Please provide a valid BCH Address.")
+    else:
+        messages.error(request, "Invalid request method.")
+
+    username = request.user.username if request.user.username else "default_username"
+    return redirect(reverse("profile", args=[username]))
+
+
+def sitemap(request):
+    random_domain = Domain.objects.order_by("?").first()
+    return render(request, "sitemap.html", {"random_domain": random_domain})
+
+
+class ContributorStatsView(TemplateView):
+    template_name = "contributor_stats.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Fetch all contributor stats records
+        stats = ContributorStats.objects.all()
+
+        # Convert the stats to a dictionary format expected by the template
+        user_stats = {
+            stat.username: {
+                "commits": stat.commits,
+                "issues_opened": stat.issues_opened,
+                "issues_closed": stat.issues_closed,
+                "assigned_issues": stat.assigned_issues,
+                "prs": stat.prs,
+                "comments": stat.comments,
+            }
+            for stat in stats
+        }
+
+        context["user_stats"] = user_stats
+        context["owner"] = "OWASP-BLT"
+        context["repo"] = "BLT"
+        context["start_date"] = (datetime.now().date() - timedelta(days=7)).isoformat()
+        context["end_date"] = datetime.now().date().isoformat()
+
+        return context
