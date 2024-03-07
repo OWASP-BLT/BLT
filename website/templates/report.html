@@ -382,7 +382,7 @@
 {% block after_js %}
     <script type="text/javascript">
     function isCVEValid(cveNumber) {
-        const cveRegex = /^CVE-\d{4}-\d{4,}$/;
+        const cveRegex = /^CVE-\d{4}-\d{4,7}$/;
         return cveRegex.test(cveNumber);
     }
 
@@ -394,7 +394,7 @@
             validationResult.style.borderColor = '';
             return true;
         }
-        
+
         if (isCVEValid(cveInput)) {
             validationResult.style.borderColor = 'green';
         }  else if (cveInput == None){
