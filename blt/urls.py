@@ -34,6 +34,7 @@ from website.api.views import (
 from website.views import (
     AllIssuesView,
     CompanySettings,
+    ContributorStatsView,
     CreateHunt,
     CustomObtainAuthToken,
     DomainDetailView,
@@ -480,6 +481,7 @@ urlpatterns = [
         website.views.update_bch_address,
         name="update_bch_address",
     ),
+    re_path(r"^contributor-stats/$", ContributorStatsView.as_view(), name="contributor-stats"),
 ]
 
 if settings.DEBUG:
