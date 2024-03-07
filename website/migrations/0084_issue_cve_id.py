@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="issue",
-            name="cve_no",
+            name="cve_id",
             field=models.CharField(blank=True, max_length=160, null=True),
         ),
     ]

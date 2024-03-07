@@ -296,13 +296,13 @@
                 </div>
             </div>
             <div>
-                <div class="cve_no">
-                    <label for="cve_no">CVE Number</label>
+                <div class="cve_id">
+                    <label for="cve_id">CVE ID</label>
                     <input class="mt-4  ml-2 w-100 rounded border-2"
                            type="text"
                            placeholder="CVE-XXXX-XXXX..."
-                           id="cve_no_input"
-                           name="cve_no"
+                           id="cve_id_input"
+                           name="cve_id"
                            min="13"
                            max="16">
                 </div>
@@ -387,9 +387,14 @@
     }
 
     function validateCVE() {
-        const cveInput = document.getElementById('cve_no_input').value;
-        const validationResult = document.getElementById('cve_no_input');
-
+        const cveInput = document.getElementById('cve_id_input').value;
+        const validationResult = document.getElementById('cve_id_input');
+        //check for empty submission(allow form submission)
+        if (!cveInput.trim()) {
+            validationResult.style.borderColor = '';
+            return true;
+        }
+        
         if (isCVEValid(cveInput)) {
             validationResult.style.borderColor = 'green';
         }  else if (cveInput == None){
