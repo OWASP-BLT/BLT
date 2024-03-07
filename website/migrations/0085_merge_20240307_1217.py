@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0084_contributorstats"),
         ("website", "0084_rename_crypto_address_userprofile_bch_address_and_more"),
