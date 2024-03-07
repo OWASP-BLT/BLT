@@ -31,7 +31,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
-from website.views import (
+from website.views import (  # IssueView,
     AllIssuesView,
     CompanySettings,
     ContributorStatsView,
@@ -53,7 +53,6 @@ from website.views import (
     InboundParseWebhookView,
     InviteCreate,
     IssueCreate,
-    # IssueView,
     IssueView2,
     IssueView3,
     JoinCompany,
