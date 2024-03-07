@@ -212,14 +212,23 @@
     width: auto; 
     }
 
-    #crypto-name,#crypto-address{
+    #crypto-address{
     text-align: center;
+    }
+
+    #crypto-name{
+        text-align: center;
+        font-size: 30px;
+        color: white;
+        font-weight: bold;
+        background-color: #ff4444;
+        border-radius: 10px;
     }
 
     #update-overlay {
         display: flex;
         flex-direction: column;
-    }
+    }   
 
     .wallet-selection {
         display: flex;
@@ -229,32 +238,41 @@
         display: flex;
         justify-content: flex-end;
         align-items: center;
-        margin-top: 10px;
+        margin-top: 0px;
     }
 
     .wallet-selection .crypto-button[data-crypto="BitcoinCash"] {
         margin-right: 93px;
     }
 
-    .arrow-btn {
+    #dialog {
+        position: relative;
+    }
+
+    .arrow-container {
         position: absolute;
-        top: 50%;
-        transform: translateY(-65%);
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .arrow-btn {
         background: none;
         border: none;
-        color: red;
-        font-size: 70px;
+        top: 0;
+        color: black;
+        font-size: 40px;
         cursor: pointer;
         font-weight: bold;
-        z-index: 1;
+        margin: 0 0px;
     }
 
-    #prev {
-        left: 0px;
-    }
-
-    #next {
-        right: 0px;
+    #slideshow {
+        margin-top: 50px; /* Adjust as needed */
     }
 
     </style>
@@ -339,13 +357,15 @@
                 <div class="status">
                     <button type="button" id="openModal" class="btn btn-danger text-black">Send a Tip</button>
                     <dialog id="dialog">
-                        <button id="prev" class="arrow-btn">&lt;</button>
+                        <div class="arrow-container">
+                            <button id="prev" class="arrow-btn">&lt;</button>
+                            <p id="crypto-name" class="text-black">Bitcoin</p>
+                            <button id="next" class="arrow-btn">&gt;</button>
+                        </div>
                         <div id="slideshow">
                             <img id="qr-image" alt="QR Code" height="300" width="400">
-                            <p id="crypto-name" class="text-black">Bitcoin</p>
                             <p id="crypto-address"></p>
                         </div>
-                        <button id="next" class="arrow-btn">&gt;</button>
                         <button id="close" class="btn-danger w-full">Close</button>
                     </dialog>
                 </div>
@@ -567,7 +587,7 @@
             if (address == '' || address == 'None') {
                 address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
                 document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
-                document.getElementById('crypto-name').textContent = "No address: Tip will go to the leaderboard fund.";
+                document.getElementById('crypto-name').textContent = "No address: Will go to BLT Donation";
                 document.getElementById('crypto-address').textContent = `BCH: ${address}`;
             }
             else{

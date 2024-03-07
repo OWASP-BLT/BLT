@@ -1,9 +1,50 @@
 {% load gravatar %}
 {% load humanize %}
 <style>
-    #crypto-name,#crypto-address{
+    .crypto-address {
     text-align: center;
     }
+
+    .dialog {
+        position: relative;
+    }
+
+    .arrow-container {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: max-content;
+    }
+
+    .arrow-btn {
+        background: none;
+        border: none;
+        color: black;
+        font-size: 40px;
+        cursor: pointer;
+        font-weight: bold;
+        margin: 0 0px;
+    }
+
+    .crypto-name {
+        text-align: center;
+        font-size: 20px;
+        color: white;
+        font-weight: bold;
+        background-color: #ff4444;
+        border-radius: 10px;
+        display: inline-block;
+        margin-left: auto ;
+    }
+
+    .slideshow {
+        margin-top: 50px;
+    }
+
 </style>
 <div class="row-start-1 bug-container leaderboard-widget flex flex-col p-5 pt-3 bg-[white] m-1 w-[100%] row-span-2 rounded-[2.5rem]  border-[#e8e8e8] border-2 font-['Inter'] h-[630px]">
     <div class="font-['Barlow_Semi_Condensed'] font-semibold text-[black] text-[25px] text-center mb-2">LEADERBOARD</div>
@@ -60,11 +101,15 @@
                         onclick="openModal('{{ leader.userprofile.btc_address }}','{{ leader.userprofile.eth_address }}','{{ leader.userprofile.bch_address }}', '{{ leader.id }}')">
                     TIP:<i class="fab fa-btc"></i>
                 </button>
-                <dialog id="dialog-{{ leader.id }}">
+                <dialog id="dialog-{{ leader.id }}" class="dialog">
+                    <div class="arrow-container">
+                        <button id="prev-{{ leader.id }}" class="arrow-btn">&lt;</button>
+                        <p id="crypto-name-{{ leader.id }}" class="crypto-name">Bitcoin</p>
+                        <button id="next-{{ leader.id }}" class="arrow-btn">&gt;</button>
+                    </div>
                     <div id="slideshow-{{ leader.id }}" class="slideshow">
                         <img id="qr-image-{{ leader.id }}" alt="QR Code" height="300" width="400">
-                        <p id="crypto-name-{{ leader.id }}"></p>
-                        <p id="crypto-address-{{ leader.id }}"></p>
+                        <p id="crypto-address-{{ leader.id }}" class="crypto-address"></p>
                     </div>
                     <button id="close-{{ leader.id }}" class="btn btn-danger w-full">Close</button>
                 </dialog>
@@ -94,7 +139,7 @@
             if (address == '' || address == 'None') {
                 address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
                 document.getElementById('qr-image-'+userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
-                document.getElementById('crypto-name-' + userId).textContent = "No address: Tip will go to the leaderboard fund.";
+                document.getElementById('crypto-name-' + userId).textContent = "No address: Will go to BLT Donation";
                 document.getElementById('crypto-address-'+userId).textContent = `BCH: ${address}`;
             }
             else{
@@ -114,7 +159,12 @@
             document.getElementById('dialog-' + userId).close();
         });
 
-        document.getElementById('dialog-' + userId).addEventListener('click', function() {
+        document.getElementById('prev-' + userId).addEventListener('click', function() {
+            currentIndex = (currentIndex - 1 + cryptoOptions.length) % cryptoOptions.length;
+            updateSlide();
+        });
+
+        document.getElementById('next-' + userId).addEventListener('click', function() {
             currentIndex = (currentIndex + 1) % cryptoOptions.length;
             updateSlide();
         });
