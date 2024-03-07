@@ -108,12 +108,7 @@ INSTALLED_APPS = (
     "captcha",
     "dj_rest_auth",
     "dj_rest_auth.registration",
-    "django_crontab",
 )
-
-CRONJOBS = [
-    ("0 3 */7 * *", "django.core.management.call_command", ["fetch_contributor_stats"]),
-]
 
 
 # CRON_CLASSES = ["website.views.CreateIssue"]
