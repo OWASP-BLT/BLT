@@ -408,7 +408,7 @@ def grant_access(request, user_pk, issue_pk):
     request_access = RequestIssueAccess.objects.filter(issue=issue_pk)
     issue = Issue.objects.get(id=issue_pk)
 
-    if request.method == "post":
+    if request.method == "POST":
         if request.POST.get("grant_access"):
             if request.POST.get("select_user") is not None:
                 selected_user = request.POST.get("select_user")
@@ -466,7 +466,7 @@ def request_access(request, issue_pk):
         r = RequestIssueAccess.objects.filter(user=request.user, issue=issue_pk).exists()
         if r is False:
             if issue.is_hidden is True and (request.user not in issue.viewer.all()):
-                if request.method == "post":
+                if request.method == "POST":
                     try:
                         msg_plain = render_to_string(
                             "email/request_access.txt",

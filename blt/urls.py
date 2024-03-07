@@ -469,7 +469,6 @@ urlpatterns = [
     re_path(r"^contributors/$", contributors_view, name="contributors"),
     path("company/", include("company.urls")),
     path("sponsor/", website.views.sponsor_view, name="sponsor"),
-
     path(
         "issue/<int:issue_pk>/request_access/",
         website.views.request_access,
