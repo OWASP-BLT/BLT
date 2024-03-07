@@ -7,6 +7,7 @@ from import_export.admin import ImportExportModelAdmin
 from website.models import (
     Company,
     CompanyAdmin,
+    ContributorStats,
     Domain,
     Hunt,
     HuntPrize,
@@ -98,6 +99,7 @@ class IssueAdmin(admin.ModelAdmin):
         "created",
         "modified",
     )
+    search_fields = ["url", "description", "domain__name", "user__username"]
     inlines = [ImageInline]
 
 
@@ -194,6 +196,8 @@ class UserAdmin(ImportExportModelAdmin):
         "is_staff",
     )
 
+
+admin.site.register(ContributorStats)
 
 admin.site.register(UserProfile)
 admin.site.register(User, UserAdmin)
