@@ -207,14 +207,56 @@
     }
 
     .btn-save {
-    padding: 5px 5px; /* Adjust padding as needed */
-    font-size: 7px; /* Adjust font size as needed */
-    width: auto; /* Allow the button to shrink to fit content */
+    padding: 5px 5px;
+    font-size: 7px;
+    width: auto; 
     }
 
     #crypto-name,#crypto-address{
     text-align: center;
     }
+
+    #update-overlay {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .wallet-selection {
+        display: flex;
+    }
+
+    .button-row {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: 10px;
+    }
+
+    .wallet-selection .crypto-button[data-crypto="BitcoinCash"] {
+        margin-right: 93px;
+    }
+
+    .arrow-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-65%);
+        background: none;
+        border: none;
+        color: red;
+        font-size: 70px;
+        cursor: pointer;
+        font-weight: bold;
+        z-index: 1;
+    }
+
+    #prev {
+        left: 0px;
+    }
+
+    #next {
+        right: 0px;
+    }
+
     </style>
 {% endblock style %}
 {% block content %}
@@ -270,20 +312,20 @@
                         <button class="crypto-button" data-crypto="BitcoinCash">
                             <i class="fa-brands fa-btc"></i>
                         </button>
-                    </div>
-                    <div>
                         <form method="post"
                               action="{% url 'update_bch_address' %}"
                               id="update-form">
                             {% csrf_token %}
+                            <button type="submit" class="btn btn-primary text-black btn-save">Save</button>
+                        </div>
+                        <div class="text-block">
                             <input type="hidden" id="selected-crypto" name="selected_crypto" value="">
                             <input type="text"
                                    id="new-crypto-address"
                                    name="new_address"
                                    placeholder="Enter new Bitcoin address">
-                            <button type="submit" class="btn btn-primary text-black btn-save">Save</button>
-                        </form>
-                    </div>
+                        </div>
+                    </form>
                 </div>
             {% endif %}
             <div id="target_div">
@@ -297,11 +339,13 @@
                 <div class="status">
                     <button type="button" id="openModal" class="btn btn-danger text-black">Send a Tip</button>
                     <dialog id="dialog">
+                        <button id="prev" class="arrow-btn">&lt;</button>
                         <div id="slideshow">
                             <img id="qr-image" alt="QR Code" height="300" width="400">
                             <p id="crypto-name" class="text-black">Bitcoin</p>
                             <p id="crypto-address"></p>
                         </div>
+                        <button id="next" class="arrow-btn">&gt;</button>
                         <button id="close" class="btn-danger w-full">Close</button>
                     </dialog>
                 </div>
@@ -543,7 +587,12 @@
             document.getElementById('dialog').close();
         });
 
-        document.getElementById('dialog').addEventListener('click', function() {
+        document.getElementById('prev').addEventListener('click', function() {
+            currentIndex = (currentIndex - 1 + cryptoOptions.length) % cryptoOptions.length;
+            updateSlide();
+        });
+
+        document.getElementById('next').addEventListener('click', function() {
             currentIndex = (currentIndex + 1) % cryptoOptions.length;
             updateSlide();
         });
