@@ -718,7 +718,7 @@ def get_client_ip(request):
 
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
-    fields = ["url", "description", "domain", "label", "markdown_description"]
+    fields = ["url", "description", "domain", "label", "markdown_description", "cve_id"]
     template_name = "report.html"
 
     def get_initial(self):
@@ -733,6 +733,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             self.request.POST["label"] = json_data["label"]
             self.request.POST["token"] = json_data["token"]
             self.request.POST["type"] = json_data["type"]
+            self.request.POST["cve_id"] = json_data["cve_id"]
 
             if self.request.POST.get("file"):
                 if isinstance(self.request.POST.get("file"), six.string_types):
@@ -3776,6 +3777,7 @@ class IssueView2(DetailView):
             .order_by("views")[:4]
         )
         context["subscribed_to_domain"] = False
+        context["cve_id"] = self.object.cve_id
 
         if isinstance(self.request.user, User):
             context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
