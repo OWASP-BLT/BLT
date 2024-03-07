@@ -1,20 +1,20 @@
 {% extends "base.html" %}
 {% block style %}
     <style>
-.main_table td a{
-    color: white!important;
-    font-size: larger!important;
-}
-.main_table td a:hover{
-    color: rgb(234, 217, 217)!important;
-    text-decoration: underline!important;
+.main_table td a:hover {
+    color: rgb(234, 217, 217) !important;
+    text-decoration: underline !important;
 }
     </style>
+    <link rel="stylesheet"
+          type="text/css"
+          href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="overflow-x-auto relative shadow-md sm:rounded-lg py-8 px-10 bg-white dark:bg-gray-800 my-20 mx-8">
-        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 main_table"
+               id="userStatsTable">
             <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 p-5 rounded border-b border-gray-200 dark:border-gray-700">
                 <tr>
                     <th scope="col" class="py-3 px-6">Username</th>
@@ -28,7 +28,7 @@
             </thead>
             <tbody>
                 {% for user, stats in user_stats.items %}
-                    <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 main_table">
+                    <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                         <th scope="row"
                             class="py-4 px-6 font-semibold text-gray-900 whitespace-nowrap dark:text-white">
                             {{ user }}
@@ -66,4 +66,4 @@
             </tbody>
         </table>
     </div>
-{% endblock content %}
+{% endblock content %
