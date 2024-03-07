@@ -77,6 +77,7 @@ from website.models import (
     IP,
     Company,
     CompanyAdmin,
+    ContributorStats,
     Domain,
     Hunt,
     InviteFriend,
@@ -4013,3 +4014,34 @@ def update_bch_address(request):
 def sitemap(request):
     random_domain = Domain.objects.order_by("?").first()
     return render(request, "sitemap.html", {"random_domain": random_domain})
+
+
+class ContributorStatsView(TemplateView):
+    template_name = "contributor_stats.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Fetch all contributor stats records
+        stats = ContributorStats.objects.all()
+
+        # Convert the stats to a dictionary format expected by the template
+        user_stats = {
+            stat.username: {
+                "commits": stat.commits,
+                "issues_opened": stat.issues_opened,
+                "issues_closed": stat.issues_closed,
+                "assigned_issues": stat.assigned_issues,
+                "prs": stat.prs,
+                "comments": stat.comments,
+            }
+            for stat in stats
+        }
+
+        context["user_stats"] = user_stats
+        context["owner"] = "OWASP-BLT"
+        context["repo"] = "BLT"
+        context["start_date"] = (datetime.now().date() - timedelta(days=7)).isoformat()
+        context["end_date"] = datetime.now().date().isoformat()
+
+        return context
