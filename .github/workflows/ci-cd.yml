@@ -17,6 +17,8 @@ jobs:
   setup:
     name: Setup and Cache Dependencies
     runs-on: ubuntu-latest
+    permissions: 
+      contents: read  # Minimal permission for checking out code
     outputs:
       python-cache-dir: ${{ steps.poetry-cache.outputs.dir }}
     steps:
@@ -51,6 +53,11 @@ jobs:
     name: Run pre-commit
     needs: setup
     runs-on: ubuntu-latest
+    permissions: 
+      issues: write
+      pull-requests: write
+      contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -63,6 +70,10 @@ jobs:
     name: Run CodeQL
     needs: pre-commit
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
     strategy:
       fail-fast: true
       matrix:
@@ -81,6 +92,11 @@ jobs:
     name: Run Tests
     needs: code-ql
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v4
