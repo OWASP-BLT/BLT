@@ -3,7 +3,7 @@
 {% block content %}
     <style>
   #banner {
- background:
+  background:
    url("https://i.postimg.cc/FzSHSbhQ/img-soccer.jpg") no-repeat;
   background-size: cover;
   height: 400px;
@@ -80,7 +80,6 @@ h5.card-title{
     <link href="{% static 'mdeditor/css/editormd.preview.css' %}"
           rel="stylesheet">
     <main>
-        <!--banner-->
         <article id="banner" class="jumbotron jumbotron-fluid">
             <div class="font-italic pl-4 mt-4 text-light">
                 <h1 class="display-1 font-italic">
@@ -103,7 +102,6 @@ h5.card-title{
                 {% endif %}
             {% endif %}
         </article>
-        <!--banner end-->
     </main>
     <div id="content">
         <textarea>{{ hunt.description }}</textarea>
