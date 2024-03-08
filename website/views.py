@@ -3998,12 +3998,16 @@ def update_bch_address(request):
         if selected_crypto and new_address:
             try:
                 user_profile = request.user.userprofile
-                if selected_crypto == "Bitcoin":
-                    user_profile.btc_address = new_address
-                elif selected_crypto == "Ethereum":
-                    user_profile.eth_address = new_address
-                elif selected_crypto == "BitcoinCash":
-                    user_profile.bch_address = new_address
+                match selected_crypto:
+                    case "Bitcoin":
+                        user_profile.btc_address = new_address
+                    case "Ethereum":
+                        user_profile.eth_address = new_address
+                    case "BitcoinCash":
+                        user_profile.bch_address = new_address
+                    case _:
+                        messages.error(request, f"Invalid crypto selected: {selected_crypto}")
+                        return redirect(reverse("profile", args=[request.user.username]))
                 user_profile.save()
                 messages.success(request, f"{selected_crypto} Address updated successfully.")
             except Exception as e:
