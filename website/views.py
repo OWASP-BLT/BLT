@@ -1415,7 +1415,6 @@ class DomainDetailView(ListView):
             twitter_url = "https://twitter.com/%s" % (parsed_url.netloc.split(".")[-2:][0].title())
             if is_valid_https_url(twitter_url):
                 context["twitter_url"] = twitter_url
-                print(twitter_url)
         return context
 
 
