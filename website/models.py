@@ -253,6 +253,7 @@ class Issue(models.Model):
     is_hidden = models.BooleanField(default=False)
     rewarded = models.PositiveIntegerField(default=0)  # money rewarded by the company
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
+    cve_id = models.CharField(max_length=160, null=True, blank=True)
 
     def __unicode__(self):
         return self.description
@@ -425,7 +426,9 @@ class UserProfile(models.Model):
 
     subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains")
     subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users")
-    crypto_address = models.CharField(max_length=100, null=True, blank=True)
+    btc_address = models.CharField(max_length=100, blank=True, null=True)
+    bch_address = models.CharField(max_length=100, blank=True, null=True)
+    eth_address = models.CharField(max_length=100, blank=True, null=True)
 
     def avatar(self, size=36):
         if self.user_avatar:

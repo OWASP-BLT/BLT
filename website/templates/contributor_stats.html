@@ -1,11 +1,5 @@
 {% extends "base.html" %}
 {% block style %}
-    <style>
-.main_table td a:hover {
-    color: rgb(234, 217, 217) !important;
-    text-decoration: underline !important;
-}
-    </style>
     <link rel="stylesheet"
           type="text/css"
           href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
@@ -60,10 +54,21 @@
                     </tr>
                 {% empty %}
                     <tr class="bg-white dark:bg-gray-800">
-                        <td colspan="7" class="py-4 px-6 text-center">No activity found</td>
+                        <td colspan="7" class="py-4 px-6 text-center">No activity found.</td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 {% endblock content %}
+{% block scripts %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+    <script>
+    $(document).ready(function() {
+        $('#userStatsTable').DataTable();
+    });
+    </script>
+{% endblock scripts %}

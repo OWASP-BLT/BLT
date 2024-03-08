@@ -168,6 +168,113 @@
             bottom: 10px;
             right: 15px;
     }
+    #update-overlay{
+        display: flex;
+        gap:2px;
+    }
+
+    .wallet-selection {
+    display: flex;
+    gap: 2px;
+    }
+
+    .crypto-button {
+    padding: 10px;
+    margin-bottom: 0.5px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    width: 20px; 
+    height: 20px;
+    }
+
+    .crypto-button[data-crypto="Ethereum"] {
+    background-color: #627eea;
+    color: #fff;
+    }
+
+    .crypto-button[data-crypto="Bitcoin"] {
+    background-color: #f2a900;
+    color: #fff;
+    }
+
+    .crypto-button[data-crypto="BitcoinCash"] {
+    background-color: #4cca47;
+    color: #fff;
+    }
+
+    .btn-save {
+    padding: 5px 5px;
+    font-size: 7px;
+    width: auto; 
+    }
+
+    #crypto-address{
+    text-align: center;
+    }
+
+    #crypto-name{
+        text-align: center;
+        font-size: 30px;
+        color: white;
+        font-weight: bold;
+        background-color: #ff4444;
+        border-radius: 10px;
+    }
+
+    #update-overlay {
+        display: flex;
+        flex-direction: column;
+    }   
+
+    .wallet-selection {
+        display: flex;
+    }
+
+    .button-row {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: 0px;
+    }
+
+    .wallet-selection .crypto-button[data-crypto="BitcoinCash"] {
+        margin-right: 93px;
+    }
+
+    #dialog {
+        position: relative;
+    }
+
+    .arrow-container {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .arrow-btn {
+        background: none;
+        border: none;
+        top: 0;
+        color: black;
+        font-size: 40px;
+        cursor: pointer;
+        font-weight: bold;
+        margin: 0 0px;
+    }
+
+    #slideshow {
+        margin-top: 50px; /* Adjust as needed */
+    }
+
     </style>
 {% endblock style %}
 {% block content %}
@@ -213,15 +320,29 @@
             {% endif %}
             {% if request.user == user %}
                 <div id="update-overlay">
-                    <form method="post"
-                          action="{% url 'update_bch_address' %}"
-                          id="update-form">
-                        {% csrf_token %}
-                        <input type="text"
-                               id="new-bch-address"
-                               name="new_address"
-                               placeholder="Enter new BCH address">
-                        <button type="submit" class="btn btn-primary text-black">Save</button>
+                    <div class="wallet-selection">
+                        <button class="crypto-button" data-crypto="Bitcoin">
+                            <i class="fa-brands fa-btc"></i>
+                        </button>
+                        <button class="crypto-button" data-crypto="Ethereum">
+                            <i class="fa-brands fa-ethereum"></i>
+                        </button>
+                        <button class="crypto-button" data-crypto="BitcoinCash">
+                            <i class="fa-brands fa-btc"></i>
+                        </button>
+                        <form method="post"
+                              action="{% url 'update_bch_address' %}"
+                              id="update-form">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary text-black btn-save">Save</button>
+                        </div>
+                        <div class="text-block">
+                            <input type="hidden" id="selected-crypto" name="selected_crypto" value="">
+                            <input type="text"
+                                   id="new-crypto-address"
+                                   name="new_address"
+                                   placeholder="Enter new Bitcoin address">
+                        </div>
                     </form>
                 </div>
             {% endif %}
@@ -236,17 +357,15 @@
                 <div class="status">
                     <button type="button" id="openModal" class="btn btn-danger text-black">Send a Tip</button>
                     <dialog id="dialog">
-                        <img id="qr-image" alt="QR Code" height="300" width="400">
-                        <p id="bch-address">
-                            BCH:
-                            {% if user.userprofile.crypto_address %}
-                                {{ user.userprofile.crypto_address }}
-                            {% else %}
-                                User has not entered a BCH address:
-                                <br>
-                                Your tip will go to the leaderboard fund
-                            {% endif %}
-                        </p>
+                        <div class="arrow-container">
+                            <button id="prev" class="arrow-btn">&lt;</button>
+                            <p id="crypto-name" class="text-black">Bitcoin</p>
+                            <button id="next" class="arrow-btn">&gt;</button>
+                        </div>
+                        <div id="slideshow">
+                            <img id="qr-image" alt="QR Code" height="300" width="400">
+                            <p id="crypto-address"></p>
+                        </div>
                         <button id="close" class="btn-danger w-full">Close</button>
                     </dialog>
                 </div>
@@ -455,16 +574,62 @@
         </a>
     </div>
     <script type="text/javascript">
-    document.getElementById('openModal').addEventListener('click', function() {
-        var address = "{{ user.userprofile.crypto_address }}";
-        if (address == '' || address == "None") {
-            address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
+    document.addEventListener('DOMContentLoaded', function() {
+        const cryptoOptions = [
+            { name: 'Bitcoin', address: '{{ user.userprofile.btc_address }}' },
+            { name: 'Ethereum', address: '{{ user.userprofile.eth_address }}' },
+            { name: 'Bitcoin Cash', address: '{{ user.userprofile.bch_address }}' }
+        ];
+
+        let currentIndex = 0;
+        const updateSlide = () => {
+            let { name, address } = cryptoOptions[currentIndex];
+            if (address == '' || address == 'None') {
+                address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
+                document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+                document.getElementById('crypto-name').textContent = "No address: Will go to BLT Donation";
+                document.getElementById('crypto-address').textContent = `BCH: ${address}`;
+            }
+            else{
+                document.getElementById('crypto-name').textContent = name;
+                document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+                document.getElementById('crypto-address').textContent = `${address}`;
+            }
         }
-        var qrUrl = "https://api.qrserver.com/v1/create-qr-code/?data=bitcoincash:" + address + "&size=400x300";
-        document.getElementById('qr-image').src = qrUrl;
-        document.getElementById('dialog').showModal();
+
+        updateSlide();
+
+        document.getElementById('openModal').addEventListener('click', function() {
+            document.getElementById('dialog').showModal();
+        });
+
         document.getElementById('close').addEventListener('click',function(){
             document.getElementById('dialog').close();
+        });
+
+        document.getElementById('prev').addEventListener('click', function() {
+            currentIndex = (currentIndex - 1 + cryptoOptions.length) % cryptoOptions.length;
+            updateSlide();
+        });
+
+        document.getElementById('next').addEventListener('click', function() {
+            currentIndex = (currentIndex + 1) % cryptoOptions.length;
+            updateSlide();
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const cryptoButtons = document.querySelectorAll('.crypto-button');
+        const newCryptoAddressInput = document.getElementById('new-crypto-address');
+        const selectedCryptoInput = document.getElementById('selected-crypto');
+
+        cryptoButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const crypto = this.getAttribute('data-crypto');
+                selectedCryptoInput.value = crypto;  // Set the selected cryptocurrency value
+                newCryptoAddressInput.placeholder = `Enter new ${crypto} address`;
+                document.getElementById('crypto-name').textContent = crypto;
+            });
         });
     });
 

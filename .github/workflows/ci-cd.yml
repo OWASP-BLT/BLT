@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI/CD Optimized
 
 on:
   merge_group:
@@ -14,28 +14,53 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
 jobs:
+  setup:
+    name: Setup and Cache Dependencies
+    runs-on: ubuntu-latest
+    permissions: 
+      contents: read  # Minimal permission for checking out code
+    outputs:
+      python-cache-dir: ${{ steps.poetry-cache.outputs.dir }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Cache pre-commit hooks
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pre-commit-
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11.2
+
+      - name: Get Poetry cache directory
+        id: poetry-cache
+        run: echo "::set-output name=dir::$(poetry config cache-dir)"
+      
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.poetry-cache.outputs.dir }}
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
   pre-commit:
     name: Run pre-commit
+    needs: setup
     runs-on: ubuntu-latest
     permissions: 
       issues: write
       pull-requests: write
       contents: write
       actions: write
-
     steps:
-      - name: Cache pre-commit hooks
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pre-commit  # Adjust the path based on where pre-commit stores its hooks.
-          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pre-commit-
-
-      - name: Check out Repository
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5.0.0
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
       - name: Run pre-commit
@@ -49,25 +74,19 @@ jobs:
       security-events: write
       actions: read
       contents: read
-
     strategy:
       fail-fast: true
       matrix:
         language:
           - 'javascript'
           - 'python'
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+      - uses: actions/checkout@v2
+      - uses: github/codeql-action/init@v2
         with:
           languages: ${{ matrix.language }}
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v2
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+      - uses: github/codeql-action/autobuild@v2
+      - uses: github/codeql-action/analyze@v2
 
   test:
     name: Run Tests
@@ -78,30 +97,13 @@ jobs:
       pull-requests: write
       contents: write
       actions: write
-
     steps:
-      - name: Get Poetry cache
-        id: poetry-cache
-        run: echo "::set-output name=dir::$(poetry config cache-dir)"
-
-      - name: Cache Python dependencies
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.poetry-cache.outputs.dir }}
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-      - uses: nanasess/setup-chromedriver@v2
       - uses: actions/checkout@v2
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.11.2
-      - name: Install Poetry
-        run: pip install poetry
-      - name: Install dependencies
-        run: poetry install
-      - name: Collect static files
-        run: poetry run python manage.py collectstatic --noinput
+      - run: pip install poetry
+      - run: poetry install
+      - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
         run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
