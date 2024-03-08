@@ -369,6 +369,11 @@ urlpatterns = [
     re_path(r"^about/$", TemplateView.as_view(template_name="about.html"), name="about"),
     re_path(r"^teams/$", TemplateView.as_view(template_name="teams.html"), name="teams"),
     re_path(
+        r"^googleplayapp/$",
+        TemplateView.as_view(template_name="coming_soon.html"),
+        name="googleplayapp",
+    ),
+    re_path(
         r"^projects/$",
         TemplateView.as_view(template_name="projects.html"),
         name="projects",
@@ -483,6 +488,11 @@ urlpatterns = [
         name="update_bch_address",
     ),
     re_path(r"^contributor-stats/$", ContributorStatsView.as_view(), name="contributor-stats"),
+    re_path(
+        r"^contributor-stats/today$",
+        ContributorStatsView.as_view(today=True),
+        name="today-contributor-stats",
+    ),
 ]
 
 if settings.DEBUG:

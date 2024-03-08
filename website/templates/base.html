@@ -69,7 +69,9 @@
               integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
               crossorigin="anonymous"
               referrerpolicy="no-referrer" />
-        <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+                integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+                crossorigin="anonymous"></script>
         <script src="{% static 'js/notify.js' %}"></script>
         <script src="{% static 'js/text-slider.js' %}"></script>
         <script src="https://cdn.tailwindcss.com"></script>
@@ -86,10 +88,11 @@
                 right: 15px;
             }
         </style>
-        {% comment %} navigation {% endcomment %}
         {% include "includes/header.html" %}
-        {% comment %} navigation {% endcomment %}
+        {% comment %} navigation double check this is correct {% endcomment %}
         <div class="lg:ml-[215px] mt-[90px] mr-[5px]">
+
+        {% comment %} it may be this <div class="lg:ml-[230px] mt-[70px]"> {% endcomment %}
             {% block content %}
             {% endblock content %}
         </div>
