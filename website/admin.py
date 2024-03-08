@@ -196,11 +196,13 @@ class UserAdmin(ImportExportModelAdmin):
         "is_staff",
     )
 
+
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "crypto_address",
     )
+
 
 admin.site.register(ContributorStats)
 
