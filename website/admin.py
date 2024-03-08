@@ -200,7 +200,9 @@ class UserAdmin(ImportExportModelAdmin):
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = (
         "id",
-        "crypto_address",
+        "btc_address",
+        "eth_address",
+        "bch_address",
     )
 
 
