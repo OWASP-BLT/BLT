@@ -4035,27 +4035,35 @@ def sitemap(request):
 
 class ContributorStatsView(TemplateView):
     template_name = "contributor_stats.html"
+    today = False
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
         # Fetch all contributor stats records
         stats = ContributorStats.objects.all()
-
-        # Convert the stats to a dictionary format expected by the template
-        user_stats = {
-            stat.username: {
-                "commits": stat.commits,
-                "issues_opened": stat.issues_opened,
-                "issues_closed": stat.issues_closed,
-                "assigned_issues": stat.assigned_issues,
-                "prs": stat.prs,
-                "comments": stat.comments,
+        if self.today:
+            # For "today" stats
+            user_stats = sorted(
+                ([stat.username, stat.prs] for stat in stats if stat.prs > 0),
+                key=lambda x: x[1],  # Sort by PRs value
+                reverse=True,  # Descending order
+            )
+        else:
+            # Convert the stats to a dictionary format expected by the template
+            user_stats = {
+                stat.username: {
+                    "commits": stat.commits,
+                    "issues_opened": stat.issues_opened,
+                    "issues_closed": stat.issues_closed,
+                    "assigned_issues": stat.assigned_issues,
+                    "prs": stat.prs,
+                    "comments": stat.comments,
+                }
+                for stat in stats
             }
-            for stat in stats
-        }
 
         context["user_stats"] = user_stats
+        context["today"] = self.today
         context["owner"] = "OWASP-BLT"
         context["repo"] = "BLT"
         context["start_date"] = (datetime.now().date() - timedelta(days=7)).isoformat()
