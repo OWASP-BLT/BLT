@@ -298,6 +298,7 @@ if "DATABASE_URL" in os.environ:
         send_default_pii=True,
         traces_sample_rate=1.0,
         profiles_sample_rate=1.0,
+        release=os.environ.get("HEROKU_RELEASE_VERSION", default=""),
     )
 
 else:
