@@ -1495,10 +1495,13 @@ class DomainDetailView(ListView):
             .annotate(c=Count("label"))
             .order_by()
         )
-        twitter_url = "https://twitter.com/%s" % (parsed_url.netloc.split(".")[-2:][0].title())
-        if is_valid_https_url(twitter_url):
-            context["twitter_url"] = twitter_url
-            print(twitter_url)
+        if domain.twitter:
+            context["twitter_url"] = domain.twitter
+        else:
+            twitter_url = "https://twitter.com/%s" % (parsed_url.netloc.split(".")[-2:][0].title())
+            if is_valid_https_url(twitter_url):
+                context["twitter_url"] = twitter_url
+                print(twitter_url)
         return context
 
 
