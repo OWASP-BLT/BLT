@@ -3,7 +3,7 @@
 {% block content %}
     <style>
   #banner {
- background:
+  background:
    url("https://i.postimg.cc/FzSHSbhQ/img-soccer.jpg") no-repeat;
   background-size: cover;
   height: 400px;
@@ -108,7 +108,6 @@ table.table tbody tr.selected {
     <link href="{% static 'mdeditor/css/editormd.preview.css' %}"
           rel="stylesheet">
     <main class="-mt-10 -mx-8">
-        <!--banner-->
         <article id="banner" class="jumbotron jumbotron-fluid">
             <div class="font-italic pl-4 mt-4 text-light">
                 <h1 class="display-1 font-italic">
@@ -118,7 +117,6 @@ table.table tbody tr.selected {
                 <p class="lead mt-5">Ended</p>
             </div>
         </article>
-        <!--banner end-->
     </main>
     {% if hunt.result_published %}
         <table class="table">
@@ -190,7 +188,9 @@ table.table tbody tr.selected {
             <button class="btn btn-danger" name="submit" value="publish">Save and Publish Result</button>
         </form>
     {% endif %}
-    <script src="{% static 'mdeditor/js/jquery.min.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+            crossorigin="anonymous"></script>
     <script src="{% static 'mdeditor/js/editormd.min.js' %}"></script>
     <script src="{% static 'mdeditor/js/lib/marked.min.js' %}"></script>
     <script src="{% static 'mdeditor/js/lib/prettify.min.js' %}"></script>
@@ -211,7 +211,6 @@ table.table tbody tr.selected {
   });
 
   $("tbody :checkbox").on("click", function() {
-    // toggle selected class to the checkbox in a row
     $(this)
       .closest("tr")
       .toggleClass("selected", this.checked);
