@@ -4029,7 +4029,7 @@ class ContributorStatsView(TemplateView):
             user_stats = sorted(
                 ([stat.username, stat.prs] for stat in stats if stat.prs > 0),
                 key=lambda x: x[1],  # Sort by PRs value
-                reverse=True  # Descending order
+                reverse=True,  # Descending order
             )
         else:
             # Convert the stats to a dictionary format expected by the template

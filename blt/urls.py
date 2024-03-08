@@ -482,7 +482,11 @@ urlpatterns = [
         name="update_bch_address",
     ),
     re_path(r"^contributor-stats/$", ContributorStatsView.as_view(), name="contributor-stats"),
-    re_path(r"^contributor-stats/today$", ContributorStatsView.as_view(today=True), name="today-contributor-stats"),
+    re_path(
+        r"^contributor-stats/today$",
+        ContributorStatsView.as_view(today=True),
+        name="today-contributor-stats",
+    ),
 ]
 
 if settings.DEBUG:
