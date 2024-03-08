@@ -25,11 +25,35 @@
 		a:visited {
             color: black;
         }
+        @media (max-width: 786px) {
+
+        }
+        @media (min-width: 1024px) {
+            .dropdown-toggle-mobile{
+                display: none;
+            }
+        }
 	
     </style>
     <div class="h-full px-11 overflow-y-auto bg-white flex flex-col justify-between no-scrollbar sidenav">
         <div class="overflow-auto no-scrollbar">
             <ul class="space-y-3 font-medium text-2xl mt-6 mb-0">
+                <li class="dropdown-toggle-mobile items-center p-2">
+                    <form class="relative px-[34px] mb-0"
+                          action="{% url 'search' %}"
+                          method="get">
+                        <i class="fa fa-search absolute left-[13px] top-[6.4px] text-[#9CA3AF] z-10"></i>
+                        <input type="text"
+                               name="query"
+                               placeholder="Search"
+                               class="text-base ps-9 scale-[1.4] placeholder-[#9CA3AF] bg-[#EDEDED] outline-none p-2.5 font-semibold rounded-lg">
+                    </form>
+                </li>
+                <li class="dropdown-toggle-mobile">
+                    <div class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[28px] py-[3px] pl-[50px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
+                        <a href="{% url 'report' %}"><span class="text">Report</span></a>
+                    </div>
+                </li>
                 <li class="flex items-center p-2">
                     <div class="w-8 mr-4">
                         <i class="fa fa-exclamation-circle" id="icon"></i>
