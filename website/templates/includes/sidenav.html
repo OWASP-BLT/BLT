@@ -151,13 +151,13 @@
                     <div class="w-8 mr-4">
                         <i class="fa fa-bar-chart" id="icon"></i>
                     </div>
-                    <a href="{% url 'stats' %}" class="text"><span>Statistics</span></a>
+                    <a href="{% url 'stats' %}" class="text"><span>Stats</span></a>
                 </li>
                 <li class="flex items-center p-2">
                     <div class="w-8 mr-4">
                         <i class="fa fa-star" id="icon"></i>
                     </div>
-                    <a href="https://github.com/OWASP/BLT/releases" class="text"><span>Features</span></a>
+                    <a href="https://github.com/OWASP/BLT/releases" class="text"><span>Releases</span></a>
                 </li>
                 <li class="flex items-center p-2">
                     <div class="w-8 mr-4">
@@ -178,7 +178,8 @@
             BLT is 100% free to use, Open Source and a non-commercial, not for profit initiative.
             <ul class="space-y-2 flex-end mb-[5px] mt-[5px]">
                 <li class="opacity-90 transition hover:opacity-100">
-                    <a class="bg-gray-100 inline-flex py-3 px-5 rounded-2xl items-center transition hover:bg-gray-200 focus:outline-none cursor-pointer hover:text-black">
+                    <a href="{% url 'googleplayapp' %}"
+                       class="bg-gray-100 inline-flex py-3 px-5 rounded-2xl items-center transition hover:bg-gray-200 focus:outline-none cursor-pointer hover:text-black">
                         <svg xmlns="http://www.w3.org/2000/svg"
                              fill="currentColor"
                              class="w-9 h-9"
@@ -209,7 +210,7 @@
                         </span>
                     </a>
                 </li>
-                <ul class="flex">
+                <ul class="flex pb-5">
                     <li class="flex items-center p-2">
                         <a href="https://www.facebook.com/groups/owaspfoundation/"
                            class="text-blue-500"
