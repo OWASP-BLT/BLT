@@ -200,10 +200,25 @@ class UserAdmin(ImportExportModelAdmin):
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = (
         "id",
+        "user",
+        "user_avatar",
+        "get_title_display",
+        "description",
+        "winnings",
+        "issues_hidden",
         "btc_address",
-        "eth_address",
         "bch_address",
+        "eth_address",
     )
+    # add these and make them sortable
+    # follows = models.ManyToManyField("self", related_name="follower", symmetrical=False, blank=True)
+    # winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    # issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
+    # issue_downvoted = models.ManyToManyField(Issue, blank=True, related_name="downvoted")
+    # issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
+    # issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
+    # subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains")
+    # subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users")
 
 
 admin.site.register(ContributorStats)
