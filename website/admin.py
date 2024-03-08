@@ -197,9 +197,16 @@ class UserAdmin(ImportExportModelAdmin):
     )
 
 
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "crypto_address",
+    )
+
+
 admin.site.register(ContributorStats)
 
-admin.site.register(UserProfile)
+admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(User, UserAdmin)
 
 admin.site.register(Domain, DomainAdminPanel)
