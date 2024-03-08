@@ -1344,8 +1344,8 @@ class DomainDetailView(ListView):
         context = super(DomainDetailView, self).get_context_data(*args, **kwargs)
         # remove any arguments from the slug
         self.kwargs["slug"] = self.kwargs["slug"].split("?")[0]
-
-        context["domain"] = get_object_or_404(Domain, name=self.kwargs["slug"])
+        domain = get_object_or_404(Domain, name=self.kwargs["slug"])
+        context["domain"] = domain
 
         parsed_url = urlparse("http://" + self.kwargs["slug"])
 
@@ -1409,10 +1409,13 @@ class DomainDetailView(ListView):
             .annotate(c=Count("label"))
             .order_by()
         )
-        twitter_url = "https://twitter.com/%s" % (parsed_url.netloc.split(".")[-2:][0].title())
-        if is_valid_https_url(twitter_url):
-            context["twitter_url"] = twitter_url
-            print(twitter_url)
+        if domain.twitter:
+            context["twitter_url"] = domain.twitter
+        else:
+            twitter_url = "https://twitter.com/%s" % (parsed_url.netloc.split(".")[-2:][0].title())
+            if is_valid_https_url(twitter_url):
+                context["twitter_url"] = twitter_url
+                print(twitter_url)
         return context
 
 
