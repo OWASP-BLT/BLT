@@ -29,9 +29,7 @@ class Migration(migrations.Migration):
                 ("last_checked_time", models.DateTimeField(auto_now=True)),
                 (
                     "status",
-                    models.CharField(
-                        choices=[("UP", "Up"), ("DOWN", "Down")], max_length=20
-                    ),
+                    models.CharField(choices=[("UP", "Up"), ("DOWN", "Down")], max_length=20),
                 ),
                 (
                     "user",
