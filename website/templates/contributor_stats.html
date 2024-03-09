@@ -6,12 +6,20 @@
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
+    <style>
+        .main_table a:link {
+            color: rgb(0, 0, 0);
+        }
+        .main_table a:visited {
+            color: rgb(0, 0, 0);
+        }
+    </style>
     {% if today %}
         <!-- make same table just have username and Pull Requests -->
-        <div class="overflow-x-auto relative shadow-md sm:rounded-lg py-8 px-10 bg-white dark:bg-gray-800 my-20 mx-8">
-            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 main_table"
+        <div class="overflow-x-auto relative shadow-md sm:rounded-lg py-8 px-10 bg-white dark:bg-[#f7f7f7] my-20 mx-8">
+            <table class="w-full text-lg text-left text-gray-500 dark:text-gray-400 main_table"
                    id="userStatsTable">
-                <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 p-5 rounded border-b border-gray-200 dark:border-gray-700">
+                <thead class="text-lg text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 p-5 rounded border-b border-gray-200 dark:border-gray-700">
                     <tr>
                         <th scope="col" class="py-3 px-6">Username</th>
                         <th scope="col" class="py-3 px-6">Pull Requests</th>
@@ -19,7 +27,7 @@
                 </thead>
                 <tbody>
                     {% for username, prs in user_stats %}
-                        <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                        <tr class="bg-white border-b dark:bg-[#f7f7f7] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                             <th scope="row"
                                 class="py-4 px-6 font-semibold text-gray-900 whitespace-nowrap dark:text-white">
                                 {{ username }}
@@ -30,7 +38,7 @@
                             </td>
                         </tr>
                     {% empty %}
-                        <tr class="bg-white dark:bg-gray-800">
+                        <tr class="bg-white dark:bg-[#f7f7f7]">
                             <td colspan="2" class="py-4 px-6 text-center">No activity found.</td>
                         </tr>
                     {% endfor %}
@@ -38,10 +46,10 @@
             </table>
         </div>
     {% else %}
-        <div class="overflow-x-auto relative shadow-md sm:rounded-lg py-8 px-10 bg-white dark:bg-gray-800 my-20 mx-8">
-            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 main_table"
+        <div class="overflow-x-auto relative shadow-md sm:rounded-lg py-8 px-10 bg-white dark:bg-[#f7f7f7] my-20 mx-8">
+            <table class="w-full text-lg text-left text-gray-500 dark:text-gray-400 main_table"
                    id="userStatsTable">
-                <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 p-5 rounded border-b border-gray-200 dark:border-gray-700">
+                <thead class="text-lg text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 p-5 rounded border-b border-gray-200 dark:border-gray-700">
                     <tr>
                         <th scope="col" class="py-3 px-6">Username</th>
                         <th scope="col" class="py-3 px-6">Commits</th>
@@ -54,7 +62,7 @@
                 </thead>
                 <tbody>
                     {% for user, stats in user_stats.items %}
-                        <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                        <tr class="bg-white border-b dark:bg-[#1d1d1e] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                             <th scope="row"
                                 class="py-4 px-6 font-semibold text-gray-900 whitespace-nowrap dark:text-white">
                                 {{ user }}
@@ -85,7 +93,7 @@
                             </td>
                         </tr>
                     {% empty %}
-                        <tr class="bg-white dark:bg-gray-800">
+                        <tr class="bg-white dark:bg-[#f7f7f7]">
                             <td colspan="7" class="py-4 px-6 text-center">No activity found.</td>
                         </tr>
                     {% endfor %}
