@@ -1893,6 +1893,7 @@ class HuntCreate(CreateView):
             )
         return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HH7MNY6KJGZFW"
 
+
 # TODO:
 # class IssueView(DetailView):
 #     model = Issue
@@ -2196,6 +2197,7 @@ def follow_user(request, user):
                 html_message=msg_html,
             )
         return HttpResponse("Success")
+
 
 # TODO:
 # @login_required(login_url="/accounts/login")
@@ -3589,6 +3591,7 @@ class DomainListView(ListView):
         context["domain"] = domain_paginated
         return context
 
+
 # TODO: Remove like_issue2 and like_issue, dislike_issue,dislike_issue2,flag_issue2,flag_issue after ready
 @login_required(login_url="/accounts/login")
 def flag_issue2(request, issue_pk):
@@ -3607,6 +3610,7 @@ def flag_issue2(request, issue_pk):
     context["object"] = issue
     context["flags"] = total_flag_votes
     return render(request, "includes/_flags2.html", context)
+
 
 @login_required(login_url="/accounts/login")
 def like_issue2(request, issue_pk):
@@ -3674,7 +3678,6 @@ def dislike_issue2(request, issue_pk):
     return render(request, "includes/_dislike2.html", context)
 
 
-
 @login_required(login_url="/accounts/login")
 def flag_issue3(request, issue_pk):
     context = {}
@@ -3691,8 +3694,11 @@ def flag_issue3(request, issue_pk):
     total_flag_votes = UserProfile.objects.filter(issue_flaged=issue).count()
     context["object"] = issue
     context["flags"] = total_flag_votes
-    context["isFlagged"] = UserProfile.objects.filter(issue_flaged=issue, user=request.user).exists()
+    context["isFlagged"] = UserProfile.objects.filter(
+        issue_flaged=issue, user=request.user
+    ).exists()
     return render(request, "includes/_flags3.html", context)
+
 
 @login_required(login_url="/accounts/login")
 def like_issue3(request, issue_pk):
@@ -3738,7 +3744,7 @@ def like_issue3(request, issue_pk):
     total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
     context["object"] = issue
     context["likes"] = total_votes
-    context["isLiked"] =  UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists()
+    context["isLiked"] = UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists()
     return render(request, "includes/_likes3.html", context)
 
 
@@ -3758,7 +3764,9 @@ def dislike_issue3(request, issue_pk):
     total_votes = UserProfile.objects.filter(issue_downvoted=issue).count()
     context["object"] = issue
     context["dislikes"] = total_votes
-    context["isDisliked"] =  UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists()
+    context["isDisliked"] = UserProfile.objects.filter(
+        issue_downvoted=issue, user=request.user
+    ).exists()
     return render(request, "includes/_dislikes3.html", context)
 
 
@@ -3937,9 +3945,15 @@ class IssueView3(DetailView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-            context["isLiked"] = UserProfile.objects.filter(issue_upvoted=self.object, user=self.request.user).exists()
-            context["isDisliked"] = UserProfile.objects.filter(issue_downvoted=self.object, user=self.request.user).exists()
-            context["isFlagged"] = UserProfile.objects.filter(issue_flaged=self.object, user=self.request.user).exists()
+            context["isLiked"] = UserProfile.objects.filter(
+                issue_upvoted=self.object, user=self.request.user
+            ).exists()
+            context["isDisliked"] = UserProfile.objects.filter(
+                issue_downvoted=self.object, user=self.request.user
+            ).exists()
+            context["isFlagged"] = UserProfile.objects.filter(
+                issue_flaged=self.object, user=self.request.user
+            ).exists()
         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context["all_comment"] = self.object.comments.all().order_by("-created_date")
         context["all_users"] = User.objects.all()

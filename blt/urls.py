@@ -31,7 +31,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
-from website.views import (  # TODO IssueView,
+from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
     AllIssuesView,
     CompanySettings,
     ContributorStatsView,
@@ -70,17 +70,16 @@ from website.views import (  # TODO IssueView,
     UserProfileDetailView,
     contributors_view,
     dislike_issue2,
+    dislike_issue3,
     facebook_callback,
     flag_issue2,
+    flag_issue3,
     github_callback,
     google_callback,
     like_issue2,
+    like_issue3,
     subscribe_to_domains,
     vote_count,
-    # TODO: REMOVE like_issue2 etc
-    like_issue3,
-    dislike_issue3,
-    flag_issue3,
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
