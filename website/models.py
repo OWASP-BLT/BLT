@@ -253,7 +253,7 @@ class Issue(models.Model):
     is_hidden = models.BooleanField(default=False)
     rewarded = models.PositiveIntegerField(default=0)  # money rewarded by the company
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
-    cve_id = models.CharField(max_length=160, null=True, blank=True)
+    cve_id = models.CharField(max_length=16, null=True, blank=True)
 
     def __unicode__(self):
         return self.description
