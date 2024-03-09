@@ -3,7 +3,7 @@
 {% block metaTags %}
     <title>
         {% block title %}
-            BLT Issue - {{ object.description }}
+            BLT Issue - {{ object.description|escapejs }}
         {% endblock title %}
     </title>
     <meta name="description"
@@ -23,7 +23,7 @@
           content="{{ object.markdown_description|escapejs }}" />
     <meta name="keywords"
           content="{% block keywords %}BLT, bug, tracking, company, easy{% endblock keywords %}">
-    {% comment %} TODO: change to update  {% endcomment %}
+    {% comment %} TODO: change to update DOMAIN {% endcomment %}
     <link rel="canonical" href="https://blt.owasp.org/issue3/{{ object.id }}">
     <meta property="og:url"
           content="https://blt.owasp.org/issue3/{{ object.id }}" />
@@ -40,282 +40,41 @@
 {% endblock head %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-white">
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Suscipit inventore provident dolorum et, in dolorem maxime explicabo praesentium doloribus officiis laboriosam iusto laudantium! Ad architecto dolor cumque perferendis quidem libero doloremque nam quo, molestias repellat, nobis vitae porro veritatis non voluptatibus. Eaque beatae cumque illo quo nulla quisquam, recusandae earum distinctio voluptatibus delectus facilis quae reiciendis mollitia nobis, dolor itaque unde explicabo natus? Itaque doloribus nihil ducimus praesentium repellendus quis quasi cupiditate dicta inventore assumenda optio eveniet numquam labore odio provident blanditiis maiores veritatis, placeat explicabo reprehenderit facere aspernatur distinctio vero. Quae a corporis expedita quis provident iure ut asperiores.
-    </div>
-    {% comment %} <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-white">
-        <div class="flex justify-between px-10 mx-auto">
-            <div class="w-full max-w-full">
-                <div class="w-full flex items-center flex-col">
-                    <div class="w-full flex items-center flex-col">
-                        <p class="text-gray-800">
-                            <strong>Published on</strong>
-                            <span class="font-light text-2xl">{{ object.created }}</span>
-                        </p>
-                        <p class="text-gray-800 ">
-                            <strong>Reported on</strong>
-                            <span class="font-light text-2xl"><a href="" class="issue-domain">{{ object.url }}</a></span>
-                        </p>
-                        <p class="text-black font-bold text-6xl text-center w-[90%] xl:w-[60%] mt-5 leading-snug issue-desc editables">
-                            {{ object.description }}
-                        </p>
-                        <div class="form form-inline mt-2 hidden">
-                            {% csrf_token %}
-                            <input type="hidden" name="issue_pk" id="issue_pk" value="{{ object.id }}">
-                            <input type="text" name="domain" placeholder="Domain" class="form-control" value="" required>
-                            <input type="text" name="description" placeholder="Bug Description" class="form-control" value="" required>
-                            <select name="label" class="form-control" required>
-                                <option value="0">General</option>
-                                <option value="1">Number error</option>
-                                <option value="2">Functional</option>
-                                <option value="3">Performance</option>
-                                <option value="4">Security</option>
-                                <option value="5">Typo</option>
-                                <option value="6">Design</option>
-                            </select>
-                            <button class="font-bold bg-red-600 px-5 py-2 text-white rounded-xl save-issue">Save</button>
-                            <button class="font-bold bg-gray-600 px-5 py-2 text-white rounded-xl cancel-edit">Cancel</button>
-                        </div>
-                    </div>
+    {% comment %} TODO:
+    delete these files after final is ready 
+    {% include "includes/_likes2.html" %}
+    {% include "includes/_dislike2.html" %}
+    {% include "includes/_flags2.html" %}
+    {% include "includes/_bookmark2.html" %}
+    {% endcomment %}
+    {% include "includes/_like_dislike_share.html" %}
+    <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-white"
+         style="padding: 2% 3% !important">
+        <h2 class="font-[ubuntu] font-bold text-3xl">{{ object.description | truncatechars:100|escapejs }}</h2>
+        <p>
+            <a href="{{ object.url }}" class="text-red-600" target="_blank">{{ object.url | truncatechars:100 }}</a>
+        </p>
+        <br>
+        <div class="container max-sm:mt-36 mx-auto px-4 md:px-12">
+            <div class="flex justify-evenly flex-wrap -mx-1 lg:-mx-4">
+                <div class="my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-3/12 rounded-2xl shadow-md p-7">
+                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo vero incidunt reprehenderit illo tenetur numquam hic ut optio esse eos minus dignissimos ducimus officia ab quidem quis, corrupti tempore voluptates.
                 </div>
-                <div class="w-full flex justify-between mt-20 flex-wrap-reverse">
-                    <div class="w-full xl:w-[56%] xl:pl-20">
-                        <div class="border-t-[1px] border-b-[1px] w-full min-h-[70px] flex flex-col xl:flex-row justify-between items-center mb-10 border-gray-300 flex-wrap pt-7 xl:p-0">
-                            <div class="flex items-center">
-                                <div class="w-[50px] h-[50px] rounded-full object-fill mr-4 flex items-center justify-center overflow-hidden">
-                                    {% if object.user.username %}
-                                        {% if object.user.userprofile.user_avatar %}
-                                            <img class="w-full h-full object-cover" src="{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}" alt="User Profile Logo" width="auto" height="auto">
-                                        {% else %}
-                                            <img class="w-full h-full object-cover" src="{% gravatar_url object.user.email 100 %}" alt="User Profile Logo" width="auto" height="auto">
-                                        {% endif %}
-                                    {% else %}
-                                        <img class="w-full h-full object-cover" src="{% static 'images/dummy-user.png' %}" alt="User Profile Logo" width="auto" height="auto">
-                                    {% endif %}
-                                </div>
-                                <div class="flex flex-col justify-center">
-                                    {% if object.user.username %}
-                                        <a href="{% url 'profile' slug=object.user.username %}">
-                                            Reported By
-                                            <span class="font-bold">{{ object.user.username }}</span>
-                                        </a>
-                                    {% else %}
-                                        <a href="">
-                                            Reported By
-                                            <span class="font-bold">Anonymous</span>
-                                        </a>
-                                    {% endif %}
-                                    <p class="text-xl text-gray-600">
-                                        Report viewed by <i class="fa fa-eye"></i> <span class="font-bold">{{ object.views }} users</span>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="w-full xl:w-[100%] mt-10 xl:mt-0 flex flex-wrap justify-between text-black">
-                                {% include "includes/_likes2.html" %}
-                                {% include "includes/_dislike2.html" %}
-                                {% include "includes/_flags2.html" %}
-                                {% include "includes/_bookmark2.html" %}
-                                <a target="_blank" href="https://twitter.com/intent/tweet?text=Bug Found on @{{ object.domain_title }} - {{ object.description }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}" class="flex items-center px-10 h-14 rounded-xl border-[1px] border-gray-300 font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0" rel="noopener noreferrer">
-                                    <i class="fa-brands fa-x-twitter text-2xl mr-2"> </i>
-                                    Share
-                                </a>
-                            </div>
-                        </div>
-                        <p class="text-3xl font-bold">Screenshots (5)</p>
-                        <div class="w-[full flex overflow-x-scroll">
-                            {% if object.screenshot %}
-                                <a href="{{ object.screenshot.url }}" data-lightbox="image">
-                                    <img class="w-[500px] h-[250px] object-cover rounded-lg m-5" src="{{ object.screenshot.url }}" alt="Image thumbnail" width="auto" height="auto">
-                                </a>
-                            {% else %}
-                                {% for screenshot in screenshots %}
-                                    <a href="{{ screenshot.image.url }}" data-lightbox="image">
-                                        <img class="w-[500px] h-[250px] object-cover rounded-lg m-5" src="{{ screenshot.image.url }}" alt="Screenshot" width="auto" height="auto">
-                                    </a>
-                                {% endfor %}
-                            {% endif %}
-                        </div>
-                        <style>
-                        .reset-style * {
-                            all: revert;
-                        }
-                        .reset-style img{
-                            max-width: 100%;
-                        }
-</style>
-                        <div id="bug_report" class="reset-style"></div>
-                    </div>
-                    <div class="w-full xl:w-[30%] flex flex-row xl:flex-col xl:items-center lg:min-w-[450px] justify-evenly xl:justify-normal items-center flex-wrap">
-                        <div class="w-[500px] xl:w-[80%] border-[1px] border-gray-300 rounded-2xl shadow-md p-7 cursor-pointer mb-10">
-                            <div class="w-full flex items-center">
-                                <div class="w-[100%] p-3 flex flex-col justify-between">
-                                    <div class="w-full flex justify-between my-3">
-                                        <p class="text-3xl font-bold">Bug Type:</p>
-                                        <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">{{ object.get_label_display }}</span>
-                                    </div>
-                                    <div class="w-full flex justify-between my-3">
-                                        <p class="text-3xl font-bold">Status:</p>
-                                        <div class="w-1/2 flex {% if request.user == object.user %} justify-between {% else %} justify-end {% endif %}">
-                                            {% if request.user == object.user or request.is_staff or request.is_superuser %}
-                                                <a class="edit-issue-status font-bold bg-gray-600 px-5 py-1 text-white rounded-xl mr-2" id="issue_stat">
-                                                    Click
-                                                    to
-                                                    {% if object.status == "open" %}
-                                                        Close
-                                                    {% else %}
-                                                        Open
-                                                    {% endif %}
-                                                </a>
-                                            {% endif %}
-                                            <span class="status font-bold bg-red-600 px-5 py-1 text-white rounded-xl">{{ object.status }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="w-full flex justify-between my-3">
-                                        <p class="text-3xl font-bold">Reported On:</p>
-                                        <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">{{ object.created }}</span>
-                                    </div>
-                                    <div class="w-full flex justify-between my-3">
-                                        <p class="text-3xl font-bold">Submitted:</p>
-                                        {% if object.hunt is None %}
-                                            <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">Independently</span>
-                                        {% else %}
-                                            <a class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl" href="{% url 'show_bughunt' object.hunt.id %}">{{ object.hunt.name }}</a>
-                                        {% endif %}
-                                    </div>
-                                    {% if request.user.is_superuser or request.user == object.user %}
-                                        <div class="w-full flex justify-between my-3">
-                                            <p class="text-3xl font-bold">Report Anonymously:</p>
-                                            {% if object.user %}
-                                                <form method="post" action="{% url 'remove_user_from_issue' id=object.id %}" class="m-0 p-0">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="token" value="{{ csrf_token }}" class="m-0 p-0" />
-                                                    <!-- Other form fields go here if needed -->
-                                                    <button type="submit" class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl" onclick="return confirm('Are you sure you want to report it anonymously?')">
-                                                        Yes <i class="fa fa-check"></i>
-                                                    </button>
-                                                </form>
-                                            {% endif %}
-                                        </div>
-                                        <!-- add a delete button here like anonymous button -->
-                                        <div class="w-full flex justify-between my-3">
-                                            <p class="text-3xl font-bold">Delete Issue:</p>
-                                            <a href="{% url 'delete_issue' id=object.id %}" onclick="return confirm('Are you sure you want to delete this issue?')">
-                                                <button class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">
-                                                    Yes <i class="fa fa-check"></i>
-                                                </button>
-                                            </a>
-                                        </div>
-                                        <!-- add a edit button here like delete button -->
-                                        <div class="w-full flex justify-between my-3">
-                                            <p class="text-3xl font-bold">Edit Issue:</p>
-                                            <a class="font-bold bg-red-600 hover:text-white px-5 py-1 text-white rounded-xl edit-issue">Yes <i class="fa fa-check"></i></a>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="w-[500px] xl:w-[80%] border-[1px] border-gray-300 rounded-2xl shadow-md p-7 cursor-pointer mb-10">
-                            <div class="w-full flex items-center">
-                                <div class="w-[90px] h-[90px] rounded-full object-fill flex flex-col  overflow-hidden">
-                                    {% if browser_family %}
-                                        {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as image_static %}
-                                            <img class="w-full h-full object-cover" src="{% static image_static %}" alt="Browser Image" width="auto" height="auto">
-                                        {% endwith %}
-                                    {% endif %}
-                                </div>
-                                <div class="full p-3 flex flex-col justify-center">
-                                    <p class="text-3xl font-light">
-                                        Browser Version: <span class="font-bold text-2xl">{{ browser_version }}</span>
-                                    </p>
-                                    <p class="text-3xl font-light">
-                                        Operating System: <span class="font-bold text-2xl">{{ os_family }}</span>
-                                    </p>
-                                    <p class="text-3xl font-light">
-                                        OS Version: <span class="font-bold text-2xl">
-                                        {% if os_version %}
-                                            {{ os_version }}
-                                        {% else %}
-                                            Unknown
-                                        {% endif %}
-                                    </span>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="w-[500px] xl:w-[80%] border-[1px] border-gray-300 rounded-2xl shadow-md p-7 cursor-pointer mb-10">
-                        <div class="w-full flex items-center">
-                            <div class="w-[90px] h-[90px] rounded-full object-fill border-black border-[1px] flex flex-col  overflow-hidden">
-                                <img class="w-full h-full object-cover" src="{{ object.domain.get_logo }}" alt="Domain Logo" width="auto" height="auto">
-                            </div>
-                            <div class="full p-3 flex flex-col justify-center">
-                                <a class="font-bold text-3xl" href="{% url 'domain' slug=object.domain.name %}">Reported on {{ object.domain.name }}</a>
-                                <p class="text-2xl font-light">
-                                    Total <span class="font-bold">{{ issue_count }}</span> bugs reported
-                                </p>
-                            </div>
-                        </div>
-                        <div class="w-full flex justify-end">
-                            <button onclick="subscribe_domain()" id="subscribe_domain_btn" class="bg-red-600 hover:bg-red-800 text-white text-2xl px-10 py-3 rounded-lg">
-                                {% if subscribed_to_domain %}
-                                    Click to Unsubscribe
-                                {% else %}
-                                    Click to Subscribe
-                                {% endif %}
-                            </button>
-                        </div>
-                    </div>
-                    <div class="w-[500px] xl:w-[80%] border-[1px] border-gray-300 rounded-2xl shadow-md p-7 cursor-pointer mb-10">
-                        <div class="w-full flex items-center">
-                            <div class="w-[90px] h-[90px] rounded-full object-fill border-black border-[1px] flex flex-col  overflow-hidden">
-                                {% if object.user.username %}
-                                    {% if object.user.userprofile.user_avatar %}
-                                        <img class="w-full h-full object-cover" src="{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}" alt="User Profile Logo" width="auto" height="auto">
-                                    {% else %}
-                                        <img class="w-full h-full object-cover" src="{% gravatar_url object.user.email 100 %}" alt="User Profile Logo" width="auto" height="auto">
-                                    {% endif %}
-                                {% else %}
-                                    <img class="w-full h-full object-cover" src="{% static 'images/dummy-user.png' %}" alt="User Profile Logo" width="auto" height="auto">
-                                {% endif %}
-                            </div>
-                            <div class="full p-3 flex flex-col justify-center">
-                                {% if object.user.username %}
-                                    <a class="font-bold text-3xl" href="{% url 'profile' slug=object.user.username %}">Reported By {{ object.user.username }}</a>
-                                {% else %}
-                                    <a class="font-bold text-3xl" href="">Reported By Anonymous</a>
-                                {% endif %}
-                                <p class="text-2xl font-light">
-                                    Total points <span class="font-bold">{{ users_score }}</span>
-                                </p>
-                            </div>
-                        </div>
-                        <div class="w-full flex justify-end">
-                            <button class="bg-red-600 hover:bg-red-800 text-white text-2xl px-10 py-2 rounded-lg">Send A Tip</button>
-                        </div>
-                    </div>
+                <br>
+                <div class="my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-3/12 rounded-2xl shadow-md p-7">
+                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo vero incidunt reprehenderit illo tenetur numquam hic ut optio esse eos minus dignissimos ducimus officia ab quidem quis, corrupti tempore voluptates.
                 </div>
+                <br>
+                <div class="my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-3/12 rounded-2xl shadow-md p-7">
+                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo vero incidunt reprehenderit illo tenetur numquam hic ut optio esse eos minus dignissimos ducimus officia ab quidem quis, corrupti tempore voluptates.
+                </div>
+                <br>
             </div>
-            {% include "comments2.html" %}
         </div>
+        <br>
+        <h3 class="font-[ubuntu] font-bold text-2xl">Issue Description</h3>
+        <p class="text-justify lg:w-11/12">{{ object.markdown_description|escapejs }}</p>
     </div>
-</div>
-<aside aria-label="Related articles" class="w-full flex justify-center items-center bg-gray-50 py-10">
-    <div class="w-full px-20 flex flex-col items-center">
-        <h2 class="mb-8 text-4xl font-bold text-gray-900 ">More Reports from {{ object.user.username }}</h2>
-        <div class="grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
-            {% for issue in more_issues %}
-                <article class="max-w-xs h-[100%]">
-                    <a href="{% url 'issue_view2' slug=issue.id %}">
-                        <img src="{{ MEDIA_URL }}{{ issue.screenshots__image }}" class="mb-5 rounded-lg object-fill h-[70%]" alt="Image 1" width="auto" height="auto">
-                        <h2 class="mb-2 text-xl font-bold leading-tight text-gray-900 ">{{ issue.description }}</h2>
-                        <p class="inline-flex items-center font-medium underline underline-offset-4 text-primary-600 hover:no-underline">
-                            Read in {{ issue.markdown_description|length|divide:200 }} minutes
-                        </p>
-                    </a>
-                </article>
-            {% endfor %}
-        </div>
-    </div>
-    </aside> {% endcomment %}
     <script src="{% static '/company/js/md_editor.js' %}"></script>
     <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.1.0/dist/markdown-it.min.js"></script>
