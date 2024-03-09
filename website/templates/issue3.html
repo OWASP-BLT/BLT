@@ -51,10 +51,13 @@
     <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-white pl-[3%]">
         <h2 class="font-[ubuntu] font-bold text-3xl">{{ object.description | truncatechars:100|escapejs }}</h2>
         <p>
-            <a href="{{ object.url }}" class="text-red-600" target="_blank">{{ object.url | truncatechars:100 }}</a>
+            <a href="{{ object.url }}"
+               class="text-red-600"
+               target="_blank"
+               rel="noopener noreferrer">{{ object.url | truncatechars:100 }}</a>
         </p>
         <br>
-        <div class="container max-sm:mt-36 mx-auto px-4 md:px-12">
+        <div class="container max-sm:mt-[30%] mx-auto px-4 md:px-12">
             <div class="flex justify-evenly flex-wrap -mx-1 lg:-mx-4">
                 <div class="my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-3/12 rounded-2xl shadow-md p-7">
                     Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo vero incidunt reprehenderit illo tenetur numquam hic ut optio esse eos minus dignissimos ducimus officia ab quidem quis, corrupti tempore voluptates.
@@ -72,7 +75,7 @@
         </div>
         <br>
         <h3 class="font-[ubuntu] font-bold text-2xl">Issue Description</h3>
-        <p class="text-justify lg:w-11/12">{{ object.markdown_description|escapejs }}</p>
+        <p class="text-justify max-sm:w-[95vw] lg:w-11/12">{{ object.markdown_description|escapejs }}</p>
     </div>
     <script src="{% static '/company/js/md_editor.js' %}"></script>
     <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
