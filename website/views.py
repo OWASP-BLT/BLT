@@ -3780,9 +3780,10 @@ class IssueView2(DetailView):
         context["cve_id"] = self.object.cve_id
 
         if isinstance(self.request.user, User):
-            context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
-                pk=self.request.user.userprofile.id
-            ).exists()
+            if self.request.user.is_authenticated:
+                context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
+                    pk=self.request.user.userprofile.id
+                ).exists()
 
         if isinstance(self.request.user, User):
             context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(
