@@ -48,8 +48,7 @@
     {% include "includes/_bookmark2.html" %}
     {% endcomment %}
     {% include "includes/_like_dislike_share.html" %}
-    <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-white"
-         style="padding: 2% 3% !important">
+    <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-white pl-[3%]">
         <h2 class="font-[ubuntu] font-bold text-3xl">{{ object.description | truncatechars:100|escapejs }}</h2>
         <p>
             <a href="{{ object.url }}" class="text-red-600" target="_blank">{{ object.url | truncatechars:100 }}</a>
