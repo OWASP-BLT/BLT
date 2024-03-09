@@ -3785,9 +3785,10 @@ class IssueView2(DetailView):
             ).exists()
 
         if isinstance(self.request.user, User):
-            context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(
-                pk=self.object.id
-            ).exists()
+            if self.request.user.is_authenticated:
+                context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(
+                    pk=self.object.id
+                ).exists()
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
 
