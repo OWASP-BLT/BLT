@@ -1,17 +1,19 @@
 {% if request.user.is_authenticated %}
-<button type="submit" name="{{ object.pk }}" class="bookmark md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#842adb4d] mb-3 cursor-pointer">
+    <button type="submit"
+            name="{{ object.pk }}"
+            class="bookmark md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#842adb4d] mb-3 cursor-pointer">
         {% if bookmarked %}
-        <i class="fa-solid fa-bookmark text-3xl text-black"></i>
+            <i class="fa-solid fa-bookmark text-3xl text-black"></i>
         {% else %}
-        <i class="fa-regular fa-bookmark text-3xl text-black"></i>
+            <i class="fa-regular fa-bookmark text-3xl text-black"></i>
         {% endif %}
-</button>
+    </button>
 {% else %}
-<button disabled class="md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#842adb4d] mb-3 cursor-pointer">
-    <i class="fa-regular fa-bookmark text-3xl text-black"></i>
-</button>
+    <button disabled
+            class="md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#842adb4d] mb-3 cursor-pointer">
+        <i class="fa-regular fa-bookmark text-3xl text-black"></i>
+    </button>
 {% endif %}
-
 <script>
     function bookmark_handler(e){
         e.preventDefault();
