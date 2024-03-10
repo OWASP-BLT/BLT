@@ -53,6 +53,7 @@ from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
     InboundParseWebhookView,
     InviteCreate,
     IssueCreate,
+    IssueView,
     IssueView2,
     IssueView3,
     JoinCompany,
@@ -267,14 +268,14 @@ urlpatterns = [
         name="user_profile",
     ),
     path(settings.ADMIN_URL + "/", admin.site.urls),
-    # TODO: REMOVE
-    # re_path(r"^like_issue/(?P<issue_pk>\d+)/$", website.views.like_issue, name="like_issue"),
-    # re_path(
-    #     r"^dislike_issue/(?P<issue_pk>\d+)/$",
-    #     website.views.dislike_issue,
-    #     name="dislike_issue",
-    # ),
-    # re_path(r"^flag_issue/(?P<issue_pk>\d+)/$", website.views.flag_issue, name="flag_issue"),
+    # TODO: REMOVE after _3 is ready
+    re_path(r"^like_issue/(?P<issue_pk>\d+)/$", website.views.like_issue, name="like_issue"),
+    re_path(
+        r"^dislike_issue/(?P<issue_pk>\d+)/$",
+        website.views.dislike_issue,
+        name="dislike_issue",
+    ),
+    re_path(r"^flag_issue/(?P<issue_pk>\d+)/$", website.views.flag_issue, name="flag_issue"),
     re_path(r"^like_issue2/(?P<issue_pk>\d+)/$", like_issue2, name="like_issue2"),
     re_path(r"^dislike_issue2/(?P<issue_pk>\d+)/$", dislike_issue2, name="dislike_issue2"),
     re_path(r"^flag_issue2/(?P<issue_pk>\d+)/$", flag_issue2, name="flag_issue2"),
@@ -308,9 +309,10 @@ urlpatterns = [
     ),
     # delete_comment
     path("issue2/comment/delete/", website.views.delete_comment, name="delete_comment"),
-    # TODO: P.S.(can be removed): re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
+    # TODO: REMOVE after _3 is ready
+    re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
     re_path(r"^issue2/(?P<slug>\w+)/$", IssueView2.as_view(), name="issue_view2"),
-    re_path(r"^issue3/(?P<slug>\w+)/$", IssueView3.as_view(), name="issue_view"),
+    re_path(r"^issue3/(?P<slug>\w+)/$", IssueView3.as_view(), name="issue_view3"),
     re_path(r"^follow/(?P<user>[^/]+)/", website.views.follow_user, name="follow_user"),
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
     re_path(r"^label_activity/$", SpecificIssuesView.as_view(), name="all_activitys"),

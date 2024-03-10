@@ -1895,99 +1895,99 @@ class HuntCreate(CreateView):
         return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HH7MNY6KJGZFW"
 
 
-# TODO:
-# class IssueView(DetailView):
-#     model = Issue
-#     slug_field = "id"
-#     template_name = "issue.html"
+# TODO: REMOVE after _3 is ready
+class IssueView(DetailView):
+    model = Issue
+    slug_field = "id"
+    template_name = "issue.html"
 
-#     def get(self, request, *args, **kwargs):
-#         ipdetails = IP()
-#         try:
-#             id = int(self.kwargs["slug"])
-#         except ValueError:
-#             return HttpResponseNotFound("Invalid ID: ID must be an integer")
+    def get(self, request, *args, **kwargs):
+        ipdetails = IP()
+        try:
+            id = int(self.kwargs["slug"])
+        except ValueError:
+            return HttpResponseNotFound("Invalid ID: ID must be an integer")
 
-#         self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
-#         ipdetails.user = self.request.user
-#         ipdetails.address = get_client_ip(request)
-#         ipdetails.issuenumber = self.object.id
-#         try:
-#             if self.request.user.is_authenticated:
-#                 try:
-#                     objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
-#                     self.object.save()
-#                 except:
-#                     ipdetails.save()
-#                     self.object.views = (self.object.views or 0) + 1
-#                     self.object.save()
-#             else:
-#                 try:
-#                     objectget = IP.objects.get(
-#                         address=get_client_ip(request), issuenumber=self.object.id
-#                     )
-#                     self.object.save()
-#                 except Exception as e:
-#                     print(e)
-#                     messages.error(self.request, "That issue was not found 2." + str(e))
-#                     ipdetails.save()
-#                     self.object.views = (self.object.views or 0) + 1
-#                     self.object.save()
-#         except Exception as e:
-#             print(e)
-#             messages.error(self.request, "That issue was not found 1." + str(e))
-#             return redirect("/")
-#         return super(IssueView, self).get(request, *args, **kwargs)
+        self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
+        ipdetails.user = self.request.user
+        ipdetails.address = get_client_ip(request)
+        ipdetails.issuenumber = self.object.id
+        try:
+            if self.request.user.is_authenticated:
+                try:
+                    objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
+                    self.object.save()
+                except:
+                    ipdetails.save()
+                    self.object.views = (self.object.views or 0) + 1
+                    self.object.save()
+            else:
+                try:
+                    objectget = IP.objects.get(
+                        address=get_client_ip(request), issuenumber=self.object.id
+                    )
+                    self.object.save()
+                except Exception as e:
+                    print(e)
+                    messages.error(self.request, "That issue was not found 2." + str(e))
+                    ipdetails.save()
+                    self.object.views = (self.object.views or 0) + 1
+                    self.object.save()
+        except Exception as e:
+            print(e)
+            messages.error(self.request, "That issue was not found 1." + str(e))
+            return redirect("/")
+        return super(IssueView, self).get(request, *args, **kwargs)
 
-#     def get_context_data(self, **kwargs):
-#         context = super(IssueView, self).get_context_data(**kwargs)
-#         if self.object.user_agent:
-#             user_agent = parse(self.object.user_agent)
-#             context["browser_family"] = user_agent.browser.family
-#             context["browser_version"] = user_agent.browser.version_string
-#             context["os_family"] = user_agent.os.family
-#             context["os_version"] = user_agent.os.version_string
-#         context["users_score"] = list(
-#             Points.objects.filter(user=self.object.user)
-#             .aggregate(total_score=Sum("score"))
-#             .values()
-#         )[0]
+    def get_context_data(self, **kwargs):
+        context = super(IssueView, self).get_context_data(**kwargs)
+        if self.object.user_agent:
+            user_agent = parse(self.object.user_agent)
+            context["browser_family"] = user_agent.browser.family
+            context["browser_version"] = user_agent.browser.version_string
+            context["os_family"] = user_agent.os.family
+            context["os_version"] = user_agent.os.version_string
+        context["users_score"] = list(
+            Points.objects.filter(user=self.object.user)
+            .aggregate(total_score=Sum("score"))
+            .values()
+        )[0]
 
-#         if self.request.user.is_authenticated:
-#             context["wallet"] = Wallet.objects.get(user=self.request.user)
-#         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
-#         context["all_comment"] = self.object.comments.all
-#         context["all_users"] = User.objects.all()
-#         context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
-#         context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
-#         context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
-#         context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
+        if self.request.user.is_authenticated:
+            context["wallet"] = Wallet.objects.get(user=self.request.user)
+        context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
+        context["all_comment"] = self.object.comments.all
+        context["all_users"] = User.objects.all()
+        context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
+        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
+        context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
+        context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
 
-#         context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
-#         context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
+        context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
+        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
 
-#         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
+        context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
 
-#         return context
+        return context
 
-# TODO:
-# @login_required(login_url="/accounts/login")
-# def flag_issue(request, issue_pk):
-#     context = {}
-#     issue_pk = int(issue_pk)
-#     issue = Issue.objects.get(pk=issue_pk)
-#     userprof = UserProfile.objects.get(user=request.user)
-#     if userprof in UserProfile.objects.filter(issue_flaged=issue):
-#         userprof.issue_flaged.remove(issue)
-#     else:
-#         userprof.issue_flaged.add(issue)
-#         issue_pk = issue.pk
 
-#     userprof.save()
-#     total_flag_votes = UserProfile.objects.filter(issue_flaged=issue).count()
-#     context["object"] = issue
-#     context["flags"] = total_flag_votes
-#     return render(request, "_flags.html", context)
+@login_required(login_url="/accounts/login")
+def flag_issue(request, issue_pk):
+    context = {}
+    issue_pk = int(issue_pk)
+    issue = Issue.objects.get(pk=issue_pk)
+    userprof = UserProfile.objects.get(user=request.user)
+    if userprof in UserProfile.objects.filter(issue_flaged=issue):
+        userprof.issue_flaged.remove(issue)
+    else:
+        userprof.issue_flaged.add(issue)
+        issue_pk = issue.pk
+
+    userprof.save()
+    total_flag_votes = UserProfile.objects.filter(issue_flaged=issue).count()
+    context["object"] = issue
+    context["flags"] = total_flag_votes
+    return render(request, "_flags.html", context)
 
 
 def IssueEdit(request):
@@ -2200,84 +2200,84 @@ def follow_user(request, user):
         return HttpResponse("Success")
 
 
-# TODO:
-# @login_required(login_url="/accounts/login")
-# def like_issue(request, issue_pk):
-#     context = {}
-#     issue_pk = int(issue_pk)
-#     issue = Issue.objects.get(pk=issue_pk)
-#     userprof = UserProfile.objects.get(user=request.user)
+# TODO: remove after _3 is ready
+@login_required(login_url="/accounts/login")
+def like_issue(request, issue_pk):
+    context = {}
+    issue_pk = int(issue_pk)
+    issue = Issue.objects.get(pk=issue_pk)
+    userprof = UserProfile.objects.get(user=request.user)
 
-#     if userprof in UserProfile.objects.filter(issue_downvoted=issue):
-#         userprof.issue_downvoted.remove(issue)
+    if userprof in UserProfile.objects.filter(issue_downvoted=issue):
+        userprof.issue_downvoted.remove(issue)
 
-#     if userprof in UserProfile.objects.filter(issue_upvoted=issue):
-#         userprof.issue_upvoted.remove(issue)
-#     else:
-#         userprof.issue_upvoted.add(issue)
-#         liked_user = issue.user
-#         liker_user = request.user
-#         issue_pk = issue.pk
-#         msg_plain = render_to_string(
-#             "email/issue_liked.txt",
-#             {
-#                 "liker_user": liker_user.username,
-#                 "liked_user": liked_user.username,
-#                 "issue_pk": issue_pk,
-#             },
-#         )
-#         msg_html = render_to_string(
-#             "email/issue_liked.txt",
-#             {
-#                 "liker_user": liker_user.username,
-#                 "liked_user": liked_user.username,
-#                 "issue_pk": issue_pk,
-#             },
-#         )
+    if userprof in UserProfile.objects.filter(issue_upvoted=issue):
+        userprof.issue_upvoted.remove(issue)
+    else:
+        userprof.issue_upvoted.add(issue)
+        liked_user = issue.user
+        liker_user = request.user
+        issue_pk = issue.pk
+        msg_plain = render_to_string(
+            "email/issue_liked.txt",
+            {
+                "liker_user": liker_user.username,
+                "liked_user": liked_user.username,
+                "issue_pk": issue_pk,
+            },
+        )
+        msg_html = render_to_string(
+            "email/issue_liked.txt",
+            {
+                "liker_user": liker_user.username,
+                "liked_user": liked_user.username,
+                "issue_pk": issue_pk,
+            },
+        )
 
-#         send_mail(
-#             "Your issue got an upvote!!",
-#             msg_plain,
-#             settings.EMAIL_TO_STRING,
-#             [liked_user.email],
-#             html_message=msg_html,
-#         )
+        send_mail(
+            "Your issue got an upvote!!",
+            msg_plain,
+            settings.EMAIL_TO_STRING,
+            [liked_user.email],
+            html_message=msg_html,
+        )
 
-#     userprof.save()
-#     total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
-#     context["object"] = issue
-#     context["likes"] = total_votes
-#     context["likers"] = UserProfile.objects.filter(issue_upvoted=issue)
-#     context["dislikes"] = UserProfile.objects.filter(issue_downvoted=issue).count()
-#     context["dislikers"] = UserProfile.objects.filter(issue_downvoted=issue)
+    userprof.save()
+    total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
+    context["object"] = issue
+    context["likes"] = total_votes
+    context["likers"] = UserProfile.objects.filter(issue_upvoted=issue)
+    context["dislikes"] = UserProfile.objects.filter(issue_downvoted=issue).count()
+    context["dislikers"] = UserProfile.objects.filter(issue_downvoted=issue)
 
-#     return render(request, "_likes_and_dislikes.html", context)
+    return render(request, "_likes_and_dislikes.html", context)
 
 
-# @login_required(login_url="/accounts/login")
-# def dislike_issue(request, issue_pk):
-#     context = {}
-#     issue_pk = int(issue_pk)
-#     issue = Issue.objects.get(pk=issue_pk)
-#     userprof = UserProfile.objects.get(user=request.user)
+@login_required(login_url="/accounts/login")
+def dislike_issue(request, issue_pk):
+    context = {}
+    issue_pk = int(issue_pk)
+    issue = Issue.objects.get(pk=issue_pk)
+    userprof = UserProfile.objects.get(user=request.user)
 
-#     if userprof in UserProfile.objects.filter(issue_upvoted=issue):
-#         userprof.issue_upvoted.remove(issue)
+    if userprof in UserProfile.objects.filter(issue_upvoted=issue):
+        userprof.issue_upvoted.remove(issue)
 
-#     if userprof in UserProfile.objects.filter(issue_downvoted=issue):
-#         userprof.issue_downvoted.remove(issue)
-#     else:
-#         userprof.issue_downvoted.add(issue)
+    if userprof in UserProfile.objects.filter(issue_downvoted=issue):
+        userprof.issue_downvoted.remove(issue)
+    else:
+        userprof.issue_downvoted.add(issue)
 
-#     userprof.save()
-#     total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
-#     context["object"] = issue
-#     context["likes"] = UserProfile.objects.filter(issue_upvoted=issue).count()
-#     context["likers"] = UserProfile.objects.filter(issue_upvoted=issue)
-#     context["dislikes"] = total_downvotes
-#     context["dislikers"] = UserProfile.objects.filter(issue_downvoted=issue)
+    userprof.save()
+    total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
+    context["object"] = issue
+    context["likes"] = UserProfile.objects.filter(issue_upvoted=issue).count()
+    context["likers"] = UserProfile.objects.filter(issue_upvoted=issue)
+    context["dislikes"] = total_downvotes
+    context["dislikers"] = UserProfile.objects.filter(issue_downvoted=issue)
 
-#     return render(request, "_likes_and_dislikes.html", context)
+    return render(request, "_likes_and_dislikes.html", context)
 
 
 @login_required(login_url="/accounts/login")
