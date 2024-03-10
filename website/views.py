@@ -879,7 +879,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 obj.hunt = hunt
 
             obj.domain = domain
-            obj.is_hidden = bool(self.request.POST.get("private", False))
+            # obj.is_hidden = bool(self.request.POST.get("private", False))
             obj.save()
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):
