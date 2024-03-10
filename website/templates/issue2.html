@@ -174,10 +174,18 @@
                                         <p class="text-3xl font-bold">Reported On:</p>
                                         <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">{{ object.created }}</span>
                                     </div>
-                                    <div class="w-full flex justify-between my-3">
-                                        <p class="text-3xl font-bold">CVE ID:</p>
-                                        <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">{{ object.cve_id }}</span>
-                                    </div>
+                                    {% if object.cve_id is not None %}
+                                        <div class="w-full flex justify-between my-3">
+                                            <p class="text-3xl font-bold">CVE ID:</p>
+                                            <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">{{ object.cve_id }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if object.cve_score is not None %}
+                                        <div class="w-full flex justify-between my-3">
+                                            <p class="text-3xl font-bold">CVE Score:</p>
+                                            <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">{{ object.cve_score }}</span>
+                                        </div>
+                                    {% endif %}
                                     <div class="w-full flex justify-between my-3">
                                         <p class="text-3xl font-bold">Submitted:</p>
                                         {% if object.hunt is None %}
