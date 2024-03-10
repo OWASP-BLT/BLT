@@ -218,11 +218,12 @@
 
     #crypto-name{
         text-align: center;
-        font-size: 30px;
+        width: 100%;
+        font-size: 20px;
         color: white;
-        font-weight: bold;
         background-color: #ff4444;
-        border-radius: 10px;
+        display: inline-block;
+        margin: 0 auto;
     }
 
     #update-overlay {
@@ -249,30 +250,50 @@
         position: relative;
     }
 
-    .arrow-container {
+    #slideshow {
+        margin-top: 50px;
+    }
+
+    .navigation {
         position: absolute;
         top: 0;
         left: 50%;
         transform: translateX(-50%);
         display: flex;
-        align-items: center;
         justify-content: center;
-        width: 100%;
     }
 
-    .arrow-btn {
-        background: none;
-        border: none;
-        top: 0;
-        color: black;
-        font-size: 40px;
+    .nav-btn {
+        width: 70px;
+        height: 40px;
+        border: 1px solid #0e0d0d;
+        margin: 6px;
         cursor: pointer;
-        font-weight: bold;
-        margin: 0 0px;
+        transition: 0.4s;
+    }
+    .nav-btn.active {
+        background: red; 
+        color: white;
+    }
+    .nav-btn:hover {
+        background: #fff;
     }
 
-    #slideshow {
-        margin-top: 50px; /* Adjust as needed */
+    input[name="r"] {
+        position: absolute;
+        visibility: hidden;
+    }
+
+    #btc:checked ~ .s1 {
+        margin-left: -20%;
+    }
+
+    #eth:checked ~ .s1 {
+        margin-left: -40%;
+    }
+
+    #bch:checked ~ .s1 {
+        margin-left: -60%;
     }
 
     </style>
@@ -357,13 +378,17 @@
                 <div class="status">
                     <button type="button" id="openModal" class="btn btn-danger text-black">Send a Tip</button>
                     <dialog id="dialog">
-                        <div class="arrow-container">
-                            <button id="prev" class="arrow-btn">&lt;</button>
-                            <p id="crypto-name" class="text-black">Bitcoin</p>
-                            <button id="next" class="arrow-btn">&gt;</button>
+                        <input type="radio" name="r" id="bch" checked class="active">
+                        <input type="radio" name="r" id="eth">
+                        <input type="radio" name="r" id="btc">
+                        <div class="navigation">
+                            <button class="nav-btn" id="bch-btn">BCH</button>
+                            <button class="nav-btn" id="eth-btn">Ethereum</button>
+                            <button class="nav-btn" id="btc-btn">Bitcoin</button>
                         </div>
                         <div id="slideshow">
                             <img id="qr-image" alt="QR Code" height="300" width="400">
+                            <p id="crypto-name" class="text-black"></p>
                             <p id="crypto-address"></p>
                         </div>
                         <button id="close" class="btn-danger w-full">Close</button>
@@ -576,9 +601,9 @@
     <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
         const cryptoOptions = [
-            { name: 'Bitcoin', address: '{{ user.userprofile.btc_address }}' },
+            { name: 'Bitcoin Cash', address: '{{ user.userprofile.bch_address }}' },
             { name: 'Ethereum', address: '{{ user.userprofile.eth_address }}' },
-            { name: 'Bitcoin Cash', address: '{{ user.userprofile.bch_address }}' }
+            { name: 'Bitcoin', address: '{{ user.userprofile.btc_address }}' },
         ];
 
         let currentIndex = 0;
@@ -607,14 +632,26 @@
             document.getElementById('dialog').close();
         });
 
-        document.getElementById('prev').addEventListener('click', function() {
-            currentIndex = (currentIndex - 1 + cryptoOptions.length) % cryptoOptions.length;
+        document.getElementById('bch-btn').classList.add('active'); // Highlight BCH button by default
+        document.getElementById('bch-btn').addEventListener('click', function() {
+            currentIndex = 0;
             updateSlide();
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
         });
 
-        document.getElementById('next').addEventListener('click', function() {
-            currentIndex = (currentIndex + 1) % cryptoOptions.length;
+        document.getElementById('eth-btn').addEventListener('click', function() {
+            currentIndex = 1;
             updateSlide();
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+
+        document.getElementById('btc-btn').addEventListener('click', function() {
+            currentIndex = 2;
+            updateSlide();
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
         });
     });
 
