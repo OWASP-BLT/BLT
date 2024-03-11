@@ -734,6 +734,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             self.request.POST["token"] = json_data["token"]
             self.request.POST["type"] = json_data["type"]
             self.request.POST["cve_id"] = json_data["cve_id"]
+            self.request.POST["cve_score"] = json_data["cve_score"]
 
             if self.request.POST.get("file"):
                 if isinstance(self.request.POST.get("file"), six.string_types):
@@ -880,7 +881,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             obj.domain = domain
             obj.is_hidden = bool(self.request.POST.get("private", False))
+            print("1")
             obj.cve_score = obj.get_cve_score()
+            print("2")
             obj.save()
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):

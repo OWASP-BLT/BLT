@@ -8,6 +8,51 @@
             crossorigin="anonymous"></script>
 {% endblock head %}
 {% block content %}
+    <style>
+    .crypto-address {
+        text-align: center;
+    }
+
+    .dialog {
+        position: relative;
+    }
+
+    .arrow-container {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: max-content;
+    }
+
+    .arrow-btn {
+        background: none;
+        border: none;
+        color: black;
+        font-size: 40px;
+        cursor: pointer;
+        font-weight: bold;
+        margin: 0 0px;
+    }
+
+    .crypto-name {
+        text-align: center;
+        font-size: 20px;
+        color: white;
+        font-weight: bold;
+        background-color: #ff4444;
+        border-radius: 10px;
+        display: inline-block;
+        margin-left: auto ;
+    }
+
+    .slideshow {
+        margin-top: 50px;
+    }
+    </style>
     {% include "includes/sidenav.html" %}
     <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-white">
         <div class="flex justify-between px-10 mx-auto">
@@ -336,7 +381,28 @@
                             </div>
                         </div>
                         <div class="w-full flex justify-end">
-                            <button class="bg-red-600 hover:bg-red-800 text-white text-2xl px-10 py-2 rounded-lg">Send A Tip</button>
+                            <button type="button"
+                                    id="openModal-{{ object.user.id }}"
+                                    class="bg-red-600 hover:bg-red-800 text-white text-2xl px-10 py-2 rounded-lg"
+                                    onclick="openModal('{{ object.user.userprofile.btc_address }}','{{ object.user.userprofile.eth_address }}','{{ object.user.userprofile.bch_address }}', '{{ object.user.id }}', '{{ cve_score }}')">
+                                Send A TIP
+                            </button>
+                            <dialog id="dialog-{{ object.user.id }}" class="dialog">
+                                <div class="arrow-container">
+                                    <button id="prev-{{ object.user.id }}" class="arrow-btn">&lt;</button>
+                                    <p id="crypto-name-{{ object.user.id }}" class="crypto-name">Bitcoin</p>
+                                    <button id="next-{{ object.user.id }}" class="arrow-btn">&gt;</button>
+                                </div>
+                                <div id="slideshow-{{ object.user.id }}" class="slideshow">
+                                    <img id="qr-image-{{ object.user.id }}"
+                                         alt="QR Code"
+                                         height="300"
+                                         width="400">
+                                    <p id="crypto-address-{{ object.user.id }}" class="crypto-address"></p>
+                                    <p id="tip-message" class="crypto-address"></p>
+                                </div>
+                                <button id="close-{{ object.user.id }}" class="btn btn-danger w-full">Close</button>
+                            </dialog>
                         </div>
                     </div>
                 </div>
@@ -544,6 +610,66 @@
             }
         });
     });
+    const openModal = (btc, eth, bch, userId, cve_score) => {
+        let severityLevel;
+        if (cve_score >= 7.0) {
+            severityLevel = "high";
+        } else if (cve_score >= 4.0) {
+            severityLevel = "medium";
+        } else {
+            severityLevel = "low";
+        }
+
+        let suggestedTip;
+        if (severityLevel === "high") {
+            suggestedTip = "$20";
+        } else if (severityLevel === "medium") {
+            suggestedTip = "$10";
+        } else {
+            suggestedTip = "$5";
+        }
+
+        const cryptoOptions = [
+        { name: 'Bitcoin', address: btc },
+        { name: 'Ethereum', address: eth },
+        { name: 'Bitcoin Cash', address: bch }
+        ];
+        let currentIndex = 0;
+
+        const updateSlide = () => {
+            let { name, address } = cryptoOptions[currentIndex];
+            if (address == '' || address == 'None') {
+                address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
+                document.getElementById('qr-image-'+userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+                document.getElementById('crypto-name-' + userId).textContent = "No address: Will go to BLT Donation";
+                document.getElementById('crypto-address-'+userId).textContent = `BCH: ${address}`;
+            }
+            else{
+            document.getElementById('crypto-name-' + userId).textContent = name;
+            document.getElementById('qr-image-' + userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+            document.getElementById('crypto-address-' + userId).textContent = `${address}`;
+            document.getElementById('tip-message').textContent = `This CVE is a ${severityLevel} severity, we suggest you tip ${suggestedTip}.`;
+            }
+        };
+        updateSlide();
+
+        document.getElementById('openModal-' + userId).addEventListener('click', function() {
+            document.getElementById('dialog-' + userId).showModal();
+        });
+
+        document.getElementById('close-' + userId).addEventListener('click', function() {
+            document.getElementById('dialog-' + userId).close();
+        });
+
+        document.getElementById('prev-' + userId).addEventListener('click', function() {
+            currentIndex = (currentIndex - 1 + cryptoOptions.length) % cryptoOptions.length;
+            updateSlide();
+        });
+
+        document.getElementById('next-' + userId).addEventListener('click', function() {
+            currentIndex = (currentIndex + 1) % cryptoOptions.length;
+            updateSlide();
+        });
+    };
 </script>
 {% endblock content %}
-%}
