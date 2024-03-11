@@ -880,7 +880,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 obj.hunt = hunt
 
             obj.domain = domain
-            #obj.is_hidden = bool(self.request.POST.get("private", False))
+            # obj.is_hidden = bool(self.request.POST.get("private", False))
             obj.cve_score = obj.get_cve_score()
             obj.save()
 
