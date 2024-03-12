@@ -8,29 +8,34 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>
-            {% block title %}
-                {% env 'PROJECT_NAME' %}
-            {% endblock title %}
-        </title>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description"
-              content="{% block description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and companies can get involved and help out.{% endblock description %}">
-        <meta name="keywords"
-              content="{% block keywords %}{% env 'PROJECT_NAME' %}, bug, tracking, company, easy{% endblock keywords %}">
-        <meta name="author" content="">
+        {% block metaTags %}
+            <title>
+                {% block title %}
+                    {% env 'PROJECT_NAME' %}
+                {% endblock title %}
+            </title>
+            <meta name="description"
+                  content="{% block description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and companies can get involved and help out.{% endblock description %}">
+            <meta name="keywords"
+                  content="{% block keywords %}{% env 'PROJECT_NAME' %}, bug, tracking, company, easy{% endblock keywords %}">
+            <meta name="author" content="">
+            <link rel="preconnect" href="https://fonts.gstatic.com">
+            <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap"
+                  rel="stylesheet">
+            <meta property="og:title"
+                  content="{% block og_title %}{% env 'PROJECT_NAME' %}{% endblock og_title %}" />
+            <meta property="og:image"
+                  content="{% block og_image %}{% static 'img/screenshot.png' %}{% endblock og_image %}" />
+            <meta property="og:description"
+                  content="{% block og_description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and companies can get involved and help out.{% endblock og_description %}" />
+            <meta property="og:type" content="website" />
+        {% endblock metaTags %}
         <link rel="preconnect" href="https://fonts.gstatic.com">
         <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap"
               rel="stylesheet">
-        <meta property="og:title"
-              content="{% block og_title %}{% env 'PROJECT_NAME' %}{% endblock og_title %}" />
-        <meta property="og:image"
-              content="{% block og_image %}{% static 'img/screenshot.png' %}{% endblock og_image %}" />
-        <meta property="og:description"
-              content="{% block og_description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and companies can get involved and help out.{% endblock og_description %}" />
-        <meta property="og:type" content="website" />
         <link href="{% static 'vendor/bootstrap/css/bootstrap.css' %}"
               rel="stylesheet">
         <link href="{% static 'css/style.css' %}" rel="stylesheet">
@@ -84,6 +89,7 @@
             }
         </style>
         {% include "includes/header.html" %}
+        {% comment %} <div class="lg:ml-[215px] mt-[90px]"></div> {% endcomment %}
         <div class="lg:ml-[230px] mt-[70px]">
             {% block content %}
             {% endblock content %}

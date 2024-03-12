@@ -1,0 +1,40 @@
+{% if request.user.is_authenticated %}
+    <div id="flag-container">
+        <button name="{{ object.pk }}"
+                type="submit"
+                class="flag-unflag rounded-2xl shadow-md p-5 bg-[#0786fb4d] mb-3 cursor-pointer">
+            {{ flags }}&nbsp;
+            {% if isFlagged %}
+                <i class="fa-solid fa-flag text-3xl text-red-[#174BD2]"></i>
+            {% else %}
+                <i class="fa-regular fa-flag text-3xl text-red-[#174BD2]"></i>
+            {% endif %}
+        </button>
+    </div>
+{% else %}
+    <button disabled
+            class="rounded-2xl shadow-md p-5 bg-[#0786fb4d] mb-3 cursor-pointer">
+        {{ flags }}&nbsp;<i class="fa-regular fa-flag text-3xl text-red-[#174BD2]"></i>
+    </button>
+{% endif %}
+<script>
+    function flag_unflag_handler(e){
+        e.preventDefault();
+        var issue_pk = $(this).attr('name');
+        $.ajax({
+            type: 'GET',
+            url: '/flag_issue3/' + issue_pk + '/',
+            data: {},
+            success: function (data) {
+                $('.flag-unflag').remove();
+                $('#flag-container').append(data);
+            },
+        });
+            // Later, when you want to "destroy" the event handler:
+        $('body').off('click', '.flag-unflag', flag_unflag_handler);
+    }
+
+    // Attach the click event handler
+    $('body').on('click', '.flag-unflag', flag_unflag_handler);
+
+</script>
