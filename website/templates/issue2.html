@@ -612,24 +612,19 @@
     });
     const openModal = (btc, eth, bch, userId, cve_score) => {
         let severityLevel;
-        if (cve_score >= 9.0){
+        let suggestedTip;
+
+        if (cve_score >= 9.0) {
             severityLevel = "critical";
+            suggestedTip = "$50";
         } else if (cve_score >= 7.0) {
             severityLevel = "high";
+            suggestedTip = "$20";
         } else if (cve_score >= 4.0) {
             severityLevel = "medium";
-        } else {
-            severityLevel = "low";
-        }
-
-        let suggestedTip;
-        if (severityLevel === "critical"){
-            suggestedTip = "$50";
-        } else if (severityLevel === "high") {
-            suggestedTip = "$20";
-        } else if (severityLevel === "medium") {
             suggestedTip = "$10";
         } else {
+            severityLevel = "low";
             suggestedTip = "$5";
         }
 
