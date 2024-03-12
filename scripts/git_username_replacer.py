@@ -1,9 +1,9 @@
 """
-    Git Username Replacer: 
-    Safeguard user privacy and enhance security by easily replacing usernames in Git commit history.
-    Protect sensitive information with our tool.
-    
-    Use: python git_username_replacer.py <repo path> <old_author_username> <new_author_username>
+Git Username Replacer:
+Safeguard user privacy and enhance security by easily replacing usernames in Git commit history.
+Protect sensitive information with our tool.
+
+Use: python git_username_replacer.py <repo path> <old_author_username> <new_author_username>
 """
 
 import argparse
