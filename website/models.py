@@ -326,10 +326,7 @@ class Issue(models.Model):
                     cvss_metric_v = next(iter(metrics))
                     score = metrics[cvss_metric_v][0]["cvssData"]["baseScore"]
                     self.score = score
-        except requests.exceptions.HTTPError as e:
-            print(e)
-            return None
-        except requests.exceptions.ReadTimeout as e:
+        except (requests.exceptions.HTTPError, requests.exceptions.ReadTimeout) as e:
             print(e)
             return None
 
