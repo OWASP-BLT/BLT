@@ -313,7 +313,7 @@ class Issue(models.Model):
     def get_absolute_url(self):
         return "/issue/" + str(self.id)
 
-    def save_cve_score(self):
+    def get_cve_score(self):
         if self.cve_id is None:
             return None
         try:
