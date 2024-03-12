@@ -628,9 +628,10 @@ class IssueBaseCreate(object):
                         obj.id,
                     )
                     auth.create_tweet(
-                        text='An Issue "%s" has been reported on %s by %s on %s.\n Have look here %s'
+                        text='@%s An Issue "%s" has been reported on %s by %s on %s.\n Have look here %s'
                         % (
-                            obj.description,
+                            domain.get_twitter_account(),
+                            domain.obj.description,
                             domain,
                             user,
                             settings.PROJECT_NAME,
@@ -1409,12 +1410,8 @@ class DomainDetailView(ListView):
             .annotate(c=Count("label"))
             .order_by()
         )
-        if domain.twitter:
-            context["twitter_url"] = domain.twitter
-        else:
-            twitter_url = "https://twitter.com/%s" % (parsed_url.netloc.split(".")[-2:][0].title())
-            if is_valid_https_url(twitter_url):
-                context["twitter_url"] = twitter_url
+        context["twitter_url"] = domain.get_twitter_account(self.kwargs["slug"])
+
         return context
 
 
