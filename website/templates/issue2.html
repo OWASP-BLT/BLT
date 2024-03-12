@@ -55,7 +55,7 @@
                     </div>
                 </div>
                 <div class="w-full flex justify-between mt-20 flex-wrap-reverse">
-                    <div class="w-full xl:w-[56%] xl:pl-20">
+                    <div class="w-full xl:w-[56%] xl:pl-20 flex flex-col">
                         <div class="border-t-[1px] border-b-[1px] w-full min-h-[70px] flex flex-col xl:flex-row justify-between items-center mb-10 border-gray-300 flex-wrap pt-7 xl:p-0">
                             <div class="flex items-center">
                                 <div class="w-[50px] h-[50px] rounded-full object-fill mr-4 flex items-center justify-center overflow-hidden">
@@ -112,36 +112,37 @@
                                 </a>
                             </div>
                         </div>
-                        <p class="text-3xl font-bold">Screenshots (5)</p>
-                        <div class="w-[full flex overflow-x-scroll">
-                            {% if object.screenshot %}
-                                <a href="{{ object.screenshot.url }}" data-lightbox="image">
-                                    <img class="w-[500px] h-[250px] object-cover rounded-lg m-5"
-                                         src="{{ object.screenshot.url }}"
-                                         alt="Image thumbnail"
-                                         width="auto"
-                                         height="auto">
-                                </a>
-                            {% else %}
-                                {% for screenshot in screenshots %}
-                                    <a href="{{ screenshot.image.url }}" data-lightbox="image">
-                                        <img class="w-[500px] h-[250px] object-cover rounded-lg m-5"
-                                             src="{{ screenshot.image.url }}"
-                                             alt="Screenshot"
-                                             width="auto"
-                                             height="auto">
+                        <div id="screenshot-wrapper" class="col-md-6 w-full">
+                            <h4 class="section-heading">Screenshots:</h4>
+                            <hr>
+                            <div class="screenshot-container h-[400px] overflow-x-scroll overflow-y-clip flex gap-2">
+                                {% if object.screenshot %}
+                                    <a href="{{ object.screenshot.url }}" data-lightbox="image">
+                                        <img src="{{ object.screenshot.url }}"
+                                             class="border-2 border-black"
+                                             height="400"
+                                             width="600"
+                                             alt="screenshot">
                                     </a>
-                                {% endfor %}
-                            {% endif %}
+                                {% else %}
+                                    <div class="flex flex-nowrap gap-5">
+                                        {% for screenshot in screenshots %}
+                                            <div class="relative w-[600px] h-[400px]">
+                                                <a href="{{ screenshot.image.url }}" data-lightbox="image">
+                                                    <img src="{{ screenshot.image.url }}"
+                                                         class="border-2 border-black object-contain w-[600px] h-[400px]"
+                                                         height="400"
+                                                         width="600"
+                                                         alt="screenshot">
+                                                </a>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <hr>
                         </div>
-                        <style>
-                        .reset-style * {
-                            all: revert;
-                        }
-                        .reset-style img{
-                            max-width: 100%;
-                        }
-                        </style>
+                        <h4 class="section-heading">Description:</h4>
                         <div id="bug_report" class="reset-style"></div>
                     </div>
                     <div class="w-full xl:w-[30%] flex flex-row xl:flex-col xl:items-center lg:min-w-[450px] justify-evenly xl:justify-normal items-center flex-wrap">
