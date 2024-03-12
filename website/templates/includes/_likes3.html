@@ -1,0 +1,40 @@
+{% if request.user.is_authenticated %}
+    <div id="like-container">
+        <button name="{{ object.pk }}"
+                type="submit"
+                class="like_unlike rounded-2xl shadow-md p-5 bg-[#ff00004d] mb-3 cursor-pointer">
+            {{ likes }}&nbsp;
+            {% if isLiked %}
+                <i class="fa-solid fa-thumbs-up text-3xl text-red-700"></i>
+            {% else %}
+                <i class="fa-regular fa-thumbs-up text-3xl text-red-700"></i>
+            {% endif %}
+        </button>
+    </div>
+{% else %}
+    <button id="like"
+            disabled
+            class="rounded-2xl shadow-md p-5 bg-[#ff00004d] mb-3 cursor-pointer">
+        {{ likes }}&nbsp;<i class="fa-regular fa-thumbs-up text-3xl text-red-700"></i>
+    </button>
+{% endif %}
+<script>
+                function like_unlike_handler(e) {
+                    e.preventDefault();
+                    var issue_pk = $(this).attr('name');
+                    $.ajax({
+                        type: 'GET',
+                        url: '/like_issue3/' + issue_pk + '/',
+                        data: {},
+                        success: function (data) {
+                            $('.like_unlike').remove();
+                            $('#like-container').append(data);
+                        },
+                    });
+                    // Later, when you want to "destroy" the event handler:
+                    $('body').off('click', '.like_unlike', like_unlike_handler);
+                }
+            
+                // Attach the click event handler
+                $('body').on('click', '.like_unlike', like_unlike_handler);
+</script>

@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% load custom_tags %}
+{% block metaTags %}
+    <title>
+        {% block title %}
+            BLT Issue - {{ object.description|escapejs }}
+        {% endblock title %}
+    </title>
+    <meta name="description"
+          content="{{ object.markdown_description|escapejs }}">
+    {% if object.user.username %}
+        <meta name="author" content="{{ object.user.username }}">
+    {% else %}
+        <meta name="author" content="Anonymous">
+    {% endif %}
+    <meta property="og:title"
+          content="{% block og_title %}{{ object.description }}{% endblock og_title %}" />
+    {% for screenshot in screenshots %}
+        <meta property="og:image"
+              content="https://blt.owasp.org{% block og_image %}{{ screenshot.image.url }}{% endblock og_image %}" />
+    {% endfor %}
+    <meta property="og:description"
+          content="{{ object.markdown_description|escapejs }}" />
+    <meta name="keywords"
+          content="{% block keywords %}BLT, bug, tracking, company, easy{% endblock keywords %}">
+    {% comment %} TODO: change to update DOMAIN {% endcomment %}
+    <link rel="canonical" href="https://blt.owasp.org/issue3/{{ object.id }}">
+    <meta property="og:url"
+          content="https://blt.owasp.org/issue3/{{ object.id }}" />
+    <meta property="og:type" content="website" />
+    <meta name="robots" content="index, follow">
+{% endblock metaTags %}
+{% load static %}
+{% load gravatar %}
+{% load custom_tags %}
+{% block head %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.0/flowbite.min.js"
+            integrity="sha384-SXh3DHBSUxvOFk7+R9qN3hv+DtgPJz4vQwOArU6zxWGnvtR1sy+XmzKUkNh2qWST"
+            crossorigin="anonymous"></script>
+{% endblock head %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    {% comment %} TODO:
+    delete these files after final is ready 
+    {% include "includes/_likes2.html" %}
+    {% include "includes/_dislike2.html" %}
+    {% include "includes/_flags2.html" %}
+    {% include "includes/_bookmark2.html" %}
+    {% endcomment %}
+    {% include "includes/_like_dislike_share.html" %}
+    <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-white pl-[3%]">
+        <h2 class="font-[ubuntu] font-bold text-3xl">{{ object.description | truncatechars:100|escapejs }}</h2>
+        <p>
+            <a href="{{ object.url }}"
+               class="text-red-600"
+               target="_blank"
+               rel="noopener noreferrer">{{ object.url | truncatechars:100 }}</a>
+        </p>
+        <br>
+        <div class="container max-sm:mt-[30%] mx-auto px-4 md:px-12">
+            <div class="flex justify-evenly flex-wrap -mx-1 lg:-mx-4">
+                <div class="my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-3/12 rounded-2xl shadow-md p-7">
+                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo vero incidunt reprehenderit illo tenetur numquam hic ut optio esse eos minus dignissimos ducimus officia ab quidem quis, corrupti tempore voluptates.
+                </div>
+                <br>
+                <div class="my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-3/12 rounded-2xl shadow-md p-7">
+                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo vero incidunt reprehenderit illo tenetur numquam hic ut optio esse eos minus dignissimos ducimus officia ab quidem quis, corrupti tempore voluptates.
+                </div>
+                <br>
+                <div class="my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-3/12 rounded-2xl shadow-md p-7">
+                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo vero incidunt reprehenderit illo tenetur numquam hic ut optio esse eos minus dignissimos ducimus officia ab quidem quis, corrupti tempore voluptates.
+                </div>
+                <br>
+            </div>
+        </div>
+        <br>
+        <h3 class="font-[ubuntu] font-bold text-2xl">Issue Description</h3>
+        <p class="text-justify max-sm:w-[95vw] lg:w-11/12">{{ object.markdown_description|escapejs }}</p>
+    </div>
+    <script src="{% static '/company/js/md_editor.js' %}"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.1.0/dist/markdown-it.min.js"></script>
+    <script>
+    const md = window.markdownit();
+    const markdownContent = `{{ object.markdown_description|escapejs }}`;
+    const renderedHtml = md.render(markdownContent);
+    // const renderedHtml = parse(markdownContent);
+    // const renderedHtml = marked.parse(markdownContent)
+
+    $("#bug_report").html(renderedHtml);
+
+
+    function subscribe_domain(){
+        $.ajax({
+            type: 'GET',
+            url: '/domain/{{ object.domain.id }}/subscribe/',
+            data: {},
+            success: function (data) {
+                
+                if (data === "SUBSCRIBED"){
+                    $("#subscribe_domain_btn").text("Click To Unsubscribe");
+                    $.notify("Subscribed!", {
+                        style: "custom",
+                        className: "success"
+                    });
+                }
+
+                else if (data === "UNSUBSCRIBED"){
+                    $("#subscribe_domain_btn").text("Click To Subscribe");
+                    $.notify("Unsubscribed!", {
+                        style: "custom",
+                        className: "success"
+                    });
+                }
+            },
+            error: function () {
+                $.notify("Some error occurred!", {
+                    style: "custom",
+                    className: "danger"
+                });
+            }
+        })
+    }
+
+
+
+    $(document).on('click', '.edit-issue-status',(e)=>{
+        var s = $('.status').text();
+        var action = s == "open" ? "close" : "open";
+        $.ajax({
+            type: 'POST',
+            url: '/issue/update/',
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader('X-CSRFToken', "{{csrf_token}}");
+            },
+            data: {
+                issue_pk: "{{object.id}}",
+                action: action
+            },
+            success: function (data) {
+                console.log(data);
+
+                if (data == "Updated") {
+                    if (action == "open") {
+                        $('.status').text('open');
+                        $('.status').removeClass('label-danger');
+                        $('.status').addClass('label-success');
+                        $('#issue_stat').text('Click to Close');
+                        $.notify("Issue Opened!", {
+                        style: "custom",
+                        className: "success"
+                        });
+                    } else {
+                        $('.status').text('closed');
+                        $('.status').removeClass('label-success');
+                        $('.status').addClass('label-danger');
+                        $('#issue_stat').text('Click to Open');
+                        $.notify("Issue Closed!", {
+                        style: "custom",
+                        className: "success"
+                        });
+                    }
+                } else {
+                    $.notify(
+                        "Only the user who has submitted the bug and superuser can close/open an issue"
+                    ), {
+                        style: "custom",
+                        className: "danger"
+                    }
+                }
+            },
+            error: function () {
+                $.notify("Some error occurred!", {
+                    style: "custom",
+                    className: "danger"
+                });
+            }
+        })
+    })
+
+    function sanitizeURL(url) {
+        var a = document.createElement('a');
+        a.href = encodeURI(url);
+        return a.href;
+    }
+
+    var label = "{{object.label}}";
+    $(document).on('click', '.edit-issue', function (e) {
+        $issue_desc = $('.issue-desc').text().trim();
+        $('.form input[name=description]').val($issue_desc);
+        $('.form input[name=domain]').val($('.issue-domain').text());
+        $('.form select').val(label);
+        $('.editables').hide();
+        $('.form').show();
+    });
+
+    $(document).on('click', '.cancel-edit', function (e) {
+        $('.form').hide();
+        $('.editables').show();
+    });
+
+    $(document).on('click', '.save-issue', function (e) {
+        e.preventDefault();
+
+        if ($('.form input[name=description]').val().trim().length == 0 ||
+            $('.form input[name=domain]').val().trim().length == 0) {
+            return;
+        }
+        var dom_regex = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi;
+        dom_regex = new RegExp(dom_regex);
+        var domain_url = $('.form input[name=domain]').val();
+        if (domain_url.match(dom_regex) == null) {
+            alert('Enter a valid url');
+            return;
+        }
+
+
+        $.ajax({
+            type: 'POST',
+            url: '/issue/edit/',
+            data: {
+                issue_pk: $('#issue_pk').val(),
+                domain: $('.form input[name=domain]').val(),
+                description: $('.form input[name=description]').val(),
+                label: $('.form select').val(),
+                csrfmiddlewaretoken: $('.form input[name=csrfmiddlewaretoken]').val(),
+            },
+            success: function (data) {
+                $('.issue-desc').text($('.form input[name=description]').val());
+                $('.issue-domain').text($('.form input[name=domain]').val());
+                var sanitizedDomain = sanitizeURL($('.form input[name=domain]').val());
+                $('.issue-domain').attr("href", sanitizedDomain);
+                label = $('.form select').val();
+                var l = $(".form select option[value='" + label + "']").text();
+                $('.bug-label').text(l);
+                $('.form').hide();
+                $('.editables').show();
+                $.notify("Issue updated!", {
+                    style: "custom",
+                    className: "success"
+                });
+                if (data === "Domain Created")
+                    $.notify("Domain Added!", {
+                        style: "custom",
+                        className: "success"
+                    });
+            },
+            error: function () {
+                $.notify("Some error occurred!", {
+                    style: "custom",
+                    className: "danger"
+                });
+            }
+        });
+    });
+    </script>
+{% endblock content %}

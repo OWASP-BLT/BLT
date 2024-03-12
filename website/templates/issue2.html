@@ -277,10 +277,15 @@
                             <button onclick="subscribe_domain()"
                                     id="subscribe_domain_btn"
                                     class="bg-red-600 hover:bg-red-800 text-white text-2xl px-10 py-3 rounded-lg">
-                                {% if subscribed_to_domain %}
-                                    Click to Unsubscribe
+                                {% if user.is_authenticated %}
+                                    {% if subscribed_to_domain %}
+                                        Click to Unsubscribe
+                                    {% else %}
+                                        Click to Subscribe
+                                    {% endif %}
                                 {% else %}
-                                    Click to Subscribe
+                                    <a href="{% url 'account_login' %}"
+                                       class="text-white font-bold rounded-lg text-lg px-5 py-2.5">Login to Subscribe</a>
                                 {% endif %}
                             </button>
                         </div>
