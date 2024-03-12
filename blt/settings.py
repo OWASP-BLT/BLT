@@ -6,6 +6,7 @@ https://docs.djangoproject.com/en/1.8/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.8/ref/settings/
 """
+
 # from google.oauth2 import service_account
 import os
 import socket

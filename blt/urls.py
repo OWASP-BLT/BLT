@@ -31,7 +31,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
-from website.views import (
+from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
     AllIssuesView,
     CompanySettings,
     ContributorStatsView,
@@ -55,6 +55,7 @@ from website.views import (
     IssueCreate,
     IssueView,
     IssueView2,
+    IssueView3,
     JoinCompany,
     ListHunts,
     OngoingHunts,
@@ -70,11 +71,14 @@ from website.views import (
     UserProfileDetailView,
     contributors_view,
     dislike_issue2,
+    dislike_issue3,
     facebook_callback,
     flag_issue2,
+    flag_issue3,
     github_callback,
     google_callback,
     like_issue2,
+    like_issue3,
     subscribe_to_domains,
     vote_count,
 )
@@ -264,6 +268,7 @@ urlpatterns = [
         name="user_profile",
     ),
     path(settings.ADMIN_URL + "/", admin.site.urls),
+    # TODO: REMOVE after _3 is ready
     re_path(r"^like_issue/(?P<issue_pk>\d+)/$", website.views.like_issue, name="like_issue"),
     re_path(
         r"^dislike_issue/(?P<issue_pk>\d+)/$",
@@ -274,6 +279,9 @@ urlpatterns = [
     re_path(r"^like_issue2/(?P<issue_pk>\d+)/$", like_issue2, name="like_issue2"),
     re_path(r"^dislike_issue2/(?P<issue_pk>\d+)/$", dislike_issue2, name="dislike_issue2"),
     re_path(r"^flag_issue2/(?P<issue_pk>\d+)/$", flag_issue2, name="flag_issue2"),
+    re_path(r"^like_issue3/(?P<issue_pk>\d+)/$", like_issue3, name="like_issue3"),
+    re_path(r"^dislike_issue3/(?P<issue_pk>\d+)/$", dislike_issue3, name="dislike_issue3"),
+    re_path(r"^flag_issue3/(?P<issue_pk>\d+)/$", flag_issue3, name="flag_issue3"),
     re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
     re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
@@ -301,8 +309,10 @@ urlpatterns = [
     ),
     # delete_comment
     path("issue2/comment/delete/", website.views.delete_comment, name="delete_comment"),
+    # TODO: REMOVE after _3 is ready
     re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
     re_path(r"^issue2/(?P<slug>\w+)/$", IssueView2.as_view(), name="issue_view2"),
+    re_path(r"^issue3/(?P<slug>\w+)/$", IssueView3.as_view(), name="issue_view3"),
     re_path(r"^follow/(?P<user>[^/]+)/", website.views.follow_user, name="follow_user"),
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
     re_path(r"^label_activity/$", SpecificIssuesView.as_view(), name="all_activitys"),
