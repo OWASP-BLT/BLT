@@ -670,6 +670,34 @@ class IssueBaseCreate(object):
                 [email_to],
                 html_message=msg_html,
             )
+            try:
+                auth = tweepy.Client(
+                    settings.BEARER_TOKEN,
+                    settings.APP_KEY,
+                    settings.APP_KEY_SECRET,
+                    settings.ACCESS_TOKEN,
+                    settings.ACCESS_TOKEN_SECRET,
+                )
+                if obj.is_hidden:
+                    pass
+                else:
+                    blt_url = "https://" + "%s/issue/%d" % (
+                        settings.DOMAIN_NAME,
+                        obj.id,
+                    )
+                    auth.create_tweet(
+                        text='@%s An Issue "%s" has been reported on %s by %s on %s.\n Have look here %s'
+                        % (
+                            domain.get_twitter_account(),
+                            domain.obj.description,
+                            domain,
+                            user,
+                            settings.PROJECT_NAME,
+                            blt_url,
+                        )
+                    )
+            except Exception as e:
+                print(e)
 
         else:
             email_to = domain.email
@@ -1495,13 +1523,8 @@ class DomainDetailView(ListView):
             .annotate(c=Count("label"))
             .order_by()
         )
-        if domain.twitter:
-            context["twitter_url"] = domain.twitter
-        else:
-            twitter_url = "https://twitter.com/%s" % (parsed_url.netloc.split(".")[-2:][0].title())
-            if is_valid_https_url(twitter_url):
-                context["twitter_url"] = twitter_url
-                print(twitter_url)
+        context["twitter_url"] = domain.get_twitter_account(self.kwargs["slug"])
+
         return context
 
 
