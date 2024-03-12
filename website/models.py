@@ -313,21 +313,25 @@ class Issue(models.Model):
     def get_absolute_url(self):
         return "/issue/" + str(self.id)
 
-    def get_cve_score(self):
-        if self.cve_id:
-            try:
-                url = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=%s" % (self.cve_id)
-                response = requests.get(url).json()
-                results = response["resultsPerPage"]
-                if results != 0:
-                    metrics = response["vulnerabilities"][0]["cve"]["metrics"]
-                    if metrics:
-                        cvss_metric_v = next(iter(metrics))
-                        score = metrics[cvss_metric_v][0]["cvssData"]["baseScore"]
-                        self.score = score
-                    return score
-            except Exception as e:
-                print(e)
+    def save_cve_score(self):
+        if self.cve_id is None:
+            return None
+        try:
+            url = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=%s" % (self.cve_id)
+            response = requests.get(url).json()
+            results = response["resultsPerPage"]
+            if results != 0:
+                metrics = response["vulnerabilities"][0]["cve"]["metrics"]
+                if metrics:
+                    cvss_metric_v = next(iter(metrics))
+                    score = metrics[cvss_metric_v][0]["cvssData"]["baseScore"]
+                    self.score = score
+        except requests.exceptions.HTTPError as e:
+            print(e)
+            return None
+        except requests.exceptions.ReadTimeout as e:
+            print(e)
+            return None
 
     class Meta:
         ordering = ["-created"]

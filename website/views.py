@@ -881,7 +881,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             obj.domain = domain
             # obj.is_hidden = bool(self.request.POST.get("private", False))
-            obj.cve_score = obj.get_cve_score()
+            obj.cve_score = obj.save_cve_score()
             obj.save()
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):
