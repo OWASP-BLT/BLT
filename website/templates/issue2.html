@@ -100,6 +100,7 @@
                             </div>
                             <div class="w-full xl:w-[100%] mt-10 xl:mt-0 flex flex-wrap justify-between text-black">
                                 {% include "includes/_likes2.html" %}
+                                {% include "includes/_dislike2.html" %}
                                 {% include "includes/_flags2.html" %}
                                 {% include "includes/_bookmark2.html" %}
                                 <a target="_blank"
@@ -172,6 +173,10 @@
                                     <div class="w-full flex justify-between my-3">
                                         <p class="text-3xl font-bold">Reported On:</p>
                                         <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">{{ object.created }}</span>
+                                    </div>
+                                    <div class="w-full flex justify-between my-3">
+                                        <p class="text-3xl font-bold">CVE ID:</p>
+                                        <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">{{ object.cve_id }}</span>
                                     </div>
                                     <div class="w-full flex justify-between my-3">
                                         <p class="text-3xl font-bold">Submitted:</p>
@@ -272,10 +277,15 @@
                             <button onclick="subscribe_domain()"
                                     id="subscribe_domain_btn"
                                     class="bg-red-600 hover:bg-red-800 text-white text-2xl px-10 py-3 rounded-lg">
-                                {% if subscribed_to_domain %}
-                                    Click to Unsubscribe
+                                {% if user.is_authenticated %}
+                                    {% if subscribed_to_domain %}
+                                        Click to Unsubscribe
+                                    {% else %}
+                                        Click to Subscribe
+                                    {% endif %}
                                 {% else %}
-                                    Click to Subscribe
+                                    <a href="{% url 'account_login' %}"
+                                       class="text-white font-bold rounded-lg text-lg px-5 py-2.5">Login to Subscribe</a>
                                 {% endif %}
                             </button>
                         </div>

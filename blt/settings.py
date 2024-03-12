@@ -6,6 +6,7 @@ https://docs.djangoproject.com/en/1.8/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.8/ref/settings/
 """
+
 # from google.oauth2 import service_account
 import os
 import socket
@@ -22,6 +23,7 @@ environ.Env.read_env()
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
 
 # Check the current hostname and adjust PROJECT_NAME and DOMAIN_NAME accordingly
 current_hostname = socket.gethostname()
@@ -297,6 +299,7 @@ if "DATABASE_URL" in os.environ:
         send_default_pii=True,
         traces_sample_rate=1.0,
         profiles_sample_rate=1.0,
+        release=os.environ.get("HEROKU_RELEASE_VERSION", default=""),
     )
 
 else:

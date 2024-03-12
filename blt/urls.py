@@ -31,9 +31,10 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
-from website.views import (
+from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
     AllIssuesView,
     CompanySettings,
+    ContributorStatsView,
     CreateHunt,
     CustomObtainAuthToken,
     DomainDetailView,
@@ -54,6 +55,7 @@ from website.views import (
     IssueCreate,
     IssueView,
     IssueView2,
+    IssueView3,
     JoinCompany,
     ListHunts,
     OngoingHunts,
@@ -64,15 +66,21 @@ from website.views import (
     StatsDetailView,
     UpcomingHunts,
     UploadCreate,
+    UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
     contributors_view,
+    dislike_issue2,
+    dislike_issue3,
     facebook_callback,
     flag_issue2,
+    flag_issue3,
     github_callback,
     google_callback,
     like_issue2,
+    like_issue3,
     subscribe_to_domains,
+    vote_count,
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
@@ -119,24 +127,19 @@ urlpatterns = [
     re_path(r"^auth/", include("dj_rest_auth.urls")),
     re_path("auth/facebook", FacebookLogin.as_view(), name="facebook_login"),
     path("accounts/", include("allauth.urls")),
+    path("accounts/delete/", UserDeleteView.as_view(), name="delete"),
     path("auth/github/", GithubLogin.as_view(), name="github_login"),
     path("auth/google/", GoogleLogin.as_view(), name="google_login"),
     path("accounts/github/login/callback/", github_callback, name="github_callback"),
     path("accounts/google/login/callback/", google_callback, name="google_callback"),
-    path(
-        "accounts/facebook/login/callback/", facebook_callback, name="facebook_callback"
-    ),
-    re_path(
-        r"^auth/facebook/connect/$", FacebookConnect.as_view(), name="facebook_connect"
-    ),
+    path("accounts/facebook/login/callback/", facebook_callback, name="facebook_callback"),
+    re_path(r"^auth/facebook/connect/$", FacebookConnect.as_view(), name="facebook_connect"),
     re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
     re_path(r"^auth/google/connect/$", GoogleConnect.as_view(), name="google_connect"),
     path("auth/github/url/", github_views.oauth2_login),
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),
-    path(
-        "socialaccounts/", SocialAccountListView.as_view(), name="social_account_list"
-    ),
+    path("socialaccounts/", SocialAccountListView.as_view(), name="social_account_list"),
     path(
         "socialaccounts/<int:pk>/disconnect/",
         SocialAccountDisconnectView.as_view(),
@@ -152,32 +155,26 @@ urlpatterns = [
         schema_view.with_ui("swagger", cache_timeout=0),
         name="schema-swagger-ui",
     ),
-    re_path(
-        r"^redoc/$", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"
-    ),
+    re_path(r"^redoc/$", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
     re_path(r"^$", website.views.newhome, name="index"),
     re_path(r"^newhome/$", website.views.index, name="newhome"),
     re_path(
         r"^dashboard/company/$",
         website.views.company_dashboard,
-        name="company_dashboar_home",
+        name="company_dashboard_home",
     ),
     re_path(
         r"^dashboard/user/profile/addbalance$",
         website.views.addbalance,
         name="addbalance",
     ),
-    re_path(
-        r"^dashboard/user/profile/withdraw$", website.views.withdraw, name="withdraw"
-    ),
+    re_path(r"^dashboard/user/profile/withdraw$", website.views.withdraw, name="withdraw"),
     re_path(
         r"^dashboard/user/stripe/connected/(?P<username>[^/]+)/$",
         website.views.stripe_connected,
         name="stripe_connected",
     ),
-    re_path(
-        r"^dashboard/admin$", website.views.admin_dashboard, name="admin_dashboard"
-    ),
+    re_path(r"^dashboard/admin$", website.views.admin_dashboard, name="admin_dashboard"),
     re_path(
         r"^dashboard/admin/company$",
         website.views.admin_company_dashboard,
@@ -224,13 +221,9 @@ urlpatterns = [
         website.views.admin_company_dashboard_detail,
         name="admin_company_dashboard_detail",
     ),
-    re_path(
-        r"^dashboard/company/hunt/create$", CreateHunt.as_view(), name="create_hunt"
-    ),
+    re_path(r"^dashboard/company/hunt/create$", CreateHunt.as_view(), name="create_hunt"),
     path("hunt/<int:pk>", ShowBughuntView.as_view(), name="show_bughunt"),
-    re_path(
-        r"^dashboard/company/hunt/drafts$", DraftHunts.as_view(), name="draft_hunts"
-    ),
+    re_path(r"^dashboard/company/hunt/drafts$", DraftHunts.as_view(), name="draft_hunts"),
     re_path(
         r"^dashboard/company/hunt/upcoming$",
         UpcomingHunts.as_view(),
@@ -275,25 +268,27 @@ urlpatterns = [
         name="user_profile",
     ),
     path(settings.ADMIN_URL + "/", admin.site.urls),
-    re_path(
-        r"^like_issue/(?P<issue_pk>\d+)/$", website.views.like_issue, name="like_issue"
-    ),
+    # TODO: REMOVE after _3 is ready
+    re_path(r"^like_issue/(?P<issue_pk>\d+)/$", website.views.like_issue, name="like_issue"),
     re_path(
         r"^dislike_issue/(?P<issue_pk>\d+)/$",
         website.views.dislike_issue,
         name="dislike_issue",
     ),
-    re_path(
-        r"^flag_issue/(?P<issue_pk>\d+)/$", website.views.flag_issue, name="flag_issue"
-    ),
+    re_path(r"^flag_issue/(?P<issue_pk>\d+)/$", website.views.flag_issue, name="flag_issue"),
     re_path(r"^like_issue2/(?P<issue_pk>\d+)/$", like_issue2, name="like_issue2"),
+    re_path(r"^dislike_issue2/(?P<issue_pk>\d+)/$", dislike_issue2, name="dislike_issue2"),
     re_path(r"^flag_issue2/(?P<issue_pk>\d+)/$", flag_issue2, name="flag_issue2"),
-    path(
-        "domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"
-    ),
-    re_path(
-        r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"
-    ),
+    re_path(r"^like_issue3/(?P<issue_pk>\d+)/$", like_issue3, name="like_issue3"),
+    re_path(r"^dislike_issue3/(?P<issue_pk>\d+)/$", dislike_issue3, name="dislike_issue3"),
+    re_path(r"^flag_issue3/(?P<issue_pk>\d+)/$", flag_issue3, name="flag_issue3"),
+    re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
+    path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
+    re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
+    path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
+    re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
+    path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
+    re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
     re_path(
         r"^unsave_issue/(?P<issue_pk>\d+)/$",
         website.views.unsave_issue,
@@ -314,14 +309,14 @@ urlpatterns = [
     ),
     # delete_comment
     path("issue2/comment/delete/", website.views.delete_comment, name="delete_comment"),
+    # TODO: REMOVE after _3 is ready
     re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
     re_path(r"^issue2/(?P<slug>\w+)/$", IssueView2.as_view(), name="issue_view2"),
+    re_path(r"^issue3/(?P<slug>\w+)/$", IssueView3.as_view(), name="issue_view3"),
     re_path(r"^follow/(?P<user>[^/]+)/", website.views.follow_user, name="follow_user"),
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
     re_path(r"^label_activity/$", SpecificIssuesView.as_view(), name="all_activitys"),
-    re_path(
-        r"^leaderboard/$", GlobalLeaderboardView.as_view(), name="leaderboard_global"
-    ),
+    re_path(r"^leaderboard/$", GlobalLeaderboardView.as_view(), name="leaderboard_global"),
     re_path(
         r"^leaderboard/monthly/$",
         SpecificMonthLeaderboardView.as_view(),
@@ -335,20 +330,18 @@ urlpatterns = [
     re_path(
         r"^api/v1/issue/like/(?P<id>\w+)/$",
         LikeIssueApiView.as_view(),
-        name="like_issue",
+        name="api_like_issue",
     ),
     re_path(
         r"^api/v1/issue/flag/(?P<id>\w+)/$",
         FlagIssueApiView.as_view(),
-        name="flag_issue",
+        name="api_flag_issue",
     ),
-    re_path(
-        r"^api/v1/leaderboard/$", LeaderboardApiViewSet.as_view(), name="leaderboard"
-    ),
+    re_path(r"^api/v1/leaderboard/$", LeaderboardApiViewSet.as_view(), name="leaderboard"),
     re_path(
         r"^api/v1/invite_friend/",
         InviteFriendApiViewset.as_view(),
-        name="invite_friend",
+        name="api_invite_friend",
     ),
     re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
@@ -357,9 +350,7 @@ urlpatterns = [
         UploadCreate.as_view(),
         name="upload",
     ),
-    re_path(
-        r"^profile/(?P<slug>[^/]+)/$", UserProfileDetailView.as_view(), name="profile"
-    ),
+    re_path(r"^profile/(?P<slug>[^/]+)/$", UserProfileDetailView.as_view(), name="profile"),
     re_path(r"^domain/(?P<slug>.+)/$", DomainDetailView.as_view(), name="domain"),
     re_path(
         r"^.well-known/acme-challenge/(?P<token>[^/]+)/$",
@@ -367,9 +358,7 @@ urlpatterns = [
         name="find_key",
     ),
     re_path(r"^accounts/profile/", website.views.profile, name="account_profile"),
-    re_path(
-        r"^delete_issue/(?P<id>\w+)/$", website.views.delete_issue, name="delete_issue"
-    ),
+    re_path(r"^delete_issue/(?P<id>\w+)/$", website.views.delete_issue, name="delete_issue"),
     re_path(
         r"^remove_user_from_issue/(?P<id>\w+)/$",
         website.views.remove_user_from_issue,
@@ -381,22 +370,17 @@ urlpatterns = [
         website.views.sitemap,
         name="sitemap",
     ),
-    re_path(
-        r"^start/$", TemplateView.as_view(template_name="hunt.html"), name="start_hunt"
-    ),
+    re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html"), name="start_hunt"),
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
     re_path(r"^hunts/$", ListHunts.as_view(), name="hunts"),
+    re_path(r"^invite/$", InviteCreate.as_view(template_name="invite.html"), name="invite"),
+    re_path(r"^terms/$", TemplateView.as_view(template_name="terms.html"), name="terms"),
+    re_path(r"^about/$", TemplateView.as_view(template_name="about.html"), name="about"),
+    re_path(r"^teams/$", TemplateView.as_view(template_name="teams.html"), name="teams"),
     re_path(
-        r"^invite/$", InviteCreate.as_view(template_name="invite.html"), name="invite"
-    ),
-    re_path(
-        r"^terms/$", TemplateView.as_view(template_name="terms.html"), name="terms"
-    ),
-    re_path(
-        r"^about/$", TemplateView.as_view(template_name="about.html"), name="about"
-    ),
-    re_path(
-        r"^teams/$", TemplateView.as_view(template_name="teams.html"), name="teams"
+        r"^googleplayapp/$",
+        TemplateView.as_view(template_name="coming_soon.html"),
+        name="googleplayapp",
     ),
     re_path(
         r"^projects/$",
@@ -409,9 +393,7 @@ urlpatterns = [
         TemplateView.as_view(template_name="deletions.html"),
         name="deletions",
     ),
-    re_path(
-        r"^bacon/$", TemplateView.as_view(template_name="bacon.html"), name="bacon"
-    ),
+    re_path(r"^bacon/$", TemplateView.as_view(template_name="bacon.html"), name="bacon"),
     re_path(r"^bltv/$", TemplateView.as_view(template_name="bltv.html"), name="bltv"),
     re_path(
         r"^privacypolicy/$",
@@ -426,12 +408,8 @@ urlpatterns = [
         name="inbound_event_webhook_callback",
     ),
     re_path(r"^issue/comment/add/$", comments.views.add_comment, name="add_comment"),
-    re_path(
-        r"^issue/comment/delete/$", comments.views.delete_comment, name="delete_comment"
-    ),
-    re_path(
-        r"^comment/autocomplete/$", comments.views.autocomplete, name="autocomplete"
-    ),
+    re_path(r"^issue/comment/delete/$", comments.views.delete_comment, name="delete_comment"),
+    re_path(r"^comment/autocomplete/$", comments.views.autocomplete, name="autocomplete"),
     re_path(
         r"^issue/(?P<pk>\d+)/comment/edit/$",
         comments.views.edit_comment,
@@ -442,9 +420,7 @@ urlpatterns = [
         comments.views.reply_comment,
         name="reply_comment",
     ),
-    re_path(
-        r"^social/$", TemplateView.as_view(template_name="social.html"), name="social"
-    ),
+    re_path(r"^social/$", TemplateView.as_view(template_name="social.html"), name="social"),
     re_path(r"^search/$", website.views.search, name="search"),
     re_path(r"^report/$", IssueCreate.as_view(), name="report"),
     re_path(r"^i18n/", include("django.conf.urls.i18n")),
@@ -455,13 +431,9 @@ urlpatterns = [
     re_path(r"^api/v2/hunts/$", BugHuntApiViewsetV2.as_view(), name="hunts_detail_v2"),
     re_path(r"^api/v1/userscore/$", website.views.get_score, name="get_score"),
     re_path(r"^authenticate/", CustomObtainAuthToken.as_view()),
-    re_path(
-        r"^api/v1/createwallet/$", website.views.create_wallet, name="create_wallet"
-    ),
+    re_path(r"^api/v1/createwallet/$", website.views.create_wallet, name="create_wallet"),
     re_path(r"^api/v1/count/$", website.views.issue_count, name="api_count"),
-    re_path(
-        r"^api/v1/contributors/$", website.views.contributors, name="api_contributor"
-    ),
+    re_path(r"^api/v1/contributors/$", website.views.contributors, name="api_contributor"),
     re_path(
         r"^api/v1/createissues/$",
         csrf_exempt(IssueCreate.as_view()),
@@ -487,20 +459,21 @@ urlpatterns = [
         csrf_exempt(website.views.UpdateIssue),
         name="update_api_issue",
     ),
-    re_path(
-        r"^api/v1/scoreboard/$", website.views.get_scoreboard, name="api_scoreboard"
-    ),
+    re_path(r"^api/v1/scoreboard/$", website.views.get_scoreboard, name="api_scoreboard"),
     re_path(
         r"^api/v1/terms/$",
         csrf_exempt(TemplateView.as_view(template_name="mobile_terms.html")),
+        name="api_terms",
     ),
     re_path(
         r"^api/v1/about/$",
         csrf_exempt(TemplateView.as_view(template_name="mobile_about.html")),
+        name="api_about",
     ),
     re_path(
         r"^api/v1/privacypolicy/$",
         csrf_exempt(TemplateView.as_view(template_name="mobile_privacy.html")),
+        name="api_privacypolicy",
     ),
     re_path(r"^error/", website.views.throw_error, name="post_error"),
     re_path(r"^tz_detect/", include("tz_detect.urls")),
@@ -522,6 +495,12 @@ urlpatterns = [
         "update_bch_address/",
         website.views.update_bch_address,
         name="update_bch_address",
+    ),
+    re_path(r"^contributor-stats/$", ContributorStatsView.as_view(), name="contributor-stats"),
+    re_path(
+        r"^contributor-stats/today$",
+        ContributorStatsView.as_view(today=True),
+        name="today-contributor-stats",
     ),
 ]
 

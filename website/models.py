@@ -56,9 +56,7 @@ class Company(models.Model):
     facebook = models.URLField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
-    subscription = models.ForeignKey(
-        Subscription, null=True, blank=True, on_delete=models.CASCADE
-    )
+    subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=False)
 
     def __str__(self):
@@ -66,9 +64,7 @@ class Company(models.Model):
 
 
 class Domain(models.Model):
-    company = models.ForeignKey(
-        Company, null=True, blank=True, on_delete=models.CASCADE
-    )
+    company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_domains")
     name = models.CharField(max_length=255, unique=True)
     url = models.URLField()
@@ -207,9 +203,7 @@ class HuntPrize(models.Model):
     hunt = models.ForeignKey(Hunt, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
     value = models.PositiveIntegerField(default=0)
-    no_of_eligible_projects = models.PositiveIntegerField(
-        default=1
-    )  # no of winner in this prize
+    no_of_eligible_projects = models.PositiveIntegerField(default=1)  # no of winner in this prize
     valid_submissions_eligible = models.BooleanField(
         default=False
     )  # all valid submissions are winners in this prize
@@ -232,9 +226,7 @@ class Issue(models.Model):
         (7, "Server Down"),
     )
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    team_members = models.ManyToManyField(
-        User, related_name="reportmembers", blank=True
-    )
+    team_members = models.ManyToManyField(User, related_name="reportmembers", blank=True)
     hunt = models.ForeignKey(Hunt, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     url = models.URLField()
@@ -261,6 +253,7 @@ class Issue(models.Model):
     is_hidden = models.BooleanField(default=False)
     rewarded = models.PositiveIntegerField(default=0)  # money rewarded by the company
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
+    cve_id = models.CharField(max_length=16, null=True, blank=True)
 
     def __unicode__(self):
         return self.description
@@ -293,8 +286,7 @@ class Issue(models.Model):
             + self.domain_title
             + spacer
             + self.description[
-                : 140
-                - (len(prefix) + len(self.domain_title) + len(spacer) + len(issue_link))
+                : 140 - (len(prefix) + len(self.domain_title) + len(spacer) + len(issue_link))
             ]
             + issue_link
         )
@@ -326,9 +318,7 @@ class Issue(models.Model):
 
 class IssueScreenshot(models.Model):
     image = models.ImageField(upload_to="screenshots", validators=[validate_image])
-    issue = models.ForeignKey(
-        Issue, on_delete=models.CASCADE, related_name="screenshots"
-    )
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
 
     # def delete(self, *args, **kwargs):
     #     if self.image:
@@ -359,7 +349,7 @@ def update_issue_image_access(sender, instance, **kwargs):
             if "hidden" not in old_name:
                 filename = screenshot.image.name
                 extension = filename.split(".")[-1]
-                name = filename[12:99] + "hidden" + str(uuid.uuid4()) + "." + extension
+                name = filename[:20] + "hidden" + str(uuid.uuid4())[:40] + "." + extension
                 default_storage.save(f"screenshots/{name}", screenshot.image)
                 default_storage.delete(old_name)
                 screenshot.image = f"screenshots/{name}"
@@ -398,12 +388,8 @@ class Points(models.Model):
 
 
 class InviteFriend(models.Model):
-    sender = models.ForeignKey(
-        User, related_name="sent_invites", on_delete=models.CASCADE
-    )
-    recipients = models.ManyToManyField(
-        User, related_name="received_invites", blank=True
-    )
+    sender = models.ForeignKey(User, related_name="sent_invites", on_delete=models.CASCADE)
+    recipients = models.ManyToManyField(User, related_name="received_invites", blank=True)
     referral_code = models.CharField(max_length=100, default=uuid.uuid4, editable=False)
     point_by_referral = models.IntegerField(default=0)
 
@@ -426,33 +412,23 @@ class UserProfile(models.Model):
         (3, "Gold"),
         (4, "Platinum"),
     )
-    follows = models.ManyToManyField(
-        "self", related_name="follower", symmetrical=False, blank=True
-    )
-    user = AutoOneToOneField(
-        "auth.user", related_name="userprofile", on_delete=models.CASCADE
-    )
+    follows = models.ManyToManyField("self", related_name="follower", symmetrical=False, blank=True)
+    user = AutoOneToOneField("auth.user", related_name="userprofile", on_delete=models.CASCADE)
     user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
     title = models.IntegerField(choices=title, default=0)
     description = models.TextField(blank=True, null=True)
-    winnings = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True
-    )
+    winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
-    issue_downvoted = models.ManyToManyField(
-        Issue, blank=True, related_name="downvoted"
-    )
+    issue_downvoted = models.ManyToManyField(Issue, blank=True, related_name="downvoted")
     issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
     issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
     issues_hidden = models.BooleanField(default=False)
 
-    subscribed_domains = models.ManyToManyField(
-        Domain, related_name="user_subscribed_domains"
-    )
-    subscribed_users = models.ManyToManyField(
-        User, related_name="user_subscribed_users"
-    )
-    crypto_address = models.CharField(max_length=100, null=True, blank=True)
+    subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains")
+    subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users")
+    btc_address = models.CharField(max_length=100, blank=True, null=True)
+    bch_address = models.CharField(max_length=100, blank=True, null=True)
+    eth_address = models.CharField(max_length=100, blank=True, null=True)
 
     def avatar(self, size=36):
         if self.user_avatar:
@@ -500,9 +476,7 @@ class CompanyAdmin(models.Model):
     )
     role = models.IntegerField(choices=role, default=0)
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    company = models.ForeignKey(
-        Company, null=True, blank=True, on_delete=models.CASCADE
-    )
+    company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
 
@@ -546,3 +520,17 @@ class Payment(models.Model):
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
     value = models.DecimalField(max_digits=6, decimal_places=2)
     active = models.BooleanField(default=True)
+
+
+class ContributorStats(models.Model):
+    username = models.CharField(max_length=255, unique=True)
+    commits = models.IntegerField(default=0)
+    issues_opened = models.IntegerField(default=0)
+    issues_closed = models.IntegerField(default=0)
+    prs = models.IntegerField(default=0)
+    comments = models.IntegerField(default=0)
+    assigned_issues = models.IntegerField(default=0)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.username
