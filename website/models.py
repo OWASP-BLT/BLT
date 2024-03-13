@@ -324,8 +324,7 @@ class Issue(models.Model):
                 metrics = response["vulnerabilities"][0]["cve"]["metrics"]
                 if metrics:
                     cvss_metric_v = next(iter(metrics))
-                    score = metrics[cvss_metric_v][0]["cvssData"]["baseScore"]
-                    return score
+                    return metrics[cvss_metric_v][0]["cvssData"]["baseScore"]
         except (requests.exceptions.HTTPError, requests.exceptions.ReadTimeout) as e:
             print(e)
             return None
