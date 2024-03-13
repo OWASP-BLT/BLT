@@ -1,0 +1,24 @@
+{% load gravatar %}
+<aside class="absolute flex-wrap right-9 max-sm:right-0 top-40 flex items-center lg:flex-col max-sm:top-80 max-sm:flex max-sm:w-full max-sm:mr--10 max-sm:items-center max-sm:justify-evenly">
+    <div class="flex flex-col max-sm:w-11/12 max-sm:flex-row max-sm:items-center max-sm:justify-evenly">
+        <span><i class="fa fa-eye mr-5 mb-3"></i><span class="font-bold">{{ object.views }}</span></span>
+        {% include "./_likes3.html" %}
+        {% include "./_dislikes3.html" %}
+        {% include "./_flags3.html" %}
+    </div>
+    <div class="max-sm:w-11/12 flex max-sm:flex-row flex-col items-center max-sm:justify-evenly">
+        {% include "./_bookmark3.html" %}
+        <div class="md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#0786fb4d] mb-3 cursor-pointer">
+            <i class="fa-solid fa-share-from-square text-3xl text-red-[#174BD2]"></i>
+        </div>
+        <div class="md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#1c20734d] mb-3 cursor-pointer">
+            <i class="fa-solid fa-copy text-3xl text-red-[#4A6676]"></i>
+        </div>
+        <div class="md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#2d9cdb4d] mb-3 cursor-pointer">
+            <i class="fa-brands fa-github text-3xl text-black"></i>
+        </div>
+        <div class="md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#842adb4d] mb-3 cursor-pointer">
+            <i class="fa-solid fa-trash text-3xl text-black"></i>
+        </div>
+    </div>
+</aside>
