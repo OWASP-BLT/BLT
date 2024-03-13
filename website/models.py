@@ -349,7 +349,7 @@ def update_issue_image_access(sender, instance, **kwargs):
             if "hidden" not in old_name:
                 filename = screenshot.image.name
                 extension = filename.split(".")[-1]
-                name = filename[12:99] + "hidden" + str(uuid.uuid4()) + "." + extension
+                name = filename[:20] + "hidden" + str(uuid.uuid4())[:40] + "." + extension
                 default_storage.save(f"screenshots/{name}", screenshot.image)
                 default_storage.delete(old_name)
                 screenshot.image = f"screenshots/{name}"

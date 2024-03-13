@@ -42,7 +42,7 @@
         }
     });
 </script>
-<nav class="fixed top-0 z-50 w-full bg-white border-b border-[#F7F7F7] border-b-2 px-4 ">
+<nav class="fixed top-0 z-50 w-full bg-white border-[#F7F7F7] border-b-2 px-4 ">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
             <div class="flex items-center justify-start rtl:justify-end">
@@ -53,7 +53,7 @@
                         aria-controls="logo-sidebar"
                         type="button"
                         class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg lg:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
-                    <svg class="w-6 h-6"
+                    <svg class="w-8 h-8"
                          aria-hidden="true"
                          fill="currentColor"
                          viewBox="0 0 20 20"
@@ -64,32 +64,40 @@
                 </button>
                 <!-- Logo -->
                 <a href="{% url 'index' %}"
-                   class="flex flex-col ms-2 md:me-24 items-center">
+                   class="flex flex-col ms-2 md:me-24 items-start">
                     <img src="{% logo 'TRANSPARENT' %}"
-                         class="!max-w-[130px] lg:max-w-[200px]"
+                         class="max-w-[100px] lg:max-w-[200px]"
                          alt="Bug Bounty Logo"
                          width="100%"
                          height="100%">
-                    <p class="text-center inline-block text-xl pl-1 mb-0">{% trans "Report Issues, Win Prizes" %}</p>
+                    <p class="inline-block text-base lg:text-xl mb-0">{% trans "Report Issues, Win Prizes" %}</p>
                 </a>
             </div>
             <!-- Search Bar  -->
-            <div class="column items-center gap-[8px] w-0 overflow-clip lg:w-fit lg:flex w-0 h-0 lg:w-[auto] lg:h-[auto]">
-                <form class="relative px-[34px] mb-0"
+            <div class="column items-center gap-[8px] overflow-clip flex lg:w-[auto] lg:h-[auto]">
+                <form class="relative lg:!px-[34px] mb-0 flex items-center"
                       action="{% url 'search' %}"
                       method="get">
-                    <i class="fa fa-search absolute left-[13px] top-[6.4px] text-[#9CA3AF] z-10"></i>
+                    <i class="lg:!flex hidden fa fa-search absolute left-[13px] text-[#9CA3AF] z-10 my-auto"></i>
                     <input type="text"
                            name="query"
                            placeholder="Search"
-                           class="text-base ps-9 scale-[1.4] placeholder-[#9CA3AF] bg-[#EDEDED] outline-none p-2.5 font-semibold rounded-lg">
+                           class="text-xl lg:text-base lg:ps-9 lg:scale-[1.4] w-[70px] lg:w-auto h-16 placeholder-[#9CA3AF] bg-[#EDEDED] outline-none p-5 font-semibold rounded-xl">
                 </form>
                 <a href="{% url 'report' %}"
-                   class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[20px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
+                   class="flex lg:hidden ml-5 h-[38px] border border-black rounded-3xl p-2 shadow">
+                    <img src="{% static 'images/report_issue.png' %}"
+                         class="w-[25px] h-[28px] lg:max-w-[200px]"
+                         alt="Report Issue Icon"
+                         width="100%"
+                         height="100%">
+                </a>
+                <a href="{% url 'report' %}"
+                   class="lg:!inline-block hidden bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[20px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
                     {% trans "Report an Issue" %}
                 </a>
                 <a href="{% url 'hunts' %}"
-                   class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[20px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
+                   class="lg:!inline-block hidden bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[20px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
                     {% trans "Bug Hunts" %}
                 </a>
             </div>
@@ -172,19 +180,21 @@
             </li>
         {% else %}
             <!-- Sign up and Log in Buttons -->
-            <div class="lg:!flex h-[80px] justify-center items-center">
-                <a href="{% url 'account_signup' %}"
-                   class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
-                {% trans "Signup" %}</a>
-                <a href="{% url 'account_login' %}"
-                   data-toggle="modal"
-                   class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
-                {% trans "Login" %}</a>
+            <div class="flex items-center h-[80px]">
+                <div class="hidden lg:!flex h-[80px] justify-center items-center ">
+                    <a href="{% url 'account_signup' %}"
+                       class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
+                    {% trans "Signup" %}</a>
+                    <a href="{% url 'account_login' %}"
+                       data-toggle="modal"
+                       class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
+                    {% trans "Login" %}</a>
+                </div>
+                <!-- Log in icon -->
+                <a href="{% url 'account_login' %}" class="block lg:hidden m-2">
+                    <i class="fa fa-user !text-5xl text-red-500"></i>
+                </a>
             </div>
-            <!-- Log in icon -->
-            <a href="{% url 'account_login' %}" class="block sm:hidden mr-[30px]">
-                <i class="fa fa-user !text-5xl text-red-500"></i>
-            </a>
         {% endif %}
     </div>
 </div>
