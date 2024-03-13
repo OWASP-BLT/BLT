@@ -91,7 +91,14 @@ from website.models import (
     Winner,
 )
 
-from .forms import CaptchaForm, HuntForm, QuickIssueForm, UserDeleteForm, UserProfileForm
+from .forms import (
+    CaptchaForm,
+    HuntForm,
+    MonitorForm,
+    QuickIssueForm,
+    UserDeleteForm,
+    UserProfileForm,
+)
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
@@ -2436,6 +2443,19 @@ def create_wallet(request):
     return JsonResponse("Created", safe=False)
 
 
+def monitor_create_view(request):
+    if request.method == "POST":
+        form = MonitorForm(request.POST)
+        if form.is_valid():
+            monitor = form.save(commit=False)
+            monitor.user = request.user  # Assuming you have a logged-in user
+            monitor.save()
+            # Redirect to a success page or render a success message
+    else:
+        form = MonitorForm()
+    return render(request, "Moniter.html", {"form": form})
+
+
 def issue_count(request):
     open_issue = Issue.objects.filter(status="open").count()
     close_issue = Issue.objects.filter(status="closed").count()
@@ -4063,3 +4083,15 @@ class ContributorStatsView(TemplateView):
         context["end_date"] = datetime.now().date().isoformat()
 
         return context
+
+
+def create_monitor(request):
+    if request.method == "POST":
+        form = MonitorForm(request.POST)
+        if form.is_valid():
+            form.save()  # This will create a new Monitor instance
+            messages.success(request, "Form submitted successfully!")
+    else:
+        form = MonitorForm()
+
+    return render(request, "Monitor.html", {"form": form})

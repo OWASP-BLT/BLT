@@ -2,7 +2,7 @@ from captcha.fields import CaptchaField
 from django import forms
 from mdeditor.fields import MDTextFormField
 
-from .models import UserProfile
+from .models import Monitor, UserProfile
 
 
 class UserProfileForm(forms.ModelForm):
@@ -37,3 +37,9 @@ class QuickIssueForm(forms.Form):
     url = forms.CharField()
     label = forms.CharField()
     description = forms.CharField()
+
+
+class MonitorForm(forms.ModelForm):
+    class Meta:
+        model = Monitor
+        fields = ["url", "keyword", "status"]

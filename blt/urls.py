@@ -69,6 +69,7 @@ from website.views import (
     UserProfileDetailsView,
     UserProfileDetailView,
     contributors_view,
+    create_monitor,
     dislike_issue2,
     facebook_callback,
     flag_issue2,
@@ -492,6 +493,7 @@ urlpatterns = [
         ContributorStatsView.as_view(today=True),
         name="today-contributor-stats",
     ),
+    path("create_monitor/", create_monitor, name="create_monitor"),
 ]
 
 if settings.DEBUG:
