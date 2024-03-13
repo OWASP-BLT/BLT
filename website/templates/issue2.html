@@ -10,7 +10,7 @@
 {% block content %}
     <style>
     .crypto-address {
-        text-align: center;
+    text-align: center;
     }
 
     .dialog {
@@ -39,18 +39,66 @@
     }
 
     .crypto-name {
-        text-align: center;
-        font-size: 20px;
-        color: white;
-        font-weight: bold;
-        background-color: #ff4444;
-        border-radius: 10px;
-        display: inline-block;
-        margin-left: auto ;
-    }
+    text-align: center;
+    width: 100%;
+    font-size: 20px;
+    color: white;
+    background-color: #ff4444;
+    display: inline-block;
+    margin: 0 auto; /* Center the element horizontally */
+}
 
     .slideshow {
+        width: 400px;
         margin-top: 50px;
+    }
+
+    .navigation {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        justify-content: center;
+    }
+
+    .nav-btn {
+        width: 70px;
+        height: 40px;
+        border: 1px solid #0e0d0d;
+        margin: 6px;
+        cursor: pointer;
+        transition: 0.4s;
+    }
+    .nav-btn.active {
+    background: red; /* Change to whatever red color you prefer */
+    color: white; /* Change text color to contrast with the red background */
+    }
+    .nav-btn:hover {
+        background: #fff;
+    }
+
+    input[name="r"] {
+        position: absolute;
+        visibility: hidden;
+    }
+
+    #btc:checked ~ .s1 {
+        margin-left: -20%;
+    }
+
+    #eth:checked ~ .s1 {
+        margin-left: -40%;
+    }
+
+    #bch:checked ~ .s1 {
+        margin-left: -60%;
+    }
+
+    #tip-message {
+        text-align: center;
+        font-weight: bold;
+        font-style: italic;
     }
     </style>
     {% include "includes/sidenav.html" %}
@@ -388,16 +436,24 @@
                                 Send A TIP
                             </button>
                             <dialog id="dialog-{{ object.user.id }}" class="dialog">
-                                <div class="arrow-container">
-                                    <button id="prev-{{ object.user.id }}" class="arrow-btn">&lt;</button>
-                                    <p id="crypto-name-{{ object.user.id }}" class="crypto-name">Bitcoin</p>
-                                    <button id="next-{{ object.user.id }}" class="arrow-btn">&gt;</button>
+                                <input type="radio"
+                                       name="r"
+                                       id="bch-{{ object.user.id }}"
+                                       checked
+                                       class="active">
+                                <input type="radio" name="r" id="eth-{{ object.user.id }}">
+                                <input type="radio" name="r" id="btc-{{ object.user.id }}">
+                                <div class="navigation">
+                                    <button class="nav-btn" id="bch-btn-{{ object.user.id }}">BCH</button>
+                                    <button class="nav-btn" id="eth-btn-{{ object.user.id }}">Ethereum</button>
+                                    <button class="nav-btn" id="btc-btn-{{ object.user.id }}">Bitcoin</button>
                                 </div>
                                 <div id="slideshow-{{ object.user.id }}" class="slideshow">
                                     <img id="qr-image-{{ object.user.id }}"
                                          alt="QR Code"
                                          height="300"
                                          width="400">
+                                    <p id="crypto-name-{{ object.user.id }}" class="crypto-name"></p>
                                     <p id="crypto-address-{{ object.user.id }}" class="crypto-address"></p>
                                     <p id="tip-message" class="crypto-address"></p>
                                 </div>
@@ -629,9 +685,9 @@
         }
 
         const cryptoOptions = [
-        { name: 'Bitcoin', address: btc },
-        { name: 'Ethereum', address: eth },
-        { name: 'Bitcoin Cash', address: bch }
+            { name: 'Bitcoin Cash', address: bch },
+            { name: 'Ethereum', address: eth },
+            { name: 'Bitcoin', address: btc }
         ];
         let currentIndex = 0;
 
@@ -642,12 +698,13 @@
                 document.getElementById('qr-image-'+userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
                 document.getElementById('crypto-name-' + userId).textContent = "No address: Will go to BLT Donation";
                 document.getElementById('crypto-address-'+userId).textContent = `BCH: ${address}`;
+                document.getElementById('tip-message').textContent = `is the address of the BLT monthly leaderboard that is distributed 100% to the top bug finder that month.`;
             }
             else{
-            document.getElementById('crypto-name-' + userId).textContent = name;
-            document.getElementById('qr-image-' + userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
-            document.getElementById('crypto-address-' + userId).textContent = `${address}`;
-            document.getElementById('tip-message').textContent = `This CVE is a ${severityLevel} severity, we suggest you tip ${suggestedTip}.`;
+                document.getElementById('crypto-name-' + userId).textContent = name;
+                document.getElementById('qr-image-' + userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+                document.getElementById('crypto-address-' + userId).textContent = `${address}`;
+                document.getElementById('tip-message').textContent = `This CVE is a ${severityLevel} severity, we suggest you tip ${suggestedTip}.`;
             }
         };
         updateSlide();
@@ -659,15 +716,26 @@
         document.getElementById('close-' + userId).addEventListener('click', function() {
             document.getElementById('dialog-' + userId).close();
         });
-
-        document.getElementById('prev-' + userId).addEventListener('click', function() {
-            currentIndex = (currentIndex - 1 + cryptoOptions.length) % cryptoOptions.length;
+        document.getElementById('bch-btn-' + userId).classList.add('active'); // Highlight BCH button by default
+        document.getElementById('bch-btn-' + userId).addEventListener('click', function() {
+            currentIndex = 0;
             updateSlide();
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
         });
 
-        document.getElementById('next-' + userId).addEventListener('click', function() {
-            currentIndex = (currentIndex + 1) % cryptoOptions.length;
+        document.getElementById('eth-btn-' + userId).addEventListener('click', function() {
+            currentIndex = 1;
             updateSlide();
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+
+        document.getElementById('btc-btn-' + userId).addEventListener('click', function() {
+            currentIndex = 2;
+            updateSlide();
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
         });
     };
 </script>
