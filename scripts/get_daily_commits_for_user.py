@@ -1,6 +1,7 @@
-import requests
 import csv
 from datetime import datetime, timedelta
+
+import requests
 
 # Configuration
 username = "USERNAME"  # GitHub username of the user
@@ -47,9 +48,7 @@ def fetch_commit_counts(username, repo, owner, headers, start_date, end_date):
 
 
 # Fetch commit counts
-commit_counts = fetch_commit_counts(
-    username, repo, owner, headers, start_date, end_date
-)
+commit_counts = fetch_commit_counts(username, repo, owner, headers, start_date, end_date)
 
 # Write commit counts to CSV
 with open(csv_filename, "w", newline="") as csvfile:
