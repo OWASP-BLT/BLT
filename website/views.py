@@ -614,14 +614,14 @@ class IssueBaseCreate(object):
                 settings.ACCESS_TOKEN_SECRET,
             )
 
-            blt_url = "https://%s/issue2/%d" % (
+            blt_url = "https://" + "%s/issue/%d" % (
                 settings.DOMAIN_NAME,
                 obj.id,
             )
             domain_name = domain.get_name
             twitter_account = (
-                "@" + domain.get_or_set_x_url(domain_name) + " "
-                if domain.get_or_set_x_url(domain_name)
+                "@" + domain.get_twitter_account(domain_name) + " "
+                if domain.get_twitter_account(domain_name)
                 else ""
             )
 
@@ -637,12 +637,8 @@ class IssueBaseCreate(object):
             )
 
             auth.create_tweet(text=message)
-
-        except (
-            TypeError,
-            tweepy.errors.HTTPException,
-            tweepy.errors.TweepyException,
-        ) as e:
+            print("\n\n\n\nDone")
+        except Exception as e:
             print(e)
 
         if created:
@@ -670,34 +666,6 @@ class IssueBaseCreate(object):
                 [email_to],
                 html_message=msg_html,
             )
-            try:
-                auth = tweepy.Client(
-                    settings.BEARER_TOKEN,
-                    settings.APP_KEY,
-                    settings.APP_KEY_SECRET,
-                    settings.ACCESS_TOKEN,
-                    settings.ACCESS_TOKEN_SECRET,
-                )
-                if obj.is_hidden:
-                    pass
-                else:
-                    blt_url = "https://" + "%s/issue/%d" % (
-                        settings.DOMAIN_NAME,
-                        obj.id,
-                    )
-                    auth.create_tweet(
-                        text='@%s An Issue "%s" has been reported on %s by %s on %s.\n Have look here %s'
-                        % (
-                            domain.get_twitter_account(),
-                            domain.obj.description,
-                            domain,
-                            user,
-                            settings.PROJECT_NAME,
-                            blt_url,
-                        )
-                    )
-            except Exception as e:
-                print(e)
 
         else:
             email_to = domain.email
