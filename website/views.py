@@ -619,7 +619,6 @@ class IssueBaseCreate(object):
             )
 
             auth.create_tweet(text=message)
-            print("\n\n\n\nDone")
         except Exception as e:
             print(e)
 
