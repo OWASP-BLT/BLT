@@ -156,16 +156,17 @@ class Domain(models.Model):
     def get_absolute_url(self):
         return "/domain/" + self.name
 
-    def get_twitter_account(self, slug):
+    def get_twitter_account(self, name):
         if self.twitter:
             return self.twitter
 
-        parsed_url = urlparse("http://" + slug)
         validate = URLValidator(schemes=["https"])  # Only allow HTTPS URLs
         try:
-            twitter_url = "https://twitter.com/%s" % (parsed_url.netloc.split(".")[-2:][0].title())
-            if validate(twitter_url):
-                self.twitter = twitter_url
+            twitter_url = "https://twitter.com/%s" % (name)
+            validate(twitter_url)
+            self.twitter = name
+            self.save()
+            return name
         except ValidationError:
             return False
 
