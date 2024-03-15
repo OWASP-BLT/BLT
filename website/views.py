@@ -619,7 +619,6 @@ class IssueBaseCreate(object):
             )
 
             auth.create_tweet(text=message)
-            print("\n\n\n\nDone")
         except Exception as e:
             print(e)
 
@@ -1417,7 +1416,10 @@ class DomainDetailView(ListView):
             .annotate(c=Count("label"))
             .order_by()
         )
-        context["twitter_url"] = domain.get_twitter_account(self.kwargs["slug"])
+        domain_name = Domain.get_name
+        context["twitter_url"] = "https://twitter.com/%s" + (
+            domain.get_twitter_account(domain_name)
+        )
 
         return context
 
