@@ -596,7 +596,7 @@ class IssueBaseCreate(object):
                 settings.ACCESS_TOKEN_SECRET,
             )
 
-            blt_url = "https://" + "%s/issue/%d" % (
+            blt_url = "https://" + "%s/issue2/%d" % (
                 settings.DOMAIN_NAME,
                 obj.id,
             )
