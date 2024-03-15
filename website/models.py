@@ -168,7 +168,7 @@ class Domain(models.Model):
             self.save()
             return name
         except ValidationError:
-            return False
+            pass
 
 
 def validate_image(fieldfile_obj):
