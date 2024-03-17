@@ -1,18 +1,37 @@
-name: Approve dependabot
+# name: Approve dependabot
 
-# Trigger the workflow on pull request
-on: pull_request_target
+# # Trigger the workflow on pull request
+# on: pull_request_target
+
+# jobs:
+#   autoapprove:
+#     name: Approve dependabot
+#     runs-on: ubuntu-latest
+#     if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]' || github.actor == 'dependabot'
+#     permissions: 
+#       issues: write
+#     steps:
+#       - name: Auto approve
+#         uses: cognitedata/auto-approve-dependabot-action@v3.0.1
+#         if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]' || github.actor == 'dependabot'
+#         with:
+#           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+name: Approve dependabot
+on: pull_request
+
+permissions:
+  contents: write
 
 jobs:
-  autoapprove:
-    name: Approve dependabot
+  dependabot:
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]' || github.actor == 'dependabot'
-    permissions: 
-      issues: write
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    env:
+      PR_URL: ${{github.event.pull_request.html_url}}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Auto approve
-        uses: cognitedata/auto-approve-dependabot-action@v3.0.1
-        if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]' || github.actor == 'dependabot'
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: approve
+        run: gh pr review --approve "$PR_URL"
+      - name: merge
+        run: gh pr merge --auto --squash --delete-branch "$PR_URL"

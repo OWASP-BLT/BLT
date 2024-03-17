@@ -2,7 +2,7 @@
 name = "blt"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["OWASP BLT <you@example.com>"]
 license = "AGPLv3"
 
 [tool.poetry.dependencies]
@@ -61,7 +61,7 @@ django-filter = "^22.1"
 webdriver-manager = "^4.0.1"
 pillow = "^10.2.0"
 chromedriver-autoinstaller = "^0.6.4"
-sentry-sdk = "^1.40.5"
+sentry-sdk = "^1.42.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"
