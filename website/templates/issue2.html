@@ -8,6 +8,99 @@
             crossorigin="anonymous"></script>
 {% endblock head %}
 {% block content %}
+    <style>
+    .crypto-address {
+    text-align: center;
+    }
+
+    .dialog {
+        position: relative;
+    }
+
+    .arrow-container {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: max-content;
+    }
+
+    .arrow-btn {
+        background: none;
+        border: none;
+        color: black;
+        font-size: 40px;
+        cursor: pointer;
+        font-weight: bold;
+        margin: 0 0px;
+    }
+
+    .crypto-name {
+    text-align: center;
+    width: 100%;
+    font-size: 20px;
+    color: white;
+    background-color: #ff4444;
+    display: inline-block;
+    margin: 0 auto; /* Center the element horizontally */
+}
+
+    .slideshow {
+        width: 400px;
+        margin-top: 50px;
+    }
+
+    .navigation {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        justify-content: center;
+    }
+
+    .nav-btn {
+        width: 70px;
+        height: 40px;
+        border: 1px solid #0e0d0d;
+        margin: 6px;
+        cursor: pointer;
+        transition: 0.4s;
+    }
+    .nav-btn.active {
+    background: red; /* Change to whatever red color you prefer */
+    color: white; /* Change text color to contrast with the red background */
+    }
+    .nav-btn:hover {
+        background: #fff;
+    }
+
+    input[name="r"] {
+        position: absolute;
+        visibility: hidden;
+    }
+
+    #btc:checked ~ .s1 {
+        margin-left: -20%;
+    }
+
+    #eth:checked ~ .s1 {
+        margin-left: -40%;
+    }
+
+    #bch:checked ~ .s1 {
+        margin-left: -60%;
+    }
+
+    #tip-message {
+        text-align: center;
+        font-weight: bold;
+        font-style: italic;
+    }
+    </style>
     {% include "includes/sidenav.html" %}
     <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-white">
         <div class="flex justify-between px-10 mx-auto">
@@ -175,10 +268,18 @@
                                         <p class="text-3xl font-bold">Reported On:</p>
                                         <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">{{ object.created }}</span>
                                     </div>
-                                    <div class="w-full flex justify-between my-3">
-                                        <p class="text-3xl font-bold">CVE ID:</p>
-                                        <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">{{ object.cve_id }}</span>
-                                    </div>
+                                    {% if object.cve_id is not None %}
+                                        <div class="w-full flex justify-between my-3">
+                                            <p class="text-3xl font-bold">CVE ID:</p>
+                                            <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">{{ object.cve_id }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if object.cve_score is not None %}
+                                        <div class="w-full flex justify-between my-3">
+                                            <p class="text-3xl font-bold">CVE Score:</p>
+                                            <span class="font-bold bg-red-600 px-5 py-1 text-white rounded-xl">{{ object.cve_score }}</span>
+                                        </div>
+                                    {% endif %}
                                     <div class="w-full flex justify-between my-3">
                                         <p class="text-3xl font-bold">Submitted:</p>
                                         {% if object.hunt is None %}
@@ -329,7 +430,36 @@
                             </div>
                         </div>
                         <div class="w-full flex justify-end">
-                            <button class="bg-red-600 hover:bg-red-800 text-white text-2xl px-10 py-2 rounded-lg">Send A Tip</button>
+                            <button type="button"
+                                    id="openModal-{{ object.user.id }}"
+                                    class="bg-red-600 hover:bg-red-800 text-white text-2xl px-10 py-2 rounded-lg"
+                                    onclick="openModal('{{ object.user.userprofile.btc_address }}','{{ object.user.userprofile.eth_address }}','{{ object.user.userprofile.bch_address }}', '{{ object.user.id }}', '{{ cve_score }}')">
+                                Send A TIP
+                            </button>
+                            <dialog id="dialog-{{ object.user.id }}" class="dialog">
+                                <input type="radio"
+                                       name="r"
+                                       id="bch-{{ object.user.id }}"
+                                       checked
+                                       class="active">
+                                <input type="radio" name="r" id="eth-{{ object.user.id }}">
+                                <input type="radio" name="r" id="btc-{{ object.user.id }}">
+                                <div class="navigation">
+                                    <button class="nav-btn" id="bch-btn-{{ object.user.id }}">BCH</button>
+                                    <button class="nav-btn" id="eth-btn-{{ object.user.id }}">Ethereum</button>
+                                    <button class="nav-btn" id="btc-btn-{{ object.user.id }}">Bitcoin</button>
+                                </div>
+                                <div id="slideshow-{{ object.user.id }}" class="slideshow">
+                                    <img id="qr-image-{{ object.user.id }}"
+                                         alt="QR Code"
+                                         height="300"
+                                         width="400">
+                                    <p id="crypto-name-{{ object.user.id }}" class="crypto-name"></p>
+                                    <p id="crypto-address-{{ object.user.id }}" class="crypto-address"></p>
+                                    <p id="tip-message" class="crypto-address"></p>
+                                </div>
+                                <button id="close-{{ object.user.id }}" class="btn btn-danger w-full">Close</button>
+                            </dialog>
                         </div>
                     </div>
                 </div>
@@ -537,5 +667,77 @@
             }
         });
     });
+    const openModal = (btc, eth, bch, userId, cve_score) => {
+        let severityLevel;
+        let suggestedTip;
+
+        if (cve_score >= 9.0) {
+            severityLevel = "critical";
+            suggestedTip = "$50";
+        } else if (cve_score >= 7.0) {
+            severityLevel = "high";
+            suggestedTip = "$20";
+        } else if (cve_score >= 4.0) {
+            severityLevel = "medium";
+            suggestedTip = "$10";
+        } else {
+            severityLevel = "low";
+            suggestedTip = "$5";
+        }
+
+        const cryptoOptions = [
+            { name: 'Bitcoin Cash', address: bch },
+            { name: 'Ethereum', address: eth },
+            { name: 'Bitcoin', address: btc }
+        ];
+        let currentIndex = 0;
+
+        const updateSlide = () => {
+            let { name, address } = cryptoOptions[currentIndex];
+            if (address == '' || address == 'None') {
+                address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
+                document.getElementById('qr-image-'+userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+                document.getElementById('crypto-name-' + userId).textContent = "No address: Will go to BLT Donation";
+                document.getElementById('crypto-address-'+userId).textContent = `BCH: ${address}`;
+                document.getElementById('tip-message').textContent = `is the address of the BLT monthly leaderboard that is distributed 100% to the top bug finder that month.`;
+            }
+            else{
+                document.getElementById('crypto-name-' + userId).textContent = name;
+                document.getElementById('qr-image-' + userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+                document.getElementById('crypto-address-' + userId).textContent = `${address}`;
+                document.getElementById('tip-message').textContent = `This CVE is a ${severityLevel} severity, we suggest you tip ${suggestedTip}.`;
+            }
+        };
+        updateSlide();
+
+        document.getElementById('openModal-' + userId).addEventListener('click', function() {
+            document.getElementById('dialog-' + userId).showModal();
+        });
+
+        document.getElementById('close-' + userId).addEventListener('click', function() {
+            document.getElementById('dialog-' + userId).close();
+        });
+        document.getElementById('bch-btn-' + userId).classList.add('active'); // Highlight BCH button by default
+        document.getElementById('bch-btn-' + userId).addEventListener('click', function() {
+            currentIndex = 0;
+            updateSlide();
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+
+        document.getElementById('eth-btn-' + userId).addEventListener('click', function() {
+            currentIndex = 1;
+            updateSlide();
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+
+        document.getElementById('btc-btn-' + userId).addEventListener('click', function() {
+            currentIndex = 2;
+            updateSlide();
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+    };
 </script>
 {% endblock content %}

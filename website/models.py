@@ -269,6 +269,7 @@ class Issue(models.Model):
     rewarded = models.PositiveIntegerField(default=0)  # money rewarded by the company
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
     cve_id = models.CharField(max_length=16, null=True, blank=True)
+    cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
 
     def __unicode__(self):
         return self.description
@@ -326,6 +327,22 @@ class Issue(models.Model):
 
     def get_absolute_url(self):
         return "/issue/" + str(self.id)
+
+    def get_cve_score(self):
+        if self.cve_id is None:
+            return None
+        try:
+            url = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=%s" % (self.cve_id)
+            response = requests.get(url).json()
+            results = response["resultsPerPage"]
+            if results != 0:
+                metrics = response["vulnerabilities"][0]["cve"]["metrics"]
+                if metrics:
+                    cvss_metric_v = next(iter(metrics))
+                    return metrics[cvss_metric_v][0]["cvssData"]["baseScore"]
+        except (requests.exceptions.HTTPError, requests.exceptions.ReadTimeout) as e:
+            print(e)
+            return None
 
     class Meta:
         ordering = ["-created"]
