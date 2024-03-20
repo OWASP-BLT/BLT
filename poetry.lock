@@ -772,13 +772,13 @@ files = [
 
 [[package]]
 name = "django-tz-detect"
-version = "0.4.0"
+version = "0.5.0"
 description = "Automatic user timezone detection for django"
 optional = false
 python-versions = "*"
 files = [
-    {file = "django-tz-detect-0.4.0.tar.gz", hash = "sha256:ff3ceb2062a2dffaf7d5c20216761c7c4fbbee894c14906bdc93ec6e03e10ffa"},
-    {file = "django_tz_detect-0.4.0-py3-none-any.whl", hash = "sha256:ca3842b9d92ed3aff3c783430d79fd66785c722ca942fabeaf5f9008f35c8124"},
+    {file = "django-tz-detect-0.5.0.tar.gz", hash = "sha256:b804c562ecd6e1c2a303cc9a88e5ad18df053b07f15453d67984f3f34b038de4"},
+    {file = "django_tz_detect-0.5.0-py3-none-any.whl", hash = "sha256:4dd6e5e4080c2257a205545134f252e51e2c58225de362dc8f05328c88599237"},
 ]
 
 [package.dependencies]
@@ -2341,4 +2341,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "00c0b89aa76b17c8085f218e6d22730168a0fe9847bb6aae54fe21b139ab8885"
+content-hash = "1f5695727f5e9dae52b56e90824c9255a2e036e9d16541ebbc64cbe23d1f7515"
