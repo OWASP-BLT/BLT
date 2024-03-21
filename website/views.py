@@ -4281,6 +4281,7 @@ class ContributorStatsView(TemplateView):
 
         return context
 
+
 @login_required
 def create_monitor(request):
     if request.method == "POST":
