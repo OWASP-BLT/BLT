@@ -4278,10 +4278,6 @@ class ContributorStatsView(TemplateView):
 
         return context
 
-
-from django.contrib.auth.decorators import login_required
-
-
 @login_required
 def create_monitor(request):
     if request.method == "POST":
