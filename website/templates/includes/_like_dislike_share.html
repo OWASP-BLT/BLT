@@ -1,4 +1,5 @@
 {% load gravatar %}
+{% load custom_tags %}
 <aside class="absolute flex-wrap right-9 max-sm:right-0 top-40 flex items-center lg:flex-col max-sm:top-80 max-sm:flex max-sm:w-full max-sm:mr--10 max-sm:items-center max-sm:justify-evenly">
     <div class="flex flex-col max-sm:w-11/12 max-sm:flex-row max-sm:items-center max-sm:justify-evenly">
         <span><i class="fa fa-eye mr-5 mb-3"></i><span class="font-bold">{{ object.views }}</span></span>
@@ -9,10 +10,16 @@
     <div class="max-sm:w-11/12 flex max-sm:flex-row flex-col items-center max-sm:justify-evenly">
         {% include "./_bookmark3.html" %}
         <div class="md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#0786fb4d] mb-3 cursor-pointer">
-            <i class="fa-solid fa-share-from-square text-3xl text-red-[#174BD2]"></i>
+            <a href="https://twitter.com/intent/tweet?text=Bug Found on @{{ object.domain_title }} - {{ object.description }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}"
+               target="_blank"
+               rel="noopener noreferrer">
+                <i class="fa-brands fa-x-twitter fa-lg"></i>
+            </a>
         </div>
         <div class="md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#1c20734d] mb-3 cursor-pointer">
-            <i class="fa-solid fa-copy text-3xl text-red-[#4A6676]"></i>
+            <button onclick="copyClipboard()">
+                <i class="fa-solid fa-copy text-3xl text-red-[#4A6676]"></i>
+            </button>
         </div>
         <div class="md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#2d9cdb4d] mb-3 cursor-pointer">
             <i class="fa-brands fa-github text-3xl text-black"></i>
@@ -22,3 +29,66 @@
         </div>
     </div>
 </aside>
+<script>
+    function copyClipboard() {
+        var textToCopy = "Bug Found on @{{ object.domain_title }} - {{ object.description }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}";
+        
+        navigator.clipboard.writeText(textToCopy);
+      
+        $.notify("Bug details copied to clipboard!", {
+            style: "custom",
+            className: "success"
+        });
+      }
+
+      function like_unlike_handler(e) {
+        e.preventDefault();
+        var issue_pk = $(this).attr('name');
+        $.ajax({
+            type: 'GET',
+            url: '/like_issue3/' + issue_pk + '/',
+            data: {},
+            success: function (data) {
+                $('.like_unlike').remove();
+                $('#like-container').append(data);
+                if ($("#dislike-btn i").hasClass("fa-solid")) {
+                var dislikes = $("#dislikes").text();
+                    dislikes =  dislikes-1;
+                    $('#dislike-btn').html(
+                        dislikes+`&nbsp;
+                        <i class="fa-regular fa-thumbs-down text-3xl text-black"></i>`
+                    );
+                }
+            },
+        });
+        // Later, when you want to "destroy" the event handler:
+        $('body').off('click', '.like_unlike', like_unlike_handler);
+    }
+
+    // Attach the click event handler
+    $('body').on('click', '.like_unlike', like_unlike_handler);
+
+    function dislike_handler(e){
+        e.preventDefault();
+        var issue_pk = document.getElementById("dislike-btn").getAttribute("name");
+        $.ajax({
+            type: 'GET',
+            url: '/dislike_issue3/' + issue_pk + '/',
+            data: {},
+            success: function (data) {
+                $('.dislike').remove();
+                $("#dislike-container").append(data);
+                if ($("#like_unlike i").hasClass("fa-solid")) {
+                    var likes = $("#likes").text();
+                    likes = likes-1;
+                    $('#like_unlike').html(
+                        likes+`&nbsp;
+                        <i class="fa-regular fa-thumbs-up text-3xl text-black"></i>`
+                    );
+                }
+            },
+        });
+        $('body').off('click', '.dislike', dislike_handler);
+    }
+    $('body').on('click', '.dislike', dislike_handler);
+</script>

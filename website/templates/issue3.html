@@ -17,16 +17,17 @@
           content="{% block og_title %}{{ object.description }}{% endblock og_title %}" />
     {% for screenshot in screenshots %}
         <meta property="og:image"
-              content="https://blt.owasp.org{% block og_image %}{{ screenshot.image.url }}{% endblock og_image %}" />
+              content="https://{% env 'FQDN' %}{% block og_image %}{{ screenshot.image.url }}{% endblock og_image %}" />
     {% endfor %}
     <meta property="og:description"
           content="{{ object.markdown_description|escapejs }}" />
     <meta name="keywords"
           content="{% block keywords %}BLT, bug, tracking, company, easy{% endblock keywords %}">
     {% comment %} TODO: change to update DOMAIN {% endcomment %}
-    <link rel="canonical" href="https://blt.owasp.org/issue3/{{ object.id }}">
+    <link rel="canonical"
+          href="https://{% env 'FQDN' %}/issue3/{{ object.id }}">
     <meta property="og:url"
-          content="https://blt.owasp.org/issue3/{{ object.id }}" />
+          content="https://{% env 'FQDN' %}/issue3/{{ object.id }}" />
     <meta property="og:type" content="website" />
     <meta name="robots" content="index, follow">
 {% endblock metaTags %}
@@ -74,8 +75,10 @@
             </div>
         </div>
         <br>
-        <h3 class="font-[ubuntu] font-bold text-2xl">Issue Description</h3>
-        <p class="text-justify max-sm:w-[95vw] lg:w-11/12">{{ object.markdown_description|escapejs }}</p>
+        {% if object.markdown_description %}
+            <h3 class="font-[ubuntu] font-bold text-2xl">Issue Description</h3>
+            <p class="text-justify max-sm:w-[95vw] lg:w-11/12" id="bug_report"></p>
+        {% endif %}
     </div>
     <script src="{% static '/company/js/md_editor.js' %}"></script>
     <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
