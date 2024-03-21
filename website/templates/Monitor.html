@@ -26,7 +26,7 @@
         color: #333;
     }
     form input[type="text"],
-    form textarea {
+    form textarea{
         width: 100%;
         padding: 8px;
         margin-bottom: 10px;
@@ -45,6 +45,16 @@
     form button:hover {
         background-color: #c82333;
     }
+    .created-field,
+    .modified-field{
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+        text-align:center;
+    }
 </style>
 <div class="container">
     <h1>Create Monitor</h1>
@@ -53,4 +63,6 @@
         {{ form.as_p }}
         <button type="submit" class="btn btn-danger">Submit</button>
     </form>
+    <p class="created-field">Created: {{ form.created.value }}</p>
+    <p class="modified-field">Modified: {{ form.modified.value }}</p>
 </div>

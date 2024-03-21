@@ -539,6 +539,8 @@ class ContributorStats(models.Model):
 class Monitor(models.Model):
     url = models.URLField()
     keyword = models.CharField(max_length=255)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
     last_checked_time = models.DateTimeField(auto_now=True)
     status = models.CharField(
         max_length=20,

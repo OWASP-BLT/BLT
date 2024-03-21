@@ -2445,19 +2445,6 @@ def create_wallet(request):
     return JsonResponse("Created", safe=False)
 
 
-def monitor_create_view(request):
-    if request.method == "POST":
-        form = MonitorForm(request.POST)
-        if form.is_valid():
-            monitor = form.save(commit=False)
-            monitor.user = request.user  # Assuming you have a logged-in user
-            monitor.save()
-            # Redirect to a success page or render a success message
-    else:
-        form = MonitorForm()
-    return render(request, "Moniter.html", {"form": form})
-
-
 def issue_count(request):
     open_issue = Issue.objects.filter(status="open").count()
     close_issue = Issue.objects.filter(status="closed").count()
@@ -4279,12 +4266,20 @@ class ContributorStatsView(TemplateView):
         return context
 
 
+from django.contrib.auth.decorators import login_required
+
+
+@login_required
 def create_monitor(request):
     if request.method == "POST":
         form = MonitorForm(request.POST)
         if form.is_valid():
-            form.save()  # This will create a new Monitor instance
+            monitor = form.save(commit=False)
+            monitor.user = request.user  # Set the user field to the current user
+            monitor.save()
             messages.success(request, "Form submitted successfully!")
+        else:
+            messages.error(request, "Form submission failed. Please correct the errors.")
     else:
         form = MonitorForm()
 
