@@ -2455,7 +2455,7 @@ def monitor_create_view(request):
             # Redirect to a success page or render a success message
     else:
         form = MonitorForm()
-    return render(request, "Moniter.html", {"form": form})
+    return render(request, "monitor.html", {"form": form})
 
 
 def issue_count(request):
