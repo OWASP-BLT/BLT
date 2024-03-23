@@ -4283,7 +4283,7 @@ class ContributorStatsView(TemplateView):
 
 
 @login_required
-def create_monitor(request):
+def deletions(request):
     if request.method == "POST":
         form = MonitorForm(request.POST)
         if form.is_valid():
