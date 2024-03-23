@@ -125,7 +125,7 @@
             </button>
             {% if user.is_superuser %}
                 <a href="{% url 'delete_issue' id=bug.id %}">del</a> |
-                <a href="{% url 'admin:website_issue_change' id=bug.id %}">edit</a>
+                <a href="{% url 'admin:website_issue_change' object_id=bug.id %}">edit</a>
             {% endif %}
             {% with user_issue_flagged_list=user.userprofile.issue_flaged.all %}
                 {% if user_issue_flagged_list and bug in user_issue_flagged_list %}
