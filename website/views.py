@@ -3898,11 +3898,12 @@ class IssueView2(DetailView):
         context["cve_id"] = self.object.cve_id
         context["cve_score"] = self.object.cve_score
 
-        if isinstance(self.request.user, User):
-            if self.request.user.is_authenticated:
-                context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
-                    pk=self.request.user.userprofile.id
-                ).exists()
+        # TODO: fix this
+        # if isinstance(self.request.user, User):
+        #     if self.request.user.is_authenticated:
+        #         context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
+        #             pk=self.request.user.userprofile.id
+        #         ).exists()
 
         if isinstance(self.request.user, User):
             context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(
@@ -3997,10 +3998,11 @@ class IssueView3(DetailView):
         )
         context["subscribed_to_domain"] = False
 
-        if isinstance(self.request.user, User):
-            context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
-                pk=self.request.user.userprofile.id
-            ).exists()
+        # TODO fix this
+        # if isinstance(self.request.user, User):
+        #     context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
+        #         pk=self.request.user.userprofile.id
+        #     ).exists()
 
         if isinstance(self.request.user, User):
             context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(
