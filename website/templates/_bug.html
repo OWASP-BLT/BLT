@@ -123,6 +123,10 @@
                     <path d="M4.06152 3.93531H18.7867L14.1851 8.53692L18.7867 13.1385H4.06152" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
             </button>
+            {% if user.is_superuser %}
+                <a href="{% url 'delete_issue' id=object.id %}">del</a> |
+                <a href="{% url 'admin:website_issue_change' id=object.id %}">edit</a>
+            {% endif %}
             {% with user_issue_flagged_list=user.userprofile.issue_flaged.all %}
                 {% if user_issue_flagged_list and bug in user_issue_flagged_list %}
                     <script>

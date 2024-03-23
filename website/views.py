@@ -260,7 +260,7 @@ def newhome(request, template="new_home.html"):
     for bug in bugs:
         bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[0:3]
 
-    paginator = Paginator(bugs, 9)
+    paginator = Paginator(bugs, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
@@ -1302,6 +1302,7 @@ class UserProfileDetailsView(DetailView):
 
 def delete_issue(request, id):
     try:
+        # TODO: Refactor this for a direct query instead of looping through all tokens
         for token in Token.objects.all():
             if request.POST["token"] == token.key:
                 request.user = User.objects.get(id=token.user_id)
