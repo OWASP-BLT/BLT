@@ -70,6 +70,7 @@ from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
     UserProfileDetailsView,
     UserProfileDetailView,
     contributors_view,
+    create_monitor,
     dislike_issue2,
     dislike_issue3,
     facebook_callback,
@@ -502,6 +503,7 @@ urlpatterns = [
         ContributorStatsView.as_view(today=True),
         name="today-contributor-stats",
     ),
+    path("create_monitor/", create_monitor, name="create_monitor"),
 ]
 
 if settings.DEBUG:
