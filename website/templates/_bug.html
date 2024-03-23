@@ -45,19 +45,29 @@
     <div class="bug-desc py-2 h-[100%] font-['Barlow'] font-medium text-[#774343] text-3xl leading-10 overflow-clip">
         <a href="{% url 'issue_view2' slug=bug.id %}">{{ bug.description|truncatechars:100 }}</a>
     </div>
-    <div class="bug-images h-[160px] flex flex-row justify-between px-3 my-2">
-        {% for bug_key, bug_screenshots in bugs_screenshots.items %}
-            {% if bug == bug_key %}
-                {% if bug_screenshots %}
-                    <img class="bug-img h-[100%] w-[200px] object-contain"
-                         src="{{ bug_screenshots.0.image.url }}"
-                         alt="bug screenshot"
-                         width="200px"
-                         height="100%">
+    {% if bug.screenshot %}
+        <div class="bug-images h-[160px] flex flex-row justify-between px-3 my-2">
+            <img class="bug-img h-[100%] w-[200px] object-contain"
+                 src="{{ bug.screenshot.url }}"
+                 alt="bug screenshot"
+                 width="200px"
+                 height="100%">
+        </div>
+    {% else %}
+        <div class="bug-images h-[160px] flex flex-row justify-between px-3 my-2">
+            {% for bug_key, bug_screenshots in bugs_screenshots.items %}
+                {% if bug == bug_key %}
+                    {% if bug_screenshots %}
+                        <img class="bug-img h-[100%] w-[200px] object-contain"
+                             src="{{ bug_screenshots.0.image.url }}"
+                             alt="bug screenshot"
+                             width="200px"
+                             height="100%">
+                    {% endif %}
                 {% endif %}
-            {% endif %}
-        {% endfor %}
-    </div>
+            {% endfor %}
+        </div>
+    {% endif %}
     <div class="bug-actions h-[45px] flex flex-row justify-between">
         <div class="flex flex-row items-center">
             <button {% if not user.is_authenticated %}disabled{% endif %}
