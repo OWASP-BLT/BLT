@@ -91,7 +91,14 @@ from website.models import (
     Winner,
 )
 
-from .forms import CaptchaForm, HuntForm, QuickIssueForm, UserDeleteForm, UserProfileForm
+from .forms import (
+    CaptchaForm,
+    HuntForm,
+    MonitorForm,
+    QuickIssueForm,
+    UserDeleteForm,
+    UserProfileForm,
+)
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
@@ -253,7 +260,7 @@ def newhome(request, template="new_home.html"):
     for bug in bugs:
         bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[0:3]
 
-    paginator = Paginator(bugs, 9)
+    paginator = Paginator(bugs, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
@@ -734,6 +741,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             self.request.POST["token"] = json_data["token"]
             self.request.POST["type"] = json_data["type"]
             self.request.POST["cve_id"] = json_data["cve_id"]
+            self.request.POST["cve_score"] = json_data["cve_score"]
 
             if self.request.POST.get("file"):
                 if isinstance(self.request.POST.get("file"), six.string_types):
@@ -888,6 +896,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             obj.domain = domain
             # obj.is_hidden = bool(self.request.POST.get("private", False))
+            obj.cve_score = obj.get_cve_score()
             obj.save()
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):
@@ -1301,6 +1310,7 @@ class UserProfileDetailsView(DetailView):
 
 def delete_issue(request, id):
     try:
+        # TODO: Refactor this for a direct query instead of looping through all tokens
         for token in Token.objects.all():
             if request.POST["token"] == token.key:
                 request.user = User.objects.get(id=token.user_id)
@@ -2444,6 +2454,19 @@ def create_wallet(request):
     for user in User.objects.all():
         Wallet.objects.get_or_create(user=user)
     return JsonResponse("Created", safe=False)
+
+
+def monitor_create_view(request):
+    if request.method == "POST":
+        form = MonitorForm(request.POST)
+        if form.is_valid():
+            monitor = form.save(commit=False)
+            monitor.user = request.user  # Assuming you have a logged-in user
+            monitor.save()
+            # Redirect to a success page or render a success message
+    else:
+        form = MonitorForm()
+    return render(request, "Moniter.html", {"form": form})
 
 
 def issue_count(request):
@@ -3881,12 +3904,14 @@ class IssueView2(DetailView):
         )
         context["subscribed_to_domain"] = False
         context["cve_id"] = self.object.cve_id
+        context["cve_score"] = self.object.cve_score
 
-        if isinstance(self.request.user, User):
-            if self.request.user.is_authenticated:
-                context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
-                    pk=self.request.user.userprofile.id
-                ).exists()
+        # TODO: fix this
+        # if isinstance(self.request.user, User):
+        #     if self.request.user.is_authenticated:
+        #         context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
+        #             pk=self.request.user.userprofile.id
+        #         ).exists()
 
         if isinstance(self.request.user, User):
             context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(
@@ -3981,10 +4006,11 @@ class IssueView3(DetailView):
         )
         context["subscribed_to_domain"] = False
 
-        if isinstance(self.request.user, User):
-            context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
-                pk=self.request.user.userprofile.id
-            ).exists()
+        # TODO fix this
+        # if isinstance(self.request.user, User):
+        #     context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
+        #         pk=self.request.user.userprofile.id
+        #     ).exists()
 
         if isinstance(self.request.user, User):
             context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(
@@ -4265,3 +4291,20 @@ class ContributorStatsView(TemplateView):
         context["end_date"] = datetime.now().date().isoformat()
 
         return context
+
+
+@login_required
+def deletions(request):
+    if request.method == "POST":
+        form = MonitorForm(request.POST)
+        if form.is_valid():
+            monitor = form.save(commit=False)
+            monitor.user = request.user  # Set the user field to the current user
+            monitor.save()
+            messages.success(request, "Form submitted successfully!")
+        else:
+            messages.error(request, "Form submission failed. Please correct the errors.")
+    else:
+        form = MonitorForm()
+
+    return render(request, "Monitor.html", {"form": form})
