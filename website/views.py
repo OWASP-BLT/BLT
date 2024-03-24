@@ -821,6 +821,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     "report.html",
                     {"form": self.get_form(), "captcha_form": captcha_form},
                 )
+        if not request.FILES.get("screenshots"):
+            messages.error(request, "Screenshot is required")
+            captcha_form = CaptchaForm(request.POST)
+            return render(
+                self.request,
+                "report.html",
+                {"form": self.get_form(), "captcha_form": captcha_form},
+            )
 
         return super().post(request, *args, **kwargs)
 
