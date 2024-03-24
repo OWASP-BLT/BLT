@@ -32,7 +32,7 @@
 
 # Development
 
-  
+Make sure to run pre-commit before committing so it formats the code.  
 
 ### Setting Up Development Server
 

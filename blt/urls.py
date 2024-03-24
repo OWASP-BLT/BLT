@@ -70,6 +70,7 @@ from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
     UserProfileDetailsView,
     UserProfileDetailView,
     contributors_view,
+    deletions,
     dislike_issue2,
     dislike_issue3,
     facebook_callback,
@@ -390,7 +391,7 @@ urlpatterns = [
     re_path(r"^apps/$", TemplateView.as_view(template_name="apps.html"), name="apps"),
     re_path(
         r"^deletions/$",
-        TemplateView.as_view(template_name="deletions.html"),
+        deletions,
         name="deletions",
     ),
     re_path(r"^bacon/$", TemplateView.as_view(template_name="bacon.html"), name="bacon"),
@@ -496,7 +497,11 @@ urlpatterns = [
         website.views.update_bch_address,
         name="update_bch_address",
     ),
-    re_path(r"^contributor-stats/$", ContributorStatsView.as_view(), name="contributor-stats"),
+    re_path(
+        r"^contributor-stats/$",
+        ContributorStatsView.as_view(),
+        name="contributor-stats",
+    ),
     re_path(
         r"^contributor-stats/today$",
         ContributorStatsView.as_view(today=True),
