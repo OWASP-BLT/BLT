@@ -609,8 +609,8 @@ class IssueBaseCreate(object):
             )
             domain_name = domain.get_name
             twitter_account = (
-                "@" + domain.get_twitter_account(domain_name) + " "
-                if domain.get_twitter_account(domain_name)
+                "@" + domain.get_or_set_x_url(domain_name) + " "
+                if domain.get_or_set_x_url(domain_name)
                 else ""
             )
 
@@ -626,7 +626,12 @@ class IssueBaseCreate(object):
             )
 
             auth.create_tweet(text=message)
-        except Exception as e:
+
+        except TypeError as e:
+            print(e)
+        except tweepy.errors.TweepyException as e:
+            print(e)
+        except tweepy.errors.HTTPException as e:
             print(e)
 
         if created:
@@ -1435,9 +1440,7 @@ class DomainDetailView(ListView):
             .order_by()
         )
         domain_name = Domain.get_name
-        context["twitter_url"] = "https://twitter.com/%s" + (
-            domain.get_twitter_account(domain_name)
-        )
+        context["twitter_url"] = "https://twitter.com/%s" + (domain.get_or_set_x_url(domain_name))
 
         return context
 

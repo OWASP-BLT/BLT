@@ -156,7 +156,7 @@ class Domain(models.Model):
     def get_absolute_url(self):
         return "/domain/" + self.name
 
-    def get_twitter_account(self, name):
+    def get_or_set_x_url(self, name):
         if self.twitter:
             return self.twitter
 
