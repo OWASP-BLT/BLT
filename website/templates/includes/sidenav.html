@@ -29,14 +29,14 @@
     </style>
     <div class="h-full px-11 overflow-y-auto bg-white flex flex-col justify-between no-scrollbar sidenav">
         <div class="overflow-auto no-scrollbar">
-            <ul class="space-y-3 font-medium text-2xl mt-6 mb-0">
-                <li class="flex items-center p-2">
+            <ul class="font-medium text-2xl mt-6 mb-0">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-exclamation-circle" id="icon"></i>
                     </div>
                     <a href="{% url 'index' %}"><span class="text">Issues</span></a>
                 </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-institution" id="icon"></i>
                     </div>
@@ -44,7 +44,7 @@
                         <a href="{% url 'domain_lists' %}"><span class="text">Companies</span></a>
                     </div>
                 </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-ranking-star" id="icon"></i>
                     </div>
@@ -52,127 +52,117 @@
                         <a href="{% url 'scoreboard' %}"><span class="text">Scoreboard</span></a>
                     </div>
                 </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-trophy" id="icon"></i>
                     </div>
                     <a href="{% url 'leaderboard_global' %}"><span class="text">Users</span></a>
                 </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-users" id="icon"></i>
                     </div>
                     <a href="{% url 'teams' %}"><span class="text">Teams</span></a>
                 </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-bug" aria-hidden="true" id="icon"></i>
                     </div>
-                    <a href="{% url 'hunts' %}" class="text"><span>Hunts</span></a>
+                    <a href="{% url 'hunts' %}" class="text"><span>Bug Bounties</span></a>
                 </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-cubes" id="icon"></i>
                     </div>
                     <a href="{% url 'projects' %}"><span class="text">Projects</span></a>
                 </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-file-code-o" id="icon"></i>
                     </div>
                     <a href="{% url 'apps' %}"><span class="text">Apps</span></a>
                 </li>
-            </ul>
-            <ul class="space-y-2 font-medium text-2xl mt-1">
-                <li class="mb-[-6px] ms-[1px]">
-                    <span class="font-bold text-[#AAA] text-[1.2rem] tracking-wide">EXPERIMENTAL</span>
-                </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-trash" id="icon"></i>
                     </div>
                     <a href="{% url 'deletions' %}"><span class="text">Deletions</span></a>
                 </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-trademark" id="icon"></i>
                     </div>
                     <a href="{% url 'trademark_search' %}"><span class="text">Trademarks</span></a>
                 </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa-solid fa-bacon" id="icon"></i>
                     </div>
                     <a href="{% url 'bacon' %}"><span class="text">BACON</span></a>
                 </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-tv" id="icon"></i>
                     </div>
                     <a href="{% url 'bltv' %}"><span class="text">BLTV</span></a>
                 </li>
-            </ul>
-            <ul class="space-y-2 font-medium text-2xl mt-1 pb-10">
-                <li class="mb-[-6px] ms-[1px]">
-                    <span class="font-bold text-[#AAA] text-[1.2rem] tracking-wide">MORE</span>
-                </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-code" aria-hidden="true" id="icon"></i>
                     </div>
                     <a href="{% url 'contributors' %}" class="text"><span>Contributors</span></a>
                 </li>
                 <!-- weekly activity -->
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-calendar" id="icon"></i>
                     </div>
                     <a href="{% url 'contributor-stats' %}" class="text"><span>Weekly Activity</span></a>
                 </li>
                 <!-- daily activity -->
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-calendar-day" id="icon"></i>
                     </div>
                     <a href="{% url 'today-contributor-stats' %}" class="text"><span>Daily Activity</span></a>
                 </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-info" id="icon"></i>
                     </div>
                     <a href="{% url 'about' %}"><span class="text">About Us</span></a>
                 </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa-solid fa-file-contract" id="icon"></i>
                     </div>
                     <a href="{% url 'terms' %}" class="text"><span>Terms</span></a>
                 </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-code-fork" id="icon"></i>
                     </div>
                     <a href="https://github.com/OWASP/BLT#readme" rel="noopener noreferrer"><span>Dev Guides</span></a>
                 </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-bar-chart" id="icon"></i>
                     </div>
                     <a href="{% url 'stats' %}" class="text"><span>Stats</span></a>
                 </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-star" id="icon"></i>
                     </div>
                     <a href="https://github.com/OWASP/BLT/releases" class="text"><span>Releases</span></a>
                 </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
-                        <i class="fa fa-file-code-o" id="icon"></i>
+                        <i class="fas fa-cogs"></i>
                     </div>
                     <a href="https://blt.owasp.org/swagger/" class="text"><span>Developer API</span></a>
                 </li>
-                <li class="flex items-center p-2">
+                <li class="flex items-center p-2 mt-0">
                     <div class="w-8 mr-4">
                         <i class="fa fa-file" id="icon"></i>
                     </div>

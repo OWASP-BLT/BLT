@@ -566,3 +566,22 @@ class ContributorStats(models.Model):
 
     def __str__(self):
         return self.username
+
+
+class Monitor(models.Model):
+    url = models.URLField()
+    keyword = models.CharField(max_length=255)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+    last_checked_time = models.DateTimeField(auto_now=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("UP", "Up"),
+            ("DOWN", "Down"),
+        ],
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Monitor for {self.url} by {self.user}"
