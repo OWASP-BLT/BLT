@@ -1436,7 +1436,7 @@ class DomainDetailView(ListView):
             .order_by()
         )
         domain_name = Domain.get_name
-        context["twitter_url"] = "https://twitter.com/%s" + (domain.get_or_set_x_url(domain_name))
+        context["twitter_url"] = "https://twitter.com/%s" % domain.get_or_set_x_url(domain_name)
 
         return context
 
