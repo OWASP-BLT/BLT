@@ -627,11 +627,7 @@ class IssueBaseCreate(object):
 
             auth.create_tweet(text=message)
 
-        except TypeError as e:
-            print(e)
-        except tweepy.errors.TweepyException as e:
-            print(e)
-        except tweepy.errors.HTTPException as e:
+        except (TypeError, tweepy.errors.HTTPException, tweepy.errors.TweepyException) as e:
             print(e)
 
         if created:
