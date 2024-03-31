@@ -1435,8 +1435,7 @@ class DomainDetailView(ListView):
             .annotate(c=Count("label"))
             .order_by()
         )
-        domain_name = domain.get_name
-        context["twitter_url"] = "https://twitter.com/%s" % (domain.get_or_set_x_url(domain_name))
+        context["twitter_url"] = "https://twitter.com/%s" % domain.get_or_set_x_url(domain.get_name)
 
         return context
 
