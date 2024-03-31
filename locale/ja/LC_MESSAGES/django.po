@@ -751,7 +751,7 @@ msgid "Submit the information"
 msgstr "情報を送信する"
 
 #: website/templates/mobile_about.html:34
-msgid "Win money through company-sponsored Bug Hunts"
+msgid "Win money through company-sponsored Bug Bounties"
 msgstr "企業がスポンサーとなるバグハントで賞金を獲得する"
 
 #: website/templates/mobile_about.html:34
@@ -771,7 +771,7 @@ msgid "If you participate in"
 msgstr "もし参加するなら"
 
 #: website/templates/mobile_about.html:36
-msgid "sponsored Bug Hunts"
+msgid "sponsored Bug Bounties"
 msgstr "スポンサー付きバグハント"
 
 #: website/templates/mobile_about.html:36
@@ -796,7 +796,7 @@ msgstr ""
 
 #: website/templates/mobile_about.html:43
 msgid ""
-"offers monthly Bug Hunts through 4 different subscription plans to help you "
+"offers monthly Bug Bounties through 4 different subscription plans to help you "
 "achieve this"
 msgstr ""
 "これを実現するのに役立つ4つの異なるサブスクリプションプランを介して月次のバグ"

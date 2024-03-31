@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="flex justify-center items-start min-h-screen bg-gray-50">
+        <div class="flex flex-wrap justify-around items-start w-full max-w-6xl mx-auto p-8 bg-white shadow-lg rounded-lg">
+            <!-- Form Section -->
+            <div class="w-full md:w-1/2 lg:w-1/3 px-4 mb-8">
+                <h1 class="text-2xl font-bold text-center text-gray-900 mb-6">Delete unwanted data from the internet</h1>
+                <p class="text-md text-center text-gray-600 mb-8">
+                    Fill out the form below to delete unwanted data from the internet.
+                </p>
+                {% if form.errors %}
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+                         role="alert">
+                        <strong class="font-bold">Error!</strong>
+                        <span class="block sm:inline">Please correct the following errors:</span>
+                        <ul>
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}<li>{{ field }}: {{ error }}</li>{% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    <div class="flex flex-col space-y-4">
+                        <!-- Keyword Field -->
+                        <div>
+                            <label for="id_keyword" class="block text-sm font-medium text-gray-700">Keyword</label>
+                            <input type="text"
+                                   name="keyword"
+                                   id="id_keyword"
+                                   class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                                   placeholder="Enter keyword"
+                                   value="{{ form.keyword.value|default:'' }}">
+                        </div>
+                        <!-- URL Field -->
+                        <div>
+                            <label for="id_url" class="block text-sm font-medium text-gray-700">URL</label>
+                            <input type="text"
+                                   name="url"
+                                   id="id_url"
+                                   class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                                   placeholder="Enter URL"
+                                   value="{{ form.url.value|default:'' }}">
+                        </div>
+                        <button type="submit"
+                                class="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">
+                            Submit
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <!-- Table Section -->
+            <div class="w-full md:w-1/2 lg:w-2/3 px-4">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full leading-normal">
+                        <thead>
+                            <tr>
+                                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Keyword
+                                </th>
+                                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Status
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for monitor in monitors %}
+                                asdf
+                                <tr>
+                                    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                        <div class="flex items-center">
+                                            <div class="ml-3">
+                                                <p class="text-gray-900 whitespace-no-wrap">{{ monitor.keyword }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                        <p class="text-gray-900 whitespace-no-wrap">{{ monitor.status }}</p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

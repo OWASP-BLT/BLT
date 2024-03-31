@@ -83,6 +83,7 @@ from website.models import (
     InviteFriend,
     Issue,
     IssueScreenshot,
+    Monitor,
     Payment,
     Points,
     Subscription,
@@ -4309,7 +4310,7 @@ def deletions(request):
         form = MonitorForm(request.POST)
         if form.is_valid():
             monitor = form.save(commit=False)
-            monitor.user = request.user  # Set the user field to the current user
+            monitor.user = request.user
             monitor.save()
             messages.success(request, "Form submitted successfully!")
         else:
@@ -4317,4 +4318,8 @@ def deletions(request):
     else:
         form = MonitorForm()
 
-    return render(request, "Monitor.html", {"form": form})
+    return render(
+        request,
+        "monitor.html",
+        {"form": form, "deletions": Monitor.objects.filter(user=request.user)},
+    )

@@ -745,7 +745,7 @@ msgid "Submit the information"
 msgstr "जानकारी सबमिट करें"
 
 #: website/templates/mobile_about.html:34
-msgid "Win money through company-sponsored Bug Hunts"
+msgid "Win money through company-sponsored Bug Bounties"
 msgstr "कंपनी के प्रायोजित बग हंट के माध्यम से पैसे जीतें"
 
 #: website/templates/mobile_about.html:34
@@ -765,7 +765,7 @@ msgid "If you participate in"
 msgstr "यदि आप भाग लेते हैं"
 
 #: website/templates/mobile_about.html:36
-msgid "sponsored Bug Hunts"
+msgid "sponsored Bug Bounties"
 msgstr "प्रायोजित बग हंट"
 
 #: website/templates/mobile_about.html:36
@@ -790,7 +790,7 @@ msgstr ""
 
 #: website/templates/mobile_about.html:43
 msgid ""
-"offers monthly Bug Hunts through 4 different subscription plans to help you "
+"offers monthly Bug Bounties through 4 different subscription plans to help you "
 "achieve this"
 msgstr ""
 "इसे प्राप्त करने में आपकी मदद करने के लिए 4 विभिन्न सदस्यता योजनाओं के माध्यम से मासिक बग "
