@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="flex justify-center items-start min-h-screen bg-gray-50">
@@ -24,7 +24,6 @@
                 <form method="post" class="space-y-6">
                     {% csrf_token %}
                     <div class="flex flex-col space-y-4">
-                        <!-- Keyword Field -->
                         <div>
                             <label for="id_keyword" class="block text-sm font-medium text-gray-700">Keyword</label>
                             <input type="text"
