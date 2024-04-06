@@ -61,6 +61,26 @@
             bottom: 10px;
             right: 15px;
     }
+    .tweet-btn {
+    background-color: #1da1f2; /* Twitter blue */
+    color: #fff; /* White text color */
+    border: none; /* Remove border */
+    padding: 5px 10px; /* Add padding */
+    border-radius: 4px; /* Rounded corners */
+    text-decoration: none; /* Remove underline */
+    transition: background-color 0.3s ease; /* Smooth hover transition */
+    }
+
+    .tweet-btn:hover {
+        background-color: #0d8ddb; /* Darker shade of Twitter blue on hover */
+    }
+
+    /* Adjust Font Awesome icon size */
+    .fa-twitter {
+        font-size: 16px;
+        margin-right: 5px; /* Add some spacing between icon and text */
+    }
+
     </style>
 {% endblock style %}
 {% block content %}
@@ -112,6 +132,15 @@
                     </button>
                 </form>
             </div>
+            {% if twitter_url %}
+                <div class="col-lg-1 col-md-1">
+                    <a class="tweet-btn btn btn-xs"
+                       href="{{ twitter_url }}"
+                       rel="noopener noreferrer">
+                        <i class="fab fa-twitter"></i> Tweet
+                    </a>
+                </div>
+            {% endif %}
         </div>
     </div>
     <div class="row charts">

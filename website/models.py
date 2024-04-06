@@ -12,6 +12,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.core.validators import URLValidator
 from django.db import models
 from django.db.models import Count
 from django.db.models.signals import post_save
@@ -154,6 +155,20 @@ class Domain(models.Model):
 
     def get_absolute_url(self):
         return "/domain/" + self.name
+
+    def get_or_set_x_url(self, name):
+        if self.twitter:
+            return self.twitter
+
+        validate = URLValidator(schemes=["https"])  # Only allow HTTPS URLs
+        try:
+            twitter_url = "https://twitter.com/%s" % (name)
+            validate(twitter_url)
+            self.twitter = name
+            self.save()
+            return name
+        except ValidationError:
+            pass
 
 
 def validate_image(fieldfile_obj):
