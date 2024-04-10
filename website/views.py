@@ -813,15 +813,11 @@ class IssueCreate(IssueBaseCreate, CreateView):
             initial["screenshot"] = "uploads\/" + self.request.POST.get("screenshot-hash") + ".png"
         return initial
 
-    # def get(self, request, *args, **kwargs):
-    #     print("processing get for ip address: ", get_client_ip(request))
-
-    #     captcha_form = CaptchaForm()
-    #     return render(
-    #         request,
-    #         self.template_name,
-    #         {"form": self.get_form(), "captcha_form": captcha_form},
-    #     )
+    def get(self, request, *args, **kwargs):
+        # GET requests should only render the form
+        form = self.form_class()
+        captcha_form = CaptchaForm()
+        return render(request, self.template_name, {"form": form, "captcha_form": captcha_form})
 
     def post(self, request, *args, **kwargs):
         print("processing post for ip address: ", get_client_ip(request))
