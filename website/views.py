@@ -797,6 +797,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
             initial["screenshot"] = "uploads\/" + self.request.POST.get("screenshot-hash") + ".png"
         return initial
 
+    def get(self, request, *args, **kwargs):
+        # GET requests should only render the form
+        form = self.form_class()
+        captcha_form = CaptchaForm()
+        return render(request, self.template_name, {"form": form, "captcha_form": captcha_form})
+
     def post(self, request, *args, **kwargs):
         # resolve domain
         url = request.POST.get("url").replace("www.", "").replace("https://", "")
