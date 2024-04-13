@@ -799,9 +799,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
     def get(self, request, *args, **kwargs):
         # GET requests should only render the form
-        form = self.form_class()
         captcha_form = CaptchaForm()
-        return render(request, self.template_name, {"form": form, "captcha_form": captcha_form})
+        return render(
+            request,
+            self.template_name,
+            {"form": self.get_form(), "captcha_form": captcha_form},
+        )
 
     def post(self, request, *args, **kwargs):
         # resolve domain
