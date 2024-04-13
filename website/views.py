@@ -594,6 +594,42 @@ class IssueBaseCreate(object):
     def process_issue(self, user, obj, created, domain, tokenauth=False, score=3):
         p = Points.objects.create(user=user, issue=obj, score=score)
         messages.success(self.request, "Bug added ! +" + str(score))
+        # tweet feature
+        try:
+            auth = tweepy.Client(
+                settings.BEARER_TOKEN,
+                settings.APP_KEY,
+                settings.APP_KEY_SECRET,
+                settings.ACCESS_TOKEN,
+                settings.ACCESS_TOKEN_SECRET,
+            )
+
+            blt_url = "https://%s/issue2/%d" % (
+                settings.DOMAIN_NAME,
+                obj.id,
+            )
+            domain_name = domain.get_name
+            twitter_account = (
+                "@" + domain.get_or_set_x_url(domain_name) + " "
+                if domain.get_or_set_x_url(domain_name)
+                else ""
+            )
+
+            issue_title = obj.description + " " if not obj.is_hidden else ""
+
+            message = "%sAn Issue %shas been reported on %s by %s on %s.\n Have look here %s" % (
+                twitter_account,
+                issue_title,
+                domain_name,
+                user.username,
+                settings.PROJECT_NAME,
+                blt_url,
+            )
+
+            auth.create_tweet(text=message)
+
+        except (TypeError, tweepy.errors.HTTPException, tweepy.errors.TweepyException) as e:
+            print(e)
 
         if created:
             try:
@@ -620,33 +656,6 @@ class IssueBaseCreate(object):
                 [email_to],
                 html_message=msg_html,
             )
-            try:
-                auth = tweepy.Client(
-                    settings.BEARER_TOKEN,
-                    settings.APP_KEY,
-                    settings.APP_KEY_SECRET,
-                    settings.ACCESS_TOKEN,
-                    settings.ACCESS_TOKEN_SECRET,
-                )
-                if obj.is_hidden:
-                    pass
-                else:
-                    blt_url = "https://" + "%s/issue/%d" % (
-                        settings.DOMAIN_NAME,
-                        obj.id,
-                    )
-                    auth.create_tweet(
-                        text='An Issue "%s" has been reported on %s by %s on %s.\n Have look here %s'
-                        % (
-                            obj.description,
-                            domain,
-                            user,
-                            settings.PROJECT_NAME,
-                            blt_url,
-                        )
-                    )
-            except Exception as e:
-                print(e)
 
         else:
             email_to = domain.email
@@ -710,7 +719,6 @@ class IssueBaseCreate(object):
                 [email_to],
                 html_message=msg_html,
             )
-
         return HttpResponseRedirect("/")
 
 
@@ -1373,8 +1381,8 @@ class DomainDetailView(ListView):
         context = super(DomainDetailView, self).get_context_data(*args, **kwargs)
         # remove any arguments from the slug
         self.kwargs["slug"] = self.kwargs["slug"].split("?")[0]
-
-        context["domain"] = get_object_or_404(Domain, name=self.kwargs["slug"])
+        domain = get_object_or_404(Domain, name=self.kwargs["slug"])
+        context["domain"] = domain
 
         parsed_url = urlparse("http://" + self.kwargs["slug"])
 
@@ -1438,6 +1446,8 @@ class DomainDetailView(ListView):
             .annotate(c=Count("label"))
             .order_by()
         )
+        context["twitter_url"] = "https://twitter.com/%s" % domain.get_or_set_x_url(domain.get_name)
+
         return context
 
 
