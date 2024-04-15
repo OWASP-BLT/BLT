@@ -64,7 +64,7 @@ chromedriver-autoinstaller = "^0.6.4"
 sentry-sdk = "^1.42.0"
 
 [tool.poetry.group.dev.dependencies]
-black = "^24.2.0"
+black = "^24.4.0"
 isort = "^5.13.2"
 ruff = "^0.2.2"
 
