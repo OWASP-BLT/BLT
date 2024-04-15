@@ -1,4 +1,5 @@
 import base64
+import io
 import json
 import os
 import random
@@ -66,6 +67,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import DetailView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
+from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
@@ -4332,3 +4334,17 @@ def deletions(request):
         "monitor.html",
         {"form": form, "deletions": Monitor.objects.filter(user=request.user)},
     )
+
+
+def generate_bid_image(request, bid_amount):
+    image = Image.new("RGB", (100, 50), color="white")
+    draw = ImageDraw.Draw(image)
+
+    font = ImageFont.load_default()
+    draw.text((10, 10), f"Bid: ${bid_amount}", fill="black", font=font)
+
+    byte_io = io.BytesIO()
+    image.save(byte_io, format="PNG")
+    byte_io.seek(0)
+
+    return HttpResponse(byte_io, content_type="image/png")

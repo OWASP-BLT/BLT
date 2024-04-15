@@ -76,6 +76,7 @@ from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
     facebook_callback,
     flag_issue2,
     flag_issue3,
+    generate_bid_image,
     github_callback,
     google_callback,
     like_issue2,
@@ -487,6 +488,7 @@ urlpatterns = [
     path("sponsor/", website.views.sponsor_view, name="sponsor"),
     path("companies/", DomainListView.as_view(), name="domain_lists"),
     path("trademarks/", website.views.trademark_search, name="trademark_search"),
+    path("generate_bid_image/<int:bid_amount>/", generate_bid_image, name="generate_bid_image"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s]+)",
         website.views.trademark_detailview,
