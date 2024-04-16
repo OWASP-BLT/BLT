@@ -822,6 +822,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         print("processing post for ip address: ", get_client_ip(request))
         # resolve domain
         url = request.POST.get("url").replace("www.", "").replace("https://", "")
+        print(url)
 
         request.POST._mutable = True
         request.POST.update(url=url)  # only domain.com will be stored in db
