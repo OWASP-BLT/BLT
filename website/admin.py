@@ -133,6 +133,7 @@ class DomainAdminPanel(ImportExportModelAdmin):
         "created",
         "modified",
     )
+    search_fields = ["name", "company__name", "url"]
 
 
 class CompanyUserAdmin(ImportExportModelAdmin):
