@@ -288,9 +288,6 @@ class Issue(models.Model):
     def domain_name(self):
         parsed_url = urlparse(self.url)
         domain = parsed_url.hostname
-        temp = domain.rsplit(".")
-        if len(temp) == 3:
-            domain = temp[1] + "." + temp[2]
         return domain
 
     def get_twitter_message(self):

@@ -896,7 +896,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     "report.html",
                     {"form": self.get_form(), "captcha_form": captcha_form},
                 )
-
             clean_domain = (
                 obj.domain_name.replace("www.", "").replace("https://", "").replace("http://", "")
             )
