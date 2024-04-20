@@ -9,7 +9,6 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 
 # from google.oauth2 import service_account
 import os
-import socket
 import sys
 
 import dj_database_url
@@ -25,13 +24,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
 
-# Check the current hostname and adjust PROJECT_NAME and DOMAIN_NAME accordingly
-current_hostname = socket.gethostname()
-
-print("Current hostname:", current_hostname)
-print(os.environ)
-
-# if current_hostname == "owasp.org":
 
 PROJECT_NAME = "BLT"
 DOMAIN_NAME = "blt.owasp.org"
@@ -119,10 +111,9 @@ MIDDLEWARE = (
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
-    "allauth.account.middleware.AccountMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "allauth.account.middleware.AccountMiddleware",  # Newly added for allauth 0.60.1
+    "allauth.account.middleware.AccountMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -426,7 +417,10 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
     "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework.authentication.TokenAuthentication",),
     "PAGE_SIZE": 10,
-    "DEFAULT_THROTTLE_RATES": {"anon": f"{anon_throttle}/day", "user": f"{user_throttle}/day"},
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": f"{anon_throttle}/day",
+        "user": f"{user_throttle}/day",
+    },
 }
 
 SOCIALACCOUNT_PROVIDER = {
