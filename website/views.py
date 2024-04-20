@@ -809,7 +809,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
     def post(self, request, *args, **kwargs):
         # resolve domain
         url = request.POST.get("url").replace("www.", "").replace("https://", "")
-        print(url)
 
         request.POST._mutable = True
         request.POST.update(url=url)  # only domain.com will be stored in db
