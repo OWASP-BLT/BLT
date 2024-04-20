@@ -66,7 +66,7 @@ class Company(models.Model):
 
 class Domain(models.Model):
     company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
-    managers = models.ManyToManyField(User, related_name="user_domains")
+    managers = models.ManyToManyField(User, related_name="user_domains", blank=True)
     name = models.CharField(max_length=255, unique=True)
     url = models.URLField()
     logo = models.ImageField(upload_to="logos", null=True, blank=True)
