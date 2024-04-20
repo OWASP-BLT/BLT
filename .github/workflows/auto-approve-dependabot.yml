@@ -1,38 +1,23 @@
-# name: Approve dependabot
-
-# # Trigger the workflow on pull request
-# on: pull_request_target
-
-# jobs:
-#   autoapprove:
-#     name: Approve dependabot
-#     runs-on: ubuntu-latest
-#     if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]' || github.actor == 'dependabot'
-#     permissions: 
-#       issues: write
-#     steps:
-#       - name: Auto approve
-#         uses: cognitedata/auto-approve-dependabot-action@v3.0.1
-#         if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]' || github.actor == 'dependabot'
-#         with:
-#           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-name: Approve dependabot
+name: Approve and Merge Dependabot PRs
 on: pull_request
 
 permissions:
   contents: write
+  pull-requests: write  # Added permission to interact with pull requests
 
 jobs:
   dependabot:
     runs-on: ubuntu-latest
     if: ${{ github.actor == 'dependabot[bot]' }}
-    permissions: 
+    permissions:
       issues: write
+      pull-requests: write  # Ensure this is explicitly set for the job too
     env:
-      PR_URL: ${{github.event.pull_request.html_url}}
+      PR_URL: ${{ github.event.pull_request.html_url }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2  # This step is typically necessary before interacting with the PR
       - name: approve
         run: gh pr review --approve "$PR_URL"
       - name: merge
