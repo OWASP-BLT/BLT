@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BIDDING</title>
+</head>
+<body>
+    <form method="post" action="{% url 'BiddingData' %}">
+        {% csrf_token %}
+        <label>Issue link:</label>
+        <input type="text" id="issueLinkInput" name="issue_url">
+        <br>
+        <button type="button" onclick="fetchBid()">Fetch</button>
+        <br>
+        <p id="BidDisplay"></p>
+        <br>
+        <label for="bid_amount" id="bid_amount" >New Bid:</label>
+        <input type="number" id="bid_amount" name="bid_amount" required min="1" >
+        <br>
+        <button type="submit" id="submitBid">Submit Bid</button>
+    </form>
+    
+    <script>
+        var latest_bid = "{{latest_bid}}";   
+        function fetchBid() {
+        document.getElementById('BidDisplay').textContent = `Lowest Bid: $${latest_bid}`;
+        console.log(latest_bid);
+        document.getElementById('bid_amount').setAttribute('max', latest_bid);
+    }
+    </script>
+</body>
+</html>

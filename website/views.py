@@ -92,6 +92,7 @@ from website.models import (
     UserProfile,
     Wallet,
     Winner,
+    Bid,
 )
 
 from .forms import (
@@ -101,6 +102,7 @@ from .forms import (
     QuickIssueForm,
     UserDeleteForm,
     UserProfileForm,
+    Bidding,
 )
 
 WHITELISTED_IMAGE_TYPES = {
@@ -4348,3 +4350,21 @@ def generate_bid_image(request, bid_amount):
     byte_io.seek(0)
 
     return HttpResponse(byte_io, content_type="image/png")
+
+def bidding_view(request):
+    form = Bidding()
+    return render(request, 'bidding.html', {"form": form})
+
+from django.http import JsonResponse
+
+def SaveBiddingData(request):
+    form = Bidding()
+    latest_bid = None
+    if request.method == "POST":
+        url = request.POST.get('issue_url')
+        bid_amount = request.POST.get('bid_amount')
+        en = Bid(issue_url=url, bid_amount=bid_amount, current_bid=bid_amount)
+        en.save()
+        latest_bid = Bid.objects.filter(issue_url=url).first()
+        
+    return render(request, 'bidding.html', {"form": form, "latest_bid": latest_bid})

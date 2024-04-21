@@ -19,6 +19,7 @@ from website.models import (
     UserProfile,
     Wallet,
     Winner,
+    Bid,
 )
 
 
@@ -72,6 +73,8 @@ class WinnerAdmin(admin.ModelAdmin):
         "prize_distributed",
     )
 
+class BiddingAdmin(admin.ModelAdmin):
+    list_display = ('issue_url','current_bid','time_left','bid_amount')
 
 class WalletAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "current_balance", "created_at")
@@ -223,7 +226,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 
 admin.site.register(ContributorStats)
-
+admin.site.register(Bid,BiddingAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(User, UserAdmin)
 
