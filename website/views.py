@@ -107,6 +107,8 @@ WHITELISTED_IMAGE_TYPES = {
     "png": "image/png",
 }
 
+from PIL import Image
+
 
 def image_validator(img):
     try:
@@ -562,7 +564,10 @@ class UserDeleteView(LoginRequiredMixin, View):
 
 class IssueBaseCreate(object):
     def form_valid(self, form):
-        print("prcessing form_valid IssueBaseCreate for ip address: ", get_client_ip(self.request))
+        print(
+            "prcessing form_valid IssueBaseCreate for ip address: ",
+            get_client_ip(self.request),
+        )
         score = 3
         obj = form.save(commit=False)
         obj.user = self.request.user
@@ -857,11 +862,34 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     "report.html",
                     {"form": self.get_form(), "captcha_form": captcha_form},
                 )
-        if not request.FILES.get("screenshots"):
+        # if not request.FILES.get("screenshots"):
+        #     messages.error(request, "Screenshot is required")
+        #     captcha_form = CaptchaForm(request.POST)
+        #     return render(
+        #         self.request,
+        #         "report.html",
+        #         {"form": self.get_form(), "captcha_form": captcha_form},
+        #     )
+
+        screenshot = request.FILES.get("screenshots")
+        if not screenshot:
             messages.error(request, "Screenshot is required")
             captcha_form = CaptchaForm(request.POST)
             return render(
-                self.request,
+                request,
+                "report.html",
+                {"form": self.get_form(), "captcha_form": captcha_form},
+            )
+
+        try:
+            # Attempt to open the image to validate if it's a correct format
+            img = Image.open(screenshot)
+            img.verify()  # Verify that it is, in fact, an image
+        except (IOError, ValueError):
+            messages.error(request, "Invalid image file.")
+            captcha_form = CaptchaForm(request.POST)
+            return render(
+                request,
                 "report.html",
                 {"form": self.get_form(), "captcha_form": captcha_form},
             )
@@ -869,7 +897,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        print("prcessing form_valid in IssueCreate for ip address: ", get_client_ip(self.request))
+        print(
+            "prcessing form_valid in IssueCreate for ip address: ",
+            get_client_ip(self.request),
+        )
         reporter_ip = get_client_ip(self.request)
         form.instance.reporter_ip_address = reporter_ip
 
