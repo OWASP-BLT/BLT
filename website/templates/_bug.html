@@ -54,15 +54,68 @@
                  height="100%">
         </div>
     {% else %}
-        <div class="bug-images h-[160px] flex flex-row justify-between px-3 my-2">
+        <div class="bug-images h-[160px] flex flex-row justify-between my-2">
             {% for bug_key, bug_screenshots in bugs_screenshots.items %}
                 {% if bug == bug_key %}
                     {% if bug_screenshots %}
-                        <img class="bug-img h-[100%] w-[200px] object-contain"
-                             src="{{ bug_screenshots.0.image.url }}"
-                             alt="bug screenshot"
-                             width="200px"
-                             height="100%">
+                        {% if bug_screenshots|length == 1 %}
+                            <img class="bug-img h-[100%] w-[200px] object-contain"
+                                 src="{{ bug_screenshots.0.image.url }}"
+                                 alt="bug screenshot"
+                                 width="200px"
+                                 height="100%">
+                        {% else %}
+                            <div class="flex flex-row items-center gap-2">
+                                <button class="py-4" id="prev-btn">
+                                    <i class="fa fa-angle-left fa-2x"></i>
+                                </button>
+                                <div class="flex flex-row items-center w-[200px] gap-10">
+                                    <img id="screenshot"
+                                         class="bug-img h-[160px] w-[200px] object-cover"
+                                         src="{{ bug_screenshots.0.image.url }}"
+                                         alt="bug screenshot"
+                                         width="200px"
+                                         height="100%">
+                                </div>
+                                <button class="py-4" id="next-btn">
+                                    <i class="fa fa-angle-right fa-2x" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <script>
+                            var currentIndex = 0;
+                            var bugScreenshots = [
+                                {% for screenshot in bug_screenshots %}
+                                    "{{ screenshot.image.url }}",
+                                {% endfor %}
+                            ];
+                            var screenshotElement = document.getElementById("screenshot");
+                            var prevButton = document.getElementById("prev-btn");
+                            var nextButton = document.getElementById("next-btn");
+        
+                            function updateButtons() {
+                                prevButton.disabled = currentIndex === 0;
+                                nextButton.disabled = currentIndex === bugScreenshots.length - 1;
+                            }
+        
+                            updateButtons();
+        
+                            document.getElementById("next-btn").addEventListener("click", function() {
+                                if (currentIndex < bugScreenshots.length - 1) {
+                                    currentIndex++;
+                                    screenshotElement.src = bugScreenshots[currentIndex];
+                                    updateButtons();
+                                }
+                            });
+        
+                            document.getElementById("prev-btn").addEventListener("click", function() {
+                                if (currentIndex > 0) {
+                                    currentIndex--;
+                                    screenshotElement.src = bugScreenshots[currentIndex];
+                                    updateButtons();
+                                }
+                            });
+                            </script>
+                        {% endif %}
                     {% endif %}
                 {% endif %}
             {% endfor %}

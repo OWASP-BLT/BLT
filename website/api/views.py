@@ -46,7 +46,7 @@ class UserIssueViewSet(viewsets.ModelViewSet):
     serializer_class = IssueSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ("user__username", "user__id")
-    http_method_names = ["get", "post", "head"]
+    http_method_names = ["get", "head"]
 
     def get_queryset(self):
         anonymous_user = self.request.user.is_anonymous
