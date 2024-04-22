@@ -4359,12 +4359,24 @@ from django.http import JsonResponse
 
 def SaveBiddingData(request):
     form = Bidding()
-    latest_bid = None
     if request.method == "POST":
         url = request.POST.get('issue_url')
         bid_amount = request.POST.get('bid_amount')
         en = Bid(issue_url=url, bid_amount=bid_amount, current_bid=bid_amount)
         en.save()
-        latest_bid = Bid.objects.filter(issue_url=url).first()
-        
-    return render(request, 'bidding.html', {"form": form, "latest_bid": latest_bid})
+        return render(request, 'bidding.html', {"form": form})
+
+    return render(request, 'bidding.html', {"form": form})
+
+def fetch_current_bid(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        issue_url = data.get('issue_url')
+        try:
+            bid = Bid.objects.get(issue_url=issue_url)
+            current_bid = bid.current_bid
+            return JsonResponse({'current_bid': current_bid})
+        except Bid.DoesNotExist:
+            return JsonResponse({'error': 'Bid not found'}, status=404)
+    else:
+        return JsonResponse({'error': 'Method not allowed'}, status=405)

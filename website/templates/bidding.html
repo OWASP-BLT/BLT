@@ -6,6 +6,51 @@
     <title>BIDDING</title>
 </head>
 <body>
+    <script>
+        function fetchBid() {
+            const issueUrl = document.getElementById('issueLinkInput').value;
+            const csrftoken = getCookie('csrftoken');  // Function to retrieve the CSRF token from cookies
+        
+            fetch(`/fetch-current-bid/`, {
+                method: 'POST',  // Or 'POST' if your view requires a POST request
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({ issue_url: issueUrl }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if ('current_bid' in data) {
+                    const currentBid = data.current_bid;
+                    // Process the currentBid value
+                    document.getElementById('BidDisplay').innerHTML = `Current Bid: ${currentBid}`;
+                    document.getElementById('bid_amount').setAttribute('max', currentBid);
+                } else {
+                    // Handle the case where there is no current bid
+                    document.getElementById('BidDisplay').innerHTML = 'No current bid';
+                }
+            })
+        }
+        
+        // Function to retrieve the CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+            </script>
     <form method="post" action="{% url 'BiddingData' %}">
         {% csrf_token %}
         <label>Issue link:</label>
@@ -20,14 +65,6 @@
         <br>
         <button type="submit" id="submitBid">Submit Bid</button>
     </form>
-    
-    <script>
-        var latest_bid = "{{latest_bid}}";   
-        function fetchBid() {
-        document.getElementById('BidDisplay').textContent = `Lowest Bid: $${latest_bid}`;
-        console.log(latest_bid);
-        document.getElementById('bid_amount').setAttribute('max', latest_bid);
-    }
-    </script>
+
 </body>
 </html>
