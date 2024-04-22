@@ -17,11 +17,11 @@ from django.db import models
 from django.db.models import Count
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 from google.cloud import storage
 from mdeditor.fields import MDTextField
 from PIL import Image
 from rest_framework.authtoken.models import Token
-from django.utils import timezone
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -586,9 +586,10 @@ class Monitor(models.Model):
 
 
 class Bid(models.Model):
-    issue_url=models.URLField()
-    current_bid=models.CharField(default='No current bid', max_length=30)
-    time_left=models.DateTimeField(default=timezone.now)
-    bid_amount=models.IntegerField()
+    issue_url = models.URLField()
+    current_bid = models.CharField(default="No current bid", max_length=30)
+    time_left = models.DateTimeField(default=timezone.now)
+    bid_amount = models.IntegerField()
+
     def __str__(self):
         return f"Link: {self.issue_url}, Bid Amount: {self.bid_amount}"

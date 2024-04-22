@@ -60,6 +60,7 @@ from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
     ListHunts,
     OngoingHunts,
     PreviousHunts,
+    SaveBiddingData,
     ScoreboardView,
     SpecificIssuesView,
     SpecificMonthLeaderboardView,
@@ -74,6 +75,7 @@ from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
     dislike_issue2,
     dislike_issue3,
     facebook_callback,
+    fetch_current_bid,
     flag_issue2,
     flag_issue3,
     generate_bid_image,
@@ -83,8 +85,6 @@ from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
     like_issue3,
     subscribe_to_domains,
     vote_count,
-    SaveBiddingData,
-    fetch_current_bid,
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
@@ -491,7 +491,7 @@ urlpatterns = [
     path("companies/", DomainListView.as_view(), name="domain_lists"),
     path("trademarks/", website.views.trademark_search, name="trademark_search"),
     path("generate_bid_image/<int:bid_amount>/", generate_bid_image, name="generate_bid_image"),
-    path('bidding/', SaveBiddingData, name='BiddingData'),
+    path("bidding/", SaveBiddingData, name="BiddingData"),
     path("fetch-current-bid/", fetch_current_bid, name="fetch_current_bid"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s]+)",

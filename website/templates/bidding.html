@@ -1,12 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BIDDING</title>
-</head>
-<body>
-    <script>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description"
+              content="This is a website used for Bidding on issue">
+        <meta name="keywords" content="Bidding,issues">
+        <title>BIDDING</title>
+        <style>
+        /* Add your CSS styles here */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+
+        form {
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        button {
+            padding: 8px 15px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #BidDisplay {
+            margin-bottom: 10px;
+        }
+        </style>
+    </head>
+    <body>
+        <script>
         function fetchBid() {
             const issueUrl = document.getElementById('issueLinkInput').value;
             const csrftoken = getCookie('csrftoken');  // Function to retrieve the CSRF token from cookies
@@ -23,14 +77,19 @@
             .then(data => {
                 if ('current_bid' in data) {
                     const currentBid = data.current_bid;
+                    const time_left= data.time_left;
                     // Process the currentBid value
-                    document.getElementById('BidDisplay').innerHTML = `Current Bid: ${currentBid}`;
-                    document.getElementById('bid_amount').setAttribute('max', currentBid);
+                    document.getElementById('BidDisplay').innerHTML = `Current Bid:  ${currentBid} Time Left: ${time_left}hrs`;
+                    const bidAmountInput = document.getElementById('bid_amount');
+                    bidAmountInput.setAttribute('max', currentBid-1);
                 } else {
                     // Handle the case where there is no current bid
                     document.getElementById('BidDisplay').innerHTML = 'No current bid';
                 }
             })
+            .catch(error => {
+                console.error('Error:', error);
+            });
         }
         
         // Function to retrieve the CSRF token from cookies
@@ -50,21 +109,20 @@
             return cookieValue;
         }
         
-            </script>
-    <form method="post" action="{% url 'BiddingData' %}">
-        {% csrf_token %}
-        <label>Issue link:</label>
-        <input type="text" id="issueLinkInput" name="issue_url">
-        <br>
-        <button type="button" onclick="fetchBid()">Fetch</button>
-        <br>
-        <p id="BidDisplay"></p>
-        <br>
-        <label for="bid_amount" id="bid_amount" >New Bid:</label>
-        <input type="number" id="bid_amount" name="bid_amount" required min="1" >
-        <br>
-        <button type="submit" id="submitBid">Submit Bid</button>
-    </form>
-
-</body>
+        </script>
+        <form method="post" action="{% url 'BiddingData' %}">
+            {% csrf_token %}
+            <label>Issue link:</label>
+            <input type="text" id="issueLinkInput" name="issue_url">
+            <br>
+            <button type="button" onclick="fetchBid()">Fetch</button>
+            <br>
+            <p id="BidDisplay"></p>
+            <br>
+            <label id="bidamount">New Bid:</label>
+            <input type="number" id="bid_amount"  name="bid_amount" required min="1">
+            <br>
+            <button type="submit" id="submitBid" onclick="Submit()">Submit Bid</button>
+        </form>
+    </body>
 </html>

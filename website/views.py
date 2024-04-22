@@ -77,6 +77,7 @@ from blt import settings
 from comments.models import Comment
 from website.models import (
     IP,
+    Bid,
     Company,
     CompanyAdmin,
     ContributorStats,
@@ -92,17 +93,16 @@ from website.models import (
     UserProfile,
     Wallet,
     Winner,
-    Bid,
 )
 
 from .forms import (
+    Bidding,
     CaptchaForm,
     HuntForm,
     MonitorForm,
     QuickIssueForm,
     UserDeleteForm,
     UserProfileForm,
-    Bidding,
 )
 
 WHITELISTED_IMAGE_TYPES = {
@@ -110,8 +110,6 @@ WHITELISTED_IMAGE_TYPES = {
     "jpg": "image/jpeg",
     "png": "image/png",
 }
-
-from PIL import Image
 
 
 def image_validator(img):
@@ -568,10 +566,6 @@ class UserDeleteView(LoginRequiredMixin, View):
 
 class IssueBaseCreate(object):
     def form_valid(self, form):
-        print(
-            "prcessing form_valid IssueBaseCreate for ip address: ",
-            get_client_ip(self.request),
-        )
         score = 3
         obj = form.save(commit=False)
         obj.user = self.request.user
@@ -602,7 +596,6 @@ class IssueBaseCreate(object):
         p = Points.objects.create(user=self.request.user, issue=obj, score=score)
 
     def process_issue(self, user, obj, created, domain, tokenauth=False, score=3):
-        print("prcessing process_issue for ip address: ", get_client_ip(self.request))
         p = Points.objects.create(user=user, issue=obj, score=score)
         messages.success(self.request, "Bug added ! +" + str(score))
         # tweet feature
@@ -639,11 +632,7 @@ class IssueBaseCreate(object):
 
             auth.create_tweet(text=message)
 
-        except (
-            TypeError,
-            tweepy.errors.HTTPException,
-            tweepy.errors.TweepyException,
-        ) as e:
+        except (TypeError, tweepy.errors.HTTPException, tweepy.errors.TweepyException) as e:
             print(e)
 
         if created:
@@ -753,7 +742,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
     template_name = "report.html"
 
     def get_initial(self):
-        print("prcessing post for ip address: ", get_client_ip(self.request))
         try:
             json_data = json.loads(self.request.body)
             if not self.request.GET._mutable:
@@ -814,8 +802,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return initial
 
     def get(self, request, *args, **kwargs):
-        print("prcessing get for ip address: ", get_client_ip(request))
-
+        # GET requests should only render the form
         captcha_form = CaptchaForm()
         return render(
             request,
@@ -824,7 +811,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
         )
 
     def post(self, request, *args, **kwargs):
-        print("prcessing post for ip address: ", get_client_ip(request))
         # resolve domain
         url = request.POST.get("url").replace("www.", "").replace("https://", "")
 
@@ -857,7 +843,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     else:
                         raise Exception
             except:
-                # TODO: it could be that the site is down so we can consider logging this differently
                 messages.error(request, "Domain does not exist")
 
                 captcha_form = CaptchaForm(request.POST)
@@ -866,34 +851,11 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     "report.html",
                     {"form": self.get_form(), "captcha_form": captcha_form},
                 )
-        # if not request.FILES.get("screenshots"):
-        #     messages.error(request, "Screenshot is required")
-        #     captcha_form = CaptchaForm(request.POST)
-        #     return render(
-        #         self.request,
-        #         "report.html",
-        #         {"form": self.get_form(), "captcha_form": captcha_form},
-        #     )
-
-        screenshot = request.FILES.get("screenshots")
-        if not screenshot:
+        if not request.FILES.get("screenshots"):
             messages.error(request, "Screenshot is required")
             captcha_form = CaptchaForm(request.POST)
             return render(
-                request,
-                "report.html",
-                {"form": self.get_form(), "captcha_form": captcha_form},
-            )
-
-        try:
-            # Attempt to open the image to validate if it's a correct format
-            img = Image.open(screenshot)
-            img.verify()  # Verify that it is, in fact, an image
-        except (IOError, ValueError):
-            messages.error(request, "Invalid image file.")
-            captcha_form = CaptchaForm(request.POST)
-            return render(
-                request,
+                self.request,
                 "report.html",
                 {"form": self.get_form(), "captcha_form": captcha_form},
             )
@@ -901,10 +863,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        print(
-            "prcessing form_valid in IssueCreate for ip address: ",
-            get_client_ip(self.request),
-        )
         reporter_ip = get_client_ip(self.request)
         form.instance.reporter_ip_address = reporter_ip
 
@@ -941,6 +899,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     "report.html",
                     {"form": self.get_form(), "captcha_form": captcha_form},
                 )
+
             clean_domain = (
                 obj.domain_name.replace("www.", "").replace("https://", "").replace("http://", "")
             )
@@ -1122,7 +1081,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return create_issue(self, form)
 
     def get_context_data(self, **kwargs):
-        print("prcessing get_context_data for ip address: ", get_client_ip(self.request))
         context = super(IssueCreate, self).get_context_data(**kwargs)
         context["activities"] = Issue.objects.exclude(
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
@@ -4393,32 +4351,46 @@ def generate_bid_image(request, bid_amount):
 
     return HttpResponse(byte_io, content_type="image/png")
 
+
 def bidding_view(request):
     form = Bidding()
-    return render(request, 'bidding.html', {"form": form})
+    return render(request, "bidding.html", {"form": form})
+
 
 from django.http import JsonResponse
+
 
 def SaveBiddingData(request):
     form = Bidding()
     if request.method == "POST":
-        url = request.POST.get('issue_url')
-        bid_amount = request.POST.get('bid_amount')
-        en = Bid(issue_url=url, bid_amount=bid_amount, current_bid=bid_amount)
+        url = request.POST.get("issue_url")
+        bid_amount = request.POST.get("bid_amount")
+        current_time = datetime.now(timezone.utc)
+        en = Bid(
+            issue_url=url, bid_amount=bid_amount, current_bid=bid_amount, time_left=current_time
+        )
         en.save()
-        return render(request, 'bidding.html', {"form": form})
+        latest_bid = Bid.objects.filter(issue_url=url).first()
+        return render(request, "bidding.html")
 
-    return render(request, 'bidding.html', {"form": form})
+    return render(request, "bidding.html")
+
 
 def fetch_current_bid(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         data = json.loads(request.body)
-        issue_url = data.get('issue_url')
-        try:
-            bid = Bid.objects.get(issue_url=issue_url)
+        issue_url = data.get("issue_url")
+        bid = Bid.objects.filter(issue_url=issue_url).order_by("-time_left").first()
+        if bid is not None:
             current_bid = bid.current_bid
-            return JsonResponse({'current_bid': current_bid})
-        except Bid.DoesNotExist:
-            return JsonResponse({'error': 'Bid not found'}, status=404)
+            time_left = bid.time_left - datetime.now(timezone.utc)
+            return JsonResponse(
+                {
+                    "current_bid": current_bid,
+                    "time_left": (time_left.total_seconds() + 86400) // 3600,
+                }
+            )
+        else:
+            return JsonResponse({"error": "Bid not found"}, status=404)
     else:
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
+        return JsonResponse({"error": "Method not allowed"}, status=405)
