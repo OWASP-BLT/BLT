@@ -51,4 +51,4 @@ class MonitorForm(forms.ModelForm):
 class Bidding(forms.ModelForm):
     class Meta:
         model = Bid
-        fields = ["issue_url", "current_bid", "time_left", "bid_amount"]
+        fields = ["issue_url", "user", "current_bid", "time_left", "bid_amount"]

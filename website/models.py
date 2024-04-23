@@ -587,6 +587,7 @@ class Monitor(models.Model):
 
 class Bid(models.Model):
     issue_url = models.URLField()
+    user = models.CharField(default="Add user", max_length=30, null=True, blank=True)
     current_bid = models.CharField(default="No current bid", max_length=30)
     time_left = models.DateTimeField(default=timezone.now)
     bid_amount = models.IntegerField()

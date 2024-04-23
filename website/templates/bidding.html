@@ -64,7 +64,6 @@
         function fetchBid() {
             const issueUrl = document.getElementById('issueLinkInput').value;
             const csrftoken = getCookie('csrftoken');  // Function to retrieve the CSRF token from cookies
-        
             fetch(`/fetch-current-bid/`, {
                 method: 'POST',  // Or 'POST' if your view requires a POST request
                 headers: {
@@ -91,7 +90,7 @@
                 console.error('Error:', error);
             });
         }
-        
+
         // Function to retrieve the CSRF token from cookies
         function getCookie(name) {
             let cookieValue = null;
@@ -119,10 +118,13 @@
             <br>
             <p id="BidDisplay"></p>
             <br>
+            <label>Github UserName:</label>
+            <input type="text" id="user" name="user" required>
+            <br>
             <label id="bidamount">New Bid:</label>
             <input type="number" id="bid_amount"  name="bid_amount" required min="1">
             <br>
-            <button type="submit" id="submitBid" onclick="Submit()">Submit Bid</button>
+            <button type="submit" id="submitBid">Submit Bid</button>
         </form>
     </body>
 </html>

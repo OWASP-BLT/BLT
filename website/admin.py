@@ -75,7 +75,7 @@ class WinnerAdmin(admin.ModelAdmin):
 
 
 class BiddingAdmin(admin.ModelAdmin):
-    list_display = ("issue_url", "current_bid", "time_left", "bid_amount")
+    list_display = ("issue_url", "user", "current_bid", "time_left", "bid_amount")
 
 
 class WalletAdmin(admin.ModelAdmin):

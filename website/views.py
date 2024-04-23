@@ -566,6 +566,10 @@ class UserDeleteView(LoginRequiredMixin, View):
 
 class IssueBaseCreate(object):
     def form_valid(self, form):
+        print(
+            "prcessing form_valid IssueBaseCreate for ip address: ",
+            get_client_ip(self.request),
+        )
         score = 3
         obj = form.save(commit=False)
         obj.user = self.request.user
@@ -596,6 +600,7 @@ class IssueBaseCreate(object):
         p = Points.objects.create(user=self.request.user, issue=obj, score=score)
 
     def process_issue(self, user, obj, created, domain, tokenauth=False, score=3):
+        print("prcessing process_issue for ip address: ", get_client_ip(self.request))
         p = Points.objects.create(user=user, issue=obj, score=score)
         messages.success(self.request, "Bug added ! +" + str(score))
         # tweet feature
@@ -632,7 +637,11 @@ class IssueBaseCreate(object):
 
             auth.create_tweet(text=message)
 
-        except (TypeError, tweepy.errors.HTTPException, tweepy.errors.TweepyException) as e:
+        except (
+            TypeError,
+            tweepy.errors.HTTPException,
+            tweepy.errors.TweepyException,
+        ) as e:
             print(e)
 
         if created:
@@ -742,6 +751,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
     template_name = "report.html"
 
     def get_initial(self):
+        print("prcessing post for ip address: ", get_client_ip(self.request))
         try:
             json_data = json.loads(self.request.body)
             if not self.request.GET._mutable:
@@ -802,7 +812,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return initial
 
     def get(self, request, *args, **kwargs):
-        # GET requests should only render the form
+        print("prcessing get for ip address: ", get_client_ip(request))
+
         captcha_form = CaptchaForm()
         return render(
             request,
@@ -811,6 +822,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         )
 
     def post(self, request, *args, **kwargs):
+        print("prcessing post for ip address: ", get_client_ip(request))
         # resolve domain
         url = request.POST.get("url").replace("www.", "").replace("https://", "")
 
@@ -843,6 +855,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     else:
                         raise Exception
             except:
+                # TODO: it could be that the site is down so we can consider logging this differently
                 messages.error(request, "Domain does not exist")
 
                 captcha_form = CaptchaForm(request.POST)
@@ -851,11 +864,34 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     "report.html",
                     {"form": self.get_form(), "captcha_form": captcha_form},
                 )
-        if not request.FILES.get("screenshots"):
+        # if not request.FILES.get("screenshots"):
+        #     messages.error(request, "Screenshot is required")
+        #     captcha_form = CaptchaForm(request.POST)
+        #     return render(
+        #         self.request,
+        #         "report.html",
+        #         {"form": self.get_form(), "captcha_form": captcha_form},
+        #     )
+
+        screenshot = request.FILES.get("screenshots")
+        if not screenshot:
             messages.error(request, "Screenshot is required")
             captcha_form = CaptchaForm(request.POST)
             return render(
-                self.request,
+                request,
+                "report.html",
+                {"form": self.get_form(), "captcha_form": captcha_form},
+            )
+
+        try:
+            # Attempt to open the image to validate if it's a correct format
+            img = Image.open(screenshot)
+            img.verify()  # Verify that it is, in fact, an image
+        except (IOError, ValueError):
+            messages.error(request, "Invalid image file.")
+            captcha_form = CaptchaForm(request.POST)
+            return render(
+                request,
                 "report.html",
                 {"form": self.get_form(), "captcha_form": captcha_form},
             )
@@ -863,6 +899,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
+        print(
+            "prcessing form_valid in IssueCreate for ip address: ",
+            get_client_ip(self.request),
+        )
         reporter_ip = get_client_ip(self.request)
         form.instance.reporter_ip_address = reporter_ip
 
@@ -899,7 +939,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     "report.html",
                     {"form": self.get_form(), "captcha_form": captcha_form},
                 )
-
             clean_domain = (
                 obj.domain_name.replace("www.", "").replace("https://", "").replace("http://", "")
             )
@@ -1081,6 +1120,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return create_issue(self, form)
 
     def get_context_data(self, **kwargs):
+        print("prcessing get_context_data for ip address: ", get_client_ip(self.request))
         context = super(IssueCreate, self).get_context_data(**kwargs)
         context["activities"] = Issue.objects.exclude(
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
@@ -4365,12 +4405,16 @@ def SaveBiddingData(request):
     if request.method == "POST":
         url = request.POST.get("issue_url")
         bid_amount = request.POST.get("bid_amount")
+        user = request.POST.get("user")
         current_time = datetime.now(timezone.utc)
         en = Bid(
-            issue_url=url, bid_amount=bid_amount, current_bid=bid_amount, time_left=current_time
+            issue_url=url,
+            bid_amount=bid_amount,
+            current_bid=bid_amount,
+            time_left=current_time,
+            user=user,
         )
         en.save()
-        latest_bid = Bid.objects.filter(issue_url=url).first()
         return render(request, "bidding.html")
 
     return render(request, "bidding.html")
