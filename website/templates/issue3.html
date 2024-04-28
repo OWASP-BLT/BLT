@@ -171,14 +171,14 @@
                     </div>
                     <div>
                         <div class=" text-[14px] w-[90%] truncate">
-                            <a class="" href="{% url 'domain' slug=object.domain.name %}">Reported on {{ object.domain.name }}</a>
+                            <a class="#" href="{% url 'domain' slug=object.domain.name %}">Reported on {{ object.domain.name }}</a>
                         </div>
                         <div class="text-[13px]">
                             Issues Reported: <span class="font-bold">{{ issue_count }}</span>
                         </div>
                     </div>
                     <div>
-                        <button {% if user.is_authenticated %} onclick="subscribe_domain()" {% else %} onclick="window.location.href=`{% url 'account_login' %}`" {% endif %}
+                        <button onclick="{% if user.is_authenticated %}subscribe_domain(){% else %}window.location.href=`{% url 'account_login' %}`{% endif %}"
                                 id="subscribe_domain_btn"
                                 class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[16px] p-2 rounded-lg">
                             {% if user.is_authenticated and subscribed_to_domain %}
@@ -194,7 +194,6 @@
                 </div>
                 <br>
                 <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
-                    <div></div>
                     {% if browser_family %}
                         {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as image_static %}
                             <div class="rounded-full w-[20%]">
@@ -223,7 +222,6 @@
                         </span>
                     </div>
                 </div>
-                <div></div>
             </div>
             <br>
         </div>
