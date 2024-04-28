@@ -1,6 +1,6 @@
 {% load gravatar %}
 {% load custom_tags %}
-<aside class="absolute flex-wrap right-9 max-sm:right-0 top-40 flex items-center lg:flex-col max-sm:top-80 max-sm:flex max-sm:w-full max-sm:mr--10 max-sm:items-center max-sm:justify-evenly">
+<aside class="absolute flex-wrap right-9 max-sm:right-0 top-40 flex items-center lg:flex-col max-sm:top-[16rem] lg:fixed lg:z-50 max-sm:flex max-sm:w-full max-sm:mr--10 max-sm:items-center max-sm:justify-evenly">
     <div class="flex flex-col max-sm:w-11/12 max-sm:flex-row max-sm:items-center max-sm:justify-evenly">
         <span><i class="fa fa-eye mr-5 mb-3"></i><span class="font-bold">{{ object.views }}</span></span>
         {% include "./_likes3.html" %}
@@ -24,9 +24,22 @@
         <div class="md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#2d9cdb4d] mb-3 cursor-pointer">
             <i class="fa-brands fa-github text-3xl text-black"></i>
         </div>
-        <div class="md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#842adb4d] mb-3 cursor-pointer">
-            <i class="fa-solid fa-trash text-3xl text-black"></i>
-        </div>
+        {% if request.user.is_superuser or request.user == object.user %}
+            {% comment %} <form method="post" action="{% url 'remove_user_from_issue' id=object.id %}" class="m-0 p-0">
+                {% csrf_token %}
+                <input type="hidden" name="token" value="{{ csrf_token }}" class="m-0 p-0" />
+                <button onclick="return confirm('Are you sure you want to report it anonymously?')">
+                    <div class="md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#842adb4d] mb-3 cursor-pointer">
+                        <i class="fa-solid fa-trash text-3xl text-black"></i>
+                    </div>
+            </button> {% endcomment %}
+            <a href="{% url 'delete_issue' id=object.id %}"
+               onclick="return confirm('Are you sure you want to delete this issue?')">
+                <div class="md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#842adb4d] mb-3 cursor-pointer">
+                    <i class="fa-solid fa-trash text-3xl text-black"></i>
+                </div>
+            </a>
+        {% endif %}
     </div>
 </aside>
 <script>
