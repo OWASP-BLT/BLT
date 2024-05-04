@@ -1,0 +1,191 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-10-26 15:58+0000\n"
+"PO-Revision-Date: 2017-10-26 14:47-0200\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 2.0.3\n"
+
+#: admin.py:46 models.py:11 templates/tellme/tpl-overview.html:13
+msgid "Screenshot"
+msgstr "Captura de Tela"
+
+#: admin.py:54
+msgctxt "Admin model"
+msgid "Browser Info"
+msgstr "Informações do Navegador"
+
+#: models.py:8
+msgid "Url"
+msgstr "Url"
+
+#: models.py:9
+msgid "Browser"
+msgstr "Navegador"
+
+#: models.py:10
+msgid "Comment"
+msgstr "Comentário"
+
+#: models.py:13
+msgid "User"
+msgstr "Usuário"
+
+#: models.py:14
+msgid "Creation date"
+msgstr "Data de criação"
+
+#: templates/tellme/initButtonText.txt:2
+msgid "Send feedback"
+msgstr "Enviar feedback"
+
+#: templates/tellme/tpl-description.html:3
+#: templates/tellme/tpl-highlighter.html:3
+#: templates/tellme/tpl-overview.html:3
+#: templates/tellme/tpl-submit-error.html:3
+#: templates/tellme/tpl-submit-success.html:3
+msgid "Feedback"
+msgstr "Feedback"
+
+#: templates/tellme/tpl-description.html:4
+msgid ""
+"Feedback lets you send us suggestions about this site. We welcome problem "
+"reports, feature ideas and general comments."
+msgstr ""
+"Feedback permite a você nos enviar sugestões sobre esse site. Nós temos a "
+"imensa satisfação de receber de você relatórios de problemas, ideias de "
+"novos recursos e comentários em geral."
+
+#: templates/tellme/tpl-description.html:5
+msgid "Start by writing a brief description:"
+msgstr "Inicie escrevendo uma breve descrição:"
+
+#: templates/tellme/tpl-description.html:6
+msgid ""
+"Next we'll let you identify areas of the page related to your description."
+msgstr ""
+"Em seguida, vamos deixar você identificar áreas da página relacionadas à "
+"sua descrição."
+
+#: templates/tellme/tpl-description.html:7
+#: templates/tellme/tpl-highlighter.html:15
+msgid "Next"
+msgstr "Próximo"
+
+#: templates/tellme/tpl-description.html:8
+#: templates/tellme/tpl-overview.html:18
+msgid "Please enter a description."
+msgstr "Por favor, informe uma descrição."
+
+#: templates/tellme/tpl-highlighter.html:4
+msgid ""
+"Click and drag on the page to help us better understand your feedback. You "
+"can move this dialog if it's in the way."
+msgstr ""
+"Clique e arraste na página para nos ajudar a entender melhor seu feedback. "
+"Você pode mover essa janela se ela estiver no seu caminho."
+
+#: templates/tellme/tpl-highlighter.html:7
+msgid "Highlight"
+msgstr "Realçar"
+
+#: templates/tellme/tpl-highlighter.html:8
+msgid "Highlight areas relevant to your feedback."
+msgstr "Realçar áreas relevantes para seu feedback."
+
+#: templates/tellme/tpl-highlighter.html:11
+msgid "Black out"
+msgstr "Escurecer"
+
+#: templates/tellme/tpl-highlighter.html:12
+msgid "Black out any personal information."
+msgstr "Escurecer qualquer informação pessoal."
+
+#: templates/tellme/tpl-highlighter.html:18
+#: templates/tellme/tpl-overview.html:16
+msgid "Back"
+msgstr "Voltar"
+
+#: templates/tellme/tpl-overview.html:5
+msgid "Description"
+msgstr "Descrição"
+
+#: templates/tellme/tpl-overview.html:6
+msgid "Additional info"
+msgstr "Informações Adicionais"
+
+#: templates/tellme/tpl-overview.html:7
+msgid "None"
+msgstr "Nenhum"
+
+#: templates/tellme/tpl-overview.html:8
+msgid "Browser Info"
+msgstr "Informações do Navegador"
+
+#: templates/tellme/tpl-overview.html:9
+msgid "Page Info"
+msgstr "Informações da Página"
+
+#: templates/tellme/tpl-overview.html:10
+msgid "Page Structure"
+msgstr "Estrutura da Página"
+
+#: templates/tellme/tpl-overview.html:15
+msgid "Submit"
+msgstr "Enviar"
+
+#: templates/tellme/tpl-submit-error.html:4
+msgid "Sadly an error occurred while sending your feedback. Please try again."
+msgstr ""
+"Infelizmente ocorreu um erro ao enviar seu feedback. Por favor, tente "
+"novamente."
+
+#: templates/tellme/tpl-submit-error.html:5
+#: templates/tellme/tpl-submit-success.html:6
+msgid "OK"
+msgstr "OK"
+
+#: templates/tellme/tpl-submit-success.html:4
+msgid ""
+"Thank you for your feedback. We value every piece of feedback we receive."
+msgstr ""
+"Obrigado por seu feedback. Nós valorizamos todos os feedbacks recebidos."
+
+#: templates/tellme/tpl-submit-success.html:5
+msgid ""
+"We cannot respond individually to every one, but we will use your comments "
+"as we strive to improve your experience."
+msgstr ""
+"Não podemos responder individualmente a cada um, mas usaremos seus "
+"comentários à medida que nos esforçamos para melhorar sua experiência."
+
+#: views.py:30
+#, python-format
+msgid ""
+"Your site %(host)s received feedback from %(user)s.\n"
+"The comments were:\n"
+"%(note)s.\n"
+"\n"
+"See the full feedback content here: %(url)s"
+msgstr ""
+"Seu site %(host)s recebeu um feedback de %(user)s.\n"
+"Os comentários são:\n"
+"%(note)s.\n"
+"\n"
+"Veja o conteúdo completo do feedback aqui: %(url)s"
+
+#: views.py:38
+#, python-format
+msgid "[%(host)s] Received feedback"
+msgstr "[%(host)s] Feedback recebido"

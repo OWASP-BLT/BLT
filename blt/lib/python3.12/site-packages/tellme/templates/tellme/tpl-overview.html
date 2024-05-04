@@ -1,0 +1,20 @@
+{% load i18n %}
+<div id="feedback-overview">
+    <div class="feedback-logo">{% trans 'Feedback' %}</div>
+    <div id="feedback-overview-description">
+        <div id="feedback-overview-description-text"><h3>{% trans 'Description' %}</h3>
+            <h3 class="feedback-additional">{% trans 'Additional info' %}</h3>
+            <div id="feedback-additional-none"><span>{% trans 'None' %}</span></div>
+            <div id="feedback-browser-info"><span>{% trans 'Browser Info' %}</span></div>
+            <div id="feedback-page-info"><span>{% trans 'Page Info' %}</span></div>
+            <div id="feedback-page-structure"><span>{% trans 'Page Structure' %}</span></div>
+        </div>
+    </div>
+    <div id="feedback-overview-screenshot"><h3>{% trans 'Screenshot' %}</h3></div>
+    <div class="feedback-buttons">
+        <button id="feedback-submit" class="feedback-submit-btn feedback-btn-blue">{% trans 'Submit' %}</button>
+        <button id="feedback-overview-back" class="feedback-back-btn feedback-btn-gray">{% trans 'Back' %}</button>
+    </div>
+    <div id="feedback-overview-error">{% trans 'Please enter a description.' %}</div>
+    <div class="feedback-wizard-close"></div>
+</div>

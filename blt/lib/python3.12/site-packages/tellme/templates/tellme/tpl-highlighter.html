@@ -1,0 +1,22 @@
+{% load i18n %}
+<div id="feedback-highlighter">
+    <div class="feedback-logo">{% trans 'Feedback' %}</div>
+    <p>{% trans "Click and drag on the page to help us better understand your feedback. You can move this dialog if it's in the way." %}</p>
+    <button class="feedback-sethighlight feedback-active">
+        <span class="ico"></span>
+        <span>{% trans 'Highlight' %}</span></button>
+    <label>{% trans 'Highlight areas relevant to your feedback.' %}</label>
+    <button class="feedback-setblackout">
+        <span class="ico"></span>
+        <span>{% trans 'Black out' %}</span></button>
+    <label class="lower">{% trans 'Black out any personal information.' %}</label>
+    <div class="feedback-buttons">
+        <button id="feedback-highlighter-next" class="feedback-next-btn feedback-btn-gray">
+            {% trans 'Next' %}
+        </button>
+        <button id="feedback-highlighter-back" class="feedback-back-btn feedback-btn-gray">
+            {% trans 'Back' %}
+        </button>
+    </div>
+    <div class="feedback-wizard-close"></div>
+</div>

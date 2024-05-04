@@ -1,0 +1,71 @@
+Metadata-Version: 2.1
+Name: django-import-export
+Version: 3.3.9
+Summary: Django application and library for importing and exporting data with included admin integration.
+Home-page: https://github.com/django-import-export/django-import-export
+Author: Bojan Mihelač
+Author-email: djangoimportexport@gmail.com
+Maintainer: Matthew Hegarty
+Maintainer-email: djangoimportexport@gmail.com
+License: BSD License
+Project-URL: Documentation, https://django-import-export.readthedocs.io/en/stable/
+Project-URL: Changelog, https://django-import-export.readthedocs.io/en/stable/changelog.html
+Platform: OS Independent
+Classifier: Framework :: Django
+Classifier: Framework :: Django :: 3.2
+Classifier: Framework :: Django :: 4.1
+Classifier: Framework :: Django :: 4.2
+Classifier: Framework :: Django :: 5.0
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Topic :: Software Development
+Requires-Python: >=3.8
+License-File: LICENSE
+Requires-Dist: diff-match-patch
+Requires-Dist: Django >=3.2
+Requires-Dist: tablib[html,ods,xls,xlsx,yaml] ==3.5.0
+
+====================
+django-import-export
+====================
+
+.. image:: https://github.com/django-import-export/django-import-export/actions/workflows/django-import-export-ci.yml/badge.svg
+    :target: https://github.com/django-import-export/django-import-export/actions/workflows/django-import-export-ci.yml
+    :alt: Build status on Github
+
+.. image:: https://coveralls.io/repos/github/django-import-export/django-import-export/badge.svg?branch=main
+    :target: https://coveralls.io/github/django-import-export/django-import-export?branch=main
+
+.. image:: https://img.shields.io/pypi/v/django-import-export.svg
+    :target: https://pypi.org/project/django-import-export/
+    :alt: Current version on PyPi
+
+.. image:: http://readthedocs.org/projects/django-import-export/badge/?version=stable
+    :target: https://django-import-export.readthedocs.io/en/stable/
+    :alt: Documentation
+
+.. image:: https://img.shields.io/pypi/pyversions/django-import-export
+    :alt: PyPI - Python Version
+
+.. image:: https://img.shields.io/pypi/djversions/django-import-export
+    :alt: PyPI - Django Version
+
+.. image:: https://static.pepy.tech/personalized-badge/django-import-export?period=month&units=international_system&left_color=black&right_color=blue&left_text=Downloads/month
+    :target: https://pepy.tech/project/django-import-export
+
+django-import-export is a Django application and library for importing
+and exporting data from a variety of formats.  Includes Django Admin site integration.
+
+* Documentation: https://django-import-export.readthedocs.io/en/stable/
+* GitHub: https://github.com/django-import-export/django-import-export/
+* Free software: BSD license
+* PyPI: https://pypi.org/project/django-import-export/
