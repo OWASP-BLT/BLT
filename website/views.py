@@ -565,7 +565,7 @@ class UserDeleteView(LoginRequiredMixin, View):
 class IssueBaseCreate(object):
     def form_valid(self, form):
         print(
-            "prcessing form_valid IssueBaseCreate for ip address: ",
+            "processing form_valid IssueBaseCreate for ip address: ",
             get_client_ip(self.request),
         )
         score = 3
@@ -598,7 +598,7 @@ class IssueBaseCreate(object):
         p = Points.objects.create(user=self.request.user, issue=obj, score=score)
 
     def process_issue(self, user, obj, created, domain, tokenauth=False, score=3):
-        print("prcessing process_issue for ip address: ", get_client_ip(self.request))
+        print("processing process_issue for ip address: ", get_client_ip(self.request))
         p = Points.objects.create(user=user, issue=obj, score=score)
         messages.success(self.request, "Bug added ! +" + str(score))
         # tweet feature
@@ -749,7 +749,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
     template_name = "report.html"
 
     def get_initial(self):
-        print("prcessing post for ip address: ", get_client_ip(self.request))
+        print("processing post for ip address: ", get_client_ip(self.request))
         try:
             json_data = json.loads(self.request.body)
             if not self.request.GET._mutable:
@@ -809,18 +809,18 @@ class IssueCreate(IssueBaseCreate, CreateView):
             initial["screenshot"] = "uploads\/" + self.request.POST.get("screenshot-hash") + ".png"
         return initial
 
-    def get(self, request, *args, **kwargs):
-        print("prcessing get for ip address: ", get_client_ip(request))
+    # def get(self, request, *args, **kwargs):
+    #     print("processing get for ip address: ", get_client_ip(request))
 
-        captcha_form = CaptchaForm()
-        return render(
-            request,
-            self.template_name,
-            {"form": self.get_form(), "captcha_form": captcha_form},
-        )
+    #     captcha_form = CaptchaForm()
+    #     return render(
+    #         request,
+    #         self.template_name,
+    #         {"form": self.get_form(), "captcha_form": captcha_form},
+    #     )
 
     def post(self, request, *args, **kwargs):
-        print("prcessing post for ip address: ", get_client_ip(request))
+        print("processing post for ip address: ", get_client_ip(request))
         # resolve domain
         url = request.POST.get("url").replace("www.", "").replace("https://", "")
 
@@ -898,7 +898,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
     def form_valid(self, form):
         print(
-            "prcessing form_valid in IssueCreate for ip address: ",
+            "processing form_valid in IssueCreate for ip address: ",
             get_client_ip(self.request),
         )
         reporter_ip = get_client_ip(self.request)
@@ -1118,7 +1118,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return create_issue(self, form)
 
     def get_context_data(self, **kwargs):
-        print("prcessing get_context_data for ip address: ", get_client_ip(self.request))
+        # if self.request is a get, clear out the form data
+        if self.request.method == "GET":
+            self.request.POST = {}
+            self.request.GET = {}
+
+        print("processing get_context_data for ip address: ", get_client_ip(self.request))
         context = super(IssueCreate, self).get_context_data(**kwargs)
         context["activities"] = Issue.objects.exclude(
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
