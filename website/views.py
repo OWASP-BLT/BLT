@@ -1802,21 +1802,23 @@ class ScoreboardView(ListView):
     paginate_by = 20
 
     def get_context_data(self, *args, **kwargs):
-        context = super(ScoreboardView, self).get_context_data(*args, **kwargs)
-        companies = sorted(Domain.objects.all(), key=lambda t: t.open_issues.count(), reverse=True)
+        context = super().get_context_data(*args, **kwargs)
 
-        # companies = Domain.objects.all().order_by("-open_issues")
-        paginator = Paginator(companies, self.paginate_by)
+        # Annotate each domain with the count of open issues
+        annotated_domains = Domain.objects.annotate(
+            open_issues_count=Count("open_issues")
+        ).order_by("-open_issues_count")
+
+        paginator = Paginator(annotated_domains, self.paginate_by)
         page = self.request.GET.get("page")
 
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
         try:
             scoreboard_paginated = paginator.page(page)
         except PageNotAnInteger:
             scoreboard_paginated = paginator.page(1)
         except EmptyPage:
             scoreboard_paginated = paginator.page(paginator.num_pages)
+
         context["scoreboard"] = scoreboard_paginated
         context["user"] = self.request.GET.get("user")
         return context
