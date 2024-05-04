@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+        <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+
+        form {
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        button {
+            padding: 8px 15px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #BidDisplay {
+            margin-bottom: 10px;
+        }
+        #pr_link{
+            display: none;
+        }
+        </style>
+    </head>
+    <body>
+        <script>
+        function fetchData(){
+            const issueUrl = document.getElementById('issue_link').value;
+            const csrftoken = getCookie('csrftoken');
+            fetch(`/fetch-current-bid/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({ issue_url: issueUrl }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if('current_bid' in data) {
+                    const currentBid = data.current_bid;
+                    const date = data.date;
+                    const user = data.user;
+                    const status = data.status;
+                    if(status === "selected") {
+                        document.getElementById('pr_link').style.display = "block";
+                    }
+                    else{
+                        document.getElementById('pr_link').style.display = "none";
+                        document.getElementById('pr_label').textContent="Bid is not selected : Status is Open/Closed";
+                    }
+                    document.getElementById('user').value = user;
+                    document.getElementById('bid_amount').value = currentBid;
+                    document.getElementById('BidDisplay').innerHTML = `User: ${user} <br> CurrentBid: ${currentBid} <br> Bid Date: ${date} <br> Status: ${status}`;
+                }
+                else{
+                    document.getElementById('BidDisplay').innerHTML = 'No current bid';
+                }
+            })
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+         
+        </script>
+        <form action="{% url 'submit_pr' %}" method="post">
+            {% csrf_token %}
+            <label>Issue Link</label>
+            <input type="text" name="issue_link" id="issue_link">
+            <button type="button" onclick="fetchData()">Fetch data</button>
+            <p id="BidDisplay"></p>
+            <input type="hidden" name="user" id="user">
+            <input type="hidden" name="bid_amount" id="bid_amount">
+            <label id="pr_label">Link to your Pull Request</label>
+            <input type="text" name="pr_link" id="pr_link" required>
+            <button type="submit" id="submit">Submit</button>
+        </form>
+    </body>
+</html>

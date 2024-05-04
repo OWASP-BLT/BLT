@@ -78,6 +78,7 @@ from comments.models import Comment
 from website.models import (
     IP,
     Bid,
+    Bidsubmitter,
     Company,
     CompanyAdmin,
     ContributorStats,
@@ -4392,14 +4393,6 @@ def generate_bid_image(request, bid_amount):
     return HttpResponse(byte_io, content_type="image/png")
 
 
-def bidding_view(request):
-    form = Bidding()
-    return render(request, "bidding.html", {"form": form})
-
-
-from django.http import JsonResponse
-
-
 def SaveBiddingData(request):
     form = Bidding()
     if request.method == "POST":
@@ -4428,13 +4421,36 @@ def fetch_current_bid(request):
         if bid is not None:
             current_bid = bid.current_bid
             time_left = bid.time_left - datetime.now(timezone.utc)
+            user = bid.user
+            date = bid.time_left
+            status = bid.status
             return JsonResponse(
                 {
                     "current_bid": current_bid,
-                    "time_left": (time_left.total_seconds() + 86400) // 3600,
+                    "time_left": (time_left.total_seconds() + 86400),
+                    "date": date,
+                    "user": user,
+                    "status": status,
                 }
             )
         else:
             return JsonResponse({"error": "Bid not found"}, status=404)
     else:
         return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+def submit_pr(request):
+    form = Bidding()
+    if request.method == "POST":
+        pr_link = request.POST.get("pr_link")
+        user = request.POST.get("user")
+        bid_amount = request.POST.get("bid_amount")
+        en = Bidsubmitter(
+            pr_link=pr_link,
+            user=user,
+            bid_amount=bid_amount,
+        )
+        en.save()
+        return render(request, "submit_pr.html")
+
+    return render(request, "submit_pr.html")

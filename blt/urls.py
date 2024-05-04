@@ -83,6 +83,7 @@ from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
     google_callback,
     like_issue2,
     like_issue3,
+    submit_pr,
     subscribe_to_domains,
     vote_count,
 )
@@ -493,6 +494,7 @@ urlpatterns = [
     path("generate_bid_image/<int:bid_amount>/", generate_bid_image, name="generate_bid_image"),
     path("bidding/", SaveBiddingData, name="BiddingData"),
     path("fetch-current-bid/", fetch_current_bid, name="fetch_current_bid"),
+    path("Submitpr/", submit_pr, name="submit_pr"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s]+)",
         website.views.trademark_detailview,

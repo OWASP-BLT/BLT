@@ -2,7 +2,7 @@ from captcha.fields import CaptchaField
 from django import forms
 from mdeditor.fields import MDTextFormField
 
-from .models import Bid, Monitor, UserProfile
+from .models import Bid, Bidsubmitter, Monitor, UserProfile
 
 
 class UserProfileForm(forms.ModelForm):
@@ -51,4 +51,10 @@ class MonitorForm(forms.ModelForm):
 class Bidding(forms.ModelForm):
     class Meta:
         model = Bid
-        fields = ["issue_url", "user", "current_bid", "time_left", "bid_amount"]
+        fields = ["issue_url", "user", "current_bid", "time_left", "bid_amount", "status"]
+
+
+class Bidsubmitter(forms.ModelForm):
+    class Meta:
+        model = Bidsubmitter
+        fields = ["user", "bid_amount", "pr_link"]

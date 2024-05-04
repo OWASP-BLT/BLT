@@ -8,7 +8,6 @@
         <meta name="keywords" content="Bidding,issues">
         <title>BIDDING</title>
         <style>
-        /* Add your CSS styles here */
         body {
             font-family: Arial, sans-serif;
             background-color: #f0f0f0;
@@ -61,53 +60,77 @@
     </head>
     <body>
         <script>
-        function fetchBid() {
-            const issueUrl = document.getElementById('issueLinkInput').value;
-            const csrftoken = getCookie('csrftoken');  // Function to retrieve the CSRF token from cookies
-            fetch(`/fetch-current-bid/`, {
-                method: 'POST',  // Or 'POST' if your view requires a POST request
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken,
-                },
-                body: JSON.stringify({ issue_url: issueUrl }),
-            })
+    function fetchBid() {
+        const issueUrl = document.getElementById('issueLinkInput').value;
+        const csrftoken = getCookie('csrftoken');
+        fetch(`/fetch-current-bid/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({issue_url: issueUrl}),
+        })
             .then(response => response.json())
             .then(data => {
                 if ('current_bid' in data) {
                     const currentBid = data.current_bid;
-                    const time_left= data.time_left;
-                    // Process the currentBid value
-                    document.getElementById('BidDisplay').innerHTML = `Current Bid:  ${currentBid} Time Left: ${time_left}hrs`;
+                    const time_left = data.time_left;
+                    const status = data.status;
+                    document.getElementById('BidDisplay').innerHTML = `Current Bid:  ${currentBid} Time Left: <span id="timer">${formatTime(time_left)}</span> Status : ${status}`;
                     const bidAmountInput = document.getElementById('bid_amount');
-                    bidAmountInput.setAttribute('max', currentBid-1);
+                    bidAmountInput.setAttribute('max', currentBid - 1);
+
+                    // Start the countdown timer
+                    startTimer(time_left);
                 } else {
-                    // Handle the case where there is no current bid
                     document.getElementById('BidDisplay').innerHTML = 'No current bid';
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
             });
-        }
+    }
 
-        // Function to retrieve the CSRF token from cookies
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    // Does this cookie string begin with the name we want?
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
+    // Function to start the countdown timer
+    function startTimer(time_left) {
+        const timerElement = document.getElementById('timer');
+
+        // Update the timer every second
+        const intervalId = setInterval(() => {
+            time_left -= 1;
+            if (time_left <= 0) {
+                clearInterval(intervalId);
+                timerElement.textContent = 'Expired';
+            } else {
+                timerElement.textContent = formatTime(time_left);
+            }
+        }, 1000);
+    }
+
+    // Function to format time in HH:MM:SS
+    function formatTime(time_left) {
+        let hours = Math.floor(time_left / 3600);
+        let minutes = Math.floor((time_left % 3600) / 60);
+        let seconds = time_left % 60;
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    // Function to retrieve the CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
                 }
             }
-            return cookieValue;
         }
-        
+        return cookieValue;
+    }
         </script>
         <form method="post" action="{% url 'BiddingData' %}">
             {% csrf_token %}
@@ -122,7 +145,7 @@
             <input type="text" id="user" name="user" required>
             <br>
             <label id="bidamount">New Bid:</label>
-            <input type="number" id="bid_amount"  name="bid_amount" required min="1">
+            <input type="number" id="bid_amount" name="bid_amount" required min="1">
             <br>
             <button type="submit" id="submitBid">Submit Bid</button>
         </form>

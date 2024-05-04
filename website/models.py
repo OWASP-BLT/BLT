@@ -12,6 +12,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.core.mail import send_mail
 from django.core.validators import URLValidator
 from django.db import models
 from django.db.models import Count
@@ -591,6 +592,33 @@ class Bid(models.Model):
     current_bid = models.CharField(default="No current bid", max_length=30)
     time_left = models.DateTimeField(default=timezone.now)
     bid_amount = models.IntegerField()
+    status = models.CharField(default="Open", max_length=10)
+
+    def save(self, *args, **kwargs):
+        if self.status == "Open":
+            Bid.objects.filter(issue_url=self.issue_url, status="Open").exclude(id=self.id).update(
+                status="closed"
+            )
+
+        if (
+            self.status == "Open"
+            and (timezone.now() - self.time_left).total_seconds() >= 24 * 60 * 60
+        ):
+            self.status = "selected"
+            send_mail(
+                "Bid Closed",
+                "Your bid has been closed.",
+                settings.EMAIL_HOST_USER,
+                ["sarthak5598sharma@gmail.com"],
+                fail_silently=False,
+            )
+        super().save(*args, **kwargs)
+
+
+class Bidsubmitter(models.Model):
+    user = models.CharField(default="Add user", max_length=30, null=True, blank=True)
+    pr_link = models.URLField()
+    bid_amount = models.IntegerField(default="0")
 
     def __str__(self):
-        return f"Link: {self.issue_url}, Bid Amount: {self.bid_amount}"
+        return f"User : {self.user}, Bid Amount: {self.bid_amount}"
