@@ -12,14 +12,12 @@ from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse, urlsplit, urlunparse
-
 import humanize
 import requests
 import requests.exceptions
 import six
 import stripe
 import tweepy
-
 # from django_cron import CronJobBase, Schedule
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in, user_signed_up
@@ -73,6 +71,15 @@ from user_agents import parse
 
 from blt import settings
 from comments.models import Comment
+from json import JSONDecodeError
+from django.http import JsonResponse
+from .serializers import CompanySerializer
+from rest_framework.parsers import JSONParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from rest_framework import viewsets, status
+from rest_framework.mixins import ListModelMixin,UpdateModelMixin,RetrieveModelMixin
 from website.models import (
     IP,
     Company,
@@ -4399,3 +4406,25 @@ def deletions(request):
         "monitor.html",
         {"form": form, "deletions": Monitor.objects.filter(user=request.user)},
     )
+
+
+class CompanyViewSet(
+    ListModelMixin,
+    RetrieveModelMixin, 
+    viewsets.GenericViewSet
+):
+    queryset = Company.objects.all()
+    serializer_class = CompanySerializer
+     
+    def create(self, request):
+        try:
+            data = JSONParser().parse(request)
+            data.pop('company_id', None)
+            serializer = CompanySerializer(data=data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                return Response(serializer.data)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except JSONDecodeError:
+            return JsonResponse({"result": "error","message": "Json decoding error"}, status=400)

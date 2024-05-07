@@ -50,7 +50,7 @@ class Company(models.Model):
     managers = models.ManyToManyField(User, related_name="user_companies")
     name = models.CharField(max_length=255)
     logo = models.ImageField(upload_to="company_logos", null=True, blank=True)
-    company_id = models.CharField(max_length=255, unique=True, editable=False)  # uuid
+    company_id = models.CharField(default=uuid.uuid4,max_length=255, unique=True, editable=False)  # uuid
     url = models.URLField()
     email = models.EmailField(null=True, blank=True)
     twitter = models.CharField(max_length=30, null=True, blank=True)
@@ -59,9 +59,25 @@ class Company(models.Model):
     modified = models.DateTimeField(auto_now=True)
     subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=False)
+    open_issues = models.JSONField(default=list) # list of ids of the open issues
+    closed_issues = models.JSONField(default=list) # list of ids of the closed issues
+
+    class Meta:
+        verbose_name = 'Company'
+        verbose_name_plural = 'Companies'
+        ordering = ["id"]
 
     def __str__(self):
-        return self.name
+        return self.name   
+
+    def addNewIssue(self,issueId):
+        openIssues=self.open_issues
+        openIssues.append(issueId)
+    
+    def closeIssue(self,issueId):
+        openIssues=self.open_issues
+        openIssues.pop(issueId)
+
 
 
 class Domain(models.Model):

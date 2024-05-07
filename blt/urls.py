@@ -82,6 +82,7 @@ from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
     like_issue3,
     subscribe_to_domains,
     vote_count,
+    CompanyViewSet
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
@@ -116,6 +117,7 @@ handler404 = "website.views.handler404"
 handler500 = "website.views.handler500"
 
 urlpatterns = [
+    path("company/", CompanyViewSet.as_view({'get': 'list', 'post': 'create'}), name="company"),
     path("invite-friend/", website.views.invite_friend, name="invite_friend"),
     path("referral/", website.views.referral_signup, name="referral_signup"),
     path("captcha/", include("captcha.urls")),

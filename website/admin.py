@@ -21,6 +21,9 @@ from website.models import (
     Winner,
 )
 
+class CompanyResource(resources.ModelResource):
+    class Meta:
+        model = Company
 
 class UserResource(resources.ModelResource):
     class Meta:
