@@ -589,36 +589,26 @@ class Monitor(models.Model):
 class Bid(models.Model):
     issue_url = models.URLField()
     user = models.CharField(default="Add user", max_length=30, null=True, blank=True)
-    current_bid = models.CharField(default="No current bid", max_length=30)
-    time_left = models.DateTimeField(default=timezone.now)
+    created = models.DateTimeField(default=timezone.now)
+    modified = models.DateTimeField(default=timezone.now)
     bid_amount = models.IntegerField()
     status = models.CharField(default="Open", max_length=10)
+    pr_link = models.CharField(max_length=255, blank=True)
 
     def save(self, *args, **kwargs):
-        if self.status == "Open":
-            Bid.objects.filter(issue_url=self.issue_url, status="Open").exclude(id=self.id).update(
-                status="closed"
-            )
-
         if (
             self.status == "Open"
-            and (timezone.now() - self.time_left).total_seconds() >= 24 * 60 * 60
+            and (timezone.now() - self.created).total_seconds() >= 24 * 60 * 60
         ):
-            self.status = "selected"
+            self.status = "Selected"
+            self.modified = timezone.now()
+            email_body = f"This bid was selected:\nIssue URL: {self.issue_url}\nUser: {self.user}\nCurrent Bid: {self.current_bid}\nCreated on: {self.created}\nBid Amount: {self.bid_amount}"
             send_mail(
                 "Bid Closed",
-                "Your bid has been closed.",
+                email_body,
                 settings.EMAIL_HOST_USER,
-                ["sarthak5598sharma@gmail.com"],
+                [settings.EMAIL_HOST_USER],
                 fail_silently=False,
             )
+
         super().save(*args, **kwargs)
-
-
-class Bidsubmitter(models.Model):
-    user = models.CharField(default="Add user", max_length=30, null=True, blank=True)
-    pr_link = models.URLField()
-    bid_amount = models.IntegerField(default="0")
-
-    def __str__(self):
-        return f"User : {self.user}, Bid Amount: {self.bid_amount}"

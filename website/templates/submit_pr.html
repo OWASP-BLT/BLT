@@ -78,8 +78,11 @@
                     const date = data.date;
                     const user = data.user;
                     const status = data.status;
-                    if(status === "selected") {
+                    if(status === "Selected") { 
                         document.getElementById('pr_link').style.display = "block";
+                    }
+                    else if (status === "Submitted") {
+                        document.getElementById('pr_label').textContent="PR is submitted , Please contact your repository head ";
                     }
                     else{
                         document.getElementById('pr_link').style.display = "none";

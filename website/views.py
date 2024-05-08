@@ -78,7 +78,6 @@ from comments.models import Comment
 from website.models import (
     IP,
     Bid,
-    Bidsubmitter,
     Company,
     CompanyAdmin,
     ContributorStats,
@@ -4403,8 +4402,8 @@ def SaveBiddingData(request):
         en = Bid(
             issue_url=url,
             bid_amount=bid_amount,
-            current_bid=bid_amount,
-            time_left=current_time,
+            created=current_time,
+            modified=current_time,
             user=user,
         )
         en.save()
@@ -4417,16 +4416,16 @@ def fetch_current_bid(request):
     if request.method == "POST":
         data = json.loads(request.body)
         issue_url = data.get("issue_url")
-        bid = Bid.objects.filter(issue_url=issue_url).order_by("-time_left").first()
+        bid = Bid.objects.filter(issue_url=issue_url).order_by("-created").first()
         if bid is not None:
-            current_bid = bid.current_bid
-            time_left = bid.time_left - datetime.now(timezone.utc)
+            bid_amount = bid.bid_amount
+            time_left = bid.created - datetime.now(timezone.utc)
             user = bid.user
-            date = bid.time_left
+            date = bid.created
             status = bid.status
             return JsonResponse(
                 {
-                    "current_bid": current_bid,
+                    "current_bid": bid_amount,
                     "time_left": (time_left.total_seconds() + 86400),
                     "date": date,
                     "user": user,
@@ -4445,10 +4444,14 @@ def submit_pr(request):
         pr_link = request.POST.get("pr_link")
         user = request.POST.get("user")
         bid_amount = request.POST.get("bid_amount")
-        en = Bidsubmitter(
+        issue_url = request.POST.get("issue_link")
+        status = "Submitted"
+        en = Bid(
             pr_link=pr_link,
             user=user,
             bid_amount=bid_amount,
+            issue_url=issue_url,
+            status=status,
         )
         en.save()
         return render(request, "submit_pr.html")
