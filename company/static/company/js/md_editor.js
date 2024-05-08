@@ -1,8 +1,8 @@
 // -------------------------------------------
 // DEFAULT INPUT AND OUTPUT AREA
-let textarea = document.querySelector('#input-area');
-let outputArea = document.querySelector('#output-area');
-let previewMessage = document.querySelector('.preview-message');
+let textarea = document.querySelector('#input-area') || { value: '', selectionStart: 0, selectionEnd: 0 };
+let outputArea = document.querySelector('#output-area') || { innerHTML: '', classList: { toggle: () => { } } };
+let previewMessage = document.querySelector('.preview-message') || { classList: { toggle: () => { } } };
 
 // -------------------------------------------
 // TOOLBAR
@@ -18,71 +18,51 @@ const tokenButton = document.querySelector('#token');
 const ulButton = document.querySelector('#list-ul');
 const olButton = document.querySelector('#list-ol');
 
+// Check if the `preview` button exists before adding an event listener
+if (preview) {
+    preview.addEventListener('click', () => {
+        output(escapeHTML(parse(textarea.value)));
+        outputArea.classList.toggle('show');
+        previewMessage.classList.toggle('show');
+        preview.classList.toggle('active');
+    });
+}
 
-preview.addEventListener('click', () => {
-    output(escapeHTML(parse(textarea.value)));
+const addButtonEvent = (button, action) => {
+    if (button) button.addEventListener('click', action);
+};
 
-    outputArea.classList.toggle('show');
-    previewMessage.classList.toggle('show');
-    preview.classList.toggle('active');
-});
-
-boldButton.addEventListener('click', () =>
-    insertText(textarea, '****', 'demo', 2, 6)
-);
-
-italicButton.addEventListener('click', () =>
-    insertText(textarea, '**', 'demo', 1, 5)
-);
-
-heading1Button.addEventListener('click', () =>
-    insertText(textarea, '#', 'heading1', 1, 9)
-);
-
-heading2Button.addEventListener('click', () =>
-    insertText(textarea, '##', 'heading2', 2, 10)
-);
-
-heading3Button.addEventListener('click', () =>
-    insertText(textarea, '###', 'heading3', 3, 11)
-);
-
-linkButton.addEventListener('click', () =>
-    insertText(textarea, '[](http://...)', 'url text', 1, 9)
-);
-
-tokenButton.addEventListener('click', () =>
-    insertText(textarea, '{{}}', 'tokenValue', 2, 12)
-);
-
-ulButton.addEventListener('click', function () {
-    insertText(textarea, '* ', 'item', 2, 6);
-});
-
-olButton.addEventListener('click', () =>
-    insertText(textarea, '1. ', 'item', 3, 7)
-);
+// Adding event listeners only if the buttons exist
+addButtonEvent(boldButton, () => insertText(textarea, '****', 'demo', 2, 6));
+addButtonEvent(italicButton, () => insertText(textarea, '**', 'demo', 1, 5));
+addButtonEvent(heading1Button, () => insertText(textarea, '#', 'heading1', 1, 9));
+addButtonEvent(heading2Button, () => insertText(textarea, '##', 'heading2', 2, 10));
+addButtonEvent(heading3Button, () => insertText(textarea, '###', 'heading3', 3, 11));
+addButtonEvent(linkButton, () => insertText(textarea, '[](http://...)', 'url text', 1, 9));
+addButtonEvent(tokenButton, () => insertText(textarea, '{{}}', 'tokenValue', 2, 12));
+addButtonEvent(ulButton, () => insertText(textarea, '* ', 'item', 2, 6));
+addButtonEvent(olButton, () => insertText(textarea, '1. ', 'item', 3, 7));
 
 // -------------------------------------------
 
 function setInputArea(inputElement) {
-    textarea = inputElement;
+    if (inputElement) textarea = inputElement;
 }
 
 function setOutputArea(outputElement) {
-    outputArea = outputElement;
+    if (outputElement) outputArea = outputElement;
 }
 
 function insertText(textarea, syntax, placeholder = 'demo', selectionStart = 0, selectionEnd = 0) {
-    // Current Selection
+    if (!textarea || typeof textarea.value === 'undefined') return;
+
     const currentSelectionStart = textarea.selectionStart;
     const currentSelectionEnd = textarea.selectionEnd;
     const currentText = textarea.value;
 
     if (currentSelectionStart === currentSelectionEnd) {
-        const textWithSyntax = textarea.value = currentText.substring(0, currentSelectionStart) + syntax + currentText.substring(currentSelectionEnd);
-        textarea.value = textWithSyntax.substring(0, currentSelectionStart + selectionStart) + placeholder + textWithSyntax.substring(currentSelectionStart + selectionStart)
-
+        const textWithSyntax = currentText.substring(0, currentSelectionStart) + syntax + currentText.substring(currentSelectionEnd);
+        textarea.value = textWithSyntax.substring(0, currentSelectionStart + selectionStart) + placeholder + textWithSyntax.substring(currentSelectionStart + selectionStart);
         textarea.focus();
         textarea.selectionStart = currentSelectionStart + selectionStart;
         textarea.selectionEnd = currentSelectionEnd + selectionEnd;
@@ -91,16 +71,16 @@ function insertText(textarea, syntax, placeholder = 'demo', selectionStart = 0, 
         const withoutSelection = currentText.substring(0, currentSelectionStart) + currentText.substring(currentSelectionEnd);
         const textWithSyntax = withoutSelection.substring(0, currentSelectionStart) + syntax + withoutSelection.substring(currentSelectionStart);
 
-        // Surround selected text
         textarea.value = textWithSyntax.substring(0, currentSelectionStart + selectionStart) + selectedText + textWithSyntax.substring(currentSelectionStart + selectionStart);
-
         textarea.focus();
         textarea.selectionEnd = currentSelectionEnd + selectionStart + selectedText.length;
     }
 }
 
 function output(lines) {
-    outputArea.innerHTML = lines;
+    if (outputArea && typeof outputArea.innerHTML !== 'undefined') {
+        outputArea.innerHTML = lines;
+    }
 }
 
 // -------------------------------------------
