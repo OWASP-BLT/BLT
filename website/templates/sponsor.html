@@ -22,12 +22,14 @@
                          width="66%"
                          height="66%" />
                     <div class="flex flex-col font-semibold">
-                        <span id="balanceDisplay">Current Balance:</span>
+                        <span id="balanceDisplay">Current Balance: {{ balance }}</span>
                     </div>
                 </div>
             </div>
             <span class="text-2xl font-semibold break-words w-96 lg:w-auto"
-                  id="walletAddress">qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc</span>
+                  id="walletAddress">
+                <a href="https://explorer.btc.com/bch/address/qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc"
+                   target="_blank">qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc</a></span>
         </div>
         <h2 class="text-[1.72rem] my-5 font-semibold ">How Does Sponsoring Work?</h2>
         <p class=" text-2xl">
@@ -109,28 +111,28 @@
             }
         }
 
-        async function getBCHBalance() {
-            const walletAddress = document.getElementById("walletAddress").innerHTML;
-            const apiUrl = `https://api.blockchair.com/bitcoin-cash/dashboards/address/${walletAddress}`;
+        // async function getBCHBalance() {
+        //     const walletAddress = document.getElementById("walletAddress").innerHTML;
+        //     const apiUrl = `https://api.blockchair.com/bitcoin-cash/dashboards/address/${walletAddress}`;
 
-            try {
-                let [response, bchPrice] = await Promise.all([fetch(apiUrl), getBCHPriceInUSD()]);
+        //     try {
+        //         let [response, bchPrice] = await Promise.all([fetch(apiUrl), getBCHPriceInUSD()]);
 
-                let data = await response.json();
+        //         let data = await response.json();
 
-                const balance = data.data[walletAddress].address.balance / 1e8; // Convert satoshis to BCH
+        //         const balance = data.data[walletAddress].address.balance / 1e8; // Convert satoshis to BCH
 
-                if (bchPrice) {
-                    const usdBalance = balance * bchPrice;
-                    document.getElementById("balanceDisplay").innerText = `Balance: ${balance} BCH (~$${usdBalance.toFixed(2)} USD)`;
-                } else {
-                    document.getElementById("balanceDisplay").innerText = `Balance: ${balance} BCH (Failed to fetch USD conversion)`;
-                }
-            } catch (error) {
-                console.error("Error fetching balance:", error);
-                document.getElementById("balanceDisplay").innerText = "Error fetching balance.";
-            }
-        }
-        getBCHBalance();
+        //         if (bchPrice) {
+        //             const usdBalance = balance * bchPrice;
+        //             document.getElementById("balanceDisplay").innerText = `Balance: ${balance} BCH (~$${usdBalance.toFixed(2)} USD)`;
+        //         } else {
+        //             document.getElementById("balanceDisplay").innerText = `Balance: ${balance} BCH (Failed to fetch USD conversion)`;
+        //         }
+        //     } catch (error) {
+        //         console.error("Error fetching balance:", error);
+        //         document.getElementById("balanceDisplay").innerText = "Error fetching balance.";
+        //     }
+        // }
+        // getBCHBalance();
     </script>
 {% endblock content %}
