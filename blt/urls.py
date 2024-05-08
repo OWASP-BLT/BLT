@@ -14,12 +14,15 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 import comments.views
+import website.api
+import website.api.views
 import website.views
 from blt import settings
 from company.views import ShowBughuntView
 from website.api.views import (
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
+    CompanyViewSet,
     DomainViewSet,
     FlagIssueApiView,
     InviteFriendApiViewset,
@@ -116,6 +119,7 @@ handler404 = "website.views.handler404"
 handler500 = "website.views.handler500"
 
 urlpatterns = [
+    path("company/", CompanyViewSet.as_view({"get": "list", "post": "create"}), name="company"),
     path("invite-friend/", website.views.invite_friend, name="invite_friend"),
     path("referral/", website.views.referral_signup, name="referral_signup"),
     path("captcha/", include("captcha.urls")),

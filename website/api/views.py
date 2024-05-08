@@ -11,11 +11,12 @@ from django.template.loader import render_to_string
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from website.models import (
+    Company,
     Domain,
     Hunt,
     HuntPrize,
@@ -29,6 +30,7 @@ from website.models import (
 from website.serializers import (
     BugHuntPrizeSerializer,
     BugHuntSerializer,
+    CompanySerializer,
     DomainSerializer,
     IssueSerializer,
     UserProfileSerializer,
@@ -606,3 +608,12 @@ class InviteFriendApiViewset(APIView):
             },
             status=200,
         )
+
+
+class CompanyViewSet(viewsets.ModelViewSet):
+    queryset = Company.objects.all()
+    serializer_class = CompanySerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ("id", "name")
+    http_method_names = ["get", "post", "put"]
