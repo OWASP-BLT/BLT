@@ -4431,7 +4431,7 @@ def SaveBiddingData(request):
             modified_at=current_time,
             user=user,
         )
-        en.save()
+        bid.save()
         return render(request, "bidding.html")
 
     return render(request, "bidding.html")
