@@ -613,7 +613,7 @@ class InviteFriendApiViewset(APIView):
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ("id", "name")
-    http_method_names = ["get", "post", "put"]
+    http_method_names = ("get", "post", "put")
