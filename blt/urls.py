@@ -14,8 +14,6 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 import comments.views
-import website.api
-import website.api.views
 import website.views
 from blt import settings
 from company.views import ShowBughuntView
