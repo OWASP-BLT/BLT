@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0090_alter_domain_managers"),
     ]
@@ -26,9 +25,7 @@ class Migration(migrations.Migration):
                 ("issue_url", models.URLField()),
                 (
                     "user",
-                    models.CharField(
-                        blank=True, default="Add user", max_length=30, null=True
-                    ),
+                    models.CharField(blank=True, default="Add user", max_length=30, null=True),
                 ),
                 ("created_at", models.DateTimeField(default=django.utils.timezone.now)),
                 (
