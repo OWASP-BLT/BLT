@@ -74,8 +74,8 @@ class WinnerAdmin(admin.ModelAdmin):
     )
 
 
-class BiddingAdmin(admin.ModelAdmin):
-    list_display = ("issue_url", "user", "pr_link", "bid_amount", "status")
+class BidAdmin(admin.ModelAdmin):
+    list_display = ("issue_url", "user", "pr_link", "amount", "status","created_at","modified_at")
 
 
 class WalletAdmin(admin.ModelAdmin):
@@ -228,7 +228,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 
 admin.site.register(ContributorStats)
-admin.site.register(Bid, BiddingAdmin)
+admin.site.register(Bid, BidAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(User, UserAdmin)
 

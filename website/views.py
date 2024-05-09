@@ -96,7 +96,7 @@ from website.models import (
 )
 
 from .forms import (
-    Bidding,
+    BidForm,
     CaptchaForm,
     HuntForm,
     MonitorForm,
@@ -4418,17 +4418,17 @@ def generate_bid_image(request, bid_amount):
 
 
 def SaveBiddingData(request):
-    form = Bidding()
+    form = BidForm()
     if request.method == "POST":
         url = request.POST.get("issue_url")
-        bid_amount = request.POST.get("bid_amount")
+        amount = request.POST.get("bid_amount")
         user = request.POST.get("user")
         current_time = datetime.now(timezone.utc)
         en = Bid(
             issue_url=url,
-            bid_amount=bid_amount,
-            created=current_time,
-            modified=current_time,
+            amount=amount,
+            created_at=current_time,
+            modified_at=current_time,
             user=user,
         )
         en.save()
@@ -4441,12 +4441,12 @@ def fetch_current_bid(request):
     if request.method == "POST":
         data = json.loads(request.body)
         issue_url = data.get("issue_url")
-        bid = Bid.objects.filter(issue_url=issue_url).order_by("-created").first()
+        bid = Bid.objects.filter(issue_url=issue_url).order_by("-created_at").first()
         if bid is not None:
-            bid_amount = bid.bid_amount
-            time_left = bid.created - datetime.now(timezone.utc)
+            bid_amount = bid.amount
+            time_left = bid.created_at - datetime.now(timezone.utc)
             user = bid.user
-            date = bid.created
+            date = bid.created_at
             status = bid.status
             return JsonResponse(
                 {
@@ -4464,19 +4464,22 @@ def fetch_current_bid(request):
 
 
 def submit_pr(request):
-    form = Bidding()
+    form = BidForm()
     if request.method == "POST":
         pr_link = request.POST.get("pr_link")
         user = request.POST.get("user")
-        bid_amount = request.POST.get("bid_amount")
+        amount = request.POST.get("bid_amount")
         issue_url = request.POST.get("issue_link")
         status = "Submitted"
+        current_time=timezone.now()
         en = Bid(
             pr_link=pr_link,
             user=user,
-            bid_amount=bid_amount,
+            amount=amount,
             issue_url=issue_url,
             status=status,
+            created_at=current_time,
+            modified_at=current_time,
         )
         en.save()
         return render(request, "submit_pr.html")
