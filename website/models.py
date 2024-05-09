@@ -12,11 +12,13 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.core.mail import send_mail
 from django.core.validators import URLValidator
 from django.db import models
 from django.db.models import Count
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 from google.cloud import storage
 from mdeditor.fields import MDTextField
 from PIL import Image
@@ -585,3 +587,31 @@ class Monitor(models.Model):
 
     def __str__(self):
         return f"Monitor for {self.url} by {self.user}"
+
+
+class Bid(models.Model):
+    issue_url = models.URLField()
+    user = models.CharField(default="Add user", max_length=30, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    modified_at = models.DateTimeField(default=timezone.now)
+    amount = models.IntegerField()
+    status = models.CharField(default="Open", max_length=10)
+    pr_link = models.URLField(blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if (
+            self.status == "Open"
+            and (timezone.now() - self.created_at).total_seconds() >= 24 * 60 * 60
+        ):
+            self.status = "Selected"
+            self.modified = timezone.now()
+            email_body = f"This bid was selected:\nIssue URL: {self.issue_url}\nUser: {self.user}\nCurrent Bid: {self.current_bid}\nCreated on: {self.created_at}\nBid Amount: {self.amount}"
+            send_mail(
+                "Bid Closed",
+                email_body,
+                settings.EMAIL_HOST_USER,
+                [settings.EMAIL_HOST_USER],
+                fail_silently=False,
+            )
+
+        super().save(*args, **kwargs)
