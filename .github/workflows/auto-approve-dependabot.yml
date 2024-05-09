@@ -1,39 +1,28 @@
-# name: Approve dependabot
-
-# # Trigger the workflow on pull request
-# on: pull_request_target
-
-# jobs:
-#   autoapprove:
-#     name: Approve dependabot
-#     runs-on: ubuntu-latest
-#     if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]' || github.actor == 'dependabot'
-#     permissions: 
-#       issues: write
-#     steps:
-#       - name: Auto approve
-#         uses: cognitedata/auto-approve-dependabot-action@v3.0.1
-#         if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]' || github.actor == 'dependabot'
-#         with:
-#           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-name: Approve dependabot
-on: pull_request
+name: Approve and Merge Dependabot PRs
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   dependabot:
     runs-on: ubuntu-latest
-    if: ${{ github.actor == 'dependabot[bot]' }}
-    permissions: 
-      issues: write
-    env:
-      PR_URL: ${{github.event.pull_request.html_url}}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    if: github.actor == 'dependabot[bot]'
     steps:
-      - name: approve
-        run: gh pr review --approve "$PR_URL"
-      - name: merge
-        run: gh pr merge --auto --squash --delete-branch "$PR_URL"
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install GitHub CLI
+        run: sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0 && sudo apt-add-repository https://cli.github.com/packages && sudo apt update && sudo apt install gh -y
+
+      - name: Authenticate GitHub CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Approve the PR
+        run: gh pr review --approve "${{ github.event.pull_request.number }}"
+
+      - name: Auto-Merge the PR
+        run: gh pr merge --squash --auto --delete-branch "${{ github.event.pull_request.number }}"

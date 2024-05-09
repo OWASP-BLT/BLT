@@ -68,7 +68,7 @@ class Company(models.Model):
 
 class Domain(models.Model):
     company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
-    managers = models.ManyToManyField(User, related_name="user_domains")
+    managers = models.ManyToManyField(User, related_name="user_domains", blank=True)
     name = models.CharField(max_length=255, unique=True)
     url = models.URLField()
     logo = models.ImageField(upload_to="logos", null=True, blank=True)
@@ -290,9 +290,6 @@ class Issue(models.Model):
     def domain_name(self):
         parsed_url = urlparse(self.url)
         domain = parsed_url.hostname
-        temp = domain.rsplit(".")
-        if len(temp) == 3:
-            domain = temp[1] + "." + temp[2]
         return domain
 
     def get_twitter_message(self):

@@ -111,6 +111,8 @@ WHITELISTED_IMAGE_TYPES = {
     "png": "image/png",
 }
 
+from PIL import Image
+
 
 def image_validator(img):
     try:
@@ -566,6 +568,10 @@ class UserDeleteView(LoginRequiredMixin, View):
 
 class IssueBaseCreate(object):
     def form_valid(self, form):
+        print(
+            "processing form_valid IssueBaseCreate for ip address: ",
+            get_client_ip(self.request),
+        )
         score = 3
         obj = form.save(commit=False)
         obj.user = self.request.user
@@ -596,6 +602,7 @@ class IssueBaseCreate(object):
         p = Points.objects.create(user=self.request.user, issue=obj, score=score)
 
     def process_issue(self, user, obj, created, domain, tokenauth=False, score=3):
+        print("processing process_issue for ip address: ", get_client_ip(self.request))
         p = Points.objects.create(user=user, issue=obj, score=score)
         messages.success(self.request, "Bug added ! +" + str(score))
         # tweet feature
@@ -632,7 +639,11 @@ class IssueBaseCreate(object):
 
             auth.create_tweet(text=message)
 
-        except (TypeError, tweepy.errors.HTTPException, tweepy.errors.TweepyException) as e:
+        except (
+            TypeError,
+            tweepy.errors.HTTPException,
+            tweepy.errors.TweepyException,
+        ) as e:
             print(e)
 
         if created:
@@ -742,6 +753,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
     template_name = "report.html"
 
     def get_initial(self):
+        print("processing post for ip address: ", get_client_ip(self.request))
         try:
             json_data = json.loads(self.request.body)
             if not self.request.GET._mutable:
@@ -801,16 +813,18 @@ class IssueCreate(IssueBaseCreate, CreateView):
             initial["screenshot"] = "uploads\/" + self.request.POST.get("screenshot-hash") + ".png"
         return initial
 
-    def get(self, request, *args, **kwargs):
-        # GET requests should only render the form
-        captcha_form = CaptchaForm()
-        return render(
-            request,
-            self.template_name,
-            {"form": self.get_form(), "captcha_form": captcha_form},
-        )
+    # def get(self, request, *args, **kwargs):
+    #     print("processing get for ip address: ", get_client_ip(request))
+
+    #     captcha_form = CaptchaForm()
+    #     return render(
+    #         request,
+    #         self.template_name,
+    #         {"form": self.get_form(), "captcha_form": captcha_form},
+    #     )
 
     def post(self, request, *args, **kwargs):
+        print("processing post for ip address: ", get_client_ip(request))
         # resolve domain
         url = request.POST.get("url").replace("www.", "").replace("https://", "")
 
@@ -843,6 +857,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     else:
                         raise Exception
             except:
+                # TODO: it could be that the site is down so we can consider logging this differently
                 messages.error(request, "Domain does not exist")
 
                 captcha_form = CaptchaForm(request.POST)
@@ -851,11 +866,34 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     "report.html",
                     {"form": self.get_form(), "captcha_form": captcha_form},
                 )
-        if not request.FILES.get("screenshots"):
+        # if not request.FILES.get("screenshots"):
+        #     messages.error(request, "Screenshot is required")
+        #     captcha_form = CaptchaForm(request.POST)
+        #     return render(
+        #         self.request,
+        #         "report.html",
+        #         {"form": self.get_form(), "captcha_form": captcha_form},
+        #     )
+
+        screenshot = request.FILES.get("screenshots")
+        if not screenshot:
             messages.error(request, "Screenshot is required")
             captcha_form = CaptchaForm(request.POST)
             return render(
-                self.request,
+                request,
+                "report.html",
+                {"form": self.get_form(), "captcha_form": captcha_form},
+            )
+
+        try:
+            # Attempt to open the image to validate if it's a correct format
+            img = Image.open(screenshot)
+            img.verify()  # Verify that it is, in fact, an image
+        except (IOError, ValueError):
+            messages.error(request, "Invalid image file.")
+            captcha_form = CaptchaForm(request.POST)
+            return render(
+                request,
                 "report.html",
                 {"form": self.get_form(), "captcha_form": captcha_form},
             )
@@ -863,6 +901,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
+        print(
+            "processing form_valid in IssueCreate for ip address: ",
+            get_client_ip(self.request),
+        )
         reporter_ip = get_client_ip(self.request)
         form.instance.reporter_ip_address = reporter_ip
 
@@ -899,7 +941,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     "report.html",
                     {"form": self.get_form(), "captcha_form": captcha_form},
                 )
-
             clean_domain = (
                 obj.domain_name.replace("www.", "").replace("https://", "").replace("http://", "")
             )
@@ -1081,6 +1122,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return create_issue(self, form)
 
     def get_context_data(self, **kwargs):
+        # if self.request is a get, clear out the form data
+        if self.request.method == "GET":
+            self.request.POST = {}
+            self.request.GET = {}
+
+        print("processing get_context_data for ip address: ", get_client_ip(self.request))
         context = super(IssueCreate, self).get_context_data(**kwargs)
         context["activities"] = Issue.objects.exclude(
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
@@ -1759,21 +1806,23 @@ class ScoreboardView(ListView):
     paginate_by = 20
 
     def get_context_data(self, *args, **kwargs):
-        context = super(ScoreboardView, self).get_context_data(*args, **kwargs)
-        companies = sorted(Domain.objects.all(), key=lambda t: t.open_issues.count(), reverse=True)
+        context = super().get_context_data(*args, **kwargs)
 
-        # companies = Domain.objects.all().order_by("-open_issues")
-        paginator = Paginator(companies, self.paginate_by)
+        # Annotate each domain with the count of open issues
+        annotated_domains = Domain.objects.annotate(
+            open_issues_count=Count("open_issues")
+        ).order_by("-open_issues_count")
+
+        paginator = Paginator(annotated_domains, self.paginate_by)
         page = self.request.GET.get("page")
 
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
         try:
             scoreboard_paginated = paginator.page(page)
         except PageNotAnInteger:
             scoreboard_paginated = paginator.page(1)
         except EmptyPage:
             scoreboard_paginated = paginator.page(paginator.num_pages)
+
         context["scoreboard"] = scoreboard_paginated
         context["user"] = self.request.GET.get("user")
         return context
@@ -3605,7 +3654,25 @@ def contributors_view(request, *args, **kwargs):
 
 
 def sponsor_view(request):
-    return render(request, "sponsor.html")
+    from bitcash.network import NetworkAPI
+
+    def get_bch_balance(address):
+        try:
+            balance_satoshis = NetworkAPI.get_balance(address)
+            balance_bch = balance_satoshis / 100000000  # Convert from satoshis to BCH
+            return balance_bch
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return None
+
+    # Example BCH address
+    bch_address = "bitcoincash:qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc"
+
+    balance = get_bch_balance(bch_address)
+    if balance is not None:
+        print(f"Balance of {bch_address}: {balance} BCH")
+
+    return render(request, "sponsor.html", context={"balance": balance})
 
 
 def safe_redirect(request: HttpRequest):
