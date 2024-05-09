@@ -4424,7 +4424,7 @@ def SaveBiddingData(request):
         amount = request.POST.get("bid_amount")
         user = request.POST.get("user")
         current_time = datetime.now(timezone.utc)
-        en = Bid(
+        bid = Bid(
             issue_url=url,
             amount=amount,
             created_at=current_time,
