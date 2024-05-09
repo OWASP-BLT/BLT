@@ -4481,7 +4481,7 @@ def submit_pr(request):
             created_at=current_time,
             modified_at=current_time,
         )
-        en.save()
+        bid.save()
         return render(request, "submit_pr.html")
 
     return render(request, "submit_pr.html")
