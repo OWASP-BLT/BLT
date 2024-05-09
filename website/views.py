@@ -4472,7 +4472,7 @@ def submit_pr(request):
         issue_url = request.POST.get("issue_link")
         status = "Submitted"
         current_time = timezone.now()
-        en = Bid(
+        bid = Bid(
             pr_link=pr_link,
             user=user,
             amount=amount,
