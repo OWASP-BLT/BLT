@@ -62,6 +62,11 @@ class Company(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def save(self, *args, **kwargs):
+        if not self.company_id:
+            self.company_id = str(uuid.uuid4())
+        super().save(*args, **kwargs)
 
 
 class Domain(models.Model):
