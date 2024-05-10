@@ -56,6 +56,10 @@
         #BidDisplay {
             margin-bottom: 10px;
         }
+
+        #Link_pr{
+            text-align: center;
+        }
         </style>
     </head>
     <body>
@@ -149,5 +153,8 @@
             <br>
             <button type="submit" id="submitBid">Submit Bid</button>
         </form>
+        <div id ="Link_pr"style="text-align: center;">
+            <a href="{% url 'submit_pr' %}">Submit Your Pull Request</a>
+        </div>
     </body>
 </html>

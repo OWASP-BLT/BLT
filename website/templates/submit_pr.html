@@ -59,6 +59,9 @@
         #pr_link{
             display: none;
         }
+        #Link_bid{
+            text-align: center;
+        }
         </style>
     </head>
     <body>
@@ -129,5 +132,8 @@
             <input type="text" name="pr_link" id="pr_link" required>
             <button type="submit" id="submit">Submit</button>
         </form>
+        <div id ="Link_bid"style="text-align: center;">
+            <a href="{% url 'BiddingData' %}">Place a Bid</a>
+        </div>
     </body>
 </html>
