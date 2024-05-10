@@ -1,7 +1,7 @@
 from django.db.models import Sum
 from rest_framework import serializers
 
-from website.models import Domain, Hunt, HuntPrize, Issue, Points, User, UserProfile
+from website.models import Company, Domain, Hunt, HuntPrize, Issue, Points, User, UserProfile
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -87,4 +87,10 @@ class BugHuntPrizeSerializer(serializers.ModelSerializer):
 class BugHuntSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hunt
+        fields = "__all__"
+
+
+class CompanySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Company
         fields = "__all__"

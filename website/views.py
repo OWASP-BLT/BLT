@@ -1808,7 +1808,7 @@ class ScoreboardView(ListView):
 
         # Annotate each domain with the count of open issues
         annotated_domains = Domain.objects.annotate(
-            open_issues_count=Count("open_issues")
+            open_issues_count=Count("issue", filter=Q(issue__status="open"))
         ).order_by("-open_issues_count")
 
         paginator = Paginator(annotated_domains, self.paginate_by)
