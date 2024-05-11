@@ -50,7 +50,7 @@ class Company(models.Model):
     managers = models.ManyToManyField(User, related_name="user_companies")
     name = models.CharField(max_length=255)
     logo = models.ImageField(upload_to="company_logos", null=True, blank=True)
-    company_id = models.CharField(max_length=255, unique=True, editable=False)  # uuid
+    # company_id = models.CharField(max_length=255, unique=True, editable=False)  # uuid
     url = models.URLField()
     email = models.EmailField(null=True, blank=True)
     twitter = models.CharField(max_length=30, null=True, blank=True)
@@ -63,10 +63,10 @@ class Company(models.Model):
     def __str__(self):
         return self.name
 
-    def save(self, *args, **kwargs):
-        if not self.company_id:
-            self.company_id = str(uuid.uuid4())
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     if not self.company_id:
+    #         self.company_id = str(uuid.uuid4())
+    #     super().save(*args, **kwargs)
 
 
 class Domain(models.Model):
