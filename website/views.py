@@ -4420,7 +4420,6 @@ def generate_bid_image(request, bid_amount):
 
 
 def SaveBiddingData(request):
-    form = BidForm()
     if request.method == "POST":
         url = request.POST.get("issue_url")
         amount = request.POST.get("bid_amount")
@@ -4445,18 +4444,13 @@ def fetch_current_bid(request):
         issue_url = data.get("issue_url")
         bid = Bid.objects.filter(issue_url=issue_url).order_by("-created_at").first()
         if bid is not None:
-            bid_amount = bid.amount
-            time_left = bid.created_at - datetime.now(timezone.utc)
-            user = bid.user
-            date = bid.created_at
-            status = bid.status
             return JsonResponse(
                 {
-                    "current_bid": bid_amount,
-                    "time_left": (time_left.total_seconds() + 86400),
-                    "date": date,
-                    "user": user,
-                    "status": status,
+                    "current_bid": bid.amount,
+                    "time_left": (bid.created_at - datetime.now(timezone.utc)).total_seconds() + 86400,
+                    "date": bid.created_at,
+                    "user": bid.user,
+                    "status": bid.status,
                 }
             )
         else:
@@ -4466,7 +4460,6 @@ def fetch_current_bid(request):
 
 
 def submit_pr(request):
-    form = BidForm()
     if request.method == "POST":
         pr_link = request.POST.get("pr_link")
         user = request.POST.get("user")
