@@ -4095,13 +4095,13 @@ class IssueView3(DetailView):
             .values("id", "description", "markdown_description", "screenshots__image")
             .order_by("views")[:4]
         )
-        context["subscribed_to_domain"] = False
-
-        # TODO fix this
-        # if isinstance(self.request.user, User):
-        #     context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
-        #         pk=self.request.user.userprofile.id
-        #     ).exists()
+        # TODO fix this, edit: Hopefully this will work
+        if isinstance(self.request.user, User):
+            context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
+                pk=self.request.user.userprofile.id
+            ).exists()
+        else:
+            context["subscribed_to_domain"] = False
 
         if isinstance(self.request.user, User):
             context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(
