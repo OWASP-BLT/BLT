@@ -64,7 +64,7 @@ class Company(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        if not self.company_id:
+        if self.company_id is None:
             self.company_id = str(uuid.uuid4())
         super().save(*args, **kwargs)
 
