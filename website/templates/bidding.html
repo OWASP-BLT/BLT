@@ -60,11 +60,22 @@
             color: #000;
             text-decoration: none;
         }
+
+        #invalidUrlMessage{
+            display: none;
+        }
     </style>
     <script>
     function fetchBid() {
         const issueUrl = document.getElementById('issueLinkInput').value;
         const csrftoken = getCookie('csrftoken');
+        if (!issueUrl.includes("github.com")) {
+            document.getElementById('invalidUrlMessage').style.display = "block";
+            return;
+        }
+        else {
+            document.getElementById('invalidUrlMessage').style.display = "none";
+        }
         fetch(`/fetch-current-bid/`, {
             method: 'POST',
             headers: {
@@ -142,6 +153,7 @@
             <br>
             <button id="fetchbid" type="button" onclick="fetchBid()">Fetch</button>
             <br>
+            <p id="invalidUrlMessage">Please enter a valid GitHub link</p>
             <p id="BidDisplay"></p>
             <br>
             <label>Github UserName:</label>
