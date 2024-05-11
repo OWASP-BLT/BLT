@@ -61,8 +61,6 @@
             text-decoration: none;
         }
     </style>
-</head>
-<body>
     <script>
     function fetchBid() {
         const issueUrl = document.getElementById('issueLinkInput').value;
@@ -136,24 +134,26 @@
         return cookieValue;
     }
     </script>
-    <form id ="bid" method="post" action="{% url 'BiddingData' %}">
-        {% csrf_token %}
-        <label>Issue link:</label>
-        <input type="text" id="issueLinkInput" name="issue_url">
-        <br>
-        <button id = "fetchBid" type="button" onclick="fetchBid()">Fetch</button>
-        <br>
-        <p id="BidDisplay"></p>
-        <br>
-        <label>Github UserName:</label>
-        <input type="text" id="user" name="user" required>
-        <br>
-        <label id="bidamount">New Bid:</label>
-        <input type="number" id="bid_amount" name="bid_amount" required min="1">
-        <br>
-        <button type="submit" id="submitBid">Submit Bid</button>
-    </form>
-    <div id ="Link_pr">
+    <div>
+        <form id="bid" method="post" action="{% url 'BiddingData' %}">
+            {% csrf_token %}
+            <label>Issue link:</label>
+            <input type="text" id="issueLinkInput" name="issue_url">
+            <br>
+            <button id="fetchBid" type="button" onclick="fetchBid()">Fetch</button>
+            <br>
+            <p id="BidDisplay"></p>
+            <br>
+            <label>Github UserName:</label>
+            <input type="text" id="user" name="user" required>
+            <br>
+            <label id="bidamount">New Bid:</label>
+            <input type="number" id="bid_amount" name="bid_amount" required min="1">
+            <br>
+            <button type="submit" id="submitBid">Submit Bid</button>
+        </form>
+    </div>
+    <div id="Link_pr">
         <a href="{% url 'submit_pr' %}">Submit Your Pull Request</a>
     </div>
 {% endblock content %}

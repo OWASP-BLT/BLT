@@ -64,8 +64,6 @@
         }
 
     </style>
-</head>
-<body>
     <script>
         function fetchData(){
             const issueUrl = document.getElementById('issue_link').value;
@@ -121,19 +119,21 @@
         }
 
     </script>
-    <form id ="submit_pr"action="{% url 'submit_pr' %}" method="post">
-        {% csrf_token %}
-        <label>Issue Link</label>
-        <input type="text" name="issue_link" id="issue_link">
-        <button id="fetch" type="button" onclick="fetchData()">Fetch data</button>
-        <p id="BidDisplay"></p>
-        <input type="hidden" name="user" id="user">
-        <input type="hidden" name="bid_amount" id="bid_amount">
-        <label id="pr_label">Link to your Pull Request</label>
-        <input type="text" name="pr_link" id="pr_link" required>
-        <button type="submit" id="submit">Submit</button>
-    </form>
-    <div id ="Link_bid">
+    <div>
+        <form id="submit_pr"action="{% url 'submit_pr' %}" method="post">
+            {% csrf_token %}
+            <label>Issue Link</label>
+            <input type="text" name="issue_link" id="issue_link">
+            <button id="fetch" type="button" onclick="fetchData()">Fetch data</button>
+            <p id="BidDisplay"></p>
+            <input type="hidden" name="user" id="user">
+            <input type="hidden" name="bid_amount" id="bid_amount">
+            <label id="pr_label">Link to your Pull Request</label>
+            <input type="text" name="pr_link" id="pr_link" required>
+            <button type="submit" id="submit">Submit</button>
+        </form>
+    </div>
+    <div id="Link_bid">
         <a href="{% url 'BiddingData' %}">Place a Bid</a>
     </div>
 {% endblock content %}
