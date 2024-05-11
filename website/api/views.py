@@ -636,3 +636,22 @@ class OpenIssuesViewSet(viewsets.ModelViewSet):
             return Response({"result": [], "message": "Object does not exist"}, status=404)
         except JSONDecodeError:
             return Response({"result": "error", "message": "Json decoding error"}, status=400)
+
+
+class ClosedIssuesViewSet(viewsets.ModelViewSet):
+    queryset = Issue.objects.all()
+    serializer_class = IssueSerializer
+
+    def get(self, request, *args, **kwargs):
+        try:
+            domainUrl = request.GET.get("domain")
+            domainData = Domain.objects.get(url=domainUrl)
+            data = Issue.objects.filter(domain=domainData.id, status="closed")
+            serializer = IssueSerializer(data, many=True)
+            return Response(
+                {"count": len(serializer.data), "response": serializer.data, "status": 200}
+            )
+        except ObjectDoesNotExist:
+            return Response({"result": "error", "message": "Domain does not exist"}, status=404)
+        except JSONDecodeError:
+            return Response({"result": "error", "message": "Json decoding error"}, status=400)
