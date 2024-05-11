@@ -1,12 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description"
-              content="This is a website used for Bidding on issue">
-        <meta name="keywords" content="Bidding,issues">
-        <title>BIDDING</title>
+{% extends "base.html" %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
         <style>
         body {
             font-family: Arial, sans-serif;
@@ -15,7 +9,7 @@
             padding: 0;
         }
 
-        form {
+        #bid {
             max-width: 400px;
             margin: 20px auto;
             padding: 20px;
@@ -30,8 +24,9 @@
             font-weight: bold;
         }
 
-        input[type="text"],
-        input[type="number"] {
+        #issueLinkInput,
+        #bid_amount,
+        #user {
             width: 100%;
             padding: 8px;
             margin-bottom: 10px;
@@ -40,7 +35,7 @@
             border-radius: 3px;
         }
 
-        button {
+        #fetchBid,#submitBid {
             padding: 8px 15px;
             background-color: #007bff;
             color: #fff;
@@ -49,16 +44,21 @@
             cursor: pointer;
         }
 
-        button:hover {
-            background-color: #0056b3;
-        }
-
         #BidDisplay {
             margin-bottom: 10px;
         }
-
-        #Link_pr{
+        #Link_pr {
             text-align: center;
+            margin-top: 20px;
+        }
+
+        #Link_pr a {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 5px;
+            background-color:  #e53e3e; 
+            color: #000;
+            text-decoration: none;
         }
         </style>
     </head>
@@ -136,12 +136,12 @@
         return cookieValue;
     }
         </script>
-        <form method="post" action="{% url 'BiddingData' %}">
+        <form id ="bid" method="post" action="{% url 'BiddingData' %}">
             {% csrf_token %}
             <label>Issue link:</label>
             <input type="text" id="issueLinkInput" name="issue_url">
             <br>
-            <button type="button" onclick="fetchBid()">Fetch</button>
+            <button id = "fetchBid" type="button" onclick="fetchBid()">Fetch</button>
             <br>
             <p id="BidDisplay"></p>
             <br>
@@ -153,8 +153,7 @@
             <br>
             <button type="submit" id="submitBid">Submit Bid</button>
         </form>
-        <div id ="Link_pr"style="text-align: center;">
+        <div id ="Link_pr">
             <a href="{% url 'submit_pr' %}">Submit Your Pull Request</a>
         </div>
-    </body>
-</html>
+{% endblock content %}

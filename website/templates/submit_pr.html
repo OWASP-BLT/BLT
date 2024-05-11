@@ -1,12 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description"
-              content="This is a website used for submitting prs on issue">
-        <meta name="keywords" content="Bidding,PullRequest">
-        <title>Document</title>
+{% extends "base.html" %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
         <style>
         body {
             font-family: Arial, sans-serif;
@@ -15,7 +9,7 @@
             padding: 0;
         }
 
-        form {
+        #submit_pr{
             max-width: 400px;
             margin: 20px auto;
             padding: 20px;
@@ -30,8 +24,8 @@
             font-weight: bold;
         }
 
-        input[type="text"],
-        input[type="number"] {
+        #issue_link,
+        #user,#bid_amount {
             width: 100%;
             padding: 8px;
             margin-bottom: 10px;
@@ -40,7 +34,7 @@
             border-radius: 3px;
         }
 
-        button {
+        #fetch,#submit {
             padding: 8px 15px;
             background-color: #007bff;
             color: #fff;
@@ -49,19 +43,26 @@
             cursor: pointer;
         }
 
-        button:hover {
-            background-color: #0056b3;
-        }
-
         #BidDisplay {
             margin-bottom: 10px;
         }
         #pr_link{
             display: none;
         }
-        #Link_bid{
+        #Link_bid {
             text-align: center;
+            margin-top: 20px;
         }
+
+        #Link_bid a {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 5px;
+            background-color:  #e53e3e; 
+            color: #000;
+            text-decoration: none;
+        }
+
         </style>
     </head>
     <body>
@@ -120,11 +121,11 @@
         }
 
         </script>
-        <form action="{% url 'submit_pr' %}" method="post">
+        <form id ="submit_pr"action="{% url 'submit_pr' %}" method="post">
             {% csrf_token %}
             <label>Issue Link</label>
             <input type="text" name="issue_link" id="issue_link">
-            <button type="button" onclick="fetchData()">Fetch data</button>
+            <button id="fetch" type="button" onclick="fetchData()">Fetch data</button>
             <p id="BidDisplay"></p>
             <input type="hidden" name="user" id="user">
             <input type="hidden" name="bid_amount" id="bid_amount">
@@ -132,8 +133,7 @@
             <input type="text" name="pr_link" id="pr_link" required>
             <button type="submit" id="submit">Submit</button>
         </form>
-        <div id ="Link_bid"style="text-align: center;">
+        <div id ="Link_bid">
             <a href="{% url 'BiddingData' %}">Place a Bid</a>
         </div>
-    </body>
-</html>
+{% endblock content %}
