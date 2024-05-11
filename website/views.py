@@ -1,4 +1,5 @@
 import base64
+import io
 import json
 import os
 import random
@@ -66,6 +67,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import DetailView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
+from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
@@ -75,6 +77,7 @@ from blt import settings
 from comments.models import Comment
 from website.models import (
     IP,
+    Bid,
     Company,
     CompanyAdmin,
     ContributorStats,
@@ -4399,3 +4402,80 @@ def deletions(request):
         "monitor.html",
         {"form": form, "deletions": Monitor.objects.filter(user=request.user)},
     )
+
+
+def generate_bid_image(request, bid_amount):
+    image = Image.new("RGB", (100, 50), color="white")
+    draw = ImageDraw.Draw(image)
+
+    font = ImageFont.load_default()
+    draw.text((10, 10), f"Bid: ${bid_amount}", fill="black", font=font)
+
+    byte_io = io.BytesIO()
+    image.save(byte_io, format="PNG")
+    byte_io.seek(0)
+
+    return HttpResponse(byte_io, content_type="image/png")
+
+
+def SaveBiddingData(request):
+    if request.method == "POST":
+        url = request.POST.get("issue_url")
+        amount = request.POST.get("bid_amount")
+        user = request.POST.get("user")
+        current_time = datetime.now(timezone.utc)
+        bid = Bid(
+            issue_url=url,
+            amount=amount,
+            created=current_time,
+            modified=current_time,
+            user=user,
+        )
+        bid.save()
+        return render(request, "bidding.html")
+
+    return render(request, "bidding.html")
+
+
+def fetch_current_bid(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        issue_url = data.get("issue_url")
+        bid = Bid.objects.filter(issue_url=issue_url).order_by("-created").first()
+        if bid is not None:
+            return JsonResponse(
+                {
+                    "current_bid": bid.amount,
+                    "time_left": (bid.created - datetime.now(timezone.utc)).total_seconds() + 86400,
+                    "date": bid.created,
+                    "user": bid.user,
+                    "status": bid.status,
+                }
+            )
+        else:
+            return JsonResponse({"error": "Bid not found"}, status=404)
+    else:
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+def submit_pr(request):
+    if request.method == "POST":
+        pr_link = request.POST.get("pr_link")
+        user = request.POST.get("user")
+        amount = request.POST.get("bid_amount")
+        issue_url = request.POST.get("issue_link")
+        status = "Submitted"
+        current_time = datetime.now(timezone.utc)
+        bid = Bid(
+            pr_link=pr_link,
+            user=user,
+            amount=amount,
+            issue_url=issue_url,
+            status=status,
+            created=current_time,
+            modified=current_time,
+        )
+        bid.save()
+        return render(request, "submit_pr.html")
+
+    return render(request, "submit_pr.html")
