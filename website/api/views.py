@@ -1,9 +1,11 @@
 import uuid
 from datetime import datetime
+from json import JSONDecodeError
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.db.models import Q, Sum
@@ -617,3 +619,20 @@ class CompanyViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ("id", "name")
     http_method_names = ("get", "post", "put")
+
+
+class OpenIssuesViewSet(viewsets.ModelViewSet):
+    queryset = Issue.objects.all()
+    serializer_class = IssueSerializer
+
+    def get(self, request, *args, **kwargs):
+        try:
+            domainUrl = request.GET.get("domain")
+            domainData = Domain.objects.get(url=domainUrl)
+            data = Issue.objects.filter(domain=domainData.id, status="open")
+            serializer = IssueSerializer(data, many=True)
+            return Response({"count": len(serializer.data), "result": serializer.data}, status=200)
+        except ObjectDoesNotExist:
+            return Response({"result": [], "message": "Object does not exist"}, status=404)
+        except JSONDecodeError:
+            return Response({"result": "error", "message": "Json decoding error"}, status=400)
