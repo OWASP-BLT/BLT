@@ -96,7 +96,6 @@ from website.models import (
 )
 
 from .forms import (
-    BidForm,
     CaptchaForm,
     HuntForm,
     MonitorForm,
@@ -4447,7 +4446,8 @@ def fetch_current_bid(request):
             return JsonResponse(
                 {
                     "current_bid": bid.amount,
-                    "time_left": (bid.created_at - datetime.now(timezone.utc)).total_seconds() + 86400,
+                    "time_left": (bid.created_at - datetime.now(timezone.utc)).total_seconds()
+                    + 86400,
                     "date": bid.created_at,
                     "user": bid.user,
                     "status": bid.status,
