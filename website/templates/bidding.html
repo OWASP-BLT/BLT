@@ -69,7 +69,8 @@
     function fetchBid() {
         const issueUrl = document.getElementById('issueLinkInput').value;
         const csrftoken = getCookie('csrftoken');
-        if (!issueUrl.includes("github.com")) {
+        const githubUrlPattern = /^https?:\/\/github\.com\/.*$/i;
+        if (!githubUrlPattern.test(issueUrl)) {
             document.getElementById('invalidUrlMessage').style.display = "block";
             return;
         }
@@ -90,7 +91,7 @@
                     const currentBid = data.current_bid;
                     const time_left = data.time_left;
                     const status = data.status;
-                    document.getElementById('BidDisplay').innerHTML = `Current Bid:  ${currentBid} Time Left: <span id="timer">${formatTime(time_left)}</span> Status : ${status}`;
+                    document.getElementById('BidDisplay').innerHTML = `Current Bid:  ${currentBid} <br> Time Left: <span id="timer">${formatTime(time_left)}</span> <br> Status : ${status}`;
                     const bidAmountInput = document.getElementById('bid_amount');
                     bidAmountInput.setAttribute('max', currentBid - 1);
 

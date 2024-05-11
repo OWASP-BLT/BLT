@@ -587,8 +587,8 @@ class Monitor(models.Model):
 class Bid(models.Model):
     issue_url = models.URLField()
     user = models.CharField(default="Add user", max_length=30, null=True, blank=True)
-    created_at = models.DateTimeField(default=timezone.now)
-    modified_at = models.DateTimeField(default=timezone.now)
+    created = models.DateTimeField(default=timezone.now)
+    modified = models.DateTimeField(default=timezone.now)
     amount = models.IntegerField()
     status = models.CharField(default="Open", max_length=10)
     pr_link = models.URLField(blank=True, null=True)
@@ -596,11 +596,11 @@ class Bid(models.Model):
     # def save(self, *args, **kwargs):
     #     if (
     #         self.status == "Open"
-    #         and (timezone.now() - self.created_at).total_seconds() >= 24 * 60 * 60
+    #         and (timezone.now() - self.created).total_seconds() >= 24 * 60 * 60
     #     ):
     #         self.status = "Selected"
     #         self.modified = timezone.now()
-    #         email_body = f"This bid was selected:\nIssue URL: {self.issue_url}\nUser: {self.user}\nCurrent Bid: {self.current_bid}\nCreated on: {self.created_at}\nBid Amount: {self.amount}"
+    #         email_body = f"This bid was selected:\nIssue URL: {self.issue_url}\nUser: {self.user}\nCurrent Bid: {self.current_bid}\nCreated on: {self.created}\nBid Amount: {self.amount}"
     #         send_mail(
     #             "Bid Closed",
     #             email_body,

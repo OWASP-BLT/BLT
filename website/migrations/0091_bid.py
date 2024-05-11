@@ -27,9 +27,9 @@ class Migration(migrations.Migration):
                     "user",
                     models.CharField(blank=True, default="Add user", max_length=30, null=True),
                 ),
-                ("created_at", models.DateTimeField(default=django.utils.timezone.now)),
+                ("created", models.DateTimeField(default=django.utils.timezone.now)),
                 (
-                    "modified_at",
+                    "modified",
                     models.DateTimeField(default=django.utils.timezone.now),
                 ),
                 ("amount", models.IntegerField()),

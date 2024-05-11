@@ -4427,8 +4427,8 @@ def SaveBiddingData(request):
         bid = Bid(
             issue_url=url,
             amount=amount,
-            created_at=current_time,
-            modified_at=current_time,
+            created=current_time,
+            modified=current_time,
             user=user,
         )
         bid.save()
@@ -4441,14 +4441,13 @@ def fetch_current_bid(request):
     if request.method == "POST":
         data = json.loads(request.body)
         issue_url = data.get("issue_url")
-        bid = Bid.objects.filter(issue_url=issue_url).order_by("-created_at").first()
+        bid = Bid.objects.filter(issue_url=issue_url).order_by("-created").first()
         if bid is not None:
             return JsonResponse(
                 {
                     "current_bid": bid.amount,
-                    "time_left": (bid.created_at - datetime.now(timezone.utc)).total_seconds()
-                    + 86400,
-                    "date": bid.created_at,
+                    "time_left": (bid.created - datetime.now(timezone.utc)).total_seconds() + 86400,
+                    "date": bid.created,
                     "user": bid.user,
                     "status": bid.status,
                 }
@@ -4473,8 +4472,8 @@ def submit_pr(request):
             amount=amount,
             issue_url=issue_url,
             status=status,
-            created_at=current_time,
-            modified_at=current_time,
+            created=current_time,
+            modified=current_time,
         )
         bid.save()
         return render(request, "submit_pr.html")
