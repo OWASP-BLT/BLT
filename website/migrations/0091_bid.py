@@ -35,6 +35,7 @@ class Migration(migrations.Migration):
                 ("amount", models.IntegerField()),
                 ("status", models.CharField(default="Open", max_length=10)),
                 ("pr_link", models.URLField(blank=True, null=True)),
+                ("bch_address", models.CharField(blank=True, null=True, max_length=45)),
             ],
         ),
     ]

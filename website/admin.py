@@ -75,7 +75,16 @@ class WinnerAdmin(admin.ModelAdmin):
 
 
 class BidAdmin(admin.ModelAdmin):
-    list_display = ("issue_url", "user", "pr_link", "amount", "status", "created", "modified")
+    list_display = (
+        "issue_url",
+        "user",
+        "pr_link",
+        "amount",
+        "bch_address",
+        "status",
+        "created",
+        "modified",
+    )
 
 
 class WalletAdmin(admin.ModelAdmin):
