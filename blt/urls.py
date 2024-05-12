@@ -20,7 +20,6 @@ from company.views import ShowBughuntView
 from website.api.views import (
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
-    ClosedIssuesViewSet,
     CompanyViewSet,
     DomainViewSet,
     FlagIssueApiView,
@@ -28,7 +27,6 @@ from website.api.views import (
     IssueViewSet,
     LeaderboardApiViewSet,
     LikeIssueApiView,
-    OpenIssuesViewSet,
     StatsApiViewset,
     UrlCheckApiViewset,
     UserIssueViewSet,
@@ -119,8 +117,10 @@ handler404 = "website.views.handler404"
 handler500 = "website.views.handler500"
 
 urlpatterns = [
-    path("open-issues/", OpenIssuesViewSet.as_view({"get": "get"}), name="open-issues"),
-    path("closed-issues/", ClosedIssuesViewSet.as_view({"get": "get"}), name="closed-issues"),
+    path("issues/open/", IssueViewSet.as_view({"get": "get_open_issues"}), name="open-issues"),
+    path(
+        "issues/closed/", IssueViewSet.as_view({"get": "get_closed_issues"}), name="closed-issues"
+    ),
     path("company/", CompanyViewSet.as_view({"get": "list", "post": "create"}), name="company"),
     path("invite-friend/", website.views.invite_friend, name="invite_friend"),
     path("referral/", website.views.referral_signup, name="referral_signup"),

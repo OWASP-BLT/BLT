@@ -209,6 +209,22 @@ class IssueViewSet(viewsets.ModelViewSet):
 
         return Response(self.get_issue_info(request, issue))
 
+    @staticmethod
+    def _get_issue_by_status(domain_url, status):
+        domain_data = Domain.objects.get(url=domain_url)
+        data = Issue.objects.filter(domain=domain_data.id, status=status)
+        serializer = IssueSerializer(data, many=True)
+        return Response({"count": len(serializer.data), "result": serializer.data}, status=200)
+
+    def get_open_issues(self, request, *args, **kwargs):
+        try:
+            domain_url = request.GET.get("domain")
+            return self._get_issue_by_status(domain_url, "open")
+        except ObjectDoesNotExist:
+            return Response({"result": [], "message": "Object does not exist"}, status=404)
+        except JSONDecodeError:
+            return Response({"result": "error", "message": "Json decoding error"}, status=400)
+
 
 class LikeIssueApiView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -619,23 +635,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ("id", "name")
     http_method_names = ("get", "post", "put")
-
-
-class OpenIssuesViewSet(viewsets.ModelViewSet):
-    queryset = Issue.objects.all()
-    serializer_class = IssueSerializer
-
-    def get(self, request, *args, **kwargs):
-        try:
-            domainUrl = request.GET.get("domain")
-            domainData = Domain.objects.get(url=domainUrl)
-            data = Issue.objects.filter(domain=domainData.id, status="open")
-            serializer = IssueSerializer(data, many=True)
-            return Response({"count": len(serializer.data), "result": serializer.data}, status=200)
-        except ObjectDoesNotExist:
-            return Response({"result": [], "message": "Object does not exist"}, status=404)
-        except JSONDecodeError:
-            return Response({"result": "error", "message": "Json decoding error"}, status=400)
 
 
 class ClosedIssuesViewSet(viewsets.ModelViewSet):
