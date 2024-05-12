@@ -4466,6 +4466,7 @@ def submit_pr(request):
         issue_url = request.POST.get("issue_link")
         status = "Submitted"
         current_time = datetime.now(timezone.utc)
+        bch_address = request.POST.get("bch_address")
         bid = Bid(
             pr_link=pr_link,
             user=user,
@@ -4474,6 +4475,7 @@ def submit_pr(request):
             status=status,
             created=current_time,
             modified=current_time,
+            bch_address=bch_address,
         )
         bid.save()
         return render(request, "submit_pr.html")
