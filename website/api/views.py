@@ -1,11 +1,9 @@
 import uuid
 from datetime import datetime
-from json import JSONDecodeError
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.db.models import Q, Sum
@@ -166,18 +164,42 @@ class IssueViewSet(viewsets.ModelViewSet):
             "screenshots": screenshots,
         }
 
+    @staticmethod
+    def _get_issue_by_status(domain_url, status):
+        if domain_url:
+            try:
+                domain_data = Domain.objects.get(url=domain_url)
+                data = Issue.objects.filter(domain=domain_data.id, status=status)
+            except Domain.DoesNotExist:
+                return Response({"result": [], "message": "Domain does not exist"}, status=404)
+            except Issue.DoesNotExist:
+                return Response({"result": [], "message": "Object does not exist"}, status=404)
+        else:
+            data = Issue.objects.filter(status=status)
+        serializer = IssueSerializer(data, many=True)
+        return Response({"count": len(serializer.data), "result": serializer.data}, status=200)
+
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-
         issues = []
-        page = self.paginate_queryset(queryset)
-        if page is None:
-            return Response(issues)
+        status = request.GET.get("status")
+        domain_url = request.GET.get("domain")
+        match status:
+            case "open":
+                return self._get_issue_by_status(domain_url, "open")
 
-        for issue in page:
-            issues.append(self.get_issue_info(request, issue))
+            case "closed":
+                return self._get_issue_by_status(domain_url, "closed")
 
-        return self.get_paginated_response(issues)
+            case _:
+                page = self.paginate_queryset(queryset)
+                if page is None:
+                    return Response(issues)
+
+                for issue in page:
+                    issues.append(self.get_issue_info(request, issue))
+
+                return self.get_paginated_response(issues)
 
     def retrieve(self, request, pk, *args, **kwargs):
         issue = Issue.objects.filter(id=pk).first()
@@ -208,22 +230,6 @@ class IssueViewSet(viewsets.ModelViewSet):
                 return Response({"error": img_valid}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(self.get_issue_info(request, issue))
-
-    @staticmethod
-    def _get_issue_by_status(domain_url, status):
-        domain_data = Domain.objects.get(url=domain_url)
-        data = Issue.objects.filter(domain=domain_data.id, status=status)
-        serializer = IssueSerializer(data, many=True)
-        return Response({"count": len(serializer.data), "result": serializer.data}, status=200)
-
-    def get_open_issues(self, request, *args, **kwargs):
-        try:
-            domain_url = request.GET.get("domain")
-            return self._get_issue_by_status(domain_url, "open")
-        except ObjectDoesNotExist:
-            return Response({"result": [], "message": "Object does not exist"}, status=404)
-        except JSONDecodeError:
-            return Response({"result": "error", "message": "Json decoding error"}, status=400)
 
 
 class LikeIssueApiView(APIView):
@@ -635,22 +641,3 @@ class CompanyViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ("id", "name")
     http_method_names = ("get", "post", "put")
-
-
-class ClosedIssuesViewSet(viewsets.ModelViewSet):
-    queryset = Issue.objects.all()
-    serializer_class = IssueSerializer
-
-    def get(self, request, *args, **kwargs):
-        try:
-            domainUrl = request.GET.get("domain")
-            domainData = Domain.objects.get(url=domainUrl)
-            data = Issue.objects.filter(domain=domainData.id, status="closed")
-            serializer = IssueSerializer(data, many=True)
-            return Response(
-                {"count": len(serializer.data), "response": serializer.data, "status": 200}
-            )
-        except ObjectDoesNotExist:
-            return Response({"result": "error", "message": "Domain does not exist"}, status=404)
-        except JSONDecodeError:
-            return Response({"result": "error", "message": "Json decoding error"}, status=400)
