@@ -53,7 +53,6 @@ class BidForm(forms.ModelForm):
         model = Bid
         fields = [
             "issue_url",
-            "user",
             "created",
             "modified",
             "amount",

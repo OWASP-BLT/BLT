@@ -24,9 +24,7 @@
             font-weight: bold;
         }
 
-        #issueLinkInput,
-        #bid_amount,
-        #user {
+        #issueLinkInput, #bid_amount {
             width: 100%;
             padding: 8px;
             margin-bottom: 10px;
@@ -66,6 +64,7 @@
         }
     </style>
     <script>
+    
     function fetchBid() {
         const issueUrl = document.getElementById('issueLinkInput').value;
         const csrftoken = getCookie('csrftoken');
@@ -89,9 +88,7 @@
             .then(data => {
                 if ('current_bid' in data) {
                     const currentBid = data.current_bid;
-                    const time_left = data.time_left;
-                    const status = data.status;
-                    document.getElementById('BidDisplay').innerHTML = `Current Bid:  ${currentBid} <br> Time Left: <span id="timer">${formatTime(time_left)}</span> <br> Status : ${status}`;
+                    document.getElementById('BidDisplay').innerHTML = `Current Bid:  ${currentBid} <br>`;
                     const bidAmountInput = document.getElementById('bid_amount');
                     bidAmountInput.setAttribute('max', currentBid - 1);
 
@@ -157,13 +154,11 @@
             <p id="invalidUrlMessage">Please enter a valid GitHub link</p>
             <p id="BidDisplay"></p>
             <br>
-            <label>Github UserName:</label>
-            <input type="text" id="user" name="user" required>
-            <br>
             <label id="bidamount">New Bid:</label>
             <input type="number" id="bid_amount" name="bid_amount" required min="1">
             <br>
-            <button type="submit" id="submitBid">Submit Bid</button>
+            <button type="submit" id="submitBid" onclick="OnSubmit()">Submit Bid</button>
+            <p type="hidden" id="verifycode"></p>
         </form>
     </div>
     <div id="Link_pr">

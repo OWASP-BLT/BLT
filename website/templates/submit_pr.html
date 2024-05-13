@@ -28,8 +28,7 @@
             display: none;
         }
 
-        #issue_link,
-        #user,#bid_amount {
+        #issue_link, #bid_amount {
             width: 100%;
             padding: 8px;
             margin-bottom: 10px;
@@ -101,8 +100,6 @@
             .then(data => {
                 if('current_bid' in data) {
                     const currentBid = data.current_bid;
-                    const date = data.date;
-                    const user = data.user;
                     const status = data.status;
                     if(status === "Selected") { 
                         document.getElementById('pr_label').style.display = "block";
@@ -119,9 +116,8 @@
                         document.getElementById('pr_link').style.display = "none";
                         document.getElementById('pr_label').textContent="Bid is not selected : Status is Open/Closed";
                     }
-                    document.getElementById('user').value = user;
                     document.getElementById('bid_amount').value = currentBid;
-                    document.getElementById('BidDisplay').innerHTML = `User: ${user} <br> CurrentBid: ${currentBid} <br> Bid Date: ${date} <br> Status: ${status}`;
+                    document.getElementById('BidDisplay').innerHTML = `CurrentBid: ${currentBid} <br>`;
                 }
                 else{
                     document.getElementById('BidDisplay').innerHTML = 'No current bid';
@@ -153,7 +149,6 @@
             <button id="fetch" type="button" onclick="fetchData()">Fetch data</button>
             <p id="invalidUrlMessage">Please enter a valid GitHub link</p>
             <p id="BidDisplay"></p>
-            <input type="hidden" name="user" id="user">
             <input type="hidden" name="bid_amount" id="bid_amount">
             <label id="bch_label">Add you BCH Address</label>
             <input type="text" name="bch_address" id="bch_address" required>
