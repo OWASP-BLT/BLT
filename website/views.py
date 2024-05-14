@@ -4430,14 +4430,14 @@ def SaveBiddingData(request):
         )
         bid.save()
         bid_link = f"https://blt.owasp.org/generate_bid_image/{amount}/"
-        return JsonResponse({'Paste this in GitHub Issue Comments:': bid_link})
+        return JsonResponse({"Paste this in GitHub Issue Comments:": bid_link})
 
     return render(request, "bidding.html")
 
 
 def fetch_current_bid(request):
     if request.method == "POST":
-        unique_issue_links = Bid.objects.values_list('issue_url', flat=True).distinct()
+        unique_issue_links = Bid.objects.values_list("issue_url", flat=True).distinct()
         data = json.loads(request.body)
         issue_url = data.get("issue_url")
         bid = Bid.objects.filter(issue_url=issue_url).order_by("-created").first()
@@ -4445,7 +4445,7 @@ def fetch_current_bid(request):
             return JsonResponse(
                 {
                     "issueLinks": list(unique_issue_links),
-                    "current_bid": bid.amount, 
+                    "current_bid": bid.amount,
                     "status": bid.status,
                 }
             )
