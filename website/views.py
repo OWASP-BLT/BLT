@@ -4405,12 +4405,11 @@ def deletions(request):
 
 
 def generate_bid_image(request, bid_amount):
-    image = Image.new("RGB", (100, 50), color="white")
+    image = Image.new("RGB", (300, 100), color="white")
     draw = ImageDraw.Draw(image)
 
     font = ImageFont.load_default()
-    draw.text((10, 10), f"Bid: ${bid_amount}", fill="black", font=font)
-
+    draw.text((10, 10), f"Bid Amount: ${bid_amount}", fill="black", font=font)
     byte_io = io.BytesIO()
     image.save(byte_io, format="PNG")
     byte_io.seek(0)
@@ -4418,37 +4417,38 @@ def generate_bid_image(request, bid_amount):
     return HttpResponse(byte_io, content_type="image/png")
 
 
+@login_required
 def SaveBiddingData(request):
     if request.method == "POST":
+        user = request.user.username
         url = request.POST.get("issue_url")
         amount = request.POST.get("bid_amount")
-        user = request.POST.get("user")
         current_time = datetime.now(timezone.utc)
         bid = Bid(
+            user=user,
             issue_url=url,
             amount=amount,
             created=current_time,
             modified=current_time,
-            user=user,
         )
         bid.save()
-        return render(request, "bidding.html")
+        bid_link = f"https://blt.owasp.org/generate_bid_image/{amount}/"
+        return JsonResponse({"Paste this in GitHub Issue Comments:": bid_link})
 
     return render(request, "bidding.html")
 
 
 def fetch_current_bid(request):
     if request.method == "POST":
+        unique_issue_links = Bid.objects.values_list("issue_url", flat=True).distinct()
         data = json.loads(request.body)
         issue_url = data.get("issue_url")
         bid = Bid.objects.filter(issue_url=issue_url).order_by("-created").first()
         if bid is not None:
             return JsonResponse(
                 {
+                    "issueLinks": list(unique_issue_links),
                     "current_bid": bid.amount,
-                    "time_left": (bid.created - datetime.now(timezone.utc)).total_seconds() + 86400,
-                    "date": bid.created,
-                    "user": bid.user,
                     "status": bid.status,
                 }
             )
@@ -4458,22 +4458,25 @@ def fetch_current_bid(request):
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
 
+@login_required
 def submit_pr(request):
     if request.method == "POST":
+        user = request.user.username
         pr_link = request.POST.get("pr_link")
-        user = request.POST.get("user")
         amount = request.POST.get("bid_amount")
         issue_url = request.POST.get("issue_link")
         status = "Submitted"
         current_time = datetime.now(timezone.utc)
+        bch_address = request.POST.get("bch_address")
         bid = Bid(
-            pr_link=pr_link,
             user=user,
+            pr_link=pr_link,
             amount=amount,
             issue_url=issue_url,
             status=status,
             created=current_time,
             modified=current_time,
+            bch_address=bch_address,
         )
         bid.save()
         return render(request, "submit_pr.html")
