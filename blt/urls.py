@@ -121,10 +121,6 @@ handler404 = "website.views.handler404"
 handler500 = "website.views.handler500"
 
 urlpatterns = [
-    # path("issues/open/", IssueViewSet.as_view({"get": "get_open_issues"}), name="open-issues"),
-    # path(
-    #     "issues/closed/", IssueViewSet.as_view({"get": "get_closed_issues"}), name="closed-issues"
-    # ),
     path("company/", CompanyViewSet.as_view({"get": "list", "post": "create"}), name="company"),
     path("invite-friend/", website.views.invite_friend, name="invite_friend"),
     path("referral/", website.views.referral_signup, name="referral_signup"),
@@ -520,11 +516,6 @@ urlpatterns = [
         r"^contributor-stats/today$",
         ContributorStatsView.as_view(today=True),
         name="today-contributor-stats",
-    ),
-    re_path(
-        r"^api/v1/issues/$",
-        IssueViewSet.as_view({"get": "list"}),
-        name="issue_list",
     ),
 ]
 
