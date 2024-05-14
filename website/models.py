@@ -585,6 +585,7 @@ class Monitor(models.Model):
 
 
 class Bid(models.Model):
+    user = models.CharField(default="Add user", max_length=30, null=True, blank=True)
     issue_url = models.URLField()
     created = models.DateTimeField(default=timezone.now)
     modified = models.DateTimeField(default=timezone.now)

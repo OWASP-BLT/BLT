@@ -52,6 +52,7 @@ class BidForm(forms.ModelForm):
     class Meta:
         model = Bid
         fields = [
+            "user",
             "issue_url",
             "created",
             "modified",

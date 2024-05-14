@@ -76,6 +76,7 @@ class WinnerAdmin(admin.ModelAdmin):
 
 class BidAdmin(admin.ModelAdmin):
     list_display = (
+        "user",
         "issue_url",
         "pr_link",
         "amount",
