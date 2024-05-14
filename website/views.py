@@ -4417,12 +4417,15 @@ def generate_bid_image(request, bid_amount):
     return HttpResponse(byte_io, content_type="image/png")
 
 
+@login_required
 def SaveBiddingData(request):
     if request.method == "POST":
+        user = request.user.username
         url = request.POST.get("issue_url")
         amount = request.POST.get("bid_amount")
         current_time = datetime.now(timezone.utc)
         bid = Bid(
+            user=user,
             issue_url=url,
             amount=amount,
             created=current_time,
@@ -4455,8 +4458,10 @@ def fetch_current_bid(request):
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
 
+@login_required
 def submit_pr(request):
     if request.method == "POST":
+        user = request.user.username
         pr_link = request.POST.get("pr_link")
         amount = request.POST.get("bid_amount")
         issue_url = request.POST.get("issue_link")
@@ -4464,6 +4469,7 @@ def submit_pr(request):
         current_time = datetime.now(timezone.utc)
         bch_address = request.POST.get("bch_address")
         bid = Bid(
+            user=user,
             pr_link=pr_link,
             amount=amount,
             issue_url=issue_url,
