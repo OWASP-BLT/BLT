@@ -585,13 +585,14 @@ class Monitor(models.Model):
 
 
 class Bid(models.Model):
-    issue_url = models.URLField()
     user = models.CharField(default="Add user", max_length=30, null=True, blank=True)
+    issue_url = models.URLField()
     created = models.DateTimeField(default=timezone.now)
     modified = models.DateTimeField(default=timezone.now)
     amount = models.IntegerField()
     status = models.CharField(default="Open", max_length=10)
     pr_link = models.URLField(blank=True, null=True)
+    bch_address = models.CharField(blank=True, null=True, max_length=45)
 
     # def save(self, *args, **kwargs):
     #     if (
