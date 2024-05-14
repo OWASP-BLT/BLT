@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0092_merge_0091_bid_0091_remove_company_company_id"),
     ]
