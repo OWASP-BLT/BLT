@@ -515,7 +515,7 @@ urlpatterns = [
     ),
     re_path(
         r"^api/v1/issues/$",
-        IssueViewSet.as_view({"get": "list", "post": "create"}),
+        IssueViewSet.as_view({"get": "list"}),
         name="issue_list",
     ),
 ]

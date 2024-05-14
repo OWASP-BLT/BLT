@@ -125,10 +125,20 @@ class IssueViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         anonymous_user = self.request.user.is_anonymous
         user_id = self.request.user.id
+        status = self.request.GET.get("status")
+        domain_url = self.request.GET.get("domain")
+
         if anonymous_user:
-            return Issue.objects.exclude(Q(is_hidden=True))
+            queryset = Issue.objects.exclude(Q(is_hidden=True))
         else:
-            return Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=user_id))
+            queryset = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=user_id))
+
+        if status:
+            queryset = queryset.filter(status=status)
+        if domain_url:
+            queryset = queryset.filter(domain__url=domain_url)
+
+        return queryset
 
     def get_issue_info(self, request, issue):
         if issue is None:
@@ -164,42 +174,15 @@ class IssueViewSet(viewsets.ModelViewSet):
             "screenshots": screenshots,
         }
 
-    @staticmethod
-    def _get_issue_by_status(domain_url, status):
-        if domain_url:
-            try:
-                domain_data = Domain.objects.get(url=domain_url)
-                data = Issue.objects.filter(domain=domain_data.id, status=status)
-            except Domain.DoesNotExist:
-                return Response({"result": [], "message": "Domain does not exist"}, status=404)
-            except Issue.DoesNotExist:
-                return Response({"result": [], "message": "Object does not exist"}, status=404)
-        else:
-            data = Issue.objects.filter(status=status)
-        serializer = IssueSerializer(data, many=True)
-        return Response({"count": len(serializer.data), "result": serializer.data}, status=200)
-
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         issues = []
-        status = request.GET.get("status")
-        domain_url = request.GET.get("domain")
-        match status:
-            case "open":
-                return self._get_issue_by_status(domain_url, "open")
-
-            case "closed":
-                return self._get_issue_by_status(domain_url, "closed")
-
-            case _:
-                page = self.paginate_queryset(queryset)
-                if page is None:
-                    return Response(issues)
-
-                for issue in page:
-                    issues.append(self.get_issue_info(request, issue))
-
-                return self.get_paginated_response(issues)
+        page = self.paginate_queryset(queryset)
+        if page is None:
+            return Response(issues)
+        for issue in page:
+            issues.append(self.get_issue_info(request, issue))
+        return self.get_paginated_response(issues)
 
     def retrieve(self, request, pk, *args, **kwargs):
         issue = Issue.objects.filter(id=pk).first()
