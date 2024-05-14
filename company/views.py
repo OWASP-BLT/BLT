@@ -523,7 +523,6 @@ class DomainView(View):
                 "name",
                 "url",
                 "company__name",
-                "company__company_id",
                 "created__day",
                 "created__month",
                 "created__year",
