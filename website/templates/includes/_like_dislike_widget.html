@@ -24,7 +24,7 @@
         <span id="likes" class="flex items-end">
             {{ likes }} &nbsp;
             {% if isLiked %}
-                {% include './_tooltip3.html' with text="Unlike" sno=object.pk widget="like" %}
+                {% include "./_tooltip3.html" with text="Unlike" sno=object.pk widget="like" %}
                 <svg xmlns="http://www.w3.org/2000/svg"
                      fill="#ff0000"
                      viewBox="0 0 512 512"
@@ -33,7 +33,7 @@
                     <path d="M313.4 32.9c26 5.2 42.9 30.5 37.7 56.5l-2.3 11.4c-5.3 26.7-15.1 52.1-28.8 75.2H464c26.5 0 48 21.5 48 48c0 18.5-10.5 34.6-25.9 42.6C497 275.4 504 288.9 504 304c0 23.4-16.8 42.9-38.9 47.1c4.4 7.3 6.9 15.8 6.9 24.9c0 21.3-13.9 39.4-33.1 45.6c.7 3.3 1.1 6.8 1.1 10.4c0 26.5-21.5 48-48 48H294.5c-19 0-37.5-5.6-53.3-16.1l-38.5-25.7C176 420.4 160 390.4 160 358.3V320 272 247.1c0-29.2 13.3-56.7 36-75l7.4-5.9c26.5-21.2 44.6-51 51.2-84.2l2.3-11.4c5.2-26 30.5-42.9 56.5-37.7zM32 192H96c17.7 0 32 14.3 32 32V448c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32V224c0-17.7 14.3-32 32-32z" />
                 </svg>
             {% else %}
-                {% include './_tooltip3.html' with text="Like" sno=object.pk widget="like" %}
+                {% include "./_tooltip3.html" with text="Like" sno=object.pk widget="like" %}
                 <svg xmlns="http://www.w3.org/2000/svg"
                      fill="#ff0000"
                      height="16px"
@@ -52,7 +52,7 @@
             type="button">
         <span id="likes" class="flex items-end">
             {{ likes }} &nbsp;
-            {% include './_tooltip3.html' with text="Login to Like" sno=object.pk widget="like" %}
+            {% include "./_tooltip3.html" with text="Login to Like" sno=object.pk widget="like" %}
             <svg xmlns="http://www.w3.org/2000/svg"
                  fill="#ff0000"
                  height="16px"
@@ -75,7 +75,7 @@
         <span id="dislikes" class="flex items-end">
             {{ dislikes }} &nbsp;
             {% if dislikes %}
-                {% include './_tooltip3.html' with text="Undo Dislike" sno=object.pk widget="dislike" %}
+                {% include "./_tooltip3.html" with text="Undo Dislike" sno=object.pk widget="dislike" %}
                 <svg xmlns="http://www.w3.org/2000/svg"
                      viewBox="0 0 512 512"
                      height="16px"
@@ -84,7 +84,7 @@
                     <path d="M313.4 479.1c26-5.2 42.9-30.5 37.7-56.5l-2.3-11.4c-5.3-26.7-15.1-52.1-28.8-75.2H464c26.5 0 48-21.5 48-48c0-18.5-10.5-34.6-25.9-42.6C497 236.6 504 223.1 504 208c0-23.4-16.8-42.9-38.9-47.1c4.4-7.3 6.9-15.8 6.9-24.9c0-21.3-13.9-39.4-33.1-45.6c.7-3.3 1.1-6.8 1.1-10.4c0-26.5-21.5-48-48-48H294.5c-19 0-37.5 5.6-53.3 16.1L202.7 73.8C176 91.6 160 121.6 160 153.7V192v48 24.9c0 29.2 13.3 56.7 36 75l7.4 5.9c26.5 21.2 44.6 51 51.2 84.2l2.3 11.4c5.2 26 30.5 42.9 56.5 37.7zM32 384H96c17.7 0 32-14.3 32-32V128c0-17.7-14.3-32-32-32H32C14.3 96 0 110.3 0 128V352c0 17.7 14.3 32 32 32z" />
                 </svg>
             {% else %}
-                {% include './_tooltip3.html' with text="Dislike" sno=object.pk widget="dislike" %}
+                {% include "./_tooltip3.html" with text="Dislike" sno=object.pk widget="dislike" %}
                 <svg xmlns="http://www.w3.org/2000/svg"
                      viewBox="0 0 512 512"
                      height="16px"
@@ -102,7 +102,7 @@
             class="dislike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 ">
         <span id="dislikes" class="flex items-end">
             {{ dislikes }} &nbsp;
-            {% include './_tooltip3.html' with text="Login to Dislike" sno=object.pk widget="dislike" %}
+            {% include "./_tooltip3.html" with text="Login to Dislike" sno=object.pk widget="dislike" %}
             <svg xmlns="http://www.w3.org/2000/svg"
                  viewBox="0 0 512 512"
                  height="16px"
@@ -124,7 +124,7 @@
         <span id="flags" class="flex items-end">
             {{ flags }} &nbsp;
             {% if isFlagged %}
-                {% include './_tooltip3.html' with text="Undo Report" sno=object.pk widget="flags" %}
+                {% include "./_tooltip3.html" with text="Undo Report" sno=object.pk widget="flags" %}
                 <svg xmlns="http://www.w3.org/2000/svg"
                      height="16px"
                      width="16px"
@@ -133,7 +133,7 @@
                     <path d="M64 32C64 14.3 49.7 0 32 0S0 14.3 0 32V64 368 480c0 17.7 14.3 32 32 32s32-14.3 32-32V352l64.3-16.1c41.1-10.3 84.6-5.5 122.5 13.4c44.2 22.1 95.5 24.8 141.7 7.4l34.7-13c12.5-4.7 20.8-16.6 20.8-30V66.1c0-23-24.2-38-44.8-27.7l-9.6 4.8c-46.3 23.2-100.8 23.2-147.1 0c-35.1-17.6-75.4-22-113.5-12.5L64 48V32z" />
                 </svg>
             {% else %}
-                {% include './_tooltip3.html' with text="Report" sno=object.pk widget="flags" %}
+                {% include "./_tooltip3.html" with text="Report" sno=object.pk widget="flags" %}
                 <svg xmlns="http://www.w3.org/2000/svg"
                      viewBox="0 0 448 512"
                      height="16px"
@@ -152,7 +152,7 @@
             type="button">
         <span id="flags" class="flex items-end">
             {{ flags }} &nbsp;
-            {% include './_tooltip3.html' with text="Login to Report" sno=object.pk widget="flags" %}
+            {% include "./_tooltip3.html" with text="Login to Report" sno=object.pk widget="flags" %}
             <svg xmlns="http://www.w3.org/2000/svg"
                  viewBox="0 0 448 512"
                  height="16px"
@@ -172,7 +172,7 @@
             type="button">
         <span id="bookmark" class="flex items-end">
             {% if bookmarked %}
-                {% include './_tooltip3.html' with text="Undo Bookmark" sno=object.pk widget="bookmark" %}
+                {% include "./_tooltip3.html" with text="Undo Bookmark" sno=object.pk widget="bookmark" %}
                 <svg xmlns="http://www.w3.org/2000/svg"
                      viewBox="0 0 448 512"
                      height="16px"
@@ -181,7 +181,7 @@
                     <path d="M0 96C0 43 43 0 96 0h96V190.7c0 13.4 15.5 20.9 26 12.5L272 160l54 43.2c10.5 8.4 26 .9 26-12.5V0h32 32c17.7 0 32 14.3 32 32V352c0 17.7-14.3 32-32 32v64c17.7 0 32 14.3 32 32s-14.3 32-32 32H384 96c-53 0-96-43-96-96V96zM64 416c0 17.7 14.3 32 32 32H352V384H96c-17.7 0-32 14.3-32 32z" />
                 </svg>
             {% else %}
-                {% include './_tooltip3.html' with text="Bookmark" sno=object.pk widget="bookmark" %}
+                {% include "./_tooltip3.html" with text="Bookmark" sno=object.pk widget="bookmark" %}
                 <svg xmlns="http://www.w3.org/2000/svg"
                      viewBox="0 0 384 512"
                      height="16px"
@@ -200,7 +200,7 @@
             type="button">
         <span id="bookmark" class="flex items-end">
             {{ bookmark }} &nbsp;
-            {% include './_tooltip3.html' with text="Login to Report" sno=object.pk widget="bookmark" %}
+            {% include "./_tooltip3.html" with text="Login to Report" sno=object.pk widget="bookmark" %}
             <svg xmlns="http://www.w3.org/2000/svg"
                  viewBox="0 0 384 512"
                  height="16px"
@@ -208,27 +208,28 @@
                  fill="#842adb4d">
                 <path d="M0 48C0 21.5 21.5 0 48 0l0 48V441.4l130.1-92.9c8.3-6 19.6-6 27.9 0L336 441.4V48H48V0H336c26.5 0 48 21.5 48 48V488c0 9-5 17.2-13 21.3s-17.6 3.4-24.9-1.8L192 397.5 37.9 507.5c-7.3 5.2-16.9 5.9-24.9 1.8S0 497 0 488V48z" />
             </svg>
-        </button>
-    {% endif %}
-    {% comment %} notification  {% endcomment %}
-    <button data-tooltip-target="tooltip-bottom-{{ object.pk }}-notification"
-            data-tooltip-placement="bottom"
-            class="relative inline-block shadow-sm rounded-xl transform-[0] font-bold text-[#3e3446] bg-white border-black-2 text-[#0.875rem] leading-4 p-4"
-            onclick="{% if user.is_authenticated %}subscribe_domain(){% else %}window.location.href=`{% url 'account_login' %}`{% endif %}"
-            id="subscribe_domain_btn">
-        {% if user.is_authenticated and subscribed_to_domain %}
-            {% include './_tooltip3.html' with text="Unsubscribe" sno=object.pk widget="notification" %}
-            <svg viewBox="0 0 16 16" fill="currentColor" height="16px" width="16px">
-                <path d="M10.533 14.07h3.466a.76.76 0 0 0 .58-.28.74.74 0 0 0 .19-.57l-.57-6.55a.13.13 0 0 0 0-.06A6.42 6.42 0 0 0 8 0a6.42 6.42 0 0 0-6.18 6.65v.06l-.57 6.55a.74.74 0 0 0 .19.57.76.76 0 0 0 .56.24h3.468A2.64 2.64 0 0 0 8 16a2.64 2.64 0 0 0 2.533-1.93Zm-1.654 0H7.121a1.13 1.13 0 0 0 1.758 0Zm4.32-1.5H2.8l.5-5.79v-.13A4.92 4.92 0 0 1 8 1.54a4.92 4.92 0 0 1 4.7 5.11v.19l.5 5.73Z">
-                </path>
-            </svg>
-        {% else %}
-            {% include './_tooltip3.html' with text="Subscribe" sno=object.pk widget="notification" %}
-            <svg viewBox="0 0 16 16" fill="currentColor" height="16px" width="16px">
-                <path d="M10.533 14.07h3.466a.76.76 0 0 0 .58-.28.74.74 0 0 0 .19-.57l-.57-6.55a.13.13 0 0 0 0-.06A6.42 6.42 0 0 0 8 0a6.42 6.42 0 0 0-6.18 6.65v.06l-.57 6.55a.74.74 0 0 0 .19.57.76.76 0 0 0 .56.24h3.468A2.64 2.64 0 0 0 8 16a2.64 2.64 0 0 0 2.533-1.93Zm-1.654 0H7.121a1.13 1.13 0 0 0 1.758 0Zm4.32-1.5H2.8l.5-5.79v-.13A4.92 4.92 0 0 1 8 1.54a4.92 4.92 0 0 1 4.7 5.11v.19l.5 5.73Z">
-                </path>
-                <path d="M.801 16.5a.798.798 0 0 1-.563-.234.786.786 0 0 1 0-1.127L14.635.733a.798.798 0 0 1 1.127 0 .787.787 0 0 1 0 1.127L1.365 16.266A.84.84 0 0 1 .8 16.5Z">
-                </path>
-            </svg>
-        {% endif %}
+        </span>
     </button>
+{% endif %}
+{% comment %} notification  {% endcomment %}
+<button data-tooltip-target="tooltip-bottom-{{ object.pk }}-notification"
+        data-tooltip-placement="bottom"
+        class="relative inline-block shadow-sm rounded-xl transform-[0] font-bold text-[#3e3446] bg-white border-black-2 text-[#0.875rem] leading-4 p-4"
+        onclick="{% if user.is_authenticated %}subscribe_domain(){% else %}window.location.href=`{% url 'account_login' %}`{% endif %}"
+        id="subscribe_domain_btn">
+    {% if user.is_authenticated and subscribed_to_domain %}
+        {% include "./_tooltip3.html" with text="Unsubscribe" sno=object.pk widget="notification" %}
+        <svg viewBox="0 0 16 16" fill="currentColor" height="16px" width="16px">
+            <path d="M10.533 14.07h3.466a.76.76 0 0 0 .58-.28.74.74 0 0 0 .19-.57l-.57-6.55a.13.13 0 0 0 0-.06A6.42 6.42 0 0 0 8 0a6.42 6.42 0 0 0-6.18 6.65v.06l-.57 6.55a.74.74 0 0 0 .19.57.76.76 0 0 0 .56.24h3.468A2.64 2.64 0 0 0 8 16a2.64 2.64 0 0 0 2.533-1.93Zm-1.654 0H7.121a1.13 1.13 0 0 0 1.758 0Zm4.32-1.5H2.8l.5-5.79v-.13A4.92 4.92 0 0 1 8 1.54a4.92 4.92 0 0 1 4.7 5.11v.19l.5 5.73Z">
+            </path>
+        </svg>
+    {% else %}
+        {% include "./_tooltip3.html" with text="Subscribe" sno=object.pk widget="notification" %}
+        <svg viewBox="0 0 16 16" fill="currentColor" height="16px" width="16px">
+            <path d="M10.533 14.07h3.466a.76.76 0 0 0 .58-.28.74.74 0 0 0 .19-.57l-.57-6.55a.13.13 0 0 0 0-.06A6.42 6.42 0 0 0 8 0a6.42 6.42 0 0 0-6.18 6.65v.06l-.57 6.55a.74.74 0 0 0 .19.57.76.76 0 0 0 .56.24h3.468A2.64 2.64 0 0 0 8 16a2.64 2.64 0 0 0 2.533-1.93Zm-1.654 0H7.121a1.13 1.13 0 0 0 1.758 0Zm4.32-1.5H2.8l.5-5.79v-.13A4.92 4.92 0 0 1 8 1.54a4.92 4.92 0 0 1 4.7 5.11v.19l.5 5.73Z">
+            </path>
+            <path d="M.801 16.5a.798.798 0 0 1-.563-.234.786.786 0 0 1 0-1.127L14.635.733a.798.798 0 0 1 1.127 0 .787.787 0 0 1 0 1.127L1.365 16.266A.84.84 0 0 1 .8 16.5Z">
+            </path>
+        </svg>
+    {% endif %}
+</button>
