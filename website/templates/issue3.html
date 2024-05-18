@@ -6,6 +6,7 @@
             BLT Issue - {{ object.description|escapejs }}
         {% endblock title %}
     </title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
     <meta name="description"
           content="{{ object.markdown_description|escapejs }}">
     {% if object.user.username %}
@@ -40,23 +41,39 @@
             crossorigin="anonymous"></script>
 {% endblock head %}
 {% block content %}
-    {% include "includes/sidenav.html" %}
+{% include "includes/sidenav.html" %}
     {% comment %} TODO:
+     removed anonymous reporting
     delete these files after final is ready 
     {% include "includes/_likes2.html" %}
     {% include "includes/_dislike2.html" %}
     {% include "includes/_flags2.html" %}
     {% include "includes/_bookmark2.html" %}
     {% endcomment %}
-    {% include "includes/_like_dislike_share.html" %}
-    <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-[#f7f7f7] font-[ubuntu] lg:pl-0">
+    
+    <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-[#FAF9FB] font-[ubuntu] lg:pl-0">
+        <div class="flex mr-[2%] ml-[2%] justify-between row gap-[8px] items-center">
+                <nav class="left-issue flex items-center mr-auto">
+                    <a href="/" class="!text-[#80708f] mx-4">Issues</a>
+                
+                    <i class="fa-solid fa-chevron-right"></i>
+                
+                    <a href="/domain/{{object.domain.name}}" class=" mx-4">
+                            <img src="{{ object.domain.get_logo }}" width="16" height="16"style="border-radius: 3px;">
+                    </a>
+                    <a href="/domain/{{object.domain.name}}"><span>{{object.domain.name}}</span></a>
+                </nav>
+                <div class="right-data ml-auto max-sm:pt-2">
+                    {% include "includes/_like_dislike_share.html" %}
+            </div>
+        </div>
         <div class="h-[3vh]"></div>
-        <h2 class="font-[ubuntu] font-bold text-[30px] w-[90%] truncate"
+        <h2 class="font-[ubuntu] font-bold text-[30px] w-[90%] truncate ml-[3.5%]"
             title="{{ object.description |escapejs }}">{{ object.description |escapejs }}</h2>
         <p>
             <a href="{{ object.url }}"
                title="{{ object.url }}"
-               class="!text-blue-500 font-thin w-[80%] truncate"
+               class="!text-blue-500 ml-[3.5%] font-thin w-[80%] truncate"
                target="_blank"
                rel="noopener noreferrer">{{ object.url }}</a>
         </p>
@@ -451,4 +468,5 @@
         });
     });
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
 {% endblock content %}
