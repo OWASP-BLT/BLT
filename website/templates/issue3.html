@@ -54,15 +54,13 @@
     <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-[#FAF9FB] font-[ubuntu] lg:pl-0">
         <div class="flex mr-[2%] ml-[2%] justify-between row gap-[8px] items-center">
             <nav class="left-issue flex items-center mr-auto">
-                <a href="/" class="!text-[#80708f] mx-4">Issues</a>
+                <a href="{% url 'index' %}" class="!text-[#80708f] mx-4">Issues</a>
                 <i class="fa-solid fa-chevron-right"></i>
-                <a href="/domain/{{ object.domain.name }}" class=" mx-4">
-                    <img src="{{ object.domain.get_logo }}"
-                         width="16"
-                         height="16"
+                <a href="{% url 'domain' object.domain.name %}" class=" mx-4">
+                    <img src="{{ object.domain.get_logo }}" class="w-[16px] h-[16px]" alt="Company Logo"
                          style="border-radius: 3px">
                 </a>
-                <a href="/domain/{{ object.domain.name }}"><span>{{ object.domain.name }}</span></a>
+                <a href="{% url 'domain' object.domain.name %}"><span>{{ object.domain.name }}</span></a>
             </nav>
             <div class="right-data ml-auto max-sm:pt-2">{% include "includes/_like_dislike_share.html" %}</div>
         </div>
