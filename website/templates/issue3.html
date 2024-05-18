@@ -57,8 +57,11 @@
                 <a href="{% url 'index' %}" class="!text-[#80708f] mx-4">Issues</a>
                 <i class="fa-solid fa-chevron-right"></i>
                 <a href="{% url 'domain' object.domain.name %}" class=" mx-4">
-                    <img src="{{ object.domain.get_logo }}" class="w-[16px] h-[16px]" alt="Company Logo"
-                         style="border-radius: 3px">
+                    <img src="{{ object.domain.get_logo }}"
+                         class="rounded"
+                         width="16"
+                         height="16"
+                         alt="Company Logo">
                 </a>
                 <a href="{% url 'domain' object.domain.name %}"><span>{{ object.domain.name }}</span></a>
             </nav>
