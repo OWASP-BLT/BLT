@@ -14,13 +14,7 @@
 </button>
 {% comment %} likes  {% endcomment %}
 {% if request.user.is_authenticated %}
-    <button name="{{ object.pk }}"
-            data-tooltip-target="tooltip-bottom-{{ object.pk }}-like"
-            data-tooltip-placement="bottom"
-            type="submit"
-            id="like_unlike"
-            class="like_unlike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
-            type="button">
+    <button name="{{ object.pk }}" {% comment %} {{device}} is passed by _like_dislike_share.html {% endcomment %} data-tooltip-target="tooltip-bottom-{{ device }}-like" data-tooltip-placement="bottom" type="submit" id="like_unlike" class="like_unlike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 " type="button">
         <span id="likes" class="flex items-end">
             {{ likes }} &nbsp;
             {% if isLiked %}
@@ -45,7 +39,7 @@
         </span>
     </button>
 {% else %}
-    <button data-tooltip-target="tooltip-bottom-{{ object.pk }}-like"
+    <button data-tooltip-target="tooltip-bottom-{{ device }}-like"
             data-tooltip-placement="bottom"
             onclick="window.location.href='/accounts/login'"
             class="like_unlike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
@@ -66,7 +60,7 @@
 {% comment %} dislike  {% endcomment %}
 {% if request.user.is_authenticated %}
     <button name="{{ object.pk }}"
-            data-tooltip-target="tooltip-bottom-{{ object.pk }}-dislike"
+            data-tooltip-target="tooltip-bottom-{{ device }}-dislike"
             data-tooltip-placement="bottom"
             type="submit"
             id="dislike-btn"
@@ -96,7 +90,7 @@
         </span>
     </button>
 {% else %}
-    <button data-tooltip-target="tooltip-bottom-{{ object.pk }}-dislike"
+    <button data-tooltip-target="tooltip-bottom-{{ device }}-dislike"
             data-tooltip-placement="bottom"
             onclick="window.location.href='/accounts/login'"
             class="dislike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 ">
@@ -116,7 +110,7 @@
 {% comment %} report  {% endcomment %}
 {% if request.user.is_authenticated %}
     <button name="{{ object.pk }}"
-            data-tooltip-target="tooltip-bottom-{{ object.pk }}-flags"
+            data-tooltip-target="tooltip-bottom-{{ device }}-flags"
             data-tooltip-placement="bottom"
             id="flag-unflag"
             class="flag-unflag rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
@@ -145,7 +139,7 @@
         </span>
     </button>
 {% else %}
-    <button data-tooltip-target="tooltip-bottom-{{ object.pk }}-flags"
+    <button data-tooltip-target="tooltip-bottom-{{ device }}-flags"
             data-tooltip-placement="bottom"
             onclick="window.location.href='/accounts/login'"
             class="like_unlike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
@@ -166,7 +160,7 @@
 {% comment %} bookmark  {% endcomment %}
 {% if request.user.is_authenticated %}
     <button name="{{ object.pk }}"
-            data-tooltip-target="tooltip-bottom-{{ object.pk }}-bookmark"
+            data-tooltip-target="tooltip-bottom-{{ device }}-bookmark"
             data-tooltip-placement="bottom"
             class="bookmark rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
             type="button">
@@ -193,7 +187,7 @@
         </span>
     </button>
 {% else %}
-    <button data-tooltip-target="tooltip-bottom-{{ object.pk }}-bookmark"
+    <button data-tooltip-target="tooltip-bottom-{{ device }}-bookmark"
             data-tooltip-placement="bottom"
             onclick="window.location.href='/accounts/login'"
             class="like_unlike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
@@ -212,7 +206,7 @@
     </button>
 {% endif %}
 {% comment %} notification  {% endcomment %}
-<button data-tooltip-target="tooltip-bottom-{{ object.pk }}-notification"
+<button data-tooltip-target="tooltip-bottom-{{ device }}-notification"
         data-tooltip-placement="bottom"
         class="relative inline-block shadow-sm rounded-xl transform-[0] font-bold text-[#3e3446] bg-white border-black-2 text-[#0.875rem] leading-4 p-4"
         onclick="{% if user.is_authenticated %}subscribe_domain(){% else %}window.location.href=`{% url 'account_login' %}`{% endif %}"

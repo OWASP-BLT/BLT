@@ -65,7 +65,7 @@
                          height="16"
                          alt="Company Logo">
                 </a>
-                <a href="{% url 'domain' object.domain.name %}"><span>{{ object.domain.name }}</span></a> &nbsp;
+                <a href="{% url 'domain' object.domain.name %}"><span>{{ object.domain.name }}</span></a> &nbsp;<span class="font-bold">#{{ object.id }}</span>&nbsp;
                 {% if status == "open" %}
                     <span class="bg-red-100 text-red-800 text-xl font-medium me-2 px-2.5 py-0.5 rounded">Ongoing</span>
                 {% else %}
@@ -80,7 +80,7 @@
         <p>
             <a href="{{ object.url }}"
                title="{{ object.url }}"
-               class="!text-blue-500 ml-[3.5%] font-thin w-[80%] truncate"
+               class="!text-[#7e22ce] ml-[3.5%] font-thin w-[80%] truncate"
                target="_blank"
                rel="noopener noreferrer">{{ object.url }}</a>
         </p>
@@ -91,7 +91,7 @@
                     id="default-tab"
                     data-tabs-toggle="#default-tab-content"
                     role="tablist"
-                    data-tabs-active-classes="border-b-2 text-[#3b82f6] border-[#3b82f6] hover:border-[#3b82f6]"
+                    data-tabs-active-classes="border-b-2 text-[#7e22ce] border-[#7e22ce] hover:border-[#7e22ce]"
                     data-tabs-inactive-classes="hover:bg-[#eaeaf6] hover:text-black">
                     <li class="me-2" role="presentation">
                         <button class="inline-flex items-center justify-center p-4 rounded-t-lg"
@@ -551,10 +551,6 @@
             }
         });
     });
-</script>
-<script>
-    // show and hide tabs
-    details-tab-div
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"
         integrity="sha512-eNB1lPVKSAW5mXqnboj6QX9kTZKEq4t2f2c5ytUhb+QzPudY3imnjHyXYhIXavZo9e3slCjhDpOJhuMm9uSwzw=="

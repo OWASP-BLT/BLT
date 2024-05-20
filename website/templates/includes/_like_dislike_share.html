@@ -14,7 +14,7 @@
      class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
     <ul class="py-2 m-2 rounded text-gray-700"
         aria-labelledby="dropdownDefaultButton">
-        <span class="md:hidden flex flex-col">{% include "./_like_dislike_widget.html" %}</span>
+        <span class="md:hidden flex flex-col">{% include "./_like_dislike_widget.html" with device="mobile" %}</span>
         <li>
             <a href="https://twitter.com/intent/tweet?text=Bug Found on @{{ object.domain_title }} - {{ object.description }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}"
                target="_blank"
@@ -39,7 +39,7 @@
         {% endif %}
     </ul>
 </div>
-<span class="max-sm:hidden">{% include "./_like_dislike_widget.html" %}</span>
+<span class="max-sm:hidden">{% include "./_like_dislike_widget.html" with device="desktop" %}</span>
 <script>
     function copyClipboard() {
         var textToCopy = "Bug Found on @{{ object.domain_title }} - {{ object.description }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}";
