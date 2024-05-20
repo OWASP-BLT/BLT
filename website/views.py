@@ -33,7 +33,7 @@ from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
@@ -4416,6 +4416,46 @@ def generate_bid_image(request, bid_amount):
     byte_io.seek(0)
 
     return HttpResponse(byte_io, content_type="image/png")
+
+
+@csrf_exempt
+def change_bid_status(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            bid_id = data.get("id")
+            bid = Bid.objects.get(id=bid_id)
+            bid.status = "Selected"
+            bid.save()
+            return JsonResponse({"success": True})
+        except Bid.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Bid not found"})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+    return HttpResponse(status=405)
+
+
+@csrf_exempt
+def get_unique_issues(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            issue_url = data.get("issue_url")
+            if not issue_url:
+                return JsonResponse({"success": False, "error": "issue_url not provided"})
+
+            all_bids = Bid.objects.filter(issue_url=issue_url).values()
+            return JsonResponse(list(all_bids), safe=False)
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid JSON"})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+    return HttpResponse(status=405)
+
+
+@method_decorator(user_passes_test(lambda u: u.is_superuser), name="dispatch")
+def selectBid(request):
+    return render(request, "bid_selection.html")
 
 
 def SaveBiddingData(request):
