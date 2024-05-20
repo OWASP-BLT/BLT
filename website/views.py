@@ -4448,7 +4448,7 @@ def get_unique_issues(request):
     return HttpResponse(status=405)
 
 
-#@method_decorator(user_passes_test(lambda u: u.is_superuser), name="dispatch")
+@method_decorator(user_passes_test(lambda u: u.is_superuser), name="dispatch")
 def selectBid(request):
     return render(request, "bid_selection.html")
 
