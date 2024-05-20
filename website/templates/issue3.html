@@ -25,7 +25,6 @@
           content="{{ object.markdown_description|escapejs }}" />
     <meta name="keywords"
           content="{% block keywords %}BLT, bug, tracking, company, easy{% endblock keywords %}">
-    {% comment %} TODO: change to update DOMAIN {% endcomment %}
     <link rel="canonical"
           href="https://{% env 'FQDN' %}/issue3/{{ object.id }}">
     <meta property="og:url"
@@ -37,14 +36,17 @@
 {% load gravatar %}
 {% load custom_tags %}
 {% block head %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.0/flowbite.min.js"
-            integrity="sha384-SXh3DHBSUxvOFk7+R9qN3hv+DtgPJz4vQwOArU6zxWGnvtR1sy+XmzKUkNh2qWST"
-            crossorigin="anonymous"></script>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css"
+          integrity="sha512-4CrzvWKAMiv1znMPFPA/lqlo9ykTDj9GdHwq3iujHBNSnopB7UpRz45dQ/gGn5ed7DF1NsA8OmUp7YHEV+mFKg=="
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer" />
 {% endblock head %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    {% comment %} TODO:
+    {% comment %} TODO(b):
      removed anonymous reporting
+     TODO(b): FIX LIKE AND OTHERS
     delete these files after final is ready 
     {% include "includes/_likes2.html" %}
     {% include "includes/_dislike2.html" %}
@@ -63,7 +65,13 @@
                          height="16"
                          alt="Company Logo">
                 </a>
-                <a href="{% url 'domain' object.domain.name %}"><span>{{ object.domain.name }}</span></a>
+                <a href="{% url 'domain' object.domain.name %}"><span>{{ object.domain.name }}</span></a> &nbsp;
+                {% if status == "open" %}
+                    <span class="bg-red-100 text-red-800 text-xl font-medium me-2 px-2.5 py-0.5 rounded">Ongoing</span>
+                {% else %}
+                    <span class="bg-green-100 text-green-800 text-xl font-medium me-2 px-2.5 py-0.5 rounded">Resolved</span>
+                {% endif %}
+                <span></span>
             </nav>
             <div class="right-data ml-auto max-sm:pt-2">{% include "includes/_like_dislike_share.html" %}</div>
         </div>
@@ -78,211 +86,288 @@
                rel="noopener noreferrer">{{ object.url }}</a>
         </p>
         <br>
-        <div class="bg-white">
-            <div class="container md:h-[20vh] max-sm:mt-[30%] mx-auto px-4 md:px-12">
-                <div class="flex justify-evenly flex-wrap -mx-1 lg:-mx-4">
-                    <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
-                        <div class="rounded-full w-[20%]">
-                            <img class="w-[80%] h-[80%] object-cover"
-                                 {% if object.user.username %} {% if object.user.userprofile.user_avatar %} src="{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}" {% else %} src="{% gravatar_url object.user.email 100 %}" {% endif %}
-                                 {% else %}
-                                 src="{% static 'images/dummy-user.png' %}"
-                                 {% endif %}
-                                 alt="User Profile Logo"
-                                 width="auto"
-                                 height="auto">
-                        </div>
-                        <div>
-                            <div class="text-[#B00000] text-[16px] w-[90%] truncate">
-                                {% if object.user.username %}
-                                    <a href="{% url 'profile' slug=object.user.username %}"
-                                       class="!text-[#B00000]">{{ object.user.username }}</a>
-                                {% else %}
-                                    Anonymous
-                                {% endif %}
+        <div class="ml-[3%]">
+            <div class="mb-4 w-[95%] border-b border-[#584ac080]">
+                <ul class="flex flex-wrap -mb-px font-medium text-center"
+                    id="default-tab"
+                    data-tabs-toggle="#default-tab-content"
+                    role="tablist"
+                    data-tabs-active-classes="border-b-2 text-[#3b82f6] border-[#3b82f6]"
+                    data-tabs-inactive-classes="hover:bg-[#eaeaf6] hover:text-black">
+                    <li class="me-2" role="presentation">
+                        <button class="inline-flex items-center justify-center p-4 rounded-t-lg"
+                                id="details-tab"
+                                data-tabs-target="#details"
+                                type="button"
+                                role="tab"
+                                aria-controls="details"
+                                aria-selected="false">
+                            <svg class="w-4 h-4 me-2"
+                                 aria-hidden="true"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 fill="currentColor"
+                                 viewBox="0 0 18 20">
+                                <path d="M16 1h-3.278A1.992 1.992 0 0 0 11 0H7a1.993 1.993 0 0 0-1.722 1H2a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2Zm-3 14H5a1 1 0 0 1 0-2h8a1 1 0 0 1 0 2Zm0-4H5a1 1 0 0 1 0-2h8a1 1 0 1 1 0 2Zm0-5H5a1 1 0 0 1 0-2h2V2h4v2h2a1 1 0 1 1 0 2Z" />
+                            </svg>
+                            Details
+                        </button>
+                    </li>
+                    <li class="me-2" role="presentation">
+                        <button class="inline-flex items-center justify-center p-4 rounded-t-lg hover:border-gray-300"
+                                id="screenshot-tab"
+                                data-tabs-target="#screenshot"
+                                type="button"
+                                role="tab"
+                                aria-controls="screenshot"
+                                aria-selected="false">
+                            <svg class="w-4 h-4 me-2"
+                                 aria-hidden="true"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 fill="currentColor"
+                                 viewBox="0 0 18 18">
+                                <path d="M6.143 0H1.857A1.857 1.857 0 0 0 0 1.857v4.286C0 7.169.831 8 1.857 8h4.286A1.857 1.857 0 0 0 8 6.143V1.857A1.857 1.857 0 0 0 6.143 0Zm10 0h-4.286A1.857 1.857 0 0 0 10 1.857v4.286C10 7.169 10.831 8 11.857 8h4.286A1.857 1.857 0 0 0 18 6.143V1.857A1.857 1.857 0 0 0 16.143 0Zm-10 10H1.857A1.857 1.857 0 0 0 0 11.857v4.286C0 17.169.831 18 1.857 18h4.286A1.857 1.857 0 0 0 8 16.143v-4.286A1.857 1.857 0 0 0 6.143 10Zm10 0h-4.286A1.857 1.857 0 0 0 10 11.857v4.286c0 1.026.831 1.857 1.857 1.857h4.286A1.857 1.857 0 0 0 18 16.143v-4.286A1.857 1.857 0 0 0 16.143 10Z" />
+                            </svg>
+                            Screenshots
+                        </button>
+                    </li>
+                    <li class="me-2" role="presentation">
+                        <button class="inline-flex items-center justify-center p-4 rounded-t-lg  hover:border-gray-300"
+                                id="comments-tab"
+                                data-tabs-target="#comments"
+                                type="button"
+                                role="tab"
+                                aria-controls="comments"
+                                aria-selected="false">
+                            <svg class="w-4 h-4 me-2"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 viewBox="0 0 512 512">
+                                <path d="M123.6 391.3c12.9-9.4 29.6-11.8 44.6-6.4c26.5 9.6 56.2 15.1 87.8 15.1c124.7 0 208-80.5 208-160s-83.3-160-208-160S48 160.5 48 240c0 32 12.4 62.8 35.7 89.2c8.6 9.7 12.8 22.5 11.8 35.5c-1.4 18.1-5.7 34.7-11.3 49.4c17-7.9 31.1-16.7 39.4-22.7zM21.2 431.9c1.8-2.7 3.5-5.4 5.1-8.1c10-16.6 19.5-38.4 21.4-62.9C17.7 326.8 0 285.1 0 240C0 125.1 114.6 32 256 32s256 93.1 256 208s-114.6 208-256 208c-37.1 0-72.3-6.4-104.1-17.9c-11.9 8.7-31.3 20.6-54.3 30.6c-15.1 6.6-32.3 12.6-50.1 16.1c-.8 .2-1.6 .3-2.4 .5c-4.4 .8-8.7 1.5-13.2 1.9c-.2 0-.5 .1-.7 .1c-5.1 .5-10.2 .8-15.3 .8c-6.5 0-12.3-3.9-14.8-9.9c-2.5-6-1.1-12.8 3.4-17.4c4.1-4.2 7.8-8.7 11.3-13.5c1.7-2.3 3.3-4.6 4.8-6.9c.1-.2 .2-.3 .3-.5z" />
+                            </svg>
+                            Comments
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div id="default-tab-content">
+            <div class="bg-white"
+                 id="details"
+                 role="tabpanel"
+                 aria-labelledby="details-tab">
+                <div class="container md:h-[20vh] max-sm:mt-[30%] mx-auto px-4 md:px-12">
+                    <div class="flex justify-evenly flex-wrap -mx-1 lg:-mx-4">
+                        <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
+                            <div class="rounded-full w-[20%]">
+                                <img class="w-[80%] h-[80%] object-cover"
+                                     {% if object.user.username %} {% if object.user.userprofile.user_avatar %} src="{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}" {% else %} src="{% gravatar_url object.user.email 100 %}" {% endif %}
+                                     {% else %}
+                                     src="{% static 'images/dummy-user.png' %}"
+                                     {% endif %}
+                                     alt="User Profile Logo"
+                                     width="auto"
+                                     height="auto">
                             </div>
-                            <div class="text-[#B00000] text-[14px]">
-                                Total Points = <span class="font-bold">{{ users_score }}</span>
-                            </div>
-                        </div>
-                        <div>
-                            {% if not object.user.username %}
-                                <button disabled
-                                        class="!cursor-not-allowed bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
-                                    <span class="border-2 border-black rounded-xl p-1">$5 <i class="text-black fa-solid fa-caret-down"></i></span> Tip
-                                </button>
-                            {% else %}
-                                <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
-                                    <span class="border-2 border-black rounded-xl p-1">$5 <i class="text-black fa-solid fa-caret-down"></i></span> Tip
-                                </button>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <br>
-                    <div class="max-sm:px-[20px] bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md">
-                    </div>
-                    <br>
-                    <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
-                        <div>
-                            <div class="text-[14px] w-[100%] font-bold truncate">Bug Type: {{ object.get_label_display }}</div>
-                            <div class="h-[2vh]"></div>
-                            <div class=" text-[14px] w-[100%] truncate">
-                                Status: <span class="status">{{ object.status }}</span>
-                            </div>
-                            <div class=" text-[14px] w-[100%] truncate">Added on: {{ object.created }}</div>
-                            {% if object.cve_id is not None %}
-                                <div class=" text-[14px] w-[100%] truncate">CVE ID: {{ object.cve_id }}</div>
-                            {% endif %}
-                            {% if object.cve_score is not None %}
-                                <div class=" text-[14px] w-[100%] truncate">CVE Score: {{ object.cve_score }}</div>
-                            {% endif %}
-                            <div class=" text-[14px] w-[100%] truncate">
-                                Submitted:
-                                {% if object.hunt is None %}
-                                    Independently
-                                {% else %}
-                                    <a href="{% url 'show_bughunt' object.hunt.id %}">{{ object.hunt.name }}</a>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="h-[80%] items-center justify-between flex flex-col">
-                            {% if request.user == object.user or request.is_staff or request.is_superuser %}
-                                <div>
-                                    <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[14px] p-2 rounded-lg edit-issue-status"
-                                            id="issue_stat">
-                                        {% if object.status == "open" %}
-                                            <svg width="23"
-                                                 height="23"
-                                                 viewBox="0 0 25 19"
-                                                 fill="none"
-                                                 xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M8.4911 18.4552L0.366101 10.3302C-0.122034 9.8421 -0.122034 9.05065 0.366101 8.56246L2.13383 6.79469C2.62196 6.30651 3.41346 6.30651 3.9016 6.79469L9.37499 12.268L21.0984 0.54469C21.5865 0.0565552 22.378 0.0565552 22.8661 0.54469L24.6339 2.31246C25.122 2.8006 25.122 3.59205 24.6339 4.08024L10.2589 18.4553C9.77069 18.9434 8.97924 18.9434 8.4911 18.4552Z" fill="white" />
-                                            </svg>
-                                        {% else %}
-                                            <i class="fa-solid fa-retweet"></i>
-                                        {% endif %}
-                                    </button>
+                            <div>
+                                <div class="text-[#B00000] text-[16px] w-[90%] truncate">
+                                    {% if object.user.username %}
+                                        <a href="{% url 'profile' slug=object.user.username %}"
+                                           class="!text-[#B00000]">{{ object.user.username }}</a>
+                                    {% else %}
+                                        Anonymous
+                                    {% endif %}
                                 </div>
-                            {% endif %}
-                            {% if request.user.is_superuser or request.user == object.user %}
-                                <div>
+                                <div class="text-[#B00000] text-[14px]">
+                                    Total Points = <span class="font-bold">{{ users_score }}</span>
+                                </div>
+                            </div>
+                            <div>
+                                {% if not object.user.username %}
+                                    <button disabled
+                                            class="!cursor-not-allowed bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
+                                        <span class="border-2 border-black rounded-xl p-1">$5 <i class="text-black fa-solid fa-caret-down"></i></span> Tip
+                                    </button>
+                                {% else %}
                                     <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
-                                        <span class="rounded-xl font-bold p-1"><i class="fa-solid fa-pen-to-square"></i></span>
+                                        <span class="border-2 border-black rounded-xl p-1">$5 <i class="text-black fa-solid fa-caret-down"></i></span> Tip
                                     </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <br>
+                        <div class="max-sm:px-[20px] bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md">
+                        </div>
+                        <br>
+                        <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
+                            <div>
+                                <div class="text-[14px] w-[100%] font-bold truncate">Bug Type: {{ object.get_label_display }}</div>
+                                <div class="h-[2vh]"></div>
+                                <div class=" text-[14px] w-[100%] truncate">
+                                    Status: <span class="status">{{ object.status }}</span>
                                 </div>
+                                <div class=" text-[14px] w-[100%] truncate">Added on: {{ object.created }}</div>
+                                {% if object.cve_id is not None %}
+                                    <div class=" text-[14px] w-[100%] truncate">CVE ID: {{ object.cve_id }}</div>
+                                {% endif %}
+                                {% if object.cve_score is not None %}
+                                    <div class=" text-[14px] w-[100%] truncate">CVE Score: {{ object.cve_score }}</div>
+                                {% endif %}
+                                <div class=" text-[14px] w-[100%] truncate">
+                                    Submitted:
+                                    {% if object.hunt is None %}
+                                        Independently
+                                    {% else %}
+                                        <a href="{% url 'show_bughunt' object.hunt.id %}">{{ object.hunt.name }}</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="h-[80%] items-center justify-between flex flex-col">
+                                {% if request.user == object.user or request.is_staff or request.is_superuser %}
+                                    <div>
+                                        <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[14px] p-2 rounded-lg edit-issue-status"
+                                                id="issue_stat">
+                                            {% if object.status == "open" %}
+                                                <svg width="23"
+                                                     height="23"
+                                                     viewBox="0 0 25 19"
+                                                     fill="none"
+                                                     xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M8.4911 18.4552L0.366101 10.3302C-0.122034 9.8421 -0.122034 9.05065 0.366101 8.56246L2.13383 6.79469C2.62196 6.30651 3.41346 6.30651 3.9016 6.79469L9.37499 12.268L21.0984 0.54469C21.5865 0.0565552 22.378 0.0565552 22.8661 0.54469L24.6339 2.31246C25.122 2.8006 25.122 3.59205 24.6339 4.08024L10.2589 18.4553C9.77069 18.9434 8.97924 18.9434 8.4911 18.4552Z" fill="white" />
+                                                </svg>
+                                            {% else %}
+                                                <i class="fa-solid fa-retweet"></i>
+                                            {% endif %}
+                                        </button>
+                                    </div>
+                                {% endif %}
+                                {% if request.user.is_superuser or request.user == object.user %}
+                                    <div>
+                                        <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
+                                            <span class="rounded-xl font-bold p-1"><i class="fa-solid fa-pen-to-square"></i></span>
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <br>
+                    </div>
+                </div>
+                <br>
+                <div class="container max-sm:mt-[2%] mx-auto px-4 md:px-12">
+                    <div class="flex justify-evenly flex-wrap -mx-1 lg:-mx-4">
+                        <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
+                            <div class="rounded-full w-[20%]">
+                                <img class="w-[80%] h-[80%] object-cover"
+                                     src="{{ object.domain.get_logo }}"
+                                     alt="Domain Logo"
+                                     width="auto"
+                                     height="auto">
+                            </div>
+                            <div>
+                                <div class=" text-[14px] w-[90%] truncate">
+                                    <a class="#" href="{% url 'domain' slug=object.domain.name %}">Reported on {{ object.domain.name }}</a>
+                                </div>
+                                <div class="text-[13px]">
+                                    Issues Reported: <span class="font-bold">{{ issue_count }}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <button onclick="{% if user.is_authenticated %}subscribe_domain(){% else %}window.location.href=`{% url 'account_login' %}`{% endif %}"
+                                        id="subscribe_domain_btn"
+                                        class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[16px] p-2 rounded-lg">
+                                    {% if user.is_authenticated and subscribed_to_domain %}
+                                        Unsubscribe
+                                    {% else %}
+                                        Subscribe
+                                    {% endif %}
+                                </button>
+                            </div>
+                        </div>
+                        <br>
+                        <div class="max-sm:px-[20px] bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 rounded-2xl shadow-md lg:w-[23vw] h-[17vh]">
+                        </div>
+                        <br>
+                        <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
+                            {% if browser_family %}
+                                {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as image_static %}
+                                    <div class="rounded-full w-[20%]">
+                                        <img class="w-[80%] h-[80%] object-cover"
+                                             src="{% static image_static %}"
+                                             alt="Browser Image"
+                                             width="auto"
+                                             height="auto">
+                                    </div>
+                                {% endwith %}
                             {% endif %}
+                            <div>
+                                <div class=" text-[14px] truncate">
+                                    Browser Version: <span class="font-bold text-2xl">{{ browser_version }}</span>
+                                </div>
+                                <div class="text-[14px]">
+                                    Operating System: <span class="font-bold text-2xl">{{ os_family }}</span>
+                                </div>
+                                <div class="text-[14px]">
+                                    OS Version: <span class="font-bold text-2xl">
+                                    {% if os_version %}
+                                        {{ os_version }}
+                                    {% else %}
+                                        Unknown
+                                    {% endif %}
+                                </span>
+                            </div>
                         </div>
                     </div>
                     <br>
                 </div>
             </div>
             <br>
-            <div class="container max-sm:mt-[2%] mx-auto px-4 md:px-12">
-                <div class="flex justify-evenly flex-wrap -mx-1 lg:-mx-4">
-                    <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
-                        <div class="rounded-full w-[20%]">
-                            <img class="w-[80%] h-[80%] object-cover"
-                                 src="{{ object.domain.get_logo }}"
-                                 alt="Domain Logo"
-                                 width="auto"
-                                 height="auto">
-                        </div>
-                        <div>
-                            <div class=" text-[14px] w-[90%] truncate">
-                                <a class="#" href="{% url 'domain' slug=object.domain.name %}">Reported on {{ object.domain.name }}</a>
-                            </div>
-                            <div class="text-[13px]">
-                                Issues Reported: <span class="font-bold">{{ issue_count }}</span>
-                            </div>
-                        </div>
-                        <div>
-                            <button onclick="{% if user.is_authenticated %}subscribe_domain(){% else %}window.location.href=`{% url 'account_login' %}`{% endif %}"
-                                    id="subscribe_domain_btn"
-                                    class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[16px] p-2 rounded-lg">
-                                {% if user.is_authenticated and subscribed_to_domain %}
-                                    Unsubscribe
-                                {% else %}
-                                    Subscribe
-                                {% endif %}
-                            </button>
-                        </div>
-                    </div>
-                    <br>
-                    <div class="max-sm:px-[20px] bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 rounded-2xl shadow-md lg:w-[23vw] h-[17vh]">
-                    </div>
-                    <br>
-                    <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
-                        {% if browser_family %}
-                            {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as image_static %}
-                                <div class="rounded-full w-[20%]">
-                                    <img class="w-[80%] h-[80%] object-cover"
-                                         src="{% static image_static %}"
-                                         alt="Browser Image"
-                                         width="auto"
-                                         height="auto">
-                                </div>
-                            {% endwith %}
-                        {% endif %}
-                        <div>
-                            <div class=" text-[14px] truncate">
-                                Browser Version: <span class="font-bold text-2xl">{{ browser_version }}</span>
-                            </div>
-                            <div class="text-[14px]">
-                                Operating System: <span class="font-bold text-2xl">{{ os_family }}</span>
-                            </div>
-                            <div class="text-[14px]">
-                                OS Version: <span class="font-bold text-2xl">
-                                {% if os_version %}
-                                    {{ os_version }}
-                                {% else %}
-                                    Unknown
-                                {% endif %}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <br>
-            </div>
-        </div>
-        <br>
-        <hr class="w-full border-red-500">
-        <div id="screenshot-wrapper"
-             class="col-md-6 w-full mb-10 max-sm:mx-0 max-sm:px-1 lg:w-[82vw]">
-            <h4 class="text-[25px] font-medium p-3">Screenshots:</h4>
-            {% if object.screenshot %}
-                <a href="{{ object.screenshot.url }}"
-                   target="_blank"
-                   rel="noopener noreferrer">
-                    <img src="{{ object.screenshot.url }}"
-                         class="w-[358px] h-[210px] rounded-lg"
-                         alt="issue screenshot"
-                         data-lightbox="image"
-                         height="auto"
-                         width="auto">
-                </a>
-            {% else %}
-                <div class="grid grid-cols-4 gap-4 max-sm:grid-cols-1">
-                    {% for screenshot in screenshots %}
-                        <a href="{{ screenshot.image.url }}"
-                           target="_blank"
-                           rel="noopener noreferrer">
-                            <img src="{{ screenshot.image.url }}"
-                                 class="w-[358px] h-[210px] rounded-lg"
-                                 alt="issue screenshot"
-                                 data-lightbox="image"
-                                 height="auto"
-                                 width="auto">
-                        </a>
-                    {% endfor %}
-                </div>
+            <hr class="w-full border-red-500">
+            {% if object.markdown_description %}
+                <h3 class="font-[ubuntu] text-[25px] p-3 my-2 font-medium text-2xl">Issue Description</h3>
+                <p class="text-justify max-sm:w-[95vw] lg:w-11/12" id="bug_report"></p>
             {% endif %}
         </div>
-        <hr class="w-full border-red-500">
-        {% if object.markdown_description %}
-            <h3 class="font-[ubuntu] text-[25px] p-3 my-2 font-medium text-2xl">Issue Description</h3>
-            <p class="text-justify max-sm:w-[95vw] lg:w-11/12" id="bug_report"></p>
-        {% endif %}
+        <div id="screenshot" role="tabpanel" aria-labelledby="screenshot-tab">
+            <div id="screenshot-wrapper"
+                 class="col-md-6 w-full mb-10 max-sm:mx-0 max-sm:px-1 lg:w-[82vw]">
+                <h4 class="text-[25px] font-medium p-3">Screenshots:</h4>
+                {% if object.screenshot %}
+                    <a href="{{ object.screenshot.url }}"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        <img src="{{ object.screenshot.url }}"
+                             class="w-[358px] h-[210px] rounded-lg"
+                             alt="issue screenshot"
+                             data-lightbox="image"
+                             height="auto"
+                             width="auto">
+                    </a>
+                {% else %}
+                    <div class="grid grid-cols-4 gap-4 max-sm:grid-cols-1">
+                        {% for screenshot in screenshots %}
+                            <a href="{{ screenshot.image.url }}"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                <img src="{{ screenshot.image.url }}"
+                                     class="w-[358px] h-[210px] rounded-lg"
+                                     alt="issue screenshot"
+                                     data-lightbox="image"
+                                     height="auto"
+                                     width="auto">
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
+</div>
+<div class="hidden p-4 rounded-lg bg-gray-50 "
+     id="comments"
+     role="tabpanel"
+     aria-labelledby="comments-tab">
+    <p class="text-sm text-gray-500 ">
+        This is some placeholder content the <strong class="font-medium text-gray-800 ">Settings tab's associated content</strong>. Clicking another tab will toggle the visibility of this one for the next. The tab JavaScript swaps classes to control the content visibility and styling.
+    </p>
 </div>
 <script src="{% static '/company/js/md_editor.js' %}"></script>
 <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
@@ -468,5 +553,12 @@
         });
     });
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+<script>
+    // show and hide tabs
+    details-tab-div
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"
+        integrity="sha512-eNB1lPVKSAW5mXqnboj6QX9kTZKEq4t2f2c5ytUhb+QzPudY3imnjHyXYhIXavZo9e3slCjhDpOJhuMm9uSwzw=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
 {% endblock content %}

@@ -233,3 +233,15 @@
         </svg>
     {% endif %}
 </button>
+{% comment %} resolve  {% endcomment %}
+{% if request.user.is_superuser or request.user == object.user %}
+    <button type="button"
+            onclick="resolveIssue()"
+            class="rounded-2xl h-auto border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:outline-none border-black-2  text-[#0.875rem] leading-4 p-4 ">
+        {% if status == "open" %}
+            Resolve
+        {% else %}
+            Open Issue
+        {% endif %}
+    </button>
+{% endif %}

@@ -161,4 +161,20 @@
 
     // Attach the click event handler
     $('body').on('click', '.bookmark', bookmark_handler);
+
+    async function resolveIssue(){
+        var id = {{object.pk}};
+
+        const request = await fetch(`/resolve/${id}/`)
+        window.location.reload();
+        if(request.status == 200){
+        const jsonData = await request.json();
+        console.log(jsonData["issue_status"])
+        }else if (request.status == 403){
+            $.notify("Permission Denied", {
+                style: "custom",
+                className: "danger"
+            });
+        }
+    }
 </script>
