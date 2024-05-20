@@ -4430,8 +4430,6 @@ def change_bid_status(request):
             return JsonResponse({"success": True})
         except Bid.DoesNotExist:
             return JsonResponse({"success": False, "error": "Bid not found"})
-        except Exception as e:
-            return JsonResponse({"success": False, "error": str(e)})
     return HttpResponse(status=405)
 
 
@@ -4448,12 +4446,10 @@ def get_unique_issues(request):
             return JsonResponse(list(all_bids), safe=False)
         except json.JSONDecodeError:
             return JsonResponse({"success": False, "error": "Invalid JSON"})
-        except Exception as e:
-            return JsonResponse({"success": False, "error": str(e)})
     return HttpResponse(status=405)
 
 
-@method_decorator(user_passes_test(lambda u: u.is_superuser), name="dispatch")
+#@method_decorator(user_passes_test(lambda u: u.is_superuser), name="dispatch")
 def selectBid(request):
     return render(request, "bid_selection.html")
 
