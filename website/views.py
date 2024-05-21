@@ -4449,7 +4449,7 @@ def get_unique_issues(request):
 
 
 @method_decorator(user_passes_test(lambda u: u.is_superuser), name="dispatch")
-def selectBid(request):
+def select_bid(request):
     return render(request, "bid_selection.html")
 
 

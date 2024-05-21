@@ -104,7 +104,7 @@
 
         function changeStatus(bidId) {
             const csrftoken = getCookie('csrftoken');
-            fetch(`/change-bid-status/`, {
+            fetch(`/change_bid_status/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
