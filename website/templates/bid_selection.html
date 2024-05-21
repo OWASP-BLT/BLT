@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+
+        #bid {
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        #issueLinkInput {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        #fetchBids {
+            padding: 8px 15px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            display: block;
+            margin: 0 auto;
+        }
+
+        #BidDisplay {
+            width: 400px;
+            margin: 0 auto;
+            border-radius: 5px;
+            background-color: #e53e3e;
+            color: #000;
+            padding: 10px;
+            text-align: center;
+        }
+
+        #BidDisplay button {
+            padding: 8px 15px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+    </style>
+    <script>
+        function fetchBid(event) {
+            const issueUrl = document.getElementById("issueLinkInput").value;
+            const csrftoken = getCookie('csrftoken');
+            fetch(`/get_unique_issues/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({ issue_url: issueUrl })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const bidContainer = document.getElementById("BidDisplay");
+                bidContainer.innerHTML = '';
+                if (data.success === false) {
+                    alert(data.error);
+                } else {
+                    data.forEach(bid => {
+                        console.log('Data fetched:', bid.user);
+                        const bidElement = document.createElement("div");
+                        bidElement.innerHTML = `
+                            <div>
+                                <p>User: ${bid.user}</p>
+                                <p>Current Bid: ${bid.amount}</p>
+                                <p>Issue Url: ${bid.issue_url}</p>
+                                <p>Created on: ${bid.created}</p>
+                                <p>Status: ${bid.status}</p>
+                                <button onclick="changeStatus(${bid.id})">Change Status</button>
+                            </div>
+                        `;
+                        bidContainer.appendChild(bidElement);
+                    });
+                }
+            })
+            .catch(error => console.error('Error fetching bids:', error));
+        }
+
+        function changeStatus(bidId) {
+            const csrftoken = getCookie('csrftoken');
+            fetch(`/change_bid_status/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({ id: bidId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Status changed successfully');
+                    fetchBid();
+                } else {
+                    alert(data.error);
+                }
+            })
+            .catch(error => console.error('Error changing status:', error));
+        }
+
+        function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    </script>
+    <div>
+        <form id="bid" method="post">
+            {% csrf_token %}
+            <label>Paste Url to fetch bids</label>
+            <input type="text" id="issueLinkInput" name="issueLinkInput">
+            <button type="button" id="fetchBids" onclick="fetchBid()">Fetch</button>
+        </form>
+        <div id="BidDisplay"></div>
+    </div>
+{% endblock content %}
