@@ -4417,7 +4417,6 @@ def generate_bid_image(request, bid_amount):
     return HttpResponse(byte_io, content_type="image/png")
 
 
-@csrf_exempt
 def change_bid_status(request):
     if request.method == "POST":
         try:
@@ -4432,7 +4431,6 @@ def change_bid_status(request):
     return HttpResponse(status=405)
 
 
-@csrf_exempt
 def get_unique_issues(request):
     if request.method == "POST":
         try:
