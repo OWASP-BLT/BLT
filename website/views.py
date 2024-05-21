@@ -33,7 +33,7 @@ from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
@@ -4448,7 +4448,6 @@ def get_unique_issues(request):
     return HttpResponse(status=405)
 
 
-@method_decorator(user_passes_test(lambda u: u.is_superuser), name="dispatch")
 def select_bid(request):
     return render(request, "bid_selection.html")
 
