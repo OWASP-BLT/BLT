@@ -500,7 +500,7 @@ urlpatterns = [
     path("bidding/", SaveBiddingData, name="BiddingData"),
     path("select_bid/", select_bid, name="select_bid"),
     path("get_unique_issues/", get_unique_issues, name="get_unique_issues"),
-    path("change_bid_status/", change_bid_status, name="get_unique_issues"),
+    path("change_bid_status/", change_bid_status, name="change_bid_status"),
     path("fetch-current-bid/", fetch_current_bid, name="fetch_current_bid"),
     path("Submitpr/", submit_pr, name="submit_pr"),
     re_path(
