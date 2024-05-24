@@ -82,7 +82,7 @@
         {% block style %}
         {% endblock style %}
     </head>
-    <body class="relative min-h-[100vh] flex flex-col bg-[#F7F7F7] font-['Inter']">
+    <body class="relative min-h-[100vh] flex flex-col bg-white font-['Inter']">
         <style>
             .bottom-right {
                 position: absolute;
@@ -95,31 +95,31 @@
         <div class="lg:ml-[230px] mt-[70px]">
             {% block content %}
             {% endblock content %}
-        </div>
-        {% comment %} block with no bootstrap wrappers {% endcomment %}
-        {% block natural_content %}
-        {% endblock natural_content %}
-        {% block edit_link %}
-            <div class="bottom-right">
-                <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/base.html">
-                    <i class="fab fa-github"></i>
-                </a>
-                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=340%3A209&t=pqxWpF3hcYxjEDrs-1">
-                    <i class="fab fa-figma"></i>
-                </a>
-            </div>
-        {% endblock edit_link %}
-    </body>
-    <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
-    <script src="{% static 'js/ui.js' %}"></script>
-    {% block after_js %}
-    {% endblock after_js %}
-    <script>
+            {% comment %} </div> {% endcomment %}
+            {% comment %} block with no bootstrap wrappers {% endcomment %}
+            {% block natural_content %}
+            {% endblock natural_content %}
+            {% block edit_link %}
+                <div class="bottom-right">
+                    <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/base.html">
+                        <i class="fab fa-github"></i>
+                    </a>
+                    <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=340%3A209&t=pqxWpF3hcYxjEDrs-1">
+                        <i class="fab fa-figma"></i>
+                    </a>
+                </div>
+            {% endblock edit_link %}
+        </body>
+        <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+        <script src="{% static 'js/ui.js' %}"></script>
+        {% block after_js %}
+        {% endblock after_js %}
+        <script>
     $("#report-bug-btn").click(function () {
         $("#spinner").show()
     });
-    </script>
-    <script>
+        </script>
+        <script>
     (function (i, s, o, g, r, a, m) {
         i['GoogleAnalyticsObject'] = r;
         i[r] = i[r] || function () {
@@ -133,8 +133,8 @@
     })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
     ga('create', 'UA-66634107-1', 'auto');
     ga('send', 'pageview');
-    </script>
-    <script type="text/javascript">
+        </script>
+        <script type="text/javascript">
     $(".mbug").click(function () {
         $(this).addClass("hidden-xs");
         $(this).addClass("hidden-sm");
@@ -160,8 +160,8 @@
             {% endfor %} 
         {% endif %}
     });
-    </script>
-    <script type="text/javascript">
+        </script>
+        <script type="text/javascript">
     window._mfq = window._mfq || [];
     (function () {
         var mf = document.createElement("script");
@@ -170,5 +170,5 @@
         mf.src = "//cdn.mouseflow.com/projects/efbbebea-436f-4b6f-9290-14ab36c8f636.js";
         document.getElementsByTagName("head")[0].appendChild(mf);
     })();
-    </script>
-</html>
+        </script>
+    </html>
