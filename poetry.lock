@@ -884,13 +884,22 @@ humanize = ">=0.5.1"
 
 [[package]]
 name = "django-import-export"
+<<<<<<< HEAD
 version = "4.0.6"
+=======
+version = "4.0.5"
+>>>>>>> c2a9357f (Bump django-import-export from 3.3.7 to 4.0.5 (#2112))
 description = "Django application and library for importing and exporting data with included admin integration."
 optional = false
 python-versions = ">=3.8"
 files = [
+<<<<<<< HEAD
     {file = "django_import_export-4.0.6-py3-none-any.whl", hash = "sha256:7b170abd992c071fa221fa6bf1822abfee1518720d07cedeba4702bbac5f119d"},
     {file = "django_import_export-4.0.6.tar.gz", hash = "sha256:098ab4943edb93d6333aa8f6c97fb6a527d1d70a57f6a014f615c6f5ff5dd559"},
+=======
+    {file = "django_import_export-4.0.5-py3-none-any.whl", hash = "sha256:55dcb6127a33deac30631dfe09bc0d68db9cfbe0bbda40d83ad8aa64ac1d2fd0"},
+    {file = "django_import_export-4.0.5.tar.gz", hash = "sha256:23e99815a25dc2f889a0f96b9c74500b7aaeefe81a02c952cda8c51dcb7db720"},
+>>>>>>> c2a9357f (Bump django-import-export from 3.3.7 to 4.0.5 (#2112))
 ]
 
 [package.dependencies]
@@ -1398,6 +1407,7 @@ files = [
 colors = ["colorama (>=0.4.6)"]
 
 [[package]]
+<<<<<<< HEAD
 name = "msgpack"
 version = "1.0.8"
 description = "MessagePack serializer"
@@ -1463,6 +1473,8 @@ files = [
 ]
 
 [[package]]
+=======
+>>>>>>> c2a9357f (Bump django-import-export from 3.3.7 to 4.0.5 (#2112))
 name = "mypy-extensions"
 version = "1.0.0"
 description = "Type system extensions for programs checked with the mypy type checker."
@@ -2650,8 +2662,12 @@ lock-version = "2.0"
 
 python-versions = "3.11.2"
 <<<<<<< HEAD
+<<<<<<< HEAD
 content-hash = "a90f3304a6f7659db99cb12fb45ca9d2eeee7d34cbe1cfab821cdf1fd091e0ce"
 content-hash = "a90f3304a6f7659db99cb12fb45ca9d2eeee7d34cbe1cfab821cdf1fd091e0ce"
 =======
 content-hash = "7bd16660f41bd0fd0693b85094219ae4fcda0b9a8672b7bb24311182a2f83102"
 >>>>>>> 4da062f6 (Bump ruff from 0.2.2 to 0.4.3)
+=======
+content-hash = "6fa459b525af95a4dc34f533776b049147aad69c6bb0ce04dd30bb9056e92ca4"
+>>>>>>> c2a9357f (Bump django-import-export from 3.3.7 to 4.0.5 (#2112))
