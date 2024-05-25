@@ -77,12 +77,12 @@ lxml = ["lxml"]
 
 [[package]]
 name = "bitcash"
-version = "1.0.1"
+version = "1.0.2"
 description = "Bitcoin Cash made easier."
 optional = false
 python-versions = "*"
 files = [
-    {file = "BitCash-1.0.1-py3-none-any.whl", hash = "sha256:4da9ef94f93f265a88097e26c3c7f5516cd452ea8916d144dec2e6031d80dd49"},
+    {file = "BitCash-1.0.2-py3-none-any.whl", hash = "sha256:a139003b56b7d954bfe2716653b89180bedf87658d8193efab24fc15f36fbf90"},
 ]
 
 [package.dependencies]
@@ -2356,4 +2356,4 @@ h11 = ">=0.9.0,<1"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "683f72670f1b1ff3fd1036b43d1ae8d83a8f806aeca9b929eab2f68e76d1fb0a"
+content-hash = "7d1089ba0ad93087c59272ee0e4788ac67e1b5596e904ba7514542c69b9af47f"
