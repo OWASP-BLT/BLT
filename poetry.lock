@@ -2461,6 +2461,7 @@ content-hash = "8d9f0be89d9e65675c80d1513e1705af973d39d1505287ef7a47836f1c017384
 python-versions = "3.11.2"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 content-hash = "7bd16660f41bd0fd0693b85094219ae4fcda0b9a8672b7bb24311182a2f83102"
 >>>>>>> 4da062f (Bump ruff from 0.2.2 to 0.4.3)
 =======
@@ -2469,3 +2470,6 @@ content-hash = "6fa459b525af95a4dc34f533776b049147aad69c6bb0ce04dd30bb9056e92ca4
 =======
 content-hash = "88eaaf7c01459902fd03b9489b66ecb2093f781a683add2ebadb4da81c34b3cd"
 >>>>>>> dbfd8dfe (Bump sentry-sdk from 1.42.0 to 2.3.1 (#2111))
+=======
+content-hash = "c4465614cf4ee20e92c19ea704cd1f4ef33c15b4131767e0e0a30a03e78dcd7c"
+>>>>>>> be0e0de7 (Bump django from 5.0.3 to 5.0.6)
