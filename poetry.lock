@@ -2512,4 +2512,4 @@ h11 = ">=0.9.0,<1"
 lock-version = "2.0"
 
 python-versions = "3.11.2"
-content-hash = "b055607760c55f28ec6f2aee5e9fa1fd96bfba5f9444ab914dd2c297824b5c2a"
+content-hash = "f2c120f3b61316200b2fb48facce037113b87434f8e2d7cb904801040126a6ee"
