@@ -69,7 +69,7 @@ channels-redis = "^4.2.0"
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"
 isort = "^5.13.2"
-ruff = "^0.4.3"
+ruff = "^0.4.5"
 
 [tool.isort]
 known_first_party = ["blt"]
