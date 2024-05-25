@@ -2080,13 +2080,13 @@ urllib3 = {version = ">=1.26,<3", extras = ["socks"]}
 
 [[package]]
 name = "sentry-sdk"
-version = "1.45.0"
+version = "2.3.1"
 description = "Python client for Sentry (https://sentry.io)"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "sentry-sdk-1.45.0.tar.gz", hash = "sha256:509aa9678c0512344ca886281766c2e538682f8acfa50fd8d405f8c417ad0625"},
-    {file = "sentry_sdk-1.45.0-py2.py3-none-any.whl", hash = "sha256:1ce29e30240cc289a027011103a8c83885b15ef2f316a60bcc7c5300afa144f1"},
+    {file = "sentry_sdk-2.3.1-py2.py3-none-any.whl", hash = "sha256:c5aeb095ba226391d337dd42a6f9470d86c9fc236ecc71cfc7cd1942b45010c6"},
+    {file = "sentry_sdk-2.3.1.tar.gz", hash = "sha256:139a71a19f5e9eb5d3623942491ce03cf8ebc14ea2e39ba3e6fe79560d8a5b1f"},
 ]
 
 [package.dependencies]
@@ -2460,8 +2460,12 @@ content-hash = "8d9f0be89d9e65675c80d1513e1705af973d39d1505287ef7a47836f1c017384
 =======
 python-versions = "3.11.2"
 <<<<<<< HEAD
+<<<<<<< HEAD
 content-hash = "7bd16660f41bd0fd0693b85094219ae4fcda0b9a8672b7bb24311182a2f83102"
 >>>>>>> 4da062f (Bump ruff from 0.2.2 to 0.4.3)
 =======
 content-hash = "6fa459b525af95a4dc34f533776b049147aad69c6bb0ce04dd30bb9056e92ca4"
 >>>>>>> c2a9357 (Bump django-import-export from 3.3.7 to 4.0.5 (#2112))
+=======
+content-hash = "88eaaf7c01459902fd03b9489b66ecb2093f781a683add2ebadb4da81c34b3cd"
+>>>>>>> dbfd8dfe (Bump sentry-sdk from 1.42.0 to 2.3.1 (#2111))
