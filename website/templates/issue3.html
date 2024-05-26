@@ -150,35 +150,34 @@
         </div>
         <div id="default-tab-content" class="bg-white mt-[-0.8%]">
             <br>
-            <div 
-                 id="details"
+            <div id="details"
                  role="tabpanel"
                  class="ml-[3%]"
                  aria-labelledby="details-tab">
-                 <h4 class="text-2xl font-bold mb-3">Event ID: {{object.id}}</h4>
-                 <div class="flex mr-[3%] justify-start items-center">
-                            <img class="w-[5%] rounded-full h-[5%] object-cover"
-                                 {% if object.user.username %} {% if object.user.userprofile.user_avatar %} src="{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}" {% else %} src="{% gravatar_url object.user.email 100 %}" {% endif %}
-                                 {% else %}
-                                 src="{% static 'images/dummy-user.png' %}"
-                                 {% endif %}
-                                 alt="User Profile Logo"
-                                 width="32px"
-                                 height="32px">
-                        <div class="ml-3">
-                            <div>
-                                {% if object.user.username %}
-                                        <a href="{% url 'profile' slug=object.user.username %}"
-                                           class="!text-[#7e22ce] font-bold">{{ object.user.username }}</a>
-                                    {% else %}
-                                        Anonymous
-                                    {% endif %}
-                            </div>
-                            <div> 
-                                <span class="font-bold">Total Points =</span> {{ users_score }}
-                            </div>
+                <h4 class="text-2xl font-bold mb-3">Event ID: {{ object.id }}</h4>
+                <div class="flex mr-[3%] justify-start items-center">
+                    <img class="w-[5%] rounded-full h-[5%] object-cover"
+                         {% if object.user.username %} {% if object.user.userprofile.user_avatar %} src="{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}" {% else %} src="{% gravatar_url object.user.email 100 %}" {% endif %}
+                         {% else %}
+                         src="{% static 'images/dummy-user.png' %}"
+                         {% endif %}
+                         alt="User Profile Logo"
+                         width="32px"
+                         height="32px">
+                    <div class="ml-3">
+                        <div>
+                            {% if object.user.username %}
+                                <a href="{% url 'profile' slug=object.user.username %}"
+                                   class="!text-[#7e22ce] font-bold">{{ object.user.username }}</a>
+                            {% else %}
+                                Anonymous
+                            {% endif %}
                         </div>
-                 </div>
+                        <div>
+                            <span class="font-bold">Total Points =</span> {{ users_score }}
+                        </div>
+                    </div>
+                </div>
                 <div class="container md:h-[20vh] max-sm:mt-[30%] mx-auto px-4 md:px-12">
                     <div class="flex justify-evenly flex-wrap -mx-1 lg:-mx-4">
                         <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
