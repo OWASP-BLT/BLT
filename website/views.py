@@ -4122,10 +4122,14 @@ def resolve(request, id):
     if request.user.is_superuser or request.user == issue.user:
         if issue.status == "open":
             issue.status = "close"
+            issue.closed_by = request.user
+            issue.closed_date = now()
             issue.save()
             return JsonResponse({"status": "ok", "issue_status": issue.status})
         else:
             issue.status = "open"
+            issue.closed_by = None
+            issue.closed_date = None
             issue.save()
             return JsonResponse({"status": "ok", "issue_status": issue.status})
     else:
