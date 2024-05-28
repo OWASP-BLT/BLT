@@ -197,6 +197,16 @@ CONN_MAX_AGE = None
 
 WSGI_APPLICATION = "blt.wsgi.application"
 
+ASGI_APPLICATION = "blt.asgi.application"
+
+CHANNEL_LAYER = {
+    "default" : {
+        "BACKEND": "channels_redis.core.RedisChaneelLayer",
+        "CONFIG":{
+            "hosts": [("localhost", 8000)],
+        }
+    }
+}
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
 
