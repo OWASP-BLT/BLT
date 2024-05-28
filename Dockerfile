@@ -16,7 +16,8 @@ RUN apt-get update && apt-get install -y \
         libmemcached11 \
         libmemcachedutil2 \
         libmemcached-dev \
-        libz-dev
+        libz-dev \ 
+        redis
 
 
 RUN pip install poetry 
