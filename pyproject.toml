@@ -6,7 +6,7 @@ authors = ["OWASP BLT <you@example.com>"]
 license = "AGPLv3"
 
 [tool.poetry.dependencies]
-python = "3.12.1"
+python = "3.12.3"
 toml = "^0.10.2"
 Django = "^5.0.6"
 dj-database-url = "^2.2.0"
