@@ -3643,7 +3643,25 @@ def contributors_view(request, *args, **kwargs):
 
 
 def sponsor_view(request):
-    return render(request, "sponsor.html")
+    from bitcash.network import NetworkAPI
+
+    def get_bch_balance(address):
+        try:
+            balance_satoshis = NetworkAPI.get_balance(address)
+            balance_bch = balance_satoshis / 100000000  # Convert from satoshis to BCH
+            return balance_bch
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return None
+
+    # Example BCH address
+    bch_address = "bitcoincash:qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc"
+
+    balance = get_bch_balance(bch_address)
+    if balance is not None:
+        print(f"Balance of {bch_address}: {balance} BCH")
+
+    return render(request, "sponsor.html", context={"balance": balance})
 
 
 def safe_redirect(request: HttpRequest):
