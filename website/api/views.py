@@ -421,7 +421,7 @@ class LeaderboardApiViewSet(APIView):
         company_urls = (
             Issue.objects.values("domain")
             .annotate(issue_count=Count("domain"))
-            .order_by("-issue_count")
+            .order_by("-issue_count")[:100]
         )
 
         companies = []
@@ -430,8 +430,8 @@ class LeaderboardApiViewSet(APIView):
             company = Company.objects.filter(url=domain.url).first()
             serializer = CompanySerializer(company)
             companies.append({"company": serializer.data, "issue_count": url["issue_count"]})
-            if len(companies) >= 100:
-                break
+            # if len(companies) >= 100:
+            #     break
 
         return Response(companies)
 
