@@ -1,0 +1,24 @@
+<div class="input-group dbdp">
+  {% include 'django/forms/widgets/text.html' %}
+  <div class="input-group-addon input-group-append input-group-text">
+    <i class="{{ addon_icon_class }}"></i>
+  </div>
+</div>
+{% if "data-dbdp-debug" in widget.attrs %}
+<script>
+  // This script is only added when DEBUG=True to check if media files are loaded
+  if (!window.dbdpMediaCheckerRegistered) {
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => {
+        if (!window.dbdpInitialized) {
+          const errorDisplay = document.createElement("div");
+          errorDisplay.className = "alert alert-danger"
+          errorDisplay.innerHTML = "form.media was not loaded, did you forget to add it to template? This message is only visible when DEBUG=True";
+          for (let el of document.querySelectorAll("[data-dbdp-config]")) el.closest(".dbdp").after(errorDisplay.cloneNode(true));
+        }
+      })
+    });
+    window.dbdpMediaCheckerRegistered = true;
+  }
+</script>
+{% endif %}

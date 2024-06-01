@@ -1,34 +1,45 @@
 {% load gravatar %}
 {% load custom_tags %}
-<aside class="absolute flex-wrap right-9 max-sm:right-0 top-40 flex items-center lg:flex-col max-sm:top-80 max-sm:flex max-sm:w-full max-sm:mr--10 max-sm:items-center max-sm:justify-evenly">
-    <div class="flex flex-col max-sm:w-11/12 max-sm:flex-row max-sm:items-center max-sm:justify-evenly">
-        <span><i class="fa fa-eye mr-5 mb-3"></i><span class="font-bold">{{ object.views }}</span></span>
-        {% include "./_likes3.html" %}
-        {% include "./_dislikes3.html" %}
-        {% include "./_flags3.html" %}
-    </div>
-    <div class="max-sm:w-11/12 flex max-sm:flex-row flex-col items-center max-sm:justify-evenly">
-        {% include "./_bookmark3.html" %}
-        <div class="md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#0786fb4d] mb-3 cursor-pointer">
+{% comment %} three dot  {% endcomment %}
+<button id="dropdownDefaultButton"
+        data-dropdown-toggle="dropdown"
+        class="like_unlike border-[1px] rounded-2xl shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
+        type="button">
+    <svg viewBox="0 0 16 16" fill="currentColor" height="12px" width="12px">
+        <circle cx="8" cy="8" r="1.31"></circle><circle cx="1.31" cy="8" r="1.31"></circle><circle cx="14.69" cy="8" r="1.31"></circle>
+    </svg>
+</button>
+<!-- Dropdown menu -->
+<div id="dropdown"
+     class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
+    <ul class="py-2 m-2 rounded text-gray-700"
+        aria-labelledby="dropdownDefaultButton">
+        <span class="md:hidden flex flex-col">{% include "./_like_dislike_widget.html" %}</span>
+        <li>
             <a href="https://twitter.com/intent/tweet?text=Bug Found on @{{ object.domain_title }} - {{ object.description }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}"
                target="_blank"
-               rel="noopener noreferrer">
-                <i class="fa-brands fa-x-twitter fa-lg"></i>
-            </a>
-        </div>
-        <div class="md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#1c20734d] mb-3 cursor-pointer">
-            <button onclick="copyClipboard()">
-                <i class="fa-solid fa-copy text-3xl text-red-[#4A6676]"></i>
+               rel="noopener noreferrer"
+               class="w-[100%] block px-4 py-2 hover:bg-gray-100">Tweet &nbsp;<i class="fa-brands fa-x-twitter fa-lg"></i></a>
+        </li>
+        <li>
+            <button onclick="copyClipboard()"
+                    class="flex w-[100%] px-4 py-2 hover:bg-gray-100">
+                Copy &nbsp;<i class="fa-solid fa-copy text-3xl text-red-[#4A6676]"></i>
             </button>
-        </div>
-        <div class="md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#2d9cdb4d] mb-3 cursor-pointer">
-            <i class="fa-brands fa-github text-3xl text-black"></i>
-        </div>
-        <div class="md:w-1/2 lg:w-auto rounded-2xl shadow-md p-5 bg-[#842adb4d] mb-3 cursor-pointer">
-            <i class="fa-solid fa-trash text-3xl text-black"></i>
-        </div>
-    </div>
-</aside>
+        </li>
+        <li>
+            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Github &nbsp;<i class="fa-brands fa-github text-3xl text-black"></i></a>
+        </li>
+        {% if request.user.is_superuser or request.user == object.user %}
+            <li>
+                <a href="{% url 'delete_issue' id=object.id %}"
+                   onclick="return confirm('Are you sure you want to delete this issue?')"
+                   class="block px-4 py-2 hover:bg-gray-100"> Delete &nbsp;<i class="fa-solid fa-trash text-2xl text-black"></i></a>
+            </li>
+        {% endif %}
+    </ul>
+</div>
+<span class="max-sm:hidden">{% include "./_like_dislike_widget.html" %}</span>
 <script>
     function copyClipboard() {
         var textToCopy = "Bug Found on @{{ object.domain_title }} - {{ object.description }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}";
@@ -91,4 +102,63 @@
         $('body').off('click', '.dislike', dislike_handler);
     }
     $('body').on('click', '.dislike', dislike_handler);
+</script>
+<script>
+    function flag_unflag_handler(e){
+        e.preventDefault();
+        var issue_pk = $(this).attr('name');
+        $.ajax({
+            type: 'GET',
+            url: '/flag_issue3/' + issue_pk + '/',
+            data: {},
+            success: function (data) {
+                $('#flag-unflag').remove();
+                $('#flag-container').append(data);
+            },
+        });
+            // Later, when you want to "destroy" the event handler:
+        $('body').off('click', '#flag-unflag', flag_unflag_handler);
+    }
+
+    // Attach the click event handler
+    $('body').on('click', '#flag-unflag', flag_unflag_handler);
+
+</script>
+<script>
+    function bookmark_handler(e){
+        e.preventDefault();
+        var issue_pk = $(this).attr('name');
+        $.ajax({
+            type: 'GET',
+            url: '/save_issue/' + issue_pk + '/',
+            data: {},
+            success: function (data) {
+                if (data === "REMOVED"){
+                    $('.bookmark i').removeClass('fa-solid');
+                    $('.bookmark i').addClass('fa-regular');
+                    $.notify("Bookmark Removed!", {
+                        style: "custom",
+                        className: "success"
+                    });
+                }
+                else{
+                    $('.bookmark i').removeClass('fa-regular');
+                    $('.bookmark i').addClass('fa-solid');
+                    $.notify("Bookmark Added!", {
+                        style: "custom",
+                        className: "success"
+                    });
+                }
+            },
+            error: function (e) {
+                $.notify("Some error occurred!", {
+                    style: "custom",
+                    className: "danger"
+                });
+            }
+        });
+    }
+
+    // Attach the click event handler
+    $('body').on('click', '.bookmark', bookmark_handler);
 </script>

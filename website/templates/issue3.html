@@ -6,6 +6,8 @@
             BLT Issue - {{ object.description|escapejs }}
         {% endblock title %}
     </title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css"
+          rel="stylesheet" />
     <meta name="description"
           content="{{ object.markdown_description|escapejs }}">
     {% if object.user.username %}
@@ -42,48 +44,250 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     {% comment %} TODO:
+     removed anonymous reporting
     delete these files after final is ready 
     {% include "includes/_likes2.html" %}
     {% include "includes/_dislike2.html" %}
     {% include "includes/_flags2.html" %}
     {% include "includes/_bookmark2.html" %}
     {% endcomment %}
-    {% include "includes/_like_dislike_share.html" %}
-    <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-white pl-[3%]">
-        <h2 class="font-[ubuntu] font-bold text-3xl">{{ object.description | truncatechars:100|escapejs }}</h2>
+    <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-[#FAF9FB] font-[ubuntu] lg:pl-0">
+        <div class="flex mr-[2%] ml-[2%] justify-between row gap-[8px] items-center">
+            <nav class="left-issue flex items-center mr-auto">
+                <a href="{% url 'index' %}" class="!text-[#80708f] mx-4">Issues</a>
+                <i class="fa-solid fa-chevron-right"></i>
+                <a href="{% url 'domain' object.domain.name %}" class=" mx-4">
+                    <img src="{{ object.domain.get_logo }}"
+                         class="rounded"
+                         width="16"
+                         height="16"
+                         alt="Company Logo">
+                </a>
+                <a href="{% url 'domain' object.domain.name %}"><span>{{ object.domain.name }}</span></a>
+            </nav>
+            <div class="right-data ml-auto max-sm:pt-2">{% include "includes/_like_dislike_share.html" %}</div>
+        </div>
+        <div class="h-[3vh]"></div>
+        <h2 class="font-[ubuntu] font-bold text-[30px] w-[90%] truncate ml-[3.5%]"
+            title="{{ object.description |escapejs }}">{{ object.description |escapejs }}</h2>
         <p>
             <a href="{{ object.url }}"
-               class="text-red-600"
+               title="{{ object.url }}"
+               class="!text-blue-500 ml-[3.5%] font-thin w-[80%] truncate"
                target="_blank"
-               rel="noopener noreferrer">{{ object.url | truncatechars:100 }}</a>
+               rel="noopener noreferrer">{{ object.url }}</a>
         </p>
         <br>
-        <div class="container max-sm:mt-[30%] mx-auto px-4 md:px-12">
-            <div class="flex justify-evenly flex-wrap -mx-1 lg:-mx-4">
-                <div class="my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-3/12 rounded-2xl shadow-md p-7">
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo vero incidunt reprehenderit illo tenetur numquam hic ut optio esse eos minus dignissimos ducimus officia ab quidem quis, corrupti tempore voluptates.
+        <div class="bg-white">
+            <div class="container md:h-[20vh] max-sm:mt-[30%] mx-auto px-4 md:px-12">
+                <div class="flex justify-evenly flex-wrap -mx-1 lg:-mx-4">
+                    <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
+                        <div class="rounded-full w-[20%]">
+                            <img class="w-[80%] h-[80%] object-cover"
+                                 {% if object.user.username %} {% if object.user.userprofile.user_avatar %} src="{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}" {% else %} src="{% gravatar_url object.user.email 100 %}" {% endif %}
+                                 {% else %}
+                                 src="{% static 'images/dummy-user.png' %}"
+                                 {% endif %}
+                                 alt="User Profile Logo"
+                                 width="auto"
+                                 height="auto">
+                        </div>
+                        <div>
+                            <div class="text-[#B00000] text-[16px] w-[90%] truncate">
+                                {% if object.user.username %}
+                                    <a href="{% url 'profile' slug=object.user.username %}"
+                                       class="!text-[#B00000]">{{ object.user.username }}</a>
+                                {% else %}
+                                    Anonymous
+                                {% endif %}
+                            </div>
+                            <div class="text-[#B00000] text-[14px]">
+                                Total Points = <span class="font-bold">{{ users_score }}</span>
+                            </div>
+                        </div>
+                        <div>
+                            {% if not object.user.username %}
+                                <button disabled
+                                        class="!cursor-not-allowed bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
+                                    <span class="border-2 border-black rounded-xl p-1">$5 <i class="text-black fa-solid fa-caret-down"></i></span> Tip
+                                </button>
+                            {% else %}
+                                <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
+                                    <span class="border-2 border-black rounded-xl p-1">$5 <i class="text-black fa-solid fa-caret-down"></i></span> Tip
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <br>
+                    <div class="max-sm:px-[20px] bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md">
+                    </div>
+                    <br>
+                    <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
+                        <div>
+                            <div class="text-[14px] w-[100%] font-bold truncate">Bug Type: {{ object.get_label_display }}</div>
+                            <div class="h-[2vh]"></div>
+                            <div class=" text-[14px] w-[100%] truncate">
+                                Status: <span class="status">{{ object.status }}</span>
+                            </div>
+                            <div class=" text-[14px] w-[100%] truncate">Added on: {{ object.created }}</div>
+                            {% if object.cve_id is not None %}
+                                <div class=" text-[14px] w-[100%] truncate">CVE ID: {{ object.cve_id }}</div>
+                            {% endif %}
+                            {% if object.cve_score is not None %}
+                                <div class=" text-[14px] w-[100%] truncate">CVE Score: {{ object.cve_score }}</div>
+                            {% endif %}
+                            <div class=" text-[14px] w-[100%] truncate">
+                                Submitted:
+                                {% if object.hunt is None %}
+                                    Independently
+                                {% else %}
+                                    <a href="{% url 'show_bughunt' object.hunt.id %}">{{ object.hunt.name }}</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="h-[80%] items-center justify-between flex flex-col">
+                            {% if request.user == object.user or request.is_staff or request.is_superuser %}
+                                <div>
+                                    <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[14px] p-2 rounded-lg edit-issue-status"
+                                            id="issue_stat">
+                                        {% if object.status == "open" %}
+                                            <svg width="23"
+                                                 height="23"
+                                                 viewBox="0 0 25 19"
+                                                 fill="none"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M8.4911 18.4552L0.366101 10.3302C-0.122034 9.8421 -0.122034 9.05065 0.366101 8.56246L2.13383 6.79469C2.62196 6.30651 3.41346 6.30651 3.9016 6.79469L9.37499 12.268L21.0984 0.54469C21.5865 0.0565552 22.378 0.0565552 22.8661 0.54469L24.6339 2.31246C25.122 2.8006 25.122 3.59205 24.6339 4.08024L10.2589 18.4553C9.77069 18.9434 8.97924 18.9434 8.4911 18.4552Z" fill="white" />
+                                            </svg>
+                                        {% else %}
+                                            <i class="fa-solid fa-retweet"></i>
+                                        {% endif %}
+                                    </button>
+                                </div>
+                            {% endif %}
+                            {% if request.user.is_superuser or request.user == object.user %}
+                                <div>
+                                    <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
+                                        <span class="rounded-xl font-bold p-1"><i class="fa-solid fa-pen-to-square"></i></span>
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <br>
                 </div>
-                <br>
-                <div class="my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-3/12 rounded-2xl shadow-md p-7">
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo vero incidunt reprehenderit illo tenetur numquam hic ut optio esse eos minus dignissimos ducimus officia ab quidem quis, corrupti tempore voluptates.
-                </div>
-                <br>
-                <div class="my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-3/12 rounded-2xl shadow-md p-7">
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo vero incidunt reprehenderit illo tenetur numquam hic ut optio esse eos minus dignissimos ducimus officia ab quidem quis, corrupti tempore voluptates.
+            </div>
+            <br>
+            <div class="container max-sm:mt-[2%] mx-auto px-4 md:px-12">
+                <div class="flex justify-evenly flex-wrap -mx-1 lg:-mx-4">
+                    <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
+                        <div class="rounded-full w-[20%]">
+                            <img class="w-[80%] h-[80%] object-cover"
+                                 src="{{ object.domain.get_logo }}"
+                                 alt="Domain Logo"
+                                 width="auto"
+                                 height="auto">
+                        </div>
+                        <div>
+                            <div class=" text-[14px] w-[90%] truncate">
+                                <a class="#" href="{% url 'domain' slug=object.domain.name %}">Reported on {{ object.domain.name }}</a>
+                            </div>
+                            <div class="text-[13px]">
+                                Issues Reported: <span class="font-bold">{{ issue_count }}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <button onclick="{% if user.is_authenticated %}subscribe_domain(){% else %}window.location.href=`{% url 'account_login' %}`{% endif %}"
+                                    id="subscribe_domain_btn"
+                                    class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[16px] p-2 rounded-lg">
+                                {% if user.is_authenticated and subscribed_to_domain %}
+                                    Unsubscribe
+                                {% else %}
+                                    Subscribe
+                                {% endif %}
+                            </button>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="max-sm:px-[20px] bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 rounded-2xl shadow-md lg:w-[23vw] h-[17vh]">
+                    </div>
+                    <br>
+                    <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
+                        {% if browser_family %}
+                            {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as image_static %}
+                                <div class="rounded-full w-[20%]">
+                                    <img class="w-[80%] h-[80%] object-cover"
+                                         src="{% static image_static %}"
+                                         alt="Browser Image"
+                                         width="auto"
+                                         height="auto">
+                                </div>
+                            {% endwith %}
+                        {% endif %}
+                        <div>
+                            <div class=" text-[14px] truncate">
+                                Browser Version: <span class="font-bold text-2xl">{{ browser_version }}</span>
+                            </div>
+                            <div class="text-[14px]">
+                                Operating System: <span class="font-bold text-2xl">{{ os_family }}</span>
+                            </div>
+                            <div class="text-[14px]">
+                                OS Version: <span class="font-bold text-2xl">
+                                {% if os_version %}
+                                    {{ os_version }}
+                                {% else %}
+                                    Unknown
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
                 </div>
                 <br>
             </div>
         </div>
         <br>
+        <hr class="w-full border-red-500">
+        <div id="screenshot-wrapper"
+             class="col-md-6 w-full mb-10 max-sm:mx-0 max-sm:px-1 lg:w-[82vw]">
+            <h4 class="text-[25px] font-medium p-3">Screenshots:</h4>
+            {% if object.screenshot %}
+                <a href="{{ object.screenshot.url }}"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                    <img src="{{ object.screenshot.url }}"
+                         class="w-[358px] h-[210px] rounded-lg"
+                         alt="issue screenshot"
+                         data-lightbox="image"
+                         height="auto"
+                         width="auto">
+                </a>
+            {% else %}
+                <div class="grid grid-cols-4 gap-4 max-sm:grid-cols-1">
+                    {% for screenshot in screenshots %}
+                        <a href="{{ screenshot.image.url }}"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            <img src="{{ screenshot.image.url }}"
+                                 class="w-[358px] h-[210px] rounded-lg"
+                                 alt="issue screenshot"
+                                 data-lightbox="image"
+                                 height="auto"
+                                 width="auto">
+                        </a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        <hr class="w-full border-red-500">
         {% if object.markdown_description %}
-            <h3 class="font-[ubuntu] font-bold text-2xl">Issue Description</h3>
+            <h3 class="font-[ubuntu] text-[25px] p-3 my-2 font-medium text-2xl">Issue Description</h3>
             <p class="text-justify max-sm:w-[95vw] lg:w-11/12" id="bug_report"></p>
         {% endif %}
     </div>
-    <script src="{% static '/company/js/md_editor.js' %}"></script>
-    <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
-    <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.1.0/dist/markdown-it.min.js"></script>
-    <script>
+</div>
+<script src="{% static '/company/js/md_editor.js' %}"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/markdown-it@12.1.0/dist/markdown-it.min.js"></script>
+<script>
     const md = window.markdownit();
     const markdownContent = `{{ object.markdown_description|escapejs }}`;
     const renderedHtml = md.render(markdownContent);
@@ -101,7 +305,7 @@
             success: function (data) {
                 
                 if (data === "SUBSCRIBED"){
-                    $("#subscribe_domain_btn").text("Click To Unsubscribe");
+                    $("#subscribe_domain_btn").text("Unsubscribe");
                     $.notify("Subscribed!", {
                         style: "custom",
                         className: "success"
@@ -109,7 +313,7 @@
                 }
 
                 else if (data === "UNSUBSCRIBED"){
-                    $("#subscribe_domain_btn").text("Click To Subscribe");
+                    $("#subscribe_domain_btn").text("Subscribe");
                     $.notify("Unsubscribed!", {
                         style: "custom",
                         className: "success"
@@ -146,19 +350,26 @@
                 if (data == "Updated") {
                     if (action == "open") {
                         $('.status').text('open');
-                        $('.status').removeClass('label-danger');
-                        $('.status').addClass('label-success');
-                        $('#issue_stat').text('Click to Close');
-                        $.notify("Issue Opened!", {
+                        //$('.status').removeClass('label-danger');
+                        //$('.status').addClass('label-success');
+                        $('#issue_stat').html(`
+    <svg width='19' height='19' viewBox='0 0 25 19' fill='none' xmlns='http://www.w3.org/2000/svg'>
+        <path d='M8.4911 18.4552L0.366101 10.3302C-0.122034 9.8421 -0.122034 9.05065 0.366101 8.56246L2.13383 6.79469C2.62196 6.30651 3.41346 6.30651 3.9016 6.79469L9.37499 12.268L21.0984 0.54469C21.5865 0.0565552 22.378 0.0565552 22.8661 0.54469L24.6339 2.31246C25.122 2.8006 25.122 3.59205 24.6339 4.08024L10.2589 18.4553C9.77069 18.9434 8.97924 18.9434 8.4911 18.4552Z' fill='white' />
+    </svg>
+`);
+                        $.notify("Issue opened!", {
                         style: "custom",
                         className: "success"
                         });
                     } else {
                         $('.status').text('closed');
-                        $('.status').removeClass('label-success');
-                        $('.status').addClass('label-danger');
-                        $('#issue_stat').text('Click to Open');
-                        $.notify("Issue Closed!", {
+                        //$('.status').removeClass('label-success');
+                        //$('.status').addClass('label-danger');
+                        $('#issue_stat').html("");
+                        $('#issue_stat').html(
+                            "<i class='fa-solid fa-retweet'></i>"
+                        );
+                        $.notify("Issue closed!", {
                         style: "custom",
                         className: "success"
                         });
@@ -256,5 +467,9 @@
             }
         });
     });
-    </script>
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.js"
+        integrity="sha512-bUju8VkXhCQgW7zCHSdiIDpECo/lqzChkKrKoc1v2PL2XqO/0Q2Y8dhu07+q6Rk+1c1xr6cfE0VZnumgwy93Ig=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
 {% endblock content %}

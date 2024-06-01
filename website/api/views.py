@@ -2,7 +2,6 @@ import uuid
 from datetime import datetime
 
 from django.conf import settings
-from django.contrib.auth.models import AnonymousUser
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
@@ -11,11 +10,12 @@ from django.template.loader import render_to_string
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from website.models import (
+    Company,
     Domain,
     Hunt,
     HuntPrize,
@@ -29,6 +29,7 @@ from website.models import (
 from website.serializers import (
     BugHuntPrizeSerializer,
     BugHuntSerializer,
+    CompanySerializer,
     DomainSerializer,
     IssueSerializer,
     UserProfileSerializer,
@@ -115,93 +116,94 @@ class IssueViewSet(viewsets.ModelViewSet):
     Issue View Set
     """
 
-    serializer_class = IssueSerializer
     filter_backends = (filters.SearchFilter,)
+    http_method_names = ("get", "post", "head")
     search_fields = ("url", "description", "user__id")
-    http_method_names = ["get", "post", "head"]
+    serializer_class = IssueSerializer
 
     def get_queryset(self):
-        anonymous_user = self.request.user.is_anonymous
-        user_id = self.request.user.id
-        if anonymous_user:
-            return Issue.objects.exclude(Q(is_hidden=True))
-        else:
-            return Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=user_id))
+        queryset = (
+            Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+            if self.request.user.is_authenticated
+            else Issue.objects.exclude(Q(is_hidden=True))
+        )
+
+        status = self.request.GET.get("status")
+        if status:
+            queryset = queryset.filter(status=status)
+
+        domain_url = self.request.GET.get("domain")
+        if domain_url:
+            queryset = queryset.filter(domain__url=domain_url)
+
+        return queryset
 
     def get_issue_info(self, request, issue):
         if issue is None:
             return {}
 
-        screenshots = [
-            # replacing space with url space notation
-            request.build_absolute_uri(screenshot.image.url)
-            for screenshot in issue.screenshots.all()
-        ] + ([request.build_absolute_uri(issue.screenshot.url)] if issue.screenshot else [])
+        screenshots = (
+            [
+                # replacing space with url space notation
+                request.build_absolute_uri(screenshot.image.url)
+                for screenshot in issue.screenshots.all()
+            ]
+            + [request.build_absolute_uri(issue.screenshot.url)]
+            if issue.screenshot
+            else []
+        )
 
-        upvotes = issue.upvoted.all().__len__()
-        flags = issue.flaged.all().__len__()
-        upvotted = False
-        flagged = False
-
-        if type(request.user) != AnonymousUser:
-            upvotted = bool(request.user.userprofile.issue_upvoted.filter(id=issue.id).first())
-            flagged = bool(request.user.userprofile.issue_flaged.filter(id=issue.id).first())
-
-        issue = Issue.objects.filter(id=issue.id)
-        issue_obj = issue.first()
-
-        issue_data = IssueSerializer(issue_obj)
+        is_upvoted = False
+        is_flagged = False
+        if request.user.is_authenticated:
+            is_upvoted = request.user.userprofile.issue_upvoted.filter(id=issue.id).exists()
+            is_flagged = request.user.userprofile.issue_flaged.filter(id=issue.id).exists()
 
         return {
-            **issue_data.data,
-            "closed_by": issue_obj.closed_by.username if issue_obj.closed_by else None,
-            "upvotes": upvotes,
-            "flags": flags,
-            "upvotted": upvotted,
-            "flagged": flagged,
+            **IssueSerializer(issue).data,
+            "closed_by": issue.closed_by.username if issue.closed_by else None,
+            "flagged": is_flagged,
+            "flags": issue.flaged.count(),
             "screenshots": screenshots,
+            "upvotes": issue.upvoted.count(),
+            "upvotted": is_upvoted,
         }
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-
         issues = []
         page = self.paginate_queryset(queryset)
         if page is None:
             return Response(issues)
-
         for issue in page:
             issues.append(self.get_issue_info(request, issue))
-
         return self.get_paginated_response(issues)
 
     def retrieve(self, request, pk, *args, **kwargs):
-        issue = Issue.objects.filter(id=pk).first()
-        return Response(self.get_issue_info(request, issue))
+        return Response(self.get_issue_info(request, Issue.objects.filter(id=pk).first()))
 
     def create(self, request, *args, **kwargs):
-        if len(self.request.FILES.getlist("screenshots")) > 5:
+        screenshot_count = len(self.request.FILES.getlist("screenshots"))
+        if screenshot_count == 0:
+            return Response(
+                {"error": "Upload at least one image!"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        elif screenshot_count > 5:
             return Response({"error": "Max limit of 5 images!"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if len(self.request.FILES.getlist("screenshots")) == 0:
-            return Response(
-                {"error": "Upload atleast one image!"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        response = super().create(request, *args, **kwargs)
-        data = response.data
+        data = super().create(request, *args, **kwargs).data
         issue = Issue.objects.filter(id=data["id"]).first()
 
         for screenshot in self.request.FILES.getlist("screenshots"):
-            img_valid = image_validator(screenshot)
-            if img_valid is True:
+            if image_validator(screenshot):
                 filename = screenshot.name
-                extension = filename.split(".")[-1]
-                screenshot.name = (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
+                screenshot.name = (
+                    f"{filename[:10]}{str(uuid.uuid4())[:40]}.{filename.split('.')[-1]}"
+                )
                 default_storage.save(f"screenshots/{screenshot.name}", screenshot)
                 IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}")
             else:
-                return Response({"error": img_valid}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Invalid image"}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(self.get_issue_info(request, issue))
 
@@ -606,3 +608,12 @@ class InviteFriendApiViewset(APIView):
             },
             status=200,
         )
+
+
+class CompanyViewSet(viewsets.ModelViewSet):
+    queryset = Company.objects.all()
+    serializer_class = CompanySerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ("id", "name")
+    http_method_names = ("get", "post", "put")

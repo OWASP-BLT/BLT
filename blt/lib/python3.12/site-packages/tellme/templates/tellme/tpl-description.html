@@ -1,0 +1,15 @@
+{% load i18n %}
+<div id="feedback-welcome">
+    <div class="feedback-logo">{% trans 'Feedback' %}</div>
+    <p>{% trans 'Feedback lets you send us suggestions about this site. We welcome problem reports, feature ideas and general comments.' %}</p>
+    {% if not user.is_authenticated %}
+        <p>{% trans 'If you wish to be contacted please leave us your email:' %}</p>
+        <input type='text' name="Email" id="feedback-user-email">
+    {% endif %}
+    <p>{% trans 'Start by writing a brief description:' %}</p>
+    <textarea id="feedback-note-tmp"></textarea>
+    <p>{% trans "Next we'll let you identify areas of the page related to your description." %}</p>
+    <button id="feedback-welcome-next" class="feedback-next-btn feedback-btn-gray">{% trans 'Next' %}</button>
+    <div id="feedback-welcome-error">{% trans 'Please enter a description.' %}</div>
+    <div class="feedback-wizard-close"></div>
+</div>

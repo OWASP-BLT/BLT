@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+
+        #bid {
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        #issueLinkInput, #bid_amount {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        #fetchbid,#submitBid {
+            padding: 8px 15px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        #BidDisplay {
+            margin-bottom: 10px;
+        }
+        #Link_pr {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #Link_pr a {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 5px;
+            background-color:  #e53e3e; 
+            color: #000;
+            text-decoration: none;
+        }
+
+        #invalidUrlMessage{
+            display: none;
+        }
+    </style>
+    <script>
+    function fetchBid() {
+        const issueUrl = document.getElementById('issueLinkInput').value;
+        const csrftoken = getCookie('csrftoken');
+        const githubUrlPattern = /^https?:\/\/github\.com\/.*$/i;
+        if (!githubUrlPattern.test(issueUrl)) {
+            document.getElementById('invalidUrlMessage').style.display = "block";
+            return;
+        }
+        else {
+            document.getElementById('invalidUrlMessage').style.display = "none";
+        }
+        fetch(`/fetch-current-bid/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({issue_url: issueUrl}),
+        })
+            .then(response => response.json())
+            .then(data => {
+                if ('current_bid' in data) {
+                    const currentBid = data.current_bid;
+                    document.getElementById('BidDisplay').innerHTML = `Current Bid:  ${currentBid} <br>`;
+                    const bidAmountInput = document.getElementById('bid_amount');
+                    bidAmountInput.setAttribute('max', currentBid - 1);
+
+                    // Start the countdown timer
+                    startTimer(time_left);
+                } else {
+                    document.getElementById('BidDisplay').innerHTML = 'No current bid';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+    // Function to start the countdown timer
+    function startTimer(time_left) {
+        const timerElement = document.getElementById('timer');
+
+        // Update the timer every second
+        const intervalId = setInterval(() => {
+            time_left -= 1;
+            if (time_left <= 0) {
+                clearInterval(intervalId);
+                timerElement.textContent = 'Expired';
+            } else {
+                timerElement.textContent = formatTime(time_left);
+            }
+        }, 1000);
+    }
+
+    // Function to format time in HH:MM:SS
+    function formatTime(time_left) {
+        let hours = Math.floor(time_left / 3600);
+        let minutes = Math.floor((time_left % 3600) / 60);
+        let seconds = time_left % 60;
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    // Function to retrieve the CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    </script>
+    <div>
+        <form id="bid" method="post" action="{% url 'BiddingData' %}">
+            {% csrf_token %}
+            <label>Issue link:</label>
+            <input type="text" id="issueLinkInput" name="issue_url">
+            <br>
+            <button id="fetchbid" type="button" onclick="fetchBid()">Fetch</button>
+            <br>
+            <p id="invalidUrlMessage">Please enter a valid GitHub link</p>
+            <p id="BidDisplay"></p>
+            <br>
+            <label id="bidamount">New Bid:</label>
+            <input type="number" id="bid_amount" name="bid_amount" required min="1">
+            <br>
+            <button type="submit" id="submitBid" onclick="OnSubmit()">Submit Bid</button>
+            <p type="hidden" id="verifycode"></p>
+        </form>
+    </div>
+    <div id="Link_pr">
+        <a href="{% url 'submit_pr' %}">Submit Your Pull Request</a>
+    </div>
+{% endblock content %}

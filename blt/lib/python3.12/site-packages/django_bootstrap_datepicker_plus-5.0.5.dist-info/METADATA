@@ -1,0 +1,243 @@
+Metadata-Version: 2.1
+Name: django-bootstrap-datepicker-plus
+Version: 5.0.5
+Summary: Bootstrap3/Bootstrap4/Bootstrap5 DatePickerInput, TimePickerInput, DateTimePickerInput, MonthPickerInput, YearPickerInput
+Home-page: https://github.com/monim67/django-bootstrap-datepicker-plus
+License: MIT
+Keywords: django,bootstrap,date-picker,time-picker,datetime-picker,date-range-picker
+Author: Abdul Monim
+Author-email: 6266677+monim67@users.noreply.github.com
+Requires-Python: >=3.8,<4.0
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Web Environment
+Classifier: Framework :: Django
+Classifier: Framework :: Django :: 2.0
+Classifier: Framework :: Django :: 3.0
+Classifier: Framework :: Django :: 4.0
+Classifier: Framework :: Django :: 5.0
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Utilities
+Requires-Dist: Django (>=2,<6)
+Requires-Dist: pydantic
+Requires-Dist: typing-extensions
+Project-URL: Documentation, https://django-bootstrap-datepicker-plus.readthedocs.io/en/latest/
+Project-URL: Repository, https://github.com/monim67/django-bootstrap-datepicker-plus
+Description-Content-Type: text/x-rst
+
+########################################
+django-bootstrap-datepicker-plus
+########################################
+
+This django widget contains Bootstrap 3, Bootstrap 4 and Bootstrap 5
+Date-Picker, Time-Picker, DateTime-Picker, Month-Picker and Year-Picker input
+with date-range-picker functionality for django version >= 2.0.
+The widget implements `bootstrap-datetimepicker v4 <https://getdatepicker.com/4/>`_
+to show bootstrap-datepicker in django model forms and custom forms
+which can be configured easily for date-range selection.
+
+If you are not using Bootstrap use `django-flatpickr <https://github.com/monim67/django-flatpickr>`_ instead.
+
+|  |build-status| |docs-status| |coverage|
+|  |pyversions| |djversions| |license|
+
+|  |date-picker-image| |datetime-picker-image| |time-picker-image|
+
+
+
+********************
+Demo
+********************
+
+- `With Bootstrap 3 <https://monim67.github.io/django-bootstrap-datepicker-plus/demo/bootstrap3/>`_
+- `With Bootstrap 4 <https://monim67.github.io/django-bootstrap-datepicker-plus/demo/bootstrap4/>`_
+- `With Bootstrap 5 <https://monim67.github.io/django-bootstrap-datepicker-plus/demo/bootstrap5/>`_
+
+
+
+********************
+Getting Started
+********************
+
+- Follow the `Getting Started doc <https://django-bootstrap-datepicker-plus.readthedocs.io/en/latest/Getting_Started.html>`_.
+- Head over to `Usage <#usage>`_ section to see how to use it in forms and views.
+- Read detailed `Documentation on ReadTheDocs <https://django-bootstrap-datepicker-plus.readthedocs.io/en/latest/>`_
+- Looks complex to get started? Follow a `Quick Walkthrough Tutorial <https://django-bootstrap-datepicker-plus.readthedocs.io/en/latest/Walkthrough.html>`_
+- Getting errors? See `Troubleshoot instructions <https://django-bootstrap-datepicker-plus.readthedocs.io/en/latest/Troubleshooting.html>`_
+
+
+
+********************
+Usage
+********************
+
+
+++++++++++++++++++++++++++++++
+Usage in Generic View
+++++++++++++++++++++++++++++++
+
+.. code:: python
+
+    # File: views.py
+    from bootstrap_datepicker_plus.widgets import DateTimePickerInput
+    from django.views import generic
+    from .models import Question
+
+    class CreateView(generic.edit.CreateView):
+        model = Question
+        fields = ["question_text", "pub_date"]
+        def get_form(self):
+            form = super().get_form()
+            form.fields["pub_date"].widget = DateTimePickerInput()
+            return form
+
+
+++++++++++++++++++++++++++++++
+Advanced Usage
+++++++++++++++++++++++++++++++
+
+- `Usage in Custom Form <https://django-bootstrap-datepicker-plus.readthedocs.io/en/latest/Usage.html#custom-form-usage>`_
+- `Usage in Model Form <https://django-bootstrap-datepicker-plus.readthedocs.io/en/latest/Usage.html#model-form-usage>`_
+- `Usage doc <https://django-bootstrap-datepicker-plus.readthedocs.io/en/latest/Usage.html>`_
+
+
+++++++++++++++++++++++++++++++
+Types of DatePickers
+++++++++++++++++++++++++++++++
+
+The widget contains all types of date-picker you may ever need.
+
+.. code:: python
+
+    # File: forms.py
+    from bootstrap_datepicker_plus.widgets import DatePickerInput, TimePickerInput, DateTimePickerInput, MonthPickerInput, YearPickerInput
+    from django import forms
+
+    class EventForm(forms.ModelForm):
+        class Meta:
+            model = Event
+            fields = ["start_date", "start_time", "start_datetime", "start_month", "start_year"]
+            widgets = {
+                "start_date": DatePickerInput(),
+                "start_time": TimePickerInput(),
+                "start_datetime": DateTimePickerInput(),
+                "start_month": MonthPickerInput(),
+                "start_year": YearPickerInput(),
+            }
+
+
+++++++++++++++++++++++++++++++
+Implement date-range-picker
+++++++++++++++++++++++++++++++
+
+DatePickers can be linked to select a date-range or time-range.
+
+.. code:: python
+
+    # File: forms.py
+    from bootstrap_datepicker_plus.widgets import DatePickerInput, TimePickerInput
+    from django import forms
+
+    class EventForm(forms.ModelForm):
+        class Meta:
+            model = Event
+            fields = ["name", "start_date", "end_date", "start_time", "end_time"]
+            widgets = {
+                "start_date": DatePickerInput(),
+                "end_date": DatePickerInput(range_from="start_date"),
+                "start_time": TimePickerInput(),
+                "end_time": TimePickerInput(range_from="start_time"),
+            }
+
+
+++++++++++++++++++++++++++++++
+Customization
+++++++++++++++++++++++++++++++
+
+- `Customize date format, language <https://django-bootstrap-datepicker-plus.readthedocs.io/en/latest/customization.html>`_
+- `Use custom template for widget input <https://django-bootstrap-datepicker-plus.readthedocs.io/en/latest/Template_Customizing.html>`_
+
+
+********************
+Contributing
+********************
+
+- `CONTRIBUTING.md <https://github.com/monim67/django-bootstrap-datepicker-plus/blob/master/.github/CONTRIBUTING.md>`_.
+- `CODE_OF_CONDUCT.md <https://github.com/monim67/django-bootstrap-datepicker-plus/blob/master/.github/CODE_OF_CONDUCT.md>`_.
+
+********************
+License
+********************
+
+This project is licensed under `MIT LICENSE <https://github.com/monim67/django-bootstrap-datepicker-plus/blob/master/LICENSE>`_ file for details.
+
+********************
+Acknowledgments
+********************
+
+This project implements `Eonasdan/bootstrap-datetimepicker <https://github.com/Eonasdan/bootstrap-datetimepicker>`_ to display date-pickers.
+The project was initially forked from `pbucher/django-bootstrap-datepicker <https://github.com/pbucher/django-bootstrap-datepicker>`_ and
+later reworked completely under MIT Licence.
+
+
+|buymeacoffee|
+
+
+.. |date-picker-image| image:: https://raw.githubusercontent.com/monim67/django-bootstrap-datepicker-plus/26d89a744d403a895422313a48c02885c4718251/images/date-picker.png
+    :alt: Date-picker
+    :width: 218px
+    :height: 280px
+
+.. |datetime-picker-image| image:: https://raw.githubusercontent.com/monim67/django-bootstrap-datepicker-plus/26d89a744d403a895422313a48c02885c4718251/images/datetime-picker.png
+    :alt: Datetime-picker
+    :width: 218px
+    :height: 280px
+
+.. |time-picker-image| image:: https://raw.githubusercontent.com/monim67/django-bootstrap-datepicker-plus/26d89a744d403a895422313a48c02885c4718251/images/time-picker.png
+    :alt: Time-picker
+    :width: 218px
+    :height: 280px
+
+.. |build-status| image:: https://github.com/monim67/django-bootstrap-datepicker-plus/actions/workflows/build.yml/badge.svg?event=push
+    :target: https://github.com/monim67/django-bootstrap-datepicker-plus/actions/workflows/build.yml
+    :alt: Build Status
+    :height: 20px
+
+.. |docs-status| image:: https://readthedocs.org/projects/django-bootstrap-datepicker-plus/badge/?version=latest
+    :target: https://django-bootstrap-datepicker-plus.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+    :height: 20px
+
+.. |coverage| image:: https://coveralls.io/repos/github/monim67/django-bootstrap-datepicker-plus/badge.svg?branch=master
+    :target: https://coveralls.io/github/monim67/django-bootstrap-datepicker-plus?branch=master
+    :alt: Coverage Status
+    :height: 20px
+
+.. |pyversions| image:: https://img.shields.io/pypi/pyversions/django-bootstrap-datepicker-plus.svg
+    :target: https://pypi.python.org/pypi/django-bootstrap-datepicker-plus
+    :alt: Python Versions
+    :height: 20px
+
+.. |djversions| image:: https://img.shields.io/pypi/djversions/django-bootstrap-datepicker-plus.svg
+    :target: https://pypi.python.org/pypi/django-bootstrap-datepicker-plus
+    :alt: DJango Versions
+    :height: 20px
+
+.. |license| image:: https://img.shields.io/pypi/l/django-bootstrap-datepicker-plus.svg
+    :target: https://pypi.python.org/pypi/django-bootstrap-datepicker-plus
+    :alt: Licence
+    :height: 20px
+
+.. |buymeacoffee| image:: https://cdn.buymeacoffee.com/buttons/v2/default-orange.png
+   :target: https://www.buymeacoffee.com/monim67
+   :alt: Buy Me A Coffee
+   :height: 48px
+

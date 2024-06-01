@@ -1,0 +1,66 @@
+Metadata-Version: 2.1
+Name: django-simple-captcha
+Version: 0.6.0
+Summary: A very simple, yet powerful, Django captcha application
+Home-page: https://github.com/mbi/django-simple-captcha
+Author: Marco Bonetti
+Author-email: mbonetti@gmail.com
+License: MIT
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Security
+Classifier: Topic :: Internet :: WWW/HTTP
+Classifier: Framework :: Django
+License-File: LICENSE
+Requires-Dist: Django >=4.2
+Requires-Dist: Pillow >=6.2.0
+Requires-Dist: django-ranged-response ==0.2.0
+Provides-Extra: test
+Requires-Dist: testfixtures ; extra == 'test'
+
+*********************
+Django Simple Captcha
+*********************
+
+.. image:: https://github.com/mbi/django-simple-captcha/actions/workflows/test.yml/badge.svg
+  :target: https://github.com/mbi/django-simple-captcha/actions/workflows/test.yml
+
+.. image:: https://img.shields.io/pypi/v/django-simple-captcha
+  :target: https://pypi.org/project/django-simple-captcha/
+
+.. image:: https://img.shields.io/pypi/l/django-simple-captcha
+  :target: https://github.com/mbi/django-simple-captcha/blob/master/LICENSE
+
+
+Django Simple Captcha is an extremely simple, yet highly customizable Django application to add captcha images to any Django form.
+
+.. image:: http://django-simple-captcha.readthedocs.io/en/latest/_images/captcha3.png
+
+Features
+++++++++
+
+* Very simple to setup and deploy, yet very configurable
+* Can use custom challenges (e.g. random chars, simple math, dictionary word, ...)
+* Custom generators, noise and filter functions alter the look of the generated image
+* Supports text-to-speech audio output of the challenge text, for improved accessibility
+* Ajax refresh
+
+Requirements
+++++++++++++
+
+* Django 4.2+, Python3.8+
+* A recent version of the Pillow compiled with FreeType support
+* Flite is required for text-to-speech (audio) output, but not mandatory
+
+Documentation
++++++++++++++
+
+Read the `documentation online <http://django-simple-captcha.readthedocs.org/en/latest/>`_.

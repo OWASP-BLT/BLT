@@ -248,6 +248,16 @@
                         <span>Stats</span>
                     </a>
                 </li>
+                <!-- Place a Bid -->
+                <li class="{% if request.path == '/bidding/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'BiddingData' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <div class="w-8 mr-4">
+                            <i class="fas fa-hand-holding-usd"></i>
+                        </div>
+                        <span>Place a Bid</span>
+                    </a>
+                </li>
             </ul>
         </div>
         <div class="overflow-hidden ">

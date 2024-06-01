@@ -5,6 +5,7 @@ from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
 from website.models import (
+    Bid,
     Company,
     CompanyAdmin,
     ContributorStats,
@@ -70,6 +71,19 @@ class WinnerAdmin(admin.ModelAdmin):
         "runner",
         "second_runner",
         "prize_distributed",
+    )
+
+
+class BidAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "issue_url",
+        "pr_link",
+        "amount",
+        "bch_address",
+        "status",
+        "created",
+        "modified",
     )
 
 
@@ -224,6 +238,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 admin.site.register(ContributorStats)
 
+admin.site.register(Bid, BidAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(User, UserAdmin)
 

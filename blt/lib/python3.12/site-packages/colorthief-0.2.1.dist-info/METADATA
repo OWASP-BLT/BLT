@@ -1,0 +1,31 @@
+Metadata-Version: 2.0
+Name: colorthief
+Version: 0.2.1
+Summary: A module for grabbing the color palette from an image.
+Home-page: https://github.com/fengsp/color-thief-py
+Author: Shipeng Feng
+Author-email: fsp261@gmail.com
+License: BSD
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Requires-Dist: Pillow
+
+Color Thief
+-----------
+
+A module for grabbing the color palette from an image.
+
+Links
+`````
+
+* `github <https://github.com/fengsp/color-thief-py>`_
+* `development version
+  <http://github.com/fengsp/color-thief-py/zipball/master#egg=color-thief-py-dev>`_
+
+
+
