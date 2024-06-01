@@ -87,6 +87,7 @@ INSTALLED_APPS = (
     "email_obfuscator",
     "import_export",
     "comments",
+    "channels",
     "annoying",
     "rest_framework",
     "django_filters",
