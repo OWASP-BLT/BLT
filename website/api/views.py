@@ -9,7 +9,6 @@ from django.db.models import Count, Q, Sum
 from django.template.loader import render_to_string
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
@@ -401,7 +400,6 @@ class LeaderboardApiViewSet(APIView):
 
         return paginator.get_paginated_response(page)
 
-    @action(detail=True, methods=["GET"])
     def get(self, request, format=None, *args, **kwargs):
         filter = request.query_params.get("filter")
         group_by_month = request.query_params.get("group_by_month")
@@ -418,22 +416,15 @@ class LeaderboardApiViewSet(APIView):
             return self.global_leaderboard(request, *args, **kwargs)
 
     def company_leaderboard(self, request, *args, **kwargs):
-        company_urls = (
-            Issue.objects.values("domain")
-            .annotate(issue_count=Count("domain"))
-            .order_by("-issue_count")[:100]
+        paginator = PageNumberPagination()
+        companies = (
+            Company.objects.values()
+            .annotate(issue_count=Count("domain__issue"))
+            .order_by("-issue_count")
         )
+        page = paginator.paginate_queryset(companies, request)
 
-        companies = []
-        for url in company_urls:
-            domain = Domain.objects.filter(id=url["domain"]).first()
-            company = Company.objects.filter(url=domain.url).first()
-            serializer = CompanySerializer(company)
-            companies.append({"company": serializer.data, "issue_count": url["issue_count"]})
-            # if len(companies) >= 100:
-            #     break
-
-        return Response(companies)
+        return paginator.get_paginated_response(page)
 
 
 class StatsApiViewset(APIView):
