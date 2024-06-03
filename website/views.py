@@ -97,7 +97,7 @@ from website.models import (
     Winner,
 )
 
-from .bot import load_vector_store, conversation_chain
+from .bot import conversation_chain, load_vector_store
 from .forms import (
     CaptchaForm,
     HuntForm,
@@ -4524,7 +4524,7 @@ def submit_pr(request):
 vector_store = None
 
 
-@api_view(['POST'])
+@api_view(["POST"])
 def question_answer_view(request):
     question = request.data.get("question", "")
 

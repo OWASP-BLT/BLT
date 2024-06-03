@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand
 
 from website.bot import embed_documents_and_save, load_document, split_document
 
+
 class Command(BaseCommand):
     help = "Update the FAISS database with new documents"
 
