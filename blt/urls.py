@@ -86,11 +86,11 @@ from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
     google_callback,
     like_issue2,
     like_issue3,
+    question_answer_view,
     select_bid,
     submit_pr,
     subscribe_to_domains,
     vote_count,
-    question_answer_view
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
@@ -524,7 +524,7 @@ urlpatterns = [
         ContributorStatsView.as_view(today=True),
         name="today-contributor-stats",
     ),
-    path('api/ask/', question_answer_view, name='ask'),
+    path("api/ask/", question_answer_view, name="ask"),
 ]
 
 if settings.DEBUG:

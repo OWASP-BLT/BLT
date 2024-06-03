@@ -68,13 +68,12 @@ from django.views.decorators.http import require_GET
 from django.views.generic import DetailView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
 from PIL import Image, ImageDraw, ImageFont
+from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
 from user_agents import parse
-from .bot import load_vector_store, conversation_chain
 
 from blt import settings
 from comments.models import Comment
@@ -98,6 +97,7 @@ from website.models import (
     Winner,
 )
 
+from .bot import load_vector_store, conversation_chain
 from .forms import (
     CaptchaForm,
     HuntForm,
@@ -4523,36 +4523,37 @@ def submit_pr(request):
 # Global variable to store the vector store
 vector_store = None
 
+
 @api_view(['POST'])
 def question_answer_view(request):
-    question = request.data.get('question', '')
+    question = request.data.get("question", "")
 
     # apply validation for question , there should be a question and the question should be a string and also the length of the question should be greater than 0
     if not question or not isinstance(question, str) or len(question) == 0:
-        return Response({'error': 'Invalid question'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
 
     global vector_store
     if vector_store is None:
-        db_path = os.path.join(os.path.dirname(__file__), 'faiss_index')
+        db_path = os.path.join(os.path.dirname(__file__), "faiss_index")
         print(f"Loading FAISS index from: {db_path}")
         vector_store = load_vector_store(db_path)
 
     # Handle the "exit" command
     if question.lower() == "exit":
         # if buffer is present in the session then delete it
-        if 'buffer' in request.session:
-            del request.session['buffer']
-        return Response({'answer': 'Conversation memory cleared.'}, status=status.HTTP_200_OK)
+        if "buffer" in request.session:
+            del request.session["buffer"]
+        return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
 
     # Initialize session state if not already initialized
-    if 'buffer' not in request.session:
+    if "buffer" not in request.session:
         crc, memory = conversation_chain(vector_store)
     else:
         crc, memory = conversation_chain(vector_store)
-        memory.buffer = request.session['buffer']
+        memory.buffer = request.session["buffer"]
 
     # Continue the conversation
-    response = crc.invoke({'question': question})
-    request.session['buffer'] = memory.buffer
+    response = crc.invoke({"question": question})
+    request.session["buffer"] = memory.buffer
 
-    return Response({'answer': response['answer']}, status=status.HTTP_200_OK)
+    return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
