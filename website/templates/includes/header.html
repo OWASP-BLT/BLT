@@ -318,8 +318,13 @@
             const message = chatInput.value;
             chatInput.value = '';
             if (message.trim() === "") return;
-            chatLog.innerHTML += '<div class="bg-red-100 text-red-800 p-2 rounded-lg mb-2">You: ' + message + '</div>';
+
+            // Escape HTML meta-characters in the message
+            const escapedMessage = message.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+            chatLog.innerHTML += '<div class="bg-red-100 text-red-800 p-2 rounded-lg mb-2">You: ' + escapedMessage + '</div>';
             loading.style.display = 'flex';
+
             fetch('/api/ask/', {
                 method: 'POST',
                 headers: {
@@ -329,7 +334,10 @@
             })
             .then(response => response.json())
             .then(data => {
-                chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + data.answer + '</div>';
+                // Escape HTML meta-characters in the response
+                const escapedAnswer = data.answer.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                
+                chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + escapedAnswer + '</div>';
                 chatLog.scrollTop = chatLog.scrollHeight;  // Scroll to the bottom
                 loading.style.display = 'none';
             })
