@@ -82,7 +82,6 @@ def load_vector_store(db_path):
         db = FAISS.load_local(db_path, embeddings, allow_dangerous_deserialization=True)
         return db
     except Exception as e:
-        print("Error loading vector store: ", e	)
         return "Bot is down due to API issues."
 
 

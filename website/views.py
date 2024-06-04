@@ -4539,7 +4539,10 @@ def question_answer_view(request):
 
         vector_store = load_vector_store(db_path)
         if isinstance(vector_store, str) and "Bot is down" in vector_store:
-            return Response({"error": "Bot is down due to API issues."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return Response(
+                {"error": "Bot is down due to API issues."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
     # Handle the "exit" command
     if question.lower() == "exit":
@@ -4556,7 +4559,9 @@ def question_answer_view(request):
         else:
             crc, memory = conversation_chain(vector_store)
     except Exception as e:
-        return Response({"error": "Bot is down due to API issues."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return Response(
+            {"error": "Bot is down due to API issues."}, status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
 
     # Continue the conversation
     try:
@@ -4564,4 +4569,6 @@ def question_answer_view(request):
         request.session["buffer"] = memory.buffer
         return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
     except Exception as e:
-        return Response({"error": "Bot is down due to API issues."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return Response(
+            {"error": "Bot is down due to API issues."}, status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
