@@ -22,16 +22,16 @@ def load_document(file_path):
         ".pdf": PyPDFLoader,
         ".docx": Docx2txtLoader,
         ".txt": TextLoader,
-        ".md": UnstructuredMarkdownLoader
+        ".md": UnstructuredMarkdownLoader,
     }
 
     file_path = Path(file_path)
     extension = file_path.suffix
     Loader = loaders.get(extension)
-    
+
     if Loader is None:
         raise ValueError(f"Unsupported file format: {extension}")
-    
+
     return Loader(file_path).load()
 
 
