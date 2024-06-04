@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 from django.core.management.base import BaseCommand
 
@@ -10,35 +10,29 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         # Calculate the base directory
-        base_dir = os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        )
+        base_dir = Path(__file__).resolve().parents[3]
 
         # Set the paths to the website directory, documents, and faiss_index directories
-        website_dir = os.path.join(base_dir, "website")
-        documents_dir = os.path.join(website_dir, "documents")
-        faiss_index_dir = os.path.join(website_dir, "")
-        processed_files_path = os.path.join(website_dir, "processed_files.txt")
+        website_dir = base_dir / "website"
+        documents_dir = website_dir / "documents"
+        faiss_index_dir = website_dir / ""
+        processed_files_path = website_dir / "processed_files.txt"
 
         # Check if the documents directory exists
-        if not os.path.exists(documents_dir):
-            self.stdout.write(
-                self.style.ERROR(f"Documents directory does not exist: {documents_dir}")
-            )
+        if not documents_dir.exists():
+            self.stdout.write(self.style.ERROR(f"Documents directory does not exist: {documents_dir}"))
             return
 
         # Load the list of already processed files
-        if os.path.exists(processed_files_path):
-            with open(processed_files_path, "r") as f:
+        if processed_files_path.exists():
+            with processed_files_path.open("r") as f:
                 processed_files = set(f.read().splitlines())
         else:
             processed_files = set()
 
         # Load documents and filter out already processed files
-        document_files = [
-            f for f in os.listdir(documents_dir) if os.path.isfile(os.path.join(documents_dir, f))
-        ]
-        new_documents = [f for f in document_files if f not in processed_files]
+        document_files = [f for f in documents_dir.iterdir() if f.is_file()]
+        new_documents = [f for f in document_files if f.name not in processed_files]
 
         if not new_documents:
             self.stdout.write(self.style.WARNING("No new documents to process"))
@@ -46,17 +40,16 @@ class Command(BaseCommand):
 
         all_split_docs = []
         for doc_file in new_documents:
-            doc_path = os.path.join(documents_dir, doc_file)
-            document = load_document(doc_path)
+            document = load_document(doc_file)
             split_docs = split_document(1000, 200, document)
             all_split_docs.extend(split_docs)
 
         # Embed the new documents
-        embed_documents_and_save(all_split_docs, db_dir=faiss_index_dir)
+        embed_documents_and_save(all_split_docs, db_dir=str(faiss_index_dir))
 
         # Update the list of processed files
-        with open(processed_files_path, "a") as f:
-            for filename in new_documents:
-                f.write(f"{filename}\n")
+        with processed_files_path.open("a") as f:
+            for doc_file in new_documents:
+                f.write(f"{doc_file.name}\n")
 
         self.stdout.write(self.style.SUCCESS("Documents embedded and saved successfully"))

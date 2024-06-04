@@ -1,7 +1,7 @@
 import base64
 import io
 import json
-import os
+from pathlib import Path
 import random
 import re
 import time
@@ -4528,14 +4528,13 @@ vector_store = None
 def question_answer_view(request):
     question = request.data.get("question", "")
 
-    # apply validation for question , there should be a question and the question should be a string and also the length of the question should be greater than 0
-    if not question or not isinstance(question, str) or len(question) == 0:
+    # Apply validation for question
+    if not question or not isinstance(question, str):
         return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
 
     global vector_store
     if vector_store is None:
-        db_path = os.path.join(os.path.dirname(__file__), "faiss_index")
-        print(f"Loading FAISS index from: {db_path}")
+        db_path = Path(__file__).resolve().parent / "faiss_index"
         vector_store = load_vector_store(db_path)
 
     # Handle the "exit" command
@@ -4546,11 +4545,11 @@ def question_answer_view(request):
         return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
 
     # Initialize session state if not already initialized
-    if "buffer" not in request.session:
-        crc, memory = conversation_chain(vector_store)
-    else:
+    if "buffer" in request.session:
         crc, memory = conversation_chain(vector_store)
         memory.buffer = request.session["buffer"]
+    else:
+        crc, memory = conversation_chain(vector_store)
 
     # Continue the conversation
     response = crc.invoke({"question": question})

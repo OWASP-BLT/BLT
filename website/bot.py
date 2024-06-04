@@ -1,5 +1,4 @@
-import os
-
+from pathlib import Path
 from dotenv import find_dotenv, load_dotenv
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationSummaryMemory
@@ -19,25 +18,25 @@ load_dotenv(find_dotenv(), override=True)
 
 
 def load_document(file_path):
-    name, extension = os.path.splitext(file_path)
-    if extension == ".pdf":
-        loader = PyPDFLoader(file_path)
-    elif extension == ".docx":
-        loader = Docx2txtLoader(file_path)
-    elif extension == ".txt":
-        loader = TextLoader(file_path)
-    elif extension == ".md":
-        loader = UnstructuredMarkdownLoader(file_path)
-    else:
-        raise ValueError("Unsupported file format: " + extension)
-    data = loader.load()
-    return data
+    loaders = {
+        ".pdf": PyPDFLoader,
+        ".docx": Docx2txtLoader,
+        ".txt": TextLoader,
+        ".md": UnstructuredMarkdownLoader
+    }
+
+    file_path = Path(file_path)
+    extension = file_path.suffix
+    Loader = loaders.get(extension)
+    
+    if Loader is None:
+        raise ValueError(f"Unsupported file format: {extension}")
+    
+    return Loader(file_path).load()
 
 
 def load_directory(dir_path):
-    loader = DirectoryLoader(dir_path)
-    data = loader.load()
-    return data
+    return DirectoryLoader(dir_path).load()
 
 
 def split_document(chunk_size, chunk_overlap, document):
@@ -46,31 +45,34 @@ def split_document(chunk_size, chunk_overlap, document):
         chunk_overlap=chunk_overlap,
         length_function=len,
     )
-    docs = text_splitter.split_documents(document)
-    return docs
+    return text_splitter.split_documents(document)
 
 
 def embed_documents_and_save(embedDocs, db_dir="", db_name="faiss_index"):
-    if not os.path.exists(db_dir):
-        os.makedirs(db_dir)
+    db_path = Path(db_dir)
+    if not db_path.exists():
+        db_path.mkdir(parents=True, exist_ok=True)
 
-    db_path = os.path.join(db_dir, db_name)
+    db_file_path = db_path / db_name
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
-    if os.path.exists(db_path):
-        db = FAISS.load_local(db_path, embeddings, allow_dangerous_deserialization=True)
+    if db_file_path.exists():
+        db = FAISS.load_local(db_file_path, embeddings, allow_dangerous_deserialization=True)
         db.add_documents(embedDocs)
     else:
         db = FAISS.from_documents(embedDocs, embeddings)
 
-    db.save_local(db_path)
+    db.save_local(db_file_path)
     return db
 
 
 def load_vector_store(db_path):
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-    if not os.path.exists(db_path):
+    db_path = Path(db_path)
+
+    if not db_path.exists():
         raise FileNotFoundError(f"FAISS index directory does not exist: {db_path}")
+
     db = FAISS.load_local(db_path, embeddings, allow_dangerous_deserialization=True)
     return db
 
