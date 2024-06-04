@@ -4536,7 +4536,10 @@ def question_answer_view(request):
     global vector_store
     if vector_store is None:
         db_path = Path(__file__).resolve().parent / "faiss_index"
+
         vector_store = load_vector_store(db_path)
+        if isinstance(vector_store, str) and "Bot is down" in vector_store:
+            return Response({"error": "Bot is down due to API issues."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
     # Handle the "exit" command
     if question.lower() == "exit":
@@ -4546,14 +4549,19 @@ def question_answer_view(request):
         return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
 
     # Initialize session state if not already initialized
-    if "buffer" in request.session:
-        crc, memory = conversation_chain(vector_store)
-        memory.buffer = request.session["buffer"]
-    else:
-        crc, memory = conversation_chain(vector_store)
+    try:
+        if "buffer" in request.session:
+            crc, memory = conversation_chain(vector_store)
+            memory.buffer = request.session["buffer"]
+        else:
+            crc, memory = conversation_chain(vector_store)
+    except Exception as e:
+        return Response({"error": "Bot is down due to API issues."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
     # Continue the conversation
-    response = crc.invoke({"question": question})
-    request.session["buffer"] = memory.buffer
-
-    return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
+    try:
+        response = crc.invoke({"question": question})
+        request.session["buffer"] = memory.buffer
+        return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error": "Bot is down due to API issues."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)

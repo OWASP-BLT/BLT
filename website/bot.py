@@ -55,27 +55,35 @@ def embed_documents_and_save(embedDocs, db_dir="", db_name="faiss_index"):
         db_path.mkdir(parents=True, exist_ok=True)
 
     db_file_path = db_path / db_name
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
-    if db_file_path.exists():
-        db = FAISS.load_local(db_file_path, embeddings, allow_dangerous_deserialization=True)
-        db.add_documents(embedDocs)
-    else:
-        db = FAISS.from_documents(embedDocs, embeddings)
+    try:
+        embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+        if db_file_path.exists():
+            db = FAISS.load_local(db_file_path, embeddings, allow_dangerous_deserialization=True)
+            db.add_documents(embedDocs)
+        else:
+            db = FAISS.from_documents(embedDocs, embeddings)
 
-    db.save_local(db_file_path)
-    return db
+        db.save_local(db_file_path)
+        return db
+    except Exception as e:
+        return "Bot is down due to API issues."
 
 
 def load_vector_store(db_path):
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-    db_path = Path(db_path)
+    try:
+        print("Loading vector store...")
+        embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+        db_path = Path(db_path)
 
-    if not db_path.exists():
-        raise FileNotFoundError(f"FAISS index directory does not exist: {db_path}")
+        if not db_path.exists():
+            raise FileNotFoundError(f"FAISS index directory does not exist: {db_path}")
 
-    db = FAISS.load_local(db_path, embeddings, allow_dangerous_deserialization=True)
-    return db
+        db = FAISS.load_local(db_path, embeddings, allow_dangerous_deserialization=True)
+        return db
+    except Exception as e:
+        print("Error loading vector store: ", e	)
+        return "Bot is down due to API issues."
 
 
 def conversation_chain(vector_store):

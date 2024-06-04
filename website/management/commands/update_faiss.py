@@ -43,7 +43,7 @@ class Command(BaseCommand):
         all_split_docs = []
         for doc_file in new_documents:
             document = load_document(doc_file)
-            split_docs = split_document(1000, 200, document)
+            split_docs = split_document(1000, 100, document)
             all_split_docs.extend(split_docs)
 
         # Embed the new documents
