@@ -15,7 +15,7 @@ beautifulsoup4 = "^4.12.3"
 colorthief = "^0.2.1"
 django-email-obfuscator = "^0.1.5"
 django-gravatar2 = "^1.4.4"
-django-import-export = "^4.0.6"
+django-import-export = "^4.0.7"
 django-annoying = "^0.10.6"
 dj-rest-auth = "^5.0.2"
 tweepy = "^4.8.0"
@@ -76,7 +76,7 @@ faiss-cpu = "^1.8.0"
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"
 isort = "^5.13.2"
-ruff = "^0.4.6"
+ruff = "^0.4.7"
 
 [tool.isort]
 known_first_party = ["blt"]
