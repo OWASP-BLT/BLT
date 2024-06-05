@@ -6,7 +6,7 @@ authors = ["OWASP BLT <you@example.com>"]
 license = "AGPLv3"
 
 [tool.poetry.dependencies]
-python = "3.12.1"
+python = "3.12.3"
 toml = "^0.10.2"
 Django = "^5.0.6"
 dj-database-url = "^1.0.0"
@@ -65,6 +65,7 @@ sentry-sdk = "^2.3.1"
 bitcash = "^1.0.2"
 django-channels = "^0.7.0"
 channels-redis = "^4.2.0"
+channels = "^4.1.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"
