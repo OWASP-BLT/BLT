@@ -6,35 +6,23 @@ authors = ["OWASP BLT <you@example.com>"]
 license = "AGPLv3"
 
 [tool.poetry.dependencies]
-python = "3.12.1"
+python = "3.12.3"
 toml = "^0.10.2"
 Django = "^5.0.6"
-dj-database-url = "^1.0.0"
+dj-database-url = "^2.2.0"
 django-allauth = "^0.61.1"
 beautifulsoup4 = "^4.12.3"
 colorthief = "^0.2.1"
 django-email-obfuscator = "^0.1.5"
 django-gravatar2 = "^1.4.4"
-django-import-export = "^4.0.5"
+django-import-export = "^4.0.7"
 django-annoying = "^0.10.6"
 dj-rest-auth = "^5.0.2"
 tweepy = "^4.8.0"
 Unidecode = "^1.3.8"
 user-agents = "^2.2.0"
 whitenoise = "^6.6.0"
-<<<<<<< HEAD
-<<<<<<< HEAD
-django-debug-toolbar = "^3.7.0"
-=======
-<<<<<<< HEAD
 django-debug-toolbar = "^4.4.2"
-=======
-django-debug-toolbar = "^3.7.0"
->>>>>>> cf36e59a (Bump selenium from 4.18.1 to 4.21.0)
->>>>>>> 3b2d14e1 (Bump selenium from 4.18.1 to 4.21.0)
-=======
-django-debug-toolbar = "^3.7.0"
->>>>>>> 2c4eed33 (poetry commit)
 selenium = "^4.21.0"
 pylibmc = "^1.6.1"
 psycopg2-binary = "^2.9.9"
@@ -52,7 +40,7 @@ python-openid = "^2.2.5"
 pytesseract = "^0.3.9"
 pytz = "^2024.1"
 PyVirtualDisplay = "^3.0"
-requests = "^2.32.2"
+requests = "^2.32.3"
 requests-oauthlib = "^1.3.1"
 six = "^1.16.0"
 tablib = "^3.2.0"
@@ -77,6 +65,7 @@ sentry-sdk = "^2.3.1"
 bitcash = "^1.0.2"
 django-channels = "^0.7.0"
 channels-redis = "^4.2.0"
+
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"
