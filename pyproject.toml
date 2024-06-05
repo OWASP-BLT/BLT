@@ -65,6 +65,7 @@ sentry-sdk = "^2.3.1"
 bitcash = "^1.0.2"
 django-channels = "^0.7.0"
 channels-redis = "^4.2.0"
+channels = "^4.1.0"
 
 
 [tool.poetry.group.dev.dependencies]
