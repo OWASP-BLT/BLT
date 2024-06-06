@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
-from django.db.models import Q, Sum
+from django.db.models import Count, Q, Sum
 from django.template.loader import render_to_string
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
@@ -403,15 +403,28 @@ class LeaderboardApiViewSet(APIView):
     def get(self, request, format=None, *args, **kwargs):
         filter = request.query_params.get("filter")
         group_by_month = request.query_params.get("group_by_month")
+        leaderboard_type = request.query_params.get("leaderboard_type")
 
         if filter:
             return self.filter(request, *args, **kwargs)
 
         elif group_by_month:
             return self.group_by_month(request, *args, **kwargs)
-
+        elif leaderboard_type == "companies":
+            return self.company_leaderboard(request, *args, **kwargs)
         else:
             return self.global_leaderboard(request, *args, **kwargs)
+
+    def company_leaderboard(self, request, *args, **kwargs):
+        paginator = PageNumberPagination()
+        companies = (
+            Company.objects.values()
+            .annotate(issue_count=Count("domain__issue"))
+            .order_by("-issue_count")
+        )
+        page = paginator.paginate_queryset(companies, request)
+
+        return paginator.get_paginated_response(page)
 
 
 class StatsApiViewset(APIView):
