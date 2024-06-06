@@ -7,11 +7,6 @@ For more information on this file, see
 https://docs.djangoproject.com/en/3.2/howto/deployment/asgi/
 """
 
-
-from django.conf import settings
-
-settings.configure()
-
 import os
 
 import django

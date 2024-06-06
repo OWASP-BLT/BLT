@@ -25,6 +25,9 @@ RUN poetry config virtualenvs.create false
 RUN poetry lock --no-update
 RUN poetry install
 
+# Starting redis service
+RUN service redis-server start
+
 RUN python manage.py migrate 
 RUN python manage.py loaddata website/fixtures/initial_data.json
 # RUN python manage.py collectstatic
