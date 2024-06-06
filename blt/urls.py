@@ -72,6 +72,7 @@ from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
     UserProfileDetailsView,
     UserProfileDetailView,
     change_bid_status,
+    chatbot_conversation,
     contributors_view,
     deletions,
     dislike_issue2,
@@ -86,7 +87,6 @@ from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
     google_callback,
     like_issue2,
     like_issue3,
-    question_answer_view,
     select_bid,
     submit_pr,
     subscribe_to_domains,
@@ -524,7 +524,7 @@ urlpatterns = [
         ContributorStatsView.as_view(today=True),
         name="today-contributor-stats",
     ),
-    path("api/ask/", question_answer_view, name="ask"),
+    path("api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"),
 ]
 
 if settings.DEBUG:

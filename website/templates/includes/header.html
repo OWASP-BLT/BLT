@@ -325,7 +325,7 @@
             chatLog.innerHTML += '<div class="bg-red-100 text-red-800 p-2 rounded-lg mb-2">You: ' + escapedMessage + '</div>';
             loading.style.display = 'flex';
 
-            fetch('/api/ask/', {
+            fetch('/api/chatbot/conversation/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -351,7 +351,7 @@
 
         function clearChat() {
             loading.style.display = 'flex';
-            fetch('/api/ask/', {
+            fetch('/api/chatbot/conversation/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

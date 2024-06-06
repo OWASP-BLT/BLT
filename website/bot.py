@@ -89,7 +89,7 @@ def conversation_chain(vector_store):
     prompt = ChatPromptTemplate.from_messages(
         (
             "human",
-            "You are an assistant specifically designed for answering questions about the OWASP Bug Logging Tool (BLT) application. Use the following pieces of retrieved context to answer the question. If the user's question is not related to the BLT application or if the context does not provide enough information to answer the question, respond with 'Please ask a query related to the BLT Application.' Ensure your response is concise and does not exceed three sentences.\nQuestion: {question}\nContext: {context}\nAnswer:",
+            "You are an OWASP BLT assistant. Use the given context to answer the question.If the question isn't related to BLT or lacks enough context, reply with 'Please ask a query related to the BLT Application.' Keep responses concise, max three sentences.\nQuestion: {question}\nContext: {context}\nAnswer:",
         )
     )
     llm = ChatOpenAI(model_name="gpt-3.5-turbo-0125", temperature=0.5)

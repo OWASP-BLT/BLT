@@ -4526,7 +4526,7 @@ vector_store = None
 
 
 @api_view(["POST"])
-def question_answer_view(request):
+def chatbot_conversation(request):
     question = request.data.get("question", "")
 
     # Apply validation for question
