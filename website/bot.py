@@ -49,7 +49,7 @@ def split_document(chunk_size, chunk_overlap, document):
     return text_splitter.split_documents(document)
 
 
-def embed_documents_and_save(embedDocs, db_dir="", db_name="faiss_index"):
+def embed_documents_and_save(embed_docs, db_dir="", db_name="faiss_index"):
     db_path = Path(db_dir)
     if not db_path.exists():
         db_path.mkdir(parents=True, exist_ok=True)
@@ -60,13 +60,26 @@ def embed_documents_and_save(embedDocs, db_dir="", db_name="faiss_index"):
         embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
         if db_file_path.exists():
             db = FAISS.load_local(db_file_path, embeddings, allow_dangerous_deserialization=True)
-            db.add_documents(embedDocs)
+            db.add_documents(embed_docs)
         else:
-            db = FAISS.from_documents(embedDocs, embeddings)
+            db = FAISS.from_documents(embed_docs, embeddings)
 
         db.save_local(db_file_path)
         return db
+    except FileNotFoundError as fnf_error:
+        print(f"FileNotFoundError: {fnf_error}")
+        return "Bot is down due to missing FAISS index directory."
+    except IOError as io_error:
+        print(f"IOError: {io_error}")
+        return "Bot is down due to an I/O error."
+    except ValueError as value_error:
+        print(f"ValueError: {value_error}")
+        return "Bot is down due to a value error."
+    except TypeError as type_error:
+        print(f"TypeError: {type_error}")
+        return "Bot is down due to a type error."
     except Exception as e:
+        print(f"Unexpected error: {e}")
         return "Bot is down due to API issues."
 
 
@@ -81,7 +94,20 @@ def load_vector_store(db_path):
 
         db = FAISS.load_local(db_path, embeddings, allow_dangerous_deserialization=True)
         return db
+    except FileNotFoundError as fnf_error:
+        print(f"FileNotFoundError: {fnf_error}")
+        return "Bot is down due to missing FAISS index directory."
+    except IOError as io_error:
+        print(f"IOError: {io_error}")
+        return "Bot is down due to an I/O error."
+    except ValueError as value_error:
+        print(f"ValueError: {value_error}")
+        return "Bot is down due to a value error."
+    except TypeError as type_error:
+        print(f"TypeError: {type_error}")
+        return "Bot is down due to a type error."
     except Exception as e:
+        print(f"Unexpected error: {e}")
         return "Bot is down due to API issues."
 
 

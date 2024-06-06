@@ -15,7 +15,7 @@ class Command(BaseCommand):
         # Set the paths to the website directory, documents, and faiss_index directories
         website_dir = base_dir / "website"
         documents_dir = website_dir / "documents"
-        faiss_index_dir = website_dir / ""
+        faiss_index_dir = website_dir
         processed_files_path = website_dir / "processed_files.txt"
 
         # Check if the documents directory exists
