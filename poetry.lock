@@ -56,6 +56,52 @@ tests-mypy = ["mypy (>=1.6)", "pytest-mypy-plugins"]
 tests-no-zope = ["attrs[tests-mypy]", "cloudpickle", "hypothesis", "pympler", "pytest (>=4.3.0)", "pytest-xdist[psutil]"]
 
 [[package]]
+name = "autobahn"
+version = "23.6.2"
+description = "WebSocket client & server library, WAMP real-time framework"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "autobahn-23.6.2.tar.gz", hash = "sha256:ec9421c52a2103364d1ef0468036e6019ee84f71721e86b36fe19ad6966c1181"},
+]
+
+[package.dependencies]
+cryptography = ">=3.4.6"
+hyperlink = ">=21.0.0"
+setuptools = "*"
+txaio = ">=21.2.1"
+
+[package.extras]
+all = ["PyGObject (>=3.40.0)", "argon2_cffi (>=20.1.0)", "attrs (>=20.3.0)", "base58 (>=2.1.0)", "bitarray (>=2.7.5)", "cbor2 (>=5.2.0)", "cffi (>=1.14.5)", "click (>=8.1.2)", "ecdsa (>=0.16.1)", "eth-abi (>=4.0.0)", "flatbuffers (>=22.12.6)", "hkdf (>=0.0.3)", "jinja2 (>=2.11.3)", "mnemonic (>=0.19)", "msgpack (>=1.0.2)", "passlib (>=1.7.4)", "py-ecc (>=5.1.0)", "py-eth-sig-utils (>=0.4.0)", "py-multihash (>=2.0.1)", "py-ubjson (>=0.16.1)", "pynacl (>=1.4.0)", "pyopenssl (>=20.0.1)", "python-snappy (>=0.6.0)", "pytrie (>=0.4.0)", "qrcode (>=7.3.1)", "rlp (>=2.0.1)", "service_identity (>=18.1.0)", "spake2 (>=0.8)", "twisted (>=20.3.0)", "ujson (>=4.0.2)", "web3[ipfs] (>=6.0.0)", "xbr (>=21.2.1)", "yapf (==0.29.0)", "zlmdb (>=21.2.1)", "zope.interface (>=5.2.0)"]
+compress = ["python-snappy (>=0.6.0)"]
+dev = ["backports.tempfile (>=1.0)", "bumpversion (>=0.5.3)", "codecov (>=2.0.15)", "flake8 (<5)", "humanize (>=0.5.1)", "mypy (>=0.610)", "passlib", "pep8-naming (>=0.3.3)", "pip (>=9.0.1)", "pyenchant (>=1.6.6)", "pyflakes (>=1.0.0)", "pyinstaller (>=4.2)", "pylint (>=1.9.2)", "pytest (>=3.4.2)", "pytest-aiohttp", "pytest-asyncio (>=0.14.0)", "pytest-runner (>=2.11.1)", "pyyaml (>=4.2b4)", "qualname", "sphinx (>=1.7.1)", "sphinx-autoapi (>=1.7.0)", "sphinx_rtd_theme (>=0.1.9)", "sphinxcontrib-images (>=0.9.1)", "tox (>=4.2.8)", "tox-gh-actions (>=2.2.0)", "twine (>=3.3.0)", "twisted (>=22.10.0)", "txaio (>=20.4.1)", "watchdog (>=0.8.3)", "wheel (>=0.36.2)", "yapf (==0.29.0)"]
+encryption = ["pynacl (>=1.4.0)", "pyopenssl (>=20.0.1)", "pytrie (>=0.4.0)", "qrcode (>=7.3.1)", "service_identity (>=18.1.0)"]
+nvx = ["cffi (>=1.14.5)"]
+scram = ["argon2_cffi (>=20.1.0)", "cffi (>=1.14.5)", "passlib (>=1.7.4)"]
+serialization = ["cbor2 (>=5.2.0)", "flatbuffers (>=22.12.6)", "msgpack (>=1.0.2)", "py-ubjson (>=0.16.1)", "ujson (>=4.0.2)"]
+twisted = ["attrs (>=20.3.0)", "twisted (>=20.3.0)", "zope.interface (>=5.2.0)"]
+ui = ["PyGObject (>=3.40.0)"]
+xbr = ["base58 (>=2.1.0)", "bitarray (>=2.7.5)", "cbor2 (>=5.2.0)", "click (>=8.1.2)", "ecdsa (>=0.16.1)", "eth-abi (>=4.0.0)", "hkdf (>=0.0.3)", "jinja2 (>=2.11.3)", "mnemonic (>=0.19)", "py-ecc (>=5.1.0)", "py-eth-sig-utils (>=0.4.0)", "py-multihash (>=2.0.1)", "rlp (>=2.0.1)", "spake2 (>=0.8)", "twisted (>=20.3.0)", "web3[ipfs] (>=6.0.0)", "xbr (>=21.2.1)", "yapf (==0.29.0)", "zlmdb (>=21.2.1)"]
+
+[[package]]
+name = "automat"
+version = "22.10.0"
+description = "Self-service finite-state machines for the programmer on the go."
+optional = false
+python-versions = "*"
+files = [
+    {file = "Automat-22.10.0-py2.py3-none-any.whl", hash = "sha256:c3164f8742b9dc440f3682482d32aaff7bb53f71740dd018533f9de286b64180"},
+    {file = "Automat-22.10.0.tar.gz", hash = "sha256:e56beb84edad19dcc11d30e8d9b895f75deeb5ef5e96b84a467066b3b84bb04e"},
+]
+
+[package.dependencies]
+attrs = ">=19.2.0"
+six = "*"
+
+[package.extras]
+visualize = ["Twisted (>=16.1.1)", "graphviz (>0.5.1)"]
+
+[[package]]
 name = "beautifulsoup4"
 version = "4.12.3"
 description = "Screen-scraping library"
@@ -248,6 +294,7 @@ files = [
 
 [package.dependencies]
 asgiref = ">=3.6.0,<4"
+daphne = {version = ">=4.0.0", optional = true, markers = "extra == \"daphne\""}
 Django = ">=4.2"
 
 [package.extras]
@@ -494,6 +541,17 @@ files = [
 Pillow = "*"
 
 [[package]]
+name = "constantly"
+version = "23.10.4"
+description = "Symbolic constants in Python"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "constantly-23.10.4-py3-none-any.whl", hash = "sha256:3fd9b4d1c3dc1ec9757f3c52aef7e53ad9323dbe39f51dfd4c43853b68dfa3f9"},
+    {file = "constantly-23.10.4.tar.gz", hash = "sha256:aa92b70a33e2ac0bb33cd745eb61776594dc48764b06c35e0efd050b7f1c7cbd"},
+]
+
+[[package]]
 name = "cryptography"
 version = "42.0.8"
 description = "cryptography is a package which provides cryptographic recipes and primitives to Python developers."
@@ -546,6 +604,25 @@ sdist = ["build"]
 ssh = ["bcrypt (>=3.1.5)"]
 test = ["certifi", "pretend", "pytest (>=6.2.0)", "pytest-benchmark", "pytest-cov", "pytest-xdist"]
 test-randomorder = ["pytest-randomly"]
+
+[[package]]
+name = "daphne"
+version = "4.1.2"
+description = "Django ASGI (HTTP/WebSocket) server"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "daphne-4.1.2-py3-none-any.whl", hash = "sha256:618d1322bb4d875342b99dd2a10da2d9aae7ee3645f765965fdc1e658ea5290a"},
+    {file = "daphne-4.1.2.tar.gz", hash = "sha256:fcbcace38eb86624ae247c7ffdc8ac12f155d7d19eafac4247381896d6f33761"},
+]
+
+[package.dependencies]
+asgiref = ">=3.5.2,<4"
+autobahn = ">=22.4.2"
+twisted = {version = ">=22.4", extras = ["tls"]}
+
+[package.extras]
+tests = ["django", "hypothesis", "pytest", "pytest-asyncio"]
 
 [[package]]
 name = "defusedxml"
@@ -689,27 +766,6 @@ files = [
 
 [package.dependencies]
 Django = ">=2.2"
-
-[[package]]
-name = "django-channels"
-version = "0.7.0"
-description = "A Django library for sending notifications"
-optional = false
-python-versions = "*"
-files = [
-    {file = "django-channels-0.7.0.tar.gz", hash = "sha256:c8bc623df4a7828c2e5ea453d0d0f066ff9b71b8c7c1a58b2f7fa86bc0bd619e"},
-    {file = "django_channels-0.7.0-py2-none-any.whl", hash = "sha256:06812bda257e7b5e9786b1c205bede9ab7bd2864689ed5dc64b549086b3d3a33"},
-    {file = "django_channels-0.7.0-py3-none-any.whl", hash = "sha256:ceb5675ed0133bd54cc0529eb76157cc3b9ab67aceba7293ee5ac2fe4126987b"},
-]
-
-[package.dependencies]
-requests = ">=2.7.0"
-requests-oauthlib = ">=0.5.0"
-six = ">=1.9.0"
-
-[package.extras]
-docs = ["Sphinx (>=1.4,<1.5)", "sphinx-rtd-theme (>=0.1.9,<0.2)"]
-test = ["mock (>=2.0.0,<3.0.0)"]
 
 [[package]]
 name = "django-cors-headers"
@@ -1272,6 +1328,20 @@ files = [
 tests = ["freezegun", "pytest", "pytest-cov"]
 
 [[package]]
+name = "hyperlink"
+version = "21.0.0"
+description = "A featureful, immutable, and correct URL for Python."
+optional = false
+python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+files = [
+    {file = "hyperlink-21.0.0-py2.py3-none-any.whl", hash = "sha256:e6b14c37ecb73e89c77d78cdb4c2cc8f3fb59a885c5b3f819ff4ed80f25af1b4"},
+    {file = "hyperlink-21.0.0.tar.gz", hash = "sha256:427af957daa58bc909471c6c40f74c5450fa123dd093fc53efd2e91d2705a56b"},
+]
+
+[package.dependencies]
+idna = ">=2.5"
+
+[[package]]
 name = "idna"
 version = "3.7"
 description = "Internationalized Domain Names in Applications (IDNA)"
@@ -1281,6 +1351,21 @@ files = [
     {file = "idna-3.7-py3-none-any.whl", hash = "sha256:82fee1fc78add43492d3a1898bfa6d8a904cc97d8427f683ed8e798d07761aa0"},
     {file = "idna-3.7.tar.gz", hash = "sha256:028ff3aadf0609c1fd278d8ea3089299412a7a8b9bd005dd08b9f8285bcb5cfc"},
 ]
+
+[[package]]
+name = "incremental"
+version = "22.10.0"
+description = "\"A small library that versions your Python projects.\""
+optional = false
+python-versions = "*"
+files = [
+    {file = "incremental-22.10.0-py2.py3-none-any.whl", hash = "sha256:b864a1f30885ee72c5ac2835a761b8fe8aa9c28b9395cacf27286602688d3e51"},
+    {file = "incremental-22.10.0.tar.gz", hash = "sha256:912feeb5e0f7e0188e6f42241d2f450002e11bbc0937c65865045854c24c0bd0"},
+]
+
+[package.extras]
+mypy = ["click (>=6.0)", "mypy (==0.812)", "twisted (>=16.4.0)"]
+scripts = ["click (>=6.0)", "twisted (>=16.4.0)"]
 
 [[package]]
 name = "inflection"
@@ -1865,6 +1950,24 @@ files = [
 ]
 
 [[package]]
+name = "pyopenssl"
+version = "24.1.0"
+description = "Python wrapper module around the OpenSSL library"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pyOpenSSL-24.1.0-py3-none-any.whl", hash = "sha256:17ed5be5936449c5418d1cd269a1a9e9081bc54c17aed272b45856a3d3dc86ad"},
+    {file = "pyOpenSSL-24.1.0.tar.gz", hash = "sha256:cabed4bfaa5df9f1a16c0ef64a0cb65318b5cd077a7eda7d6970131ca2f41a6f"},
+]
+
+[package.dependencies]
+cryptography = ">=41.0.5,<43"
+
+[package.extras]
+docs = ["sphinx (!=5.2.0,!=5.2.0.post0,!=7.2.5)", "sphinx-rtd-theme"]
+test = ["pretend", "pytest (>=3.0.1)", "pytest-rerunfailures"]
+
+[[package]]
 name = "pysocks"
 version = "1.7.1"
 description = "A Python SOCKS client module. See https://github.com/Anorov/PySocks for more information."
@@ -2087,6 +2190,7 @@ pyasn1 = ">=0.1.3"
 [[package]]
 name = "ruff"
 version = "0.4.8"
+version = "0.4.8"
 description = "An extremely fast Python linter and code formatter, written in Rust."
 optional = false
 python-versions = ">=3.7"
@@ -2177,6 +2281,30 @@ sqlalchemy = ["sqlalchemy (>=1.2)"]
 starlette = ["starlette (>=0.19.1)"]
 starlite = ["starlite (>=1.48)"]
 tornado = ["tornado (>=5)"]
+
+[[package]]
+name = "service-identity"
+version = "24.1.0"
+description = "Service identity verification for pyOpenSSL & cryptography."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "service_identity-24.1.0-py3-none-any.whl", hash = "sha256:a28caf8130c8a5c1c7a6f5293faaf239bbfb7751e4862436920ee6f2616f568a"},
+    {file = "service_identity-24.1.0.tar.gz", hash = "sha256:6829c9d62fb832c2e1c435629b0a8c476e1929881f28bee4d20bc24161009221"},
+]
+
+[package.dependencies]
+attrs = ">=19.1.0"
+cryptography = "*"
+pyasn1 = "*"
+pyasn1-modules = "*"
+
+[package.extras]
+dev = ["pyopenssl", "service-identity[idna,mypy,tests]"]
+docs = ["furo", "myst-parser", "pyopenssl", "sphinx", "sphinx-notfound-page"]
+idna = ["idna"]
+mypy = ["idna", "mypy", "types-pyopenssl"]
+tests = ["coverage[toml] (>=5.0.2)", "pytest"]
 
 [[package]]
 name = "setuptools"
@@ -2368,6 +2496,89 @@ socks = ["requests[socks] (>=2.27.0,<3)"]
 test = ["vcrpy (>=1.10.3)"]
 
 [[package]]
+name = "twisted"
+version = "24.3.0"
+description = "An asynchronous networking framework written in Python"
+optional = false
+python-versions = ">=3.8.0"
+files = [
+    {file = "twisted-24.3.0-py3-none-any.whl", hash = "sha256:039f2e6a49ab5108abd94de187fa92377abe5985c7a72d68d0ad266ba19eae63"},
+    {file = "twisted-24.3.0.tar.gz", hash = "sha256:6b38b6ece7296b5e122c9eb17da2eeab3d98a198f50ca9efd00fb03e5b4fd4ae"},
+]
+
+[package.dependencies]
+attrs = ">=21.3.0"
+automat = ">=0.8.0"
+constantly = ">=15.1"
+hyperlink = ">=17.1.1"
+idna = {version = ">=2.4", optional = true, markers = "extra == \"tls\""}
+incremental = ">=22.10.0"
+pyopenssl = {version = ">=21.0.0", optional = true, markers = "extra == \"tls\""}
+service-identity = {version = ">=18.1.0", optional = true, markers = "extra == \"tls\""}
+twisted-iocpsupport = {version = ">=1.0.2,<2", markers = "platform_system == \"Windows\""}
+typing-extensions = ">=4.2.0"
+zope-interface = ">=5"
+
+[package.extras]
+all-non-platform = ["twisted[conch,http2,serial,test,tls]", "twisted[conch,http2,serial,test,tls]"]
+conch = ["appdirs (>=1.4.0)", "bcrypt (>=3.1.3)", "cryptography (>=3.3)"]
+dev = ["coverage (>=6b1,<7)", "pyflakes (>=2.2,<3.0)", "python-subunit (>=1.4,<2.0)", "twisted[dev-release]", "twistedchecker (>=0.7,<1.0)"]
+dev-release = ["pydoctor (>=23.9.0,<23.10.0)", "pydoctor (>=23.9.0,<23.10.0)", "sphinx (>=6,<7)", "sphinx (>=6,<7)", "sphinx-rtd-theme (>=1.3,<2.0)", "sphinx-rtd-theme (>=1.3,<2.0)", "towncrier (>=23.6,<24.0)", "towncrier (>=23.6,<24.0)"]
+gtk-platform = ["pygobject", "pygobject", "twisted[all-non-platform]", "twisted[all-non-platform]"]
+http2 = ["h2 (>=3.0,<5.0)", "priority (>=1.1.0,<2.0)"]
+macos-platform = ["pyobjc-core", "pyobjc-core", "pyobjc-framework-cfnetwork", "pyobjc-framework-cfnetwork", "pyobjc-framework-cocoa", "pyobjc-framework-cocoa", "twisted[all-non-platform]", "twisted[all-non-platform]"]
+mypy = ["mypy (>=1.8,<2.0)", "mypy-zope (>=1.0.3,<1.1.0)", "twisted[all-non-platform,dev]", "types-pyopenssl", "types-setuptools"]
+osx-platform = ["twisted[macos-platform]", "twisted[macos-platform]"]
+serial = ["pyserial (>=3.0)", "pywin32 (!=226)"]
+test = ["cython-test-exception-raiser (>=1.0.2,<2)", "hypothesis (>=6.56)", "pyhamcrest (>=2)"]
+tls = ["idna (>=2.4)", "pyopenssl (>=21.0.0)", "service-identity (>=18.1.0)"]
+windows-platform = ["pywin32 (!=226)", "pywin32 (!=226)", "twisted[all-non-platform]", "twisted[all-non-platform]"]
+
+[[package]]
+name = "twisted-iocpsupport"
+version = "1.0.4"
+description = "An extension for use in the twisted I/O Completion Ports reactor."
+optional = false
+python-versions = "*"
+files = [
+    {file = "twisted-iocpsupport-1.0.4.tar.gz", hash = "sha256:858096c0d15e33f15ac157f455d8f86f2f2cdd223963e58c0f682a3af8362d89"},
+    {file = "twisted_iocpsupport-1.0.4-cp310-cp310-win32.whl", hash = "sha256:afa2b630797f9ed2f27f3d9f55e3f72b4244911e45a8c82756f44babbf0b243e"},
+    {file = "twisted_iocpsupport-1.0.4-cp310-cp310-win_amd64.whl", hash = "sha256:0058c963c8957bcd3deda62122e89953c9de1e867a274facc9b15dde1a9f31e8"},
+    {file = "twisted_iocpsupport-1.0.4-cp311-cp311-win32.whl", hash = "sha256:196f7c7ccad4ba4d1783b1c4e1d1b22d93c04275cd780bf7498d16c77319ad6e"},
+    {file = "twisted_iocpsupport-1.0.4-cp311-cp311-win_amd64.whl", hash = "sha256:4e5f97bcbabdd79cbaa969b63439b89801ea560f11d42b0a387634275c633623"},
+    {file = "twisted_iocpsupport-1.0.4-cp312-cp312-win32.whl", hash = "sha256:6081bd7c2f4fcf9b383dcdb3b3385d75a26a7c9d2be25b6950c3d8ea652d2d2d"},
+    {file = "twisted_iocpsupport-1.0.4-cp312-cp312-win_amd64.whl", hash = "sha256:76f7e67cec1f1d097d1f4ed7de41be3d74546e1a4ede0c7d56e775c4dce5dfb0"},
+    {file = "twisted_iocpsupport-1.0.4-cp36-cp36m-win32.whl", hash = "sha256:3d306fc4d88a6bcf61ce9d572c738b918578121bfd72891625fab314549024b5"},
+    {file = "twisted_iocpsupport-1.0.4-cp36-cp36m-win_amd64.whl", hash = "sha256:391ac4d6002a80e15f35adc4ad6056f4fe1c17ceb0d1f98ba01b0f4f917adfd7"},
+    {file = "twisted_iocpsupport-1.0.4-cp37-cp37m-win32.whl", hash = "sha256:0c1b5cf37f0b2d96cc3c9bc86fff16613b9f5d0ca565c96cf1f1fb8cfca4b81c"},
+    {file = "twisted_iocpsupport-1.0.4-cp37-cp37m-win_amd64.whl", hash = "sha256:3c5dc11d72519e55f727320e3cee535feedfaee09c0f0765ed1ca7badff1ab3c"},
+    {file = "twisted_iocpsupport-1.0.4-cp38-cp38-win32.whl", hash = "sha256:cc86c2ef598c15d824a243c2541c29459881c67fc3c0adb6efe2242f8f0ec3af"},
+    {file = "twisted_iocpsupport-1.0.4-cp38-cp38-win_amd64.whl", hash = "sha256:c27985e949b9b1a1fb4c20c71d315c10ea0f93fdf3ccdd4a8c158b5926edd8c8"},
+    {file = "twisted_iocpsupport-1.0.4-cp39-cp39-win32.whl", hash = "sha256:e311dfcb470696e3c077249615893cada598e62fa7c4e4ca090167bd2b7d331f"},
+    {file = "twisted_iocpsupport-1.0.4-cp39-cp39-win_amd64.whl", hash = "sha256:4574eef1f3bb81501fb02f911298af3c02fe8179c31a33b361dd49180c3e644d"},
+    {file = "twisted_iocpsupport-1.0.4-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:872747a3b64e2909aee59c803ccd0bceb9b75bf27915520ebd32d69687040fa2"},
+    {file = "twisted_iocpsupport-1.0.4-pp37-pypy37_pp73-win_amd64.whl", hash = "sha256:c2712b778bacf1db434e3e065adfed3db300754186a29aecac1efae9ef4bcaff"},
+    {file = "twisted_iocpsupport-1.0.4-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:7c66fa0aa4236b27b3c61cb488662d85dae746a6d1c7b0d91cf7aae118445adf"},
+    {file = "twisted_iocpsupport-1.0.4-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:300437af17396a945a58dcfffd77863303a8b6d9e65c6e81f1d2eed55b50d444"},
+]
+
+[[package]]
+name = "txaio"
+version = "23.1.1"
+description = "Compatibility API between asyncio/Twisted/Trollius"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "txaio-23.1.1-py2.py3-none-any.whl", hash = "sha256:aaea42f8aad50e0ecfb976130ada140797e9dcb85fad2cf72b0f37f8cefcb490"},
+    {file = "txaio-23.1.1.tar.gz", hash = "sha256:f9a9216e976e5e3246dfd112ad7ad55ca915606b60b84a757ac769bd404ff704"},
+]
+
+[package.extras]
+all = ["twisted (>=20.3.0)", "zope.interface (>=5.2.0)"]
+dev = ["pep8 (>=1.6.2)", "pyenchant (>=1.6.6)", "pytest (>=2.6.4)", "pytest-cov (>=1.8.1)", "sphinx (>=1.2.3)", "sphinx-rtd-theme (>=0.1.9)", "sphinxcontrib-spelling (>=2.1.2)", "tox (>=2.1.1)", "tox-gh-actions (>=2.2.0)", "twine (>=1.6.5)", "wheel"]
+twisted = ["twisted (>=20.3.0)", "zope.interface (>=5.2.0)"]
+
+[[package]]
 name = "typing-extensions"
 version = "4.12.1"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -2499,6 +2710,59 @@ files = [
 
 [package.dependencies]
 h11 = ">=0.9.0,<1"
+
+[[package]]
+name = "zope-interface"
+version = "6.4.post2"
+description = "Interfaces for Python"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "zope.interface-6.4.post2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:2eccd5bef45883802848f821d940367c1d0ad588de71e5cabe3813175444202c"},
+    {file = "zope.interface-6.4.post2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:762e616199f6319bb98e7f4f27d254c84c5fb1c25c908c2a9d0f92b92fb27530"},
+    {file = "zope.interface-6.4.post2-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5ef8356f16b1a83609f7a992a6e33d792bb5eff2370712c9eaae0d02e1924341"},
+    {file = "zope.interface-6.4.post2-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:0e4fa5d34d7973e6b0efa46fe4405090f3b406f64b6290facbb19dcbf642ad6b"},
+    {file = "zope.interface-6.4.post2-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d22fce0b0f5715cdac082e35a9e735a1752dc8585f005d045abb1a7c20e197f9"},
+    {file = "zope.interface-6.4.post2-cp310-cp310-win_amd64.whl", hash = "sha256:97e615eab34bd8477c3f34197a17ce08c648d38467489359cb9eb7394f1083f7"},
+    {file = "zope.interface-6.4.post2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:599f3b07bde2627e163ce484d5497a54a0a8437779362395c6b25e68c6590ede"},
+    {file = "zope.interface-6.4.post2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:136cacdde1a2c5e5bc3d0b2a1beed733f97e2dad8c2ad3c2e17116f6590a3827"},
+    {file = "zope.interface-6.4.post2-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:47937cf2e7ed4e0e37f7851c76edeb8543ec9b0eae149b36ecd26176ff1ca874"},
+    {file = "zope.interface-6.4.post2-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:6f0a6be264afb094975b5ef55c911379d6989caa87c4e558814ec4f5125cfa2e"},
+    {file = "zope.interface-6.4.post2-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:47654177e675bafdf4e4738ce58cdc5c6d6ee2157ac0a78a3fa460942b9d64a8"},
+    {file = "zope.interface-6.4.post2-cp311-cp311-win_amd64.whl", hash = "sha256:e2fb8e8158306567a3a9a41670c1ff99d0567d7fc96fa93b7abf8b519a46b250"},
+    {file = "zope.interface-6.4.post2-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:b912750b13d76af8aac45ddf4679535def304b2a48a07989ec736508d0bbfbde"},
+    {file = "zope.interface-6.4.post2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:4ac46298e0143d91e4644a27a769d1388d5d89e82ee0cf37bf2b0b001b9712a4"},
+    {file = "zope.interface-6.4.post2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:86a94af4a88110ed4bb8961f5ac72edf782958e665d5bfceaab6bf388420a78b"},
+    {file = "zope.interface-6.4.post2-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:73f9752cf3596771c7726f7eea5b9e634ad47c6d863043589a1c3bb31325c7eb"},
+    {file = "zope.interface-6.4.post2-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:00b5c3e9744dcdc9e84c24ed6646d5cf0cf66551347b310b3ffd70f056535854"},
+    {file = "zope.interface-6.4.post2-cp312-cp312-win_amd64.whl", hash = "sha256:551db2fe892fcbefb38f6f81ffa62de11090c8119fd4e66a60f3adff70751ec7"},
+    {file = "zope.interface-6.4.post2-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e96ac6b3169940a8cd57b4f2b8edcad8f5213b60efcd197d59fbe52f0accd66e"},
+    {file = "zope.interface-6.4.post2-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:cebff2fe5dc82cb22122e4e1225e00a4a506b1a16fafa911142ee124febf2c9e"},
+    {file = "zope.interface-6.4.post2-cp313-cp313-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:33ee982237cffaf946db365c3a6ebaa37855d8e3ca5800f6f48890209c1cfefc"},
+    {file = "zope.interface-6.4.post2-cp37-cp37m-macosx_11_0_x86_64.whl", hash = "sha256:fbf649bc77510ef2521cf797700b96167bb77838c40780da7ea3edd8b78044d1"},
+    {file = "zope.interface-6.4.post2-cp37-cp37m-win_amd64.whl", hash = "sha256:4c0b208a5d6c81434bdfa0f06d9b667e5de15af84d8cae5723c3a33ba6611b82"},
+    {file = "zope.interface-6.4.post2-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:d3fe667935e9562407c2511570dca14604a654988a13d8725667e95161d92e9b"},
+    {file = "zope.interface-6.4.post2-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:a96e6d4074db29b152222c34d7eec2e2db2f92638d2b2b2c704f9e8db3ae0edc"},
+    {file = "zope.interface-6.4.post2-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:866a0f583be79f0def667a5d2c60b7b4cc68f0c0a470f227e1122691b443c934"},
+    {file = "zope.interface-6.4.post2-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:5fe919027f29b12f7a2562ba0daf3e045cb388f844e022552a5674fcdf5d21f1"},
+    {file = "zope.interface-6.4.post2-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8e0343a6e06d94f6b6ac52fbc75269b41dd3c57066541a6c76517f69fe67cb43"},
+    {file = "zope.interface-6.4.post2-cp38-cp38-win_amd64.whl", hash = "sha256:dabb70a6e3d9c22df50e08dc55b14ca2a99da95a2d941954255ac76fd6982bc5"},
+    {file = "zope.interface-6.4.post2-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:706efc19f9679a1b425d6fa2b4bc770d976d0984335eaea0869bd32f627591d2"},
+    {file = "zope.interface-6.4.post2-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:3d136e5b8821073e1a09dde3eb076ea9988e7010c54ffe4d39701adf0c303438"},
+    {file = "zope.interface-6.4.post2-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1730c93a38b5a18d24549bc81613223962a19d457cfda9bdc66e542f475a36f4"},
+    {file = "zope.interface-6.4.post2-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:bc2676312cc3468a25aac001ec727168994ea3b69b48914944a44c6a0b251e79"},
+    {file = "zope.interface-6.4.post2-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1a62fd6cd518693568e23e02f41816adedfca637f26716837681c90b36af3671"},
+    {file = "zope.interface-6.4.post2-cp39-cp39-win_amd64.whl", hash = "sha256:d3f7e001328bd6466b3414215f66dde3c7c13d8025a9c160a75d7b2687090d15"},
+    {file = "zope.interface-6.4.post2.tar.gz", hash = "sha256:1c207e6f6dfd5749a26f5a5fd966602d6b824ec00d2df84a7e9a924e8933654e"},
+]
+
+[package.dependencies]
+setuptools = "*"
+
+[package.extras]
+docs = ["Sphinx", "repoze.sphinx.autointerface", "sphinx-rtd-theme"]
+test = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
+testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 
 [metadata]
 lock-version = "2.0"
