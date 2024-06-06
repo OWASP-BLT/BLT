@@ -69,18 +69,6 @@ def embed_documents_and_save(embed_docs, db_dir="", db_name="faiss_index"):
     except FileNotFoundError as fnf_error:
         print(f"FileNotFoundError: {fnf_error}")
         return "Bot is down due to missing FAISS index directory."
-    except IOError as io_error:
-        print(f"IOError: {io_error}")
-        return "Bot is down due to an I/O error."
-    except ValueError as value_error:
-        print(f"ValueError: {value_error}")
-        return "Bot is down due to a value error."
-    except TypeError as type_error:
-        print(f"TypeError: {type_error}")
-        return "Bot is down due to a type error."
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-        return "Bot is down due to API issues."
 
 
 def load_vector_store(db_path):
@@ -97,18 +85,6 @@ def load_vector_store(db_path):
     except FileNotFoundError as fnf_error:
         print(f"FileNotFoundError: {fnf_error}")
         return "Bot is down due to missing FAISS index directory."
-    except IOError as io_error:
-        print(f"IOError: {io_error}")
-        return "Bot is down due to an I/O error."
-    except ValueError as value_error:
-        print(f"ValueError: {value_error}")
-        return "Bot is down due to a value error."
-    except TypeError as type_error:
-        print(f"TypeError: {type_error}")
-        return "Bot is down due to a type error."
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-        return "Bot is down due to API issues."
 
 
 def conversation_chain(vector_store):
