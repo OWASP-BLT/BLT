@@ -14,23 +14,6 @@
     }
   },
   {
-    "model": "website.domain",
-    "pk": 55,
-    "fields": {
-      "name": "example.com",
-      "url": "http://example.com",
-      "logo": "",
-      "webshot": "",
-      "clicks": null,
-      "color": "",
-      "email": "support@example.com",
-      "twitter": "",
-      "facebook": "",
-      "created": "2016-10-13T16:46:46Z",
-      "modified": "2016-10-13T18:42:00.325Z"
-    }
-  },
-  {
     "model": "auth.user",
     "pk": 1,
     "fields": {
@@ -45,7 +28,7 @@
     "model": "website.domain",
     "pk": 99,
     "fields": {
-      "name": "owasp.org",
+      "name": "blt.owasp",
       "url": "http://owasp.org",
       "logo": "",
       "webshot": "",
