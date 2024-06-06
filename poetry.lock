@@ -2121,13 +2121,13 @@ files = [
 
 [[package]]
 name = "redis"
-version = "5.0.4"
+version = "5.0.5"
 description = "Python client for Redis database and key-value store"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "redis-5.0.4-py3-none-any.whl", hash = "sha256:7adc2835c7a9b5033b7ad8f8918d09b7344188228809c98df07af226d39dec91"},
-    {file = "redis-5.0.4.tar.gz", hash = "sha256:ec31f2ed9675cc54c21ba854cfe0462e6faf1d83c8ce5944709db8a4700b9c61"},
+    {file = "redis-5.0.5-py3-none-any.whl", hash = "sha256:30b47d4ebb6b7a0b9b40c1275a19b87bb6f46b3bed82a89012cf56dea4024ada"},
+    {file = "redis-5.0.5.tar.gz", hash = "sha256:3417688621acf6ee368dec4a04dd95881be24efd34c79f00d31f62bb528800ae"},
 ]
 
 [package.extras]
@@ -2233,13 +2233,13 @@ urllib3 = {version = ">=1.26,<3", extras = ["socks"]}
 
 [[package]]
 name = "sentry-sdk"
-version = "2.4.0"
+version = "2.5.0"
 description = "Python client for Sentry (https://sentry.io)"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "sentry_sdk-2.4.0-py2.py3-none-any.whl", hash = "sha256:a42b70981cd4ed7da3c85d0360502d2ac932a15a4a420b360e1ebded2fc19a92"},
-    {file = "sentry_sdk-2.4.0.tar.gz", hash = "sha256:62b9bb0489e731ecbce008f9647899b51d220067a75c3adfd46f8187660c0029"},
+    {file = "sentry_sdk-2.5.0-py2.py3-none-any.whl", hash = "sha256:75d2e1fd8a887fdf63df612f5d37991c248a080b886d80714560bdded2bb9051"},
+    {file = "sentry_sdk-2.5.0.tar.gz", hash = "sha256:05453f921c561b51159f712c2cd267b595e5c195b38b337d03baeb42719dd3c7"},
 ]
 
 [package.dependencies]
@@ -2765,5 +2765,5 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = "3.12.3"
-content-hash = "d9254c83a18a15f663645014a60ce83175b40449c0dd7491f5183e29b0e58558"
+python-versions = "3.10.12"
+content-hash = "89e6acf8ad22bad837eafb72eeeddb8e547eb1ba7a41f2d4eac01fa433950614"
