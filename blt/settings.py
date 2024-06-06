@@ -67,6 +67,7 @@ SITE_ID = 1
 # Application definition
 
 INSTALLED_APPS = (
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -87,7 +88,6 @@ INSTALLED_APPS = (
     "email_obfuscator",
     "import_export",
     "comments",
-    "channels",
     "annoying",
     "rest_framework",
     "django_filters",
