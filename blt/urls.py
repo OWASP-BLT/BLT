@@ -523,6 +523,7 @@ urlpatterns = [
         ContributorStatsView.as_view(today=True),
         name="today-contributor-stats",
     ),
+    path("test/", website.views.test, name="test"),
 ]
 
 if settings.DEBUG:

@@ -321,6 +321,7 @@ def newhome(request, template="new_home.html"):
             points__created__month=datetime.now().month,
             points__created__year=datetime.now().year,
         ),
+        "room_name": "brodcast",
         # .annotate(total_score=Sum("points__score"))
         # .order_by("-total_score")[:10],
         # "bug_count": bug_count,
@@ -336,6 +337,19 @@ def newhome(request, template="new_home.html"):
         # "ended_hunts": False if latest_hunts_filter is None else True
     }
     return render(request, template, context)
+
+
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
+
+def test(request):
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        "notification_broadcast",
+        {"type": "send_notification", "message": json.dumps("Notification")},
+    )
+    return HttpResponse("Done")
 
 
 def is_safe_url(url, allowed_hosts, allowed_paths=None):

@@ -1,4 +1,4 @@
-FROM python:3.11.2
+FROM python:3.12.3
 
 ENV PYTHONUNBUFFERED 1
 RUN mkdir /blt
@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install poetry 
 RUN poetry config virtualenvs.create false
+RUN poetry lock --no-update
 RUN poetry install
 
 RUN python manage.py migrate 

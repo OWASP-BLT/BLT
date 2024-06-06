@@ -11,6 +11,62 @@
     a {
         color: black;
     }
+
+    .notification {
+        background-color: #0d6efd;
+        color: white;
+        text-decoration: none;
+        padding: 4px 24px;
+        margin-right: 20px;
+        margin-left: 20px;
+        position: relative;
+        display: inline-block;
+        border-radius: 2px;
+        font-size: 20px;
+    }
+
+    .notification:hover {
+        background: #0b5ed7;
+        color: #fff;
+    }
+
+    .notification .badge {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        padding: 8px 8px;
+        border-radius: 50%;
+        background: red;
+        color: white;
+    }
+
+    .notification-section .dropdown-toggle::after {
+        content: none;
+    }
+
+    .dropdown-toggle::after {
+        color: #fff;
+    }
+
+    #notifications-dropdown li {
+        max-width: 500px;
+        word-wrap: break-word;
+        display: inline-block;
+        white-space: normal;
+    }
+
+    #notifications-dropdown.dropdown-menu {
+        width: 15rem;
+    }
+    
+    #navbarDropdown {
+        position: absolute;
+        inset: 0px auto auto 0px;
+        margin: 0px;
+        transform: translate3d(-70px, 42px, 0px)
+    }
+        
+
 </style>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -102,82 +158,106 @@
                 </a>
             </div>
             {% if request.user.is_authenticated %}
-                <li class="h-[80px] flex justify-center items-center ">
-                    <button id="dropdownButton"
-                            class="relative flex items-center sm:gap-3 mr-[30px]"
-                            type="button">
-                        {% if request.user.userprofile.avatar %}
-                            <img src="{{ request.user.userprofile.avatar }}"
-                                 class="h-[30px] w-[30px] rounded-full "
-                                 alt="User Avatar"
-                                 width="30"
-                                 height="30">
-                        {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
-                            <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
-                                 class="h-[30px] w-[30px] rounded-full "
-                                 alt="User Avatar"
-                                 width="30"
-                                 height="30">
-                        {% else %}
-                            {% gravatar request.user.email 30 '' 'gravatar rounded-full' %}
-                        {% endif %}
-                        <span class="absolute -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap"><span>{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
-                        <i class="fa fa-caret-down text-red-500"></i>
-                    </span>
-                </button>
-                <!-- Dropdown for User Avatar -->
-                <div id="dropdownMenu"
-                     class="z-50 hidden absolute bg-white top-32 right-5">
-                    <ul class="flex flex-col gap-2 px-8 py-4 border shadow-xl rounded-lg left-auto">
-                        <li>
-                            <a href="{% url 'account_profile' %}">
-                                <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% env 'EXTENSION_URL' %}"
-                               target="_new"
-                               rel="noopener noreferrer">
-                                <i class="fa fa-chrome fa-fw"></i>
-                                {% trans "Add to chrome" %}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'start_hunt' %}">
-                                <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'social' %}">
-                                <i class="fa fa-share fa-fw"></i>
-                                {% trans "Social" %}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'account_change_password' %}">
-                                <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'invite' %}">
-                                <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite Friends" %}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'company_view' %}">
-                                <i class="fa fa-building fa-fw"></i> {% trans "Company Dashboard" %}
-                            </a>
-                        </li>
-                        <!-- divider -->
-                        <li class="border my-4 -mx-8"></li>
-                        <li>
-                            <a href="{% url 'account_logout' %}">
-                                <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </li>
+                <div class="flex items-center h-[80px]">
+                    <li class="nav-item dropdown notification-section">
+                        <a href="#"
+                           class="notification dropdown-toggle"
+                           id="navbarDropdown"
+                           role="button"
+                           data-bs-toggle="dropdown"
+                           aria-expanded="true">
+                            <span><i class="fa fa-bell"></i></span>
+                            <span class="badge" id="notification-badge">0</span>
+                        </a>
+                        <ul class="dropdown-menu"
+                            aria-labelledby="navbarDropdown"
+                            id="notifications-dropdown"
+                            data-popper-placement="bottom-end">
+                            {% for i in notifications %}
+                                <li class="dropdown-item">{{ i.message }}</li>
+                                <hr class="dropdown-divider">
+                            {% endfor %}
+                            {% comment %} <li class='dropdown-item'>Hello</li>
+                            <hr class="dropdown-divider"> {% endcomment %}
+                        </ul>
+                    </li>
+                    <li class="h-[80px] flex justify-center items-center ">
+                        <button id="dropdownButton"
+                                class="relative flex items-center sm:gap-3 mr-[30px]"
+                                type="button">
+                            {% if request.user.userprofile.avatar %}
+                                <img src="{{ request.user.userprofile.avatar }}"
+                                     class="h-[30px] w-[30px] rounded-full "
+                                     alt="User Avatar"
+                                     width="30"
+                                     height="30">
+                            {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
+                                <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
+                                     class="h-[30px] w-[30px] rounded-full "
+                                     alt="User Avatar"
+                                     width="30"
+                                     height="30">
+                            {% else %}
+                                {% gravatar request.user.email 30 '' 'gravatar rounded-full' %}
+                            {% endif %}
+                            <span class="absolute -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap"><span>{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
+                            <i class="fa fa-caret-down text-red-500"></i>
+                        </span>
+                    </button>
+                    <!-- Dropdown for User Avatar -->
+                    <div id="dropdownMenu"
+                         class="z-50 hidden absolute bg-white top-32 right-5">
+                        <ul class="flex flex-col gap-2 px-8 py-4 border shadow-xl rounded-lg left-auto">
+                            <li>
+                                <a href="{% url 'account_profile' %}">
+                                    <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% env 'EXTENSION_URL' %}"
+                                   target="_new"
+                                   rel="noopener noreferrer">
+                                    <i class="fa fa-chrome fa-fw"></i>
+                                    {% trans "Add to chrome" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'start_hunt' %}">
+                                    <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'social' %}">
+                                    <i class="fa fa-share fa-fw"></i>
+                                    {% trans "Social" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'account_change_password' %}">
+                                    <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'invite' %}">
+                                    <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite Friends" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'company_view' %}">
+                                    <i class="fa fa-building fa-fw"></i> {% trans "Company Dashboard" %}
+                                </a>
+                            </li>
+                            <!-- divider -->
+                            <li class="border my-4 -mx-8"></li>
+                            <li>
+                                <a href="{% url 'account_logout' %}">
+                                    <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+            </div>
         {% else %}
             <!-- Sign up and Log in Buttons -->
             <div class="flex items-center h-[80px]">
@@ -199,3 +279,31 @@
     </div>
 </div>
 </nav>
+{{ room_name|json_script:"room-name" }}
+<script>
+    const roomName = JSON.parse(document.getElementById('room-name').textContent);
+
+    const notificationSocket = new WebSocket(
+        'ws://'
+        + window.location.host
+        + '/ws/notification/'
+        + roomName
+        + '/'
+    );
+
+    notificationSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        //document.querySelector('#chat-log').value += (data.message + '\n');
+        console.log(data);
+        document.getElementById("notifications-dropdown").innerHTML = "<li class='dropdown-item'>" + data + "</li><hr class='dropdown-divider'>" + document.getElementById("notifications-dropdown").innerHTML;
+        document.getElementById("notification-badge").innerHTML = parseInt(document.getElementById("notification-badge").innerHTML) + 1;
+    };
+
+    notificationSocket.onclose = function(e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+
+    
+
+    
+</script>
