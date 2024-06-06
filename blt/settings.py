@@ -87,6 +87,7 @@ INSTALLED_APPS = (
     "email_obfuscator",
     "import_export",
     "comments",
+    "channels",
     "annoying",
     "rest_framework",
     "django_filters",
@@ -524,11 +525,17 @@ if "test" in sys.argv:
 
 # Twitter
 
-BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
-APP_KEY = os.environ.get("APP_KEY")
-APP_KEY_SECRET = os.environ.get("APP_KEY_SECRET")
-ACCESS_TOKEN = os.environ.get("ACCESS_TOKEN")
-ACCESS_TOKEN_SECRET = os.environ.get("ACCESS_TOKEN_SECRET")
+# BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
+# APP_KEY = os.environ.get("APP_KEY")
+# APP_KEY_SECRET = os.environ.get("APP_KEY_SECRET")
+# ACCESS_TOKEN = os.environ.get("ACCESS_TOKEN")
+# ACCESS_TOKEN_SECRET = os.environ.get("ACCESS_TOKEN_SECRET")
+
+BEARER_TOKEN = "AAAAAAAAAAAAAAAAAAAAACY4swEAAAAACCwbesyUMRhqJcZ5IQKJ%2FeAWpYY%3DWhxvFboQKFlJtKIJ1WWlL2fWYzKSfF383NMBsgRFTg9h8Y5jBF"
+APP_KEY = "hBSe9kWzsWvrZTjbm5326j9TE"
+APP_KEY_SECRET = "mbHK5fNCkIppsO8ErswLzGDXMdRS74XltkHmnFF2WXtxB60AIE"
+ACCESS_TOKEN = "1562852714412793857-CHEfVrO4shDhoWJOsBNCN7Z0d0d3Kw"
+ACCESS_TOKEN_SECRET = "jKfqv8FaIuYcyYdy6jdGprh2WHJtonR4ziHgETkC81hYq"
 
 # USPTO
 

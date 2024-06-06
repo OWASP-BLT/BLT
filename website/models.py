@@ -13,6 +13,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.validators import URLValidator
+from django.core.validators import URLValidator
 from django.db import models
 from django.db.models import Count
 from django.db.models.signals import post_save
@@ -156,7 +157,7 @@ class Domain(models.Model):
     def get_absolute_url(self):
         return "/domain/" + self.name
 
-    def get_or_set_x_url(self, name):
+    def get_twitter_account(self, name):
         if self.twitter:
             return self.twitter
 
@@ -168,7 +169,7 @@ class Domain(models.Model):
             self.save()
             return name
         except ValidationError:
-            pass
+            return False
 
 
 def validate_image(fieldfile_obj):

@@ -614,14 +614,14 @@ class IssueBaseCreate(object):
                 settings.ACCESS_TOKEN_SECRET,
             )
 
-            blt_url = "https://%s/issue2/%d" % (
+            blt_url = "https://" + "%s/issue/%d" % (
                 settings.DOMAIN_NAME,
                 obj.id,
             )
             domain_name = domain.get_name
             twitter_account = (
-                "@" + domain.get_or_set_x_url(domain_name) + " "
-                if domain.get_or_set_x_url(domain_name)
+                "@" + domain.get_twitter_account(domain_name) + " "
+                if domain.get_twitter_account(domain_name)
                 else ""
             )
 
@@ -637,12 +637,8 @@ class IssueBaseCreate(object):
             )
 
             auth.create_tweet(text=message)
-
-        except (
-            TypeError,
-            tweepy.errors.HTTPException,
-            tweepy.errors.TweepyException,
-        ) as e:
+            print("\n\n\n\nDone")
+        except Exception as e:
             print(e)
 
         if created:
