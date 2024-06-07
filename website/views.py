@@ -4529,7 +4529,7 @@ vector_store = None
 def chatbot_conversation(request):
     question = request.data.get("question", "")
     check_Api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
-    if check_Api != True:
+    if not check_Api:
         return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Apply validation for question
