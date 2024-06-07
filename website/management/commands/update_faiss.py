@@ -1,14 +1,19 @@
+import os
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
 
-from website.bot import embed_documents_and_save, load_document, split_document
+from website.bot import embed_documents_and_save, is_api_key_valid, load_document, split_document
 
 
 class Command(BaseCommand):
     help = "Update the FAISS database with new documents"
 
     def handle(self, *args, **kwargs):
+        check_Api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
+        if check_Api != True:
+            return self.stdout.write(self.style.ERROR(check_Api))
+
         # Calculate the base directory
         base_dir = Path(__file__).resolve().parents[3]
 

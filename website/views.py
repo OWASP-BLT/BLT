@@ -98,7 +98,7 @@ from website.models import (
     Winner,
 )
 
-from .bot import conversation_chain, load_vector_store
+from .bot import conversation_chain, is_api_key_valid, load_vector_store
 from .forms import (
     CaptchaForm,
     HuntForm,
@@ -4528,6 +4528,9 @@ vector_store = None
 @api_view(["POST"])
 def chatbot_conversation(request):
     question = request.data.get("question", "")
+    check_Api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
+    if check_Api != True:
+        return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Apply validation for question
     if not question or not isinstance(question, str):
@@ -4538,11 +4541,6 @@ def chatbot_conversation(request):
         db_path = Path(__file__).resolve().parent / "faiss_index"
 
         vector_store = load_vector_store(db_path)
-        if isinstance(vector_store, str) and "Bot is down" in vector_store:
-            return Response(
-                {"error": "Bot is down due to API issues."},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
 
     # Handle the "exit" command
     if question.lower() == "exit":
@@ -4551,24 +4549,12 @@ def chatbot_conversation(request):
             del request.session["buffer"]
         return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
 
-    # Initialize session state if not already initialized
-    try:
-        if "buffer" in request.session:
-            crc, memory = conversation_chain(vector_store)
-            memory.buffer = request.session["buffer"]
-        else:
-            crc, memory = conversation_chain(vector_store)
-    except Exception as e:
-        return Response(
-            {"error": "Bot is down due to API issues."}, status=status.HTTP_503_SERVICE_UNAVAILABLE
-        )
+    if "buffer" in request.session:
+        crc, memory = conversation_chain(vector_store)
+        memory.buffer = request.session["buffer"]
+    else:
+        crc, memory = conversation_chain(vector_store)
 
-    # Continue the conversation
-    try:
-        response = crc.invoke({"question": question})
-        request.session["buffer"] = memory.buffer
-        return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response(
-            {"error": "Bot is down due to API issues."}, status=status.HTTP_503_SERVICE_UNAVAILABLE
-        )
+    response = crc.invoke({"question": question})
+    request.session["buffer"] = memory.buffer
+    return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)

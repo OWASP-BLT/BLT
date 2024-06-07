@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import openai
 from dotenv import find_dotenv, load_dotenv
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationSummaryMemory
@@ -14,8 +15,24 @@ from langchain_community.document_loaders import (
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from openai import OpenAI
 
 load_dotenv(find_dotenv(), override=True)
+
+
+def is_api_key_valid(api_key):
+    client = OpenAI(api_key=api_key)
+    try:
+        response = client.completions.create(
+            prompt="Hello", model="gpt-3.5-turbo-instruct", max_tokens=1
+        )
+        return True
+    except openai.APIError as e:
+        return f"OpenAI API returned an API Error: {e}"
+    except openai.APIConnectionError as e:
+        return f"Failed to connect to OpenAI API: {e}"
+    except openai.RateLimitError as e:
+        return f"OpenAI API request exceeded rate limit: {e}"
 
 
 def load_document(file_path):
@@ -56,35 +73,26 @@ def embed_documents_and_save(embed_docs, db_dir="", db_name="faiss_index"):
 
     db_file_path = db_path / db_name
 
-    try:
-        embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-        if db_file_path.exists():
-            db = FAISS.load_local(db_file_path, embeddings, allow_dangerous_deserialization=True)
-            db.add_documents(embed_docs)
-        else:
-            db = FAISS.from_documents(embed_docs, embeddings)
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    if db_file_path.exists():
+        db = FAISS.load_local(db_file_path, embeddings, allow_dangerous_deserialization=True)
+        db.add_documents(embed_docs)
+    else:
+        db = FAISS.from_documents(embed_docs, embeddings)
 
-        db.save_local(db_file_path)
-        return db
-    except FileNotFoundError as fnf_error:
-        print(f"FileNotFoundError: {fnf_error}")
-        return "Bot is down due to missing FAISS index directory."
+    db.save_local(db_file_path)
+    return db
 
 
 def load_vector_store(db_path):
-    try:
-        print("Loading vector store...")
-        embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-        db_path = Path(db_path)
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    db_path = Path(db_path)
 
-        if not db_path.exists():
-            raise FileNotFoundError(f"FAISS index directory does not exist: {db_path}")
+    if not db_path.exists():
+        raise FileNotFoundError(f"FAISS index directory does not exist: {db_path}")
 
-        db = FAISS.load_local(db_path, embeddings, allow_dangerous_deserialization=True)
-        return db
-    except FileNotFoundError as fnf_error:
-        print(f"FileNotFoundError: {fnf_error}")
-        return "Bot is down due to missing FAISS index directory."
+    db = FAISS.load_local(db_path, embeddings, allow_dangerous_deserialization=True)
+    return db
 
 
 def conversation_chain(vector_store):
