@@ -27,12 +27,15 @@ def is_api_key_valid(api_key):
             prompt="Hello", model="gpt-3.5-turbo-instruct", max_tokens=1
         )
         return True
-    except openai.APIError as e:
-        return f"OpenAI API returned an API Error: {e}"
     except openai.APIConnectionError as e:
-        return f"Failed to connect to OpenAI API: {e}"
+        print("Failed to connect to OpenAI API: {e}")
+        return False
     except openai.RateLimitError as e:
-        return f"OpenAI API request exceeded rate limit: {e}"
+        print("OpenAI API rate limit exceeded: {e}")
+        return False
+    except openai.APIError as e:
+        print("OpenAI API error: {e}")
+        return False
 
 
 def load_document(file_path):
@@ -88,10 +91,10 @@ def load_vector_store(db_path):
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
     db_path = Path(db_path)
 
-    if not db_path.exists():
-        raise FileNotFoundError(f"FAISS index directory does not exist: {db_path}")
-
-    db = FAISS.load_local(db_path, embeddings, allow_dangerous_deserialization=True)
+    try:
+        db = FAISS.load_local(db_path, embeddings, allow_dangerous_deserialization=True)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"FAISS index file does not exist: {db_path}")
     return db
 
 

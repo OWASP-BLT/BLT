@@ -10,9 +10,9 @@ class Command(BaseCommand):
     help = "Update the FAISS database with new documents"
 
     def handle(self, *args, **kwargs):
-        check_Api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
-        if not check_Api:
-            return self.stdout.write(self.style.ERROR(check_Api))
+        check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
+        if not check_api:
+            return self.stdout.write(self.style.ERROR(check_api))
 
         # Calculate the base directory
         base_dir = Path(__file__).resolve().parents[3]
