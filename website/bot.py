@@ -91,10 +91,7 @@ def load_vector_store(db_path):
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
     db_path = Path(db_path)
 
-    try:
-        db = FAISS.load_local(db_path, embeddings, allow_dangerous_deserialization=True)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"FAISS index file does not exist: {db_path}")
+    db = FAISS.load_local(db_path, embeddings, allow_dangerous_deserialization=True)
     return db
 
 

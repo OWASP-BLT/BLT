@@ -4540,6 +4540,11 @@ def chatbot_conversation(request):
     if vector_store is None:
         db_path = Path(__file__).resolve().parent / "faiss_index"
 
+        if not db_path.exists():
+            return Response(
+                {"error": "Vector store not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         vector_store = load_vector_store(db_path)
 
     # Handle the "exit" command
