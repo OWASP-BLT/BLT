@@ -23,18 +23,16 @@ load_dotenv(find_dotenv(), override=True)
 def is_api_key_valid(api_key):
     client = OpenAI(api_key=api_key)
     try:
-        response = client.completions.create(
-            prompt="Hello", model="gpt-3.5-turbo-instruct", max_tokens=1
-        )
+        client.completions.create(prompt="Hello", model="gpt-3.5-turbo-instruct", max_tokens=1)
         return True
-    except openai.APIConnectionError as e:
-        print("Failed to connect to OpenAI API: {e}")
+    except openai.APIConnectionError as APICncError:
+        print(f"Failed to connect to OpenAI API: {APICncError}")
         return False
-    except openai.RateLimitError as e:
-        print("OpenAI API rate limit exceeded: {e}")
+    except openai.RateLimitError as RateLimitError:
+        print(f"OpenAI API rate limit exceeded: {RateLimitError}")
         return False
-    except openai.APIError as e:
-        print("OpenAI API error: {e}")
+    except openai.APIError as APIError:
+        print(f"OpenAI API error: {APIError}")
         return False
 
 
