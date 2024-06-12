@@ -25,14 +25,14 @@ def is_api_key_valid(api_key):
     try:
         client.completions.create(prompt="Hello", model="gpt-3.5-turbo-instruct", max_tokens=1)
         return True
-    except openai.APIConnectionError as APICncError:
-        print(f"Failed to connect to OpenAI API: {APICncError}")
+    except openai.APIConnectionError as e:
+        print(f"Failed to connect to OpenAI API: {e}")
         return False
-    except openai.RateLimitError as RateLimitError:
-        print(f"OpenAI API rate limit exceeded: {RateLimitError}")
+    except openai.RateLimitError as e:
+        print(f"OpenAI API rate limit exceeded: {e}")
         return False
-    except openai.APIError as APIError:
-        print(f"OpenAI API error: {APIError}")
+    except openai.APIError as e:
+        print(f"OpenAI API error: {e}")
         return False
 
 
