@@ -34,7 +34,6 @@
         position: absolute;
         top: -10px;
         right: -10px;
-        padding: 8px 8px;
         border-radius: 50%;
         background: red;
         color: white;
@@ -158,8 +157,8 @@
                 </a>
             </div>
             {% if request.user.is_authenticated %}
-                <div class="flex items-center h-[80px]">
-                    <li class="nav-item dropdown notification-section">
+                <div>
+                    <li class="dropdown notification-section">
                         <a href="#"
                            class="notification dropdown-toggle"
                            id="navbarDropdown"
@@ -181,83 +180,83 @@
                             <hr class="dropdown-divider"> {% endcomment %}
                         </ul>
                     </li>
-                    <li class="h-[80px] flex justify-center items-center ">
-                        <button id="dropdownButton"
-                                class="relative flex items-center sm:gap-3 mr-[30px]"
-                                type="button">
-                            {% if request.user.userprofile.avatar %}
-                                <img src="{{ request.user.userprofile.avatar }}"
-                                     class="h-[30px] w-[30px] rounded-full "
-                                     alt="User Avatar"
-                                     width="30"
-                                     height="30">
-                            {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
-                                <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
-                                     class="h-[30px] w-[30px] rounded-full "
-                                     alt="User Avatar"
-                                     width="30"
-                                     height="30">
-                            {% else %}
-                                {% gravatar request.user.email 30 '' 'gravatar rounded-full' %}
-                            {% endif %}
-                            <span class="absolute -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap"><span>{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
-                            <i class="fa fa-caret-down text-red-500"></i>
-                        </span>
-                    </button>
-                    <!-- Dropdown for User Avatar -->
-                    <div id="dropdownMenu"
-                         class="z-50 hidden absolute bg-white top-32 right-5">
-                        <ul class="flex flex-col gap-2 px-8 py-4 border shadow-xl rounded-lg left-auto">
-                            <li>
-                                <a href="{% url 'account_profile' %}">
-                                    <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{% env 'EXTENSION_URL' %}"
-                                   target="_new"
-                                   rel="noopener noreferrer">
-                                    <i class="fa fa-chrome fa-fw"></i>
-                                    {% trans "Add to chrome" %}
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{% url 'start_hunt' %}">
-                                    <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{% url 'social' %}">
-                                    <i class="fa fa-share fa-fw"></i>
-                                    {% trans "Social" %}
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{% url 'account_change_password' %}">
-                                    <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{% url 'invite' %}">
-                                    <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite Friends" %}
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{% url 'company_view' %}">
-                                    <i class="fa fa-building fa-fw"></i> {% trans "Company Dashboard" %}
-                                </a>
-                            </li>
-                            <!-- divider -->
-                            <li class="border my-4 -mx-8"></li>
-                            <li>
-                                <a href="{% url 'account_logout' %}">
-                                    <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
-            </div>
+                </div>
+                <li class="h-[80px] flex justify-center items-center ">
+                    <button id="dropdownButton"
+                            class="relative flex items-center sm:gap-3 mr-[30px]"
+                            type="button">
+                        {% if request.user.userprofile.avatar %}
+                            <img src="{{ request.user.userprofile.avatar }}"
+                                 class="h-[30px] w-[30px] rounded-full "
+                                 alt="User Avatar"
+                                 width="30"
+                                 height="30">
+                        {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
+                            <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
+                                 class="h-[30px] w-[30px] rounded-full "
+                                 alt="User Avatar"
+                                 width="30"
+                                 height="30">
+                        {% else %}
+                            {% gravatar request.user.email 30 '' 'gravatar rounded-full' %}
+                        {% endif %}
+                        <span class="absolute -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap"><span>{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
+                        <i class="fa fa-caret-down text-red-500"></i>
+                    </span>
+                </button>
+                <!-- Dropdown for User Avatar -->
+                <div id="dropdownMenu"
+                     class="z-50 hidden absolute bg-white top-32 right-5">
+                    <ul class="flex flex-col gap-2 px-8 py-4 border shadow-xl rounded-lg left-auto">
+                        <li>
+                            <a href="{% url 'account_profile' %}">
+                                <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% env 'EXTENSION_URL' %}"
+                               target="_new"
+                               rel="noopener noreferrer">
+                                <i class="fa fa-chrome fa-fw"></i>
+                                {% trans "Add to chrome" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'start_hunt' %}">
+                                <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'social' %}">
+                                <i class="fa fa-share fa-fw"></i>
+                                {% trans "Social" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'account_change_password' %}">
+                                <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'invite' %}">
+                                <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite Friends" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'company_view' %}">
+                                <i class="fa fa-building fa-fw"></i> {% trans "Company Dashboard" %}
+                            </a>
+                        </li>
+                        <!-- divider -->
+                        <li class="border my-4 -mx-8"></li>
+                        <li>
+                            <a href="{% url 'account_logout' %}">
+                                <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
         {% else %}
             <!-- Sign up and Log in Buttons -->
             <div class="flex items-center h-[80px]">
