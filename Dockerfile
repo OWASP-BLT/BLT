@@ -24,10 +24,9 @@ RUN pip install poetry
 RUN poetry config virtualenvs.create false
 RUN poetry lock --no-update
 RUN poetry install
-RUN chmod +x /blt/entrypoint.sh
+
 RUN python manage.py migrate 
 RUN python manage.py loaddata website/fixtures/initial_data.json
 # RUN python manage.py collectstatic
 RUN python manage.py initsuperuser
 
-ENTRYPOINT ["/blt/entrypoint.sh"]
