@@ -39,6 +39,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import serializers
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.files.base import ContentFile
@@ -4527,6 +4528,17 @@ vector_store = None
 
 @api_view(["POST"])
 def chatbot_conversation(request):
+    # Rate Limit Check
+    utc_now = datetime.now(timezone.utc)
+    today = utc_now.date()
+    rate_limit_key = f"global_daily_requests_{today}"
+    request_count = cache.get(rate_limit_key, 0)
+
+    if request_count >= 10:
+        return Response(
+            {"error": "Daily request limit exceeded."}, status=status.HTTP_429_TOO_MANY_REQUESTS
+        )
+
     question = request.data.get("question", "")
     check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
     if not check_api:
@@ -4561,5 +4573,7 @@ def chatbot_conversation(request):
         crc, memory = conversation_chain(vector_store)
 
     response = crc.invoke({"question": question})
+    # Increment the request count
+    cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
     request.session["buffer"] = memory.buffer
     return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)

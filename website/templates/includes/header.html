@@ -332,7 +332,15 @@
                 },
                 body: JSON.stringify({ question: message }),
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 429) {
+                        throw new Error('Rate limit exceeded');
+                    }
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 // Escape HTML meta-characters in the response
                 const escapedAnswer = data.answer.replace(/</g , "&lt;").replace( />/g, "&gt;");
@@ -342,9 +350,12 @@
                 loading.style.display = 'none';
             })
             .catch((error) => {
-                chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: Sorry, I am unable to process your request at the moment. Please try again later.</div>';
-                chatLog.scrollTop = chatLog.scrollHeight;  // Scroll to the bottom
-                
+                if (error.message === 'Rate limit exceeded') {
+                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: The request limit has been reached. Please try again later.</div>';
+                } else {
+                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: Sorry, I am unable to process your request at the moment. Please try again later.</div>';
+                }
+                chatLog.scrollTop = chatLog.scrollHeight;
                 loading.style.display = 'none';
             });
         };

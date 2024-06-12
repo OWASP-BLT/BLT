@@ -1,7 +1,3 @@
-rity through
-
- 
-
 OWASP Bug Logging Tool
 Introduction
 
