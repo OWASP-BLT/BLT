@@ -6,8 +6,6 @@
             BLT Issue - {{ object.description|escapejs }}
         {% endblock title %}
     </title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css"
-          rel="stylesheet" />
     <meta name="description"
           content="{{ object.markdown_description|escapejs }}">
     {% if object.user.username %}
@@ -35,13 +33,6 @@
 {% load static %}
 {% load gravatar %}
 {% load custom_tags %}
-{% block head %}
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css"
-          integrity="sha512-4CrzvWKAMiv1znMPFPA/lqlo9ykTDj9GdHwq3iujHBNSnopB7UpRz45dQ/gGn5ed7DF1NsA8OmUp7YHEV+mFKg=="
-          crossorigin="anonymous"
-          referrerpolicy="no-referrer" />
-{% endblock head %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     {% comment %} TODO(b):
@@ -53,7 +44,7 @@
     {% include "includes/_flags2.html" %}
     {% include "includes/_bookmark2.html" %}
     {% endcomment %}
-    <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-[#FAF9FB] font-[ubuntu] lg:pl-0">
+    <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-[#FAF9FB] font-[ubuntu] lg:pl-0 overflow-x-hidden">
         <div class="flex mr-[2%] ml-[2%] justify-between row gap-[8px] items-center">
             <nav class="left-issue flex items-center mr-auto">
                 <a href="{% url 'index' %}" class="!text-[#80708f] mx-4">Issues</a>
@@ -85,75 +76,50 @@
                rel="noopener noreferrer">{{ object.url }}</a>
         </p>
         <br>
-        <div class="ml-[3%]">
-            <div class="mb-4 w-[95%] border-b border-[#584ac080]">
-                <ul class="flex flex-wrap -mb-px font-medium text-center"
-                    id="default-tab"
-                    data-tabs-toggle="#default-tab-content"
-                    role="tablist"
-                    data-tabs-active-classes="border-b-2 text-[#7e22ce] border-[#7e22ce] hover:border-[#7e22ce]"
-                    data-tabs-inactive-classes="hover:bg-[#eaeaf6] hover:text-black">
-                    <li class="me-2" role="presentation">
-                        <button class="inline-flex items-center justify-center p-4 rounded-t-lg"
-                                id="details-tab"
-                                data-tabs-target="#details"
-                                type="button"
-                                role="tab"
-                                aria-controls="details"
-                                aria-selected="false">
-                            <svg class="w-4 h-4 me-2"
-                                 aria-hidden="true"
-                                 xmlns="http://www.w3.org/2000/svg"
-                                 fill="currentColor"
-                                 viewBox="0 0 18 20">
-                                <path d="M16 1h-3.278A1.992 1.992 0 0 0 11 0H7a1.993 1.993 0 0 0-1.722 1H2a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2Zm-3 14H5a1 1 0 0 1 0-2h8a1 1 0 0 1 0 2Zm0-4H5a1 1 0 0 1 0-2h8a1 1 0 1 1 0 2Zm0-5H5a1 1 0 0 1 0-2h2V2h4v2h2a1 1 0 1 1 0 2Z" />
-                            </svg>
-                            Details
-                        </button>
-                    </li>
-                    <li class="me-2" role="presentation">
-                        <button class="inline-flex items-center justify-center p-4 rounded-t-lg"
-                                id="screenshot-tab"
-                                data-tabs-target="#screenshot"
-                                type="button"
-                                role="tab"
-                                aria-controls="screenshot"
-                                aria-selected="false">
-                            <svg class="w-4 h-4 me-2"
-                                 aria-hidden="true"
-                                 xmlns="http://www.w3.org/2000/svg"
-                                 fill="currentColor"
-                                 viewBox="0 0 18 18">
-                                <path d="M6.143 0H1.857A1.857 1.857 0 0 0 0 1.857v4.286C0 7.169.831 8 1.857 8h4.286A1.857 1.857 0 0 0 8 6.143V1.857A1.857 1.857 0 0 0 6.143 0Zm10 0h-4.286A1.857 1.857 0 0 0 10 1.857v4.286C10 7.169 10.831 8 11.857 8h4.286A1.857 1.857 0 0 0 18 6.143V1.857A1.857 1.857 0 0 0 16.143 0Zm-10 10H1.857A1.857 1.857 0 0 0 0 11.857v4.286C0 17.169.831 18 1.857 18h4.286A1.857 1.857 0 0 0 8 16.143v-4.286A1.857 1.857 0 0 0 6.143 10Zm10 0h-4.286A1.857 1.857 0 0 0 10 11.857v4.286c0 1.026.831 1.857 1.857 1.857h4.286A1.857 1.857 0 0 0 18 16.143v-4.286A1.857 1.857 0 0 0 16.143 10Z" />
-                            </svg>
-                            Screenshots
-                        </button>
-                    </li>
-                    <li class="me-2" role="presentation">
-                        <button class="inline-flex items-center justify-center p-4 rounded-t-lg"
-                                id="comments-tab"
-                                data-tabs-target="#comments"
-                                type="button"
-                                role="tab"
-                                aria-controls="comments"
-                                aria-selected="false">
-                            <svg class="w-4 h-4 me-2"
-                                 xmlns="http://www.w3.org/2000/svg"
-                                 viewBox="0 0 512 512">
-                                <path d="M123.6 391.3c12.9-9.4 29.6-11.8 44.6-6.4c26.5 9.6 56.2 15.1 87.8 15.1c124.7 0 208-80.5 208-160s-83.3-160-208-160S48 160.5 48 240c0 32 12.4 62.8 35.7 89.2c8.6 9.7 12.8 22.5 11.8 35.5c-1.4 18.1-5.7 34.7-11.3 49.4c17-7.9 31.1-16.7 39.4-22.7zM21.2 431.9c1.8-2.7 3.5-5.4 5.1-8.1c10-16.6 19.5-38.4 21.4-62.9C17.7 326.8 0 285.1 0 240C0 125.1 114.6 32 256 32s256 93.1 256 208s-114.6 208-256 208c-37.1 0-72.3-6.4-104.1-17.9c-11.9 8.7-31.3 20.6-54.3 30.6c-15.1 6.6-32.3 12.6-50.1 16.1c-.8 .2-1.6 .3-2.4 .5c-4.4 .8-8.7 1.5-13.2 1.9c-.2 0-.5 .1-.7 .1c-5.1 .5-10.2 .8-15.3 .8c-6.5 0-12.3-3.9-14.8-9.9c-2.5-6-1.1-12.8 3.4-17.4c4.1-4.2 7.8-8.7 11.3-13.5c1.7-2.3 3.3-4.6 4.8-6.9c.1-.2 .2-.3 .3-.5z" />
-                            </svg>
-                            Comments
-                        </button>
-                    </li>
-                </ul>
+            <div class="mb-4 ml-5 w-[95%] border-b border-[#584ac080]">    
+            </div>
+        <div class="w-full flex lg:flex-row max-sm:flex-col px-5 bg-white">
+            <div class="max-sm:w-full lg:w-[40%] contents">
+                <div id="screenshot-wrapper"
+                     class=" bg-white col-md-6 w-full mb-10 max-sm:mx-0 max-sm:px-1 lg:w-[85vw] border-r border-[#584ac080]">
+                    <h4 class="ml-[1.45%] text-[25px] font-medium p-3 bg-white">Screenshots:</h4>
+                    {% if object.screenshot %}
+                        <a href="{{ object.screenshot.url }}"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            <img src="{{ object.screenshot.url }}"
+                                 class="w-[358px] h-[210px] rounded-lg"
+                                 alt="issue screenshot"
+                                 data-lightbox="image"
+                                 height="auto"
+                                 width="auto">
+                        </a>
+                    {% else %}
+                        <div class="grid grid-cols-4 gap-4 max-sm:grid-cols-1">
+                            {% for screenshot in screenshots %}
+                                <a href="{{ screenshot.image.url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    <img src="{{ screenshot.image.url }}"
+                                         class="w-[358px] h-[210px] rounded-lg"
+                                         alt="issue screenshot"
+                                         data-lightbox="image"
+                                         height="auto"
+                                         width="auto">
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="lg:w-[60%] px-3 max-sm:w-full">
+                Lorem ipsum dolor sit amet consectetur, adipisicing elit. Cum amet neque, explicabo facilis possimus error totam iure vitae officiis et minus at enim ducimus cumque quae, voluptatibus aliquam eum ipsam eveniet sint exercitationem in rem aspernatur ut. Possimus quaerat inventore temporibus, voluptatem omnis quasi itaque. Libero, officiis beatae nisi minus itaque accusantium hic fugiat natus. Enim veniam sed est? Ab esse hic in reiciendis. Magni earum quos eaque alias facere eveniet! Quisquam debitis ex nihil asperiores voluptatem error iure velit, veniam odio inventore vitae praesentium ullam earum tempora aliquam, doloremque provident. Ad reiciendis eveniet perspiciatis ullam modi quam molestias quod.
             </div>
         </div>
-        <div id="default-tab-content" class="bg-white mt-[-0.8%]">
+        <div class="bg-white mt-[-0.8%]">
             <br>
-            <div id="details"
-                 role="tabpanel"
-                 class="ml-[3%]"
-                 aria-labelledby="details-tab">
+            <div 
+                 class="ml-[3%]">
                 <h4 class="text-2xl font-bold mb-3">Event ID: {{ object.id }}</h4>
                 <div class="flex mr-[3%] justify-start items-center">
                     <img class="w-[5%] rounded-full h-[5%] object-cover"
@@ -345,55 +311,22 @@
                 <br>
             </div>
             <br>
-            <hr class="w-full border-red-500">
+            <hr class="border-[#7e22ce] w-[97%]">
             {% if object.markdown_description %}
                 <h3 class="font-[ubuntu] text-[25px] p-3 my-2 font-medium text-2xl">Issue Description</h3>
-                <p class="text-justify max-sm:w-[95vw] lg:w-11/12" id="bug_report"></p>
+                <p class="ml-3 text-justify max-sm:w-[95vw] lg:w-11/12" id="bug_report"></p>
             {% endif %}
         </div>
-        <div id="screenshot" role="tabpanel" aria-labelledby="screenshot-tab">
-            <div id="screenshot-wrapper"
-                 class="col-md-6 w-full mb-10 max-sm:mx-0 max-sm:px-1 lg:w-[82vw]">
-                <h4 class="text-[25px] font-medium p-3">Screenshots:</h4>
-                {% if object.screenshot %}
-                    <a href="{{ object.screenshot.url }}"
-                       target="_blank"
-                       rel="noopener noreferrer">
-                        <img src="{{ object.screenshot.url }}"
-                             class="w-[358px] h-[210px] rounded-lg"
-                             alt="issue screenshot"
-                             data-lightbox="image"
-                             height="auto"
-                             width="auto">
-                    </a>
-                {% else %}
-                    <div class="grid grid-cols-4 gap-4 max-sm:grid-cols-1">
-                        {% for screenshot in screenshots %}
-                            <a href="{{ screenshot.image.url }}"
-                               target="_blank"
-                               rel="noopener noreferrer">
-                                <img src="{{ screenshot.image.url }}"
-                                     class="w-[358px] h-[210px] rounded-lg"
-                                     alt="issue screenshot"
-                                     data-lightbox="image"
-                                     height="auto"
-                                     width="auto">
-                            </a>
-                        {% endfor %}
-                    </div>
-                {% endif %}
+
+
+            <div class="p-4 rounded-lg bg-white">
+                {% include "comments2.html" %}
             </div>
+
+
         </div>
     </div>
-</div>
-<div class="hidden p-4 rounded-lg bg-gray-50 "
-     id="comments"
-     role="tabpanel"
-     aria-labelledby="comments-tab">
-    <p class="text-sm text-gray-500 ">
-        This is some placeholder content the <strong class="font-medium text-gray-800 ">Settings tab's associated content</strong>. Clicking another tab will toggle the visibility of this one for the next. The tab JavaScript swaps classes to control the content visibility and styling.
-    </p>
-</div>
+
 <script src="{% static '/company/js/md_editor.js' %}"></script>
 <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.1.0/dist/markdown-it.min.js"></script>
@@ -578,8 +511,4 @@
         });
     });
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"
-        integrity="sha512-eNB1lPVKSAW5mXqnboj6QX9kTZKEq4t2f2c5ytUhb+QzPudY3imnjHyXYhIXavZo9e3slCjhDpOJhuMm9uSwzw=="
-        crossorigin="anonymous"
-        referrerpolicy="no-referrer"></script>
 {% endblock content %}

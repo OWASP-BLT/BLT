@@ -34,7 +34,7 @@
                     <footer class="flex justify-between items-center mb-2">
                         <div class="grid grid-cols-9 items-center justify-between">
                             <p class="sm:col-start-1 sm:col-span-4 col-span-5 sm:order-1 items-center inline-flex sm:text-3xl text-2xl text-gray-900 ">
-                                {% if comment.author_fk %}
+                                {% if comment.author_fk.user_avatar %}
                                     <img class="sm:mr-2 mr-1 sm:w-12 w-10 sm:h-12 h-10 rounded-full"
                                          src="{{ MEDIA_URL }}{{ comment.author_fk.user_avatar }}"
                                          alt="{{ comment.author }} profile"
@@ -117,7 +117,11 @@
                                 <div class="flex items-center">
                                     <p class="inline-flex items-center mr-3 text-md text-gray-900 ">
                                         <img class="mr-2 w-9 h-9 rounded-full"
+                                            {% if user.userprofile.user_avatar %}
                                              src="{{ MEDIA_URL }}{{ user.userprofile.user_avatar }}"
+                                             {% else %}
+                                             src="{% static 'images/dummy-user.png' %}"
+                                             {% endif %}
                                              alt="Michael Gough"
                                              width="36px"
                                              height="36px">
@@ -176,6 +180,24 @@
         {% endfor %}
     </div>
     <script>
+
+        function initDropDown(){
+            document.querySelectorAll("[data-dropdown-toggle]").forEach((toggle) => {
+                
+                toggle.addEventListener("click", () => {
+                    const { dropdownToggle } = toggle.dataset;
+                    const dropdown = document.getElementById(dropdownToggle);
+                    dropdown.classList.toggle("hidden");
+                    dropdown.classList.toggle("block");
+                    dropdown.style.position = "absolute";
+                    dropdown.style.top = toggle.offsetTop + toggle.offsetHeight + "px";
+                    dropdown.style.left = toggle.offsetLeft - 50 + "px";
+                    
+                });
+            });
+        }
+
+
         function remove_reply(){
             document.getElementById("replying_to_cont").remove();
             document.getElementById("replying_to_input").value = "";
@@ -226,18 +248,8 @@
                 },
                 success: function (data) {
                     $('#comment_root').replaceWith(data);
-                    document.querySelectorAll("[data-dropdown-toggle]").forEach((toggle) => {
-                        toggle.addEventListener("click", () => {
-                            const { dropdownToggle } = toggle.dataset;
-                            const dropdown = document.getElementById(dropdownToggle);
-                            dropdown.classList.toggle("hidden");
-                            dropdown.classList.toggle("block");
-                            dropdown.style.position = "absolute";
-                            dropdown.style.top = toggle.offsetTop + toggle.offsetHeight + "px";
-                            dropdown.style.left = toggle.offsetLeft - 50 + "px";
-                            
-                        });
-                    });
+                    // initDropDown();
+                    location.reload()
                 },
             });
         }
@@ -262,18 +274,8 @@
                 },
                 success: function (data) {
                     $('#comment_root').replaceWith(data);
-                    document.querySelectorAll("[data-dropdown-toggle]").forEach((toggle) => {
-                        toggle.addEventListener("click", () => {
-                            const { dropdownToggle } = toggle.dataset;
-                            const dropdown = document.getElementById(dropdownToggle);
-                            dropdown.classList.toggle("hidden");
-                            dropdown.classList.toggle("block");
-                            dropdown.style.position = "absolute";
-                            dropdown.style.top = toggle.offsetTop + toggle.offsetHeight + "px";
-                            dropdown.style.left = toggle.offsetLeft - 50 + "px";
-                            
-                        });
-                    });
+                    // initDropDown();
+                    location.reload()
                 },
             });
         }        
@@ -326,18 +328,8 @@
                         // Replace the content of #comment_root with the new data
                         $('#comment_root').replaceWith(data);
 
-                        document.querySelectorAll("[data-dropdown-toggle]").forEach((toggle) => {
-                            toggle.addEventListener("click", () => {
-                                const { dropdownToggle } = toggle.dataset;
-                                const dropdown = document.getElementById(dropdownToggle);
-                                dropdown.classList.toggle("hidden");
-                                dropdown.classList.toggle("block");
-                                dropdown.style.position = "absolute";
-                                dropdown.style.top = toggle.offsetTop + toggle.offsetHeight + "px";
-                                dropdown.style.left = toggle.offsetLeft - 50 + "px";
-                                
-                            });
-                        });
+                        // initDropDown();
+                        location.reload()
                     },
                 });
             }
@@ -357,6 +349,12 @@
         // }
 
         // setInterval(get_comments, 10000);
+
+        $(document).ready(function(){
+            // bind event handlers when the page loads.
+            initDropDown();
+        });
+        
 
 
     </script>
