@@ -76,8 +76,7 @@
                rel="noopener noreferrer">{{ object.url }}</a>
         </p>
         <br>
-            <div class="mb-4 ml-5 w-[95%] border-b border-[#584ac080]">    
-            </div>
+        <div class="mb-4 ml-5 w-[95%] border-b border-[#584ac080]"></div>
         <div class="w-full flex lg:flex-row max-sm:flex-col-reverse px-5 bg-white">
             <div class="max-sm:w-full lg:w-[40%] contents">
                 <div id="screenshot-wrapper"
@@ -118,8 +117,7 @@
         </div>
         <div class="bg-white mt-[-0.8%]">
             <br>
-            <div 
-                 class="ml-[3%]">
+            <div class="ml-[3%]">
                 <h4 class="text-2xl font-bold mb-3">Event ID: {{ object.id }}</h4>
                 <div class="flex mr-[3%] justify-start items-center">
                     <img class="w-[5%] rounded-full h-[5%] object-cover"
@@ -317,16 +315,9 @@
                 <p class="ml-3 text-justify max-sm:w-[95vw] lg:w-11/12" id="bug_report"></p>
             {% endif %}
         </div>
-
-
-            <div class="p-4 rounded-lg bg-white">
-                {% include "comments2.html" %}
-            </div>
-
-
-        </div>
+        <div class="p-4 rounded-lg bg-white">{% include "comments2.html" %}</div>
     </div>
-
+</div>
 <script src="{% static '/company/js/md_editor.js' %}"></script>
 <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.1.0/dist/markdown-it.min.js"></script>

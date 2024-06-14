@@ -117,11 +117,7 @@
                                 <div class="flex items-center">
                                     <p class="inline-flex items-center mr-3 text-md text-gray-900 ">
                                         <img class="mr-2 w-9 h-9 rounded-full"
-                                            {% if user.userprofile.user_avatar %}
-                                             src="{{ MEDIA_URL }}{{ user.userprofile.user_avatar }}"
-                                             {% else %}
-                                             src="{% static 'images/dummy-user.png' %}"
-                                             {% endif %}
+                                             {% if user.userprofile.user_avatar %} src="{{ MEDIA_URL }}{{ user.userprofile.user_avatar }}" {% else %} src="{% static 'images/dummy-user.png' %}" {% endif %}
                                              alt="Michael Gough"
                                              width="36px"
                                              height="36px">
@@ -180,7 +176,6 @@
         {% endfor %}
     </div>
     <script>
-
         function initDropDown(){
             document.querySelectorAll("[data-dropdown-toggle]").forEach((toggle) => {
                 
