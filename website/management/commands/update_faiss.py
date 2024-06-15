@@ -20,7 +20,7 @@ class Command(BaseCommand):
         # Set the paths to the website directory, documents, and faiss_index directories
         website_dir = base_dir / "website"
         documents_dir = website_dir / "documents"
-        faiss_index_dir = website_dir
+        # faiss_index_dir = website_dir
         processed_files_path = website_dir / "processed_files.txt"
 
         # Check if the documents directory exists
@@ -52,7 +52,8 @@ class Command(BaseCommand):
             all_split_docs.extend(split_docs)
 
         # Embed the new documents
-        embed_documents_and_save(all_split_docs, db_dir=str(faiss_index_dir))
+        # embed_documents_and_save(all_split_docs, db_dir=str(faiss_index_dir))
+        embed_documents_and_save(all_split_docs)
 
         # Update the list of processed files
         with processed_files_path.open("a") as f:

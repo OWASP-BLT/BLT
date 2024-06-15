@@ -12,7 +12,6 @@ import uuid
 from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from pathlib import Path
 from urllib.parse import urlparse, urlsplit, urlunparse
 
 import humanize
@@ -4550,14 +4549,13 @@ def chatbot_conversation(request):
 
     global vector_store
     if vector_store is None:
-        db_path = Path(__file__).resolve().parent / "faiss_index"
-
-        if not db_path.exists():
+        try:
+            vector_store = load_vector_store()
+        except FileNotFoundError as e:
             return Response(
                 {"error": "Vector store not found"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        vector_store = load_vector_store(db_path)
 
     # Handle the "exit" command
     if question.lower() == "exit":

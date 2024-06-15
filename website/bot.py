@@ -1,6 +1,9 @@
+import tempfile
 from pathlib import Path
 
 import openai
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from dotenv import find_dotenv, load_dotenv
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationSummaryMemory
@@ -67,29 +70,76 @@ def split_document(chunk_size, chunk_overlap, document):
     return text_splitter.split_documents(document)
 
 
-def embed_documents_and_save(embed_docs, db_dir="", db_name="faiss_index"):
-    db_path = Path(db_dir)
-    if not db_path.exists():
-        db_path.mkdir(parents=True, exist_ok=True)
-
-    db_file_path = db_path / db_name
+def embed_documents_and_save(embed_docs):
+    db_folder_path = Path("faiss_index")
 
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-    if db_file_path.exists():
-        db = FAISS.load_local(db_file_path, embeddings, allow_dangerous_deserialization=True)
-        db.add_documents(embed_docs)
-    else:
-        db = FAISS.from_documents(embed_docs, embeddings)
 
-    db.save_local(db_file_path)
+    # Temporary directory for local operations
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_db_path = Path(temp_dir) / db_folder_path
+        temp_db_path.mkdir(parents=True, exist_ok=True)
+
+        # Check if the folder exists in the storage system and download files
+        if default_storage.exists(str(db_folder_path)) and default_storage.listdir(
+            str(db_folder_path)
+        ):
+            # Download all files from the storage folder to the temp directory
+            for file_name in default_storage.listdir(str(db_folder_path))[1]:
+                with default_storage.open(db_folder_path / file_name, "rb") as f:
+                    content = f.read()
+                with open(temp_db_path / file_name, "wb") as temp_file:
+                    temp_file.write(content)
+
+            # Load the FAISS index from the temp directory
+            db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=True)
+            # Add new documents to the index
+            db.add_documents(embed_docs)
+        else:
+            # Create a new FAISS index if it doesn't exist
+            db = FAISS.from_documents(embed_docs, embeddings)
+
+        # Save the updated FAISS index back to the temp directory
+        db.save_local(temp_db_path)
+
+        # Clean up the storage directory before uploading the new files
+        if default_storage.exists(str(db_folder_path)):
+            for file_name in default_storage.listdir(str(db_folder_path))[1]:
+                default_storage.delete(db_folder_path / file_name)
+
+        # Upload the updated files back to Django's storage
+        for file in temp_db_path.rglob("*"):
+            if file.is_file():
+                with open(file, "rb") as f:
+                    content = f.read()
+                default_storage.save(
+                    str(db_folder_path / file.relative_to(temp_db_path)), ContentFile(content)
+                )
+
     return db
 
 
-def load_vector_store(db_path):
+def load_vector_store():
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-    db_path = Path(db_path)
+    db_folder_path = Path("faiss_index")
 
-    db = FAISS.load_local(db_path, embeddings, allow_dangerous_deserialization=True)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_db_path = Path(temp_dir) / db_folder_path
+        temp_db_path.mkdir(parents=True, exist_ok=True)
+
+        try:
+            # Download all files from the storage folder to the temp directory
+            for file_name in default_storage.listdir(str(db_folder_path))[1]:
+                with default_storage.open(db_folder_path / file_name, "rb") as f:
+                    content = f.read()
+                with open(temp_db_path / file_name, "wb") as temp_file:
+                    temp_file.write(content)
+
+            # Load the FAISS index from the temp directory
+            db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=True)
+        except FileNotFoundError as e:
+            raise FileNotFoundError(f"Required file not found: {e}")
+
     return db
 
 
