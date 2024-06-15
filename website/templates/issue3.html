@@ -76,86 +76,90 @@
                rel="noopener noreferrer">{{ object.url }}</a>
         </p>
         <br>
-        <div class="mb-4 ml-5 w-[95%] border-b border-[#584ac080]"></div>
-        <div class="w-full flex lg:flex-row max-sm:flex-col-reverse px-5 bg-white">
-            <div class="max-sm:w-full lg:w-[40%] contents">
-                <div id="screenshot-wrapper"
-                     class=" bg-white col-md-6 w-full mb-10 max-sm:mx-0 max-sm:px-1 lg:w-[85vw] lg:border-r lg:border-[#584ac080]">
-                    <h4 class="ml-[1.45%] text-[25px] font-medium p-3 bg-white">Screenshots:</h4>
-                    {% if object.screenshot %}
-                        <a href="{{ object.screenshot.url }}"
-                           target="_blank"
-                           rel="noopener noreferrer">
-                            <img src="{{ object.screenshot.url }}"
-                                 class="w-[358px] h-[210px] rounded-lg"
-                                 alt="issue screenshot"
-                                 data-lightbox="image"
-                                 height="auto"
-                                 width="auto">
-                        </a>
-                    {% else %}
-                        <div class="grid grid-cols-4 gap-4 max-sm:grid-cols-1">
-                            {% for screenshot in screenshots %}
-                                <a href="{{ screenshot.image.url }}"
-                                   target="_blank"
-                                   rel="noopener noreferrer">
-                                    <img src="{{ screenshot.image.url }}"
-                                         class="w-[358px] h-[210px] rounded-lg"
-                                         alt="issue screenshot"
-                                         data-lightbox="image"
-                                         height="auto"
-                                         width="auto">
-                                </a>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="lg:w-[60%] px-3 max-sm:w-full">
-                Lorem ipsum dolor sit amet consectetur, adipisicing elit. Cum amet neque, explicabo facilis possimus error totam iure vitae officiis et minus at enim ducimus cumque quae, voluptatibus aliquam eum ipsam eveniet sint exercitationem in rem aspernatur ut. Possimus quaerat inventore temporibus, voluptatem omnis quasi itaque. Libero, officiis beatae nisi minus itaque accusantium hic fugiat natus. Enim veniam sed est? Ab esse hic in reiciendis. Magni earum quos eaque alias facere eveniet! Quisquam debitis ex nihil asperiores voluptatem error iure velit, veniam odio inventore vitae praesentium ullam earum tempora aliquam, doloremque provident. Ad reiciendis eveniet perspiciatis ullam modi quam molestias quod.
-            </div>
-        </div>
-        <div class="bg-white mt-[-0.8%]">
+        <div id="default-tab-content" class="bg-white">
             <br>
-            <div class="ml-[3%]">
-                <h4 class="text-2xl font-bold mb-3">Event ID: {{ object.id }}</h4>
-                <div class="flex mr-[3%] justify-start items-center">
-                    <img class="w-[5%] rounded-full h-[5%] object-cover"
-                         {% if object.user.username %} {% if object.user.userprofile.user_avatar %} src="{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}" {% else %} src="{% gravatar_url object.user.email 100 %}" {% endif %}
-                         {% else %}
-                         src="{% static 'images/dummy-user.png' %}"
-                         {% endif %}
-                         alt="User Profile Logo"
-                         width="32px"
-                         height="32px">
-                    <div class="ml-3">
-                        <div>
-                            {% if object.user.username %}
-                                <a href="{% url 'profile' slug=object.user.username %}"
-                                   class="!text-[#7e22ce] font-bold">{{ object.user.username }}</a>
-                            {% else %}
-                                Anonymous
-                            {% endif %}
-                        </div>
-                        <div>
-                            <span class="font-bold">Total Points =</span> {{ users_score }}
-                        </div>
+            <div class="flex flex-row">
+                <div id="screenshot-wrapper" class="">
+                    <div class="text-[16px] font-semibold mb-5">Screenshots:</div>
+                    <hr>
+                    <div class="screenshot-container h-[400px] w-[40vw] flex">
+                        {% if object.screenshot %}
+                            <a href="{{ object.screenshot.url }}" data-lightbox="image">
+                                <img id="current-screenshot"
+                                     src="{{ object.screenshot.url }}"
+                                     class="border-2 border-black object-contain"
+                                     height="400"
+                                     width="600"
+                                     alt="screenshot">
+                            </a>
+                        {% else %}
+                            <div id="screenshot-gallery" class="hidden">
+                                {% for screenshot in screenshots %}
+                                    <img src="{{ screenshot.image.url }}"
+                                         class="screenshot-image object-contain"
+                                         height="400"
+                                         width="600"
+                                         alt="screenshot">
+                                {% endfor %}
+                            </div>
+                            <a id="lightbox-link"
+                               href="{{ screenshots.0.image.url }}"
+                               data-lightbox="image">
+                                <img id="current-screenshot"
+                                     src="{{ screenshots.0.image.url }}"
+                                     class="border-2 border-black object-contain"
+                                     height="400"
+                                     width="600"
+                                     alt="screenshot">
+                            </a>
+                        {% endif %}
+                    </div>
+                    <hr>
+                    <div class="flex flex-row my-5 gap-5">
+                        <button id="prevBtn"
+                                class="bg-[#FF6363] text-white px-4 py-2 text-[18px] font-medium rounded-lg">
+                            Prev
+                        </button>
+                        <button id="nextBtn"
+                                class="bg-[#FF6363] text-white px-4 py-2 text-[18px] font-medium rounded-lg">
+                            Next
+                        </button>
                     </div>
                 </div>
-                <div class="container md:h-[20vh] max-sm:mt-[30%] mx-auto px-4 md:px-12">
-                    <div class="flex justify-evenly flex-wrap -mx-1 lg:-mx-4">
-                        <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
+                <div id="details" class="">
+                    <div>
+                        <h4 class="text-2xl font-bold mb-3">Event ID: {{ object.id }}</h4>
+                        <div class="flex justify-start items-center">
+                            <img class="w-[40px] rounded-full h-[40px] object-cover"
+                                 src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.png' %}{% endif %}"
+                                 alt="User Profile Logo"
+                                 width="32px"
+                                 height="32px">
+                            <div class="ml-3">
+                                <div>
+                                    {% if object.user.username %}
+                                        <a href="{% url 'profile' slug=object.user.username %}"
+                                           class="!text-[#7e22ce] font-bold">{{ object.user.username }}</a>
+                                    {% else %}
+                                        Anonymous
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <span class="font-bold">Total Points =</span> {{ users_score }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap lg:grid lg:grid-cols-2 gap-10">
+                        <div class="flex items-center bg-white rounded-2xl shadow-md gap-5 p-10 w-[20vw]">
                             <div class="rounded-full w-[20%]">
                                 <img class="w-[80%] h-[80%] object-cover"
-                                     {% if object.user.username %} {% if object.user.userprofile.user_avatar %} src="{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}" {% else %} src="{% gravatar_url object.user.email 100 %}" {% endif %}
-                                     {% else %}
-                                     src="{% static 'images/dummy-user.png' %}"
-                                     {% endif %}
+                                     src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.png' %}{% endif %}"
                                      alt="User Profile Logo"
                                      width="auto"
                                      height="auto">
                             </div>
-                            <div>
+                            <div class="flex flex-col items-start gap-2">
                                 <div class="text-[#B00000] text-[16px] w-[90%] truncate">
                                     {% if object.user.username %}
                                         <a href="{% url 'profile' slug=object.user.username %}"
@@ -167,98 +171,77 @@
                                 <div class="text-[#B00000] text-[14px]">
                                     Total Points = <span class="font-bold">{{ users_score }}</span>
                                 </div>
-                            </div>
-                            <div>
-                                {% if not object.user.username %}
-                                    <button disabled
-                                            class="!cursor-not-allowed bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
-                                        <span class="border-2 border-black rounded-xl p-1">$5 <i class="text-black fa-solid fa-caret-down"></i></span> Tip
-                                    </button>
-                                {% else %}
-                                    <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
-                                        <span class="border-2 border-black rounded-xl p-1">$5 <i class="text-black fa-solid fa-caret-down"></i></span> Tip
-                                    </button>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <br>
-                        <div class="max-sm:px-[20px] bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md">
-                        </div>
-                        <br>
-                        <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
-                            <div>
-                                <div class="text-[14px] w-[100%] font-bold truncate">Bug Type: {{ object.get_label_display }}</div>
-                                <div class="h-[2vh]"></div>
-                                <div class=" text-[14px] w-[100%] truncate">
-                                    Status: <span class="status">{{ object.status }}</span>
-                                </div>
-                                <div class=" text-[14px] w-[100%] truncate">Added on: {{ object.created }}</div>
-                                {% if object.cve_id is not None %}
-                                    <div class=" text-[14px] w-[100%] truncate">CVE ID: {{ object.cve_id }}</div>
-                                {% endif %}
-                                {% if object.cve_score is not None %}
-                                    <div class=" text-[14px] w-[100%] truncate">CVE Score: {{ object.cve_score }}</div>
-                                {% endif %}
-                                <div class=" text-[14px] w-[100%] truncate">
-                                    Submitted:
-                                    {% if object.hunt is None %}
-                                        Independently
+                                <div>
+                                    {% if not object.user.username %}
+                                        <button disabled
+                                                class="!cursor-not-allowed bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
+                                            <span class="border-2 border-black rounded-xl p-1">$5 <i class="text-black fa-solid fa-caret-down"></i></span> Tip
+                                        </button>
                                     {% else %}
-                                        <a href="{% url 'show_bughunt' object.hunt.id %}">{{ object.hunt.name }}</a>
+                                        <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
+                                            <span class="border-2 border-black rounded-xl p-1">$5 <i class="text-black fa-solid fa-caret-down"></i></span> Tip
+                                        </button>
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="h-[80%] items-center justify-between flex flex-col">
-                                {% if request.user == object.user or request.is_staff or request.is_superuser %}
-                                    <div>
-                                        <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[14px] p-2 rounded-lg edit-issue-status"
-                                                id="issue_stat">
-                                            {% if object.status == "open" %}
-                                                <svg width="23"
-                                                     height="23"
-                                                     viewBox="0 0 25 19"
-                                                     fill="none"
-                                                     xmlns="http://www.w3.org/2000/svg">
-                                                    <path d="M8.4911 18.4552L0.366101 10.3302C-0.122034 9.8421 -0.122034 9.05065 0.366101 8.56246L2.13383 6.79469C2.62196 6.30651 3.41346 6.30651 3.9016 6.79469L9.37499 12.268L21.0984 0.54469C21.5865 0.0565552 22.378 0.0565552 22.8661 0.54469L24.6339 2.31246C25.122 2.8006 25.122 3.59205 24.6339 4.08024L10.2589 18.4553C9.77069 18.9434 8.97924 18.9434 8.4911 18.4552Z" fill="white" />
-                                                </svg>
-                                            {% else %}
-                                                <i class="fa-solid fa-retweet"></i>
-                                            {% endif %}
-                                        </button>
-                                    </div>
-                                {% endif %}
-                                {% if request.user.is_superuser or request.user == object.user %}
-                                    <div>
-                                        <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
-                                            <span class="rounded-xl font-bold p-1"><i class="fa-solid fa-pen-to-square"></i></span>
-                                        </button>
-                                    </div>
+                        </div>
+                        <div class="flex flex-col items-center bg-white rounded-2xl shadow-md justify-between p-10 w-[20vw]">
+                            <div class="text-[14px] w-[100%] font-bold truncate">Bug Type: {{ object.get_label_display }}</div>
+                            <div class="h-[2vh]"></div>
+                            <div class="text-[14px] w-[100%] truncate">
+                                Status: <span class="status">{{ object.status }}</span>
+                            </div>
+                            <div class="text-[14px] w-[100%] truncate">Added on: {{ object.created }}</div>
+                            {% if object.cve_id %}
+                                <div class="text-[14px] w-[100%] truncate">CVE ID: {{ object.cve_id }}</div>
+                            {% endif %}
+                            {% if object.cve_score %}
+                                <div class="text-[14px] w-[100%] truncate">CVE Score: {{ object.cve_score }}</div>
+                            {% endif %}
+                            <div class="text-[14px] w-[100%] truncate">
+                                Submitted:
+                                {% if object.hunt %}
+                                    <a href="{% url 'show_bughunt' object.hunt.id %}">{{ object.hunt.name }}</a>
+                                {% else %}
+                                    Independently
                                 {% endif %}
                             </div>
                         </div>
-                        <br>
-                    </div>
-                </div>
-                <br>
-                <div class="container max-sm:mt-[2%] mx-auto px-4 md:px-12">
-                    <div class="flex justify-evenly flex-wrap -mx-1 lg:-mx-4">
-                        <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
-                            <div class="rounded-full w-[20%]">
-                                <img class="w-[80%] h-[80%] object-cover"
-                                     src="{{ object.domain.get_logo }}"
-                                     alt="Domain Logo"
-                                     width="auto"
-                                     height="auto">
-                            </div>
-                            <div>
-                                <div class=" text-[14px] w-[90%] truncate">
+                        <!-- <div class="h-[80%] items-center justify-between flex flex-col">
+                            {% if request.user == object.user or request.is_staff or request.is_superuser %}
+                                <div>
+                                    <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[14px] p-2 rounded-lg edit-issue-status" id="issue_stat">
+                                        {% if object.status == "open" %}
+                                            <svg width="23" height="23" viewBox="0 0 25 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M8.4911 18.4552L0.366101 10.3302C-0.122034 9.8421 -0.122034 9.05065 0.366101 8.56246L2.13383 6.79469C2.62196 6.30651 3.41346 6.30651 3.9016 6.79469L9.37499 12.268L21.0984 0.54469C21.5865 0.0565552 22.378 0.0565552 22.8661 0.54469L24.6339 2.31246C25.122 2.8006 25.122 3.59205 24.6339 4.08024L10.2589 18.4553C9.77069 18.9434 8.97924 18.9434 8.4911 18.4552Z" fill="white" />
+                                            </svg>
+                                        {% else %}
+                                            <i class="fa-solid fa-retweet"></i>
+                                        {% endif %}
+                                    </button>
+                                </div>
+                            {% endif %}
+                            {% if request.user.is_superuser or request.user == object.user %}
+                                <div>
+                                    <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
+                                        <span class="rounded-xl font-bold p-1"><i class="fa-solid fa-pen-to-square"></i></span>
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div> -->
+                        <div class="flex items-center bg-white rounded-2xl shadow-md gap-5 p-10 w-[20vw]">
+                            <img class="w-[40px] h-[40px] object-cover"
+                                 src="{{ object.domain.get_logo }}"
+                                 alt="Domain Logo"
+                                 width="auto"
+                                 height="auto">
+                            <div class="flex flex-col items-start gap-2">
+                                <div class="text-[14px] w-[90%] truncate">
                                     <a class="#" href="{% url 'domain' slug=object.domain.name %}">Reported on {{ object.domain.name }}</a>
                                 </div>
                                 <div class="text-[13px]">
                                     Issues Reported: <span class="font-bold">{{ issue_count }}</span>
                                 </div>
-                            </div>
-                            <div>
                                 <button onclick="{% if user.is_authenticated %}subscribe_domain(){% else %}window.location.href=`{% url 'account_login' %}`{% endif %}"
                                         id="subscribe_domain_btn"
                                         class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[16px] p-2 rounded-lg">
@@ -270,11 +253,7 @@
                                 </button>
                             </div>
                         </div>
-                        <br>
-                        <div class="max-sm:px-[20px] bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 rounded-2xl shadow-md lg:w-[23vw] h-[17vh]">
-                        </div>
-                        <br>
-                        <div class="max-sm:px-[20px] flex items-center bg-white my-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-[23vw] h-[17vh] rounded-2xl shadow-md justify-between">
+                        <div class="flex items-center bg-white rounded-2xl shadow-md p-10 w-[20vw]">
                             {% if browser_family %}
                                 {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as image_static %}
                                     <div class="rounded-full w-[20%]">
@@ -286,8 +265,8 @@
                                     </div>
                                 {% endwith %}
                             {% endif %}
-                            <div>
-                                <div class=" text-[14px] truncate">
+                            <div class="flex flex-col items-start">
+                                <div class="text-[14px] truncate">
                                     Browser Version: <span class="font-bold text-2xl">{{ browser_version }}</span>
                                 </div>
                                 <div class="text-[14px]">
@@ -304,15 +283,14 @@
                             </div>
                         </div>
                     </div>
-                    <br>
                 </div>
-                <br>
             </div>
-            <br>
+        </div>
+        <div>
             <hr class="border-[#7e22ce] w-[97%]">
             {% if object.markdown_description %}
-                <h3 class="font-[ubuntu] text-[25px] p-3 my-2 font-medium text-2xl">Issue Description</h3>
-                <p class="ml-3 text-justify max-sm:w-[95vw] lg:w-11/12" id="bug_report"></p>
+                <h3 class="font-[ubuntu] text-[20px] f p-3 my-2 font-semibold">Issue Description</h3>
+                <p class="ml-3 text-justify max-sm:w-[95vw] lg:w-11/12" id="bug_report">{{ object.markdown_description }}</p>
             {% endif %}
         </div>
         <div class="p-4 rounded-lg bg-white">{% include "comments2.html" %}</div>
@@ -330,6 +308,34 @@
 
     $("#bug_report").html(renderedHtml);
 
+    document.addEventListener('DOMContentLoaded', function () {
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const currentScreenshot = document.getElementById('current-screenshot');
+    const lightboxLink = document.getElementById('lightbox-link');
+    const screenshots = document.querySelectorAll('.screenshot-image');
+    
+    let currentIndex = 0;
+
+    function updateImage() {
+        currentScreenshot.src = screenshots[currentIndex].src;
+        lightboxLink.href = screenshots[currentIndex].src;
+    }
+
+    nextBtn.addEventListener('click', function () {
+        if (currentIndex < screenshots.length - 1) {
+            currentIndex++;
+            updateImage();
+        }
+    });
+
+    prevBtn.addEventListener('click', function () {
+        if (currentIndex > 0) {
+            currentIndex--;
+            updateImage();
+        }
+    });
+});
 
     function subscribe_domain(){
         $.ajax({
