@@ -344,10 +344,15 @@ from channels.layers import get_channel_layer
 
 
 def test(request):
+    messages = ["notification"]
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
-        "notification_broadcast",
-        {"type": "send_notification", "message": "Notification"},
+        "notification_" + str(request.user.id),
+        {
+            "type": "send_notification",
+            "notification_id": "notification_" + str(request.user.id),
+            "message": messages,
+        },
     )
     return HttpResponse("Done")
 

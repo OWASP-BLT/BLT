@@ -2,6 +2,8 @@ import json
 
 from channels.generic.websocket import AsyncWebsocketConsumer
 
+from notification_app.models import Notification
+
 
 class NotificationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -17,23 +19,14 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         # Leave room group
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
-    # Receive message from WebSocket
-    # async def receive(self, text_data):
-    #     text_data_json = json.loads(text_data)
-    #     message = text_data_json['message']
-
-    #     # Send message to room group
-    #     await self.channel_layer.group_send(
-    #         self.room_group_name,
-    #         {
-    #             'type': 'chat_message',
-    #             'message': message
-    #         }
-    #     )
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        notification_id = data["notification_id"]
+        Notification.objects.filter(id=notification_id).delete()
 
     # Receive message from room group
     async def send_notification(self, event):
-        message = json.loads(event["message"])
-
+        print("===========", event)
+        message = event
         # Send message to WebSocket
         await self.send(text_data=json.dumps(message))
