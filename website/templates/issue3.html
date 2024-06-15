@@ -63,7 +63,6 @@
                     <span class="bg-green-100 text-green-800 text-xl font-medium me-2 px-2.5 py-0.5 rounded">Resolved</span>
                 {% endif %}
             </nav>
-            <div class="right-data ml-auto max-sm:pt-2">{% include "includes/_like_dislike_share.html" %}</div>
         </div>
         <div class="h-[3vh]"></div>
         <h2 class="font-[ubuntu] font-bold text-[30px] w-[90%] truncate ml-[3.5%]"
@@ -76,13 +75,14 @@
                rel="noopener noreferrer">{{ object.url }}</a>
         </p>
         <br>
+        <div class="right-data max-sm:pt-2 ml-[3.5%]">{% include "includes/_like_dislike_share.html" %}</div>
         <div id="default-tab-content" class="bg-white">
             <br>
-            <div class="flex flex-row">
+            <div class="flex flex-col items-center lg:items-start px-10 lg:flex-row">
                 <div id="screenshot-wrapper">
                     <div class="text-[16px] font-semibold mb-5">Screenshots:</div>
                     <hr>
-                    <div class="screenshot-container h-[400px] w-[40vw] flex">
+                    <div class="screenshot-container max-h-[400px] w-[100%] lg:h-[400px] lg:w-[40vw] flex">
                         {% if object.screenshot %}
                             <a href="{{ object.screenshot.url }}" data-lightbox="image">
                                 <img id="current-screenshot"
@@ -150,8 +150,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="flex flex-wrap lg:grid lg:grid-cols-2 gap-10">
-                        <div class="flex items-center bg-white rounded-2xl shadow-md gap-5 p-10 w-[20vw]">
+                    <div class="flex flex-col lg:grid lg:grid-cols-2 gap-10">
+                        <div class="flex items-center bg-white rounded-2xl shadow-md gap-5 p-10 w-full lg:w-[20vw]">
                             <div class="rounded-full w-[20%]">
                                 <img class="w-[80%] h-[80%] object-cover"
                                      src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.png' %}{% endif %}"
@@ -185,7 +185,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="flex flex-col items-center bg-white rounded-2xl shadow-md justify-between p-10 w-[20vw]">
+                        <div class="flex flex-col items-center bg-white rounded-2xl shadow-md justify-between p-10 w-full lg:w-[20vw]">
                             <div class="text-[14px] w-[100%] font-bold truncate">Bug Type: {{ object.get_label_display }}</div>
                             <div class="h-[2vh]"></div>
                             <div class="text-[14px] w-[100%] truncate">
@@ -229,7 +229,7 @@
                                 </div>
                             {% endif %}
                         </div> -->
-                        <div class="flex items-center bg-white rounded-2xl shadow-md gap-5 p-10 w-[20vw]">
+                        <div class="flex items-center bg-white rounded-2xl shadow-md gap-5 p-10 w-full lg:w-[20vw]">
                             <img class="w-[40px] h-[40px] object-cover"
                                  src="{{ object.domain.get_logo }}"
                                  alt="Domain Logo"
@@ -253,7 +253,7 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="flex items-center bg-white rounded-2xl shadow-md p-10 w-[20vw]">
+                        <div class="flex items-center bg-white rounded-2xl shadow-md p-10 w-full lg:w-[20vw]">
                             {% if browser_family %}
                                 {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as image_static %}
                                     <div class="rounded-full w-[20%]">
@@ -286,14 +286,15 @@
                 </div>
             </div>
         </div>
-        <div>
-            <hr class="border-[#7e22ce] w-[97%]">
+        <div class="px-10 mt-5">
+            <hr class="border-[#7e22ce] w-[100%]">
             {% if object.markdown_description %}
-                <h3 class="font-[ubuntu] text-[20px] f p-3 my-2 font-semibold">Issue Description</h3>
-                <p class="ml-3 text-justify max-sm:w-[95vw] lg:w-11/12" id="bug_report">{{ object.markdown_description }}</p>
+                <h3 class="font-[ubuntu] text-[16px] lg:text-[20px] p-3 my-2 font-semibold">Issue Description</h3>
+                <p class="ml-3 text-justify text-[12px] lg:text-[14px] lg:w-11/12"
+                   id="bug_report">{{ object.markdown_description }}</p>
             {% endif %}
         </div>
-        <div class="p-4 rounded-lg bg-white">{% include "comments2.html" %}</div>
+        <div class="px-10 rounded-lg bg-white">{% include "comments2.html" %}</div>
     </div>
 </div>
 <script src="{% static '/company/js/md_editor.js' %}"></script>

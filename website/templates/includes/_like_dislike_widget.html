@@ -1,9 +1,10 @@
 {% comment %} views  {% endcomment %}
 <button disabled
-        class="like_unlike border-[1px] rounded-2xl shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
+        class="like_unlike border-[1px] rounded-2xl shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[1.3rem] leading-4 p-4 "
         type="button">
-    <span id="likes" class="flex items-end">
-        {{ object.views }} &nbsp;
+    <span id="likes" class="flex flex-row gap-2 items-center">
+        {{ object.views }}
+        <span>Views</span>
         <svg xmlns="http://www.w3.org/2000/svg"
              viewBox="0 0 562 352"
              height="16px"
@@ -14,9 +15,10 @@
 </button>
 {% comment %} likes  {% endcomment %}
 {% if request.user.is_authenticated %}
-    <button name="{{ object.pk }}" {% comment %} {{device}} is passed by _like_dislike_share.html {% endcomment %} data-tooltip-target="tooltip-bottom-{{ device }}-like" data-tooltip-placement="bottom" type="submit" id="like_unlike" class="like_unlike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 " type="button">
-        <span id="likes" class="flex items-end">
-            {{ likes }} &nbsp;
+    <button name="{{ object.pk }}" {% comment %} {{device}} is passed by _like_dislike_share.html {% endcomment %} data-tooltip-target="tooltip-bottom-{{ device }}-like" data-tooltip-placement="bottom" type="submit" id="like_unlike" class="like_unlike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 " type="button">
+        <span id="likes" class="flex flex-row gap-2 items-center">
+            {{ likes }}
+            <span>Likes</span>
             {% if isLiked %}
                 {% include "./_tooltip3.html" with text="Unlike" sno=object.pk widget="like" %}
                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -42,7 +44,7 @@
     <button data-tooltip-target="tooltip-bottom-{{ device }}-like"
             data-tooltip-placement="bottom"
             onclick="window.location.href='/accounts/login'"
-            class="like_unlike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
+            class="like_unlike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
             type="button">
         <span id="likes" class="flex items-end">
             {{ likes }} &nbsp;
@@ -64,10 +66,11 @@
             data-tooltip-placement="bottom"
             type="submit"
             id="dislike-btn"
-            class="dislike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4"
+            class="dislike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4"
             type="button">
-        <span id="dislikes" class="flex items-end">
-            {{ dislikes }} &nbsp;
+        <span id="dislikes" class="flex flex-row gap-2 items-center">
+            {{ dislikes }}
+            <span>Dislikes</span>
             {% if dislikes %}
                 {% include "./_tooltip3.html" with text="Undo Dislike" sno=object.pk widget="dislike" %}
                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -93,7 +96,7 @@
     <button data-tooltip-target="tooltip-bottom-{{ device }}-dislike"
             data-tooltip-placement="bottom"
             onclick="window.location.href='/accounts/login'"
-            class="dislike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 ">
+            class="dislike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 ">
         <span id="dislikes" class="flex items-end">
             {{ dislikes }} &nbsp;
             {% include "./_tooltip3.html" with text="Login to Dislike" sno=object.pk widget="dislike" %}
@@ -113,10 +116,11 @@
             data-tooltip-target="tooltip-bottom-{{ device }}-flags"
             data-tooltip-placement="bottom"
             id="flag-unflag"
-            class="flag-unflag rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
+            class="flag-unflag rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
             type="button">
-        <span id="flags" class="flex items-end">
-            {{ flags }} &nbsp;
+        <span id="flags" class="flex flex-row gap-2 items-center">
+            {{ flags }}
+            <span>Flag</span>
             {% if isFlagged %}
                 {% include "./_tooltip3.html" with text="Undo Report" sno=object.pk widget="flags" %}
                 <svg xmlns="http://www.w3.org/2000/svg"
@@ -142,7 +146,7 @@
     <button data-tooltip-target="tooltip-bottom-{{ device }}-flags"
             data-tooltip-placement="bottom"
             onclick="window.location.href='/accounts/login'"
-            class="like_unlike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
+            class="like_unlike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
             type="button">
         <span id="flags" class="flex items-end">
             {{ flags }} &nbsp;
@@ -162,11 +166,12 @@
     <button name="{{ object.pk }}"
             data-tooltip-target="tooltip-bottom-{{ device }}-bookmark"
             data-tooltip-placement="bottom"
-            class="bookmark rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
+            class="bookmark rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
             type="button">
-        <span id="bookmark" class="flex items-end">
+        <span id="bookmark" class="flex flex-row gap-2 items-center">
             {% if bookmarked %}
                 {% include "./_tooltip3.html" with text="Undo Bookmark" sno=object.pk widget="bookmark" %}
+                <span>Bookmark</span>
                 <svg xmlns="http://www.w3.org/2000/svg"
                      viewBox="0 0 448 512"
                      height="16px"
@@ -176,6 +181,7 @@
                 </svg>
             {% else %}
                 {% include "./_tooltip3.html" with text="Bookmark" sno=object.pk widget="bookmark" %}
+                <span>Bookmark</span>
                 <svg xmlns="http://www.w3.org/2000/svg"
                      viewBox="0 0 384 512"
                      height="16px"
@@ -190,7 +196,7 @@
     <button data-tooltip-target="tooltip-bottom-{{ device }}-bookmark"
             data-tooltip-placement="bottom"
             onclick="window.location.href='/accounts/login'"
-            class="like_unlike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
+            class="like_unlike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
             type="button">
         <span id="bookmark" class="flex items-end">
             {{ bookmark }} &nbsp;
@@ -208,30 +214,36 @@
 {% comment %} notification  {% endcomment %}
 <button data-tooltip-target="tooltip-bottom-{{ device }}-notification"
         data-tooltip-placement="bottom"
-        class="relative inline-block shadow-sm rounded-xl transform-[0] font-bold text-[#3e3446] bg-white border-black-2 text-[#0.875rem] leading-4 p-4"
+        class="relative inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[#0.875rem] leading-4 p-4"
         onclick="{% if user.is_authenticated %}subscribe_domain(){% else %}window.location.href=`{% url 'account_login' %}`{% endif %}"
         id="subscribe_domain_btn">
     {% if user.is_authenticated and subscribed_to_domain %}
         {% include "./_tooltip3.html" with text="Unsubscribe" sno=object.pk widget="notification" %}
-        <svg viewBox="0 0 16 16" fill="currentColor" height="16px" width="16px">
-            <path d="M10.533 14.07h3.466a.76.76 0 0 0 .58-.28.74.74 0 0 0 .19-.57l-.57-6.55a.13.13 0 0 0 0-.06A6.42 6.42 0 0 0 8 0a6.42 6.42 0 0 0-6.18 6.65v.06l-.57 6.55a.74.74 0 0 0 .19.57.76.76 0 0 0 .56.24h3.468A2.64 2.64 0 0 0 8 16a2.64 2.64 0 0 0 2.533-1.93Zm-1.654 0H7.121a1.13 1.13 0 0 0 1.758 0Zm4.32-1.5H2.8l.5-5.79v-.13A4.92 4.92 0 0 1 8 1.54a4.92 4.92 0 0 1 4.7 5.11v.19l.5 5.73Z">
-            </path>
-        </svg>
+        <div class="flex flex-row gap-2 items-center">
+            <span>Unsubscribe</span>
+            <svg viewBox="0 0 16 16" fill="currentColor" height="16px" width="16px">
+                <path d="M10.533 14.07h3.466a.76.76 0 0 0 .58-.28.74.74 0 0 0 .19-.57l-.57-6.55a.13.13 0 0 0 0-.06A6.42 6.42 0 0 0 8 0a6.42 6.42 0 0 0-6.18 6.65v.06l-.57 6.55a.74.74 0 0 0 .19.57.76.76 0 0 0 .56.24h3.468A2.64 2.64 0 0 0 8 16a2.64 2.64 0 0 0 2.533-1.93Zm-1.654 0H7.121a1.13 1.13 0 0 0 1.758 0Zm4.32-1.5H2.8l.5-5.79v-.13A4.92 4.92 0 0 1 8 1.54a4.92 4.92 0 0 1 4.7 5.11v.19l.5 5.73Z">
+                </path>
+                <path d="M.801 16.5a.798.798 0 0 1-.563-.234.786.786 0 0 1 0-1.127L14.635.733a.798.798 0 0 1 1.127 0 .787.787 0 0 1 0 1.127L1.365 16.266A.84.84 0 0 1 .8 16.5Z">
+                </path>
+            </svg>
+        </div>
     {% else %}
         {% include "./_tooltip3.html" with text="Subscribe" sno=object.pk widget="notification" %}
-        <svg viewBox="0 0 16 16" fill="currentColor" height="16px" width="16px">
-            <path d="M10.533 14.07h3.466a.76.76 0 0 0 .58-.28.74.74 0 0 0 .19-.57l-.57-6.55a.13.13 0 0 0 0-.06A6.42 6.42 0 0 0 8 0a6.42 6.42 0 0 0-6.18 6.65v.06l-.57 6.55a.74.74 0 0 0 .19.57.76.76 0 0 0 .56.24h3.468A2.64 2.64 0 0 0 8 16a2.64 2.64 0 0 0 2.533-1.93Zm-1.654 0H7.121a1.13 1.13 0 0 0 1.758 0Zm4.32-1.5H2.8l.5-5.79v-.13A4.92 4.92 0 0 1 8 1.54a4.92 4.92 0 0 1 4.7 5.11v.19l.5 5.73Z">
-            </path>
-            <path d="M.801 16.5a.798.798 0 0 1-.563-.234.786.786 0 0 1 0-1.127L14.635.733a.798.798 0 0 1 1.127 0 .787.787 0 0 1 0 1.127L1.365 16.266A.84.84 0 0 1 .8 16.5Z">
-            </path>
-        </svg>
+        <div class="flex flex-row gap-2 items-center">
+            <span>Sububscribe</span>
+            <svg viewBox="0 0 16 16" fill="currentColor" height="16px" width="16px">
+                <path d="M10.533 14.07h3.466a.76.76 0 0 0 .58-.28.74.74 0 0 0 .19-.57l-.57-6.55a.13.13 0 0 0 0-.06A6.42 6.42 0 0 0 8 0a6.42 6.42 0 0 0-6.18 6.65v.06l-.57 6.55a.74.74 0 0 0 .19.57.76.76 0 0 0 .56.24h3.468A2.64 2.64 0 0 0 8 16a2.64 2.64 0 0 0 2.533-1.93Zm-1.654 0H7.121a1.13 1.13 0 0 0 1.758 0Zm4.32-1.5H2.8l.5-5.79v-.13A4.92 4.92 0 0 1 8 1.54a4.92 4.92 0 0 1 4.7 5.11v.19l.5 5.73Z">
+                </path>
+            </svg>
+        </div>
     {% endif %}
 </button>
 {% comment %} resolve  {% endcomment %}
 {% if request.user.is_superuser or request.user == object.user %}
     <button type="button"
             onclick="resolveIssue()"
-            class="rounded-2xl h-auto border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:outline-none border-black-2  text-[#0.875rem] leading-4 p-4 ">
+            class="rounded-2xl h-auto border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:outline-none border-black-2  text-[#0.875rem] leading-4 p-4 ">
         {% if status == "open" %}
             Resolve
         {% else %}
