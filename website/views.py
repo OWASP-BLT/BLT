@@ -75,6 +75,7 @@ from user_agents import parse
 
 from blt import settings
 from comments.models import Comment
+from notification_app.models import Notification
 from website.models import (
     IP,
     Bid,
@@ -344,13 +345,18 @@ from channels.layers import get_channel_layer
 
 
 def test(request):
-    messages = ["notification"]
+    notification = Notification.objects.filter(user=request.user).all()
+    count = Notification.objects.filter(user=request.user).count()
+    messages, notification_id = [], []
+    for i in range(count):
+        messages.append(notification[i].message)
+        notification_id.append(notification[i].id)
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         "notification_" + str(request.user.id),
         {
             "type": "send_notification",
-            "notification_id": "notification_" + str(request.user.id),
+            "notification_id": notification_id,
             "message": messages,
         },
     )

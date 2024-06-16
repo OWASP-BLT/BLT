@@ -337,14 +337,15 @@
         + '/'
     );
 
-    notificationSocket.onopen = function(e){
-        console.log("web socket connected " + roomName) 
-    
-    };
-
     notificationSocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
-        document.getElementById("notifications-dropdown").innerHTML = "<li class='dropdown-item'>" + data.message + "</li><hr class='dropdown-divider'>" + document.getElementById("notifications-dropdown").innerHTML;
+        const notifications = data.message
+        for (let i=0; i<data.message.length; i++){
+            const notification_id = data.notification_id[i]
+            const message = data.message[i]
+            document.getElementById("notifications-dropdown").innerHTML = `<li class='dropdown-item' onclick=markAsSeen(${notification_id})>` + message + "</li><hr class='dropdown-divider'>" + document.getElementById("notifications-dropdown").innerHTML;
+        }
+
         if (data.message) {
             let notificationCount = parseInt(document.getElementById("notification-bell-count").textContent) || 0;
             notificationCount += data.message.length;
@@ -359,5 +360,18 @@
         console.log(e)
         console.error('Chat socket closed unexpectedly');
     };
+
+
+    function markAsSeen(notificationId) {
+            // Send WebSocket message to mark the notification as seen
+            notificationSocket.send(JSON.stringify({
+                'notification_id': notificationId
+            }));
+
+            // Update notification count
+            let notificationCount = parseInt(document.getElementById("notification-bell-count").textContent) || 0;
+            notificationCount = Math.max(notificationCount - 1, 0);
+            document.getElementById("notification-bell-count").textContent = notificationCount;
+    }
     
 </script>
