@@ -67,7 +67,7 @@ bitcash = "^1.0.2"
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"
 isort = "^5.13.2"
-ruff = "^0.4.8"
+ruff = "^0.4.9"
 
 [tool.isort]
 known_first_party = ["blt"]
