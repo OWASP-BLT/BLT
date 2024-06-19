@@ -77,12 +77,12 @@ lxml = ["lxml"]
 
 [[package]]
 name = "bitcash"
-version = "1.0.1"
+version = "1.0.2"
 description = "Bitcoin Cash made easier."
 optional = false
 python-versions = "*"
 files = [
-    {file = "BitCash-1.0.1-py3-none-any.whl", hash = "sha256:4da9ef94f93f265a88097e26c3c7f5516cd452ea8916d144dec2e6031d80dd49"},
+    {file = "BitCash-1.0.2-py3-none-any.whl", hash = "sha256:a139003b56b7d954bfe2716653b89180bedf87658d8193efab24fc15f36fbf90"},
 ]
 
 [package.dependencies]
@@ -508,18 +508,18 @@ dev = ["attribution (==1.6.2)", "black (==23.3.0)", "flit (==3.8.0)", "mypy (==1
 
 [[package]]
 name = "dj-database-url"
-version = "1.3.0"
+version = "2.2.0"
 description = "Use Database URLs in your Django Application."
 optional = false
 python-versions = "*"
 files = [
-    {file = "dj-database-url-1.3.0.tar.gz", hash = "sha256:87be5f7c4c83d9b3d8ce94b834f96cea14b3986f3629aac097afdd9318d7b098"},
-    {file = "dj_database_url-1.3.0-py3-none-any.whl", hash = "sha256:80a115bd7675c9fe14a900b2f8b5c8b1822b5a279b333bf9b2804de681656c7c"},
+    {file = "dj_database_url-2.2.0-py3-none-any.whl", hash = "sha256:3e792567b0aa9a4884860af05fe2aa4968071ad351e033b6db632f97ac6db9de"},
+    {file = "dj_database_url-2.2.0.tar.gz", hash = "sha256:9f9b05058ddf888f1e6f840048b8d705ff9395e3b52a07165daa3d8b9360551b"},
 ]
 
 [package.dependencies]
 Django = ">=3.2"
-typing-extensions = ">=3.10.0.0"
+typing_extensions = ">=3.10.0.0"
 
 [[package]]
 name = "dj-rest-auth"
@@ -540,13 +540,13 @@ with-social = ["django-allauth (>=0.56.0,<0.58.0)"]
 
 [[package]]
 name = "django"
-version = "5.0.3"
+version = "5.0.6"
 description = "A high-level Python web framework that encourages rapid development and clean, pragmatic design."
 optional = false
 python-versions = ">=3.10"
 files = [
-    {file = "Django-5.0.3-py3-none-any.whl", hash = "sha256:5c7d748ad113a81b2d44750ccc41edc14e933f56581683db548c9257e078cc83"},
-    {file = "Django-5.0.3.tar.gz", hash = "sha256:5fb37580dcf4a262f9258c1f4373819aacca906431f505e4688e37f3a99195df"},
+    {file = "Django-5.0.6-py3-none-any.whl", hash = "sha256:8363ac062bb4ef7c3f12d078f6fa5d154031d129a15170a1066412af49d30905"},
+    {file = "Django-5.0.6.tar.gz", hash = "sha256:ff1b61005004e476e0aeea47c7f79b85864c70124030e95146315396f1e7951f"},
 ]
 
 [package.dependencies]
@@ -641,17 +641,17 @@ Django = ">=3.2"
 
 [[package]]
 name = "django-debug-toolbar"
-version = "3.8.1"
+version = "4.4.2"
 description = "A configurable set of panels that display various debug information about the current request/response."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "django_debug_toolbar-3.8.1-py3-none-any.whl", hash = "sha256:879f8a4672d41621c06a4d322dcffa630fc4df056cada6e417ed01db0e5e0478"},
-    {file = "django_debug_toolbar-3.8.1.tar.gz", hash = "sha256:24ef1a7d44d25e60d7951e378454c6509bf536dce7e7d9d36e7c387db499bc27"},
+    {file = "django_debug_toolbar-4.4.2-py3-none-any.whl", hash = "sha256:5d7afb2ea5f8730241e5b0735396e16cd1fd8c6b53a2f3e1e30bbab9abb23728"},
+    {file = "django_debug_toolbar-4.4.2.tar.gz", hash = "sha256:9204050fcb1e4f74216c5b024bc76081451926a6303993d6c513f5e142675927"},
 ]
 
 [package.dependencies]
-django = ">=3.2.4"
+django = ">=4.2.9"
 sqlparse = ">=0.2"
 
 [[package]]
@@ -721,19 +721,28 @@ humanize = ">=0.5.1"
 
 [[package]]
 name = "django-import-export"
-version = "3.3.7"
+version = "4.0.9"
 description = "Django application and library for importing and exporting data with included admin integration."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "django-import-export-3.3.7.tar.gz", hash = "sha256:39a4216c26a2dba6429b64c68b3fe282a6279bb71afb4015c13df0696bdbb4cd"},
-    {file = "django_import_export-3.3.7-py3-none-any.whl", hash = "sha256:dffedd53bed33cfcceb3b2f13d4fd93a21826f9a2ae37b9926a1e1f4be24bcb9"},
+    {file = "django_import_export-4.0.9-py3-none-any.whl", hash = "sha256:8941bbb3d48a1fd26bc8997686423beb153c6aff4440c290f8e0cb252303ca10"},
+    {file = "django_import_export-4.0.9.tar.gz", hash = "sha256:7ceaf3f809b7bf0449c5e52d4dc25545c040994d1a2f4bc925b963842373d093"},
 ]
 
 [package.dependencies]
 diff-match-patch = "*"
 Django = ">=3.2"
-tablib = {version = "3.5.0", extras = ["html", "ods", "xls", "xlsx", "yaml"]}
+tablib = "3.5.0"
+
+[package.extras]
+all = ["tablib[all] (==3.5.0)"]
+cli = ["tablib[cli]"]
+ods = ["tablib[ods]"]
+pandas = ["tablib[pandas]"]
+xls = ["tablib[xls] (==3.5.0)"]
+xlsx = ["tablib[xlsx] (==3.5.0)"]
+yaml = ["tablib[yaml] (==3.5.0)"]
 
 [[package]]
 name = "django-mdeditor"
@@ -810,13 +819,13 @@ swapper = "*"
 
 [[package]]
 name = "django-storages"
-version = "1.14.2"
+version = "1.14.3"
 description = "Support for many storage backends in Django"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "django-storages-1.14.2.tar.gz", hash = "sha256:51b36af28cc5813b98d5f3dfe7459af638d84428c8df4a03990c7d74d1bea4e5"},
-    {file = "django_storages-1.14.2-py3-none-any.whl", hash = "sha256:1db759346b52ada6c2efd9f23d8241ecf518813eb31db9e2589207174f58f6ad"},
+    {file = "django-storages-1.14.3.tar.gz", hash = "sha256:95a12836cd998d4c7a4512347322331c662d9114c4344f932f5e9c0fce000608"},
+    {file = "django_storages-1.14.3-py3-none-any.whl", hash = "sha256:31f263389e95ce3a1b902fb5f739a7ed32895f7d8b80179fe7453ecc0dfe102e"},
 ]
 
 [package.dependencies]
@@ -918,17 +927,6 @@ python-versions = "*"
 files = [
     {file = "EasyProcess-1.1-py3-none-any.whl", hash = "sha256:82eed523a0a5eb12a81fa4eacd9f342caeb3f900eb4b798740e6696ad07e63f9"},
     {file = "EasyProcess-1.1.tar.gz", hash = "sha256:885898302a57aab948973e8b5d32a4229392b9fb2d986ab1d4ffd590e5ba90ec"},
-]
-
-[[package]]
-name = "et-xmlfile"
-version = "1.1.0"
-description = "An implementation of lxml.xmlfile for the standard library"
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "et_xmlfile-1.1.0-py3-none-any.whl", hash = "sha256:a2ba85d1d6a74ef63837eed693bcb89c3f752169b0e3e7ae5b16ca5e1b3deada"},
-    {file = "et_xmlfile-1.1.0.tar.gz", hash = "sha256:8eb9e2bc2f8c97e37a2dc85a09ecdcdec9d8a396530a6d5a33b30b9a92da0c5c"},
 ]
 
 [[package]]
@@ -1237,16 +1235,6 @@ files = [
 colors = ["colorama (>=0.4.6)"]
 
 [[package]]
-name = "markuppy"
-version = "1.14"
-description = "An HTML/XML generator"
-optional = false
-python-versions = "*"
-files = [
-    {file = "MarkupPy-1.14.tar.gz", hash = "sha256:1adee2c0a542af378fe84548ff6f6b0168f3cb7f426b46961038a2bcfaad0d5f"},
-]
-
-[[package]]
 name = "mypy-extensions"
 version = "1.0.0"
 description = "Type system extensions for programs checked with the mypy type checker."
@@ -1272,33 +1260,6 @@ files = [
 rsa = ["cryptography (>=3.0.0)"]
 signals = ["blinker (>=1.4.0)"]
 signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
-
-[[package]]
-name = "odfpy"
-version = "1.4.1"
-description = "Python API and tools to manipulate OpenDocument files"
-optional = false
-python-versions = "*"
-files = [
-    {file = "odfpy-1.4.1.tar.gz", hash = "sha256:db766a6e59c5103212f3cc92ec8dd50a0f3a02790233ed0b52148b70d3c438ec"},
-]
-
-[package.dependencies]
-defusedxml = "*"
-
-[[package]]
-name = "openpyxl"
-version = "3.1.2"
-description = "A Python library to read/write Excel 2010 xlsx/xlsm files"
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "openpyxl-3.1.2-py2.py3-none-any.whl", hash = "sha256:f91456ead12ab3c6c2e9491cf33ba6d08357d802192379bb482f1033ade496f5"},
-    {file = "openpyxl-3.1.2.tar.gz", hash = "sha256:a6f5977418eff3b2d5500d54d9db50c8277a368436f4e4f8ddb1be3422870184"},
-]
-
-[package.dependencies]
-et-xmlfile = "*"
 
 [[package]]
 name = "outcome"
@@ -1327,13 +1288,13 @@ files = [
 
 [[package]]
 name = "parse"
-version = "1.20.1"
+version = "1.20.2"
 description = "parse() is the opposite of format()"
 optional = false
 python-versions = "*"
 files = [
-    {file = "parse-1.20.1-py2.py3-none-any.whl", hash = "sha256:76ddd5214255ae711db4c512be636151fbabaa948c6f30115aecc440422ca82c"},
-    {file = "parse-1.20.1.tar.gz", hash = "sha256:09002ca350ad42e76629995f71f7b518670bcf93548bdde3684fd55d2be51975"},
+    {file = "parse-1.20.2-py2.py3-none-any.whl", hash = "sha256:967095588cb802add9177d0c0b6133b5ba33b1ea9007ca800e526f42a85af558"},
+    {file = "parse-1.20.2.tar.gz", hash = "sha256:b41d604d16503c79d81af5165155c0b20f6c8d6c559efa66b4b695c3e5a0a0ce"},
 ]
 
 [[package]]
@@ -1922,13 +1883,13 @@ files = [
 
 [[package]]
 name = "requests"
-version = "2.31.0"
+version = "2.32.3"
 description = "Python HTTP for Humans."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "requests-2.31.0-py3-none-any.whl", hash = "sha256:58cd2187c01e70e6e26505bca751777aa9f2ee0b7f4300988b709f44e013003f"},
-    {file = "requests-2.31.0.tar.gz", hash = "sha256:942c5a758f98d790eaed1a29cb6eefc7ffb0d1cf7af05c3d2791656dbd6ad1e1"},
+    {file = "requests-2.32.3-py3-none-any.whl", hash = "sha256:70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6"},
+    {file = "requests-2.32.3.tar.gz", hash = "sha256:55365417734eb18255590a9ff9eb97e9e1da868d4ccd6402399eaf68af20a760"},
 ]
 
 [package.dependencies]
@@ -1975,39 +1936,39 @@ pyasn1 = ">=0.1.3"
 
 [[package]]
 name = "ruff"
-version = "0.4.3"
+version = "0.4.9"
 description = "An extremely fast Python linter and code formatter, written in Rust."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "ruff-0.4.3-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:b70800c290f14ae6fcbb41bbe201cf62dfca024d124a1f373e76371a007454ce"},
-    {file = "ruff-0.4.3-py3-none-macosx_11_0_arm64.whl", hash = "sha256:08a0d6a22918ab2552ace96adeaca308833873a4d7d1d587bb1d37bae8728eb3"},
-    {file = "ruff-0.4.3-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:eba1f14df3c758dd7de5b55fbae7e1c8af238597961e5fb628f3de446c3c40c5"},
-    {file = "ruff-0.4.3-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:819fb06d535cc76dfddbfe8d3068ff602ddeb40e3eacbc90e0d1272bb8d97113"},
-    {file = "ruff-0.4.3-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:0bfc9e955e6dc6359eb6f82ea150c4f4e82b660e5b58d9a20a0e42ec3bb6342b"},
-    {file = "ruff-0.4.3-py3-none-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:510a67d232d2ebe983fddea324dbf9d69b71c4d2dfeb8a862f4a127536dd4cfb"},
-    {file = "ruff-0.4.3-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:dc9ff11cd9a092ee7680a56d21f302bdda14327772cd870d806610a3503d001f"},
-    {file = "ruff-0.4.3-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:29efff25bf9ee685c2c8390563a5b5c006a3fee5230d28ea39f4f75f9d0b6f2f"},
-    {file = "ruff-0.4.3-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:18b00e0bcccf0fc8d7186ed21e311dffd19761cb632241a6e4fe4477cc80ef6e"},
-    {file = "ruff-0.4.3-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:262f5635e2c74d80b7507fbc2fac28fe0d4fef26373bbc62039526f7722bca1b"},
-    {file = "ruff-0.4.3-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:7363691198719c26459e08cc17c6a3dac6f592e9ea3d2fa772f4e561b5fe82a3"},
-    {file = "ruff-0.4.3-py3-none-musllinux_1_2_i686.whl", hash = "sha256:eeb039f8428fcb6725bb63cbae92ad67b0559e68b5d80f840f11914afd8ddf7f"},
-    {file = "ruff-0.4.3-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:927b11c1e4d0727ce1a729eace61cee88a334623ec424c0b1c8fe3e5f9d3c865"},
-    {file = "ruff-0.4.3-py3-none-win32.whl", hash = "sha256:25cacda2155778beb0d064e0ec5a3944dcca9c12715f7c4634fd9d93ac33fd30"},
-    {file = "ruff-0.4.3-py3-none-win_amd64.whl", hash = "sha256:7a1c3a450bc6539ef00da6c819fb1b76b6b065dec585f91456e7c0d6a0bbc725"},
-    {file = "ruff-0.4.3-py3-none-win_arm64.whl", hash = "sha256:71ca5f8ccf1121b95a59649482470c5601c60a416bf189d553955b0338e34614"},
-    {file = "ruff-0.4.3.tar.gz", hash = "sha256:ff0a3ef2e3c4b6d133fbedcf9586abfbe38d076041f2dc18ffb2c7e0485d5a07"},
+    {file = "ruff-0.4.9-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:b262ed08d036ebe162123170b35703aaf9daffecb698cd367a8d585157732991"},
+    {file = "ruff-0.4.9-py3-none-macosx_11_0_arm64.whl", hash = "sha256:98ec2775fd2d856dc405635e5ee4ff177920f2141b8e2d9eb5bd6efd50e80317"},
+    {file = "ruff-0.4.9-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4555056049d46d8a381f746680db1c46e67ac3b00d714606304077682832998e"},
+    {file = "ruff-0.4.9-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:e91175fbe48f8a2174c9aad70438fe9cb0a5732c4159b2a10a3565fea2d94cde"},
+    {file = "ruff-0.4.9-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:0e8e7b95673f22e0efd3571fb5b0cf71a5eaaa3cc8a776584f3b2cc878e46bff"},
+    {file = "ruff-0.4.9-py3-none-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:2d45ddc6d82e1190ea737341326ecbc9a61447ba331b0a8962869fcada758505"},
+    {file = "ruff-0.4.9-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:78de3fdb95c4af084087628132336772b1c5044f6e710739d440fc0bccf4d321"},
+    {file = "ruff-0.4.9-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:06b60f91bfa5514bb689b500a25ba48e897d18fea14dce14b48a0c40d1635893"},
+    {file = "ruff-0.4.9-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:88bffe9c6a454bf8529f9ab9091c99490578a593cc9f9822b7fc065ee0712a06"},
+    {file = "ruff-0.4.9-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:673bddb893f21ab47a8334c8e0ea7fd6598ecc8e698da75bcd12a7b9d0a3206e"},
+    {file = "ruff-0.4.9-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:8c1aff58c31948cc66d0b22951aa19edb5af0a3af40c936340cd32a8b1ab7438"},
+    {file = "ruff-0.4.9-py3-none-musllinux_1_2_i686.whl", hash = "sha256:784d3ec9bd6493c3b720a0b76f741e6c2d7d44f6b2be87f5eef1ae8cc1d54c84"},
+    {file = "ruff-0.4.9-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:732dd550bfa5d85af8c3c6cbc47ba5b67c6aed8a89e2f011b908fc88f87649db"},
+    {file = "ruff-0.4.9-py3-none-win32.whl", hash = "sha256:8064590fd1a50dcf4909c268b0e7c2498253273309ad3d97e4a752bb9df4f521"},
+    {file = "ruff-0.4.9-py3-none-win_amd64.whl", hash = "sha256:e0a22c4157e53d006530c902107c7f550b9233e9706313ab57b892d7197d8e52"},
+    {file = "ruff-0.4.9-py3-none-win_arm64.whl", hash = "sha256:5d5460f789ccf4efd43f265a58538a2c24dbce15dbf560676e430375f20a8198"},
+    {file = "ruff-0.4.9.tar.gz", hash = "sha256:f1cb0828ac9533ba0135d148d214e284711ede33640465e706772645483427e3"},
 ]
 
 [[package]]
 name = "selenium"
-version = "4.18.1"
+version = "4.21.0"
 description = ""
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "selenium-4.18.1-py3-none-any.whl", hash = "sha256:b24a3cdd2d47c29832e81345bfcde0c12bb608738013e53c781b211b418df241"},
-    {file = "selenium-4.18.1.tar.gz", hash = "sha256:a11f67afa8bfac6b77e148c987b33f6b14eb1cae4d352722a75de1f26e3f0ae2"},
+    {file = "selenium-4.21.0-py3-none-any.whl", hash = "sha256:4770ffe5a5264e609de7dc914be6b89987512040d5a8efb2abb181330d097993"},
+    {file = "selenium-4.21.0.tar.gz", hash = "sha256:650dbfa5159895ff00ad16e5ddb6ceecb86b90c7ed2012b3f041f64e6e4904fe"},
 ]
 
 [package.dependencies]
@@ -2019,35 +1980,39 @@ urllib3 = {version = ">=1.26,<3", extras = ["socks"]}
 
 [[package]]
 name = "sentry-sdk"
-version = "1.42.0"
+version = "2.5.1"
 description = "Python client for Sentry (https://sentry.io)"
 optional = false
-python-versions = "*"
+python-versions = ">=3.6"
 files = [
-    {file = "sentry-sdk-1.42.0.tar.gz", hash = "sha256:4a8364b8f7edbf47f95f7163e48334c96100d9c098f0ae6606e2e18183c223e6"},
-    {file = "sentry_sdk-1.42.0-py2.py3-none-any.whl", hash = "sha256:a654ee7e497a3f5f6368b36d4f04baeab1fe92b3105f7f6965d6ef0de35a9ba4"},
+    {file = "sentry_sdk-2.5.1-py2.py3-none-any.whl", hash = "sha256:1f87acdce4a43a523ae5aa21a3fc37522d73ebd9ec04b1dbf01aa3d173852def"},
+    {file = "sentry_sdk-2.5.1.tar.gz", hash = "sha256:fbc40a78a8a9c6675133031116144f0d0940376fa6e4e1acd5624c90b0aaf58b"},
 ]
 
 [package.dependencies]
 certifi = "*"
-urllib3 = {version = ">=1.26.11", markers = "python_version >= \"3.6\""}
+urllib3 = ">=1.26.11"
 
 [package.extras]
 aiohttp = ["aiohttp (>=3.5)"]
+anthropic = ["anthropic (>=0.16)"]
 arq = ["arq (>=0.23)"]
 asyncpg = ["asyncpg (>=0.23)"]
 beam = ["apache-beam (>=2.12)"]
 bottle = ["bottle (>=0.12.13)"]
 celery = ["celery (>=3)"]
+celery-redbeat = ["celery-redbeat (>=2)"]
 chalice = ["chalice (>=1.16.0)"]
 clickhouse-driver = ["clickhouse-driver (>=0.2.0)"]
 django = ["django (>=1.8)"]
 falcon = ["falcon (>=1.4)"]
 fastapi = ["fastapi (>=0.79.0)"]
 flask = ["blinker (>=1.1)", "flask (>=0.11)", "markupsafe"]
-grpcio = ["grpcio (>=1.21.1)"]
+grpcio = ["grpcio (>=1.21.1)", "protobuf (>=3.8.0)"]
 httpx = ["httpx (>=0.16.0)"]
 huey = ["huey (>=2)"]
+huggingface-hub = ["huggingface-hub (>=0.22)"]
+langchain = ["langchain (>=0.0.210)"]
 loguru = ["loguru (>=0.5)"]
 openai = ["openai (>=1.0.0)", "tiktoken (>=0.3.0)"]
 opentelemetry = ["opentelemetry-distro (>=0.35b0)"]
@@ -2175,14 +2140,6 @@ files = [
     {file = "tablib-3.5.0-py3-none-any.whl", hash = "sha256:9821caa9eca6062ff7299fa645e737aecff982e6b2b42046928a6413c8dabfd9"},
     {file = "tablib-3.5.0.tar.gz", hash = "sha256:f6661dfc45e1d4f51fa8a6239f9c8349380859a5bfaa73280645f046d6c96e33"},
 ]
-
-[package.dependencies]
-markuppy = {version = "*", optional = true, markers = "extra == \"html\""}
-odfpy = {version = "*", optional = true, markers = "extra == \"ods\""}
-openpyxl = {version = ">=2.6.0", optional = true, markers = "extra == \"xlsx\""}
-pyyaml = {version = "*", optional = true, markers = "extra == \"yaml\""}
-xlrd = {version = "*", optional = true, markers = "extra == \"xls\""}
-xlwt = {version = "*", optional = true, markers = "extra == \"xls\""}
 
 [package.extras]
 all = ["markuppy", "odfpy", "openpyxl (>=2.6.0)", "pandas", "pyyaml", "tabulate", "xlrd", "xlwt"]
@@ -2320,13 +2277,13 @@ files = [
 
 [[package]]
 name = "urllib3"
-version = "2.0.7"
+version = "2.2.2"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "urllib3-2.0.7-py3-none-any.whl", hash = "sha256:fdb6d215c776278489906c2f8916e6e7d4f5a9b602ccbcfdf7f016fc8da0596e"},
-    {file = "urllib3-2.0.7.tar.gz", hash = "sha256:c97dfde1f7bd43a71c8d2a58e369e9b2bf692d1334ea9f9cae55add7d0dd0f84"},
+    {file = "urllib3-2.2.2-py3-none-any.whl", hash = "sha256:a448b2f64d686155468037e1ace9f2d2199776e17f0a46610480d311f73e3472"},
+    {file = "urllib3-2.2.2.tar.gz", hash = "sha256:dd505485549a7a552833da5e6063639d0d177c04f23bc3864e41e5dc5f612168"},
 ]
 
 [package.dependencies]
@@ -2334,7 +2291,7 @@ pysocks = {version = ">=1.5.6,<1.5.7 || >1.5.7,<2.0", optional = true, markers =
 
 [package.extras]
 brotli = ["brotli (>=1.0.9)", "brotlicffi (>=0.8.0)"]
-secure = ["certifi", "cryptography (>=1.9)", "idna (>=2.0.0)", "pyopenssl (>=17.1.0)", "urllib3-secure-extra"]
+h2 = ["h2 (>=4,<5)"]
 socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
 zstd = ["zstandard (>=0.18.0)"]
 
@@ -2396,34 +2353,7 @@ files = [
 [package.dependencies]
 h11 = ">=0.9.0,<1"
 
-[[package]]
-name = "xlrd"
-version = "2.0.1"
-description = "Library for developers to extract data from Microsoft Excel (tm) .xls spreadsheet files"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
-files = [
-    {file = "xlrd-2.0.1-py2.py3-none-any.whl", hash = "sha256:6a33ee89877bd9abc1158129f6e94be74e2679636b8a205b43b85206c3f0bbdd"},
-    {file = "xlrd-2.0.1.tar.gz", hash = "sha256:f72f148f54442c6b056bf931dbc34f986fd0c3b0b6b5a58d013c9aef274d0c88"},
-]
-
-[package.extras]
-build = ["twine", "wheel"]
-docs = ["sphinx"]
-test = ["pytest", "pytest-cov"]
-
-[[package]]
-name = "xlwt"
-version = "1.3.0"
-description = "Library to create spreadsheet files compatible with MS Excel 97/2000/XP/2003 XLS files, on any platform, with Python 2.6, 2.7, 3.3+"
-optional = false
-python-versions = "*"
-files = [
-    {file = "xlwt-1.3.0-py2.py3-none-any.whl", hash = "sha256:a082260524678ba48a297d922cc385f58278b8aa68741596a87de01a9c628b2e"},
-    {file = "xlwt-1.3.0.tar.gz", hash = "sha256:c59912717a9b28f1a3c2a98fd60741014b06b043936dcecbc113eaaada156c88"},
-]
-
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "7bd16660f41bd0fd0693b85094219ae4fcda0b9a8672b7bb24311182a2f83102"
+content-hash = "f48ca73fb06f82868bd48acad47906e36e0d377e8adb65c03d813211031a19e3"

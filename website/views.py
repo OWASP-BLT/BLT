@@ -54,6 +54,7 @@ from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
+    HttpResponseForbidden,
     HttpResponseNotFound,
     HttpResponseRedirect,
     JsonResponse,
@@ -1985,7 +1986,7 @@ class HuntCreate(CreateView):
         return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HH7MNY6KJGZFW"
 
 
-# TODO: REMOVE after _3 is ready
+# TODO(b): REMOVE after _3 is ready
 class IssueView(DetailView):
     model = Issue
     slug_field = "id"
@@ -2290,7 +2291,7 @@ def follow_user(request, user):
         return HttpResponse("Success")
 
 
-# TODO: remove after _3 is ready
+# TODO(b): remove after _3 is ready
 @login_required(login_url="/accounts/login")
 def like_issue(request, issue_pk):
     context = {}
@@ -3714,7 +3715,7 @@ class DomainListView(ListView):
         return context
 
 
-# TODO: Remove like_issue2 and like_issue, dislike_issue,dislike_issue2,flag_issue2,flag_issue after ready
+# TODO(b): Remove like_issue2 and like_issue, dislike_issue,dislike_issue2,flag_issue2,flag_issue after ready
 @login_required(login_url="/accounts/login")
 def flag_issue2(request, issue_pk):
     context = {}
@@ -4094,7 +4095,7 @@ class IssueView3(DetailView):
             .values("id", "description", "markdown_description", "screenshots__image")
             .order_by("views")[:4]
         )
-        # TODO fix this, edit: Hopefully this will work
+        # TODO(b) fix this, edit: Hopefully this will work
         if isinstance(self.request.user, User):
             context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
                 pk=self.request.user.userprofile.id
@@ -4108,8 +4109,31 @@ class IssueView3(DetailView):
             ).exists()
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
-
+        # TODO(b) track the behaviour
+        context["status"] = Issue.objects.filter(id=self.object.id).get().status
         return context
+
+
+# TODO(b) track this
+@login_required(login_url="/accounts/login")
+@csrf_exempt
+def resolve(request, id):
+    issue = Issue.objects.get(id=id)
+    if request.user.is_superuser or request.user == issue.user:
+        if issue.status == "open":
+            issue.status = "close"
+            issue.closed_by = request.user
+            issue.closed_date = now()
+            issue.save()
+            return JsonResponse({"status": "ok", "issue_status": issue.status})
+        else:
+            issue.status = "open"
+            issue.closed_by = None
+            issue.closed_date = None
+            issue.save()
+            return JsonResponse({"status": "ok", "issue_status": issue.status})
+    else:
+        return HttpResponseForbidden()
 
 
 @receiver(user_signed_up)
@@ -4415,6 +4439,39 @@ def generate_bid_image(request, bid_amount):
     byte_io.seek(0)
 
     return HttpResponse(byte_io, content_type="image/png")
+
+
+def change_bid_status(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            bid_id = data.get("id")
+            bid = Bid.objects.get(id=bid_id)
+            bid.status = "Selected"
+            bid.save()
+            return JsonResponse({"success": True})
+        except Bid.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Bid not found"})
+    return HttpResponse(status=405)
+
+
+def get_unique_issues(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            issue_url = data.get("issue_url")
+            if not issue_url:
+                return JsonResponse({"success": False, "error": "issue_url not provided"})
+
+            all_bids = Bid.objects.filter(issue_url=issue_url).values()
+            return JsonResponse(list(all_bids), safe=False)
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid JSON"})
+    return HttpResponse(status=405)
+
+
+def select_bid(request):
+    return render(request, "bid_selection.html")
 
 
 @login_required
