@@ -29,6 +29,10 @@
           content="https://{% env 'FQDN' %}/issue3/{{ object.id }}" />
     <meta property="og:type" content="website" />
     <meta name="robots" content="index, follow">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css"
+          integrity="sha256-5uKiXEwbaQh9cgd2/5Vp6WmMnsUr3VZZw0a8rKnOKNU="
+          crossorigin="anonymous">
 {% endblock metaTags %}
 {% load static %}
 {% load gravatar %}
@@ -65,7 +69,7 @@
             </nav>
         </div>
         <div class="h-[3vh]"></div>
-        <h2 class="font-[ubuntu] font-bold text-[30px] w-[90%] truncate ml-[3.5%]"
+        <h2 class="font-[ubuntu] font-bold text-[30px] max-sm:w-[70%] w-[90%] line-clamp-3 ml-[3.5%]"
             title="{{ object.description |escapejs }}">{{ object.description |escapejs }}</h2>
         <p>
             <a href="{{ object.url }}"
@@ -75,58 +79,54 @@
                rel="noopener noreferrer">{{ object.url }}</a>
         </p>
         <br>
-        <div class="right-data max-sm:pt-2 ml-[3.5%]">{% include "includes/_like_dislike_share.html" %}</div>
+        <div class="right-data max-sm:absolute top-[10%] max-sm:pt-2 max-sm:ml-[80%] ml-[3.50%]">
+            {% include "includes/_like_dislike_share.html" %}
+        </div>
         <div id="default-tab-content" class="bg-white">
             <br>
-            <div class="flex flex-col items-center lg:items-start px-10 lg:flex-row">
-                <div id="screenshot-wrapper">
-                    <div class="text-[16px] font-semibold mb-5">Screenshots:</div>
-                    <hr>
-                    <div class="screenshot-container max-h-[400px] w-[100%] lg:h-[400px] lg:w-[40vw] flex">
-                        {% if object.screenshot %}
-                            <a href="{{ object.screenshot.url }}" data-lightbox="image">
-                                <img id="current-screenshot"
-                                     src="{{ object.screenshot.url }}"
-                                     class="border-2 border-black object-contain"
-                                     height="400"
-                                     width="600"
-                                     alt="screenshot">
-                            </a>
-                        {% else %}
-                            <div id="screenshot-gallery" class="hidden">
-                                {% for screenshot in screenshots %}
-                                    <img src="{{ screenshot.image.url }}"
-                                         class="screenshot-image object-contain"
-                                         height="400"
-                                         width="600"
-                                         alt="screenshot">
-                                {% endfor %}
-                            </div>
-                            <a id="lightbox-link"
-                               href="{{ screenshots.0.image.url }}"
-                               data-lightbox="image">
-                                <img id="current-screenshot"
-                                     src="{{ screenshots.0.image.url }}"
-                                     class="border-2 border-black object-contain"
-                                     height="400"
-                                     width="600"
-                                     alt="screenshot">
-                            </a>
-                        {% endif %}
-                    </div>
-                    <hr>
-                    <div class="flex flex-row my-5 gap-5">
-                        <button id="prevBtn"
-                                class="bg-[#FF6363] text-white px-4 py-2 text-[18px] font-medium rounded-lg">
-                            Prev
-                        </button>
-                        <button id="nextBtn"
-                                class="bg-[#FF6363] text-white px-4 py-2 text-[18px] font-medium rounded-lg">
-                            Next
-                        </button>
+            <div class="mb-4 ml-5 w-[95%] border-b border-[#584ac080]"></div>
+            <div class="flex max-sm:flex-col">
+                <div class="w-5/12 max-sm:w-[100%]">
+                    <h4 class="ml-[1.45%] text-[25px] font-medium p-3 bg-white">Screenshots:</h4>
+                    <div class="splide">
+                        <div class="splide__track">
+                            <ul class="splide__list">
+                                {% if object.screenshot %}
+                                    <li class="splide__slide">
+                                        <a href="{{ object.screenshot.url }}"
+                                           target="_blank"
+                                           rel="noopener noreferrer">
+                                            <img src="{{ object.screenshot.url }}"
+                                                 class="w-[488px] h-[310px] rounded-lg"
+                                                 alt="issue screenshot"
+                                                 data-lightbox="image"
+                                                 height="auto"
+                                                 width="auto">
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    {% comment %} <div class="grid grid-cols-4 gap-4 max-sm:grid-cols-1"> {% endcomment %}
+                                    {% for screenshot in screenshots %}
+                                        <li class="splide__slide">
+                                            <a href="{{ screenshot.image.url }}"
+                                               target="_blank"
+                                               rel="noopener noreferrer">
+                                                <img src="{{ screenshot.image.url }}"
+                                                     class="w-[488px] h-[310px] rounded-lg"
+                                                     alt="issue screenshot"
+                                                     data-lightbox="image"
+                                                     height="auto"
+                                                     width="auto">
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                    {% comment %} </div> {% endcomment %}
+                                {% endif %}
+                            </ul>
+                        </div>
                     </div>
                 </div>
-                <div id="details">
+                <div class="w-7/12 max-sm:w-[100%]">
                     <div>
                         <h4 class="text-2xl font-bold mb-3">Event ID: {{ object.id }}</h4>
                         <div class="flex justify-start items-center">
@@ -172,6 +172,7 @@
                                     Total Points = <span class="font-bold">{{ users_score }}</span>
                                 </div>
                                 <div>
+                                    {% comment %} TODO(b): other logics to disable bitcoin donation button {% endcomment %}
                                     {% if not object.user.username %}
                                         <button disabled
                                                 class="!cursor-not-allowed bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
@@ -309,7 +310,7 @@
 
     $("#bug_report").html(renderedHtml);
 
-    document.addEventListener('DOMContentLoaded', function () {
+    {% comment %} document.addEventListener('DOMContentLoaded', function () {
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
     const currentScreenshot = document.getElementById('current-screenshot');
@@ -336,8 +337,7 @@
             updateImage();
         }
     });
-});
-
+}); {% endcomment %}
     function subscribe_domain(){
         $.ajax({
             type: 'GET',
@@ -509,4 +509,16 @@
         });
     });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"
+        integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw="
+        crossorigin="anonymous"></script>
+<script>
+    document.addEventListener( 'DOMContentLoaded', function() {
+        var elms = document.getElementsByClassName( 'splide' );
+        for ( var i = 0; i < elms.length; i++ ) {
+          new Splide( elms[ i ] ).mount();
+        }
+      } );
+</script>
+<script type="module">import lineClamp from 'https://cdn.jsdelivr.net/npm/line-clamp@1.0.0/+esm'</script>
 {% endblock content %}
