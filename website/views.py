@@ -13,7 +13,8 @@ from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse, urlsplit, urlunparse
-
+from langchain import PromptTemplate
+from langchain.llms import OpenAI
 import humanize
 import requests
 import requests.exceptions
@@ -4482,3 +4483,19 @@ def submit_pr(request):
         return render(request, "submit_pr.html")
 
     return render(request, "submit_pr.html")
+
+def auto_label(request):
+    template= """
+        Label the bug description: {BugDescription} with one of these: General, Number error, Functional, Performance, Security, Typo, Design, Server down
+    """
+
+    prompt=PromptTemplate(
+        input_variables=["BugDescription"],
+        template=template,
+    )
+
+    llm=OpenAI(temperature=0.5)
+    bug_description= request.POST.get('BugDescription')
+    prompt_with_bug_description=prompt.format(BugDescription=bug_description)
+    label=llm(prompt_with_bug_description)
+    return JsonResponse({'label': label})
