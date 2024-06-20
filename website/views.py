@@ -13,8 +13,7 @@ from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse, urlsplit, urlunparse
-from langchain import PromptTemplate
-from langchain.llms import OpenAI
+
 import humanize
 import requests
 import requests.exceptions
@@ -68,6 +67,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import DetailView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
+from langchain import PromptTemplate
+from langchain.llms import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -4484,18 +4485,19 @@ def submit_pr(request):
 
     return render(request, "submit_pr.html")
 
+
 def auto_label(request):
-    template= """
+    template = """
         Label the bug description: {BugDescription} with one of these: General, Number error, Functional, Performance, Security, Typo, Design, Server down
     """
 
-    prompt=PromptTemplate(
+    prompt = PromptTemplate(
         input_variables=["BugDescription"],
         template=template,
     )
 
-    llm=OpenAI(temperature=0.5)
-    bug_description= request.POST.get('BugDescription')
-    prompt_with_bug_description=prompt.format(BugDescription=bug_description)
-    label=llm(prompt_with_bug_description)
-    return JsonResponse({'label': label})
+    llm = OpenAI(temperature=0.5)
+    bug_description = request.POST.get("BugDescription")
+    prompt_with_bug_description = prompt.format(BugDescription=bug_description)
+    label = llm(prompt_with_bug_description)
+    return JsonResponse({"label": label})
