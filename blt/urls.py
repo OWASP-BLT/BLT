@@ -32,7 +32,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
-from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
+from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 etc
     AllIssuesView,
     CompanySettings,
     ContributorStatsView,
@@ -71,6 +71,7 @@ from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
+    change_bid_status,
     contributors_view,
     deletions,
     dislike_issue2,
@@ -80,10 +81,13 @@ from website.views import (  # TODO IssueView,; TODO: REMOVE like_issue2 etc
     flag_issue2,
     flag_issue3,
     generate_bid_image,
+    get_unique_issues,
     github_callback,
     google_callback,
     like_issue2,
     like_issue3,
+    resolve,
+    select_bid,
     submit_pr,
     subscribe_to_domains,
     vote_count,
@@ -275,7 +279,7 @@ urlpatterns = [
         name="user_profile",
     ),
     path(settings.ADMIN_URL + "/", admin.site.urls),
-    # TODO: REMOVE after _3 is ready
+    # TODO(b): REMOVE after _3 is ready
     re_path(r"^like_issue/(?P<issue_pk>\d+)/$", website.views.like_issue, name="like_issue"),
     re_path(
         r"^dislike_issue/(?P<issue_pk>\d+)/$",
@@ -289,6 +293,8 @@ urlpatterns = [
     re_path(r"^like_issue3/(?P<issue_pk>\d+)/$", like_issue3, name="like_issue3"),
     re_path(r"^dislike_issue3/(?P<issue_pk>\d+)/$", dislike_issue3, name="dislike_issue3"),
     re_path(r"^flag_issue3/(?P<issue_pk>\d+)/$", flag_issue3, name="flag_issue3"),
+    # TODO(b) track this
+    re_path(r"^resolve/(?P<id>\w+)/$", resolve, name="resolve"),
     re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
     re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
@@ -316,7 +322,7 @@ urlpatterns = [
     ),
     # delete_comment
     path("issue2/comment/delete/", website.views.delete_comment, name="delete_comment"),
-    # TODO: REMOVE after _3 is ready
+    # TODO(b): REMOVE after _3 is ready
     re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
     re_path(r"^issue2/(?P<slug>\w+)/$", IssueView2.as_view(), name="issue_view2"),
     re_path(r"^issue3/(?P<slug>\w+)/$", IssueView3.as_view(), name="issue_view3"),
@@ -495,6 +501,9 @@ urlpatterns = [
     path("trademarks/", website.views.trademark_search, name="trademark_search"),
     path("generate_bid_image/<int:bid_amount>/", generate_bid_image, name="generate_bid_image"),
     path("bidding/", SaveBiddingData, name="BiddingData"),
+    path("select_bid/", select_bid, name="select_bid"),
+    path("get_unique_issues/", get_unique_issues, name="get_unique_issues"),
+    path("change_bid_status/", change_bid_status, name="change_bid_status"),
     path("fetch-current-bid/", fetch_current_bid, name="fetch_current_bid"),
     path("Submitpr/", submit_pr, name="submit_pr"),
     re_path(
