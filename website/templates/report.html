@@ -170,7 +170,7 @@
                             {% trans "BUG TYPE" %}
                         </label>
                         <div class="mt-2">
-                            <label type="hidden" id="labelSelect" name="label">Critical</input>
+                            <input type="hidden" id="labelSelect" name="label">
                         </div>
                     </div>
                 </div>
@@ -566,6 +566,7 @@
         .catch(error => {
             console.error('Error:', error);
         });
+        return true;
     }
 
     </script>
