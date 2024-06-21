@@ -170,21 +170,7 @@
                             {% trans "BUG TYPE" %}
                         </label>
                         <div class="mt-2">
-                            <select name="label"
-                                    id="labelSelect"
-                                    required
-                                    data-intro="Categorize the bug."
-                                    data-step="3"
-                                    class="flex w-full placeholder:text-xl rounded-md border-0 py-4 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset">
-                                <option value="0" selected="selected">General</option>
-                                <option value="1">Number error</option>
-                                <option value="2">Functional</option>
-                                <option value="3">Performance</option>
-                                <option value="4">Security</option>
-                                <option value="5">Typo</option>
-                                <option value="6">Design</option>
-                                <option value="7">Server down</option>
-                            </select>
+                            <label type="hidden" id="labelSelect" name="label">Critical</input>
                         </div>
                     </div>
                 </div>
@@ -347,7 +333,8 @@
                             class="text-md font-semibold leading-6 mr-10 text-gray-900">{% trans "Cancel" %}</button>
                     <button type="submit"
                             name="reportbug_button"
-                            class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500">
+                            class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500"
+                            onclick="Submit()">
                         {% trans "Report" %}
                     </button>
                 </div>
@@ -538,17 +525,48 @@
         let email_container = document.getElementById("email-container");
         email_container.appendChild(email_container_child_html)
     }
-
-
-    document.addEventListener("DOMContentLoaded", function() {
-        // Get the value from the URL parameter
-        var labelParam = new URLSearchParams(window.location.search).get("label");
     
-        // Set the selected option based on the parameter
-        if (labelParam !== null) {
-            document.getElementById("labelSelect").value = labelParam;
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
         }
-    });
+        return cookieValue;
+    }
+
+    function Submit() {
+        const BugDescription = document.getElementById('markdownInput').value;
+        const csrftoken = getCookie('csrftoken');
+        fetch(`/AutoLabel/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({ BugDescription : BugDescription }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if ('label' in data) {
+                console.log(data.label);
+                document.getElementById("labelSelect").value = data.label;
+            }
+            else {
+                console.log('No label found');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
 
     </script>
 {% endblock after_js %}

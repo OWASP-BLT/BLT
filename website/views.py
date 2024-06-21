@@ -68,8 +68,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import DetailView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
-from langchain import PromptTemplate
-from langchain.llms import OpenAI
+# from langchain import PromptTemplate
+# from langchain.llms import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -4543,18 +4543,30 @@ def submit_pr(request):
     return render(request, "submit_pr.html")
 
 
-def auto_label(request):
-    template = """
-        Label the bug description: {BugDescription} with one of these: General, Number error, Functional, Performance, Security, Typo, Design, Server down
-    """
+def AutoLabel(request):
+    if request.method == "POST":
+        template = """
+        Label: {BugDescription}.
+        Options: General, Number error, Functional, Performance, Security, Typo, Design, Server down. 
+        Check for critical CVE alerts. 
+        If this message looks like spam, return with the word 'spam'.
+        """
 
-    prompt = PromptTemplate(
-        input_variables=["BugDescription"],
-        template=template,
-    )
+        # prompt = PromptTemplate(
+        #     input_variables=["BugDescription"],
+        #     template=template,
+        # )
 
-    llm = OpenAI(temperature=0.5)
-    bug_description = request.POST.get("BugDescription")
-    prompt_with_bug_description = prompt.format(BugDescription=bug_description)
-    label = llm(prompt_with_bug_description)
-    return JsonResponse({"label": label})
+        # llm = OpenAI(temperature=0.5)
+        data=request.POST
+        bug_description = request.POST.get("BugDescription")
+        print(data)
+        if bug_description is not None:
+            print("hi printing bug " + bug_description)
+        else:
+            print("Bug description not found in the POST request.")
+
+        # prompt_with_bug_description = prompt.format(BugDescription=bug_description)
+        # label = llm(prompt_with_bug_description)
+        label="Critical"
+        return JsonResponse({"label": label})
