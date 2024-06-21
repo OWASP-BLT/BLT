@@ -4558,14 +4558,8 @@ def AutoLabel(request):
         # )
 
         # llm = OpenAI(temperature=0.5)
-        data=request.POST
-        bug_description = request.POST.get("BugDescription")
-        print(data)
-        if bug_description is not None:
-            print("hi printing bug " + bug_description)
-        else:
-            print("Bug description not found in the POST request.")
-
+        data = json.loads(request.body)
+        bug_description = data.get("BugDescription")
         # prompt_with_bug_description = prompt.format(BugDescription=bug_description)
         # label = llm(prompt_with_bug_description)
         label="Critical"
