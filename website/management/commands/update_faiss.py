@@ -20,7 +20,6 @@ class Command(BaseCommand):
         # Set the paths to the website directory, documents, and faiss_index directories
         website_dir = base_dir / "website"
         documents_dir = website_dir / "documents"
-        # faiss_index_dir = website_dir
         processed_files_path = website_dir / "processed_files.txt"
 
         # Check if the documents directory exists
@@ -28,7 +27,7 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.ERROR(f"Documents directory does not exist: {documents_dir}")
             )
-            return
+            return None
 
         # Load the list of already processed files
         if processed_files_path.exists():
@@ -43,7 +42,7 @@ class Command(BaseCommand):
 
         if not new_documents:
             self.stdout.write(self.style.WARNING("No new documents to process"))
-            return
+            return None
 
         all_split_docs = []
         for doc_file in new_documents:

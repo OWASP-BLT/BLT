@@ -70,51 +70,56 @@ def split_document(chunk_size, chunk_overlap, document):
     return text_splitter.split_documents(document)
 
 
+def get_temp_db_path(db_folder_path):
+    temp_dir = tempfile.TemporaryDirectory()
+    db_folder_str = str(db_folder_path)
+    temp_db_path = Path(temp_dir.name) / db_folder_path
+    temp_db_path.mkdir(parents=True, exist_ok=True)
+    return temp_dir, db_folder_str, temp_db_path
+
+
 def embed_documents_and_save(embed_docs):
     db_folder_path = Path("faiss_index")
 
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
     # Temporary directory for local operations
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_db_path = Path(temp_dir) / db_folder_path
-        temp_db_path.mkdir(parents=True, exist_ok=True)
+    temp_dir, db_folder_str, temp_db_path = get_temp_db_path(db_folder_path)
 
-        # Check if the folder exists in the storage system and download files
-        if default_storage.exists(str(db_folder_path)) and default_storage.listdir(
-            str(db_folder_path)
-        ):
-            # Download all files from the storage folder to the temp directory
-            for file_name in default_storage.listdir(str(db_folder_path))[1]:
-                with default_storage.open(db_folder_path / file_name, "rb") as f:
-                    content = f.read()
-                with open(temp_db_path / file_name, "wb") as temp_file:
-                    temp_file.write(content)
+    # Check if the folder exists in the storage system and download files
+    if default_storage.exists(db_folder_str) and default_storage.listdir(db_folder_str):
+        # Download all files from the storage folder to the temp directory
+        for file_name in default_storage.listdir(db_folder_str)[1]:
+            with default_storage.open(db_folder_path / file_name, "rb") as f:
+                content = f.read()
+            with open(temp_db_path / file_name, "wb") as temp_file:
+                temp_file.write(content)
 
-            # Load the FAISS index from the temp directory
-            db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=True)
-            # Add new documents to the index
-            db.add_documents(embed_docs)
-        else:
-            # Create a new FAISS index if it doesn't exist
-            db = FAISS.from_documents(embed_docs, embeddings)
+        # Load the FAISS index from the temp directory
+        db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=True)
+        # Add new documents to the index
+        db.add_documents(embed_docs)
+    else:
+        # Create a new FAISS index if it doesn't exist
+        db = FAISS.from_documents(embed_docs, embeddings)
 
-        # Save the updated FAISS index back to the temp directory
-        db.save_local(temp_db_path)
+    # Save the updated FAISS index back to the temp directory
+    db.save_local(temp_db_path)
 
-        # Clean up the storage directory before uploading the new files
-        if default_storage.exists(str(db_folder_path)):
-            for file_name in default_storage.listdir(str(db_folder_path))[1]:
-                default_storage.delete(db_folder_path / file_name)
+    # Clean up the storage directory before uploading the new files
+    if default_storage.exists(db_folder_str):
+        for file_name in default_storage.listdir(db_folder_str)[1]:
+            default_storage.delete(db_folder_path / file_name)
 
-        # Upload the updated files back to Django's storage
-        for file in temp_db_path.rglob("*"):
-            if file.is_file():
-                with open(file, "rb") as f:
-                    content = f.read()
-                default_storage.save(
-                    str(db_folder_path / file.relative_to(temp_db_path)), ContentFile(content)
-                )
+    # Upload the updated files back to Django's storage
+    for file in temp_db_path.rglob("*"):
+        if file.is_file():
+            with open(file, "rb") as f:
+                content = f.read()
+            default_storage.save(
+                str(db_folder_path / file.relative_to(temp_db_path)), ContentFile(content)
+            )
+    temp_dir.cleanup()
 
     return db
 
@@ -123,22 +128,22 @@ def load_vector_store():
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
     db_folder_path = Path("faiss_index")
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_db_path = Path(temp_dir) / db_folder_path
-        temp_db_path.mkdir(parents=True, exist_ok=True)
+    temp_dir, db_folder_str, temp_db_path = get_temp_db_path(db_folder_path)
 
-        try:
-            # Download all files from the storage folder to the temp directory
-            for file_name in default_storage.listdir(str(db_folder_path))[1]:
-                with default_storage.open(db_folder_path / file_name, "rb") as f:
-                    content = f.read()
-                with open(temp_db_path / file_name, "wb") as temp_file:
-                    temp_file.write(content)
+    # check the file exists in the storage system and download files if not exist return None
+    if not default_storage.exists(db_folder_str) or not default_storage.listdir(db_folder_str)[1]:
+        temp_dir.cleanup()
+        return None
+    # Download all files from the storage folder to the temp directory
+    for file_name in default_storage.listdir(db_folder_str)[1]:
+        with default_storage.open(db_folder_path / file_name, "rb") as f:
+            content = f.read()
+        with open(temp_db_path / file_name, "wb") as temp_file:
+            temp_file.write(content)
 
-            # Load the FAISS index from the temp directory
-            db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=True)
-        except FileNotFoundError as e:
-            raise FileNotFoundError(f"Required file not found: {e}")
+    # Load the FAISS index from the temp directory
+    db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=True)
+    temp_dir.cleanup()
 
     return db
 

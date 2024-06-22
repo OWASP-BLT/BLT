@@ -4524,16 +4524,18 @@ def submit_pr(request):
 # Global variable to store the vector store
 vector_store = None
 
+# Define the daily request limit as a variable
+DAILY_REQUEST_LIMIT = 10
+
 
 @api_view(["POST"])
 def chatbot_conversation(request):
     # Rate Limit Check
-    utc_now = datetime.now(timezone.utc)
-    today = utc_now.date()
+    today = datetime.now(timezone.utc).date()
     rate_limit_key = f"global_daily_requests_{today}"
     request_count = cache.get(rate_limit_key, 0)
 
-    if request_count >= 10:
+    if request_count >= DAILY_REQUEST_LIMIT:
         return Response(
             {"error": "Daily request limit exceeded."}, status=status.HTTP_429_TOO_MANY_REQUESTS
         )
@@ -4551,7 +4553,7 @@ def chatbot_conversation(request):
     if vector_store is None:
         try:
             vector_store = load_vector_store()
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             return Response(
                 {"error": "Vector store not found"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -4564,11 +4566,9 @@ def chatbot_conversation(request):
             del request.session["buffer"]
         return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
 
+    crc, memory = conversation_chain(vector_store)
     if "buffer" in request.session:
-        crc, memory = conversation_chain(vector_store)
         memory.buffer = request.session["buffer"]
-    else:
-        crc, memory = conversation_chain(vector_store)
 
     response = crc.invoke({"question": question})
     # Increment the request count
