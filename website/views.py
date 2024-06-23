@@ -4547,9 +4547,18 @@ def AutoLabel(request):
     if request.method == "POST":
         template = """
         Label: {BugDescription}.
-        Options: General, Number error, Functional, Performance, Security, Typo, Design, Server down. 
-        Check for critical CVE alerts. 
-        If this message looks like spam, return with the word 'spam'.
+        Options: 
+        0. General 
+        1. Number error 
+        2. Functional 
+        3. Performance 
+        4. Security 
+        5. Typo 
+        6. Design 
+        7. Server down.
+        8. Spam
+        9. Critical CVE
+        Return the number corresponding to the appropriate option.
         """
 
         # prompt = PromptTemplate(
@@ -4562,5 +4571,5 @@ def AutoLabel(request):
         bug_description = data.get("BugDescription")
         # prompt_with_bug_description = prompt.format(BugDescription=bug_description)
         # label = llm(prompt_with_bug_description)
-        label="Critical"
+        label="5"
         return JsonResponse({"label": label})
