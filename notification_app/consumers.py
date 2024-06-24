@@ -23,11 +23,8 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
         notification_id = data["notification_id"]
-        print("!")
         notification = await sync_to_async(Notification.objects.get)(id=notification_id)
-        print(notification)
         await sync_to_async(notification.delete)()
-        print("1")
 
     # Receive message from room group
     async def send_notification(self, event):

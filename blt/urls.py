@@ -22,6 +22,7 @@ from website.api.views import (
     BugHuntApiViewsetV2,
     CompanyViewSet,
     DomainViewSet,
+    FetchNotificationApiView,
     FlagIssueApiView,
     InviteFriendApiViewset,
     IssueViewSet,
@@ -485,6 +486,7 @@ urlpatterns = [
         csrf_exempt(TemplateView.as_view(template_name="mobile_privacy.html")),
         name="api_privacypolicy",
     ),
+    path("api/notification/", FetchNotificationApiView.as_view(), name="notification"),
     re_path(r"^error/", website.views.throw_error, name="post_error"),
     re_path(r"^tz_detect/", include("tz_detect.urls")),
     # re_path(r"^tellme/", include("tellme.urls")),
@@ -523,7 +525,6 @@ urlpatterns = [
         ContributorStatsView.as_view(today=True),
         name="today-contributor-stats",
     ),
-    path("test/", website.views.test, name="test"),
 ]
 
 if settings.DEBUG:

@@ -2712,6 +2712,25 @@ files = [
 ua-parser = ">=0.10.0"
 
 [[package]]
+name = "uvicorn"
+version = "0.30.1"
+description = "The lightning-fast ASGI server."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "uvicorn-0.30.1-py3-none-any.whl", hash = "sha256:cd17daa7f3b9d7a24de3617820e634d0933b69eed8e33a516071174427238c81"},
+    {file = "uvicorn-0.30.1.tar.gz", hash = "sha256:d46cd8e0fd80240baffbcd9ec1012a712938754afcf81bce56c024c1656aece8"},
+]
+
+[package.dependencies]
+click = ">=7.0"
+h11 = ">=0.8"
+typing-extensions = {version = ">=4.0", markers = "python_version < \"3.11\""}
+
+[package.extras]
+standard = ["colorama (>=0.4)", "httptools (>=0.5.0)", "python-dotenv (>=0.13)", "pyyaml (>=5.1)", "uvloop (>=0.14.0,!=0.15.0,!=0.15.1)", "watchfiles (>=0.13)", "websockets (>=10.4)"]
+
+[[package]]
 name = "webdriver-manager"
 version = "4.0.1"
 description = "Library provides the way to automatically manage drivers for different browsers"
@@ -2811,4 +2830,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "3.10.12"
-content-hash = "28e19105e2fde7508fa0d95c21ea7a835f71d329121151f88543a03b681e12ff"
+content-hash = "227a8a9fb57a57b6509bc0b1e83d1e23b5c663a81bdaf46bf6a8720a90ddd4ef"

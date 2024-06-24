@@ -344,13 +344,10 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
 
-def test(request):
+def notification(request):
     notification = Notification.objects.filter(user=request.user).all()
-    count = Notification.objects.filter(user=request.user).count()
-    messages, notification_id = [], []
-    for i in range(count):
-        messages.append(notification[i].message)
-        notification_id.append(notification[i].id)
+    messages = [n.message for n in notification]
+    notification_id = [n.id for n in notification]
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         "notification_" + str(request.user.id),
@@ -360,7 +357,7 @@ def test(request):
             "message": messages,
         },
     )
-    return HttpResponse("Done")
+    return HttpResponse("Notification Sent")
 
 
 def is_safe_url(url, allowed_hosts, allowed_paths=None):
