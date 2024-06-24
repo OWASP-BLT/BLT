@@ -30,7 +30,7 @@
             if (!Response.ok) {
                 throw new Error('Network response was not ok');
                 }
-                return response.json();
+                return Response.json();
         })
         .catch(error => {
             console.error('Fetch error:', error);

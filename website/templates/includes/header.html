@@ -343,7 +343,7 @@
         for (let i=0; i<data.message.length; i++){
             const notification_id = data.notification_id[i]
             const message = data.message[i]
-            document.getElementById("notifications-dropdown").innerHTML = `<li class='dropdown-item' onclick=markAsSeen(${notification_id})>` + message + "</li><hr class='dropdown-divider'>" + document.getElementById("notifications-dropdown").innerHTML;
+            document.getElementById("notifications-dropdown").innerHTML = `<li class='dropdown-item' id='notification-${notificationId}' onclick=markAsSeen(${notification_id})>` + message + `</li><hr class='dropdown-divider' id='divider-${notificationId}'>` + document.getElementById("notifications-dropdown").innerHTML;
         }
 
         if (data.message) {
@@ -363,6 +363,15 @@
 
 
     function markAsSeen(notificationId) {
+        
+            const notificationElement = document.getElementById('notification-${notificationId}');
+            const dividerElement = document.getElementById('divider-${notificationId}');
+            if (notificationElement) {
+                notificationElement.remove();
+            }
+            if (dividerElement) {
+                dividerElement.remove();
+            }
             // Send WebSocket message to mark the notification as seen
             notificationSocket.send(JSON.stringify({
                 'notification_id': notificationId
