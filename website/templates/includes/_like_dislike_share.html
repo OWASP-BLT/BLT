@@ -60,24 +60,25 @@
             url: '/like_issue3/' + issue_pk + '/',
             data: {},
             success: function (data) {
-                $('.like_unlike').remove();
-                $('#like-container').append(data);
-                if ($("#dislike-btn i").hasClass("fa-solid")) {
-                var dislikes = $("#dislikes").text();
-                    dislikes =  dislikes-1;
-                    $('#dislike-btn').html(
-                        dislikes+`&nbsp;
-                        <i class="fa-regular fa-thumbs-down text-3xl text-black"></i>`
-                    );
-                }
+                window.location.reload();
+                // $('.like_unlike').remove();
+                // $('#like-container').append(data);
+                // if ($("#dislike-btn i").hasClass("fa-solid")) {
+                // var dislikes = $("#dislikes").text();
+                //     dislikes =  dislikes-1;
+                //     $('#dislike-btn').html(
+                //         dislikes+`&nbsp;
+                //         <i class="fa-regular fa-thumbs-down text-3xl text-black"></i>`
+                //     );
+                // }
             },
         });
         // Later, when you want to "destroy" the event handler:
-        $('body').off('click', '.like_unlike', like_unlike_handler);
+        // $('body').off('click', '.like_unlike', like_unlike_handler);
     }
 
     // Attach the click event handler
-    $('body').on('click', '.like_unlike', like_unlike_handler);
+    $('body').on('click', '#like_unlike', like_unlike_handler);
 
     function dislike_handler(e){
         e.preventDefault();
@@ -87,21 +88,22 @@
             url: '/dislike_issue3/' + issue_pk + '/',
             data: {},
             success: function (data) {
-                $('.dislike').remove();
-                $("#dislike-container").append(data);
-                if ($("#like_unlike i").hasClass("fa-solid")) {
-                    var likes = $("#likes").text();
-                    likes = likes-1;
-                    $('#like_unlike').html(
-                        likes+`&nbsp;
-                        <i class="fa-regular fa-thumbs-up text-3xl text-black"></i>`
-                    );
-                }
+                window.location.reload();
+                // $('.dislike').remove();
+                // $("#dislike-container").append(data);
+                // if ($("#like_unlike i").hasClass("fa-solid")) {
+                //     var likes = $("#likes").text();
+                //     likes = likes-1;
+                //     $('#like_unlike').html(
+                //         likes+`&nbsp;
+                //         <i class="fa-regular fa-thumbs-up text-3xl text-black"></i>`
+                //     );
+                // }
             },
         });
-        $('body').off('click', '.dislike', dislike_handler);
+        // $('body').off('click', '.dislike', dislike_handler);
     }
-    $('body').on('click', '.dislike', dislike_handler);
+    $('body').on('click', '#dislike-btn', dislike_handler);
 </script>
 <script>
     function flag_unflag_handler(e){
@@ -112,12 +114,15 @@
             url: '/flag_issue3/' + issue_pk + '/',
             data: {},
             success: function (data) {
-                $('#flag-unflag').remove();
-                $('#flag-container').append(data);
+                // Test this behaviour
+                window.location.reload();
+                // $('#flag-unflag').remove();
+                // $('#flag-container').append(data);
             },
         });
             // Later, when you want to "destroy" the event handler:
-        $('body').off('click', '#flag-unflag', flag_unflag_handler);
+            // Remove destroy
+        // $('body').off('click', '#flag-unflag', flag_unflag_handler);
     }
 
     // Attach the click event handler
@@ -133,22 +138,24 @@
             url: '/save_issue/' + issue_pk + '/',
             data: {},
             success: function (data) {
-                if (data === "REMOVED"){
-                    $('.bookmark i').removeClass('fa-solid');
-                    $('.bookmark i').addClass('fa-regular');
-                    $.notify("Bookmark Removed!", {
-                        style: "custom",
-                        className: "success"
-                    });
-                }
-                else{
-                    $('.bookmark i').removeClass('fa-regular');
-                    $('.bookmark i').addClass('fa-solid');
-                    $.notify("Bookmark Added!", {
-                        style: "custom",
-                        className: "success"
-                    });
-                }
+                // Test this behaviour
+                window.location.reload();
+                //if (data === "REMOVED"){
+                    // $('.bookmark i').removeClass('fa-solid');
+                    // $('.bookmark i').addClass('fa-regular');
+                    // $.notify("Bookmark Removed!", {
+                    //     style: "custom",
+                    //     className: "success"
+                    // });
+                //}
+                //else{
+                    // $('.bookmark i').removeClass('fa-regular');
+                    // $('.bookmark i').addClass('fa-solid');
+                    // $.notify("Bookmark Added!", {
+                    //     style: "custom",
+                    //     className: "success"
+                    // });
+                //}
             },
             error: function (e) {
                 $.notify("Some error occurred!", {
@@ -160,7 +167,10 @@
     }
 
     // Attach the click event handler
-    $('body').on('click', '.bookmark', bookmark_handler);
+    $('body').on('click', '#bookmark', bookmark_handler);
+</script>
+<script>
+
     async function resolveIssue(){
         var id = {{object.pk}};
 

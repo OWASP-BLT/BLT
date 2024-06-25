@@ -3804,7 +3804,7 @@ def flag_issue3(request, issue_pk):
     context["isFlagged"] = UserProfile.objects.filter(
         issue_flaged=issue, user=request.user
     ).exists()
-    return render(request, "includes/_flags3.html", context)
+    return HttpResponse("Success")
 
 
 @login_required(login_url="/accounts/login")
@@ -3852,7 +3852,7 @@ def like_issue3(request, issue_pk):
     context["object"] = issue
     context["likes"] = total_votes
     context["isLiked"] = UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists()
-    return render(request, "includes/_likes3.html", context)
+    return HttpResponse("Success")
 
 
 @login_required(login_url="/accounts/login")
@@ -3874,7 +3874,7 @@ def dislike_issue3(request, issue_pk):
     context["isDisliked"] = UserProfile.objects.filter(
         issue_downvoted=issue, user=request.user
     ).exists()
-    return render(request, "includes/_dislikes3.html", context)
+    return HttpResponse("Success")
 
 
 @login_required(login_url="/accounts/login")
