@@ -329,6 +329,7 @@ ALLOWED_HOSTS = [
     "0.0.0.0",
     "blt.owasp.org",
     "." + DOMAIN_NAME_PREVIOUS,
+    "blt.onrender.com",
 ]
 
 # Static files (CSS, JavaScript, Images)
