@@ -6,7 +6,7 @@ authors = ["OWASP BLT <you@example.com>"]
 license = "AGPLv3"
 
 [tool.poetry.dependencies]
-python = "3.11.2"
+python = "3.12.3"
 toml = "^0.10.2"
 Django = "^5.0.6"
 dj-database-url = "^2.2.0" 
@@ -72,6 +72,7 @@ uvicorn = "^0.30.1"
 black = "^24.2.0"
 isort = "^5.13.2"
 ruff = "^0.4.3"
+
 
 [tool.isort]
 known_first_party = ["blt"]
