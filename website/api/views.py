@@ -619,7 +619,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
     search_fields = ("id", "name")
     http_method_names = ("get", "post", "put")
 
-
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
