@@ -207,9 +207,6 @@
                                         <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg"
                                                 type="button"
                                                 id="openModal-{{ object.user.id }}"
-                                                {% comment %}
-                                                class="bg-red-600 hover:bg-red-800 text-white text-2xl px-10 py-2 rounded-lg"
-                                                {% endcomment %}
                                                 onclick="openModal('{{ object.user.userprofile.btc_address }}','{{ object.user.userprofile.eth_address }}','{{ object.user.userprofile.bch_address }}', '{{ object.user.id }}', '{{ cve_score }}')">
                                             <span class="border-2 border-black rounded-xl p-1">$5 <i class="text-black fa-solid fa-caret-down"></i></span> Tip
                                         </button>
