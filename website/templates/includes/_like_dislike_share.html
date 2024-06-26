@@ -176,14 +176,88 @@
 
         const request = await fetch(`/resolve/${id}/`)
         window.location.reload();
-        if(request.status == 200){
-        const jsonData = await request.json();
-        console.log(jsonData["issue_status"])
-        }else if (request.status == 403){
+        if (request.status == 403){
             $.notify("Permission Denied", {
                 style: "custom",
                 className: "danger"
             });
         }
     }
+</script>
+<script>
+    function sanitizeURL(url) {
+        var a = document.createElement('a');
+        a.href = encodeURI(url);
+        return a.href;
+    }
+    var label = "{{object.label}}";
+
+    $(document).on('click', '.edit-issue', function (e) {
+        $issue_desc = $('.issue-desc').text().trim();
+        $('.form input[name=description]').val($issue_desc);
+        $('.form input[name=domain]').val($('.issue-domain').text());
+        $('.form select').val(label);
+        $('.editables').hide();
+        $('.form').show();
+    });
+
+    $(document).on('click', '.cancel-edit', function (e) {
+        $('.form').hide();
+        $('.editables').show();
+    });
+
+    $(document).on('click', '.save-issue', function (e) {
+        e.preventDefault();
+
+        if ($('.form input[name=description]').val().trim().length == 0 ||
+            $('.form input[name=domain]').val().trim().length == 0) {
+            return;
+        }
+        var dom_regex = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi;
+        dom_regex = new RegExp(dom_regex);
+        var domain_url = $('.form input[name=domain]').val();
+        if (domain_url.match(dom_regex) == null) {
+            alert('Enter a valid url');
+            return;
+        }
+
+
+        $.ajax({
+            type: 'POST',
+            url: '/issue/edit/',
+            data: {
+                issue_pk: $('#issue_pk').val(),
+                domain: $('.form input[name=domain]').val(),
+                description: $('.form input[name=description]').val(),
+                label: $('.form select').val(),
+                csrfmiddlewaretoken: $('.form input[name=csrfmiddlewaretoken]').val(),
+            },
+            success: function (data) {
+                $('.issue-desc').text($('.form input[name=description]').val());
+                $('.issue-domain').text($('.form input[name=domain]').val());
+                var sanitizedDomain = sanitizeURL($('.form input[name=domain]').val());
+                $('.issue-domain').attr("href", sanitizedDomain);
+                label = $('.form select').val();
+                var l = $(".form select option[value='" + label + "']").text();
+                $('.bug-label').text(l);
+                $('.form').hide();
+                $('.editables').show();
+                $.notify("Issue updated!", {
+                    style: "custom",
+                    className: "success"
+                });
+                if (data === "Domain Created")
+                    $.notify("Domain Added!", {
+                        style: "custom",
+                        className: "success"
+                    });
+            },
+            error: function () {
+                $.notify("Some error occurred!", {
+                    style: "custom",
+                    className: "danger"
+                });
+            }
+        });
+    });
 </script>
