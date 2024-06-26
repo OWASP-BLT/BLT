@@ -178,6 +178,13 @@
             </button>
         </form>
     {% endif %}
+    <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[#0.875rem] leading-4 p-4"
+            id="edit-issue">
+        <div class="flex flex-row gap-2 items-center">
+            <span class="max-sm:text-[12px]">Edit</span>
+            <i class="fa-regular fa-pen-to-square text-[16px]"></i>
+        </div>
+    </button>
 {% endif %}
 {% comment %} resolve {% endcomment %}
 {% if request.user.is_superuser or request.user == object.user %}

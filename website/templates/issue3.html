@@ -38,6 +38,29 @@
 {% load gravatar %}
 {% load custom_tags %}
 {% block content %}
+    <style>
+    .nav-btn.active {
+    background: red; /* Change to whatever red color you prefer */
+    color: white; /* Change text color to contrast with the red background */
+    }
+
+    input[name="r"] {
+        position: absolute;
+        visibility: hidden;
+    }
+
+    #btc:checked ~ .s1 {
+        margin-left: -20%;
+    }
+
+    #eth:checked ~ .s1 {
+        margin-left: -40%;
+    }
+
+    #bch:checked ~ .s1 {
+        margin-left: -60%;
+    }
+    </style>
     {% include "includes/sidenav.html" %}
     {% comment %} TODO(b):
      removed anonymous reporting
@@ -181,7 +204,13 @@
                                             <span class="border-2 border-black rounded-xl p-1">$5 <i class="text-black fa-solid fa-caret-down"></i></span> Tip
                                         </button>
                                     {% else %}
-                                        <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
+                                        <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg"
+                                                type="button"
+                                                id="openModal-{{ object.user.id }}"
+                                                {% comment %}
+                                                class="bg-red-600 hover:bg-red-800 text-white text-2xl px-10 py-2 rounded-lg"
+                                                {% endcomment %}
+                                                onclick="openModal('{{ object.user.userprofile.btc_address }}','{{ object.user.userprofile.eth_address }}','{{ object.user.userprofile.bch_address }}', '{{ object.user.id }}', '{{ cve_score }}')">
                                             <span class="border-2 border-black rounded-xl p-1">$5 <i class="text-black fa-solid fa-caret-down"></i></span> Tip
                                         </button>
                                     {% endif %}
@@ -416,6 +445,36 @@
         </div>
     </div>
 </div>
+<dialog id="dialog-{{ object.user.id }}" class="dialog relative">
+    <input type="radio"
+           name="r"
+           id="bch-{{ object.user.id }}"
+           checked
+           class="active">
+    <input type="radio" name="r" id="eth-{{ object.user.id }}">
+    <input type="radio" name="r" id="btc-{{ object.user.id }}">
+    <div class="navigation absolute top-0 left-[50%] translate-x-[-50%] flex content-center">
+        <button class="nav-btn w-[70px] h-[40px] border-[1px] m-[6px] cursor-pointer transition-[0.4s] border-solid border-[#0e0d0d] hover:bg-[#ff0000] hover:text-white"
+                id="bch-btn-{{ object.user.id }}">BCH</button>
+        <button class="nav-btn w-[70px] h-[40px] border-[1px] m-[6px] cursor-pointer transition-[0.4s] border-solid border-[#0e0d0d] hover:bg-[#ff0000] hover:text-white"
+                id="eth-btn-{{ object.user.id }}">Ethereum</button>
+        <button class="nav-btn w-[70px] h-[40px] border-[1px] m-[6px] cursor-pointer transition-[0.4s] border-solid border-[#0e0d0d] hover:bg-[#ff0000] hover:text-white"
+                id="btc-btn-{{ object.user.id }}">Bitcoin</button>
+    </div>
+    <div id="slideshow-{{ object.user.id }}"
+         class="slideshow w-[400px] mt-[50px]">
+        <img id="qr-image-{{ object.user.id }}"
+             alt="QR Code"
+             height="300"
+             width="400">
+        <p id="crypto-name-{{ object.user.id }}"
+           class="crypto-name text-center w-full text-[20px] text-white bg-[#ff4444] inline-block m-auto"></p>
+        <p id="crypto-address-{{ object.user.id }}"
+           class="crypto-address text-center"></p>
+        <p id="tip-message" class="crypto-address text-center font-bold italic"></p>
+    </div>
+    <button id="close-{{ object.user.id }}" class="btn btn-danger w-full">Close</button>
+</dialog>
 <script src="{% static '/company/js/md_editor.js' %}"></script>
 <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.1.0/dist/markdown-it.min.js"></script>
@@ -649,6 +708,80 @@
             }
         });
     });
+</script>
+<script>
+    const openModal = (btc, eth, bch, userId, cve_score) => {
+        let severityLevel;
+        let suggestedTip;
+
+        if (cve_score >= 9.0) {
+            severityLevel = "critical";
+            suggestedTip = "$50";
+        } else if (cve_score >= 7.0) {
+            severityLevel = "high";
+            suggestedTip = "$20";
+        } else if (cve_score >= 4.0) {
+            severityLevel = "medium";
+            suggestedTip = "$10";
+        } else {
+            severityLevel = "low";
+            suggestedTip = "$5";
+        }
+
+        const cryptoOptions = [
+            { name: 'Bitcoin Cash', address: bch },
+            { name: 'Ethereum', address: eth },
+            { name: 'Bitcoin', address: btc }
+        ];
+        let currentIndex = 0;
+
+        const updateSlide = () => {
+            let { name, address } = cryptoOptions[currentIndex];
+            if (address == '' || address == 'None') {
+                address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
+                document.getElementById('qr-image-'+userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+                document.getElementById('crypto-name-' + userId).textContent = "No address: Will go to BLT Donation";
+                document.getElementById('crypto-address-'+userId).textContent = `BCH: ${address}`;
+                document.getElementById('tip-message').textContent = `is the address of the BLT monthly leaderboard that is distributed 100% to the top bug finder that month.`;
+            }
+            else{
+                document.getElementById('crypto-name-' + userId).textContent = name;
+                document.getElementById('qr-image-' + userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+                document.getElementById('crypto-address-' + userId).textContent = `${address}`;
+                document.getElementById('tip-message').textContent = `This CVE is a ${severityLevel} severity, we suggest you tip ${suggestedTip}.`;
+            }
+        };
+        updateSlide();
+
+        document.getElementById('openModal-' + userId).addEventListener('click', function() {
+            document.getElementById('dialog-' + userId).showModal();
+        });
+
+        document.getElementById('close-' + userId).addEventListener('click', function() {
+            document.getElementById('dialog-' + userId).close();
+        });
+        document.getElementById('bch-btn-' + userId).classList.add('active'); // Highlight BCH button by default
+        document.getElementById('bch-btn-' + userId).addEventListener('click', function() {
+            currentIndex = 0;
+            updateSlide();
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+
+        document.getElementById('eth-btn-' + userId).addEventListener('click', function() {
+            currentIndex = 1;
+            updateSlide();
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+
+        document.getElementById('btc-btn-' + userId).addEventListener('click', function() {
+            currentIndex = 2;
+            updateSlide();
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+    };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"
         integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw="
