@@ -38,6 +38,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import serializers
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.files.base import ContentFile
@@ -68,8 +69,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import DetailView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
-# from langchain import PromptTemplate
-# from langchain.llms import OpenAI
+from langchain_community import PromptTemplate
+from langchain.llms import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -4544,32 +4545,34 @@ def submit_pr(request):
 
 
 def AutoLabel(request):
+    Token_Limit = 1000
+    Token_per_prompt=70
     if request.method == "POST":
+        today = datetime.now(timezone.utc).date()
+        rate_limit_key = f"global_daily_request_{today}"
+        total_token_used = cache.get(rate_limit_key, 0)
+        
+        if total_token_used+Token_per_prompt > Token_Limit:
+            return JsonResponse({"error": "Rate limit exceeded."}, status=429)
+        
+        data = json.loads(request.body)
+        bug_description = data.get("BugDescription", "")
+
         template = """
-        Label: {BugDescription}.
-        Options: 
-        0. General 
-        1. Number error 
-        2. Functional 
-        3. Performance 
-        4. Security 
-        5. Typo 
-        6. Design 
-        7. Server down.
-        8. Spam
-        9. Critical CVE
+        Label:{BugDescription}
+        Options:0.General,1.Number error,2.Functional,3.Performance,4.Security,5.type,6.Design,7.Server down,8.Spam,9.Critical CVE
         Return the number corresponding to the appropriate option.
         """
 
-        # prompt = PromptTemplate(
-        #     input_variables=["BugDescription"],
-        #     template=template,
-        # )
+        prompt = PromptTemplate(
+            input_variables=["BugDescription"],
+            template=template,
+        )
 
-        # llm = OpenAI(temperature=0.5)
-        data = json.loads(request.body)
-        bug_description = data.get("BugDescription")
-        # prompt_with_bug_description = prompt.format(BugDescription=bug_description)
-        # label = llm(prompt_with_bug_description)
-        label="5"
+        llm = OpenAI(model="gpt-3.5-turbo-0125", temperature=0.5)
+        prompt_with_bug_description = prompt.format(BugDescription=bug_description)
+        label = llm(prompt_with_bug_description)
+
+        cache.set(rate_limit_key,total_token_used + Token_per_prompt, timeout=None)
+
         return JsonResponse({"label": label})

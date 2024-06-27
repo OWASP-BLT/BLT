@@ -53,6 +53,9 @@
             right: 15px;
     }
 
+    #GenerateLabel{
+        margin-left: 37%;
+    }
     </style>
 {% endblock style %}
 {% block content %}
@@ -171,14 +174,15 @@
                         </label>
                         <div class="mt-2">
                             <select name="label"
+                            required
                             id="labelSelect"
                             data-intro="Categorize the bug."
                             data-step="3"
-                            class="flex w-full placeholder:text-xl rounded-md border-0 py-4 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset hidden">
+                            class="flex w-full placeholder:text-xl rounded-md border-0 py-4 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset">
                         <option value="0">General</option>
                         <option value="1">Number error</option>
                         <option value="2">Functional</option>
-                        <option value="3">Performance</option>
+                        <option value="3"selected>Performance</option>
                         <option value="4">Security</option>
                         <option value="5">Typo</option>
                         <option value="6">Design</option>
@@ -309,7 +313,13 @@
             </div>
             <div id="bug-description-container"
                  class="w-[100%] flex justify-between md:pr-10 flex-wrap border-b border-gray-900/10 pb-10 my-10">
-                <div class="w-1/2">{% include "includes/md_editor.html" %}</div>
+                <div class="w-1/2">
+                    {% include "includes/md_editor.html" %}
+                    <button id="GenerateLabel" onclick="Submit(event)"
+                    class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500">           
+                            Generate Label
+                    </button>
+                </div>
                 <div class="w-1/2 pl-10 mt-5">
                     <div class="flex w-full items-center justify-between">
                         <h2 class="text-2xl font-semibold leading-7 text-gray-900">{% trans "ADD TEAM MEMBERS" %}</h2>
@@ -346,8 +356,7 @@
                             class="text-md font-semibold leading-6 mr-10 text-gray-900">{% trans "Cancel" %}</button>
                     <button type="submit"
                             name="reportbug_button"
-                            class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500"
-                            onclick="Submit()">
+                            class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500">
                         {% trans "Report" %}
                     </button>
                 </div>
@@ -538,7 +547,7 @@
         let email_container = document.getElementById("email-container");
         email_container.appendChild(email_container_child_html)
     }
-    
+
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -556,6 +565,7 @@
     }
 
     function Submit() {
+    event.preventDefault();
     const BugDescription = document.getElementById('markdownInput').value;
     const csrftoken = getCookie('csrftoken');
     fetch(`/AutoLabel/`, {
@@ -574,6 +584,7 @@
             const labelSelect = document.getElementById("labelSelect");
             console.log('Current labelSelect value:', labelSelect.value);
             labelSelect.selectedIndex = parseInt(data.label);
+            console.log('Selected label:', labelSelect.options[labelSelect.selectedIndex].text);
             console.log('Updated labelSelect value:', labelSelect.selectedIndex);
         }
         else {
