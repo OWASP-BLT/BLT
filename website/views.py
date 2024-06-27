@@ -815,6 +815,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
     def get(self, request, *args, **kwargs):
         # GET requests should only render the form
+        if self.form_class is None:
+            self.form_class = self.get_form_class()
         form = self.form_class()
         captcha_form = CaptchaForm()
         return render(request, self.template_name, {"form": form, "captcha_form": captcha_form})
