@@ -61,7 +61,7 @@ django-filter = "^22.1"
 webdriver-manager = "^4.0.1"
 pillow = "^10.2.0"
 chromedriver-autoinstaller = "^0.6.4"
-sentry-sdk = "^2.7.0"
+sentry-sdk = "^2.7.1"
 bitcash = "^1.0.2"
 
 [tool.poetry.group.dev.dependencies]
