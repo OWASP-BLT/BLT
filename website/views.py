@@ -4566,7 +4566,7 @@ def AutoLabel(request):
         bug_description = data.get("BugDescription")
         template = """
         Label: {BugDescription}
-        Options: 0.General, 1.Number error, 2.Functional, 3.Performance, 4.Security, 5.Type, 6.Design, 7.Server down, 8.Spam, 9.Critical CVE
+        Options: 0.General, 1.Number error, 2.Functional, 3.Performance, 4.Security, 5.Type, 6.Design, 7.Server down
         Just return the number corresponding to the appropriate option.
          """
         print(bug_description)
