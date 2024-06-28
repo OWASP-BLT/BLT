@@ -69,8 +69,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import DetailView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
-from langchain_community import PromptTemplate
-from langchain.llms import OpenAI
+from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -4544,35 +4543,47 @@ def submit_pr(request):
     return render(request, "submit_pr.html")
 
 
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+
 def AutoLabel(request):
+    dotenv_path = Path("blt\.env")
+    load_dotenv(dotenv_path=dotenv_path)
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     Token_Limit = 1000
-    Token_per_prompt=70
+    Token_per_prompt = 70
     if request.method == "POST":
         today = datetime.now(timezone.utc).date()
         rate_limit_key = f"global_daily_request_{today}"
         total_token_used = cache.get(rate_limit_key, 0)
-        
-        if total_token_used+Token_per_prompt > Token_Limit:
+
+        if total_token_used + Token_per_prompt > Token_Limit:
             return JsonResponse({"error": "Rate limit exceeded."}, status=429)
-        
+
         data = json.loads(request.body)
-        bug_description = data.get("BugDescription", "")
-
+        bug_description = data.get("BugDescription")
         template = """
-        Label:{BugDescription}
-        Options:0.General,1.Number error,2.Functional,3.Performance,4.Security,5.type,6.Design,7.Server down,8.Spam,9.Critical CVE
-        Return the number corresponding to the appropriate option.
-        """
-
-        prompt = PromptTemplate(
-            input_variables=["BugDescription"],
-            template=template,
+        Label: {BugDescription}
+        Options: 0.General, 1.Number error, 2.Functional, 3.Performance, 4.Security, 5.Type, 6.Design, 7.Server down, 8.Spam, 9.Critical CVE
+        Just return the number corresponding to the appropriate option.
+         """
+        print(bug_description)
+        prompt = template.format(BugDescription=bug_description)
+        client = OpenAI(
+            api_key=OPENAI_API_KEY,
         )
-
-        llm = OpenAI(model="gpt-3.5-turbo-0125", temperature=0.5)
-        prompt_with_bug_description = prompt.format(BugDescription=bug_description)
-        label = llm(prompt_with_bug_description)
-
-        cache.set(rate_limit_key,total_token_used + Token_per_prompt, timeout=None)
-
+        response = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            model="gpt-3.5-turbo-0125",
+            max_tokens=1,
+        )
+        label = response.choices[0].message.content
+        cache.set(rate_limit_key, total_token_used + Token_per_prompt, timeout=None)
         return JsonResponse({"label": label})

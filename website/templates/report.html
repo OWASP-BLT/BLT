@@ -174,20 +174,20 @@
                         </label>
                         <div class="mt-2">
                             <select name="label"
-                            required
-                            id="labelSelect"
-                            data-intro="Categorize the bug."
-                            data-step="3"
-                            class="flex w-full placeholder:text-xl rounded-md border-0 py-4 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset">
-                        <option value="0">General</option>
-                        <option value="1">Number error</option>
-                        <option value="2">Functional</option>
-                        <option value="3"selected>Performance</option>
-                        <option value="4">Security</option>
-                        <option value="5">Typo</option>
-                        <option value="6">Design</option>
-                        <option value="7">Server down</option>
-                        </select>
+                                    required
+                                    id="labelSelect"
+                                    data-intro="Categorize the bug."
+                                    data-step="3"
+                                    class="flex w-full placeholder:text-xl rounded-md border-0 py-4 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset">
+                                <option value="0"selected>General</option>
+                                <option value="1">Number error</option>
+                                <option value="2">Functional</option>
+                                <option value="3">Performance</option>
+                                <option value="4">Security</option>
+                                <option value="5">Typo</option>
+                                <option value="6">Design</option>
+                                <option value="7">Server down</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -315,9 +315,10 @@
                  class="w-[100%] flex justify-between md:pr-10 flex-wrap border-b border-gray-900/10 pb-10 my-10">
                 <div class="w-1/2">
                     {% include "includes/md_editor.html" %}
-                    <button id="GenerateLabel" onclick="Submit(event)"
-                    class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500">           
-                            Generate Label
+                    <button id="GenerateLabel"
+                            onclick="Submit(event)"
+                            class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500">
+                        Generate Label
                     </button>
                 </div>
                 <div class="w-1/2 pl-10 mt-5">
