@@ -1,15 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta name="description" content="Add your meta description here">
-        <meta name="keywords" content="Add your meta keywords here">
-        <title>Sitemap</title>
-    </head>
-    <head>
-        <title>Sitemap</title>
-    </head>
-    <body>
-        <h1>Sitemap</h1>
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="min-h-screen flex flex-col mx-4">
+        <h1 class="text-4xl font-semibold my-8 mx-auto">Sitemap</h1>
         <ul>
             <h2>General</h2>
             <li>
@@ -425,5 +419,5 @@
                 <a href="{% url 'post_error' %}">Error</a>
             </li>
         </ul>
-    </body>
-</html>
+    </div>
+{% endblock content %}
