@@ -12,6 +12,7 @@ import uuid
 from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+from pathlib import Path
 from urllib.parse import urlparse, urlsplit, urlunparse
 
 import humanize
@@ -69,6 +70,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import DetailView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
+from dotenv import load_dotenv
 from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
@@ -4541,11 +4543,6 @@ def submit_pr(request):
         return render(request, "submit_pr.html")
 
     return render(request, "submit_pr.html")
-
-
-from pathlib import Path
-
-from dotenv import load_dotenv
 
 
 def AutoLabel(request):
