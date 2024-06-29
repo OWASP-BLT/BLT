@@ -507,7 +507,7 @@ urlpatterns = [
     path("change_bid_status/", change_bid_status, name="change_bid_status"),
     path("fetch-current-bid/", fetch_current_bid, name="fetch_current_bid"),
     path("Submitpr/", submit_pr, name="submit_pr"),
-    path("AutoLabel/", AutoLabel, name="AutoLabel"),
+    path("issue-auto-label/", AutoLabel, name="AutoLabel"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s]+)",
         website.views.trademark_detailview,
