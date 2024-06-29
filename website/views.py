@@ -4583,3 +4583,5 @@ def AutoLabel(request):
         label = response.choices[0].message.content
         cache.set(rate_limit_key, total_token_used + token_per_prompt, timeout=None)
         return JsonResponse({"label": label})
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
