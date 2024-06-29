@@ -1824,13 +1824,13 @@ tenacity = ">=8.1.0,<8.4.0 || >8.4.0,<9.0.0"
 
 [[package]]
 name = "langchain-openai"
-version = "0.1.12"
+version = "0.1.13"
 description = "An integration package connecting OpenAI and LangChain"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langchain_openai-0.1.12-py3-none-any.whl", hash = "sha256:5d6679ccac4a5cee82aa37ab5c7bb1422405e6cee72d3057b96b8ec9c277c8ab"},
-    {file = "langchain_openai-0.1.12.tar.gz", hash = "sha256:9e27888536c579c3c4cd6e23e65c42fb6756c19f93c14ba00a15d2a236344fe8"},
+    {file = "langchain_openai-0.1.13-py3-none-any.whl", hash = "sha256:4344b6c5c67088a28eed80ba763157fdd1d690cee679966a021b42f305dbf7b5"},
+    {file = "langchain_openai-0.1.13.tar.gz", hash = "sha256:03318669bcb3238f7d1bb043329f91d150ca09246f1faf569ef299f535405c71"},
 ]
 
 [package.dependencies]
@@ -4270,4 +4270,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "394f6ca0ec23351455ad11f69017f36ac88b9b74ef11ca231045f1ebe1a29121"
+content-hash = "21fb9badefa97b0fd66d50488278dc74b3ec2fc8a67b289659ace6ed950d00d5"
