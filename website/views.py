@@ -4549,14 +4549,14 @@ def AutoLabel(request):
     dotenv_path = Path("blt/.env")
     load_dotenv(dotenv_path=dotenv_path)
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-    Token_Limit = 1000
-    Token_per_prompt = 70
+    token_Limit = 1000
+    token_per_prompt = 70
     if request.method == "POST":
         today = datetime.now(timezone.utc).date()
         rate_limit_key = f"global_daily_request_{today}"
         total_token_used = cache.get(rate_limit_key, 0)
 
-        if total_token_used + Token_per_prompt > Token_Limit:
+        if total_token_used + token_per_prompt > token_Limit:
             return JsonResponse({"error": "Rate limit exceeded."}, status=429)
 
         data = json.loads(request.body)
@@ -4566,7 +4566,6 @@ def AutoLabel(request):
         Options: 0.General, 1.Number error, 2.Functional, 3.Performance, 4.Security, 5.Type, 6.Design, 7.Server down
         Just return the number corresponding to the appropriate option.
          """
-        print(bug_description)
         prompt = template.format(BugDescription=bug_description)
         client = OpenAI(
             api_key=OPENAI_API_KEY,
@@ -4582,5 +4581,5 @@ def AutoLabel(request):
             max_tokens=1,
         )
         label = response.choices[0].message.content
-        cache.set(rate_limit_key, total_token_used + Token_per_prompt, timeout=None)
+        cache.set(rate_limit_key, total_token_used + token_per_prompt, timeout=None)
         return JsonResponse({"label": label})
