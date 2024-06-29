@@ -12,7 +12,8 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
         if not check_api:
-            return self.stdout.write(self.style.ERROR(check_api))
+            self.stdout.write(self.style.ERROR(check_api))
+            return None
 
         # Calculate the base directory
         base_dir = Path(__file__).resolve().parents[3]

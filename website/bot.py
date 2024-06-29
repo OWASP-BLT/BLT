@@ -30,13 +30,11 @@ def is_api_key_valid(api_key):
         return True
     except openai.APIConnectionError as e:
         print(f"Failed to connect to OpenAI API: {e}")
-        return False
     except openai.RateLimitError as e:
         print(f"OpenAI API rate limit exceeded: {e}")
-        return False
     except openai.APIError as e:
         print(f"OpenAI API error: {e}")
-        return False
+    return False
 
 
 def load_document(file_path):
