@@ -42,6 +42,71 @@
         }
     });
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.7.3/web3.min.js"></script>
+<script>
+  let web3;
+    let userAddress;
+
+    window.addEventListener('load', () => {
+        if (typeof window.ethereum !== 'undefined') {
+            web3 = new Web3(window.ethereum);
+            checkConnection();
+        } else {
+            document.getElementById('connect-button').classList.add('hidden');
+        }
+    });
+
+    async function connectWallet() {
+        if (web3) {
+            try {
+                await window.ethereum.enable();
+                const accounts = await web3.eth.getAccounts();
+                userAddress = accounts[0];
+                localStorage.setItem('userAddress', userAddress);
+                document.getElementById('wallet-address').innerText = `Connected: ${userAddress}`;
+                updateUI();
+            } catch (error) {
+                console.error("User denied account access", error);
+            }
+        } else {
+            console.log('Web3 is not initialized.');
+        }
+    }
+
+    function disconnectWallet() {
+        userAddress = null;
+        localStorage.removeItem('userAddress');
+        document.getElementById('wallet-address').innerText = 'Not connected';
+        updateUI();
+    }
+
+    function checkConnection() {
+        const storedAddress = localStorage.getItem('userAddress');
+        if (storedAddress) {
+            userAddress = storedAddress;
+            document.getElementById('wallet-address').innerText = `Connected: ${userAddress}`;
+        } else {
+            document.getElementById('wallet-address').innerText = 'Not connected';
+        }
+        updateUI();
+    }
+
+    function updateUI() {
+        const connectButton = document.getElementById('connect-button');
+        const disconnectButton = document.getElementById('disconnect-button');
+        const walletAddress = document.getElementById('wallet-address');
+
+        if (userAddress) {
+            connectButton.classList.add('hidden');
+            disconnectButton.classList.remove('hidden');
+            walletAddress.classList.remove('hidden');
+        } else {
+            connectButton.classList.remove('hidden');
+            disconnectButton.classList.add('hidden');
+            walletAddress.classList.add('hidden');
+        }
+    }
+</script>
 <nav class="fixed top-0 z-50 w-full bg-white border-[#F7F7F7] border-b-2 px-4 ">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
@@ -102,7 +167,21 @@
                 </a>
             </div>
             {% if request.user.is_authenticated %}
-                <li class="h-[80px] flex justify-center items-center ">
+                <li class="h-[80px] flex justify-center items-center">
+                    <button id="connect-button"
+                            onclick="{connectWallet()}"
+                            class="mr-5 bg-[#DC3545] text-white px-4 py-2 rounded connect-button">
+                        Connect Wallet
+                    </button>
+                    <button id="disconnect-button"
+                            onclick="disconnectWallet()"
+                            class="mr-5 bg-[#DC3545] text-white px-4 py-2 rounded disconnect-button hidden">
+                        Disconnect Wallet
+                    </button>
+                    <p id="wallet-address"
+                       class="truncate w-[15rem] mr-5 bg-[#b3b3b3] bg-opacity-50 rounded-full px-4 py-2 text-base font-semibold hidden">
+                        Not connected
+                    </p>
                     <button id="dropdownButton"
                             class="relative flex items-center sm:gap-3 mr-[30px]"
                             type="button">
