@@ -4546,7 +4546,7 @@ def submit_pr(request):
 
 
 def AutoLabel(request):
-    dotenv_path = Path("blt\.env")
+    dotenv_path = Path("blt/.env")
     load_dotenv(dotenv_path=dotenv_path)
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     Token_Limit = 1000
