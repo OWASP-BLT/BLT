@@ -54,7 +54,6 @@ class UUIDModel(models.Model):
 
 
 class Company(UUIDModel):
-    company_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_companies")
     name = models.CharField(max_length=255)
