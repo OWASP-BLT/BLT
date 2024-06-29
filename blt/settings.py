@@ -67,6 +67,8 @@ SITE_ID = 1
 # Application definition
 
 INSTALLED_APPS = (
+    "notification_app",
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -197,6 +199,16 @@ CONN_MAX_AGE = None
 
 WSGI_APPLICATION = "blt.wsgi.application"
 
+ASGI_APPLICATION = "blt.asgi.application"
+
+CHANNEL_LAYER = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChaneelLayer",
+        "CONFIG": {
+            "hosts": [("cache", 8000)],
+        },
+    }
+}
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
 
@@ -317,6 +329,7 @@ ALLOWED_HOSTS = [
     "0.0.0.0",
     "blt.owasp.org",
     "." + DOMAIN_NAME_PREVIOUS,
+    "blt.onrender.com",
 ]
 
 # Static files (CSS, JavaScript, Images)

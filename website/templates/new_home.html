@@ -25,6 +25,16 @@
         </div>
     </div>
     <script>
+        fetch('{% url "notification" %}?user_id={{request.user.id}} ')
+        .then(Response => {
+            if (!Response.ok) {
+                throw new Error('Network response was not ok');
+                }
+                return Response.json();
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+        })
         function like_unlike_handler(e,issue_pk){
             e.preventDefault();
             var issue_pk = issue_pk;

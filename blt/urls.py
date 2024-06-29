@@ -22,6 +22,7 @@ from website.api.views import (
     BugHuntApiViewsetV2,
     CompanyViewSet,
     DomainViewSet,
+    FetchNotificationApiView,
     FlagIssueApiView,
     InviteFriendApiViewset,
     IssueViewSet,
@@ -356,6 +357,7 @@ urlpatterns = [
         InviteFriendApiViewset.as_view(),
         name="api_invite_friend",
     ),
+    path("api/notification/", FetchNotificationApiView.as_view(), name="notification"),
     re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
     re_path(

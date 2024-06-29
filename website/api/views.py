@@ -630,3 +630,31 @@ class CompanyViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ("id", "name")
     http_method_names = ("get", "post", "put")
+
+
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
+
+class FetchNotificationApiView(APIView):
+    def get(self, request, *args, **kwargs):
+        user_id = request.query_params.get("user_id")
+        if user_id is None or not user_id.isdigit():
+            return Response("Invalid User Id, ID should be integer", status=400)
+        user_not_exist = User.objects.filter(id=user_id).exists()
+        if not user_not_exist:
+            return Response("User Does Not Exist", status=400)
+
+        notification = Notification.objects.filter(user__id=user_id).all()
+        messages = [n.message for n in notification]
+        notification_id = [n.id for n in notification]
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "notification_" + str(user_id),
+            {
+                "type": "send_notification",
+                "notification_id": notification_id,
+                "message": messages,
+            },
+        )
+        return Response("OK")

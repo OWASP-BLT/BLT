@@ -16,15 +16,16 @@ RUN apt-get update && apt-get install -y \
         libmemcached11 \
         libmemcachedutil2 \
         libmemcached-dev \
-        libz-dev
+        libz-dev \ 
+        redis
 
 
 RUN pip install poetry 
 RUN poetry config virtualenvs.create false
+RUN poetry lock --no-update
 RUN poetry install
 
 RUN python manage.py migrate 
 RUN python manage.py loaddata website/fixtures/initial_data.json
 # RUN python manage.py collectstatic
 RUN python manage.py initsuperuser
-
