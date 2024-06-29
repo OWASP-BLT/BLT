@@ -6,7 +6,9 @@ authors = ["OWASP BLT <you@example.com>"]
 license = "AGPLv3"
 
 [tool.poetry.dependencies]
+
 python = "3.11.2"
+python-dotenv = "^1.0.1"
 toml = "^0.10.2"
 Django = "^5.0.6"
 dj-database-url = "^2.2.0"
@@ -29,7 +31,7 @@ psycopg2-binary = "^2.9.9"
 boto = "^2.49.0"
 django-cors-headers = "^4.4.0"
 protobuf = "^4.25.3"
-django-storages = {extras = ["google"], version = "^1.14.3"}
+django-storages = { extras = ["google"], version = "^1.14.3" }
 django-timedeltafield = "^0.7.10"
 EasyProcess = "^1.1"
 "giturlparse.py" = "^0.0.5"
@@ -63,6 +65,7 @@ pillow = "^10.2.0"
 chromedriver-autoinstaller = "^0.6.4"
 sentry-sdk = "^2.7.1"
 bitcash = "^1.0.2"
+openai = "^1.35.7"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"

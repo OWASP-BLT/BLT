@@ -40,7 +40,9 @@
             <textarea id="markdownInput"
                       name="markdown_description"
                       class="flex-1 h-[200px] bg-gray-200 text-2xl resize-none border border-gray-300 rounded-md p-5"
-                      placeholder="Enter your markdown here...">{{ form.markdown_description.value|default:'' }}</textarea>
+                      placeholder="Enter your markdown here..."
+                      required
+                      maxlength="20">{{ form.markdown_description.value|default:'' }}</textarea>
             <div id="previewContainer"
                  class="h-[200px] flex-1 bg-white rounded-md p-4 hidden">
                 <div id="markdownPreview"></div>
