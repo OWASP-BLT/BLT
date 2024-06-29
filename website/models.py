@@ -46,7 +46,14 @@ def generate_uuid_for_company(apps, schema_editor):
         obj.save()
 
 
-class Company(models.Model):
+class UUIDModel(models.Model):
+    company_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+
+    class Meta:
+        abstract = True
+
+
+class Company(UUIDModel):
     company_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_companies")
