@@ -115,6 +115,7 @@ class IssueAdmin(admin.ModelAdmin):
     )
     search_fields = ["url", "description", "domain__name", "user__username"]
     inlines = [ImageInline]
+    list_filter = ["domain", "user"]
 
 
 class HuntAdmin(admin.ModelAdmin):
