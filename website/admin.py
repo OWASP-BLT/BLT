@@ -228,6 +228,10 @@ class UserProfileAdmin(admin.ModelAdmin):
         "follow_count",
         "upvote_count",
         "downvote_count",
+        "saved_count",
+        "flagged_count",
+        "subscribed_domains_count",
+        "subscribed_users_count",
     )
 
     def follow_count(self, obj):
@@ -239,12 +243,17 @@ class UserProfileAdmin(admin.ModelAdmin):
     def downvote_count(self, obj):
         return obj.issue_downvoted.count()
 
-    # issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
-    # issue_downvoted = models.ManyToManyField(Issue, blank=True, related_name="downvoted")
-    # issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
-    # issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
-    # subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains")
-    # subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users")
+    def saved_count(self, obj):
+        return obj.issue_saved.count()
+
+    def flagged_count(self, obj):
+        return obj.issue_flaged.count()
+
+    def subscribed_domains_count(self, obj):
+        return obj.subscribed_domains.count()
+
+    def subscribed_users_count(self, obj):
+        return obj.subscribed_users.count()
 
 
 class IssueScreenshotAdmin(admin.ModelAdmin):
