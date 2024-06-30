@@ -225,14 +225,26 @@ class UserProfileAdmin(admin.ModelAdmin):
         "btc_address",
         "bch_address",
         "eth_address",
-        "follows",
-        "issue_upvoted",
-        "issue_downvoted",
-        "issue_saved",
-        "issue_flaged",
-        "subscribed_domains",
-        "subscribed_users",
+        "follow_count",
+        "upvote_count",
+        "downvote_count",
     )
+
+    def follow_count(self, obj):
+        return obj.follows.count()
+
+    def upvote_count(self, obj):
+        return obj.issue_upvoted.count()
+
+    def downvote_count(self, obj):
+        return obj.issue_downvoted.count()
+
+    # issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
+    # issue_downvoted = models.ManyToManyField(Issue, blank=True, related_name="downvoted")
+    # issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
+    # issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
+    # subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains")
+    # subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users")
 
 
 class IssueScreenshotAdmin(admin.ModelAdmin):
