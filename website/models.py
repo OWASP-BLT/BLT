@@ -15,9 +15,10 @@ from django.core.files.storage import default_storage
 from django.core.validators import URLValidator
 from django.db import models
 from django.db.models import Count
-from django.db.models.signals import post_save
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from google.cloud import storage
 from mdeditor.fields import MDTextField
 from PIL import Image
 from rest_framework.authtoken.models import Token
@@ -360,6 +361,15 @@ class IssueScreenshot(models.Model):
             name = self.image.name  # Use .name to get the relative file path in the storage system
             storage.delete(name)
         super(IssueScreenshot, self).delete(*args, **kwargs)
+
+
+@receiver(post_delete, sender=IssueScreenshot)
+def delete_image_on_post_delete(sender, instance, **kwargs):
+    if instance.image:
+        client = storage.Client()
+        bucket = client.bucket(settings.GS_BUCKET_NAME)
+        blob = bucket.blob(instance.image.name)
+        blob.delete()
 
 
 @receiver(post_save, sender=Issue)
