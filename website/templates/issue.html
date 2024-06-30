@@ -366,7 +366,12 @@
                                 </div>
                             </div>
                             <div class="col-xs-6 operations">
-                                <div>Github URL: {{ object.domain.github }}</div>
+                                <div>
+                                    Github URL: <a href="{{ object.domain.github }}">{{ object.domain.github }}</a>
+                                </div>
+                                <div>
+                                    Github Issues URL: <a href="{{ object.domain.github }}/issues">{{ object.domain.github }}/issues</a>
+                                </div>
                                 {% if object.domain.github %}
                                     {% if object.github_url %}
                                         <a href="{{ object.github_url }}"
