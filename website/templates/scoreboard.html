@@ -86,12 +86,12 @@
                                          height="80px">
                                 </a>
                             </td>
-                            <td class="text-capitalize">{{ domain }}</td>
+                            <td>{{ domain }}</td>
                             <td>{{ domain.open_issues|length }}</td>
                             <td>{{ domain.closed_issues|length }}</td>
-                            <td class="text-capitalize">{{ domain.email_event }}</td>
+                            <td>{{ domain.email_event }}</td>
                             <td>{{ domain.modified|timesince }} ago</td>
-                            <td class="text-capitalize">
+                            <td>
                                 <a href="{% url 'profile' slug=domain.top_tester %}">{{ domain.top_tester|default:"" }}</a>
                             </td>
                         </tr>

@@ -271,6 +271,23 @@ class IssueScreenshotAdmin(admin.ModelAdmin):
         return obj.issue.description
 
 
+class IPAdmin(admin.ModelAdmin):
+    list_display = ("id", "address", "user", "issuenumber")
+
+
+class MonitorAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "url",
+        "keyword",
+        "created",
+        "modified",
+        "last_checked_time",
+        "status",
+        "user",
+    )
+
+
 # Register all models with their respective admin classes
 admin.site.register(ContributorStats)
 admin.site.register(Bid, BidAdmin)
@@ -291,6 +308,6 @@ admin.site.register(HuntPrize)
 
 # Register missing models
 admin.site.register(InviteFriend)
-admin.site.register(IP)
+admin.site.register(IP, IPAdmin)
 admin.site.register(Transaction)
-admin.site.register(Monitor)
+admin.site.register(Monitor, MonitorAdmin)
