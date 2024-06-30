@@ -19,6 +19,7 @@ from django.db.models import Count
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
 from PIL import Image
@@ -355,24 +356,22 @@ class IssueScreenshot(models.Model):
     image = models.ImageField(upload_to="screenshots", validators=[validate_image])
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
 
-    def delete(self, *args, **kwargs):
-        logger.info("Deleting IssueScreenshot instance")
-        if self.image:
-            logger.info(f"Deleting image: {self.image.name}")
-            storage = self.image.storage or default_storage
-            name = self.image.name
-            storage.delete(name)
-        super().delete(*args, **kwargs)
-
 
 @receiver(post_delete, sender=IssueScreenshot)
 def delete_image_on_post_delete(sender, instance, **kwargs):
     if instance.image:
-        logger.info(f"Deleting image from Google Cloud Storage: {instance.image.name}")
         client = storage.Client()
         bucket = client.bucket(settings.GS_BUCKET_NAME)
-        blob = bucket.blob(instance.image.name)
-        blob.delete()
+        blob_name = instance.image.name
+        blob = bucket.blob(blob_name)
+        try:
+            logger.info(f"Attempting to delete image from Google Cloud Storage: {blob_name}")
+            blob.delete()
+            logger.info(f"Successfully deleted image from Google Cloud Storage: {blob_name}")
+        except NotFound:
+            logger.warning(f"File not found in Google Cloud Storage: {blob_name}")
+        except Exception as e:
+            logger.error(f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}")
 
 
 @receiver(post_save, sender=Issue)
