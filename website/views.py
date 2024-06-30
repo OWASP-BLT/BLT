@@ -12,6 +12,7 @@ import uuid
 from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+from pathlib import Path
 from urllib.parse import urlparse, urlsplit, urlunparse
 
 import humanize
@@ -38,6 +39,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import serializers
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.files.base import ContentFile
@@ -68,9 +70,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import DetailView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
+from dotenv import load_dotenv
+from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
+from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from user_agents import parse
 
@@ -96,6 +102,7 @@ from website.models import (
     Winner,
 )
 
+from .bot import conversation_chain, is_api_key_valid, load_vector_store
 from .forms import (
     CaptchaForm,
     HuntForm,
@@ -4543,3 +4550,101 @@ def submit_pr(request):
         return render(request, "submit_pr.html")
 
     return render(request, "submit_pr.html")
+
+
+# Global variable to store the vector store
+vector_store = None
+
+# Define the daily request limit as a variable
+DAILY_REQUEST_LIMIT = 10
+
+
+@api_view(["POST"])
+def chatbot_conversation(request):
+    # Rate Limit Check
+    today = datetime.now(timezone.utc).date()
+    rate_limit_key = f"global_daily_requests_{today}"
+    request_count = cache.get(rate_limit_key, 0)
+
+    if request_count >= DAILY_REQUEST_LIMIT:
+        return Response(
+            {"error": "Daily request limit exceeded."}, status=status.HTTP_429_TOO_MANY_REQUESTS
+        )
+
+    question = request.data.get("question", "")
+    check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
+    if not check_api:
+        return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Apply validation for question
+    if not question or not isinstance(question, str):
+        return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
+
+    global vector_store
+    if vector_store is None:
+        try:
+            vector_store = load_vector_store()
+        except FileNotFoundError:
+            return Response(
+                {"error": "Vector store not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    # Handle the "exit" command
+    if question.lower() == "exit":
+        # if buffer is present in the session then delete it
+        if "buffer" in request.session:
+            del request.session["buffer"]
+        return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
+
+    crc, memory = conversation_chain(vector_store)
+    if "buffer" in request.session:
+        memory.buffer = request.session["buffer"]
+
+    response = crc.invoke({"question": question})
+    # Increment the request count
+    cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
+    request.session["buffer"] = memory.buffer
+    return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
+
+
+def AutoLabel(request):
+    dotenv_path = Path("blt/.env")
+    load_dotenv(dotenv_path=dotenv_path)
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    token_Limit = 1000
+    token_per_prompt = 70
+    if request.method == "POST":
+        today = datetime.now(timezone.utc).date()
+        rate_limit_key = f"global_daily_request_{today}"
+        total_token_used = cache.get(rate_limit_key, 0)
+
+        if total_token_used + token_per_prompt > token_Limit:
+            return JsonResponse({"error": "Rate limit exceeded."}, status=429)
+
+        data = json.loads(request.body)
+        bug_description = data.get("BugDescription")
+        template = """
+        Label: {BugDescription}
+        Options: 0.General, 1.Number error, 2.Functional, 3.Performance, 4.Security, 5.Type, 6.Design, 7.Server down
+        Just return the number corresponding to the appropriate option.
+         """
+        prompt = template.format(BugDescription=bug_description)
+        client = OpenAI(
+            api_key=OPENAI_API_KEY,
+        )
+        response = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            model="gpt-3.5-turbo-0125",
+            max_tokens=1,
+        )
+        label = response.choices[0].message.content
+        cache.set(rate_limit_key, total_token_used + token_per_prompt, timeout=None)
+        return JsonResponse({"label": label})
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)

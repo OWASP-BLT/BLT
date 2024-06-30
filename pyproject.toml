@@ -6,7 +6,9 @@ authors = ["OWASP BLT <you@example.com>"]
 license = "AGPLv3"
 
 [tool.poetry.dependencies]
+
 python = "3.11.2"
+python-dotenv = "^1.0.1"
 toml = "^0.10.2"
 Django = "^5.0.6"
 dj-database-url = "^2.2.0"
@@ -15,7 +17,7 @@ beautifulsoup4 = "^4.12.3"
 colorthief = "^0.2.1"
 django-email-obfuscator = "^0.1.5"
 django-gravatar2 = "^1.4.4"
-django-import-export = "^4.0.9"
+django-import-export = "^4.1.0"
 django-annoying = "^0.10.6"
 dj-rest-auth = "^5.0.2"
 tweepy = "^4.8.0"
@@ -29,7 +31,7 @@ psycopg2-binary = "^2.9.9"
 boto = "^2.49.0"
 django-cors-headers = "^4.4.0"
 protobuf = "^4.25.3"
-django-storages = {extras = ["google"], version = "^1.14.3"}
+django-storages = { extras = ["google"], version = "^1.14.3" }
 django-timedeltafield = "^0.7.10"
 EasyProcess = "^1.1"
 "giturlparse.py" = "^0.0.5"
@@ -61,13 +63,23 @@ django-filter = "^22.1"
 webdriver-manager = "^4.0.1"
 pillow = "^10.2.0"
 chromedriver-autoinstaller = "^0.6.4"
-sentry-sdk = "^2.6.0"
+sentry-sdk = "^2.7.1"
 bitcash = "^1.0.2"
+pydantic = "^2.7.3"
+pydantic_core = "^2.18.4"
+langchain = "^0.2.1"
+langchain-community = "^0.2.1"
+langchain-core = "^0.2.3"
+langchain-openai = "^0.1.8"
+unstructured = "^0.14.4"
+Markdown = "^3.6"
+faiss-cpu = "^1.8.0"
+openai = "^1.35.7"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"
 isort = "^5.13.2"
-ruff = "^0.4.10"
+ruff = "^0.5.0"
 
 [tool.isort]
 known_first_party = ["blt"]
