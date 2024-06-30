@@ -18,7 +18,6 @@ from django.db.models import Count
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
-from google.cloud import storage
 from mdeditor.fields import MDTextField
 from PIL import Image
 from rest_framework.authtoken.models import Token
@@ -352,28 +351,15 @@ class IssueScreenshot(models.Model):
     image = models.ImageField(upload_to="screenshots", validators=[validate_image])
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
 
-    # def delete(self, *args, **kwargs):
-    #     if self.image:
-    #         # Delete the image file
-    #         storage = self.image.storage
-    #         name = (
-    #             self.image.name
-    #         )  # Use .name to get the relative file path in the storage system
-    #         storage.delete(name)
-    #     super(IssueScreenshot, self).delete(*args, **kwargs)
-
     def delete(self, *args, **kwargs):
+        print("Deleting image")
         if self.image:
-            print("Deleting image")
-            client = storage.Client()
-            print("Client created and is:", client)
-            bucket = client.bucket(settings.GS_BUCKET_NAME)
-            print("Bucket is:", bucket)
-            blob = bucket.blob(self.image.name)
-            print("Blob is:", blob)
-            blob.delete()
-
-        super().delete(*args, **kwargs)
+            print("Deleting image - image detected")
+            # Delete the image file
+            storage = self.image.storage or default_storage
+            name = self.image.name  # Use .name to get the relative file path in the storage system
+            storage.delete(name)
+        super(IssueScreenshot, self).delete(*args, **kwargs)
 
 
 @receiver(post_save, sender=Issue)
