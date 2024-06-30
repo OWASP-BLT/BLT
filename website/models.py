@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 from decimal import Decimal
@@ -22,6 +23,8 @@ from google.cloud import storage
 from mdeditor.fields import MDTextField
 from PIL import Image
 from rest_framework.authtoken.models import Token
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -353,19 +356,19 @@ class IssueScreenshot(models.Model):
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
 
     def delete(self, *args, **kwargs):
-        print("Deleting image")
+        logger.info("Deleting IssueScreenshot instance")
         if self.image:
-            print("Deleting image - image detected")
-            # Delete the image file
+            logger.info(f"Deleting image: {self.image.name}")
             storage = self.image.storage or default_storage
-            name = self.image.name  # Use .name to get the relative file path in the storage system
+            name = self.image.name
             storage.delete(name)
-        super(IssueScreenshot, self).delete(*args, **kwargs)
+        super().delete(*args, **kwargs)
 
 
 @receiver(post_delete, sender=IssueScreenshot)
 def delete_image_on_post_delete(sender, instance, **kwargs):
     if instance.image:
+        logger.info(f"Deleting image from Google Cloud Storage: {instance.image.name}")
         client = storage.Client()
         bucket = client.bucket(settings.GS_BUCKET_NAME)
         blob = bucket.blob(instance.image.name)
