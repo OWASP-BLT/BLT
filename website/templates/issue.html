@@ -139,9 +139,16 @@
     <script src="{% static "js/jquery.atwho.js" %}"></script>
     <script src="{% static "js/jquery.caret.js" %}"></script>
     <link href="{% static "css/jquery.atwho.css" %}" rel="stylesheet">
+    {% include "includes/sidenav.html" %}
     <div class="row">
         <div class="col-lg-12">
             <h3 class="page-header">
+                <div>
+                    View this issue in:
+                    <a href="{% url 'issue_view' object.id %}">v1</a> |
+                    <a href="{% url 'issue_view2' object.id %}">v2</a> |
+                    <a href="{% url 'issue_view3' object.id %}">v3</a>
+                </div>
                 <span class="editables">
                     <span class="issue-desc">{{ object.description }}</span>
                     <span class="pull-right">
@@ -359,6 +366,12 @@
                                 </div>
                             </div>
                             <div class="col-xs-6 operations">
+                                <div>
+                                    Github URL: <a href="{{ object.domain.github }}">{{ object.domain.github }}</a>
+                                </div>
+                                <div>
+                                    Github Issues URL: <a href="{{ object.domain.github }}/issues">{{ object.domain.github }}/issues</a>
+                                </div>
                                 {% if object.domain.github %}
                                     {% if object.github_url %}
                                         <a href="{{ object.github_url }}"

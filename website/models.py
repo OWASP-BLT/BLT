@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 from decimal import Decimal
@@ -15,13 +16,16 @@ from django.core.files.storage import default_storage
 from django.core.validators import URLValidator
 from django.db import models
 from django.db.models import Count
-from django.db.models.signals import post_save
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
 from PIL import Image
 from rest_framework.authtoken.models import Token
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -274,6 +278,9 @@ class Issue(models.Model):
     def __unicode__(self):
         return self.description
 
+    def __str__(self):
+        return self.description
+
     @property
     def domain_title(self):
         parsed_url = urlparse(self.url)
@@ -345,28 +352,43 @@ class Issue(models.Model):
         ordering = ["-created"]
 
 
+@receiver(post_delete, sender=Issue)
+def delete_image_on_issue_delete(sender, instance, **kwargs):
+    if instance.screenshot:
+        client = storage.Client()
+        bucket = client.bucket(settings.GS_BUCKET_NAME)
+        blob_name = instance.screenshot.name
+        blob = bucket.blob(blob_name)
+        try:
+            logger.info(f"Attempting to delete image from Google Cloud Storage: {blob_name}")
+            blob.delete()
+            logger.info(f"Successfully deleted image from Google Cloud Storage: {blob_name}")
+        except NotFound:
+            logger.warning(f"File not found in Google Cloud Storage: {blob_name}")
+        except Exception as e:
+            logger.error(f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}")
+
+
 class IssueScreenshot(models.Model):
     image = models.ImageField(upload_to="screenshots", validators=[validate_image])
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
 
-    # def delete(self, *args, **kwargs):
-    #     if self.image:
-    #         # Delete the image file
-    #         storage = self.image.storage
-    #         name = (
-    #             self.image.name
-    #         )  # Use .name to get the relative file path in the storage system
-    #         storage.delete(name)
-    #     super(IssueScreenshot, self).delete(*args, **kwargs)
 
-    def delete(self, *args, **kwargs):
-        if self.image:
-            client = storage.Client()
-            bucket = client.bucket(settings.GS_BUCKET_NAME)
-            blob = bucket.blob(self.image.name)
+@receiver(post_delete, sender=IssueScreenshot)
+def delete_image_on_post_delete(sender, instance, **kwargs):
+    if instance.image:
+        client = storage.Client()
+        bucket = client.bucket(settings.GS_BUCKET_NAME)
+        blob_name = instance.image.name
+        blob = bucket.blob(blob_name)
+        try:
+            logger.info(f"Attempting to delete image from Google Cloud Storage: {blob_name}")
             blob.delete()
-
-        super().delete(*args, **kwargs)
+            logger.info(f"Successfully deleted image from Google Cloud Storage: {blob_name}")
+        except NotFound:
+            logger.warning(f"File not found in Google Cloud Storage: {blob_name}")
+        except Exception as e:
+            logger.error(f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}")
 
 
 @receiver(post_save, sender=Issue)
@@ -525,7 +547,7 @@ class Wallet(models.Model):
 
     def withdraw(self, value):
         if value > self.current_balance:
-            raise InsufficientBalance("This wallet has insufficient balance.")
+            raise Exception("This wallet has insufficient balance.")
 
         self.transaction_set.create(
             value=-value, running_balance=self.current_balance - Decimal(value)

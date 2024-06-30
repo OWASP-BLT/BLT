@@ -5,6 +5,7 @@ from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
 from website.models import (
+    IP,
     Bid,
     Company,
     CompanyAdmin,
@@ -12,11 +13,14 @@ from website.models import (
     Domain,
     Hunt,
     HuntPrize,
+    InviteFriend,
     Issue,
     IssueScreenshot,
+    Monitor,
     Payment,
     Points,
     Subscription,
+    Transaction,
     UserProfile,
     Wallet,
     Winner,
@@ -115,6 +119,7 @@ class IssueAdmin(admin.ModelAdmin):
     )
     search_fields = ["url", "description", "domain__name", "user__username"]
     inlines = [ImageInline]
+    list_filter = ["domain", "user"]
 
 
 class HuntAdmin(admin.ModelAdmin):
@@ -224,36 +229,85 @@ class UserProfileAdmin(admin.ModelAdmin):
         "btc_address",
         "bch_address",
         "eth_address",
+        "follow_count",
+        "upvote_count",
+        "downvote_count",
+        "saved_count",
+        "flagged_count",
+        "subscribed_domains_count",
+        "subscribed_users_count",
     )
-    # add these and make them sortable
-    # follows = models.ManyToManyField("self", related_name="follower", symmetrical=False, blank=True)
-    # winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    # issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
-    # issue_downvoted = models.ManyToManyField(Issue, blank=True, related_name="downvoted")
-    # issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
-    # issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
-    # subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains")
-    # subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users")
+
+    def follow_count(self, obj):
+        return obj.follows.count()
+
+    def upvote_count(self, obj):
+        return obj.issue_upvoted.count()
+
+    def downvote_count(self, obj):
+        return obj.issue_downvoted.count()
+
+    def saved_count(self, obj):
+        return obj.issue_saved.count()
+
+    def flagged_count(self, obj):
+        return obj.issue_flaged.count()
+
+    def subscribed_domains_count(self, obj):
+        return obj.subscribed_domains.count()
+
+    def subscribed_users_count(self, obj):
+        return obj.subscribed_users.count()
 
 
+class IssueScreenshotAdmin(admin.ModelAdmin):
+    model = IssueScreenshot
+    list_display = ("id", "issue__user", "issue_description", "issue", "image")
+
+    def issue__user(self, obj):
+        return obj.issue.user
+
+    def issue_description(self, obj):
+        return obj.issue.description
+
+
+class IPAdmin(admin.ModelAdmin):
+    list_display = ("id", "address", "user", "issuenumber")
+
+
+class MonitorAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "url",
+        "keyword",
+        "created",
+        "modified",
+        "last_checked_time",
+        "status",
+        "user",
+    )
+
+
+# Register all models with their respective admin classes
 admin.site.register(ContributorStats)
-
 admin.site.register(Bid, BidAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(User, UserAdmin)
-
 admin.site.register(Domain, DomainAdminPanel)
-
 admin.site.register(Issue, IssueAdmin)
 admin.site.register(Points, PointsAdmin)
 admin.site.register(Hunt, HuntAdmin)
-
 admin.site.register(CompanyAdmin, CompanyUserAdmin)
 admin.site.register(Company, CompanyAdmins)
-
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Wallet, WalletAdmin)
 admin.site.register(Winner, WinnerAdmin)
 admin.site.register(Payment, PaymentAdmin)
-admin.site.register(IssueScreenshot)
+admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
 admin.site.register(HuntPrize)
+
+# Register missing models
+admin.site.register(InviteFriend)
+admin.site.register(IP, IPAdmin)
+admin.site.register(Transaction)
+admin.site.register(Monitor, MonitorAdmin)
