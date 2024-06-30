@@ -257,7 +257,14 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 
 class IssueScreenshotAdmin(admin.ModelAdmin):
-    list_display = ("id", "issue_user", "issue_domain", "issue", "image")
+    model = IssueScreenshot
+    list_display = ("id", "issue__user", "issue_description", "issue", "image")
+
+    def issue__user(self, obj):
+        return obj.issue.user
+
+    def issue_description(self, obj):
+        return obj.issue.description
 
 
 admin.site.register(ContributorStats)
