@@ -2004,6 +2004,7 @@ class IssueView(DetailView):
     template_name = "issue.html"
 
     def get(self, request, *args, **kwargs):
+        print("getting issue id: ", self.kwargs["slug"])
         ipdetails = IP()
         try:
             id = int(self.kwargs["slug"])
@@ -2014,6 +2015,9 @@ class IssueView(DetailView):
         ipdetails.user = self.request.user
         ipdetails.address = get_client_ip(request)
         ipdetails.issuenumber = self.object.id
+        print("IP Address: ", ipdetails.address)
+        print("Issue Number: ", ipdetails.issuenumber)
+
         try:
             if self.request.user.is_authenticated:
                 try:
@@ -2042,6 +2046,7 @@ class IssueView(DetailView):
         return super(IssueView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
+        print('getting context data')
         context = super(IssueView, self).get_context_data(**kwargs)
         if self.object.user_agent:
             user_agent = parse(self.object.user_agent)
