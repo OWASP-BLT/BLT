@@ -76,6 +76,9 @@
                 found a bug on <a href="{% url 'domain' slug=activity.domain_name %}">{{ activity.domain_title }}</a> {{ activity.created|timesince }}
                 ago
             </div>
+            <div>
+                <a href="{{ activity.url }}" target="_blank">{{ activity.url }}</a>
+            </div>
             <a class="whitespace-nowrap"
                href="{{ activity.get_absolute_url }}#comments">
                 {% if activity.comments.all|length > 0 %}{{ activity.comments.all|length }} comments{% endif %}
