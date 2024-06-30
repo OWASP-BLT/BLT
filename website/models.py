@@ -274,6 +274,9 @@ class Issue(models.Model):
     def __unicode__(self):
         return self.description
 
+    def __str__(self):
+        return self.description
+
     @property
     def domain_title(self):
         parsed_url = urlparse(self.url)
