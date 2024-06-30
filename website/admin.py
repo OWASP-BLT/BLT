@@ -225,20 +225,18 @@ class UserProfileAdmin(admin.ModelAdmin):
         "btc_address",
         "bch_address",
         "eth_address",
+        "follows",
+        "issue_upvoted",
+        "issue_downvoted",
+        "issue_saved",
+        "issue_flaged",
+        "subscribed_domains",
+        "subscribed_users",
     )
-    # add these and make them sortable
-    # follows = models.ManyToManyField("self", related_name="follower", symmetrical=False, blank=True)
-    # winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    # issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
-    # issue_downvoted = models.ManyToManyField(Issue, blank=True, related_name="downvoted")
-    # issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
-    # issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
-    # subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains")
-    # subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users")
 
 
 class IssueScreenshotAdmin(admin.ModelAdmin):
-    list_display = ("id", "issue_title", "image")
+    list_display = ("id", "issue", "image")
 
 
 admin.site.register(ContributorStats)
