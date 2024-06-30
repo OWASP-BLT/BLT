@@ -361,9 +361,13 @@ class IssueScreenshot(models.Model):
 
     def delete(self, *args, **kwargs):
         if self.image:
+            print("Deleting image")
             client = storage.Client()
+            print("Client created and is:", client)
             bucket = client.bucket(settings.GS_BUCKET_NAME)
+            print("Bucket is:", bucket)
             blob = bucket.blob(self.image.name)
+            print("Blob is:", blob)
             blob.delete()
 
         super().delete(*args, **kwargs)

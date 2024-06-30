@@ -237,6 +237,10 @@ class UserProfileAdmin(admin.ModelAdmin):
     # subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users")
 
 
+class IssueScreenshotAdmin(admin.ModelAdmin):
+    list_display = ("id", "issue", "image")
+
+
 admin.site.register(ContributorStats)
 
 admin.site.register(Bid, BidAdmin)
@@ -256,5 +260,5 @@ admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Wallet, WalletAdmin)
 admin.site.register(Winner, WinnerAdmin)
 admin.site.register(Payment, PaymentAdmin)
-admin.site.register(IssueScreenshot)
+admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
 admin.site.register(HuntPrize)
