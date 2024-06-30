@@ -73,6 +73,7 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     UserProfileDetailsView,
     UserProfileDetailView,
     change_bid_status,
+    chatbot_conversation,
     contributors_view,
     deletions,
     dislike_issue2,
@@ -528,6 +529,7 @@ urlpatterns = [
         ContributorStatsView.as_view(today=True),
         name="today-contributor-stats",
     ),
+    path("api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"),
 ]
 
 if settings.DEBUG:

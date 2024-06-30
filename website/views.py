@@ -73,8 +73,10 @@ from django.views.generic.edit import CreateView
 from dotenv import load_dotenv
 from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
+from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from user_agents import parse
 
@@ -100,6 +102,7 @@ from website.models import (
     Winner,
 )
 
+from .bot import conversation_chain, is_api_key_valid, load_vector_store
 from .forms import (
     CaptchaForm,
     HuntForm,
@@ -4543,6 +4546,62 @@ def submit_pr(request):
         return render(request, "submit_pr.html")
 
     return render(request, "submit_pr.html")
+
+
+# Global variable to store the vector store
+vector_store = None
+
+# Define the daily request limit as a variable
+DAILY_REQUEST_LIMIT = 10
+
+
+@api_view(["POST"])
+def chatbot_conversation(request):
+    # Rate Limit Check
+    today = datetime.now(timezone.utc).date()
+    rate_limit_key = f"global_daily_requests_{today}"
+    request_count = cache.get(rate_limit_key, 0)
+
+    if request_count >= DAILY_REQUEST_LIMIT:
+        return Response(
+            {"error": "Daily request limit exceeded."}, status=status.HTTP_429_TOO_MANY_REQUESTS
+        )
+
+    question = request.data.get("question", "")
+    check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
+    if not check_api:
+        return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Apply validation for question
+    if not question or not isinstance(question, str):
+        return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
+
+    global vector_store
+    if vector_store is None:
+        try:
+            vector_store = load_vector_store()
+        except FileNotFoundError:
+            return Response(
+                {"error": "Vector store not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    # Handle the "exit" command
+    if question.lower() == "exit":
+        # if buffer is present in the session then delete it
+        if "buffer" in request.session:
+            del request.session["buffer"]
+        return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
+
+    crc, memory = conversation_chain(vector_store)
+    if "buffer" in request.session:
+        memory.buffer = request.session["buffer"]
+
+    response = crc.invoke({"question": question})
+    # Increment the request count
+    cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
+    request.session["buffer"] = memory.buffer
+    return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
 
 
 def AutoLabel(request):
