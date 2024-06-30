@@ -2035,15 +2035,17 @@ class IssueView(DetailView):
                     )
                     self.object.save()
                 except Exception as e:
-                    print(e)
-                    messages.error(self.request, "That issue was not found 2." + str(e))
-                    ipdetails.save()
-                    self.object.views = (self.object.views or 0) + 1
-                    self.object.save()
+                    pass  # pass this temporarly to avoid error
+                    # print(e)
+                    # messages.error(self.request, "That issue was not found 2." + str(e))
+                    # ipdetails.save()
+                    # self.object.views = (self.object.views or 0) + 1
+                    # self.object.save()
         except Exception as e:
-            print(e)
-            messages.error(self.request, "That issue was not found 1." + str(e))
-            return redirect("/")
+            pass  # pass this temporarly to avoid error
+            # print(e)
+            # messages.error(self.request, "That issue was not found 1." + str(e))
+            # return redirect("/")
         return super(IssueView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
