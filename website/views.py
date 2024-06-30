@@ -1098,7 +1098,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 response = r.json()
                 try:
                     obj.github_url = response["html_url"]
-                except KeyError:
+                except Exception as e:
                     send_mail(
                         "Error in github issue creation for "
                         + str(domain.name)
@@ -1106,6 +1106,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         "Error in github issue creation, check your github settings\n"
                         + " your current settings are: "
                         + str(domain.github),
+                        +" and the error is: " + str(e),
                         settings.EMAIL_TO_STRING,
                         [domain.email],
                         fail_silently=True,
