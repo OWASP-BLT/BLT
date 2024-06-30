@@ -2005,6 +2005,7 @@ class IssueView(DetailView):
 
     def get(self, request, *args, **kwargs):
         print("getting issue id: ", self.kwargs["slug"])
+        print("getting issue id: ", self.kwargs)
         ipdetails = IP()
         try:
             id = int(self.kwargs["slug"])
@@ -2046,7 +2047,7 @@ class IssueView(DetailView):
         return super(IssueView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        print('getting context data')
+        print("getting context data")
         context = super(IssueView, self).get_context_data(**kwargs)
         if self.object.user_agent:
             user_agent = parse(self.object.user_agent)
