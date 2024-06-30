@@ -257,7 +257,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 
 class IssueScreenshotAdmin(admin.ModelAdmin):
-    list_display = ("id", "issue__user", "issue__domain", "issue", "image")
+    list_display = ("id", "issue_user", "issue_domain", "issue", "image")
 
 
 admin.site.register(ContributorStats)
