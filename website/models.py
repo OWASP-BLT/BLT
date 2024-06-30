@@ -352,6 +352,23 @@ class Issue(models.Model):
         ordering = ["-created"]
 
 
+@receiver(post_delete, sender=Issue)
+def delete_image_on_issue_delete(sender, instance, **kwargs):
+    if instance.screenshot:
+        client = storage.Client()
+        bucket = client.bucket(settings.GS_BUCKET_NAME)
+        blob_name = instance.screenshot.name
+        blob = bucket.blob(blob_name)
+        try:
+            logger.info(f"Attempting to delete image from Google Cloud Storage: {blob_name}")
+            blob.delete()
+            logger.info(f"Successfully deleted image from Google Cloud Storage: {blob_name}")
+        except NotFound:
+            logger.warning(f"File not found in Google Cloud Storage: {blob_name}")
+        except Exception as e:
+            logger.error(f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}")
+
+
 class IssueScreenshot(models.Model):
     image = models.ImageField(upload_to="screenshots", validators=[validate_image])
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
@@ -530,7 +547,7 @@ class Wallet(models.Model):
 
     def withdraw(self, value):
         if value > self.current_balance:
-            raise InsufficientBalance("This wallet has insufficient balance.")
+            raise Exception("This wallet has insufficient balance.")
 
         self.transaction_set.create(
             value=-value, running_balance=self.current_balance - Decimal(value)
