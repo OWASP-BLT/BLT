@@ -1997,7 +1997,7 @@ class HuntCreate(CreateView):
         return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HH7MNY6KJGZFW"
 
 
-# TODO(b): REMOVE after _3 is ready
+# TODO(b): REMOVE after _3 is ready, tested and has all features of the existing issueview, until then keep this working.
 class IssueView(DetailView):
     model = Issue
     slug_field = "id"
