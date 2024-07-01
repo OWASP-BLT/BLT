@@ -5,6 +5,7 @@ from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
 from website.models import (
+    IP,
     Bid,
     Company,
     CompanyAdmin,
@@ -12,11 +13,14 @@ from website.models import (
     Domain,
     Hunt,
     HuntPrize,
+    InviteFriend,
     Issue,
     IssueScreenshot,
+    Monitor,
     Payment,
     Points,
     Subscription,
+    Transaction,
     UserProfile,
     Wallet,
     Winner,
@@ -267,24 +271,43 @@ class IssueScreenshotAdmin(admin.ModelAdmin):
         return obj.issue.description
 
 
-admin.site.register(ContributorStats)
+class IPAdmin(admin.ModelAdmin):
+    list_display = ("id", "address", "user", "issuenumber")
 
+
+class MonitorAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "url",
+        "keyword",
+        "created",
+        "modified",
+        "last_checked_time",
+        "status",
+        "user",
+    )
+
+
+# Register all models with their respective admin classes
+admin.site.register(ContributorStats)
 admin.site.register(Bid, BidAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(User, UserAdmin)
-
 admin.site.register(Domain, DomainAdminPanel)
-
 admin.site.register(Issue, IssueAdmin)
 admin.site.register(Points, PointsAdmin)
 admin.site.register(Hunt, HuntAdmin)
-
 admin.site.register(CompanyAdmin, CompanyUserAdmin)
 admin.site.register(Company, CompanyAdmins)
-
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Wallet, WalletAdmin)
 admin.site.register(Winner, WinnerAdmin)
 admin.site.register(Payment, PaymentAdmin)
 admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
 admin.site.register(HuntPrize)
+
+# Register missing models
+admin.site.register(InviteFriend)
+admin.site.register(IP, IPAdmin)
+admin.site.register(Transaction)
+admin.site.register(Monitor, MonitorAdmin)

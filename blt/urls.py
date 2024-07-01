@@ -172,7 +172,7 @@ urlpatterns = [
     ),
     re_path(r"^redoc/$", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
     re_path(r"^$", website.views.newhome, name="index"),
-    re_path(r"^newhome/$", website.views.index, name="newhome"),
+    # re_path(r"^newhome/$", website.views.index, name="newhome"),
     re_path(
         r"^dashboard/company/$",
         website.views.company_dashboard,

@@ -79,19 +79,19 @@
                                          onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';"
                                          width="80px"
                                          height="80px">
-                                    <img src="https://www.google.com/s2/favicons?sz=80&domain_url={{ domain.domain__name }}"
+                                    <img src="https://www.google.com/s2/favicons?sz=80&domain_url={{ domain.name }}"
                                          class="alt-img"
                                          alt="{{ domain.name }}"
                                          width="80px"
                                          height="80px">
                                 </a>
                             </td>
-                            <td class="text-capitalize">{{ domain }}</td>
+                            <td>{{ domain }}</td>
                             <td>{{ domain.open_issues|length }}</td>
                             <td>{{ domain.closed_issues|length }}</td>
-                            <td class="text-capitalize">{{ domain.email_event }}</td>
+                            <td>{{ domain.email_event }}</td>
                             <td>{{ domain.modified|timesince }} ago</td>
-                            <td class="text-capitalize">
+                            <td>
                                 <a href="{% url 'profile' slug=domain.top_tester %}">{{ domain.top_tester|default:"" }}</a>
                             </td>
                         </tr>

@@ -2,7 +2,6 @@ import base64
 import io
 import json
 import os
-import random
 import re
 import time
 import urllib.error
@@ -103,14 +102,7 @@ from website.models import (
 )
 
 from .bot import conversation_chain, is_api_key_valid, load_vector_store
-from .forms import (
-    CaptchaForm,
-    HuntForm,
-    MonitorForm,
-    QuickIssueForm,
-    UserDeleteForm,
-    UserProfileForm,
-)
+from .forms import CaptchaForm, HuntForm, MonitorForm, UserDeleteForm, UserProfileForm
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
@@ -118,6 +110,9 @@ WHITELISTED_IMAGE_TYPES = {
     "png": "image/png",
 }
 
+from django.core.cache import cache
+from django.utils.decorators import decorator_from_middleware_with_args
+from django.views.decorators.cache import CacheMiddleware
 from PIL import Image
 
 
@@ -159,189 +154,157 @@ def rebuild_safe_url(url):
     return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", ""))
 
 
-# @cache_page(60 * 60 * 24)
-def index(request, template="index.html"):
-    try:
-        domains = random.sample(Domain.objects.all(), 3)
-    except:
-        domains = None
-    try:
-        if not EmailAddress.objects.get(email=request.user.email).verified:
-            messages.error(request, "Please verify your email address")
-    except:
-        pass
+# # @cache_page(60 * 60 * 24)
+# def index(request, template="index.html"):
+#     try:
+#         domains = random.sample(Domain.objects.all(), 3)
+#     except:
+#         domains = None
+#     try:
+#         if not EmailAddress.objects.get(email=request.user.email).verified:
+#             messages.error(request, "Please verify your email address")
+#     except:
+#         pass
 
-    latest_hunts_filter = request.GET.get("latest_hunts", None)
+#     latest_hunts_filter = request.GET.get("latest_hunts", None)
 
-    bug_count = Issue.objects.all().count()
-    user_count = User.objects.all().count()
-    hunt_count = Hunt.objects.all().count()
-    domain_count = Domain.objects.all().count()
+#     bug_count = Issue.objects.all().count()
+#     user_count = User.objects.all().count()
+#     hunt_count = Hunt.objects.all().count()
+#     domain_count = Domain.objects.all().count()
 
-    captcha_form = CaptchaForm()
+#     captcha_form = CaptchaForm()
 
-    wallet = None
-    if request.user.is_authenticated:
-        wallet, created = Wallet.objects.get_or_create(user=request.user)
+#     wallet = None
+#     if request.user.is_authenticated:
+#         wallet, created = Wallet.objects.get_or_create(user=request.user)
 
-    activity_screenshots = {}
-    for activity in Issue.objects.all():
-        activity_screenshots[activity] = IssueScreenshot.objects.filter(issue=activity).first()
+#     activity_screenshots = {}
+#     for activity in Issue.objects.all():
+#         activity_screenshots[activity] = IssueScreenshot.objects.filter(issue=activity).first()
 
-    top_companies = (
-        Issue.objects.values("domain__name")
-        .annotate(count=Count("domain__name"))
-        .order_by("-count")[:10]
-    )
-    top_testers = (
-        Issue.objects.values("user__id", "user__username")
-        .filter(user__isnull=False)
-        .annotate(count=Count("user__username"))
-        .order_by("-count")[:10]
-    )
+#     top_companies = (
+#         Issue.objects.values("domain__name")
+#         .annotate(count=Count("domain__name"))
+#         .order_by("-count")[:10]
+#     )
+#     top_testers = (
+#         Issue.objects.values("user__id", "user__username")
+#         .filter(user__isnull=False)
+#         .annotate(count=Count("user__username"))
+#         .order_by("-count")[:10]
+#     )
 
-    if request.user.is_anonymous:
-        activities = Issue.objects.exclude(Q(is_hidden=True))[0:10]
-    else:
-        activities = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:10]
+#     if request.user.is_anonymous:
+#         activities = Issue.objects.exclude(Q(is_hidden=True))[0:10]
+#     else:
+#         activities = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:10]
 
-    top_hunts = Hunt.objects.values(
-        "id",
-        "name",
-        "url",
-        "logo",
-        "starts_on",
-        "starts_on__day",
-        "starts_on__month",
-        "starts_on__year",
-        "end_on",
-        "end_on__day",
-        "end_on__month",
-        "end_on__year",
-    ).annotate(total_prize=Sum("huntprize__value"))
+#     top_hunts = Hunt.objects.values(
+#         "id",
+#         "name",
+#         "url",
+#         "logo",
+#         "starts_on",
+#         "starts_on__day",
+#         "starts_on__month",
+#         "starts_on__year",
+#         "end_on",
+#         "end_on__day",
+#         "end_on__month",
+#         "end_on__year",
+#     ).annotate(total_prize=Sum("huntprize__value"))
 
-    if latest_hunts_filter is not None:
-        top_hunts = top_hunts.filter(result_published=True).order_by("-created")[:3]
-    else:
-        top_hunts = top_hunts.filter(is_published=True, result_published=False).order_by(
-            "-created"
-        )[:3]
+#     if latest_hunts_filter is not None:
+#         top_hunts = top_hunts.filter(result_published=True).order_by("-created")[:3]
+#     else:
+#         top_hunts = top_hunts.filter(is_published=True, result_published=False).order_by(
+#             "-created"
+#         )[:3]
 
-    context = {
-        "server_url": request.build_absolute_uri("/"),
-        "activities": activities,
-        "domains": domains,
-        "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
-        "leaderboard": User.objects.filter(
-            points__created__month=datetime.now().month,
-            points__created__year=datetime.now().year,
+#     context = {
+#         "server_url": request.build_absolute_uri("/"),
+#         "activities": activities,
+#         "domains": domains,
+#         "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
+#         "leaderboard": User.objects.filter(
+#             points__created__month=datetime.now().month,
+#             points__created__year=datetime.now().year,
+#         )
+#         .annotate(total_score=Sum("points__score"))
+#         .order_by("-total_score")[:10],
+#         "bug_count": bug_count,
+#         "user_count": user_count,
+#         "hunt_count": hunt_count,
+#         "domain_count": domain_count,
+#         "wallet": wallet,
+#         "captcha_form": captcha_form,
+#         "activity_screenshots": activity_screenshots,
+#         "top_companies": top_companies,
+#         "top_testers": top_testers,
+#         "top_hunts": top_hunts,
+#         "ended_hunts": False if latest_hunts_filter is None else True,
+#     }
+#     return render(request, template, context)
+
+
+def cache_per_user(timeout, cache_alias=None):
+    def _decorator(view_func):
+        @decorator_from_middleware_with_args(CacheMiddleware)(
+            cache_timeout=timeout, cache_alias=cache_alias, key_prefix=None
         )
-        .annotate(total_score=Sum("points__score"))
-        .order_by("-total_score")[:10],
-        "bug_count": bug_count,
-        "user_count": user_count,
-        "hunt_count": hunt_count,
-        "domain_count": domain_count,
-        "wallet": wallet,
-        "captcha_form": captcha_form,
-        "activity_screenshots": activity_screenshots,
-        "top_companies": top_companies,
-        "top_testers": top_testers,
-        "top_hunts": top_hunts,
-        "ended_hunts": False if latest_hunts_filter is None else True,
-    }
-    return render(request, template, context)
+        def _cache_middleware(request, *args, **kwargs):
+            # Override get_cache_key to include the user in the cache key
+            if request.user.is_authenticated:
+                request._cache_update_cache = True
+                username = request.user.get_username()
+                cache_key = f"{username}:{request.get_full_path()}"
+            else:
+                cache_key = f"anonymous:{request.get_full_path()}"
+            response = cache.get(cache_key)
+            if not response:
+                response = view_func(request, *args, **kwargs)
+                cache.set(cache_key, response, timeout)
+            return response
+
+        return _cache_middleware
+
+    return _decorator
 
 
-# @cache_page(60 * 60 * 24)
+@cache_per_user(3600)
 def newhome(request, template="new_home.html"):
-    if request.method == "POST":
-        form = QuickIssueForm(request.POST)
-        if form.is_valid():
-            query_string = urllib.parse.urlencode(form.cleaned_data)
-            redirect_url = f"/report/?{query_string}"
-            return HttpResponseRedirect(redirect_url)
+    if request.user.is_authenticated:
+        try:
+            email_record = EmailAddress.objects.get(email=request.user.email)
+            if not email_record.verified:
+                messages.error(request, "Please verify your email address.")
+        except EmailAddress.DoesNotExist:
+            messages.error(request, "No email associated with your account. Please add an email.")
+        except AttributeError:
+            # This catches cases where request.user.email might be None or doesn't exist
+            messages.error(request, "Your account does not have an email address.")
+    else:
+        messages.info(
+            request, "You are browsing as a guest. Please log in or register for full access."
+        )
 
-    try:
-        if not EmailAddress.objects.get(email=request.user.email).verified:
-            messages.error(request, "Please verify your email address")
-    except:
-        pass
-
+    # Retrieve and paginate issues that aren't hidden or are created by the current user
     bugs = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id)).all()
     bugs_screenshots = {}
-
     for bug in bugs:
-        bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[0:3]
+        bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[:3]
 
     paginator = Paginator(bugs, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    # latest_hunts_filter = request.GET.get("latest_hunts",None)
-
-    # bug_count = Issue.objects.all().count()
-    # user_count = User.objects.all().count()
-    # hunt_count = Hunt.objects.all().count()
-    # domain_count = Domain.objects.all().count()
-
-    # captcha_form = CaptchaForm()
-
-    # wallet = None
-    # if request.user.is_authenticated:
-    #     wallet, created = Wallet.objects.get_or_create(user=request.user)
-
-    # activity_screenshots = {}
-    # for activity in Issue.objects.all():
-    #     activity_screenshots[activity] = IssueScreenshot.objects.filter(issue=activity).first()
-
-    # top_companies = Issue.objects.values("domain__name").annotate(count=Count('domain__name')).order_by("-count")[:10]
-    # top_testers = Issue.objects.values("user__id","user__username").filter(user__isnull=False).annotate(count=Count('user__username')).order_by("-count")[:10]
-    # activities = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:10]
-
-    # top_hunts = Hunt.objects.values(
-    #     'id',
-    #     'name',
-    #     'url',
-    #     'logo',
-    #     'starts_on',
-    #     'starts_on__day',
-    #     'starts_on__month',
-    #     'starts_on__year',
-    #     'end_on',
-    #     'end_on__day',
-    #     'end_on__month',
-    #     'end_on__year',
-    # ).annotate(total_prize=Sum("huntprize__value"))
-
-    # if latest_hunts_filter is not None:
-    #     top_hunts = top_hunts.filter(result_published=True).order_by("-created")[:3]
-    # else:
-    #     top_hunts = top_hunts.filter(is_published=True,result_published=False).order_by("-created")[:3]
-
     context = {
         "bugs": page_obj,
         "bugs_screenshots": bugs_screenshots,
-        # "server_url": request.build_absolute_uri('/'),
-        # "activities": activities,
-        # "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
         "leaderboard": User.objects.filter(
-            points__created__month=datetime.now().month,
-            points__created__year=datetime.now().year,
+            points__created__month=datetime.now().month, points__created__year=datetime.now().year
         ),
-        # .annotate(total_score=Sum("points__score"))
-        # .order_by("-total_score")[:10],
-        # "bug_count": bug_count,
-        # "user_count": user_count,
-        # "hunt_count": hunt_count,
-        # "domain_count": domain_count,
-        # "wallet": wallet,
-        # "captcha_form": captcha_form,
-        # "activity_screenshots":activity_screenshots,
-        # "top_companies":top_companies,
-        # "top_testers":top_testers,
-        # "top_hunts": top_hunts,
-        # "ended_hunts": False if latest_hunts_filter is None else True
     }
     return render(request, template, context)
 
@@ -1098,14 +1061,16 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 response = r.json()
                 try:
                     obj.github_url = response["html_url"]
-                except KeyError:
+                except Exception as e:
                     send_mail(
                         "Error in github issue creation for "
                         + str(domain.name)
                         + ", check your github settings",
                         "Error in github issue creation, check your github settings\n"
                         + " your current settings are: "
-                        + str(domain.github),
+                        + str(domain.github)
+                        + " and the error is: "
+                        + str(e),
                         settings.EMAIL_TO_STRING,
                         [domain.email],
                         fail_silently=True,
@@ -1997,7 +1962,7 @@ class HuntCreate(CreateView):
         return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HH7MNY6KJGZFW"
 
 
-# TODO(b): REMOVE after _3 is ready
+# TODO(b): REMOVE after _3 is ready, tested and has all features of the existing issueview, until then keep this working.
 class IssueView(DetailView):
     model = Issue
     slug_field = "id"
@@ -4510,8 +4475,8 @@ def SaveBiddingData(request):
         bid.save()
         bid_link = f"https://blt.owasp.org/generate_bid_image/{amount}/"
         return JsonResponse({"Paste this in GitHub Issue Comments:": bid_link})
-
-    return render(request, "bidding.html")
+    bids = Bid.objects.all()
+    return render(request, "bidding.html", {"bids": bids})
 
 
 def fetch_current_bid(request):
