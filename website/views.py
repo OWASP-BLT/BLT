@@ -2,7 +2,6 @@ import base64
 import io
 import json
 import os
-import random
 import re
 import time
 import urllib.error
@@ -91,7 +90,6 @@ from website.models import (
     CompanyAdmin,
     ContributorStats,
     Domain,
-    EmailAddress,
     Hunt,
     InviteFriend,
     Issue,
@@ -162,98 +160,98 @@ def rebuild_safe_url(url):
     return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", ""))
 
 
-# @cache_page(60 * 60 * 24)
-def index(request, template="index.html"):
-    try:
-        domains = random.sample(Domain.objects.all(), 3)
-    except:
-        domains = None
-    try:
-        if not EmailAddress.objects.get(email=request.user.email).verified:
-            messages.error(request, "Please verify your email address")
-    except:
-        pass
+# # @cache_page(60 * 60 * 24)
+# def index(request, template="index.html"):
+#     try:
+#         domains = random.sample(Domain.objects.all(), 3)
+#     except:
+#         domains = None
+#     try:
+#         if not EmailAddress.objects.get(email=request.user.email).verified:
+#             messages.error(request, "Please verify your email address")
+#     except:
+#         pass
 
-    latest_hunts_filter = request.GET.get("latest_hunts", None)
+#     latest_hunts_filter = request.GET.get("latest_hunts", None)
 
-    bug_count = Issue.objects.all().count()
-    user_count = User.objects.all().count()
-    hunt_count = Hunt.objects.all().count()
-    domain_count = Domain.objects.all().count()
+#     bug_count = Issue.objects.all().count()
+#     user_count = User.objects.all().count()
+#     hunt_count = Hunt.objects.all().count()
+#     domain_count = Domain.objects.all().count()
 
-    captcha_form = CaptchaForm()
+#     captcha_form = CaptchaForm()
 
-    wallet = None
-    if request.user.is_authenticated:
-        wallet, created = Wallet.objects.get_or_create(user=request.user)
+#     wallet = None
+#     if request.user.is_authenticated:
+#         wallet, created = Wallet.objects.get_or_create(user=request.user)
 
-    activity_screenshots = {}
-    for activity in Issue.objects.all():
-        activity_screenshots[activity] = IssueScreenshot.objects.filter(issue=activity).first()
+#     activity_screenshots = {}
+#     for activity in Issue.objects.all():
+#         activity_screenshots[activity] = IssueScreenshot.objects.filter(issue=activity).first()
 
-    top_companies = (
-        Issue.objects.values("domain__name")
-        .annotate(count=Count("domain__name"))
-        .order_by("-count")[:10]
-    )
-    top_testers = (
-        Issue.objects.values("user__id", "user__username")
-        .filter(user__isnull=False)
-        .annotate(count=Count("user__username"))
-        .order_by("-count")[:10]
-    )
+#     top_companies = (
+#         Issue.objects.values("domain__name")
+#         .annotate(count=Count("domain__name"))
+#         .order_by("-count")[:10]
+#     )
+#     top_testers = (
+#         Issue.objects.values("user__id", "user__username")
+#         .filter(user__isnull=False)
+#         .annotate(count=Count("user__username"))
+#         .order_by("-count")[:10]
+#     )
 
-    if request.user.is_anonymous:
-        activities = Issue.objects.exclude(Q(is_hidden=True))[0:10]
-    else:
-        activities = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:10]
+#     if request.user.is_anonymous:
+#         activities = Issue.objects.exclude(Q(is_hidden=True))[0:10]
+#     else:
+#         activities = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:10]
 
-    top_hunts = Hunt.objects.values(
-        "id",
-        "name",
-        "url",
-        "logo",
-        "starts_on",
-        "starts_on__day",
-        "starts_on__month",
-        "starts_on__year",
-        "end_on",
-        "end_on__day",
-        "end_on__month",
-        "end_on__year",
-    ).annotate(total_prize=Sum("huntprize__value"))
+#     top_hunts = Hunt.objects.values(
+#         "id",
+#         "name",
+#         "url",
+#         "logo",
+#         "starts_on",
+#         "starts_on__day",
+#         "starts_on__month",
+#         "starts_on__year",
+#         "end_on",
+#         "end_on__day",
+#         "end_on__month",
+#         "end_on__year",
+#     ).annotate(total_prize=Sum("huntprize__value"))
 
-    if latest_hunts_filter is not None:
-        top_hunts = top_hunts.filter(result_published=True).order_by("-created")[:3]
-    else:
-        top_hunts = top_hunts.filter(is_published=True, result_published=False).order_by(
-            "-created"
-        )[:3]
+#     if latest_hunts_filter is not None:
+#         top_hunts = top_hunts.filter(result_published=True).order_by("-created")[:3]
+#     else:
+#         top_hunts = top_hunts.filter(is_published=True, result_published=False).order_by(
+#             "-created"
+#         )[:3]
 
-    context = {
-        "server_url": request.build_absolute_uri("/"),
-        "activities": activities,
-        "domains": domains,
-        "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
-        "leaderboard": User.objects.filter(
-            points__created__month=datetime.now().month,
-            points__created__year=datetime.now().year,
-        )
-        .annotate(total_score=Sum("points__score"))
-        .order_by("-total_score")[:10],
-        "bug_count": bug_count,
-        "user_count": user_count,
-        "hunt_count": hunt_count,
-        "domain_count": domain_count,
-        "wallet": wallet,
-        "captcha_form": captcha_form,
-        "activity_screenshots": activity_screenshots,
-        "top_companies": top_companies,
-        "top_testers": top_testers,
-        "top_hunts": top_hunts,
-        "ended_hunts": False if latest_hunts_filter is None else True,
-    }
-    return render(request, template, context)
+#     context = {
+#         "server_url": request.build_absolute_uri("/"),
+#         "activities": activities,
+#         "domains": domains,
+#         "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
+#         "leaderboard": User.objects.filter(
+#             points__created__month=datetime.now().month,
+#             points__created__year=datetime.now().year,
+#         )
+#         .annotate(total_score=Sum("points__score"))
+#         .order_by("-total_score")[:10],
+#         "bug_count": bug_count,
+#         "user_count": user_count,
+#         "hunt_count": hunt_count,
+#         "domain_count": domain_count,
+#         "wallet": wallet,
+#         "captcha_form": captcha_form,
+#         "activity_screenshots": activity_screenshots,
+#         "top_companies": top_companies,
+#         "top_testers": top_testers,
+#         "top_hunts": top_hunts,
+#         "ended_hunts": False if latest_hunts_filter is None else True,
+#     }
+#     return render(request, template, context)
 
 
 @vary_on_cookie
