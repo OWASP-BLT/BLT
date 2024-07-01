@@ -1069,7 +1069,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         "Error in github issue creation, check your github settings\n"
                         + " your current settings are: "
                         + str(domain.github)
-                        + " and the error is: " + str(e),
+                        + " and the error is: "
+                        + str(e),
                         settings.EMAIL_TO_STRING,
                         [domain.email],
                         fail_silently=True,
