@@ -22,6 +22,7 @@ from google.cloud import storage
 from mdeditor.fields import MDTextField
 from PIL import Image
 from rest_framework.authtoken.models import Token
+from .common.models import UUIDModel
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -44,13 +45,6 @@ def generate_uuid_for_company(apps, schema_editor):
     for obj in company_model.objects.all():
         obj.company_id = uuid.uuid4()  # Replace with your desired UUID generation logic
         obj.save()
-
-
-class UUIDModel(models.Model):
-    company_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-
-    class Meta:
-        abstract = True
 
 
 class Company(UUIDModel):
