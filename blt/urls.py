@@ -34,6 +34,7 @@ from website.api.views import (
 )
 from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 etc
     AllIssuesView,
+    AutoLabel,
     CompanySettings,
     ContributorStatsView,
     CreateHunt,
@@ -72,6 +73,7 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     UserProfileDetailsView,
     UserProfileDetailView,
     change_bid_status,
+    chatbot_conversation,
     contributors_view,
     deletions,
     dislike_issue2,
@@ -508,6 +510,7 @@ urlpatterns = [
     path("change_bid_status/", change_bid_status, name="change_bid_status"),
     path("fetch-current-bid/", fetch_current_bid, name="fetch_current_bid"),
     path("Submitpr/", submit_pr, name="submit_pr"),
+    path("issue-auto-label/", AutoLabel, name="AutoLabel"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s]+)",
         website.views.trademark_detailview,
@@ -528,6 +531,7 @@ urlpatterns = [
         ContributorStatsView.as_view(today=True),
         name="today-contributor-stats",
     ),
+    path("api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"),
 ]
 
 if settings.DEBUG:

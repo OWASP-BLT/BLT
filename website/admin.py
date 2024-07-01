@@ -115,6 +115,7 @@ class IssueAdmin(admin.ModelAdmin):
     )
     search_fields = ["url", "description", "domain__name", "user__username"]
     inlines = [ImageInline]
+    list_filter = ["domain", "user"]
 
 
 class HuntAdmin(admin.ModelAdmin):
@@ -224,16 +225,46 @@ class UserProfileAdmin(admin.ModelAdmin):
         "btc_address",
         "bch_address",
         "eth_address",
+        "follow_count",
+        "upvote_count",
+        "downvote_count",
+        "saved_count",
+        "flagged_count",
+        "subscribed_domains_count",
+        "subscribed_users_count",
     )
-    # add these and make them sortable
-    # follows = models.ManyToManyField("self", related_name="follower", symmetrical=False, blank=True)
-    # winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    # issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
-    # issue_downvoted = models.ManyToManyField(Issue, blank=True, related_name="downvoted")
-    # issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
-    # issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
-    # subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains")
-    # subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users")
+
+    def follow_count(self, obj):
+        return obj.follows.count()
+
+    def upvote_count(self, obj):
+        return obj.issue_upvoted.count()
+
+    def downvote_count(self, obj):
+        return obj.issue_downvoted.count()
+
+    def saved_count(self, obj):
+        return obj.issue_saved.count()
+
+    def flagged_count(self, obj):
+        return obj.issue_flaged.count()
+
+    def subscribed_domains_count(self, obj):
+        return obj.subscribed_domains.count()
+
+    def subscribed_users_count(self, obj):
+        return obj.subscribed_users.count()
+
+
+class IssueScreenshotAdmin(admin.ModelAdmin):
+    model = IssueScreenshot
+    list_display = ("id", "issue__user", "issue_description", "issue", "image")
+
+    def issue__user(self, obj):
+        return obj.issue.user
+
+    def issue_description(self, obj):
+        return obj.issue.description
 
 
 admin.site.register(ContributorStats)
@@ -255,5 +286,5 @@ admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Wallet, WalletAdmin)
 admin.site.register(Winner, WinnerAdmin)
 admin.site.register(Payment, PaymentAdmin)
-admin.site.register(IssueScreenshot)
+admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
 admin.site.register(HuntPrize)

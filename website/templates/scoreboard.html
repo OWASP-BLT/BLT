@@ -51,7 +51,7 @@
     </div>
     <div class="row">
         <div class="col-lg-6">
-            <h2 class="page-header">Company Scoreboard</h2>
+            <h2 class="page-header">Domain Scoreboard</h2>
         </div>
     </div>
     <div class="row">
@@ -60,13 +60,13 @@
                    class="table table-bordered table-striped table-condensed">
                 <thead>
                     <tr>
-                        <th>Company</th>
-                        <th>Company Name</th>
+                        <th>Logo</th>
+                        <th>Domain Name</th>
                         <th>Open Issues</th>
                         <th>Closed Issues</th>
                         <th>Email Event</th>
                         <th>Time of Last Event</th>
-                        <th>Top Company Tester</th>
+                        <th>Top Domain Tester</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -79,14 +79,14 @@
                                          onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';"
                                          width="80px"
                                          height="80px">
-                                    <img src="{% static 'img/logo-small-transparent.png' %}"
+                                    <img src="https://www.google.com/s2/favicons?sz=80&domain_url={{ domain.domain__name }}"
                                          class="alt-img"
-                                         alt="No logo found"
+                                         alt="{{ domain.name }}"
                                          width="80px"
                                          height="80px">
                                 </a>
                             </td>
-                            <td class="text-capitalize">{{ domain.get_name }}</td>
+                            <td class="text-capitalize">{{ domain }}</td>
                             <td>{{ domain.open_issues|length }}</td>
                             <td>{{ domain.closed_issues|length }}</td>
                             <td class="text-capitalize">{{ domain.email_event }}</td>
