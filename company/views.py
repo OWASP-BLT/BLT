@@ -312,11 +312,15 @@ class CompanyDashboardAnalyticsView(View):
             "company_obj": Company.objects.filter(uuid=company_uuid).first(),
             "total_info": self.get_general_info(company_uuid),
             "bug_report_type_piechart_data": self.get_bug_report_type_piechart_data(company_uuid),
-            "reports_on_domain_piechart_data": self.get_reports_on_domain_piechart_data(company_uuid),
+            "reports_on_domain_piechart_data": self.get_reports_on_domain_piechart_data(
+                company_uuid
+            ),
             "get_current_year_monthly_reported_bar_data": self.get_current_year_monthly_reported_bar_data(
                 company_uuid
             ),
-            "bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(company_uuid),
+            "bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(
+                company_uuid
+            ),
             "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(
                 company_uuid, True
             ),
