@@ -67,7 +67,6 @@ SITE_ID = 1
 # Application definition
 
 INSTALLED_APPS = (
-    "notification_app",
     "daphne",
     "django.contrib.admin",
     "django.contrib.auth",

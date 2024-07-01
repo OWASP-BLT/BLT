@@ -81,7 +81,6 @@ from user_agents import parse
 
 from blt import settings
 from comments.models import Comment
-from notification_app.models import Notification
 from website.models import (
     IP,
     Bid,
@@ -94,6 +93,7 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
+    Notification,
     Payment,
     Points,
     Subscription,

@@ -17,6 +17,7 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
+    Notification,
     Payment,
     Points,
     Subscription,
@@ -305,6 +306,8 @@ admin.site.register(Winner, WinnerAdmin)
 admin.site.register(Payment, PaymentAdmin)
 admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
 admin.site.register(HuntPrize)
+admin.site.register(Notification)
+
 
 # Register missing models
 admin.site.register(InviteFriend)

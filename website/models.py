@@ -633,3 +633,8 @@ class Bid(models.Model):
     #         )
 
     #     super().save(*args, **kwargs)
+
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    message = models.TextField(null=True, blank=True, max_length=50)
