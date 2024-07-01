@@ -38,6 +38,29 @@
 {% load gravatar %}
 {% load custom_tags %}
 {% block content %}
+    <style>
+    .nav-btn.active {
+    background: red; /* Change to whatever red color you prefer */
+    color: white; /* Change text color to contrast with the red background */
+    }
+
+    input[name="r"] {
+        position: absolute;
+        visibility: hidden;
+    }
+
+    #btc:checked ~ .s1 {
+        margin-left: -20%;
+    }
+
+    #eth:checked ~ .s1 {
+        margin-left: -40%;
+    }
+
+    #bch:checked ~ .s1 {
+        margin-left: -60%;
+    }
+    </style>
     {% include "includes/sidenav.html" %}
     {% comment %} TODO(b):
      removed anonymous reporting
@@ -95,9 +118,10 @@
                                     <li class="splide__slide">
                                         <a href="{{ object.screenshot.url }}"
                                            target="_blank"
+                                           class="flex align-middle justify-center"
                                            rel="noopener noreferrer">
                                             <img src="{{ object.screenshot.url }}"
-                                                 class="w-[488px] h-[310px] rounded-lg"
+                                                 class="w-[488px] h-[310px] rounded-lg max-sm:w-[80vw] max-sm:h-[28vh] max-sm:mb-[10%]"
                                                  alt="issue screenshot"
                                                  data-lightbox="image"
                                                  height="auto"
@@ -110,9 +134,10 @@
                                         <li class="splide__slide">
                                             <a href="{{ screenshot.image.url }}"
                                                target="_blank"
+                                               class="flex align-middle justify-center"
                                                rel="noopener noreferrer">
                                                 <img src="{{ screenshot.image.url }}"
-                                                     class="w-[488px] h-[310px] rounded-lg"
+                                                     class="w-[488px] h-[310px] rounded-lg max-sm:w-[80vw] max-sm:h-[28vh] max-sm:mb-[10%]"
                                                      alt="issue screenshot"
                                                      data-lightbox="image"
                                                      height="auto"
@@ -127,7 +152,7 @@
                     </div>
                 </div>
                 <div class="w-7/12 max-sm:w-[100%]">
-                    <div>
+                    <div class="max-sm:ml-[3.45%]">
                         <h4 class="text-2xl font-bold mb-3">Event ID: {{ object.id }}</h4>
                         <div class="flex justify-start items-center">
                             <img class="w-[40px] rounded-full h-[40px] object-cover"
@@ -179,7 +204,10 @@
                                             <span class="border-2 border-black rounded-xl p-1">$5 <i class="text-black fa-solid fa-caret-down"></i></span> Tip
                                         </button>
                                     {% else %}
-                                        <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
+                                        <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg"
+                                                type="button"
+                                                id="openModal-{{ object.user.id }}"
+                                                onclick="openModal('{{ object.user.userprofile.btc_address }}','{{ object.user.userprofile.eth_address }}','{{ object.user.userprofile.bch_address }}', '{{ object.user.id }}', '{{ cve_score }}')">
                                             <span class="border-2 border-black rounded-xl p-1">$5 <i class="text-black fa-solid fa-caret-down"></i></span> Tip
                                         </button>
                                     {% endif %}
@@ -298,9 +326,174 @@
         <div class="px-10 rounded-lg bg-white">{% include "comments2.html" %}</div>
     </div>
 </div>
+{% comment %} list of flags modal  {% endcomment %}
+<div id="flag-modal"
+     class="hidden relative z-10"
+     aria-labelledby="modal-title"
+     role="dialog"
+     aria-modal="true">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+         aria-hidden="true"></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start lg:w-full">
+                        <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
+                            <div class="mt-2">
+                                <h3>Flagged by:</h3>
+                                <br>
+                                <p class="text-xl">
+                                    <table class="table-auto w-full border-spacing-52">
+                                        <tbody>
+                                            {% for usr in flagers %}
+                                                <tr class="shadow-lg m-3 w-full rounded">
+                                                    {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
+                                                        <td>
+                                                            <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
+                                                                 height="50px"
+                                                                 width="50px"
+                                                                 alt="{{ usr.user.username }}">
+                                                        </td>
+                                                    {% else %}
+                                                        <td>
+                                                            <img src="{% gravatar_url usr.user.email 50 %}"
+                                                                 height="50px"
+                                                                 width="50px"
+                                                                 alt="{{ usr.user.username }}">
+                                                        </td>
+                                                    {% endif %}
+                                                    <td>
+                                                        &nbsp; <a href="{% url 'profile' slug=usr.user.username %}">{{ usr.user.username }}</a>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <button type="button"
+                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                            id="close-flag">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% comment %} list of likers  {% endcomment %}
+<div id="like-modal"
+     class="hidden relative z-10"
+     aria-labelledby="modal-title"
+     role="dialog"
+     aria-modal="true">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+         aria-hidden="true"></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start lg:w-full">
+                        <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
+                            <div class="mt-2">
+                                <h3>Liked By:</h3>
+                                <br>
+                                <p class="text-xl">
+                                    <table class="table-auto w-full border-spacing-52">
+                                        <tbody>
+                                            {% for usr in likers %}
+                                                <tr class="shadow-lg m-3 w-full rounded">
+                                                    {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
+                                                        <td>
+                                                            <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
+                                                                 height="50px"
+                                                                 width="50px"
+                                                                 alt="{{ usr.user.username }}">
+                                                        </td>
+                                                    {% else %}
+                                                        <td>
+                                                            <img src="{% gravatar_url usr.user.email 50 %}"
+                                                                 height="50px"
+                                                                 width="50px"
+                                                                 alt="{{ usr.user.username }}">
+                                                        </td>
+                                                    {% endif %}
+                                                    <td>
+                                                        &nbsp; <a href="{% url 'profile' slug=usr.user.username %}">{{ usr.user.username }}</a>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <button type="button"
+                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                            id="close-like">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<dialog id="dialog-{{ object.user.id }}" class="dialog relative">
+    <input type="radio"
+           name="r"
+           id="bch-{{ object.user.id }}"
+           checked
+           class="active">
+    <input type="radio" name="r" id="eth-{{ object.user.id }}">
+    <input type="radio" name="r" id="btc-{{ object.user.id }}">
+    <div class="navigation absolute top-0 left-[50%] translate-x-[-50%] flex content-center">
+        <button class="nav-btn w-[70px] h-[40px] border-[1px] m-[6px] cursor-pointer transition-[0.4s] border-solid border-[#0e0d0d] hover:bg-[#ff0000] hover:text-white"
+                id="bch-btn-{{ object.user.id }}">BCH</button>
+        <button class="nav-btn w-[70px] h-[40px] border-[1px] m-[6px] cursor-pointer transition-[0.4s] border-solid border-[#0e0d0d] hover:bg-[#ff0000] hover:text-white"
+                id="eth-btn-{{ object.user.id }}">Ethereum</button>
+        <button class="nav-btn w-[70px] h-[40px] border-[1px] m-[6px] cursor-pointer transition-[0.4s] border-solid border-[#0e0d0d] hover:bg-[#ff0000] hover:text-white"
+                id="btc-btn-{{ object.user.id }}">Bitcoin</button>
+    </div>
+    <div id="slideshow-{{ object.user.id }}"
+         class="slideshow w-[400px] mt-[50px]">
+        <img id="qr-image-{{ object.user.id }}"
+             alt="QR Code"
+             height="300"
+             width="400">
+        <p id="crypto-name-{{ object.user.id }}"
+           class="crypto-name text-center w-full text-[20px] text-white bg-[#ff4444] inline-block m-auto"></p>
+        <p id="crypto-address-{{ object.user.id }}"
+           class="crypto-address text-center"></p>
+        <p id="tip-message" class="crypto-address text-center font-bold italic"></p>
+    </div>
+    <button id="close-{{ object.user.id }}" class="btn btn-danger w-full">Close</button>
+</dialog>
 <script src="{% static '/company/js/md_editor.js' %}"></script>
 <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.1.0/dist/markdown-it.min.js"></script>
+<script>
+    var flagClose = document.getElementById("close-flag");
+    var likeClose = document.getElementById("close-like");
+    var flagModal = document.getElementById("flag-modal");
+    var likeModal = document.getElementById("like-modal");
+    var flagOpen = document.getElementById("open-flag");
+    flagClose.addEventListener("click",()=>{
+        flagModal.style.display="none";
+    });
+    likeClose.addEventListener("click",()=>{
+        likeModal.style.display="none";
+    });
+    function flagOpenn() {
+        flagModal.style.cssText = "display:block !important;"
+    }
+    function likeOpenn() {
+        likeModal.style.cssText = "display:block !important;"
+    }
+</script>
 <script>
     const md = window.markdownit();
     const markdownContent = `{{ object.markdown_description|escapejs }}`;
@@ -344,22 +537,26 @@
             url: '/domain/{{ object.domain.id }}/subscribe/',
             data: {},
             success: function (data) {
-                
-                if (data === "SUBSCRIBED"){
-                    $("#subscribe_domain_btn").text("Unsubscribe");
-                    $.notify("Subscribed!", {
-                        style: "custom",
-                        className: "success"
-                    });
-                }
 
-                else if (data === "UNSUBSCRIBED"){
-                    $("#subscribe_domain_btn").text("Subscribe");
-                    $.notify("Unsubscribed!", {
-                        style: "custom",
-                        className: "success"
-                    });
-                }
+
+                // Test this behaviour
+                window.location.reload();
+                
+                // if (data === "SUBSCRIBED"){
+                //     $("#subscribe_domain_btn").text("Unsubscribe");
+                //     $.notify("Subscribed!", {
+                //         style: "custom",
+                //         className: "success"
+                //     });
+                // }
+
+                // else if (data === "UNSUBSCRIBED"){
+                //     $("#subscribe_domain_btn").text("Subscribe");
+                //     $.notify("Unsubscribed!", {
+                //         style: "custom",
+                //         className: "success"
+                //     });
+                // }
             },
             error: function () {
                 $.notify("Some error occurred!", {
@@ -508,6 +705,80 @@
             }
         });
     });
+</script>
+<script>
+    const openModal = (btc, eth, bch, userId, cve_score) => {
+        let severityLevel;
+        let suggestedTip;
+
+        if (cve_score >= 9.0) {
+            severityLevel = "critical";
+            suggestedTip = "$50";
+        } else if (cve_score >= 7.0) {
+            severityLevel = "high";
+            suggestedTip = "$20";
+        } else if (cve_score >= 4.0) {
+            severityLevel = "medium";
+            suggestedTip = "$10";
+        } else {
+            severityLevel = "low";
+            suggestedTip = "$5";
+        }
+
+        const cryptoOptions = [
+            { name: 'Bitcoin Cash', address: bch },
+            { name: 'Ethereum', address: eth },
+            { name: 'Bitcoin', address: btc }
+        ];
+        let currentIndex = 0;
+
+        const updateSlide = () => {
+            let { name, address } = cryptoOptions[currentIndex];
+            if (address == '' || address == 'None') {
+                address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
+                document.getElementById('qr-image-'+userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+                document.getElementById('crypto-name-' + userId).textContent = "No address: Will go to BLT Donation";
+                document.getElementById('crypto-address-'+userId).textContent = `BCH: ${address}`;
+                document.getElementById('tip-message').textContent = `is the address of the BLT monthly leaderboard that is distributed 100% to the top bug finder that month.`;
+            }
+            else{
+                document.getElementById('crypto-name-' + userId).textContent = name;
+                document.getElementById('qr-image-' + userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+                document.getElementById('crypto-address-' + userId).textContent = `${address}`;
+                document.getElementById('tip-message').textContent = `This CVE is a ${severityLevel} severity, we suggest you tip ${suggestedTip}.`;
+            }
+        };
+        updateSlide();
+
+        document.getElementById('openModal-' + userId).addEventListener('click', function() {
+            document.getElementById('dialog-' + userId).showModal();
+        });
+
+        document.getElementById('close-' + userId).addEventListener('click', function() {
+            document.getElementById('dialog-' + userId).close();
+        });
+        document.getElementById('bch-btn-' + userId).classList.add('active'); // Highlight BCH button by default
+        document.getElementById('bch-btn-' + userId).addEventListener('click', function() {
+            currentIndex = 0;
+            updateSlide();
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+
+        document.getElementById('eth-btn-' + userId).addEventListener('click', function() {
+            currentIndex = 1;
+            updateSlide();
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+
+        document.getElementById('btc-btn-' + userId).addEventListener('click', function() {
+            currentIndex = 2;
+            updateSlide();
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+    };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"
         integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw="

@@ -60,24 +60,25 @@
             url: '/like_issue3/' + issue_pk + '/',
             data: {},
             success: function (data) {
-                $('.like_unlike').remove();
-                $('#like-container').append(data);
-                if ($("#dislike-btn i").hasClass("fa-solid")) {
-                var dislikes = $("#dislikes").text();
-                    dislikes =  dislikes-1;
-                    $('#dislike-btn').html(
-                        dislikes+`&nbsp;
-                        <i class="fa-regular fa-thumbs-down text-3xl text-black"></i>`
-                    );
-                }
+                window.location.reload();
+                // $('.like_unlike').remove();
+                // $('#like-container').append(data);
+                // if ($("#dislike-btn i").hasClass("fa-solid")) {
+                // var dislikes = $("#dislikes").text();
+                //     dislikes =  dislikes-1;
+                //     $('#dislike-btn').html(
+                //         dislikes+`&nbsp;
+                //         <i class="fa-regular fa-thumbs-down text-3xl text-black"></i>`
+                //     );
+                // }
             },
         });
         // Later, when you want to "destroy" the event handler:
-        $('body').off('click', '.like_unlike', like_unlike_handler);
+        // $('body').off('click', '.like_unlike', like_unlike_handler);
     }
 
     // Attach the click event handler
-    $('body').on('click', '.like_unlike', like_unlike_handler);
+    $('body').on('click', '#like_unlike', like_unlike_handler);
 
     function dislike_handler(e){
         e.preventDefault();
@@ -87,21 +88,22 @@
             url: '/dislike_issue3/' + issue_pk + '/',
             data: {},
             success: function (data) {
-                $('.dislike').remove();
-                $("#dislike-container").append(data);
-                if ($("#like_unlike i").hasClass("fa-solid")) {
-                    var likes = $("#likes").text();
-                    likes = likes-1;
-                    $('#like_unlike').html(
-                        likes+`&nbsp;
-                        <i class="fa-regular fa-thumbs-up text-3xl text-black"></i>`
-                    );
-                }
+                window.location.reload();
+                // $('.dislike').remove();
+                // $("#dislike-container").append(data);
+                // if ($("#like_unlike i").hasClass("fa-solid")) {
+                //     var likes = $("#likes").text();
+                //     likes = likes-1;
+                //     $('#like_unlike').html(
+                //         likes+`&nbsp;
+                //         <i class="fa-regular fa-thumbs-up text-3xl text-black"></i>`
+                //     );
+                // }
             },
         });
-        $('body').off('click', '.dislike', dislike_handler);
+        // $('body').off('click', '.dislike', dislike_handler);
     }
-    $('body').on('click', '.dislike', dislike_handler);
+    $('body').on('click', '#dislike-btn', dislike_handler);
 </script>
 <script>
     function flag_unflag_handler(e){
@@ -112,12 +114,15 @@
             url: '/flag_issue3/' + issue_pk + '/',
             data: {},
             success: function (data) {
-                $('#flag-unflag').remove();
-                $('#flag-container').append(data);
+                // Test this behaviour
+                window.location.reload();
+                // $('#flag-unflag').remove();
+                // $('#flag-container').append(data);
             },
         });
             // Later, when you want to "destroy" the event handler:
-        $('body').off('click', '#flag-unflag', flag_unflag_handler);
+            // Remove destroy
+        // $('body').off('click', '#flag-unflag', flag_unflag_handler);
     }
 
     // Attach the click event handler
@@ -133,22 +138,24 @@
             url: '/save_issue/' + issue_pk + '/',
             data: {},
             success: function (data) {
-                if (data === "REMOVED"){
-                    $('.bookmark i').removeClass('fa-solid');
-                    $('.bookmark i').addClass('fa-regular');
-                    $.notify("Bookmark Removed!", {
-                        style: "custom",
-                        className: "success"
-                    });
-                }
-                else{
-                    $('.bookmark i').removeClass('fa-regular');
-                    $('.bookmark i').addClass('fa-solid');
-                    $.notify("Bookmark Added!", {
-                        style: "custom",
-                        className: "success"
-                    });
-                }
+                // Test this behaviour
+                window.location.reload();
+                //if (data === "REMOVED"){
+                    // $('.bookmark i').removeClass('fa-solid');
+                    // $('.bookmark i').addClass('fa-regular');
+                    // $.notify("Bookmark Removed!", {
+                    //     style: "custom",
+                    //     className: "success"
+                    // });
+                //}
+                //else{
+                    // $('.bookmark i').removeClass('fa-regular');
+                    // $('.bookmark i').addClass('fa-solid');
+                    // $.notify("Bookmark Added!", {
+                    //     style: "custom",
+                    //     className: "success"
+                    // });
+                //}
             },
             error: function (e) {
                 $.notify("Some error occurred!", {
@@ -160,20 +167,97 @@
     }
 
     // Attach the click event handler
-    $('body').on('click', '.bookmark', bookmark_handler);
+    $('body').on('click', '#bookmark', bookmark_handler);
+</script>
+<script>
+
     async function resolveIssue(){
         var id = {{object.pk}};
 
         const request = await fetch(`/resolve/${id}/`)
         window.location.reload();
-        if(request.status == 200){
-        const jsonData = await request.json();
-        console.log(jsonData["issue_status"])
-        }else if (request.status == 403){
+        if (request.status == 403){
             $.notify("Permission Denied", {
                 style: "custom",
                 className: "danger"
             });
         }
     }
+</script>
+<script>
+    function sanitizeURL(url) {
+        var a = document.createElement('a');
+        a.href = encodeURI(url);
+        return a.href;
+    }
+    var label = "{{object.label}}";
+
+    $(document).on('click', '.edit-issue', function (e) {
+        $issue_desc = $('.issue-desc').text().trim();
+        $('.form input[name=description]').val($issue_desc);
+        $('.form input[name=domain]').val($('.issue-domain').text());
+        $('.form select').val(label);
+        $('.editables').hide();
+        $('.form').show();
+    });
+
+    $(document).on('click', '.cancel-edit', function (e) {
+        $('.form').hide();
+        $('.editables').show();
+    });
+
+    $(document).on('click', '.save-issue', function (e) {
+        e.preventDefault();
+
+        if ($('.form input[name=description]').val().trim().length == 0 ||
+            $('.form input[name=domain]').val().trim().length == 0) {
+            return;
+        }
+        var dom_regex = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi;
+        dom_regex = new RegExp(dom_regex);
+        var domain_url = $('.form input[name=domain]').val();
+        if (domain_url.match(dom_regex) == null) {
+            alert('Enter a valid url');
+            return;
+        }
+
+
+        $.ajax({
+            type: 'POST',
+            url: '/issue/edit/',
+            data: {
+                issue_pk: $('#issue_pk').val(),
+                domain: $('.form input[name=domain]').val(),
+                description: $('.form input[name=description]').val(),
+                label: $('.form select').val(),
+                csrfmiddlewaretoken: $('.form input[name=csrfmiddlewaretoken]').val(),
+            },
+            success: function (data) {
+                $('.issue-desc').text($('.form input[name=description]').val());
+                $('.issue-domain').text($('.form input[name=domain]').val());
+                var sanitizedDomain = sanitizeURL($('.form input[name=domain]').val());
+                $('.issue-domain').attr("href", sanitizedDomain);
+                label = $('.form select').val();
+                var l = $(".form select option[value='" + label + "']").text();
+                $('.bug-label').text(l);
+                $('.form').hide();
+                $('.editables').show();
+                $.notify("Issue updated!", {
+                    style: "custom",
+                    className: "success"
+                });
+                if (data === "Domain Created")
+                    $.notify("Domain Added!", {
+                        style: "custom",
+                        className: "success"
+                    });
+            },
+            error: function () {
+                $.notify("Some error occurred!", {
+                    style: "custom",
+                    className: "danger"
+                });
+            }
+        });
+    });
 </script>
