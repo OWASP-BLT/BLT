@@ -65,10 +65,8 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
-from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
-from django.views.decorators.vary import vary_on_cookie
 from django.views.generic import DetailView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
 from dotenv import load_dotenv
@@ -104,14 +102,7 @@ from website.models import (
 )
 
 from .bot import conversation_chain, is_api_key_valid, load_vector_store
-from .forms import (
-    CaptchaForm,
-    HuntForm,
-    MonitorForm,
-    QuickIssueForm,
-    UserDeleteForm,
-    UserProfileForm,
-)
+from .forms import CaptchaForm, HuntForm, MonitorForm, UserDeleteForm, UserProfileForm
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
@@ -119,6 +110,9 @@ WHITELISTED_IMAGE_TYPES = {
     "png": "image/png",
 }
 
+from django.core.cache import cache
+from django.utils.decorators import decorator_from_middleware_with_args
+from django.views.decorators.cache import CacheMiddleware
 from PIL import Image
 
 
@@ -254,16 +248,32 @@ def rebuild_safe_url(url):
 #     return render(request, template, context)
 
 
-@vary_on_cookie
-@cache_page(60 * 60 * 24)
-def newhome(request, template="new_home.html"):
-    if request.method == "POST":
-        form = QuickIssueForm(request.POST)
-        if form.is_valid():
-            query_string = urllib.parse.urlencode(form.cleaned_data)
-            redirect_url = f"/report/?{query_string}"
-            return HttpResponseRedirect(redirect_url)
+def cache_per_user(timeout, cache_alias=None):
+    def _decorator(view_func):
+        @decorator_from_middleware_with_args(CacheMiddleware)(
+            cache_timeout=timeout, cache_alias=cache_alias, key_prefix=None
+        )
+        def _cache_middleware(request, *args, **kwargs):
+            # Override get_cache_key to include the user in the cache key
+            if request.user.is_authenticated:
+                request._cache_update_cache = True
+                username = request.user.get_username()
+                cache_key = f"{username}:{request.get_full_path()}"
+            else:
+                cache_key = f"anonymous:{request.get_full_path()}"
+            response = cache.get(cache_key)
+            if not response:
+                response = view_func(request, *args, **kwargs)
+                cache.set(cache_key, response, timeout)
+            return response
 
+        return _cache_middleware
+
+    return _decorator
+
+
+@cache_per_user(3600)
+def newhome(request, template="new_home.html"):
     try:
         if not EmailAddress.objects.get(email=request.user.email).verified:
             messages.error(request, "Please verify your email address")
