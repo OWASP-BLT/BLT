@@ -27,6 +27,8 @@ from rest_framework.authtoken.models import Token
 
 logger = logging.getLogger(__name__)
 
+from .common.models import UUIDModel
+
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
@@ -50,7 +52,7 @@ def generate_uuid_for_company(apps, schema_editor):
         obj.save()
 
 
-class Company(models.Model):
+class Company(UUIDModel):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_companies")
     name = models.CharField(max_length=255)

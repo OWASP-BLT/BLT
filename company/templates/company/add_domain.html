@@ -50,7 +50,7 @@
                                     name="company"
                                     autocomplete="company-name"
                                     class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:max-w-xs sm:text-sm sm:leading-6">
-                                {% for company in companies %}<option value="{{ company.company_id }}">{{ company.name }}</option>{% endfor %}
+                                {% for company in companies %}<option value="{{ company.uuid }}">{{ company.name }}</option>{% endfor %}
                             </select>
                         </div>
                     </div>
