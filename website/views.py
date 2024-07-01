@@ -274,17 +274,26 @@ def cache_per_user(timeout, cache_alias=None):
 
 @cache_per_user(3600)
 def newhome(request, template="new_home.html"):
-    try:
-        if not EmailAddress.objects.get(email=request.user.email).verified:
-            messages.error(request, "Please verify your email address")
-    except EmailAddress.DoesNotExist:
-        pass
+    if request.user.is_authenticated:
+        try:
+            email_record = EmailAddress.objects.get(email=request.user.email)
+            if not email_record.verified:
+                messages.error(request, "Please verify your email address.")
+        except EmailAddress.DoesNotExist:
+            messages.error(request, "No email associated with your account. Please add an email.")
+        except AttributeError:
+            # This catches cases where request.user.email might be None or doesn't exist
+            messages.error(request, "Your account does not have an email address.")
+    else:
+        messages.info(
+            request, "You are browsing as a guest. Please log in or register for full access."
+        )
 
+    # Retrieve and paginate issues that aren't hidden or are created by the current user
     bugs = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id)).all()
     bugs_screenshots = {}
-
     for bug in bugs:
-        bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[0:3]
+        bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[:3]
 
     paginator = Paginator(bugs, 15)
     page_number = request.GET.get("page")
@@ -294,8 +303,7 @@ def newhome(request, template="new_home.html"):
         "bugs": page_obj,
         "bugs_screenshots": bugs_screenshots,
         "leaderboard": User.objects.filter(
-            points__created__month=datetime.now().month,
-            points__created__year=datetime.now().year,
+            points__created__month=datetime.now().month, points__created__year=datetime.now().year
         ),
     }
     return render(request, template, context)
