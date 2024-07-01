@@ -14,6 +14,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from notification_app.models import Notification
 from website.models import (
     Company,
     Domain,
