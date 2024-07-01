@@ -8,18 +8,3 @@ services:
       - .:/blt
     ports:
       - "8000:8000"
-    environment:
-      - REDIS_HOST=cache
-      - REDIS_PORT=6379
-  cache:
-    command: "redis-server"
-    image: redis:6.2-alpine
-    restart: always
-    ports:
-      - '6379:6379'
-    volumes: 
-      - cache:/data
-
-volumes:
-  cache:
-    driver: local

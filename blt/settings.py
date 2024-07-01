@@ -203,12 +203,10 @@ ASGI_APPLICATION = "blt.asgi.application"
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("cache", 6379)],
-        },
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
     },
 }
+
 
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
