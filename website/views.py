@@ -4474,8 +4474,8 @@ def SaveBiddingData(request):
         bid.save()
         bid_link = f"https://blt.owasp.org/generate_bid_image/{amount}/"
         return JsonResponse({"Paste this in GitHub Issue Comments:": bid_link})
-
-    return render(request, "bidding.html")
+    bids = Bid.objects.all()
+    return render(request, "bidding.html", {"bids": bids})
 
 
 def fetch_current_bid(request):
