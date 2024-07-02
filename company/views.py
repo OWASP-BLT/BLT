@@ -81,7 +81,7 @@ def company_view(request, *args, **kwargs):
 
     company = Company.objects.filter(Q(admin=user) | Q(managers__in=[user])).first()
 
-    return redirect("company_analytics", company=company.uuid)
+    return redirect("company_analytics", company_uuid=company.uuid)
 
 
 class RegisterCompanyView(View):
