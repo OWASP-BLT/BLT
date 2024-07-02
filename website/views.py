@@ -24,7 +24,6 @@ import tweepy
 # from django_cron import CronJobBase, Schedule
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in, user_signed_up
-from django.contrib.auth.signals import user_logged_out
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
@@ -37,6 +36,7 @@ from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.contrib.auth.signals import user_logged_out
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import serializers
 from django.core.cache import cache
