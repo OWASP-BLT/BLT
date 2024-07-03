@@ -35,6 +35,7 @@ from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.contrib.auth.signals import user_logged_out
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import serializers
 from django.core.exceptions import ValidationError
@@ -106,7 +107,6 @@ WHITELISTED_IMAGE_TYPES = {
     "png": "image/png",
 }
 
-from django.core.cache import cache
 from django.utils.decorators import decorator_from_middleware_with_args
 from django.views.decorators.cache import CacheMiddleware
 from PIL import Image
@@ -266,6 +266,11 @@ def cache_per_user(timeout, cache_alias=None):
         return _cache_middleware
 
     return _decorator
+
+
+@receiver(user_logged_out)
+def handle_user_logged_out(request, user, **kwargs):
+    cache.clear()
 
 
 @cache_per_user(3600)
@@ -2219,6 +2224,7 @@ def UpdateIssue(request):
 
 @receiver(user_logged_in)
 def assign_issue_to_user(request, user, **kwargs):
+    cache.clear()
     issue_id = request.session.get("issue")
     created = request.session.get("created")
     domain_id = request.session.get("domain")
@@ -3800,7 +3806,7 @@ def flag_issue3(request, issue_pk):
     context["isFlagged"] = UserProfile.objects.filter(
         issue_flaged=issue, user=request.user
     ).exists()
-    return render(request, "includes/_flags3.html", context)
+    return HttpResponse("Success")
 
 
 @login_required(login_url="/accounts/login")
@@ -3848,7 +3854,7 @@ def like_issue3(request, issue_pk):
     context["object"] = issue
     context["likes"] = total_votes
     context["isLiked"] = UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists()
-    return render(request, "includes/_likes3.html", context)
+    return HttpResponse("Success")
 
 
 @login_required(login_url="/accounts/login")
@@ -3870,7 +3876,7 @@ def dislike_issue3(request, issue_pk):
     context["isDisliked"] = UserProfile.objects.filter(
         issue_downvoted=issue, user=request.user
     ).exists()
-    return render(request, "includes/_dislikes3.html", context)
+    return HttpResponse("Success")
 
 
 @login_required(login_url="/accounts/login")
@@ -4118,6 +4124,7 @@ def resolve(request, id):
 
 @receiver(user_signed_up)
 def handle_user_signup(request, user, **kwargs):
+    cache.clear()
     referral_token = request.session.get("ref")
     if referral_token:
         try:
