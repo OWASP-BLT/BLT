@@ -642,7 +642,7 @@ class FetchNotificationApiView(APIView):
         user_id = request.query_params.get("user_id")
         if user_id is None or not user_id.isdigit():
             return Response("Invalid User Id, ID should be integer", status=400)
-        user_not_exist = User.objects.filter(id=user_id).exists()
+        user_exists = User.objects.filter(id=user_id).exists()
         if not user_not_exist:
             return Response("User Does Not Exist", status=400)
 
@@ -651,7 +651,7 @@ class FetchNotificationApiView(APIView):
         notification_id = [n.id for n in notification]
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
-            "notification_" + str(user_id),
+            f"notification_{user_id}",
             {
                 "type": "send_notification",
                 "notification_id": notification_id,

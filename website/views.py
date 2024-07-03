@@ -326,7 +326,7 @@ def notification(request):
     notification_id = [n.id for n in notification]
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
-        "notification_" + str(request.user.id),
+        f"notification_{request.user.id}",
         {
             "type": "send_notification",
             "notification_id": notification_id,
