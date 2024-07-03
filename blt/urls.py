@@ -32,9 +32,8 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
-from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 etc
+from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 etc; AutoLabel,
     AllIssuesView,
-    # AutoLabel,
     CompanySettings,
     ContributorStatsView,
     CreateHunt,
