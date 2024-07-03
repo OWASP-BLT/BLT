@@ -2283,13 +2283,13 @@ signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 
 [[package]]
 name = "openai"
-version = "1.35.7"
+version = "1.35.9"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.35.7-py3-none-any.whl", hash = "sha256:3d1e0b0aac9b0db69a972d36dc7efa7563f8e8d65550b27a48f2a0c2ec207e80"},
-    {file = "openai-1.35.7.tar.gz", hash = "sha256:009bfa1504c9c7ef64d87be55936d142325656bbc6d98c68b669d6472e4beb09"},
+    {file = "openai-1.35.9-py3-none-any.whl", hash = "sha256:d73d353bcc0bd46b9516e78a0c6fb1cffaaeb92906c7c7b467c4fa088332a150"},
+    {file = "openai-1.35.9.tar.gz", hash = "sha256:4f5c1b90526cf48eaedac7b32d11b5c92fa7064b82617ad8f5f3279cd9ef090d"},
 ]
 
 [package.dependencies]
@@ -4270,4 +4270,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "96e54626bc8ff38f209bd0e405c47be818a419040c8c7b3dcc09a3c11ad69116"
+content-hash = "230f1d4ca43751c579a4ea3ede46d58baf5404a39d292fb89672068cdb194912"
