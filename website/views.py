@@ -111,8 +111,6 @@ WHITELISTED_IMAGE_TYPES = {
     "png": "image/png",
 }
 
-from django.utils.decorators import decorator_from_middleware_with_args
-from django.views.decorators.cache import CacheMiddleware
 from PIL import Image
 
 
@@ -248,33 +246,36 @@ def rebuild_safe_url(url):
 #     return render(request, template, context)
 
 
-def cache_per_user(timeout, cache_alias=None):
+def cache_per_user(timeout=3600, cache_alias=None):
     def _decorator(view_func):
-        @decorator_from_middleware_with_args(CacheMiddleware)(
-            cache_timeout=timeout, cache_alias=cache_alias, key_prefix=None
-        )
-        def _cache_middleware(request, *args, **kwargs):
-            # Override get_cache_key to include the user in the cache key
+        def _wrapped_view(request, *args, **kwargs):
             if request.user.is_authenticated:
-                request._cache_update_cache = True
                 username = request.user.get_username()
-                cache_key = f"{username}:{request.get_full_path()}"
+                cache_key = f"user:{username}:{request.get_full_path()}"
             else:
                 cache_key = f"anonymous:{request.get_full_path()}"
+
             response = cache.get(cache_key)
-            if not response:
-                response = view_func(request, *args, **kwargs)
-                cache.set(cache_key, response, timeout)
+            if response is not None:
+                return response
+
+            response = view_func(request, *args, **kwargs)
+            cache.set(cache_key, response, timeout)
             return response
 
-        return _cache_middleware
+        return _wrapped_view
 
     return _decorator
 
 
+def clear_anonymous_cache(request):
+    anonymous_cache_key = f"anonymous:{request.get_full_path()}"
+    cache.delete(anonymous_cache_key)
+
+
 @receiver(user_logged_out)
 def handle_user_logged_out(request, user, **kwargs):
-    cache.clear()
+    clear_anonymous_cache(request)
 
 
 @cache_per_user(3600)
@@ -2228,7 +2229,7 @@ def UpdateIssue(request):
 
 @receiver(user_logged_in)
 def assign_issue_to_user(request, user, **kwargs):
-    cache.clear()
+    clear_anonymous_cache(request)
     issue_id = request.session.get("issue")
     created = request.session.get("created")
     domain_id = request.session.get("domain")
@@ -4128,7 +4129,7 @@ def resolve(request, id):
 
 @receiver(user_signed_up)
 def handle_user_signup(request, user, **kwargs):
-    cache.clear()
+    clear_anonymous_cache(request)
     referral_token = request.session.get("ref")
     if referral_token:
         try:
