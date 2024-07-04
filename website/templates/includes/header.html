@@ -11,6 +11,56 @@
     a {
         color: black;
     }
+    .chatbot {
+        display: none;
+        position: fixed;
+        bottom: 7%;
+        right: 1%;
+        max-width: 400px;
+        width: 100%;
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        height: 450px; /* Fixed height */
+    }
+    .chat-icon {
+        position: fixed;
+        bottom: 4%;
+        right: 4%;
+        background-color: rgb(209, 16, 16); /* Red color */
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .chat-header {
+        background-color: #e11d48; /* Red color */
+        color: white;
+        padding: 12px;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+    }
+    .chat-log {
+        max-height: 320px; /* Adjusted height */
+        overflow-y: auto;
+        height: 320px; /* Fixed height */
+    }
+    .loading {
+        display: none;
+        position: fixed;
+        bottom: 100px;
+        right: 10.5%;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent background */
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
 </style>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -292,3 +342,144 @@
     </div>
 </div>
 </nav>
+<div class="bg-gray-100">
+    <div id="chatbot" class="chatbot">
+        <div class="chat-header flex justify-between items-center">
+            <h3 class="text-xl font-extrabold">Chat with BLT Bot</h3>
+            <button id="closeChatbot" class="text-white text-2xl">×</button>
+        </div>
+        <div class="p-4">
+            <div class="bg-red-100 p-3 rounded-lg mb-2 text-red-700">
+                <p class="text-base">We reply immediately</p>
+            </div>
+            <div id="chat-log" class="chat-log bg-gray-50 p-3 rounded-lg"></div>
+            <div class="flex" id="chat-message-input-container">
+                <input id="chat-message-input"
+                       type="text"
+                       class="flex-grow p-2 border border-gray-300 rounded-l-lg"
+                       placeholder="Enter your message...">
+                <button id="chat-message-submit"
+                        class="bg-red-600 text-white p-2 rounded-md ml-2">Send</button>
+                <button id="chat-message-clear"
+                        class="bg-gray-300 text-black p-2 rounded-md ml-2">Clear</button>
+            </div>
+        </div>
+    </div>
+    <div id="loading" class="loading">
+        <svg class="animate-spin h-5 w-5 text-red-600"
+             xmlns="http://www.w3.org/2000/svg"
+             fill="none"
+             viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+        </svg>
+        <span class="ml-2 text-gray-600">Loading...</span>
+    </div>
+    <div id="chatIcon" class="chat-icon z-99999">
+        <svg class="w-10 h-10 text-white"
+             aria-hidden="true"
+             xmlns="http://www.w3.org/2000/svg"
+             width="24"
+             height="24"
+             fill="currentColor"
+             viewBox="0 0 24 24">
+            <path fill-rule="evenodd" d="M3.559 4.544c.355-.35.834-.544 1.33-.544H19.11c.496 0 .975.194 1.33.544.356.35.559.829.559 1.331v9.25c0 .502-.203.981-.559 1.331-.355.35-.834.544-1.33.544H15.5l-2.7 3.6a1 1 0 0 1-1.6 0L8.5 17H4.889c-.496 0-.975-.194-1.33-.544A1.868 1.868 0 0 1 3 15.125v-9.25c0-.502.203-.981.559-1.331ZM7.556 7.5a1 1 0 1 0 0 2h8a1 1 0 0 0 0-2h-8Zm0 3.5a1 1 0 1 0 0 2H12a1 1 0 1 0 0-2H7.556Z" clip-rule="evenodd" />
+        </svg>
+    </div>
+</div>
+<script>
+    document.getElementById('chatIcon').addEventListener('click', function() {
+        document.getElementById('chatbot').style.display = 'block';
+        this.style.display = 'none';
+    });
+
+    document.getElementById('closeChatbot').addEventListener('click', function() {
+        document.getElementById('chatbot').style.display = 'none';
+        document.getElementById('chatIcon').style.display = 'flex';
+    });
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const chatLog = document.querySelector('#chat-log');
+        const chatInput = document.querySelector('#chat-message-input');
+        const chatSubmit = document.querySelector('#chat-message-submit');
+        const chatClear = document.querySelector('#chat-message-clear');
+        const chatClose = document.querySelector('#closeChatbot');
+        const loading = document.querySelector('#loading');
+
+        chatSubmit.onclick = function() {
+            const message = chatInput.value;
+            chatInput.value = '';
+            if (message.trim() === "") return;
+
+            // Escape HTML meta-characters in the message
+            const escapedMessage = message.replace(/</g , "&lt;").replace( />/g, "&gt;");
+
+            chatLog.innerHTML += '<div class="bg-red-100 text-red-800 p-2 rounded-lg mb-2">You: ' + escapedMessage + '</div>';
+            loading.style.display = 'flex';
+
+            fetch('/api/chatbot/conversation/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question: message }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 429) {
+                        throw new Error('Rate limit exceeded');
+                    }
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Escape HTML meta-characters in the response
+                const escapedAnswer = data.answer.replace(/</g , "&lt;").replace( />/g, "&gt;");
+                
+                chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + escapedAnswer + '</div>';
+                chatLog.scrollTop = chatLog.scrollHeight;  // Scroll to the bottom
+                loading.style.display = 'none';
+            })
+            .catch((error) => {
+                if (error.message === 'Rate limit exceeded') {
+                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: The request limit has been reached. Please try again later.</div>';
+                } else {
+                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: Sorry, I am unable to process your request at the moment. Please try again later.</div>';
+                }
+                chatLog.scrollTop = chatLog.scrollHeight;
+                loading.style.display = 'none';
+            });
+        };
+
+        function clearChat() {
+            loading.style.display = 'flex';
+            fetch('/api/chatbot/conversation/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question: "exit" }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                chatLog.innerHTML = '';
+                loading.style.display = 'none';
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                loading.style.display = 'none';
+            });
+        }
+
+        chatClear.onclick = clearChat;
+        chatClose.onclick = clearChat;
+
+        chatInput.addEventListener('keyup', function(event) {
+            if (event.keyCode === 13) {  // Enter key
+                chatSubmit.click();
+            }
+        });
+    });
+</script>

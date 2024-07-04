@@ -2,7 +2,6 @@ import base64
 import io
 import json
 import os
-import random
 import re
 import time
 import urllib.error
@@ -12,6 +11,7 @@ import uuid
 from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+from pathlib import Path
 from urllib.parse import urlparse, urlsplit, urlunparse
 
 import humanize
@@ -36,8 +36,10 @@ from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.contrib.auth.signals import user_logged_out
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import serializers
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.files.base import ContentFile
@@ -68,9 +70,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import DetailView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
+from dotenv import load_dotenv
+from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
+from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from user_agents import parse
 
@@ -96,14 +102,8 @@ from website.models import (
     Winner,
 )
 
-from .forms import (
-    CaptchaForm,
-    HuntForm,
-    MonitorForm,
-    QuickIssueForm,
-    UserDeleteForm,
-    UserProfileForm,
-)
+from .bot import conversation_chain, is_api_key_valid, load_vector_store
+from .forms import CaptchaForm, HuntForm, MonitorForm, UserDeleteForm, UserProfileForm
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
@@ -152,189 +152,165 @@ def rebuild_safe_url(url):
     return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", ""))
 
 
-# @cache_page(60 * 60 * 24)
-def index(request, template="index.html"):
-    try:
-        domains = random.sample(Domain.objects.all(), 3)
-    except:
-        domains = None
-    try:
-        if not EmailAddress.objects.get(email=request.user.email).verified:
-            messages.error(request, "Please verify your email address")
-    except:
-        pass
+# # @cache_page(60 * 60 * 24)
+# def index(request, template="index.html"):
+#     try:
+#         domains = random.sample(Domain.objects.all(), 3)
+#     except:
+#         domains = None
+#     try:
+#         if not EmailAddress.objects.get(email=request.user.email).verified:
+#             messages.error(request, "Please verify your email address")
+#     except:
+#         pass
 
-    latest_hunts_filter = request.GET.get("latest_hunts", None)
+#     latest_hunts_filter = request.GET.get("latest_hunts", None)
 
-    bug_count = Issue.objects.all().count()
-    user_count = User.objects.all().count()
-    hunt_count = Hunt.objects.all().count()
-    domain_count = Domain.objects.all().count()
+#     bug_count = Issue.objects.all().count()
+#     user_count = User.objects.all().count()
+#     hunt_count = Hunt.objects.all().count()
+#     domain_count = Domain.objects.all().count()
 
-    captcha_form = CaptchaForm()
+#     captcha_form = CaptchaForm()
 
-    wallet = None
-    if request.user.is_authenticated:
-        wallet, created = Wallet.objects.get_or_create(user=request.user)
+#     wallet = None
+#     if request.user.is_authenticated:
+#         wallet, created = Wallet.objects.get_or_create(user=request.user)
 
-    activity_screenshots = {}
-    for activity in Issue.objects.all():
-        activity_screenshots[activity] = IssueScreenshot.objects.filter(issue=activity).first()
+#     activity_screenshots = {}
+#     for activity in Issue.objects.all():
+#         activity_screenshots[activity] = IssueScreenshot.objects.filter(issue=activity).first()
 
-    top_companies = (
-        Issue.objects.values("domain__name")
-        .annotate(count=Count("domain__name"))
-        .order_by("-count")[:10]
-    )
-    top_testers = (
-        Issue.objects.values("user__id", "user__username")
-        .filter(user__isnull=False)
-        .annotate(count=Count("user__username"))
-        .order_by("-count")[:10]
-    )
+#     top_companies = (
+#         Issue.objects.values("domain__name")
+#         .annotate(count=Count("domain__name"))
+#         .order_by("-count")[:10]
+#     )
+#     top_testers = (
+#         Issue.objects.values("user__id", "user__username")
+#         .filter(user__isnull=False)
+#         .annotate(count=Count("user__username"))
+#         .order_by("-count")[:10]
+#     )
 
-    if request.user.is_anonymous:
-        activities = Issue.objects.exclude(Q(is_hidden=True))[0:10]
-    else:
-        activities = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:10]
+#     if request.user.is_anonymous:
+#         activities = Issue.objects.exclude(Q(is_hidden=True))[0:10]
+#     else:
+#         activities = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:10]
 
-    top_hunts = Hunt.objects.values(
-        "id",
-        "name",
-        "url",
-        "logo",
-        "starts_on",
-        "starts_on__day",
-        "starts_on__month",
-        "starts_on__year",
-        "end_on",
-        "end_on__day",
-        "end_on__month",
-        "end_on__year",
-    ).annotate(total_prize=Sum("huntprize__value"))
+#     top_hunts = Hunt.objects.values(
+#         "id",
+#         "name",
+#         "url",
+#         "logo",
+#         "starts_on",
+#         "starts_on__day",
+#         "starts_on__month",
+#         "starts_on__year",
+#         "end_on",
+#         "end_on__day",
+#         "end_on__month",
+#         "end_on__year",
+#     ).annotate(total_prize=Sum("huntprize__value"))
 
-    if latest_hunts_filter is not None:
-        top_hunts = top_hunts.filter(result_published=True).order_by("-created")[:3]
-    else:
-        top_hunts = top_hunts.filter(is_published=True, result_published=False).order_by(
-            "-created"
-        )[:3]
+#     if latest_hunts_filter is not None:
+#         top_hunts = top_hunts.filter(result_published=True).order_by("-created")[:3]
+#     else:
+#         top_hunts = top_hunts.filter(is_published=True, result_published=False).order_by(
+#             "-created"
+#         )[:3]
 
-    context = {
-        "server_url": request.build_absolute_uri("/"),
-        "activities": activities,
-        "domains": domains,
-        "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
-        "leaderboard": User.objects.filter(
-            points__created__month=datetime.now().month,
-            points__created__year=datetime.now().year,
-        )
-        .annotate(total_score=Sum("points__score"))
-        .order_by("-total_score")[:10],
-        "bug_count": bug_count,
-        "user_count": user_count,
-        "hunt_count": hunt_count,
-        "domain_count": domain_count,
-        "wallet": wallet,
-        "captcha_form": captcha_form,
-        "activity_screenshots": activity_screenshots,
-        "top_companies": top_companies,
-        "top_testers": top_testers,
-        "top_hunts": top_hunts,
-        "ended_hunts": False if latest_hunts_filter is None else True,
-    }
-    return render(request, template, context)
+#     context = {
+#         "server_url": request.build_absolute_uri("/"),
+#         "activities": activities,
+#         "domains": domains,
+#         "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
+#         "leaderboard": User.objects.filter(
+#             points__created__month=datetime.now().month,
+#             points__created__year=datetime.now().year,
+#         )
+#         .annotate(total_score=Sum("points__score"))
+#         .order_by("-total_score")[:10],
+#         "bug_count": bug_count,
+#         "user_count": user_count,
+#         "hunt_count": hunt_count,
+#         "domain_count": domain_count,
+#         "wallet": wallet,
+#         "captcha_form": captcha_form,
+#         "activity_screenshots": activity_screenshots,
+#         "top_companies": top_companies,
+#         "top_testers": top_testers,
+#         "top_hunts": top_hunts,
+#         "ended_hunts": False if latest_hunts_filter is None else True,
+#     }
+#     return render(request, template, context)
 
 
-# @cache_page(60 * 60 * 24)
+def cache_per_user(timeout=3600, cache_alias=None):
+    def _decorator(view_func):
+        def _wrapped_view(request, *args, **kwargs):
+            if request.user.is_authenticated:
+                username = request.user.get_username()
+                cache_key = f"user:{username}:{request.get_full_path()}"
+            else:
+                cache_key = f"anonymous:{request.get_full_path()}"
+
+            response = cache.get(cache_key)
+            if response is not None:
+                return response
+
+            response = view_func(request, *args, **kwargs)
+            cache.set(cache_key, response, timeout)
+            return response
+
+        return _wrapped_view
+
+    return _decorator
+
+
+def clear_anonymous_cache(request):
+    anonymous_cache_key = f"anonymous:{request.get_full_path()}"
+    cache.delete(anonymous_cache_key)
+
+
+@receiver(user_logged_out)
+def handle_user_logged_out(request, user, **kwargs):
+    clear_anonymous_cache(request)
+
+
+@cache_per_user(3600)
 def newhome(request, template="new_home.html"):
-    if request.method == "POST":
-        form = QuickIssueForm(request.POST)
-        if form.is_valid():
-            query_string = urllib.parse.urlencode(form.cleaned_data)
-            redirect_url = f"/report/?{query_string}"
-            return HttpResponseRedirect(redirect_url)
+    if request.user.is_authenticated:
+        try:
+            email_record = EmailAddress.objects.get(email=request.user.email)
+            if not email_record.verified:
+                messages.error(request, "Please verify your email address.")
+        except EmailAddress.DoesNotExist:
+            messages.error(request, "No email associated with your account. Please add an email.")
+        except AttributeError:
+            # This catches cases where request.user.email might be None or doesn't exist
+            messages.error(request, "Your account does not have an email address.")
+    else:
+        messages.info(
+            request, "You are browsing as a guest. Please log in or register for full access."
+        )
 
-    try:
-        if not EmailAddress.objects.get(email=request.user.email).verified:
-            messages.error(request, "Please verify your email address")
-    except:
-        pass
-
+    # Retrieve and paginate issues that aren't hidden or are created by the current user
     bugs = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id)).all()
     bugs_screenshots = {}
-
     for bug in bugs:
-        bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[0:3]
+        bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[:3]
 
     paginator = Paginator(bugs, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    # latest_hunts_filter = request.GET.get("latest_hunts",None)
-
-    # bug_count = Issue.objects.all().count()
-    # user_count = User.objects.all().count()
-    # hunt_count = Hunt.objects.all().count()
-    # domain_count = Domain.objects.all().count()
-
-    # captcha_form = CaptchaForm()
-
-    # wallet = None
-    # if request.user.is_authenticated:
-    #     wallet, created = Wallet.objects.get_or_create(user=request.user)
-
-    # activity_screenshots = {}
-    # for activity in Issue.objects.all():
-    #     activity_screenshots[activity] = IssueScreenshot.objects.filter(issue=activity).first()
-
-    # top_companies = Issue.objects.values("domain__name").annotate(count=Count('domain__name')).order_by("-count")[:10]
-    # top_testers = Issue.objects.values("user__id","user__username").filter(user__isnull=False).annotate(count=Count('user__username')).order_by("-count")[:10]
-    # activities = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:10]
-
-    # top_hunts = Hunt.objects.values(
-    #     'id',
-    #     'name',
-    #     'url',
-    #     'logo',
-    #     'starts_on',
-    #     'starts_on__day',
-    #     'starts_on__month',
-    #     'starts_on__year',
-    #     'end_on',
-    #     'end_on__day',
-    #     'end_on__month',
-    #     'end_on__year',
-    # ).annotate(total_prize=Sum("huntprize__value"))
-
-    # if latest_hunts_filter is not None:
-    #     top_hunts = top_hunts.filter(result_published=True).order_by("-created")[:3]
-    # else:
-    #     top_hunts = top_hunts.filter(is_published=True,result_published=False).order_by("-created")[:3]
-
     context = {
         "bugs": page_obj,
         "bugs_screenshots": bugs_screenshots,
-        # "server_url": request.build_absolute_uri('/'),
-        # "activities": activities,
-        # "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
         "leaderboard": User.objects.filter(
-            points__created__month=datetime.now().month,
-            points__created__year=datetime.now().year,
+            points__created__month=datetime.now().month, points__created__year=datetime.now().year
         ),
-        # .annotate(total_score=Sum("points__score"))
-        # .order_by("-total_score")[:10],
-        # "bug_count": bug_count,
-        # "user_count": user_count,
-        # "hunt_count": hunt_count,
-        # "domain_count": domain_count,
-        # "wallet": wallet,
-        # "captcha_form": captcha_form,
-        # "activity_screenshots":activity_screenshots,
-        # "top_companies":top_companies,
-        # "top_testers":top_testers,
-        # "top_hunts": top_hunts,
-        # "ended_hunts": False if latest_hunts_filter is None else True
     }
     return render(request, template, context)
 
@@ -1091,10 +1067,16 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 response = r.json()
                 try:
                     obj.github_url = response["html_url"]
-                except KeyError:
+                except Exception as e:
                     send_mail(
-                        "Error in github issue creation, check your github settings",
-                        "Error in github issue creation, check your github settings",
+                        "Error in github issue creation for "
+                        + str(domain.name)
+                        + ", check your github settings",
+                        "Error in github issue creation, check your github settings\n"
+                        + " your current settings are: "
+                        + str(domain.github)
+                        + " and the error is: "
+                        + str(e),
                         settings.EMAIL_TO_STRING,
                         [domain.email],
                         fail_silently=True,
@@ -1986,13 +1968,15 @@ class HuntCreate(CreateView):
         return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HH7MNY6KJGZFW"
 
 
-# TODO(b): REMOVE after _3 is ready
+# TODO(b): REMOVE after _3 is ready, tested and has all features of the existing issueview, until then keep this working.
 class IssueView(DetailView):
     model = Issue
     slug_field = "id"
     template_name = "issue.html"
 
     def get(self, request, *args, **kwargs):
+        print("getting issue id: ", self.kwargs["slug"])
+        print("getting issue id: ", self.kwargs)
         ipdetails = IP()
         try:
             id = int(self.kwargs["slug"])
@@ -2003,6 +1987,9 @@ class IssueView(DetailView):
         ipdetails.user = self.request.user
         ipdetails.address = get_client_ip(request)
         ipdetails.issuenumber = self.object.id
+        print("IP Address: ", ipdetails.address)
+        print("Issue Number: ", ipdetails.issuenumber)
+
         try:
             if self.request.user.is_authenticated:
                 try:
@@ -2019,18 +2006,21 @@ class IssueView(DetailView):
                     )
                     self.object.save()
                 except Exception as e:
-                    print(e)
-                    messages.error(self.request, "That issue was not found 2." + str(e))
-                    ipdetails.save()
-                    self.object.views = (self.object.views or 0) + 1
-                    self.object.save()
+                    pass  # pass this temporarly to avoid error
+                    # print(e)
+                    # messages.error(self.request, "That issue was not found 2." + str(e))
+                    # ipdetails.save()
+                    # self.object.views = (self.object.views or 0) + 1
+                    # self.object.save()
         except Exception as e:
-            print(e)
-            messages.error(self.request, "That issue was not found 1." + str(e))
-            return redirect("/")
+            pass  # pass this temporarly to avoid error
+            # print(e)
+            # messages.error(self.request, "That issue was not found 1." + str(e))
+            # return redirect("/")
         return super(IssueView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
+        print("getting context data")
         context = super(IssueView, self).get_context_data(**kwargs)
         if self.object.user_agent:
             user_agent = parse(self.object.user_agent)
@@ -2239,6 +2229,7 @@ def UpdateIssue(request):
 
 @receiver(user_logged_in)
 def assign_issue_to_user(request, user, **kwargs):
+    clear_anonymous_cache(request)
     issue_id = request.session.get("issue")
     created = request.session.get("created")
     domain_id = request.session.get("domain")
@@ -3820,7 +3811,7 @@ def flag_issue3(request, issue_pk):
     context["isFlagged"] = UserProfile.objects.filter(
         issue_flaged=issue, user=request.user
     ).exists()
-    return render(request, "includes/_flags3.html", context)
+    return HttpResponse("Success")
 
 
 @login_required(login_url="/accounts/login")
@@ -3868,7 +3859,7 @@ def like_issue3(request, issue_pk):
     context["object"] = issue
     context["likes"] = total_votes
     context["isLiked"] = UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists()
-    return render(request, "includes/_likes3.html", context)
+    return HttpResponse("Success")
 
 
 @login_required(login_url="/accounts/login")
@@ -3890,7 +3881,7 @@ def dislike_issue3(request, issue_pk):
     context["isDisliked"] = UserProfile.objects.filter(
         issue_downvoted=issue, user=request.user
     ).exists()
-    return render(request, "includes/_dislikes3.html", context)
+    return HttpResponse("Success")
 
 
 @login_required(login_url="/accounts/login")
@@ -4138,6 +4129,7 @@ def resolve(request, id):
 
 @receiver(user_signed_up)
 def handle_user_signup(request, user, **kwargs):
+    clear_anonymous_cache(request)
     referral_token = request.session.get("ref")
     if referral_token:
         try:
@@ -4491,8 +4483,8 @@ def SaveBiddingData(request):
         bid.save()
         bid_link = f"https://blt.owasp.org/generate_bid_image/{amount}/"
         return JsonResponse({"Paste this in GitHub Issue Comments:": bid_link})
-
-    return render(request, "bidding.html")
+    bids = Bid.objects.all()
+    return render(request, "bidding.html", {"bids": bids})
 
 
 def fetch_current_bid(request):
@@ -4539,3 +4531,101 @@ def submit_pr(request):
         return render(request, "submit_pr.html")
 
     return render(request, "submit_pr.html")
+
+
+# Global variable to store the vector store
+vector_store = None
+
+# Define the daily request limit as a variable
+DAILY_REQUEST_LIMIT = 10
+
+
+@api_view(["POST"])
+def chatbot_conversation(request):
+    # Rate Limit Check
+    today = datetime.now(timezone.utc).date()
+    rate_limit_key = f"global_daily_requests_{today}"
+    request_count = cache.get(rate_limit_key, 0)
+
+    if request_count >= DAILY_REQUEST_LIMIT:
+        return Response(
+            {"error": "Daily request limit exceeded."}, status=status.HTTP_429_TOO_MANY_REQUESTS
+        )
+
+    question = request.data.get("question", "")
+    check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
+    if not check_api:
+        return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Apply validation for question
+    if not question or not isinstance(question, str):
+        return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
+
+    global vector_store
+    if vector_store is None:
+        try:
+            vector_store = load_vector_store()
+        except FileNotFoundError:
+            return Response(
+                {"error": "Vector store not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    # Handle the "exit" command
+    if question.lower() == "exit":
+        # if buffer is present in the session then delete it
+        if "buffer" in request.session:
+            del request.session["buffer"]
+        return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
+
+    crc, memory = conversation_chain(vector_store)
+    if "buffer" in request.session:
+        memory.buffer = request.session["buffer"]
+
+    response = crc.invoke({"question": question})
+    # Increment the request count
+    cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
+    request.session["buffer"] = memory.buffer
+    return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
+
+
+def AutoLabel(request):
+    dotenv_path = Path("blt/.env")
+    load_dotenv(dotenv_path=dotenv_path)
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    token_Limit = 1000
+    token_per_prompt = 70
+    if request.method == "POST":
+        today = datetime.now(timezone.utc).date()
+        rate_limit_key = f"global_daily_request_{today}"
+        total_token_used = cache.get(rate_limit_key, 0)
+
+        if total_token_used + token_per_prompt > token_Limit:
+            return JsonResponse({"error": "Rate limit exceeded."}, status=429)
+
+        data = json.loads(request.body)
+        bug_description = data.get("BugDescription")
+        template = """
+        Label: {BugDescription}
+        Options: 0.General, 1.Number error, 2.Functional, 3.Performance, 4.Security, 5.Type, 6.Design, 7.Server down
+        Just return the number corresponding to the appropriate option.
+         """
+        prompt = template.format(BugDescription=bug_description)
+        client = OpenAI(
+            api_key=OPENAI_API_KEY,
+        )
+        response = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            model="gpt-3.5-turbo-0125",
+            max_tokens=1,
+        )
+        label = response.choices[0].message.content
+        cache.set(rate_limit_key, total_token_used + token_per_prompt, timeout=None)
+        return JsonResponse({"label": label})
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
