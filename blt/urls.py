@@ -370,7 +370,9 @@ urlpatterns = [
         UploadCreate.as_view(),
         name="upload",
     ),
+    # TODO(b)
     re_path(r"^profile/(?P<slug>[^/]+)/$", UserProfileDetailView.as_view(), name="profile"),
+    re_path(r"^profile2/(?P<slug>[^/]+)/$", UserProfileDetailView2.as_view(), name="profile"),
     re_path(r"^domain/(?P<slug>.+)/$", DomainDetailView.as_view(), name="domain"),
     re_path(
         r"^.well-known/acme-challenge/(?P<token>[^/]+)/$",
