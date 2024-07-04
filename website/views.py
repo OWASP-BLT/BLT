@@ -4003,6 +4003,11 @@ class IssueView2(DetailView):
         context["subscribed_to_domain"] = False
         context["cve_id"] = self.object.cve_id
         context["cve_score"] = self.object.cve_score
+        context["infringing_domain_name"] = self.object.infringing_domain_name
+        context["infringing_domain_url"] = self.object.infringing_domain_url
+        context["registration_no"] = self.object.registration_no
+        context["serial_no"] = self.object.serial_no
+        context["contact_info"] = self.object.contact_info
 
         # TODO: fix this
         # if isinstance(self.request.user, User):
