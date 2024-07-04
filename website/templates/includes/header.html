@@ -44,7 +44,7 @@
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.7.3/web3.min.js"></script>
 <script>
-  let web3;
+    let web3;
     let userAddress;
 
     window.addEventListener('load', () => {
@@ -62,15 +62,25 @@
                 await window.ethereum.enable();
                 const accounts = await web3.eth.getAccounts();
                 userAddress = accounts[0];
-                localStorage.setItem('userAddress', userAddress);
-                document.getElementById('wallet-address').innerText = `Connected: ${userAddress}`;
-                updateUI();
+                
+                if (validateWalletAddress(userAddress)) {
+                    localStorage.setItem('userAddress', userAddress);
+                    document.getElementById('wallet-address').innerText = `Connected: ${userAddress}`;
+                    updateUI();
+                } else {
+                    alert('Invalid wallet address. Please try connecting again.');
+                    disconnectWallet();
+                }
             } catch (error) {
                 console.error("User denied account access", error);
             }
         } else {
             console.log('Web3 is not initialized.');
         }
+    }
+
+    function validateWalletAddress(address) {
+        return web3.utils.isAddress(address);
     }
 
     function disconnectWallet() {
@@ -84,7 +94,11 @@
         const storedAddress = localStorage.getItem('userAddress');
         if (storedAddress) {
             userAddress = storedAddress;
-            document.getElementById('wallet-address').innerText = `Connected: ${userAddress}`;
+            if (validateWalletAddress(userAddress)) {
+                document.getElementById('wallet-address').innerText = `Connected: ${userAddress}`;
+            } else {
+                disconnectWallet();
+            }
         } else {
             document.getElementById('wallet-address').innerText = 'Not connected';
         }
@@ -107,6 +121,7 @@
         }
     }
 </script>
+
 <nav class="fixed top-0 z-50 w-full bg-white border-[#F7F7F7] border-b-2 px-4 ">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
