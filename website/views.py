@@ -724,7 +724,19 @@ def get_client_ip(request):
 
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
-    fields = ["url", "description", "domain", "label", "markdown_description", "cve_id"]
+    fields = [
+        "url",
+        "description",
+        "domain",
+        "label",
+        "markdown_description",
+        "cve_id",
+        "infringing_domain_name",
+        "infringing_domain_url",
+        "registration_no",
+        "serial_no",
+        "contact_info",
+    ]
     template_name = "report.html"
 
     def get_initial(self):
@@ -742,6 +754,11 @@ class IssueCreate(IssueBaseCreate, CreateView):
             self.request.POST["type"] = json_data["type"]
             self.request.POST["cve_id"] = json_data["cve_id"]
             self.request.POST["cve_score"] = json_data["cve_score"]
+            self.request.POST["infringing_domain_name"] = json_data["infringing_domain_name"]
+            self.request.POST["infringing_domain_url"] = json_data["infringing_domain_url"]
+            self.request.POST["registration_no"] = json_data["registration_no"]
+            self.request.POST["serial_no"] = json_data["serial_no"]
+            self.request.POST["contact_info"] = json_data["contact_info"]
 
             if self.request.POST.get("file"):
                 if isinstance(self.request.POST.get("file"), six.string_types):
@@ -4606,7 +4623,7 @@ def AutoLabel(request):
         bug_description = data.get("BugDescription")
         template = """
         Label: {BugDescription}
-        Options: 0.General, 1.Number error, 2.Functional, 3.Performance, 4.Security, 5.Type, 6.Design, 7.Server down
+        Options: 0.General, 1.Number error, 2.Functional, 3.Performance, 4.Security, 5.Type, 6.Design, 7.Server down, 8.Tademark Sw
         Just return the number corresponding to the appropriate option.
          """
         prompt = template.format(BugDescription=bug_description)

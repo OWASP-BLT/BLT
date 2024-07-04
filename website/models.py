@@ -243,6 +243,7 @@ class Issue(models.Model):
         (5, "Typo"),
         (6, "Design"),
         (7, "Server Down"),
+        (8, "Trademark Squatting"),
     )
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     team_members = models.ManyToManyField(User, related_name="reportmembers", blank=True)
@@ -274,6 +275,11 @@ class Issue(models.Model):
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
     cve_id = models.CharField(max_length=16, null=True, blank=True)
     cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
+    infringing_domain_name = models.TextField(max_length=100, null=True, blank=True)
+    infringing_domain_url = models.URLField(default="", null=True, blank=True)
+    registration_no = models.PositiveIntegerField(null=True, blank=True)
+    serial_no = models.PositiveIntegerField(null=True, blank=True)
+    contact_info = models.CharField(max_length=100, null=True, blank=True)
 
     def __unicode__(self):
         return self.description
