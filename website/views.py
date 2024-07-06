@@ -4100,12 +4100,63 @@ class IssueView3(DetailView):
             ).exists()
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
-        # TODO(b) track the behaviour
         context["status"] = Issue.objects.filter(id=self.object.id).get().status
+        # if os.environ.get("GITHUB_ACCESS_TOKEN"):
+        #         import json
+
+        #         import requests
+        #         from giturlparse import parse
+
+        #         github_url = domain.github.replace("https", "git").replace("http", "git") + ".git"
+        #         p = parse(github_url)
+
+        #         url = "https://api.github.com/repos/OWASP-BLT/BLT/issues"
+
+        #         if not obj.user:
+        #             the_user = "Anonymous"
+        #         else:
+        #             the_user = obj.user
+        #         issue = {
+        #             "title": obj.description,
+        #             "body": obj.markdown_description
+        #             + "\n\n"
+        #             + screenshot_text
+        #             + "https://"
+        #             + settings.FQDN
+        #             + "/issue/"
+        #             + str(obj.id)
+        #             + " found by "
+        #             + str(the_user)
+        #             + " at url: "
+        #             + obj.url,
+        #             "labels": ["bug", settings.PROJECT_NAME_LOWER],
+        #         }
+        #         r = requests.post(
+        #             url,
+        #             json.dumps(issue),
+        #             headers={"Authorization": "token " + os.environ.get("GITHUB_ACCESS_TOKEN")},
+        #         )
+        #         response = r.json()
+        #         try:
+        #             obj.github_url = response["html_url"]
+        #         except Exception as e:
+        #             send_mail(
+        #                 "Error in github issue creation for "
+        #                 + str(domain.name)
+        #                 + ", check your github settings",
+        #                 "Error in github issue creation, check your github settings\n"
+        #                 + " your current settings are: "
+        #                 + str(domain.github)
+        #                 + " and the error is: "
+        #                 + str(e),
+        #                 settings.EMAIL_TO_STRING,
+        #                 [domain.email],
+        #                 fail_silently=True,
+        #             )
+        #             pass
         return context
 
 
-# TODO(b) track this
 @login_required(login_url="/accounts/login")
 @csrf_exempt
 def resolve(request, id):
