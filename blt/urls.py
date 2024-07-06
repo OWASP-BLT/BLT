@@ -128,7 +128,9 @@ handler404 = "website.views.handler404"
 handler500 = "website.views.handler500"
 
 urlpatterns = [
-    path("company/", CompanyViewSet.as_view({"get": "list", "post": "create"}), name="company"),
+    path(
+        "api/companies/", CompanyViewSet.as_view({"get": "list", "post": "create"}), name="company"
+    ),
     path("invite-friend/", website.views.invite_friend, name="invite_friend"),
     path("referral/", website.views.referral_signup, name="referral_signup"),
     path("captcha/", include("captcha.urls")),
