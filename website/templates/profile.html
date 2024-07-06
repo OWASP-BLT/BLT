@@ -351,14 +351,20 @@
                         <button class="crypto-button" data-crypto="BitcoinCash">
                             <i class="fa-brands fa-btc"></i>
                         </button>
-                        <form method="post"
+                        <form name="cryptoForm"
+                              method="post"
                               action="{% url 'update_bch_address' %}"
-                              id="update-form">
+                              id="update-form"
+                              onsubmit="return validateCrypto()">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-primary text-black btn-save">Save</button>
                         </div>
                         <div class="text-block">
-                            <input type="hidden" id="selected-crypto" name="selected_crypto" value="">
+                            {% comment %} set default to index 0 or Bitcoin  {% endcomment %}
+                            <input type="hidden"
+                                   id="selected-crypto"
+                                   name="selected_crypto"
+                                   value="Bitcoin">
                             <input type="text"
                                    id="new-crypto-address"
                                    name="new_address"
@@ -805,4 +811,5 @@
         });
     });
     </script>
+    <script src="/static/js/validate-btc.js"></script>
 {% endblock content %}
