@@ -4584,3 +4584,44 @@ def chatbot_conversation(request):
     cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
     request.session["buffer"] = memory.buffer
     return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
+
+def weekly_report(request):
+    domains = Domain.objects.all()
+    report_data = [
+        "Hey This is a weekly report from OWASP BLT regarding the bugs reported for your company!"
+    ]
+    try:
+        for domain in domains:
+            open_issues = domain.open_issues
+            closed_issues = domain.closed_issues
+            total_issues = open_issues.count() + closed_issues.count()
+            issues = Issue.objects.filter(domain=domain)
+            email = domain.email
+            report_data.append(
+                "Hey This is a weekly report from OWASP BLT regarding the bugs reported for your company!"
+                f"\n\nCompany Name: {domain.name}"
+                f"Open issues: {open_issues.count()}"
+                f"Closed issues: {closed_issues.count()}"
+                f"Total issues: {total_issues}"
+            )
+            for issue in issues:
+                description = issue.description
+                views = issue.views
+                label = issue.get_label_display()
+                report_data.append(
+                    f"\n Description: {description} \n Views: {views} \n Labels: {label} \n"
+                )
+
+        report_string = "".join(report_data)
+        send_mail(
+            "Weekly Report!!!",
+            report_string,
+            settings.EMAIL_HOST_USER,
+            [email],
+            fail_silently=False,
+        )
+    except:
+        return HttpResponse("An error occurred while sending the weekly report")
+
+    return HttpResponse("Weekly report sent successfully.")
+  
