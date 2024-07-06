@@ -163,6 +163,25 @@
     }
 </script>
 <script>
+    function createIssue(){
+        var issue_pk = $("#create_issue").attr('name');
+        $.ajax({
+            type: 'GET',
+            url: '/create_github_issue/' + issue_pk,
+            data: {},
+            success: function (data) {
+                if(data["status"] != "ok"){
+                    $.notify(data["status_reason"], {
+                        style: "custom",
+                        className: "danger"
+                    });
+                }else{
+                    window.location.reload();
+                }
+            },
+        });
+    }
+
     function sanitizeURL(url) {
         var a = document.createElement('a');
         a.href = encodeURI(url);
