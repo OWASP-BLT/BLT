@@ -4666,7 +4666,7 @@ def weekly_report(request):
             [email],
             fail_silently=False,
         )
-    except Exception as e:
-        return HttpResponse(f"An error occurred while sending the weekly report: {str(e)}")
+    except:
+        return HttpResponse(f"An error occurred while sending the weekly report")
 
     return HttpResponse("Weekly report sent successfully.")
