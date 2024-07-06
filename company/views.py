@@ -192,15 +192,16 @@ class CompanyDashboardAnalyticsView(View):
 
     def get_reports_on_domain_piechart_data(self, company):
         report_piechart = (
-            Issue.objects.values("domain__name")
+            Issue.objects.values("url")
             .filter(domain__company__id=company)
-            .annotate(count=Count("domain__name"))
+            .annotate(count=Count("url"))
         )
+
         report_labels = []
         report_data = []
 
         for domain_data in report_piechart:
-            report_labels.append(domain_data["domain__name"])
+            report_labels.append(domain_data["url"])
             report_data.append(domain_data["count"])
 
         return {
@@ -220,15 +221,32 @@ class CompanyDashboardAnalyticsView(View):
             .order_by("month")
         )
 
-        data = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]  # count
+        data = [0] * 12  # count
 
         for data_month in data_monthly:
-            data[data_month["month"]] = data_month["count"]
+            data[data_month["month"] - 1] = data_month["count"]
+
+        # Define month labels
+        months = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ]
 
         return {
-            "bug_monthly_report_labels": json.dumps(self.months),
+            "bug_monthly_report_labels": json.dumps(months),
             "bug_monthly_report_data": json.dumps(data),
             "max_count": max(data),
+            "current_year": current_year,
         }
 
     def bug_rate_increase_descrease_weekly(self, company, is_accepted_bugs=False):
