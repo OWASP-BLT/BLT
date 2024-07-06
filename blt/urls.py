@@ -93,6 +93,7 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     submit_pr,
     subscribe_to_domains,
     vote_count,
+    weekly_report,
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
@@ -511,6 +512,7 @@ urlpatterns = [
     path("fetch-current-bid/", fetch_current_bid, name="fetch_current_bid"),
     path("Submitpr/", submit_pr, name="submit_pr"),
     path("issue-auto-label/", AutoLabel, name="AutoLabel"),
+    path("weekly-report/", weekly_report, name="weekly_report"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s]+)",
         website.views.trademark_detailview,
