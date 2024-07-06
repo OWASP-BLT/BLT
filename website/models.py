@@ -43,13 +43,6 @@ class Subscription(models.Model):
     feature = models.BooleanField(default=True)
 
 
-def generate_uuid_for_company(apps, schema_editor):
-    company_model = apps.get_model("website", "Company")
-    for obj in company_model.objects.all():
-        obj.company_id = uuid.uuid4()  # Replace with your desired UUID generation logic
-        obj.save()
-
-
 class Company(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_companies")
