@@ -4585,6 +4585,7 @@ def chatbot_conversation(request):
     request.session["buffer"] = memory.buffer
     return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
 
+
 def weekly_report(request):
     domains = Domain.objects.all()
     report_data = [
@@ -4624,4 +4625,3 @@ def weekly_report(request):
         return HttpResponse("An error occurred while sending the weekly report")
 
     return HttpResponse("Weekly report sent successfully.")
-  
