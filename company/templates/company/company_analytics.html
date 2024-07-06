@@ -25,8 +25,10 @@
                         <i class="fa-solid fa-bug fa-2x text-black"></i>
                     </div>
                     <div>
-                        <p class="text-black text-3xl font-bold">{{ total_info.total_company_bugs }}</p>
-                        <p class="text-black text-md font-extralight">Total Bugs</p>
+                        <a href="{% url 'company_manage_bugs' company %}">
+                            <p class="text-black text-3xl font-bold">{{ total_info.total_company_bugs }}</p>
+                            <p class="text-black text-md font-extralight">Total Bugs</p>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -36,8 +38,10 @@
                         <i class="fa-sharp fa-solid fa-flag fa-2x text-black"></i>
                     </div>
                     <div>
-                        <p class="text-black text-3xl font-bold">{{ total_info.total_bug_hunts }}</p>
-                        <p class="text-black text-md font-extralight">Bug Bounties</p>
+                        <a href="{% url 'company_manage_bughunts' company %}">
+                            <p class="text-black text-3xl font-bold">{{ total_info.total_bug_hunts }}</p>
+                            <p class="text-black text-md font-extralight">Bug Bounties</p>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -47,8 +51,10 @@
                         <i class="fa-sharp fa-solid fa-globe fa-2x text-black"></i>
                     </div>
                     <div>
-                        <p class="text-black text-3xl font-bold">{{ total_info.total_domains }}</p>
-                        <p class="text-black text-md font-extralight">Domains</p>
+                        <a href="{% url 'company_manage_domains' company %}">
+                            <p class="text-black text-3xl font-bold">{{ total_info.total_domains }}</p>
+                            <p class="text-black text-md font-extralight">Domains</p>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -85,26 +91,7 @@
                     </div>
                 </div>
                 <div class="bg-white p-5 rounded-xl w-full lg:w-[115vh]">
-                    <h3 class="section-header">Monthly Reports</h3>
-                    <div class="year-selector">
-                        <svg width="24"
-                             height="24"
-                             viewBox="0 0 24 24"
-                             fill="none"
-                             xmlns="http://www.w3.org/2000/svg">
-                            <rect opacity="0.8" width="24" height="24" rx="6" fill="#F6F7F9" />
-                            <path d="M13.4999 15.96L10.2399 12.7C9.85492 12.315 9.85492 11.685 10.2399 11.3L13.4999 8.04004" stroke="#1A202C" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        <span>2023</span>
-                        <svg width="24"
-                             height="24"
-                             viewBox="0 0 24 24"
-                             fill="none"
-                             xmlns="http://www.w3.org/2000/svg">
-                            <rect opacity="0.8" width="24" height="24" rx="6" fill="#F6F7F9" />
-                            <path d="M10.4551 15.96L13.7151 12.7C14.1001 12.315 14.1001 11.685 13.7151 11.3L10.4551 8.04004" stroke="#1A202C" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                    </div>
+                    <h3 class="section-header">Monthly Reports of {{ get_current_year_monthly_reported_bar_data.current_year }}</h3>
                     <div class="bar-chart">
                         <canvas id="myChart" height="220px" width="660px"></canvas>
                     </div>
