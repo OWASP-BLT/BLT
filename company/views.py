@@ -9,6 +9,7 @@ from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import URLValidator
+from django.db import transaction
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.http import Http404
@@ -111,33 +112,44 @@ class RegisterCompanyView(View):
             messages.error(request, "Company name doesn't match your email domain.")
             return redirect("register_company")
 
-        managers = User.objects.values("id").filter(email__in=data.get("email", []))
-
-        company = Company.objects.filter(name=data["company_name"]).first()
-
-        if company is not None:
-            messages.error(request, "Company already exist.")
+        if Company.objects.filter(name=company_name).exists():
+            messages.error(request, "Company already exists.")
             return redirect("register_company")
 
         company_logo = request.FILES.get("logo")
-        company_logo_file = company_logo.name.split(".")[0]
-        extension = company_logo.name.split(".")[-1]
-        company_logo.name = company_logo_file[:99] + str(uuid.uuid4()) + "." + extension
-        default_storage.save(f"company_logos/{company_logo.name}", company_logo)
-        company = Company.objects.create(
-            admin=user,
-            name=data["company_name"],
-            url=data["company_url"],
-            email=data["support_email"],
-            twitter=data["twitter_url"],
-            facebook=data["facebook_url"],
-            logo=f"company_logos/{company_logo.name}",
-            is_active=True,
-        )
+        if company_logo:
+            company_logo_file = company_logo.name.split(".")[0]
+            extension = company_logo.name.split(".")[-1]
+            company_logo.name = f"{company_logo_file[:99]}_{uuid.uuid4()}.{extension}"
+            logo_path = default_storage.save(f"company_logos/{company_logo.name}", company_logo)
+        else:
+            logo_path = None
 
-        company.managers.set([manager["id"] for manager in managers])
-        company.save()
+        try:
+            with transaction.atomic():
+                company = Company.objects.create(
+                    admin=user,
+                    name=company_name,
+                    url=data["company_url"],
+                    email=data["support_email"],
+                    twitter=data.get("twitter_url", ""),
+                    facebook=data.get("facebook_url", ""),
+                    logo=logo_path,
+                    is_active=True,
+                )
 
+                manager_emails = data.get("email", "").split(",")
+                managers = User.objects.filter(email__in=manager_emails)
+                company.managers.set(managers)
+                company.save()
+
+        except ValidationError as e:
+            messages.error(request, f"Error saving company: {e}")
+            if logo_path:
+                default_storage.delete(logo_path)
+            return render(request, "company/register_company.html")
+
+        messages.success(request, "Company registered successfully.")
         return redirect("company_analytics", id=company.id)
 
 
