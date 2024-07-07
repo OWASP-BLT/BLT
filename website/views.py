@@ -4109,7 +4109,6 @@ class IssueView3(DetailView):
         return context
 
 
-@login_required(login_url="/accounts/login")
 def create_github_issue(request, id):
     issue = get_object_or_404(Issue, id=id)
     screenshot_all = IssueScreenshot.objects.filter(issue=issue)

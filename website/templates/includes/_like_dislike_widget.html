@@ -195,13 +195,12 @@
         </form>
     {% endif %}
     {% comment %} edit  {% endcomment %}
-    <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[1.1rem] leading-4 p-4"
-            id="edit-issue">
+    {% comment %} <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[1.1rem] leading-4 p-4" id="edit-issue">
         <div class="flex flex-row gap-2 items-center">
             <span class="max-sm:text-[12px]">Edit</span>
             <i class="fa-regular fa-pen-to-square text-[13px]"></i>
         </div>
-    </button>
+    </button> {% endcomment %}
 {% endif %}
 {% comment %} delete  {% endcomment %}
 {% if request.user.is_superuser or request.user == object.user %}
@@ -215,7 +214,7 @@
             onclick="resolveIssue()"
             class="rounded-2xl h-auto border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:outline-none border-black-2  text-[1.1rem] leading-4 p-4 ">
         {% if status == "open" %}
-            Resolve ✅
+            Close Issue
         {% else %}
             Open Issue
         {% endif %}
