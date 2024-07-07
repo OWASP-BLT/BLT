@@ -51,6 +51,7 @@ from django.db.models import Count, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.db.transaction import atomic
 from django.dispatch import receiver
+from django.utils.safestring import mark_safe
 from django.http import (
     Http404,
     HttpRequest,
@@ -4670,3 +4671,23 @@ def weekly_report(request):
         return HttpResponse("An error occurred while sending the weekly report")
 
     return HttpResponse("Weekly report sent successfully.")
+
+def blt_tomato(request):
+    current_dir = os.path.dirname(__file__)
+    json_file_path = os.path.join(current_dir, "fixtures", "blt_tomato_project_link.json")
+
+    try:
+        with open(json_file_path, "r") as json_file:
+            data = json.load(json_file)
+    except Exception:
+        data = []
+
+    for project in data:
+        funding_details = project.get("funding_details", "").split(", ")
+        funding_links = [
+            url.strip() for url in funding_details if url.startswith("https://")
+        ]
+        funding_link = funding_links[0] if funding_links else "#"
+        project["funding_hyperlinks"] = funding_link
+
+    return render(request, "blt_tomato.html", {"data": data})
