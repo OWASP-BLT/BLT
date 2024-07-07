@@ -1,6 +1,5 @@
 {% load gravatar %}
 {% load custom_tags %}
-{% comment %} views {% endcomment %}
 <button disabled
         class="like_unlike border-[1px] rounded-2xl shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[1.1rem] leading-4 p-4 "
         type="button">
@@ -16,7 +15,6 @@
         </svg>
     </span>
 </button>
-{% comment %} likes {% endcomment %}
 <button class="like_unlike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[1.1rem] leading-4 p-4 "
         type="button">
     <span id="likes" class="flex flex-row gap-2 items-center">
@@ -47,7 +45,6 @@
         {% endif %}
     </span>
 </button>
-{% comment %} dislike {% endcomment %}
 <button {% if request.user.is_authenticated %} name="{{ object.pk }}" type="submit" id="dislike-btn" {% else %} onclick="window.location.href='/accounts/login'" {% endif %}
         class="dislike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[1.1rem] leading-4 p-4"
         type="button">
@@ -73,7 +70,6 @@
         {% endif %}
     </span>
 </button>
-{% comment %} report {% endcomment %}
 <button class="flag-unflag rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[1.1rem] leading-4 p-4 "
         type="button">
     <span id="flags" class="flex flex-row gap-2 items-center">
@@ -104,7 +100,6 @@
         {% endif %}
     </span>
 </button>
-{% comment %} bookmark {% endcomment %}
 <button {% if request.user.is_authenticated %} name="{{ object.pk }}" id="bookmark" {% else %} onclick="window.location.href='/accounts/login'" {% endif %}
         class="bookmark rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[1.1rem] leading-4 p-4 "
         type="button">
@@ -130,7 +125,6 @@
         {% endif %}
     </span>
 </button>
-{% comment %} notification {% endcomment %}
 <button class="relative border-[1px] inline-block shadow-sm rounded-xl  mb-3 transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[1.1rem] leading-4 p-4"
         onclick="{% if user.is_authenticated %}subscribe_domain(){% else %}window.location.href=`{% url 'account_login' %}`{% endif %}"
         id="subscribe_domain_btn">
@@ -154,12 +148,10 @@
         </div>
     {% endif %}
 </button>
-{% comment %} tweet  {% endcomment %}
 <a href="https://twitter.com/intent/tweet?text=Bug Found on @{{ object.domain_title }} - {{ object.description }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}"
    target="_blank"
    rel="noopener noreferrer"
    class="rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] !bg-white border-black-2  text-[1.1rem] leading-4 p-4">Tweet &nbsp;<i class="fa-brands fa-x-twitter fa-lg"></i></a>
-{% comment %} GitHub Link  {% endcomment %}
 <a {% if github_link != "empty" %} target="_blank" href="{{ github_link }}" {% else %} href="#" {% if request.user.is_superuser or request.user == object.user and github_link == "empty" %}onclick="createIssue()" name="{{ object.pk }}" id="create_issue"{% endif %}
    {% endif %}
    rel="noopener noreferrer"
@@ -170,12 +162,10 @@
         GitHub Link
     {% endif %}
 &nbsp;<i class="fas fa-external-link fa-lg"></i></a>
-{% comment %} copy  {% endcomment %}
 <button onclick="copyClipboard()"
         class="max-sm:text-start rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[1.1rem] leading-4 p-4">
     Copy &nbsp;<i class="fa-solid fa-copy fa-lg text-red-[#4A6676]"></i>
 </button>
-{% comment %} report anonymously  {% endcomment %}
 {% if request.user.is_superuser or request.user == object.user %}
     {% if object.user %}
         <form method="post"
@@ -194,21 +184,19 @@
             </button>
         </form>
     {% endif %}
-    {% comment %} edit  {% endcomment %}
-    {% comment %} <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[1.1rem] leading-4 p-4" id="edit-issue">
+    <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[1.1rem] leading-4 p-4"
+            id="edit-issue">
         <div class="flex flex-row gap-2 items-center">
             <span class="max-sm:text-[12px]">Edit</span>
             <i class="fa-regular fa-pen-to-square text-[13px]"></i>
         </div>
-    </button> {% endcomment %}
+    </button>
 {% endif %}
-{% comment %} delete  {% endcomment %}
 {% if request.user.is_superuser or request.user == object.user %}
     <a href="{% url 'delete_issue' id=object.id %}"
        onclick="return confirm('Are you sure you want to delete this issue?')"
        class="rounded-2xl text-[1.1rem] border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] !bg-white border-black-2 p-4 hover:!text-[#3e3446]"> Delete &nbsp;<i class="fa-solid fa-trash text-xl text-black"></i></a>
 {% endif %}
-{% comment %} resolve {% endcomment %}
 {% if request.user.is_superuser or request.user == object.user %}
     <button type="button"
             onclick="resolveIssue()"
