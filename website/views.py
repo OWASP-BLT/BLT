@@ -278,7 +278,7 @@ def handle_user_logged_out(request, user, **kwargs):
     clear_anonymous_cache(request)
 
 
-# @cache_per_user(3600)
+@cache_per_user(3600)
 def newhome(request, template="new_home.html"):
     if request.user.is_authenticated:
         try:
