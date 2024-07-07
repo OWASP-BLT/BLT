@@ -278,7 +278,7 @@ def handle_user_logged_out(request, user, **kwargs):
     clear_anonymous_cache(request)
 
 
-@cache_per_user(3600)
+# @cache_per_user(3600)
 def newhome(request, template="new_home.html"):
     if request.user.is_authenticated:
         try:
@@ -301,13 +301,14 @@ def newhome(request, template="new_home.html"):
     for bug in bugs:
         bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[:3]
 
-    paginator = Paginator(bugs, 15)
+    paginator = Paginator(bugs, 12)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
     context = {
         "bugs": page_obj,
         "bugs_screenshots": bugs_screenshots,
+        "totalPage": paginator.num_pages,
         "leaderboard": User.objects.filter(
             points__created__month=datetime.now().month, points__created__year=datetime.now().year
         ),

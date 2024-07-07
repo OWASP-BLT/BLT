@@ -2,22 +2,60 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <style>
-        .hero-bugs-container {
-            grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+    .hero-bugs-container {
+        grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+    }
+
+    .bottom-right {
+        position: absolute;
+        bottom: 10px;
+        right: 15px;
+    }
+
+    .loader {
+        border: 16px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 16px solid #3498db;
+        width: 50px;
+        height: 50px;
+        position: absolute;
+        bottom: 50px;
+        display: none;
+        left: 50%;
+        -webkit-animation: spin 2s linear infinite;
+        /* Safari */
+        animation: spin 2s linear infinite;
+    }
+
+    /* Safari */
+    @-webkit-keyframes spin {
+        0% {
+            -webkit-transform: rotate(0deg);
         }
 
-        .bottom-right {
-            position: absolute;
-            bottom: 10px;
-            right: 15px;
+        100% {
+            -webkit-transform: rotate(360deg);
         }
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
     </style>
     <div class="flex flex-col sm:flex-row mt-[35px]">
         <div class="flex-1">
-            <div class="hero-bugs-container grid grid-cols-1 sm:grid-cols-2 gap-4 mx-4 my-2.5">
+            <div class="hero-bugs-container grid grid-cols-1 sm:grid-cols-2 gap-4 mx-4 my-2.5"
+                 id="bugs-container">
                 {% for bug in bugs %}
                     {% include "_bug.html" %}
                 {% endfor %}
+                <div class="loader"></div>
             </div>
         </div>
         <div class="w-full mt-4  sm:w-[20%] sm:mt-0 sm:order-2 ">
@@ -25,90 +63,148 @@
         </div>
     </div>
     <script>
-        function like_unlike_handler(e,issue_pk){
-            e.preventDefault();
-            var issue_pk = issue_pk;
-            $.ajax({
-                type: 'GET',
-                url: '/like_issue2/' + issue_pk + '/',
-                data: {},
-                success: function (data) {
+    function like_unlike_handler(e, issue_pk) {
+        e.preventDefault();
+        var issue_pk = issue_pk;
+        $.ajax({
+            type: 'GET',
+            url: '/like_issue2/' + issue_pk + '/',
+            data: {},
+            success: function (data) {
 
-                    var likesvg = $('#likeSvg' + issue_pk);
-                    var dislikesvg = $('#dislikeSvg' + issue_pk);
-                    var currentColor = likesvg.find('path').attr('fill');
-                    
-                    if (currentColor === '#a11010') {
-                        likesvg.find('path').attr('fill', ''); 
-                    } else {
-                        likesvg.find('path').attr('fill', '#a11010');
-                        dislikesvg.find('path').attr('fill', ''); 
-                    }
+                var likesvg = $('#likeSvg' + issue_pk);
+                var dislikesvg = $('#dislikeSvg' + issue_pk);
+                var currentColor = likesvg.find('path').attr('fill');
 
-                    getVoteCount(issue_pk);
-                },
-            });
-        }
-        function dislike_handler(e,issue_pk){
-            e.preventDefault();
-            var issue_pk = issue_pk;
-            $.ajax({
-                type: 'GET',
-                url: '/dislike_issue2/' + issue_pk + '/',
-                data: {},
-                success: function (data) {
-                    var likesvg = $('#likeSvg' + issue_pk);
-                    var dislikesvg = $('#dislikeSvg' + issue_pk);
-                    var currentColor = dislikesvg.find('path').attr('fill');
-    
-                    if (currentColor === '#a11010') {
-                        dislikesvg.find('path').attr('fill', ''); 
-                    } else {
-                        dislikesvg.find('path').attr('fill', '#a11010');
-                        likesvg.find('path').attr('fill', ''); 
-                    }
-
-                    getVoteCount(issue_pk);
-                },
-            });
-        }
-        function flag_unflag_handler(e,issue_pk){
-            e.preventDefault();
-            var issue_pk = issue_pk;
-            $.ajax({
-                type: 'GET',
-                url: '/flag_issue2/' + issue_pk + '/',
-                data: {},
-                success: function (data) {
-                    // Toggle the color of the SVG
-                    var svg = $('#flagSvg' + issue_pk);
-                    var currentColor = svg.find('path').attr('fill');
-    
-                    if (currentColor === '#a11010') {
-                        // Change to default color
-                        svg.find('path').attr('fill', ''); // Set to default color
-                    } else {
-                        // Change to full red
-                        svg.find('path').attr('fill', '#a11010');
-                    }
-                },
-            });
-        }
-        function getVoteCount(issue_pk) {
-            $.ajax({
-                url: `/vote_count/${issue_pk}/`,  // Adjust the URL as needed
-                type: 'GET',
-                success: function(response) {
-                    $('#likes_count').text(response.likes);
-                    $('#dislikes_count').text(response.dislikes);
-                },
-                error: function(error) {
-                    console.log(error);
+                if (currentColor === '#a11010') {
+                    likesvg.find('path').attr('fill', '');
+                } else {
+                    likesvg.find('path').attr('fill', '#a11010');
+                    dislikesvg.find('path').attr('fill', '');
                 }
-            });
-        }
+
+                getVoteCount(issue_pk);
+            },
+        });
+    }
+    function dislike_handler(e, issue_pk) {
+        e.preventDefault();
+        var issue_pk = issue_pk;
+        $.ajax({
+            type: 'GET',
+            url: '/dislike_issue2/' + issue_pk + '/',
+            data: {},
+            success: function (data) {
+                var likesvg = $('#likeSvg' + issue_pk);
+                var dislikesvg = $('#dislikeSvg' + issue_pk);
+                var currentColor = dislikesvg.find('path').attr('fill');
+
+                if (currentColor === '#a11010') {
+                    dislikesvg.find('path').attr('fill', '');
+                } else {
+                    dislikesvg.find('path').attr('fill', '#a11010');
+                    likesvg.find('path').attr('fill', '');
+                }
+
+                getVoteCount(issue_pk);
+            },
+        });
+    }
+    function flag_unflag_handler(e, issue_pk) {
+        e.preventDefault();
+        var issue_pk = issue_pk;
+        $.ajax({
+            type: 'GET',
+            url: '/flag_issue2/' + issue_pk + '/',
+            data: {},
+            success: function (data) {
+                // Toggle the color of the SVG
+                var svg = $('#flagSvg' + issue_pk);
+                var currentColor = svg.find('path').attr('fill');
+
+                if (currentColor === '#a11010') {
+                    // Change to default color
+                    svg.find('path').attr('fill', ''); // Set to default color
+                } else {
+                    // Change to full red
+                    svg.find('path').attr('fill', '#a11010');
+                }
+            },
+        });
+    }
+    function getVoteCount(issue_pk) {
+        $.ajax({
+            url: `/vote_count/${issue_pk}/`,  // Adjust the URL as needed
+            type: 'GET',
+            success: function (response) {
+                $('#likes_count').text(response.likes);
+                $('#dislikes_count').text(response.dislikes);
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+    }
     </script>
-    <div class="col-md-12">
+    <script>
+    function showLoader(isShow) {
+        var loaderContainer = document.getElementsByClassName("loader");
+        for (let index = 0; index < loaderContainer.length; index++) {
+            const element = loaderContainer[index];
+            if (isShow == true) {
+                element.style.display = "block";
+                element.style.visibility = "1";
+            } else {
+                element.style.display = "none";
+                element.style.visibility = "0";
+            }
+        }
+    }
+    var currentPage = 1;
+    // var pageNumberSection = document.getElementsByClassName("pageNumber");
+    async function fetchBugs(pageNum) {
+        var apiURL = `/?page=${pageNum}`;
+        var bugsContainer = document.querySelector("#bugs-container");
+        var finalBugsData;
+        showLoader(true);
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(this.responseText, "text/html");
+                const bugsData = doc.querySelector("#bugs-container").innerHTML;
+                bugsContainer.insertAdjacentHTML("beforeend", bugsData);
+                showLoader(false);
+                finalBugsData = bugsData;
+            }
+        };
+        xhr.open("GET", apiURL, true);
+        xhr.send();
+        return finalBugsData;
+    }
+
+
+    const body = document.getElementById("bugs-container")
+
+    window.addEventListener("scroll",()=>{
+
+        var condition = (window.innerHeight != screen.height) && (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight) && (currentPage <= {{ totalPage }});
+        if (condition) {
+            fetchBugs(currentPage++);
+        // pageNumberSection[currentPage].id = currentPage;
+        }
+    });
+
+    function onIntersection(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && currentPage <= {{totalPage}}) {
+                console.log("dasdasd")
+            }
+        });
+    }
+
+    </script>
+    <div class="col-md-12 lg:hidden max-sm:block">
         <div class="text-center">
             {% if bugs.has_previous %}
                 <a href="?page=1{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
