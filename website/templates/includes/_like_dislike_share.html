@@ -3,7 +3,7 @@
 {% comment %} three dot  {% endcomment %}
 <button id="dropdownDefaultButton"
         data-dropdown-toggle="dropdown"
-        class="like_unlike border-[1px] rounded-2xl shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
+        class="md:hidden like_unlike border-[1px] rounded-2xl shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
         type="button">
     <svg viewBox="0 0 16 16" fill="currentColor" height="12px" width="12px">
         <circle cx="8" cy="8" r="1.31"></circle><circle cx="1.31" cy="8" r="1.31"></circle><circle cx="14.69" cy="8" r="1.31"></circle>
@@ -15,28 +15,6 @@
     <ul class="py-2 m-2 rounded text-gray-700"
         aria-labelledby="dropdownDefaultButton">
         <span class="md:hidden flex flex-col">{% include "./_like_dislike_widget.html" with device="mobile" %}</span>
-        <li>
-            <a href="https://twitter.com/intent/tweet?text=Bug Found on @{{ object.domain_title }} - {{ object.description }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}"
-               target="_blank"
-               rel="noopener noreferrer"
-               class="w-[100%] block px-4 py-2 hover:bg-gray-100">Tweet &nbsp;<i class="fa-brands fa-x-twitter fa-lg"></i></a>
-        </li>
-        <li>
-            <button onclick="copyClipboard()"
-                    class="flex w-[100%] px-4 py-2 hover:bg-gray-100">
-                Copy &nbsp;<i class="fa-solid fa-copy text-3xl text-red-[#4A6676]"></i>
-            </button>
-        </li>
-        <li>
-            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Github &nbsp;<i class="fa-brands fa-github text-3xl text-black"></i></a>
-        </li>
-        {% if request.user.is_superuser or request.user == object.user %}
-            <li>
-                <a href="{% url 'delete_issue' id=object.id %}"
-                   onclick="return confirm('Are you sure you want to delete this issue?')"
-                   class="block px-4 py-2 hover:bg-gray-100"> Delete &nbsp;<i class="fa-solid fa-trash text-2xl text-black"></i></a>
-            </li>
-        {% endif %}
     </ul>
 </div>
 <span class="max-sm:hidden">{% include "./_like_dislike_widget.html" with device="desktop" %}</span>
@@ -185,6 +163,25 @@
     }
 </script>
 <script>
+    function createIssue(){
+        var issue_pk = $("#create_issue").attr('name');
+        $.ajax({
+            type: 'GET',
+            url: '/create_github_issue/' + issue_pk,
+            data: {},
+            success: function (data) {
+                if(data["status"] != "ok"){
+                    $.notify(data["status_reason"], {
+                        style: "custom",
+                        className: "danger"
+                    });
+                }else{
+                    window.location.reload();
+                }
+            },
+        });
+    }
+
     function sanitizeURL(url) {
         var a = document.createElement('a');
         a.href = encodeURI(url);
