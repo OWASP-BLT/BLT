@@ -75,6 +75,7 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     change_bid_status,
     chatbot_conversation,
     contributors_view,
+    create_github_issue,
     deletions,
     dislike_issue2,
     dislike_issue3,
@@ -299,8 +300,9 @@ urlpatterns = [
     re_path(r"^like_issue3/(?P<issue_pk>\d+)/$", like_issue3, name="like_issue3"),
     re_path(r"^dislike_issue3/(?P<issue_pk>\d+)/$", dislike_issue3, name="dislike_issue3"),
     re_path(r"^flag_issue3/(?P<issue_pk>\d+)/$", flag_issue3, name="flag_issue3"),
-    # TODO(b) track this
     re_path(r"^resolve/(?P<id>\w+)/$", resolve, name="resolve"),
+    # TODO(b) track this
+    re_path(r"^create_github_issue/(?P<id>\w+)/$", create_github_issue, name="create_github_issue"),
     re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
     re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
