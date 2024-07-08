@@ -2689,13 +2689,13 @@ files = [
 
 [[package]]
 name = "pydantic"
-version = "2.8.0b1"
+version = "2.8.0"
 description = "Data validation using Python type hints"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pydantic-2.8.0b1-py3-none-any.whl", hash = "sha256:9ad41446bc2b4da4b5a1f9c4ecec2874db32e3c97d180ac9c401455fc5f3d124"},
-    {file = "pydantic-2.8.0b1.tar.gz", hash = "sha256:7ed26c29bca2ea247a7437231f345d6137d160d5ef5b1d172bda0d38263927b7"},
+    {file = "pydantic-2.8.0-py3-none-any.whl", hash = "sha256:ead4f3a1e92386a734ca1411cb25d94147cf8778ed5be6b56749047676d6364e"},
+    {file = "pydantic-2.8.0.tar.gz", hash = "sha256:d970ffb9d030b710795878940bd0489842c638e7252fc4a19c3ae2f7da4d6141"},
 ]
 
 [package.dependencies]
@@ -4281,4 +4281,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "d873b7b30964a562b66b89dc3f34aed6370474c1eed4582e0a1a563001611636"
+content-hash = "d99501739c1f7123f3ae68e6ed19dce88cdc381894394ba9b246ce9d4c8268f9"
