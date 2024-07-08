@@ -4070,12 +4070,83 @@ class IssueView3(DetailView):
             ).exists()
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
-        # TODO(b) track the behaviour
         context["status"] = Issue.objects.filter(id=self.object.id).get().status
+        if not self.object.github_url:
+            context["github_link"] = "empty"
+        else:
+            context["github_link"] = self.object.github_url
+
         return context
 
 
-# TODO(b) track this
+def create_github_issue(request, id):
+    issue = get_object_or_404(Issue, id=id)
+    screenshot_all = IssueScreenshot.objects.filter(issue=issue)
+    referer = request.META.get("HTTP_REFERER")
+    if not referer:
+        return HttpResponseForbidden()
+    if issue.github_url is not None:
+        return JsonResponse({"status": "Failed", "status_reason": "GitHub Issue Exists"})
+    if (
+        os.environ.get("GITHUB_ACCESS_TOKEN")
+        and request.user.is_authenticated
+        and (issue.user == request.user or request.user.is_superuser)
+    ):
+        screenshot_text = ""
+        for screenshot in screenshot_all:
+            screenshot_text += "![0](" + settings.FQDN + screenshot.image.url + ") \n"
+
+        url = "https://api.github.com/repos/OWASP-BLT/BLT/issues"
+        the_user = request.user.username if request.user.is_authenticated else "Anonymous"
+
+        issue_data = {
+            "title": issue.description,
+            "body": issue.markdown_description
+            + "\n\n"
+            + screenshot_text
+            + "Read More: https://"
+            + settings.FQDN
+            + "/issue/"
+            + str(id)
+            + "\n found by "
+            + str(the_user)
+            + "\n at url: "
+            + issue.url,
+            "labels": ["Bug", settings.PROJECT_NAME_LOWER, issue.domain_name],
+        }
+
+        try:
+            response = requests.post(
+                url,
+                data=json.dumps(issue_data),
+                headers={"Authorization": "token " + os.environ.get("GITHUB_ACCESS_TOKEN")},
+            )
+            if response.status_code == 201:
+                response_data = response.json()
+                issue.github_url = response_data.get("html_url", "")
+                issue.save()
+                return JsonResponse({"status": "ok", "github_url": issue.github_url})
+            else:
+                return JsonResponse({"status": "Failed", "status_reason": response.reason})
+        except Exception as e:
+            send_mail(
+                "Error in GitHub issue creation for Issue ID " + str(issue.id),
+                "Error in GitHub issue creation, check your GitHub settings\n"
+                + "Your current settings are: "
+                + str(issue.github_url)
+                + " and the error is: "
+                + str(e),
+                settings.EMAIL_TO_STRING,
+                [request.user.email],
+                fail_silently=True,
+            )
+            return JsonResponse({"status": "Failed", "status_reason": "Failed"})
+    else:
+        return JsonResponse(
+            {"status": "Failed", "status_reason": "You are not authorised to make that request"}
+        )
+
+
 @login_required(login_url="/accounts/login")
 @csrf_exempt
 def resolve(request, id):
