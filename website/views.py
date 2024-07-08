@@ -36,7 +36,6 @@ from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.contrib.auth.signals import user_logged_out
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import serializers
 from django.core.cache import cache
@@ -47,7 +46,7 @@ from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import URLValidator
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Prefetch, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.db.transaction import atomic
 from django.dispatch import receiver
@@ -247,39 +246,6 @@ def rebuild_safe_url(url):
 #     return render(request, template, context)
 
 
-def cache_per_user(timeout=3600, cache_alias=None):
-    def _decorator(view_func):
-        def _wrapped_view(request, *args, **kwargs):
-            if request.user.is_authenticated:
-                username = request.user.get_username()
-                cache_key = f"user:{username}:{request.get_full_path()}"
-            else:
-                cache_key = f"anonymous:{request.get_full_path()}"
-
-            response = cache.get(cache_key)
-            if response is not None:
-                return response
-
-            response = view_func(request, *args, **kwargs)
-            cache.set(cache_key, response, timeout)
-            return response
-
-        return _wrapped_view
-
-    return _decorator
-
-
-def clear_anonymous_cache(request):
-    anonymous_cache_key = f"anonymous:{request.get_full_path()}"
-    cache.delete(anonymous_cache_key)
-
-
-@receiver(user_logged_out)
-def handle_user_logged_out(request, user, **kwargs):
-    clear_anonymous_cache(request)
-
-
-@cache_per_user(3600)
 def newhome(request, template="new_home.html"):
     if request.user.is_authenticated:
         try:
@@ -289,29 +255,34 @@ def newhome(request, template="new_home.html"):
         except EmailAddress.DoesNotExist:
             messages.error(request, "No email associated with your account. Please add an email.")
         except AttributeError:
-            # This catches cases where request.user.email might be None or doesn't exist
             messages.error(request, "Your account does not have an email address.")
     else:
         messages.info(
             request, "You are browsing as a guest. Please log in or register for full access."
         )
 
-    # Retrieve and paginate issues that aren't hidden or are created by the current user
-    bugs = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id)).all()
-    bugs_screenshots = {}
-    for bug in bugs:
-        bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[:3]
-
-    paginator = Paginator(bugs, 15)
+    # Fetch and paginate issues
+    issues_queryset = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+    paginator = Paginator(issues_queryset, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+
+    # Prefetch related screenshots only for issues on the current page
+    issues_with_screenshots = page_obj.object_list.prefetch_related(
+        Prefetch("screenshots", queryset=IssueScreenshot.objects.all())
+    )
+    bugs_screenshots = {issue: issue.screenshots.all()[:3] for issue in issues_with_screenshots}
+
+    # Filter leaderboard for current month and year
+    current_time = now()
+    leaderboard = User.objects.filter(
+        points__created__month=current_time.month, points__created__year=current_time.year
+    )
 
     context = {
         "bugs": page_obj,
         "bugs_screenshots": bugs_screenshots,
-        "leaderboard": User.objects.filter(
-            points__created__month=datetime.now().month, points__created__year=datetime.now().year
-        ),
+        "leaderboard": leaderboard,
     }
     return render(request, template, context)
 
@@ -2230,7 +2201,6 @@ def UpdateIssue(request):
 
 @receiver(user_logged_in)
 def assign_issue_to_user(request, user, **kwargs):
-    clear_anonymous_cache(request)
     issue_id = request.session.get("issue")
     created = request.session.get("created")
     domain_id = request.session.get("domain")
@@ -4101,12 +4071,83 @@ class IssueView3(DetailView):
             ).exists()
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
-        # TODO(b) track the behaviour
         context["status"] = Issue.objects.filter(id=self.object.id).get().status
+        if not self.object.github_url:
+            context["github_link"] = "empty"
+        else:
+            context["github_link"] = self.object.github_url
+
         return context
 
 
-# TODO(b) track this
+def create_github_issue(request, id):
+    issue = get_object_or_404(Issue, id=id)
+    screenshot_all = IssueScreenshot.objects.filter(issue=issue)
+    referer = request.META.get("HTTP_REFERER")
+    if not referer:
+        return HttpResponseForbidden()
+    if issue.github_url is not None:
+        return JsonResponse({"status": "Failed", "status_reason": "GitHub Issue Exists"})
+    if (
+        os.environ.get("GITHUB_ACCESS_TOKEN")
+        and request.user.is_authenticated
+        and (issue.user == request.user or request.user.is_superuser)
+    ):
+        screenshot_text = ""
+        for screenshot in screenshot_all:
+            screenshot_text += "![0](" + settings.FQDN + screenshot.image.url + ") \n"
+
+        url = "https://api.github.com/repos/OWASP-BLT/BLT/issues"
+        the_user = request.user.username if request.user.is_authenticated else "Anonymous"
+
+        issue_data = {
+            "title": issue.description,
+            "body": issue.markdown_description
+            + "\n\n"
+            + screenshot_text
+            + "Read More: https://"
+            + settings.FQDN
+            + "/issue/"
+            + str(id)
+            + "\n found by "
+            + str(the_user)
+            + "\n at url: "
+            + issue.url,
+            "labels": ["Bug", settings.PROJECT_NAME_LOWER, issue.domain_name],
+        }
+
+        try:
+            response = requests.post(
+                url,
+                data=json.dumps(issue_data),
+                headers={"Authorization": "token " + os.environ.get("GITHUB_ACCESS_TOKEN")},
+            )
+            if response.status_code == 201:
+                response_data = response.json()
+                issue.github_url = response_data.get("html_url", "")
+                issue.save()
+                return JsonResponse({"status": "ok", "github_url": issue.github_url})
+            else:
+                return JsonResponse({"status": "Failed", "status_reason": response.reason})
+        except Exception as e:
+            send_mail(
+                "Error in GitHub issue creation for Issue ID " + str(issue.id),
+                "Error in GitHub issue creation, check your GitHub settings\n"
+                + "Your current settings are: "
+                + str(issue.github_url)
+                + " and the error is: "
+                + str(e),
+                settings.EMAIL_TO_STRING,
+                [request.user.email],
+                fail_silently=True,
+            )
+            return JsonResponse({"status": "Failed", "status_reason": "Failed"})
+    else:
+        return JsonResponse(
+            {"status": "Failed", "status_reason": "You are not authorised to make that request"}
+        )
+
+
 @login_required(login_url="/accounts/login")
 @csrf_exempt
 def resolve(request, id):
@@ -4130,7 +4171,6 @@ def resolve(request, id):
 
 @receiver(user_signed_up)
 def handle_user_signup(request, user, **kwargs):
-    clear_anonymous_cache(request)
     referral_token = request.session.get("ref")
     if referral_token:
         try:
