@@ -8,7 +8,6 @@ class Migration(migrations.Migration):
         ("website", "0093_bid_bch_address"),
     ]
 
-
     operations = [
         migrations.CreateModel(
             name="ChatBotLog",
