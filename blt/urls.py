@@ -32,9 +32,8 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
-from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 etc
+from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 etc; AutoLabel,
     AllIssuesView,
-    AutoLabel,
     CompanySettings,
     ContributorStatsView,
     CreateHunt,
@@ -514,7 +513,6 @@ urlpatterns = [
     path("change_bid_status/", change_bid_status, name="change_bid_status"),
     path("fetch-current-bid/", fetch_current_bid, name="fetch_current_bid"),
     path("Submitpr/", submit_pr, name="submit_pr"),
-    path("issue-auto-label/", AutoLabel, name="AutoLabel"),
     path("weekly-report/", weekly_report, name="weekly_report"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s]+)",
