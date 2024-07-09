@@ -49,7 +49,6 @@ from django.db.models import Count, Prefetch, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.db.transaction import atomic
 from django.dispatch import receiver
-from django.utils.safestring import mark_safe
 from django.http import (
     Http404,
     HttpRequest,
