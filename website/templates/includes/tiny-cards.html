@@ -1,10 +1,5 @@
-{% if insideIFCondition %}
-<div class="h-[0.5vh]"></div>
-{% endif %}
-<div class="border-[1px] rounded-xl p-1 border-[#DFDCE4] flex text-[13px]
-{% if lessWidth %}ml-[3%] w-[50%]
-{% else %}max-sm:ml-[3.45%] ml-[10%]{% endif %}
-">
-    <div class="bg-white border-r-[1px] p-1 border-[#DFDCE4]">{{left}}</div>
-    <div class="bg-[#FAF9FB] p-[0.40rem] select-all truncate font-[monospace] text-[11px]">{{right}}</div>
+{% if insideIFCondition %}<div class="h-[0.5vh]"></div>{% endif %}
+<div class="border-[1px] rounded-xl p-1 border-[#DFDCE4] flex text-[13px] {% if lessWidth %}ml-[3%] w-[50%] {% else %}max-sm:ml-[3.45%] ml-[10%]{% endif %} ">
+    <div class="bg-white border-r-[1px] p-1 border-[#DFDCE4]">{{ left }}</div>
+    <div class="bg-[#FAF9FB] p-[0.40rem] select-all truncate font-[monospace] text-[11px]">{{ right }}</div>
 </div>

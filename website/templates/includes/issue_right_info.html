@@ -39,17 +39,17 @@
                  height="32px">
             <div class="ml-3" id="crypto">
                 {% if object.user.userprofile.btc_address %}
-                {% include "./tiny-cards.html" with insideIFCondition=True left="BTC" right=object.user.userprofile.btc_address lessWidth=True%}
+                    {% include "./tiny-cards.html" with insideIFCondition=True left="BTC" right=object.user.userprofile.btc_address lessWidth=True %}
                 {% endif %}
                 {% if object.user.userprofile.bch_address %}
-                {% include "./tiny-cards.html" with insideIFCondition=True left="BCH" right=object.user.userprofile.bch_address lessWidth=True%}
+                    {% include "./tiny-cards.html" with insideIFCondition=True left="BCH" right=object.user.userprofile.bch_address lessWidth=True %}
                 {% endif %}
                 {% if object.user.userprofile.eth_address %}
-                {% include "./tiny-cards.html" with insideIFCondition=True left="ETH" right=object.user.userprofile.eth_address lessWidth=True%}
+                    {% include "./tiny-cards.html" with insideIFCondition=True left="ETH" right=object.user.userprofile.eth_address lessWidth=True %}
                 {% endif %}
             </div>
-            <div class="hidden" id="no-crypto">      
-                {% include "./tiny-cards.html" with left="BCH" right="qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc" lessWidth=True%}
+            <div class="hidden" id="no-crypto">
+                {% include "./tiny-cards.html" with left="BCH" right="qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc" lessWidth=True %}
                 <i class="ml-[3%] text-[12px]">No Address, will go to BLT Donation</i>
             </div>
         </div>
@@ -64,7 +64,8 @@
                  height="32px">
             <div class="ml-3">
                 <div class="truncate hover:!text-black hover:underline">
-                    <a class="hover:!text-black" href="{% url 'domain' slug=object.domain.name %}">Reported on {{ object.domain.name }}</a>
+                    <a class="hover:!text-black"
+                       href="{% url 'domain' slug=object.domain.name %}">Reported on {{ object.domain.name }}</a>
                 </div>
                 <div>
                     Issues Reported: <span class="font-bold">{{ issue_count }}
@@ -81,28 +82,26 @@
         {% include "./tiny-cards.html" with insideIFCondition=True left="CVE ID" right=object.cve_id %}
     {% endif %}
     {% if object.hunt %}
-    <a href="{% url 'show_bughunt' object.hunt.id %}">
-        {% include "./tiny-cards.html" with insideIFCondition=True left="Submitted" right=object.hunt.name %}
-    </a>
+        <a href="{% url 'show_bughunt' object.hunt.id %}">
+            {% include "./tiny-cards.html" with insideIFCondition=True left="Submitted" right=object.hunt.name %}
+        </a>
     {% else %}
-    {% include "./tiny-cards.html" with insideIFCondition=True left="Submitted" right="Independently" %}
+        {% include "./tiny-cards.html" with insideIFCondition=True left="Submitted" right="Independently" %}
     {% endif %}
     <div class="h-[2vh]"></div>
     <div class="max-sm:ml-[3.45%] ml-[10%]">
         <div class="flex justify-start items-center">
             {% if browser_family %}
-                                {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as image_static %}
-                                        <img class="w-[45px] h-[45px] rounded-full object-cover"
-                                             src="{% static image_static %}"
-                                             alt="Browser Image"
-                                             width="auto"
-                                             height="auto">
-                                {% endwith %}
-                            {% endif %}
+                {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as image_static %}
+                    <img class="w-[45px] h-[45px] rounded-full object-cover"
+                         src="{% static image_static %}"
+                         alt="Browser Image"
+                         width="auto"
+                         height="auto">
+                {% endwith %}
+            {% endif %}
             <div class="ml-3">
-                <div>
-                    Browser Version: {{ browser_version }}
-                </div>
+                <div>Browser Version: {{ browser_version }}</div>
                 <div>
                     <span class="font-bold">Operating System</span> {{ os_family }}
                 </div>
