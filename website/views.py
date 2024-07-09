@@ -11,7 +11,6 @@ import uuid
 from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from pathlib import Path
 from urllib.parse import urlparse, urlsplit, urlunparse
 
 import humanize
@@ -36,7 +35,6 @@ from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.contrib.auth.signals import user_logged_out
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import serializers
 from django.core.cache import cache
@@ -47,7 +45,7 @@ from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import URLValidator
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Prefetch, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.db.transaction import atomic
 from django.dispatch import receiver
@@ -70,8 +68,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import DetailView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
-from dotenv import load_dotenv
-from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -246,39 +242,6 @@ def rebuild_safe_url(url):
 #     return render(request, template, context)
 
 
-def cache_per_user(timeout=3600, cache_alias=None):
-    def _decorator(view_func):
-        def _wrapped_view(request, *args, **kwargs):
-            if request.user.is_authenticated:
-                username = request.user.get_username()
-                cache_key = f"user:{username}:{request.get_full_path()}"
-            else:
-                cache_key = f"anonymous:{request.get_full_path()}"
-
-            response = cache.get(cache_key)
-            if response is not None:
-                return response
-
-            response = view_func(request, *args, **kwargs)
-            cache.set(cache_key, response, timeout)
-            return response
-
-        return _wrapped_view
-
-    return _decorator
-
-
-def clear_anonymous_cache(request):
-    anonymous_cache_key = f"anonymous:{request.get_full_path()}"
-    cache.delete(anonymous_cache_key)
-
-
-@receiver(user_logged_out)
-def handle_user_logged_out(request, user, **kwargs):
-    clear_anonymous_cache(request)
-
-
-@cache_per_user(3600)
 def newhome(request, template="new_home.html"):
     if request.user.is_authenticated:
         try:
@@ -288,29 +251,34 @@ def newhome(request, template="new_home.html"):
         except EmailAddress.DoesNotExist:
             messages.error(request, "No email associated with your account. Please add an email.")
         except AttributeError:
-            # This catches cases where request.user.email might be None or doesn't exist
             messages.error(request, "Your account does not have an email address.")
     else:
         messages.info(
             request, "You are browsing as a guest. Please log in or register for full access."
         )
 
-    # Retrieve and paginate issues that aren't hidden or are created by the current user
-    bugs = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id)).all()
-    bugs_screenshots = {}
-    for bug in bugs:
-        bugs_screenshots[bug] = IssueScreenshot.objects.filter(issue=bug)[:3]
-
-    paginator = Paginator(bugs, 15)
+    # Fetch and paginate issues
+    issues_queryset = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+    paginator = Paginator(issues_queryset, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+
+    # Prefetch related screenshots only for issues on the current page
+    issues_with_screenshots = page_obj.object_list.prefetch_related(
+        Prefetch("screenshots", queryset=IssueScreenshot.objects.all())
+    )
+    bugs_screenshots = {issue: issue.screenshots.all()[:3] for issue in issues_with_screenshots}
+
+    # Filter leaderboard for current month and year
+    current_time = now()
+    leaderboard = User.objects.filter(
+        points__created__month=current_time.month, points__created__year=current_time.year
+    )
 
     context = {
         "bugs": page_obj,
         "bugs_screenshots": bugs_screenshots,
-        "leaderboard": User.objects.filter(
-            points__created__month=datetime.now().month, points__created__year=datetime.now().year
-        ),
+        "leaderboard": leaderboard,
     }
     return render(request, template, context)
 
@@ -2229,7 +2197,6 @@ def UpdateIssue(request):
 
 @receiver(user_logged_in)
 def assign_issue_to_user(request, user, **kwargs):
-    clear_anonymous_cache(request)
     issue_id = request.session.get("issue")
     created = request.session.get("created")
     domain_id = request.session.get("domain")
@@ -4200,7 +4167,6 @@ def resolve(request, id):
 
 @receiver(user_signed_up)
 def handle_user_signup(request, user, **kwargs):
-    clear_anonymous_cache(request)
     referral_token = request.session.get("ref")
     if referral_token:
         try:
@@ -4658,48 +4624,6 @@ def chatbot_conversation(request):
     cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
     request.session["buffer"] = memory.buffer
     return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
-
-
-def AutoLabel(request):
-    dotenv_path = Path("blt/.env")
-    load_dotenv(dotenv_path=dotenv_path)
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-    token_Limit = 1000
-    token_per_prompt = 70
-    if request.method == "POST":
-        today = datetime.now(timezone.utc).date()
-        rate_limit_key = f"global_daily_request_{today}"
-        total_token_used = cache.get(rate_limit_key, 0)
-
-        if total_token_used + token_per_prompt > token_Limit:
-            return JsonResponse({"error": "Rate limit exceeded."}, status=429)
-
-        data = json.loads(request.body)
-        bug_description = data.get("BugDescription")
-        template = """
-        Label: {BugDescription}
-        Options: 0.General, 1.Number error, 2.Functional, 3.Performance, 4.Security, 5.Type, 6.Design, 7.Server down
-        Just return the number corresponding to the appropriate option.
-         """
-        prompt = template.format(BugDescription=bug_description)
-        client = OpenAI(
-            api_key=OPENAI_API_KEY,
-        )
-        response = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
-            model="gpt-3.5-turbo-0125",
-            max_tokens=1,
-        )
-        label = response.choices[0].message.content
-        cache.set(rate_limit_key, total_token_used + token_per_prompt, timeout=None)
-        return JsonResponse({"label": label})
-
-    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 
 def weekly_report(request):
