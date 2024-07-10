@@ -314,6 +314,7 @@ ALLOWED_HOSTS = [
     "." + DOMAIN_NAME,
     "127.0.0.1",
     "localhost",
+    "192.168.56.1",
     "0.0.0.0",
     "blt.owasp.org",
     "." + DOMAIN_NAME_PREVIOUS,
