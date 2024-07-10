@@ -155,10 +155,10 @@
 <a {% if github_link != "empty" %} target="_blank" href="{{ github_link }}" {% else %} onclick="createIssue()" name="{{ object.pk }}" id="create_issue" {% endif %}
    rel="noopener noreferrer"
    class="rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] !bg-white border-black-2  text-[1.1rem] max-sm:text-[1rem] leading-4 p-4 hover:!text-[#3e3446]">
-    {% if github_link == "empty" and request.user.is_superuser or request.user == object.user %}
-        Create Issue
-    {% else %}
+    {% if github_link != "empty" %}
         GitHub Link
+    {% else %}
+        Create Issue
     {% endif %}
 &nbsp;<i class="fas fa-external-link fa-lg"></i></a>
 <button onclick="copyClipboard()"
