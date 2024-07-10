@@ -12,7 +12,7 @@ from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse, urlsplit, urlunparse
-
+from pathlib import Path
 import humanize
 import requests
 import requests.exceptions
@@ -4673,11 +4673,11 @@ def weekly_report(request):
 
 
 def blt_tomato(request):
-    current_dir = os.path.dirname(__file__)
-    json_file_path = os.path.join(current_dir, "fixtures", "blt_tomato_project_link.json")
+    current_dir = Path(__file__).parent
+    json_file_path = current_dir / "fixtures" / "blt_tomato_project_link.json"
 
     try:
-        with open(json_file_path, "r") as json_file:
+        with json_file_path.open("r") as json_file:
             data = json.load(json_file)
     except Exception:
         data = []
@@ -4689,4 +4689,4 @@ def blt_tomato(request):
         funding_link = funding_links[0] if funding_links else "#"
         project["funding_hyperlinks"] = funding_link
 
-    return render(request, "blt_tomato.html", {"data": data})
+    return render(request, "blt_tomato.html", {"projects": data})

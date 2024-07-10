@@ -94,7 +94,7 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     subscribe_to_domains,
     vote_count,
     weekly_report,
-    blt_tomato
+    blt_tomato,
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
