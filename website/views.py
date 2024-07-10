@@ -81,6 +81,7 @@ from comments.models import Comment
 from website.models import (
     IP,
     Bid,
+    ChatBotLog,
     Company,
     CompanyAdmin,
     ContributorStats,
@@ -4623,6 +4624,10 @@ def chatbot_conversation(request):
     # Increment the request count
     cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
     request.session["buffer"] = memory.buffer
+
+    # Log the conversation
+    ChatBotLog.objects.create(question=question, answer=response["answer"])
+
     return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
 
 

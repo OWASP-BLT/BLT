@@ -75,6 +75,7 @@ unstructured = "^0.14.4"
 Markdown = "^3.6"
 faiss-cpu = "^1.8.0"
 openai = "^1.35.10"
+psutil = "^5.9.8"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"

@@ -626,3 +626,12 @@ class Bid(models.Model):
     #         )
 
     #     super().save(*args, **kwargs)
+
+
+class ChatBotLog(models.Model):
+    question = models.TextField()
+    answer = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Q: {self.question} | A: {self.answer} at {self.timestamp}"
