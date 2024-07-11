@@ -466,5 +466,18 @@
         "linkedin": "https://www.linkedin.com/in/shirsh-jain-5a5b751b9/",
         "website": "https://github.com/haniljain",
         "bch_addr": "serendipity"
+    },
+    {
+        "id": 38,
+        "img": "https://avatars.githubusercontent.com/u/93156825?v=4",
+        "name": "Nikhil Raj",
+        "repository": "BLT | BLT-Core",
+        "short_description": "Engineer.",
+        "long_description": "I am a dedicated computer science student specializing in AI and ML, with a rich background in backend development, technical writing, and open-source contributions.",
+        "location": "Kolkata, India",
+        "twitter": "https://twitter.com/humans_write",
+        "linkedin": "https://www.linkedin.com/in/nikhil25803/",
+        "website": "https://github.com/nikhil25803",
+        "bch_addr": ""
     }
 ]
