@@ -76,6 +76,7 @@ Markdown = "^3.6"
 faiss-cpu = "^1.8.0"
 openai = "^1.35.13"
 psutil = "^5.9.8"
+pre-commit = "^3.7.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"
