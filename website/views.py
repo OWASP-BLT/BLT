@@ -3796,6 +3796,7 @@ def like_issue3(request, issue_pk):
         userprof.issue_upvoted.remove(issue)
     else:
         userprof.issue_upvoted.add(issue)
+    if issue.user is not None:
         liked_user = issue.user
         liker_user = request.user
         issue_pk = issue.pk
@@ -4055,7 +4056,7 @@ class IssueView3(DetailView):
             .values("id", "description", "markdown_description", "screenshots__image")
             .order_by("views")[:4]
         )
-        # TODO(b) fix this, edit: Hopefully this will work
+        # TODO test if email works
         if isinstance(self.request.user, User):
             context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
                 pk=self.request.user.userprofile.id
@@ -4084,12 +4085,12 @@ def create_github_issue(request, id):
     referer = request.META.get("HTTP_REFERER")
     if not referer:
         return HttpResponseForbidden()
-    if issue.github_url is not None:
+    if issue.github_url:
         return JsonResponse({"status": "Failed", "status_reason": "GitHub Issue Exists"})
     if (
-        os.environ.get("GITHUB_ACCESS_TOKEN")
-        and request.user.is_authenticated
-        and (issue.user == request.user or request.user.is_superuser)
+        os.environ.get("GITHUB_ACCESS_TOKEN") and request.user.is_authenticated
+        # Any Authenticated user will be able to create a GitHub issue
+        # and (issue.user == request.user or request.user.is_superuser)
     ):
         screenshot_text = ""
         for screenshot in screenshot_all:
