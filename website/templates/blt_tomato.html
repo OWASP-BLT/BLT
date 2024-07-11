@@ -3,18 +3,21 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="min-h-screen flex flex-col mx-4 mt-5">
-        <h2 class="text-4xl font-semibold my-8 p-5 text-white rounded-md bg-[#d9534f]">BLT Tomato - This is an OWASP BLT project created to help other OWASP projects.</h2>
+        <h2 class="text-4xl font-semibold my-8 p-5 text-white rounded-md bg-[#d9534f]">
+            BLT Tomato - This is an OWASP BLT project created to help other OWASP projects.
+        </h2>
         {% if projects %}
             <p class="text-xl font-semibold mt-5">The following OWASP projects are seeking funding and have a funding.yml file:</p>
             <ul class="text-2xl">
                 {% for project in projects %}
                     <li type="1" class=" my-2 py-2 px-4 shadow">
-                        <p href="{{ item.repo_url }}" class="text-primary underline inline-block">{{ project.project_name }}</p>
+                        <p href="{{ item.repo_url }}"
+                           class="text-primary underline inline-block">{{ project.project_name }}</p>
                         <button class="bg-[#d9534f] ml-4 inline-block py-1 px-2 rounded text-white">
                             <a href="{{ project.funding_hyperlinks }}" target="_blank">
                                 <span class="text-white">Donate</span>
                             </a>
-                        </button>                        
+                        </button>
                         <span class="ml-4">{{ project.funding_details }}</span>
                     </li>
                 {% endfor %}
@@ -22,7 +25,6 @@
         {% endif %}
     </div>
 {% endblock content %}
-
 <style>
     .min-h-screen {
         min-height: 100vh;
