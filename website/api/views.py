@@ -509,7 +509,7 @@ class BugHuntApiViewset(APIView):
         previousHunt = request.query_params.get("previousHunt")
         upcomingHunt = request.query_params.get("upcomingHunt")
         search_query = request.query_params.get("search")
-        fields = [
+        fields = (
             "id",
             "name",
             "url",
@@ -519,7 +519,7 @@ class BugHuntApiViewset(APIView):
             "description",
             "starts_on",
             "end_on",
-        ]
+        )
 
         if search_query:
             return self.get_search_by_name(request, search_query, fields, *args, **kwargs)
