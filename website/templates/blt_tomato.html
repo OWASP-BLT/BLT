@@ -19,16 +19,6 @@
                     </li>
                 {% endfor %}
             </ul>
-
-            <!-- <ul>
-                {% for project in data %}
-                <li>
-                    <h2>{{ project.project_name }}</h2>
-                    <p>Repository: <a href="{{ project.repo_url }}" target="_blank">{{ project.repo_url }}</a></p>
-                    <p>Funding: {{ project.funding_hyperlinks|safe }}</p>
-                </li>
-                {% endfor %}
-            </ul> -->
         {% endif %}
     </div>
 {% endblock content %}
