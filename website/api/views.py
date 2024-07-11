@@ -472,41 +472,33 @@ class UrlCheckApiViewset(APIView):
 class BugHuntApiViewset(APIView):
     permission_classes = [AllowAny]
 
-    def get_active_hunts(self, request, *args, **kwargs):
+    def get_active_hunts(self, request, fields, *args, **kwargs):
         hunts = (
-            Hunt.objects.values(
-                "id", "name", "url", "prize", "logo", "banner", "description", "starts_on", "end_on"
-            )
+            Hunt.objects.values(*fields)
             .filter(is_published=True, starts_on__lte=datetime.now(), end_on__gte=datetime.now())
             .order_by("-prize")
         )
         return Response(hunts)
 
-    def get_previous_hunts(self, request, *args, **kwargs):
+    def get_previous_hunts(self, request, fields, *args, **kwargs):
         hunts = (
-            Hunt.objects.values(
-                "id", "name", "url", "prize", "logo", "banner", "description", "starts_on", "end_on"
-            )
+            Hunt.objects.values(*fields)
             .filter(is_published=True, end_on__lte=datetime.now())
             .order_by("-end_on")
         )
         return Response(hunts)
 
-    def get_upcoming_hunts(self, request, *args, **kwargs):
+    def get_upcoming_hunts(self, request, fields, *args, **kwargs):
         hunts = (
-            Hunt.objects.values(
-                "id", "name", "url", "prize", "logo", "banner", "description", "starts_on", "end_on"
-            )
+            Hunt.objects.values(*fields)
             .filter(is_published=True, starts_on__gte=datetime.now())
             .order_by("starts_on")
         )
         return Response(hunts)
 
-    def get_search_by_name(self, request, search_query, *args, **kwargs):
+    def get_search_by_name(self, request, search_query, fields, *args, **kwargs):
         hunts = (
-            Hunt.objects.values(
-                "id", "name", "url", "prize", "logo", "banner", "description", "starts_on", "end_on"
-            )
+            Hunt.objects.values(*fields)
             .filter(is_published=True, name__icontains=search_query)
             .order_by("end_on")
         )
@@ -517,21 +509,27 @@ class BugHuntApiViewset(APIView):
         previousHunt = request.query_params.get("previousHunt")
         upcomingHunt = request.query_params.get("upcomingHunt")
         search_query = request.query_params.get("search")
+        fields = [
+            "id",
+            "name",
+            "url",
+            "prize",
+            "logo",
+            "banner",
+            "description",
+            "starts_on",
+            "end_on",
+        ]
+
         if search_query:
-            return self.get_search_by_name(request, search_query, *args, **kwargs)
+            return self.get_search_by_name(request, search_query, fields, *args, **kwargs)
         elif activeHunt:
-            return self.get_active_hunts(request, *args, **kwargs)
+            return self.get_active_hunts(request, fields, *args, **kwargs)
         elif previousHunt:
-            return self.get_previous_hunts(request, *args, **kwargs)
+            return self.get_previous_hunts(request, fields, *args, **kwargs)
         elif upcomingHunt:
-            return self.get_upcoming_hunts(request, *args, **kwargs)
-        hunts = (
-            Hunt.objects.values(
-                "id", "name", "url", "prize", "logo", "banner", "description", "starts_on", "end_on"
-            )
-            .filter(is_published=True)
-            .order_by("-end_on")
-        )
+            return self.get_upcoming_hunts(request, fields, *args, **kwargs)
+        hunts = Hunt.objects.values(*fields).filter(is_published=True).order_by("-end_on")
         return Response(hunts)
 
 
