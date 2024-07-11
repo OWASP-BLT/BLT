@@ -152,14 +152,13 @@
    target="_blank"
    rel="noopener noreferrer"
    class="rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] !bg-white border-black-2  text-[1.1rem] leading-4 p-4">Tweet &nbsp;<i class="fa-brands fa-x-twitter fa-lg"></i></a>
-<a {% if github_link != "empty" %} target="_blank" href="{{ github_link }}" {% else %} href="#" {% if request.user.is_superuser or request.user == object.user and github_link == "empty" %}onclick="createIssue()" name="{{ object.pk }}" id="create_issue"{% endif %}
-   {% endif %}
+<a {% if github_link != "empty" %} target="_blank" href="{{ github_link }}" {% else %} onclick="createIssue()" name="{{ object.pk }}" id="create_issue" {% endif %}
    rel="noopener noreferrer"
    class="rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] !bg-white border-black-2  text-[1.1rem] max-sm:text-[1rem] leading-4 p-4 hover:!text-[#3e3446]">
-    {% if request.user.is_superuser or request.user == object.user and github_link == "empty" %}
-        Create Issue
-    {% else %}
+    {% if github_link != "empty" %}
         GitHub Link
+    {% else %}
+        Create Issue
     {% endif %}
 &nbsp;<i class="fas fa-external-link fa-lg"></i></a>
 <button onclick="copyClipboard()"
