@@ -71,6 +71,7 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
+    UserProfileDetailView2,
     blt_tomato,
     change_bid_status,
     chatbot_conversation,
