@@ -1,3 +1,4 @@
+{% load static %}
 <aside id="sidebar"
        class="tracking-tight fixed top-0 left-0 z-40 w-[210px] h-screen pt-[70px] transition-transform -translate-x-full bg-white lg:translate-x-0 no-scrollbar"
        aria-label="Sidebar">
@@ -208,6 +209,18 @@
                             <i class="fa fa-bar-chart"></i>
                         </div>
                         <span>Stats</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/blt-tomato/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'blt-tomato' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <div class="w-8 mr-4">
+                            <img src="{% static 'img/tomato-svgrepo-com.svg' %}"
+                                 width="100"
+                                 height="100"
+                                 alt="ant">
+                        </div>
+                        <span>BLT Tomato</span>
                     </a>
                 </li>
                 <li>
