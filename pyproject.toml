@@ -76,12 +76,12 @@ Markdown = "^3.6"
 faiss-cpu = "^1.8.0"
 openai = "^1.35.13"
 psutil = "^5.9.8"
-pre-commit = "^3.7.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"
 isort = "^5.13.2"
 ruff = "^0.5.1"
+pre-commit = "^3.7.1"
 
 [tool.isort]
 known_first_party = ["blt"]
