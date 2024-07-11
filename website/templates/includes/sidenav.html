@@ -212,14 +212,17 @@
                     </a>
                 </li>
                 <li class="{% if request.path == '/blt-tomato/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'blt-tomato' %}" class="flex items-center w-full text-black no-underline p-2">
+                    <a href="{% url 'blt-tomato' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
                         <div class="w-8 mr-4">
-                            <img src="{% static 'img/tomato-svgrepo-com.svg' %}" width="100" height="100" alt="ant">
+                            <img src="{% static 'img/tomato-svgrepo-com.svg' %}"
+                                 width="100"
+                                 height="100"
+                                 alt="ant">
                         </div>
                         <span>BLT Tomato</span>
                     </a>
                 </li>
-                
                 <li>
                     <div class="border-t-2 border-gray-200"></div>
                 </li>
