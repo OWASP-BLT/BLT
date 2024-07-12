@@ -162,9 +162,9 @@ def conversation_chain(vector_store):
         )
     )
     llm = ChatOpenAI(model_name="gpt-3.5-turbo-0125", temperature=0.5)
-    retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 3})
+    retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 5})
     memory = ConversationSummaryMemory(
-        llm=llm, return_messages=True, memory_key="chat_history", max_token_limit=1000
+        llm=llm, return_messages=True, memory_key="chat_history", max_token_limit=1500
     )
 
     crc = ConversationalRetrievalChain.from_llm(
