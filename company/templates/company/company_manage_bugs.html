@@ -51,16 +51,14 @@
                                     </td>
                                     <td class="px-6 py-4 text-right">
                                         <a href="{% url 'issue_view2' issue.pk %}"
-                                            class="font-medium text-blue-600 hover:underline">View</a>
+                                           class="font-medium text-blue-600 hover:underline">View</a>
                                     </td>
                                 </tr>
                             {% endfor %}
                         {% else %}
                             <tr class="bg-white border-b">
                                 <th scope="row"
-                                    class="px-6 py-4 font-medium text-red-500 whitespace-nowrap">
-                                    No Issues Found
-                                </th>
+                                    class="px-6 py-4 font-medium text-red-500 whitespace-nowrap">No Issues Found</th>
                             </tr>
                         {% endif %}
                     </tbody>
