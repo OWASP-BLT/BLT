@@ -44,6 +44,11 @@
     color: white; /* Change text color to contrast with the red background */
     }
 
+    .splide__slide img {
+        width: 100%;
+        height: auto;
+      }
+
     input[name="r"] {
         position: absolute;
         visibility: hidden;
@@ -102,380 +107,20 @@
                rel="noopener noreferrer">{{ object.url }}</a>
         </p>
         <br>
-        <div class="right-data max-sm:absolute top-[10%] max-sm:pt-2 max-sm:ml-[80%] ml-[3.50%]">
-            {% include "includes/_like_dislike_share.html" %}
-        </div>
-        <div id="default-tab-content" class="bg-white">
-            <br>
-            <div class="mb-4 ml-5 w-[95%] border-b border-[#584ac080]"></div>
-            <div class="flex max-sm:flex-col">
-                <div class="w-5/12 max-sm:w-[100%]">
-                    <h4 class="ml-[1.45%] text-[25px] font-medium p-3 bg-white">Screenshots:</h4>
-                    <div class="splide">
-                        <div class="splide__track">
-                            <ul class="splide__list">
-                                {% if object.screenshot %}
-                                    <li class="splide__slide">
-                                        <a href="{{ object.screenshot.url }}"
-                                           target="_blank"
-                                           class="flex align-middle justify-center"
-                                           rel="noopener noreferrer">
-                                            <img src="{{ object.screenshot.url }}"
-                                                 class="w-[488px] h-[310px] rounded-lg max-sm:w-[80vw] max-sm:h-[28vh] max-sm:mb-[10%]"
-                                                 alt="issue screenshot"
-                                                 data-lightbox="image"
-                                                 height="auto"
-                                                 width="auto">
-                                        </a>
-                                    </li>
-                                {% else %}
-                                    {% comment %} <div class="grid grid-cols-4 gap-4 max-sm:grid-cols-1"> {% endcomment %}
-                                    {% for screenshot in screenshots %}
-                                        <li class="splide__slide">
-                                            <a href="{{ screenshot.image.url }}"
-                                               target="_blank"
-                                               class="flex align-middle justify-center"
-                                               rel="noopener noreferrer">
-                                                <img src="{{ screenshot.image.url }}"
-                                                     class="w-[488px] h-[310px] rounded-lg max-sm:w-[80vw] max-sm:h-[28vh] max-sm:mb-[10%]"
-                                                     alt="issue screenshot"
-                                                     data-lightbox="image"
-                                                     height="auto"
-                                                     width="auto">
-                                            </a>
-                                        </li>
-                                    {% endfor %}
-                                    {% comment %} </div> {% endcomment %}
-                                {% endif %}
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="w-7/12 max-sm:w-[100%]">
-                    <div class="max-sm:ml-[3.45%]">
-                        <h4 class="text-2xl font-bold mb-3">Event ID: {{ object.id }}</h4>
-                        <div class="flex justify-start items-center">
-                            <img class="w-[40px] rounded-full h-[40px] object-cover"
-                                 src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.png' %}{% endif %}"
-                                 alt="User Profile Logo"
-                                 width="32px"
-                                 height="32px">
-                            <div class="ml-3">
-                                <div>
-                                    {% if object.user.username %}
-                                        <a href="{% url 'profile' slug=object.user.username %}"
-                                           class="!text-[#7e22ce] font-bold">{{ object.user.username }}</a>
-                                    {% else %}
-                                        Anonymous
-                                    {% endif %}
-                                </div>
-                                <div>
-                                    <span class="font-bold">Total Points =</span> {{ users_score }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex flex-col lg:grid lg:grid-cols-2 gap-10">
-                        <div class="flex items-center bg-white rounded-2xl shadow-md gap-5 p-10 w-full lg:w-[20vw]">
-                            <div class="rounded-full w-[20%]">
-                                <img class="w-[80%] h-[80%] object-cover"
-                                     src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.png' %}{% endif %}"
-                                     alt="User Profile Logo"
-                                     width="auto"
-                                     height="auto">
-                            </div>
-                            <div class="flex flex-col items-start gap-2">
-                                <div class="text-[#B00000] text-[16px] w-[90%] truncate">
-                                    {% if object.user.username %}
-                                        <a href="{% url 'profile' slug=object.user.username %}"
-                                           class="!text-[#B00000]">{{ object.user.username }}</a>
-                                    {% else %}
-                                        Anonymous
-                                    {% endif %}
-                                </div>
-                                <div class="text-[#B00000] text-[14px]">
-                                    Total Points = <span class="font-bold">{{ users_score }}</span>
-                                </div>
-                                <div>
-                                    {% comment %} TODO(b): other logics to disable bitcoin donation button {% endcomment %}
-                                    {% if not object.user.username %}
-                                        <button disabled
-                                                class="!cursor-not-allowed bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
-                                            <span class="border-2 border-black rounded-xl p-1">$5 <i class="text-black fa-solid fa-caret-down"></i></span> Tip
-                                        </button>
-                                    {% else %}
-                                        <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg"
-                                                type="button"
-                                                id="openModal-{{ object.user.id }}"
-                                                onclick="openModal('{{ object.user.userprofile.btc_address }}','{{ object.user.userprofile.eth_address }}','{{ object.user.userprofile.bch_address }}', '{{ object.user.id }}', '{{ cve_score }}')">
-                                            <span class="border-2 border-black rounded-xl p-1">$5 <i class="text-black fa-solid fa-caret-down"></i></span> Tip
-                                        </button>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex flex-col items-center bg-white rounded-2xl shadow-md justify-between p-10 w-full lg:w-[20vw]">
-                            <div class="text-[14px] w-[100%] font-bold truncate">Bug Type: {{ object.get_label_display }}</div>
-                            <div class="h-[2vh]"></div>
-                            <div class="text-[14px] w-[100%] truncate">
-                                Status: <span class="status">{{ object.status }}</span>
-                            </div>
-                            <div class="text-[14px] w-[100%] truncate">Added on: {{ object.created }}</div>
-                            {% if object.cve_id %}
-                                <div class="text-[14px] w-[100%] truncate">CVE ID: {{ object.cve_id }}</div>
-                            {% endif %}
-                            {% if object.cve_score %}
-                                <div class="text-[14px] w-[100%] truncate">CVE Score: {{ object.cve_score }}</div>
-                            {% endif %}
-                            <div class="text-[14px] w-[100%] truncate">
-                                Submitted:
-                                {% if object.hunt %}
-                                    <a href="{% url 'show_bughunt' object.hunt.id %}">{{ object.hunt.name }}</a>
-                                {% else %}
-                                    Independently
-                                {% endif %}
-                            </div>
-                        </div>
-                        <!-- <div class="h-[80%] items-center justify-between flex flex-col">
-                            {% if request.user == object.user or request.is_staff or request.is_superuser %}
-                                <div>
-                                    <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[14px] p-2 rounded-lg edit-issue-status" id="issue_stat">
-                                        {% if object.status == "open" %}
-                                            <svg width="23" height="23" viewBox="0 0 25 19" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M8.4911 18.4552L0.366101 10.3302C-0.122034 9.8421 -0.122034 9.05065 0.366101 8.56246L2.13383 6.79469C2.62196 6.30651 3.41346 6.30651 3.9016 6.79469L9.37499 12.268L21.0984 0.54469C21.5865 0.0565552 22.378 0.0565552 22.8661 0.54469L24.6339 2.31246C25.122 2.8006 25.122 3.59205 24.6339 4.08024L10.2589 18.4553C9.77069 18.9434 8.97924 18.9434 8.4911 18.4552Z" fill="white" />
-                                            </svg>
-                                        {% else %}
-                                            <i class="fa-solid fa-retweet"></i>
-                                        {% endif %}
-                                    </button>
-                                </div>
-                            {% endif %}
-                            {% if request.user.is_superuser or request.user == object.user %}
-                                <div>
-                                    <button class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[18px] p-2 rounded-lg">
-                                        <span class="rounded-xl font-bold p-1"><i class="fa-solid fa-pen-to-square"></i></span>
-                                    </button>
-                                </div>
-                            {% endif %}
-                        </div> -->
-                        <div class="flex items-center bg-white rounded-2xl shadow-md gap-5 p-10 w-full lg:w-[20vw]">
-                            <img class="w-[40px] h-[40px] object-cover"
-                                 src="{{ object.domain.get_logo }}"
-                                 alt="Domain Logo"
-                                 width="auto"
-                                 height="auto">
-                            <div class="flex flex-col items-start gap-2">
-                                <div class="text-[14px] w-[90%] truncate">
-                                    <a class="#" href="{% url 'domain' slug=object.domain.name %}">Reported on {{ object.domain.name }}</a>
-                                </div>
-                                <div class="text-[13px]">
-                                    Issues Reported: <span class="font-bold">{{ issue_count }}</span>
-                                </div>
-                                <button onclick="{% if user.is_authenticated %}subscribe_domain(){% else %}window.location.href=`{% url 'account_login' %}`{% endif %}"
-                                        id="subscribe_domain_btn"
-                                        class="bg-[#FF6363] font-bold font-[ubuntu] text-white text-[16px] p-2 rounded-lg">
-                                    {% if user.is_authenticated and subscribed_to_domain %}
-                                        Unsubscribe
-                                    {% else %}
-                                        Subscribe
-                                    {% endif %}
-                                </button>
-                            </div>
-                        </div>
-                        <div class="flex items-center bg-white rounded-2xl shadow-md p-10 w-full lg:w-[20vw]">
-                            {% if browser_family %}
-                                {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as image_static %}
-                                    <div class="rounded-full w-[20%]">
-                                        <img class="w-[80%] h-[80%] object-cover"
-                                             src="{% static image_static %}"
-                                             alt="Browser Image"
-                                             width="auto"
-                                             height="auto">
-                                    </div>
-                                {% endwith %}
-                            {% endif %}
-                            <div class="flex flex-col items-start">
-                                <div class="text-[14px] truncate">
-                                    Browser Version: <span class="font-bold text-2xl">{{ browser_version }}</span>
-                                </div>
-                                <div class="text-[14px]">
-                                    Operating System: <span class="font-bold text-2xl">{{ os_family }}</span>
-                                </div>
-                                <div class="text-[14px]">
-                                    OS Version: <span class="font-bold text-2xl">
-                                    {% if os_version %}
-                                        {{ os_version }}
-                                    {% else %}
-                                        Unknown
-                                    {% endif %}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <div class="border-b-2 border-[#584ac080]">
+            <div class="right-data max-sm:absolute top-[15%] max-sm:pt-2 max-sm:ml-[80%] ml-[3.50%] ">
+                {% include "includes/_like_dislike_share.html" %}
             </div>
         </div>
-        <div class="px-10 mt-5">
-            <hr class="border-[#7e22ce] w-[100%]">
-            {% if object.markdown_description %}
-                <h3 class="font-[ubuntu] text-[16px] lg:text-[20px] p-3 my-2 font-semibold">Issue Description</h3>
-                <p class="ml-3 text-justify text-[12px] lg:text-[14px] lg:w-11/12"
-                   id="bug_report">{{ object.markdown_description }}</p>
-            {% endif %}
-        </div>
-        <div class="px-10 rounded-lg bg-white">{% include "comments2.html" %}</div>
-    </div>
-</div>
-{% comment %} list of flags modal  {% endcomment %}
-<div id="flag-modal"
-     class="hidden relative z-10"
-     aria-labelledby="modal-title"
-     role="dialog"
-     aria-modal="true">
-    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-         aria-hidden="true"></div>
-    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-        <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
-            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
-                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start lg:w-full">
-                        <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
-                            <div class="mt-2">
-                                <h3>Flagged by:</h3>
-                                <br>
-                                <p class="text-xl">
-                                    <table class="table-auto w-full border-spacing-52">
-                                        <tbody>
-                                            {% for usr in flagers %}
-                                                <tr class="shadow-lg m-3 w-full rounded">
-                                                    {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
-                                                        <td>
-                                                            <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
-                                                                 height="50px"
-                                                                 width="50px"
-                                                                 alt="{{ usr.user.username }}">
-                                                        </td>
-                                                    {% else %}
-                                                        <td>
-                                                            <img src="{% gravatar_url usr.user.email 50 %}"
-                                                                 height="50px"
-                                                                 width="50px"
-                                                                 alt="{{ usr.user.username }}">
-                                                        </td>
-                                                    {% endif %}
-                                                    <td>
-                                                        &nbsp; <a href="{% url 'profile' slug=usr.user.username %}">{{ usr.user.username }}</a>
-                                                    </td>
-                                                </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                    <button type="button"
-                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                            id="close-flag">Close</button>
-                </div>
-            </div>
+        <div class="flex bg-white max-sm:flex-col-reverse">
+            {% include "./includes/issue_left_info.html" %}
+            {% include "./includes/issue_right_info.html" %}
         </div>
     </div>
-</div>
-{% comment %} list of likers  {% endcomment %}
-<div id="like-modal"
-     class="hidden relative z-10"
-     aria-labelledby="modal-title"
-     role="dialog"
-     aria-modal="true">
-    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-         aria-hidden="true"></div>
-    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-        <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
-            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
-                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start lg:w-full">
-                        <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
-                            <div class="mt-2">
-                                <h3>Liked By:</h3>
-                                <br>
-                                <p class="text-xl">
-                                    <table class="table-auto w-full border-spacing-52">
-                                        <tbody>
-                                            {% for usr in likers %}
-                                                <tr class="shadow-lg m-3 w-full rounded">
-                                                    {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
-                                                        <td>
-                                                            <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
-                                                                 height="50px"
-                                                                 width="50px"
-                                                                 alt="{{ usr.user.username }}">
-                                                        </td>
-                                                    {% else %}
-                                                        <td>
-                                                            <img src="{% gravatar_url usr.user.email 50 %}"
-                                                                 height="50px"
-                                                                 width="50px"
-                                                                 alt="{{ usr.user.username }}">
-                                                        </td>
-                                                    {% endif %}
-                                                    <td>
-                                                        &nbsp; <a href="{% url 'profile' slug=usr.user.username %}">{{ usr.user.username }}</a>
-                                                    </td>
-                                                </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                    <button type="button"
-                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                            id="close-like">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<dialog id="dialog-{{ object.user.id }}" class="dialog relative">
-    <input type="radio"
-           name="r"
-           id="bch-{{ object.user.id }}"
-           checked
-           class="active">
-    <input type="radio" name="r" id="eth-{{ object.user.id }}">
-    <input type="radio" name="r" id="btc-{{ object.user.id }}">
-    <div class="navigation absolute top-0 left-[50%] translate-x-[-50%] flex content-center">
-        <button class="nav-btn w-[70px] h-[40px] border-[1px] m-[6px] cursor-pointer transition-[0.4s] border-solid border-[#0e0d0d] hover:bg-[#ff0000] hover:text-white"
-                id="bch-btn-{{ object.user.id }}">BCH</button>
-        <button class="nav-btn w-[70px] h-[40px] border-[1px] m-[6px] cursor-pointer transition-[0.4s] border-solid border-[#0e0d0d] hover:bg-[#ff0000] hover:text-white"
-                id="eth-btn-{{ object.user.id }}">Ethereum</button>
-        <button class="nav-btn w-[70px] h-[40px] border-[1px] m-[6px] cursor-pointer transition-[0.4s] border-solid border-[#0e0d0d] hover:bg-[#ff0000] hover:text-white"
-                id="btc-btn-{{ object.user.id }}">Bitcoin</button>
-    </div>
-    <div id="slideshow-{{ object.user.id }}"
-         class="slideshow w-[400px] mt-[50px]">
-        <img id="qr-image-{{ object.user.id }}"
-             alt="QR Code"
-             height="300"
-             width="400">
-        <p id="crypto-name-{{ object.user.id }}"
-           class="crypto-name text-center w-full text-[20px] text-white bg-[#ff4444] inline-block m-auto"></p>
-        <p id="crypto-address-{{ object.user.id }}"
-           class="crypto-address text-center"></p>
-        <p id="tip-message" class="crypto-address text-center font-bold italic"></p>
-    </div>
-    <button id="close-{{ object.user.id }}" class="btn btn-danger w-full">Close</button>
-</dialog>
-<script src="{% static '/company/js/md_editor.js' %}"></script>
-<!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
-<script src="https://cdn.jsdelivr.net/npm/markdown-it@12.1.0/dist/markdown-it.min.js"></script>
-<script>
+    <script src="{% static '/company/js/md_editor.js' %}"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.1.0/dist/markdown-it.min.js"></script>
+    <script>
     var flagClose = document.getElementById("close-flag");
     var likeClose = document.getElementById("close-like");
     var flagModal = document.getElementById("flag-modal");
@@ -493,8 +138,8 @@
     function likeOpenn() {
         likeModal.style.cssText = "display:block !important;"
     }
-</script>
-<script>
+    </script>
+    <script>
     const md = window.markdownit();
     const markdownContent = `{{ object.markdown_description|escapejs }}`;
     const renderedHtml = md.render(markdownContent);
@@ -502,294 +147,190 @@
     // const renderedHtml = marked.parse(markdownContent)
 
     $("#bug_report").html(renderedHtml);
+    </script>
+    <script>
+    function loadQRCode(){
+        var btc_address = "{{object.user.userprofile.btc_address}}";
+        var bch_address = "{{object.user.userprofile.bch_address}}";
+        var eth_address = "{{object.user.userprofile.eth_address}}";
 
-    {% comment %} document.addEventListener('DOMContentLoaded', function () {
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const currentScreenshot = document.getElementById('current-screenshot');
-    const lightboxLink = document.getElementById('lightbox-link');
-    const screenshots = document.querySelectorAll('.screenshot-image');
-    
-    let currentIndex = 0;
+        if(btc_address != "None" && btc_address != ""){
+            document.getElementById('crypto-qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${btc_address}&size=400x300`;
+        }else if(bch_address != "None" && bch_address != ""){
+            document.getElementById('crypto-qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${bch_address}&size=400x300`;
+        }else if(eth_address != "None" && eth_address != ""){
+            document.getElementById('crypto-qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${eth_address}&size=400x300`;
+        }else{
+            // User has not set their crypto addresses
+            // Show BLT QR code
+            var showBLT = document.getElementById("no-crypto");
+            showBLT.style.cssText = "display: block !important";
+            var hideUser = document.getElementById("crypto");
+            hideUser.style.cssText = "display: none !important";
+            bch_address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
+            document.getElementById('crypto-qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${bch_address}&size=400x300`;
+        }
 
-    function updateImage() {
-        currentScreenshot.src = screenshots[currentIndex].src;
-        lightboxLink.href = screenshots[currentIndex].src;
     }
-
-    nextBtn.addEventListener('click', function () {
-        if (currentIndex < screenshots.length - 1) {
-            currentIndex++;
-            updateImage();
-        }
-    });
-
-    prevBtn.addEventListener('click', function () {
-        if (currentIndex > 0) {
-            currentIndex--;
-            updateImage();
-        }
-    });
-}); {% endcomment %}
-    function subscribe_domain(){
-        $.ajax({
-            type: 'GET',
-            url: '/domain/{{ object.domain.id }}/subscribe/',
-            data: {},
-            success: function (data) {
-
-
-                // Test this behaviour
-                window.location.reload();
-                
-                // if (data === "SUBSCRIBED"){
-                //     $("#subscribe_domain_btn").text("Unsubscribe");
-                //     $.notify("Subscribed!", {
-                //         style: "custom",
-                //         className: "success"
-                //     });
-                // }
-
-                // else if (data === "UNSUBSCRIBED"){
-                //     $("#subscribe_domain_btn").text("Subscribe");
-                //     $.notify("Unsubscribed!", {
-                //         style: "custom",
-                //         className: "success"
-                //     });
-                // }
-            },
-            error: function () {
-                $.notify("Some error occurred!", {
-                    style: "custom",
-                    className: "danger"
-                });
-            }
-        })
-    }
-
-
-
-    $(document).on('click', '.edit-issue-status',(e)=>{
-        var s = $('.status').text();
-        var action = s == "open" ? "close" : "open";
-        $.ajax({
-            type: 'POST',
-            url: '/issue/update/',
-            beforeSend: function (xhr) {
-                xhr.setRequestHeader('X-CSRFToken', "{{csrf_token}}");
-            },
-            data: {
-                issue_pk: "{{object.id}}",
-                action: action
-            },
-            success: function (data) {
-                console.log(data);
-
-                if (data == "Updated") {
-                    if (action == "open") {
-                        $('.status').text('open');
-                        //$('.status').removeClass('label-danger');
-                        //$('.status').addClass('label-success');
-                        $('#issue_stat').html(`
-    <svg width='19' height='19' viewBox='0 0 25 19' fill='none' xmlns='http://www.w3.org/2000/svg'>
-        <path d='M8.4911 18.4552L0.366101 10.3302C-0.122034 9.8421 -0.122034 9.05065 0.366101 8.56246L2.13383 6.79469C2.62196 6.30651 3.41346 6.30651 3.9016 6.79469L9.37499 12.268L21.0984 0.54469C21.5865 0.0565552 22.378 0.0565552 22.8661 0.54469L24.6339 2.31246C25.122 2.8006 25.122 3.59205 24.6339 4.08024L10.2589 18.4553C9.77069 18.9434 8.97924 18.9434 8.4911 18.4552Z' fill='white' />
-    </svg>
-`);
-                        $.notify("Issue opened!", {
-                        style: "custom",
-                        className: "success"
-                        });
-                    } else {
-                        $('.status').text('closed');
-                        //$('.status').removeClass('label-success');
-                        //$('.status').addClass('label-danger');
-                        $('#issue_stat').html("");
-                        $('#issue_stat').html(
-                            "<i class='fa-solid fa-retweet'></i>"
-                        );
-                        $.notify("Issue closed!", {
-                        style: "custom",
-                        className: "success"
-                        });
-                    }
-                } else {
-                    $.notify(
-                        "Only the user who has submitted the bug and superuser can close/open an issue"
-                    ), {
-                        style: "custom",
-                        className: "danger"
-                    }
-                }
-            },
-            error: function () {
-                $.notify("Some error occurred!", {
-                    style: "custom",
-                    className: "danger"
-                });
-            }
-        })
-    })
-
-    function sanitizeURL(url) {
-        var a = document.createElement('a');
-        a.href = encodeURI(url);
-        return a.href;
-    }
-
-    var label = "{{object.label}}";
-    $(document).on('click', '.edit-issue', function (e) {
-        $issue_desc = $('.issue-desc').text().trim();
-        $('.form input[name=description]').val($issue_desc);
-        $('.form input[name=domain]').val($('.issue-domain').text());
-        $('.form select').val(label);
-        $('.editables').hide();
-        $('.form').show();
-    });
-
-    $(document).on('click', '.cancel-edit', function (e) {
-        $('.form').hide();
-        $('.editables').show();
-    });
-
-    $(document).on('click', '.save-issue', function (e) {
-        e.preventDefault();
-
-        if ($('.form input[name=description]').val().trim().length == 0 ||
-            $('.form input[name=domain]').val().trim().length == 0) {
-            return;
-        }
-        var dom_regex = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi;
-        dom_regex = new RegExp(dom_regex);
-        var domain_url = $('.form input[name=domain]').val();
-        if (domain_url.match(dom_regex) == null) {
-            alert('Enter a valid url');
-            return;
-        }
-
-
-        $.ajax({
-            type: 'POST',
-            url: '/issue/edit/',
-            data: {
-                issue_pk: $('#issue_pk').val(),
-                domain: $('.form input[name=domain]').val(),
-                description: $('.form input[name=description]').val(),
-                label: $('.form select').val(),
-                csrfmiddlewaretoken: $('.form input[name=csrfmiddlewaretoken]').val(),
-            },
-            success: function (data) {
-                $('.issue-desc').text($('.form input[name=description]').val());
-                $('.issue-domain').text($('.form input[name=domain]').val());
-                var sanitizedDomain = sanitizeURL($('.form input[name=domain]').val());
-                $('.issue-domain').attr("href", sanitizedDomain);
-                label = $('.form select').val();
-                var l = $(".form select option[value='" + label + "']").text();
-                $('.bug-label').text(l);
-                $('.form').hide();
-                $('.editables').show();
-                $.notify("Issue updated!", {
-                    style: "custom",
-                    className: "success"
-                });
-                if (data === "Domain Created")
-                    $.notify("Domain Added!", {
-                        style: "custom",
-                        className: "success"
-                    });
-            },
-            error: function () {
-                $.notify("Some error occurred!", {
-                    style: "custom",
-                    className: "danger"
-                });
-            }
-        });
-    });
-</script>
-<script>
-    const openModal = (btc, eth, bch, userId, cve_score) => {
-        let severityLevel;
-        let suggestedTip;
-
-        if (cve_score >= 9.0) {
-            severityLevel = "critical";
-            suggestedTip = "$50";
-        } else if (cve_score >= 7.0) {
-            severityLevel = "high";
-            suggestedTip = "$20";
-        } else if (cve_score >= 4.0) {
-            severityLevel = "medium";
-            suggestedTip = "$10";
-        } else {
-            severityLevel = "low";
-            suggestedTip = "$5";
-        }
-
-        const cryptoOptions = [
-            { name: 'Bitcoin Cash', address: bch },
-            { name: 'Ethereum', address: eth },
-            { name: 'Bitcoin', address: btc }
-        ];
-        let currentIndex = 0;
-
-        const updateSlide = () => {
-            let { name, address } = cryptoOptions[currentIndex];
-            if (address == '' || address == 'None') {
-                address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
-                document.getElementById('qr-image-'+userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
-                document.getElementById('crypto-name-' + userId).textContent = "No address: Will go to BLT Donation";
-                document.getElementById('crypto-address-'+userId).textContent = `BCH: ${address}`;
-                document.getElementById('tip-message').textContent = `is the address of the BLT monthly leaderboard that is distributed 100% to the top bug finder that month.`;
-            }
-            else{
-                document.getElementById('crypto-name-' + userId).textContent = name;
-                document.getElementById('qr-image-' + userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
-                document.getElementById('crypto-address-' + userId).textContent = `${address}`;
-                document.getElementById('tip-message').textContent = `This CVE is a ${severityLevel} severity, we suggest you tip ${suggestedTip}.`;
-            }
-        };
-        updateSlide();
-
-        document.getElementById('openModal-' + userId).addEventListener('click', function() {
-            document.getElementById('dialog-' + userId).showModal();
-        });
-
-        document.getElementById('close-' + userId).addEventListener('click', function() {
-            document.getElementById('dialog-' + userId).close();
-        });
-        document.getElementById('bch-btn-' + userId).classList.add('active'); // Highlight BCH button by default
-        document.getElementById('bch-btn-' + userId).addEventListener('click', function() {
-            currentIndex = 0;
-            updateSlide();
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-        });
-
-        document.getElementById('eth-btn-' + userId).addEventListener('click', function() {
-            currentIndex = 1;
-            updateSlide();
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-        });
-
-        document.getElementById('btc-btn-' + userId).addEventListener('click', function() {
-            currentIndex = 2;
-            updateSlide();
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-        });
-    };
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"
-        integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw="
-        crossorigin="anonymous"></script>
-<script>
+    loadQRCode();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"
+            integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw="
+            crossorigin="anonymous"></script>
+    <script>
     document.addEventListener( 'DOMContentLoaded', function() {
         var elms = document.getElementsByClassName( 'splide' );
         for ( var i = 0; i < elms.length; i++ ) {
-          new Splide( elms[ i ] ).mount();
+            new Splide( elms[i], {
+                perPage: 3,
+                breakpoints: {
+                    640: {
+                        perPage: 1,
+                    },
+                },
+          } ).mount();
         }
       } );
-</script>
-<script type="module">import lineClamp from 'https://cdn.jsdelivr.net/npm/line-clamp@1.0.0/+esm'</script>
+    </script>
+    <!-- <script>
+    function edit(){
+        $(document).on('click', '.edit-issue-status',(e)=>{
+            var s = $('.status').text();
+            var action = s == "open" ? "close" : "open";
+            $.ajax({
+                type: 'POST',
+                url: '/issue/update/',
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader('X-CSRFToken', "{{csrf_token}}");
+                },
+                data: {
+                    issue_pk: "{{object.id}}",
+                    action: action
+                },
+                success: function (data) {
+                    console.log(data);
+    
+                    if (data == "Updated") {
+                        if (action == "open") {
+                            $('.status').text('open');
+                            //$('.status').removeClass('label-danger');
+                            //$('.status').addClass('label-success');
+                            $('#issue_stat').html(`
+        <svg width='19' height='19' viewBox='0 0 25 19' fill='none' xmlns='http://www.w3.org/2000/svg'>
+            <path d='M8.4911 18.4552L0.366101 10.3302C-0.122034 9.8421 -0.122034 9.05065 0.366101 8.56246L2.13383 6.79469C2.62196 6.30651 3.41346 6.30651 3.9016 6.79469L9.37499 12.268L21.0984 0.54469C21.5865 0.0565552 22.378 0.0565552 22.8661 0.54469L24.6339 2.31246C25.122 2.8006 25.122 3.59205 24.6339 4.08024L10.2589 18.4553C9.77069 18.9434 8.97924 18.9434 8.4911 18.4552Z' fill='white' />
+        </svg>
+    `);
+                            $.notify("Issue opened!", {
+                            style: "custom",
+                            className: "success"
+                            });
+                        } else {
+                            $('.status').text('closed');
+                            //$('.status').removeClass('label-success');
+                            //$('.status').addClass('label-danger');
+                            $('#issue_stat').html("");
+                            $('#issue_stat').html(
+                                "<i class='fa-solid fa-retweet'></i>"
+                            );
+                            $.notify("Issue closed!", {
+                            style: "custom",
+                            className: "success"
+                            });
+                        }
+                    } else {
+                        $.notify(
+                            "Only the user who has submitted the bug and superuser can close/open an issue"
+                        ), {
+                            style: "custom",
+                            className: "danger"
+                        }
+                    }
+                },
+                error: function () {
+                    $.notify("Some error occurred!", {
+                        style: "custom",
+                        className: "danger"
+                    });
+                }
+            })
+        })
+    
+        function sanitizeURL(url) {
+            var a = document.createElement('a');
+            a.href = encodeURI(url);
+            return a.href;
+        }
+    
+        var label = "{{object.label}}";
+        $(document).on('click', '.edit-issue', function (e) {
+            $issue_desc = $('.issue-desc').text().trim();
+            $('.form input[name=description]').val($issue_desc);
+            $('.form input[name=domain]').val($('.issue-domain').text());
+            $('.form select').val(label);
+            $('.editables').hide();
+            $('.form').show();
+        });
+    
+        $(document).on('click', '.cancel-edit', function (e) {
+            $('.form').hide();
+            $('.editables').show();
+        });
+    
+        $(document).on('click', '.save-issue', function (e) {
+            e.preventDefault();
+    
+            if ($('.form input[name=description]').val().trim().length == 0 ||
+                $('.form input[name=domain]').val().trim().length == 0) {
+                return;
+            }
+            var dom_regex = /[-a-zA-Z0-9@:%_\+.~#?&//=]{2,256}\.[a-z]{2,4}\b(\/[-a-zA-Z0-9@:%_\+.~#?&//=]*)?/gi;
+            dom_regex = new RegExp(dom_regex);
+            var domain_url = $('.form input[name=domain]').val();
+            if (domain_url.match(dom_regex) == null) {
+                alert('Enter a valid url');
+                return;
+            }
+    
+    
+            $.ajax({
+                type: 'POST',
+                url: '/issue/edit/',
+                data: {
+                    issue_pk: $('#issue_pk').val(),
+                    domain: $('.form input[name=domain]').val(),
+                    description: $('.form input[name=description]').val(),
+                    label: $('.form select').val(),
+                    csrfmiddlewaretoken: $('.form input[name=csrfmiddlewaretoken]').val(),
+                },
+                success: function (data) {
+                    $('.issue-desc').text($('.form input[name=description]').val());
+                    $('.issue-domain').text($('.form input[name=domain]').val());
+                    var sanitizedDomain = sanitizeURL($('.form input[name=domain]').val());
+                    $('.issue-domain').attr("href", sanitizedDomain);
+                    label = $('.form select').val();
+                    var l = $(".form select option[value='" + label + "']").text();
+                    $('.bug-label').text(l);
+                    $('.form').hide();
+                    $('.editables').show();
+                    $.notify("Issue updated!", {
+                        style: "custom",
+                        className: "success"
+                    });
+                    if (data === "Domain Created")
+                        $.notify("Domain Added!", {
+                            style: "custom",
+                            className: "success"
+                        });
+                },
+                error: function () {
+                    $.notify("Some error occurred!", {
+                        style: "custom",
+                        className: "danger"
+                    });
+                }
+            });
+        });
+    }
+    </script> -->
+    <script type="module">import lineClamp from 'https://cdn.jsdelivr.net/npm/line-clamp@1.0.0/+esm'</script>
 {% endblock content %}

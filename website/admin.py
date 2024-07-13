@@ -7,6 +7,7 @@ from import_export.admin import ImportExportModelAdmin
 from website.models import (
     IP,
     Bid,
+    ChatBotLog,
     Company,
     CompanyAdmin,
     ContributorStats,
@@ -289,6 +290,10 @@ class MonitorAdmin(admin.ModelAdmin):
     )
 
 
+class ChatBotLogAdmin(admin.ModelAdmin):
+    list_display = ("id", "question", "answer", "timestamp")
+
+
 # Register all models with their respective admin classes
 admin.site.register(ContributorStats)
 admin.site.register(Bid, BidAdmin)
@@ -307,7 +312,7 @@ admin.site.register(Payment, PaymentAdmin)
 admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
 admin.site.register(HuntPrize)
 admin.site.register(Notification)
-
+admin.site.register(ChatBotLog, ChatBotLogAdmin)
 
 # Register missing models
 admin.site.register(InviteFriend)

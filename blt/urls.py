@@ -33,9 +33,8 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
-from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 etc
+from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 etc; AutoLabel,
     AllIssuesView,
-    AutoLabel,
     CompanySettings,
     ContributorStatsView,
     CreateHunt,
@@ -73,9 +72,11 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
+    blt_tomato,
     change_bid_status,
     chatbot_conversation,
     contributors_view,
+    create_github_issue,
     deletions,
     dislike_issue2,
     dislike_issue3,
@@ -94,6 +95,7 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     submit_pr,
     subscribe_to_domains,
     vote_count,
+    weekly_report,
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
@@ -128,7 +130,9 @@ handler404 = "website.views.handler404"
 handler500 = "website.views.handler500"
 
 urlpatterns = [
-    path("company/", CompanyViewSet.as_view({"get": "list", "post": "create"}), name="company"),
+    path(
+        "api/companies/", CompanyViewSet.as_view({"get": "list", "post": "create"}), name="company"
+    ),
     path("invite-friend/", website.views.invite_friend, name="invite_friend"),
     path("referral/", website.views.referral_signup, name="referral_signup"),
     path("captcha/", include("captcha.urls")),
@@ -296,8 +300,9 @@ urlpatterns = [
     re_path(r"^like_issue3/(?P<issue_pk>\d+)/$", like_issue3, name="like_issue3"),
     re_path(r"^dislike_issue3/(?P<issue_pk>\d+)/$", dislike_issue3, name="dislike_issue3"),
     re_path(r"^flag_issue3/(?P<issue_pk>\d+)/$", flag_issue3, name="flag_issue3"),
-    # TODO(b) track this
     re_path(r"^resolve/(?P<id>\w+)/$", resolve, name="resolve"),
+    # TODO(b) track this
+    re_path(r"^create_github_issue/(?P<id>\w+)/$", create_github_issue, name="create_github_issue"),
     re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
     re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
@@ -510,7 +515,7 @@ urlpatterns = [
     path("change_bid_status/", change_bid_status, name="change_bid_status"),
     path("fetch-current-bid/", fetch_current_bid, name="fetch_current_bid"),
     path("Submitpr/", submit_pr, name="submit_pr"),
-    path("issue-auto-label/", AutoLabel, name="AutoLabel"),
+    path("weekly-report/", weekly_report, name="weekly_report"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s]+)",
         website.views.trademark_detailview,
@@ -532,6 +537,7 @@ urlpatterns = [
         name="today-contributor-stats",
     ),
     path("api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"),
+    path("blt-tomato/", blt_tomato, name="blt-tomato"),
 ]
 
 if settings.DEBUG:
