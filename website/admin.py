@@ -297,6 +297,7 @@ class ChatBotLogAdmin(admin.ModelAdmin):
 class SuggestionsAdmin(admin.ModelAdmin):
     list_display = ("title", "description", "name", "email", "up_vote", "id", "down_vote")
 
+
 # Register all models with their respective admin classes
 admin.site.register(ContributorStats)
 admin.site.register(Bid, BidAdmin)

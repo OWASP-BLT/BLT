@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
-{% include "includes/sidenav.html" %}
-<style>
+    {% include "includes/sidenav.html" %}
+    <style>
     .container {
         display: flex;
         margin-top: 40px;
@@ -82,9 +82,9 @@
     }
 
     .suggestion-vote button {
-        background-color: #ccc;
+        background-color: #2b2b2b;
         border: none;
-        padding: 10px;
+        padding: 2px;
         border-radius: 5px;
         cursor: pointer;
         margin-right: 5px;
@@ -95,49 +95,57 @@
         background-color: red;
         color: white;
     }
-</style>
-
-<div id="heading-container">
-    <h1 id="heading">Suggest Features</h1>
-</div>
-
-<div class="container">
-    <div class="list-section">
-        <ul class="suggestion-list">
-            {% for suggestion in suggestions %}
-            <li>
-                <h3>{{ suggestion.title }}</h3>
-                <p>Description: {{ suggestion.description }}</p>
-                <p><strong>Name:</strong> {{ suggestion.name }}</p>
-                <p><strong>Email:</strong> {{ suggestion.email }}</p>
-                <div class="suggestion-vote">
-                    <button type="button" onclick="upvote(event)" id="upvote---{{ suggestion.id }}">&#8593;</button>
-                    <label id="up_vote-{{ suggestion.id }}">{{ suggestion.up_vote }}</label>
-                    <button type="button" onclick="downvote(event)" id="downvote---{{ suggestion.id }}">&#8595;</button>
-                    <label id="down_vote-{{ suggestion.id }}">{{ suggestion.down_vote }}</label>
-                </div>
-            </li>
-            {% endfor %}
-        </ul>
+    </style>
+    <div id="heading-container">
+        <h1 id="heading">Suggest Features</h1>
     </div>
-    <div class="form-section">
-        <h2 id="semiheading">Suggest us Features</h2>
-        <form id="suggestionForm">
-            {% csrf_token %}
-            <label>Title</label>
-            <input type="text" id="title" name="title" placeholder="Your suggestion">
-            <label>Description</label>
-            <textarea id="description" name="description" rows="4" placeholder="Description of your suggestion (optional)"></textarea>
-            <label>Name</label>
-            <input type="text" id="name" name="name" placeholder="Your name">
-            <label>Email</label>
-            <input type="email" id="email" name="email" placeholder="Your email">
-            <button type="submit" onclick="Savefeature()">Post Suggestion</button>
-        </form>
+    <div class="container">
+        <div class="list-section">
+            <ul class="suggestion-list">
+                {% for suggestion in suggestions %}
+                    <li>
+                        <h3>{{ suggestion.title }}</h3>
+                        <p>Description: {{ suggestion.description }}</p>
+                        <p>
+                            <strong>Name:</strong> {{ suggestion.name }}
+                        </p>
+                        <p>
+                            <strong>Email:</strong> {{ suggestion.email }}
+                        </p>
+                        <div class="suggestion-vote">
+                            <button type="button"
+                                    onclick="upvote(event)"
+                                    id="upvote---{{ suggestion.id }}">↑</button>
+                            <label id="up_vote-{{ suggestion.id }}">{{ suggestion.up_vote }}</label>
+                            <button type="button"
+                                    onclick="downvote(event)"
+                                    id="downvote---{{ suggestion.id }}">↓</button>
+                            <label id="down_vote-{{ suggestion.id }}">{{ suggestion.down_vote }}</label>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="form-section">
+            <h2 id="semiheading">Suggest us Features</h2>
+            <form id="suggestionForm">
+                {% csrf_token %}
+                <label>Title</label>
+                <input type="text" id="title" name="title" placeholder="Your suggestion">
+                <label>Description</label>
+                <textarea id="description"
+                          name="description"
+                          rows="4"
+                          placeholder="Description of your suggestion (optional)"></textarea>
+                <label>Name</label>
+                <input type="text" id="name" name="name" placeholder="Your name">
+                <label>Email</label>
+                <input type="email" id="email" name="email" placeholder="Your email">
+                <button type="submit" onclick="Savefeature()">Post Suggestion</button>
+            </form>
+        </div>
     </div>
-</div>
-
-<script>
+    <script>
     function upvote(event) {
         const button = event.target;
         const id = button.id.split('---')[1];
@@ -166,15 +174,15 @@
             
             if (downvoteBtn.classList.contains('active')) {
                 downvoteBtn.classList.remove('active');
-                downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) + 1;
-                down_vote = false;
+                downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) - 1;
+                down_vote = true;
             }
         }
         fetch('/vote-suggestion/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'), // Fetch CSRF token from cookies
+                'X-CSRFToken': getCookie('csrftoken'),
             },
             body: JSON.stringify({ suggestion_id: id, up_vote: up_vote, down_vote: down_vote }),
         })
@@ -205,13 +213,13 @@
         let down_vote;
 
         if (downvoteBtn.classList.contains('active')) {
-            downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) + 1;
+            downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) - 1;
             downvoteBtn.classList.remove('active');
             down_vote = true;
         } else {
-            downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) - 1;
+            downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) + 1;
             downvoteBtn.classList.add('active');
-            down_vote = true;
+            down_vote = false;
             
             if (upvoteBtn.classList.contains('active')) {
                 upvoteBtn.classList.remove('active');
@@ -243,7 +251,6 @@
             const cookies = document.cookie.split(';');
             for (let i = 0; i < cookies.length; i++) {
                 const cookie = cookies[i].trim();
-                // Extract CSRF token
                 if (cookie.startsWith(name + '=')) {
                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                     break;
@@ -297,5 +304,5 @@
             console.error('Error:', error);
         });
     }
-</script>
-{% endblock %}
+    </script>
+{% endblock content %}
