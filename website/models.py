@@ -636,3 +636,15 @@ class ChatBotLog(models.Model):
 
     def __str__(self):
         return f"Q: {self.question} | A: {self.answer} at {self.timestamp}"
+
+class Suggestion(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField(max_length=1000, null=True, blank=True)
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    up_vote = models.IntegerField(null=True, blank=True, default=0)
+    down_vote = models.IntegerField(null=True, blank=True, default=0)
+    id = models.UUIDField( primary_key = True, default = uuid.uuid4, editable = False)
+
+    def __str__(self):
+        return f"{self.title} by {self.name}"

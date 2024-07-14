@@ -95,6 +95,7 @@ from website.models import (
     Payment,
     Points,
     Subscription,
+    Suggestion,
     UserProfile,
     Wallet,
     Winner,
@@ -4692,3 +4693,49 @@ def blt_tomato(request):
         project["funding_hyperlinks"] = funding_link
 
     return render(request, "blt_tomato.html", {"projects": data})
+
+@login_required
+def vote_suggestions(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        suggestion_id = data.get("suggestion_id")
+        suggestion = Suggestion.objects.get(id=suggestion_id)
+        up_vote = data.get("up_vote")
+        down_vote = data.get("down_vote")
+        print(up_vote, down_vote)
+        if up_vote == True:
+            suggestion.up_vote += 1
+        elif up_vote == False:
+            suggestion.up_vote -= 1
+        if down_vote == True:
+            suggestion.down_vote -= 1
+        elif down_vote == False:
+            suggestion.down_vote += 1
+        suggestion.save()
+        response = {"success": True, "up_vote": suggestion.up_vote, "down_vote": suggestion.down_vote}
+        return JsonResponse(response)
+
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
+
+@login_required
+def add_suggestions(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        title = data.get("title")
+        description = data.get("description", "")
+        name = data.get("name")
+        email = data.get("email")
+        id =  str(uuid.uuid4())
+        if title and description and name and email:
+            suggestion = Suggestion(title=title, description=description, name=name, email=email,id=id)
+            suggestion.save()
+            messages.success(request, "Suggestion added successfully.")
+            return JsonResponse({"status": "success"})
+        else:
+            messages.error(request, "Please fill all the fields.")
+            return JsonResponse({"status": "error"}, status=400)
+
+
+def view_suggestions(request):
+    suggestion = Suggestion.objects.all()
+    return render(request, "feature_suggestion.html", {"suggestions": suggestion})
