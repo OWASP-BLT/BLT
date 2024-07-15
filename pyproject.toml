@@ -69,7 +69,7 @@ pydantic = "^2.7.3"
 pydantic_core = "^2.18.4"
 langchain = "^0.2.1"
 langchain-community = "^0.2.1"
-langchain-core = "^0.2.16"
+langchain-core = "^0.2.18"
 langchain-openai = "^0.1.15"
 unstructured = "^0.14.4"
 Markdown = "^3.6"
@@ -80,7 +80,7 @@ psutil = "^5.9.8"
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"
 isort = "^5.13.2"
-ruff = "^0.5.1"
+ruff = "^0.5.2"
 pre-commit = "^3.7.1"
 
 [tool.isort]
