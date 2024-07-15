@@ -6,9 +6,7 @@
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-
     {% if today %}
-        <!-- make same table just have username and Pull Requests -->
         <div class="overflow-x-auto relative shadow-md sm:rounded-lg py-8 px-10 bg-white dark:bg-[#f7f7f7] my-20 mx-8">
             <table class="w-full text-lg text-left text-gray-500 dark:text-gray-400 main_table"
                    id="userStatsTable">
