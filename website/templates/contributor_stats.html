@@ -53,7 +53,7 @@
                 </thead>
                 <tbody>
                     {% for user, stats in user_stats.items %}
-                        <tr class="bg-[#1d1d1e] border-b dark:bg-white dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                        <tr class="border-b dark:bg-white dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                             <th scope="row"
                                 class="py-4 px-6 font-semibold text-black whitespace-nowrap dark:text-gray-900">
                                 {{ user }}
@@ -84,7 +84,7 @@
                             </td>
                         </tr>
                     {% empty %}
-                        <tr class="bg-[#1d1d1e] dark:bg-[#f7f7f7]">
+                        <tr class="dark:bg-[#f7f7f7]">
                             <td colspan="7" class="py-4 px-6 text-center">No activity found.</td>
                         </tr>
                     {% endfor %}
