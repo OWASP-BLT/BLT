@@ -71,6 +71,7 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
+    blt_tomato,
     change_bid_status,
     chatbot_conversation,
     contributors_view,
@@ -534,6 +535,7 @@ urlpatterns = [
         name="today-contributor-stats",
     ),
     path("api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"),
+    path("blt-tomato/", blt_tomato, name="blt-tomato"),
 ]
 
 if settings.DEBUG:

@@ -47,6 +47,7 @@ class Company(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_companies")
     name = models.CharField(max_length=255)
+    description = models.CharField(max_length=500, null=True, blank=True)
     logo = models.ImageField(upload_to="company_logos", null=True, blank=True)
     url = models.URLField()
     email = models.EmailField(null=True, blank=True)
@@ -626,3 +627,12 @@ class Bid(models.Model):
     #         )
 
     #     super().save(*args, **kwargs)
+
+
+class ChatBotLog(models.Model):
+    question = models.TextField()
+    answer = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Q: {self.question} | A: {self.answer} at {self.timestamp}"

@@ -11,6 +11,7 @@ import uuid
 from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+from pathlib import Path
 from urllib.parse import urlparse, urlsplit, urlunparse
 
 import humanize
@@ -81,6 +82,7 @@ from comments.models import Comment
 from website.models import (
     IP,
     Bid,
+    ChatBotLog,
     Company,
     CompanyAdmin,
     ContributorStats,
@@ -3794,6 +3796,7 @@ def like_issue3(request, issue_pk):
         userprof.issue_upvoted.remove(issue)
     else:
         userprof.issue_upvoted.add(issue)
+    if issue.user is not None:
         liked_user = issue.user
         liker_user = request.user
         issue_pk = issue.pk
@@ -4053,7 +4056,7 @@ class IssueView3(DetailView):
             .values("id", "description", "markdown_description", "screenshots__image")
             .order_by("views")[:4]
         )
-        # TODO(b) fix this, edit: Hopefully this will work
+        # TODO test if email works
         if isinstance(self.request.user, User):
             context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
                 pk=self.request.user.userprofile.id
@@ -4082,12 +4085,12 @@ def create_github_issue(request, id):
     referer = request.META.get("HTTP_REFERER")
     if not referer:
         return HttpResponseForbidden()
-    if issue.github_url is not None:
+    if issue.github_url:
         return JsonResponse({"status": "Failed", "status_reason": "GitHub Issue Exists"})
     if (
-        os.environ.get("GITHUB_ACCESS_TOKEN")
-        and request.user.is_authenticated
-        and (issue.user == request.user or request.user.is_superuser)
+        os.environ.get("GITHUB_ACCESS_TOKEN") and request.user.is_authenticated
+        # Any Authenticated user will be able to create a GitHub issue
+        # and (issue.user == request.user or request.user.is_superuser)
     ):
         screenshot_text = ""
         for screenshot in screenshot_all:
@@ -4623,6 +4626,10 @@ def chatbot_conversation(request):
     # Increment the request count
     cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
     request.session["buffer"] = memory.buffer
+
+    # Log the conversation
+    ChatBotLog.objects.create(question=question, answer=response["answer"])
+
     return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
 
 
@@ -4665,3 +4672,23 @@ def weekly_report(request):
         return HttpResponse("An error occurred while sending the weekly report")
 
     return HttpResponse("Weekly report sent successfully.")
+
+
+def blt_tomato(request):
+    current_dir = Path(__file__).parent
+    json_file_path = current_dir / "fixtures" / "blt_tomato_project_link.json"
+
+    try:
+        with json_file_path.open("r") as json_file:
+            data = json.load(json_file)
+    except Exception:
+        data = []
+
+    for project in data:
+        funding_details = project.get("funding_details", "").split(", ")
+        funding_links = [url.strip() for url in funding_details if url.startswith("https://")]
+
+        funding_link = funding_links[0] if funding_links else "#"
+        project["funding_hyperlinks"] = funding_link
+
+    return render(request, "blt_tomato.html", {"projects": data})
