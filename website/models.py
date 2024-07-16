@@ -275,7 +275,7 @@ class Issue(models.Model):
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
     cve_id = models.CharField(max_length=16, null=True, blank=True)
     cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
-    infringing_domain_name = models.TextField(max_length=100, null=True, blank=True)
+    infringing_domain_name = models.TextField(max_length=100, blank=True)
     infringing_domain_url = models.URLField(default="", null=True, blank=True)
     registration_no = models.PositiveIntegerField(null=True, blank=True)
     serial_no = models.PositiveIntegerField(null=True, blank=True)
