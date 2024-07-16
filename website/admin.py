@@ -20,6 +20,7 @@ from website.models import (
     Monitor,
     Payment,
     Points,
+    Project,
     Subscription,
     Transaction,
     UserProfile,
@@ -293,7 +294,21 @@ class ChatBotLogAdmin(admin.ModelAdmin):
     list_display = ("id", "question", "answer", "timestamp")
 
 
+class ProjectAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "name",
+        "description",
+        "url",
+        "created",
+        "modified",
+    )
+
+    search_fields = ["name", "description", "url"]
+
+
 # Register all models with their respective admin classes
+admin.site.register(Project, ProjectAdmin)
 admin.site.register(ContributorStats)
 admin.site.register(Bid, BidAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)
