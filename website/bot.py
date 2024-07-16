@@ -147,6 +147,8 @@ def load_vector_store():
 
 
 def conversation_chain(vector_store):
+    retrieval_search_results = 5
+    summary_max_memory_token_limit = 1500
     prompt = ChatPromptTemplate.from_messages(
         (
             "human",
@@ -162,9 +164,14 @@ def conversation_chain(vector_store):
         )
     )
     llm = ChatOpenAI(model_name="gpt-3.5-turbo-0125", temperature=0.5)
-    retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 3})
+    retriever = vector_store.as_retriever(
+        search_type="similarity", search_kwargs={"k": retrieval_search_results}
+    )
     memory = ConversationSummaryMemory(
-        llm=llm, return_messages=True, memory_key="chat_history", max_token_limit=1000
+        llm=llm,
+        return_messages=True,
+        memory_key="chat_history",
+        max_token_limit=summary_max_memory_token_limit,
     )
 
     crc = ConversationalRetrievalChain.from_llm(
