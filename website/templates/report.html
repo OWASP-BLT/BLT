@@ -53,13 +53,6 @@
             right: 15px;
     }
 
-    #generateLabel{
-        margin-left: 37%;
-    }
-
-    #trademark-fields{
-        display: none;
-    }
     </style>
 {% endblock style %}
 {% block content %}
@@ -173,17 +166,17 @@
                     </div>
                     <div class="sm:col-span-1 w-full min-w-[150px]">
                         <label for="label"
-                               class="block text-2xl font-semibold leading-6 text-gray-900 hidden">
+                               class="block text-2xl font-semibold leading-6 text-gray-900">
                             {% trans "BUG TYPE" %}
                         </label>
                         <div class="mt-2">
                             <select name="label"
-                                    required
                                     id="labelSelect"
+                                    required
                                     data-intro="Categorize the bug."
                                     data-step="3"
                                     class="flex w-full placeholder:text-xl rounded-md border-0 py-4 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset">
-                                <option value="0"selected>General</option>
+                                <option value="0" selected="selected">General</option>
                                 <option value="1">Number error</option>
                                 <option value="2">Functional</option>
                                 <option value="3">Performance</option>
@@ -365,14 +358,7 @@
             </div>
             <div id="bug-description-container"
                  class="w-[100%] flex justify-between md:pr-10 flex-wrap border-b border-gray-900/10 pb-10 my-10">
-                <div class="w-1/2">
-                    {% include "includes/md_editor.html" %}
-                    <button id="generateLabel"
-                            onclick="Submit(event)"
-                            class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500">
-                        Generate Label
-                    </button>
-                </div>
+                <div class="w-1/2">{% include "includes/md_editor.html" %}</div>
                 <div class="w-1/2 pl-10 mt-5">
                     <div class="flex w-full items-center justify-between">
                         <h2 class="text-2xl font-semibold leading-7 text-gray-900">{% trans "ADD TEAM MEMBERS" %}</h2>
@@ -622,54 +608,14 @@
         email_container.appendChild(email_container_child_html)
     }
 
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                // Does this cookie string begin with the name we want?
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
+    document.addEventListener("DOMContentLoaded", function() {
+        // Get the value from the URL parameter
+        var labelParam = new URLSearchParams(window.location.search).get("label");
 
-    function Submit() {
-    event.preventDefault();
-    const BugDescription = document.getElementById('markdownInput').value;
-    const csrftoken = getCookie('csrftoken');
-    fetch(`/issue-auto-label/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken
-        },
-        body: JSON.stringify({ BugDescription: BugDescription }),
-    })
-    .then(response => response.json())
-    .then(data => {
-        if ('label' in data) {
-            console.log('Received label:', data.label);
-
-            const labelSelect = document.getElementById("labelSelect");
-            console.log('Current labelSelect value:', labelSelect.value);
-            labelSelect.selectedIndex = parseInt(data.label);
-            console.log('Selected label:', labelSelect.options[labelSelect.selectedIndex].text);
-            console.log('Updated labelSelect value:', labelSelect.selectedIndex);
+        // Set the selected option based on the parameter
+        if (labelParam !== null) {
+            document.getElementById("labelSelect").value = labelParam;
         }
-        else {
-            console.log('No label found');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
     });
-    return true;
-}
-
     </script>
 {% endblock after_js %}

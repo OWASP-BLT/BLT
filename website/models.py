@@ -43,17 +43,11 @@ class Subscription(models.Model):
     feature = models.BooleanField(default=True)
 
 
-def generate_uuid_for_company(apps, schema_editor):
-    company_model = apps.get_model("website", "Company")
-    for obj in company_model.objects.all():
-        obj.company_id = uuid.uuid4()  # Replace with your desired UUID generation logic
-        obj.save()
-
-
 class Company(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_companies")
     name = models.CharField(max_length=255)
+    description = models.CharField(max_length=500, null=True, blank=True)
     logo = models.ImageField(upload_to="company_logos", null=True, blank=True)
     url = models.URLField()
     email = models.EmailField(null=True, blank=True)
@@ -277,8 +271,8 @@ class Issue(models.Model):
     cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
     infringing_domain_name = models.TextField(max_length=100, blank=True)
     infringing_domain_url = models.URLField(default="", null=True, blank=True)
-    registration_no = models.PositiveIntegerField(null=True, blank=True)
-    serial_no = models.PositiveIntegerField(null=True, blank=True)
+    registration_number = models.PositiveIntegerField(null=True, blank=True)
+    serial_number = models.PositiveIntegerField(null=True, blank=True)
     contact_info = models.CharField(max_length=100, null=True, blank=True)
 
     def __unicode__(self):
@@ -639,3 +633,12 @@ class Bid(models.Model):
     #         )
 
     #     super().save(*args, **kwargs)
+
+
+class ChatBotLog(models.Model):
+    question = models.TextField()
+    answer = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Q: {self.question} | A: {self.answer} at {self.timestamp}"
