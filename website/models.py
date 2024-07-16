@@ -639,13 +639,23 @@ class ChatBotLog(models.Model):
 
 
 class Suggestion(models.Model):
+    user = models.CharField(max_length=100, default="Add user")
     title = models.CharField(max_length=200)
     description = models.TextField(max_length=1000, null=True, blank=True)
     name = models.CharField(max_length=100)
-    email = models.EmailField()
     up_vote = models.IntegerField(null=True, blank=True, default=0)
     down_vote = models.IntegerField(null=True, blank=True, default=0)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     def __str__(self):
         return f"{self.title} by {self.name}"
+
+
+class SuggestionLikes(models.Model):
+    suggestion = models.ForeignKey(Suggestion, on_delete=models.CASCADE)
+    user = models.CharField(max_length=100, default="Add user")
+    up_vote = models.BooleanField(default=False)
+    down_vote = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Suggestion {self.suggestion.id}"

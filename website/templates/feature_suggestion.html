@@ -95,6 +95,9 @@
         background-color: red;
         color: white;
     }
+    .suggestion-list li h1{
+        font-size: 20px;
+    }
     </style>
     <div id="heading-container">
         <h1 id="heading">Suggest Features</h1>
@@ -104,14 +107,19 @@
             <ul class="suggestion-list">
                 {% for suggestion in suggestions %}
                     <li>
-                        <h3>{{ suggestion.title }}</h3>
-                        <p>Description: {{ suggestion.description }}</p>
+                        <h1>
+                            <strong>{{ suggestion.title }}</strong>
+                        </h1>
+                        <p>
+                            <strong>Description:</strong> {{ suggestion.description }}
+                        </p>
                         <p>
                             <strong>Name:</strong> {{ suggestion.name }}
                         </p>
                         <p>
-                            <strong>Email:</strong> {{ suggestion.email }}
+                            <strong>User:</strong>{{ suggestion.user }}
                         </p>
+                        <p hidden id="suggestion-id---{{ suggestion.id }}">{{ suggestion.id }}</p>
                         <div class="suggestion-vote">
                             <button type="button"
                                     onclick="upvote(event)"
@@ -139,13 +147,42 @@
                           placeholder="Description of your suggestion (optional)"></textarea>
                 <label>Name</label>
                 <input type="text" id="name" name="name" placeholder="Your name">
-                <label>Email</label>
-                <input type="email" id="email" name="email" placeholder="Your email">
+                <br>
                 <button type="submit" onclick="Savefeature()">Post Suggestion</button>
             </form>
         </div>
     </div>
     <script>
+    window.onload = function() {
+        setvote();
+    };
+
+    function setvote(){
+        document.querySelectorAll('p[id^="suggestion-id-"]').forEach(function(element) {
+            const id = element.id.split('---')[1];
+            console.log(id);
+            const upvoteBtn = document.getElementById(`upvote---${id}`);
+            const downvoteBtn = document.getElementById(`downvote---${id}`);
+            fetch('/set-vote/', {
+                method:'POST',
+                headers:{
+                    'Content-Type' : 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body : JSON.stringify({id:id}),
+            })
+            .then(response=>response.json())
+            .then(data=>{
+                if(data.up_vote){
+                    upvoteBtn.classList.add('active');
+                }
+                else if(data.down_vote){
+                    downvoteBtn.classList.add('active');
+                }
+            });
+        });
+    }
+
     function upvote(event) {
         const button = event.target;
         const id = button.id.split('---')[1];
@@ -159,7 +196,7 @@
             console.error('Element not found for id:', id);
             return;
         }
-
+        
         let up_vote;
         let down_vote;
 
@@ -175,7 +212,7 @@
             if (downvoteBtn.classList.contains('active')) {
                 downvoteBtn.classList.remove('active');
                 downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) - 1;
-                down_vote = true;
+                down_vote = false;
             }
         }
         fetch('/vote-suggestion/', {
@@ -184,7 +221,7 @@
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken'),
             },
-            body: JSON.stringify({ suggestion_id: id, up_vote: up_vote, down_vote: down_vote }),
+            body: JSON.stringify({ suggestion_id: id, up_vote: up_vote, down_vote:   down_vote }),
         })
         .then(response => response.json())
         .then(data => {
@@ -215,11 +252,12 @@
         if (downvoteBtn.classList.contains('active')) {
             downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) - 1;
             downvoteBtn.classList.remove('active');
-            down_vote = true;
-        } else {
+            down_vote = false;
+        }
+        else {
             downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) + 1;
             downvoteBtn.classList.add('active');
-            down_vote = false;
+            down_vote = true;
             
             if (upvoteBtn.classList.contains('active')) {
                 upvoteBtn.classList.remove('active');
@@ -261,25 +299,14 @@
     }
 
 
-
-    function isValidEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    }
-
     function Savefeature() {
         const form = document.getElementById("suggestionForm");
         const formData = new FormData(form);
-        const email = formData.get('email');
         const title = formData.get('title');
         const description = formData.get('description');
         const name = formData.get('name');
-        if (!isValidEmail(email)) {
-            alert('Please provide a valid email address.');
-            return;
-        }
 
-        if (!title || !name || !email) {
+        if (!title || !name) {
             alert('Please fill all the required fields.');
             return;
         }
@@ -290,7 +317,7 @@
                 'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({email: email,name: name,title: title,description: description}),
+            body: JSON.stringify({name: name,title: title,description: description}),
         })
         .then(response => response.json())
         .then(data => {

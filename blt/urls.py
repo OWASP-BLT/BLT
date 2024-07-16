@@ -92,6 +92,7 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     like_issue3,
     resolve,
     select_bid,
+    set_vote,
     submit_pr,
     subscribe_to_domains,
     view_suggestions,
@@ -520,6 +521,7 @@ urlpatterns = [
     path("add-suggestion/", add_suggestions, name="add_suggestions"),
     path("view-suggestion/", view_suggestions, name="view_suggestions"),
     path("vote-suggestion/", vote_suggestions, name="vote_suggestions"),
+    path("set-vote/", set_vote, name="set_vote"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s]+)",
         website.views.trademark_detailview,

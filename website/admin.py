@@ -22,6 +22,7 @@ from website.models import (
     Points,
     Subscription,
     Suggestion,
+    SuggestionLikes,
     Transaction,
     UserProfile,
     Wallet,
@@ -295,7 +296,11 @@ class ChatBotLogAdmin(admin.ModelAdmin):
 
 
 class SuggestionsAdmin(admin.ModelAdmin):
-    list_display = ("title", "description", "name", "email", "up_vote", "id", "down_vote")
+    list_display = ("user", "title", "description", "name", "up_vote", "id", "down_vote")
+
+
+class SuggestionLikesAdmin(admin.ModelAdmin):
+    list_display = ("user", "suggestion", "up_vote", "down_vote")
 
 
 # Register all models with their respective admin classes
@@ -317,6 +322,7 @@ admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
 admin.site.register(HuntPrize)
 admin.site.register(ChatBotLog, ChatBotLogAdmin)
 admin.site.register(Suggestion, SuggestionsAdmin)
+admin.site.register(SuggestionLikes, SuggestionLikesAdmin)
 
 # Register missing models
 admin.site.register(InviteFriend)
