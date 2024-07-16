@@ -365,10 +365,19 @@ class CompanyDashboardManageBugsView(View):
             .distinct()
         )
 
+        company_obj = Company.objects.filter(id=id).first()
+
+        # get all domains of this company
+        domains = Domain.objects.filter(company_id=id)
+
+        # get all issues where the url is in the domains in descending order
+        issues = Issue.objects.filter(domain__in=domains).order_by("-created")
+
         context = {
             "company": id,
             "companies": companies,
-            "company_obj": Company.objects.filter(id=id).first(),
+            "company_obj": company_obj,
+            "issues": issues,
         }
         return render(request, "company/company_manage_bugs.html", context=context)
 

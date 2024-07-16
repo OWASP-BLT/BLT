@@ -94,6 +94,7 @@ from website.models import (
     Monitor,
     Payment,
     Points,
+    Project,
     Subscription,
     Suggestion,
     SuggestionLikes,
@@ -103,7 +104,14 @@ from website.models import (
 )
 
 from .bot import conversation_chain, is_api_key_valid, load_vector_store
-from .forms import CaptchaForm, HuntForm, MonitorForm, UserDeleteForm, UserProfileForm
+from .forms import (
+    CaptchaForm,
+    GitHubURLForm,
+    HuntForm,
+    MonitorForm,
+    UserDeleteForm,
+    UserProfileForm,
+)
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
@@ -150,6 +158,50 @@ def rebuild_safe_url(url):
     parsed_url = urlparse(url)
     # Rebuild the URL with scheme, netloc, and path only
     return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", ""))
+
+
+class ProjectDetailView(DetailView):
+    model = Project
+
+
+class ProjectListView(ListView):
+    model = Project
+    context_object_name = "projects"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = GitHubURLForm()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = GitHubURLForm(request.POST)
+        if form.is_valid():
+            github_url = form.cleaned_data["github_url"]
+            api_url = github_url.replace("github.com", "api.github.com/repos")
+            response = requests.get(api_url)
+            if response.status_code == 200:
+                data = response.json()
+                project, created = Project.objects.get_or_create(
+                    github_url=github_url,
+                    defaults={
+                        "name": data["name"],
+                        "slug": data["name"].lower(),
+                        "description": data["description"],
+                        "wiki_url": data["html_url"],
+                        "homepage_url": data.get("homepage", ""),
+                        "logo": data["owner"]["avatar_url"],  # assuming avatar_url for logo
+                    },
+                )
+                if created:
+                    messages.success(request, "Project added successfully.")
+                else:
+                    messages.info(request, "Project already exists.")
+            else:
+                messages.error(request, "Failed to fetch project from GitHub.")
+            return redirect("project_list")
+        context = self.get_context_data()
+        context["form"] = form
+        return self.render_to_response(context)
 
 
 # # @cache_page(60 * 60 * 24)

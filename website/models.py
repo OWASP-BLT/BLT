@@ -637,7 +637,6 @@ class ChatBotLog(models.Model):
     def __str__(self):
         return f"Q: {self.question} | A: {self.answer} at {self.timestamp}"
 
-
 class Suggestion(models.Model):
     user = models.CharField(max_length=100, default="Add user")
     title = models.CharField(max_length=200)
@@ -658,3 +657,33 @@ class SuggestionLikes(models.Model):
 
     def __str__(self):
         return f"Suggestion {self.suggestion.id}"
+
+class Project(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    description = models.TextField()
+    github_url = models.URLField()
+    wiki_url = models.URLField(null=True, blank=True)
+    homepage_url = models.URLField(null=True, blank=True)
+    logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    # # these need to be tested
+    # def get_github_logo_save_to_storage(self):
+    #     github_logo = requests.get(f"{self.github_url}/raw/master/logo.png")
+    #     if github_logo.status_code == 200:
+    #         self.logo.save(f"{self.slug}.png", ContentFile(github_logo.content))
+    #         self.save()
+    #         return self.logo.url
+
+    # def save(self, *args, **kwargs):
+    #     if not self.logo:
+    #         self.get_github_logo_save_to_storage()
+    #     super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return f"/project/{self.slug}"
