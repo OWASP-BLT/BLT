@@ -456,7 +456,7 @@ urlpatterns = [
     re_path(r"^api/v1/createwallet/$", website.views.create_wallet, name="create_wallet"),
     re_path(r"^api/v1/count/$", website.views.issue_count, name="api_count"),
     re_path(r"^api/v1/contributors/$", website.views.contributors, name="api_contributor"),
-    re_path(r"^project/(?P<slug>\w+)/$", ProjectDetailView.as_view(), name="project_view"),
+    path("project/<slug:slug>/", ProjectDetailView.as_view(), name="project_view"),
     re_path(
         r"^api/v1/createissues/$",
         csrf_exempt(IssueCreate.as_view()),

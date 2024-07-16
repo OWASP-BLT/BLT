@@ -20,6 +20,7 @@ from website.models import (
     Monitor,
     Payment,
     Points,
+    Project,
     Subscription,
     Suggestion,
     SuggestionLikes,
@@ -303,7 +304,21 @@ class SuggestionLikesAdmin(admin.ModelAdmin):
     list_display = ("user", "suggestion", "up_vote", "down_vote")
 
 
+class ProjectAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "name",
+        "description",
+        "url",
+        "created",
+        "modified",
+    )
+
+    search_fields = ["name", "description", "url"]
+
+
 # Register all models with their respective admin classes
+admin.site.register(Project, ProjectAdmin)
 admin.site.register(ContributorStats)
 admin.site.register(Bid, BidAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)
