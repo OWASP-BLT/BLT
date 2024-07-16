@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}
+    Project List
+{% endblock title %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container">
+        <h2>Project List</h2>
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li {% if message.tags %}class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        <form method="post" class="add-project-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Add Project</button>
+        </form>
+        <ul class="project-list">
+            {% for project in projects %}
+                <a href="{% url 'project_view' project.slug %}" class="project-link">
+                    <li class="project-item">
+                        {% if project.logo %}
+                            <img src="{{ project.logo }}"
+                                 alt="{{ project.name }} logo"
+                                 class="project-logo"
+                                 height="100"
+                                 width="100">
+                        {% endif %}
+                        <div class="project-details">
+                            <h3>{{ project.name }}</h3>
+                            <p>{{ project.description }}</p>
+                            <div class="project-links">
+                                <a href="{{ project.github_url }}" target="_blank" title="GitHub">
+                                    <i class="fab fa-github"></i> GitHub
+                                </a>
+                                {% if project.wiki_url %}
+                                    <a href="{{ project.wiki_url }}" target="_blank" title="Wiki">
+                                        <i class="fas fa-book"></i> Wiki
+                                    </a>
+                                {% endif %}
+                                {% if project.homepage_url %}
+                                    <a href="{{ project.homepage_url }}" target="_blank" title="Homepage">
+                                        <i class="fas fa-home"></i> Homepage
+                                    </a>
+                                {% endif %}
+                            </div>
+                            <div class="project-stats">
+                                <p>Top Contributors:</p>
+                                <div class="contributors">
+                                    {% for contributor in project.get_top_contributors %}
+                                        <img src="{{ contributor.avatar_url }}"
+                                             alt="{{ contributor.name }}"
+                                             class="contributor-avatar"
+                                             title="{{ contributor.name }}"
+                                             height="40"
+                                             width="40">
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                </a>
+            {% endfor %}
+        </ul>
+    </div>
+    <style>
+.container {
+    margin-top: 30px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: #f8f8f8;
+    border-bottom: 1px solid #ddd;
+}
+
+header h1 {
+    margin: 0;
+}
+h3 {
+   font-size: 20px;
+}
+
+header nav a {
+    margin-left: 1rem;
+    text-decoration: none;
+    color: #333;
+}
+
+header nav a:hover {
+    text-decoration: underline;
+}
+
+.add-project-form {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+}
+
+.add-project-form input, .add-project-form textarea, .add-project-form button {
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid #ddd;
+}
+
+.add-project-form button {
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.add-project-form button:hover {
+    background: #0056b3;
+}
+
+.messages {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+}
+
+.messages li {
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid #ddd;
+}
+
+.messages li.success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.messages li.error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.project-list {
+    list-style: none;
+    padding: 0;
+}
+
+.project-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.project-item {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.project-logo {
+    max-width: 100px;
+    margin-right: 1rem;
+}
+
+.project-details {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.project-links a {
+    display: inline-block;
+    margin-right: 0.5rem;
+    text-decoration: none;
+    color: #007bff;
+}
+
+.project-links a i {
+    margin-right: 0.3rem;
+}
+
+.project-links a:hover {
+    text-decoration: underline;
+}
+
+.project-stats {
+    margin-top: 1rem;
+}
+
+.contributors {
+    display: flex;
+    margin-top: 0.5rem;
+}
+
+.contributor-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+    </style>
+{% endblock content %}

@@ -61,3 +61,11 @@ class BidForm(forms.ModelForm):
             "pr_link",
             "bch_address",
         ]
+
+
+class GitHubURLForm(forms.Form):
+    github_url = forms.URLField(
+        label="GitHub URL",
+        required=True,
+        widget=forms.TextInput(attrs={"placeholder": "Add any Github URL"}),
+    )
