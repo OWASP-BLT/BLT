@@ -114,9 +114,6 @@
                             <strong>Description:</strong> {{ suggestion.description }}
                         </p>
                         <p>
-                            <strong>Name:</strong> {{ suggestion.name }}
-                        </p>
-                        <p>
                             <strong>User:</strong>{{ suggestion.user }}
                         </p>
                         <p hidden id="suggestion-id---{{ suggestion.id }}">{{ suggestion.id }}</p>
@@ -145,8 +142,6 @@
                           name="description"
                           rows="4"
                           placeholder="Description of your suggestion (optional)"></textarea>
-                <label>Name</label>
-                <input type="text" id="name" name="name" placeholder="Your name">
                 <br>
                 <button type="submit" onclick="Savefeature()">Post Suggestion</button>
             </form>
@@ -204,11 +199,12 @@
             upvotesLabel.innerHTML = parseInt(upvotesLabel.innerHTML) - 1;
             upvoteBtn.classList.remove('active');
             up_vote=false;
-        } else {
+        }
+        else {
             upvotesLabel.innerHTML = parseInt(upvotesLabel.innerHTML) + 1;
             upvoteBtn.classList.add('active');
             up_vote = true;
-            
+
             if (downvoteBtn.classList.contains('active')) {
                 downvoteBtn.classList.remove('active');
                 downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) - 1;
@@ -235,7 +231,7 @@
     function downvote(event) {
         const button = event.target;
         const id = button.id.split('---')[1];
-        
+
         const upvoteBtn = document.getElementById(`upvote---${id}`);
         const downvoteBtn = document.getElementById(`downvote---${id}`);
         const upvotesLabel = document.getElementById(`up_vote-${id}`);
@@ -304,9 +300,8 @@
         const formData = new FormData(form);
         const title = formData.get('title');
         const description = formData.get('description');
-        const name = formData.get('name');
 
-        if (!title || !name) {
+        if (!title) {
             alert('Please fill all the required fields.');
             return;
         }
@@ -317,7 +312,7 @@
                 'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({name: name,title: title,description: description}),
+            body: JSON.stringify({title: title,description: description}),
         })
         .then(response => response.json())
         .then(data => {

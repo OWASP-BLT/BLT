@@ -4742,7 +4742,7 @@ def vote_suggestions(request):
         }
         return JsonResponse(response)
 
-    return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=402)
 
 
 def set_vote(request):
@@ -4759,7 +4759,6 @@ def set_vote(request):
         ).exists()
         response = {"up_vote": up_vote, "down_vote": down_vote}
         return JsonResponse(response)
-
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
 
 
@@ -4770,12 +4769,9 @@ def add_suggestions(request):
         data = json.loads(request.body)
         title = data.get("title")
         description = data.get("description", "")
-        name = data.get("name")
         id = str(uuid.uuid4())
-        if title and description and name and user:
-            suggestion = Suggestion(
-                user=user, title=title, description=description, name=name, id=id
-            )
+        if title and description and user:
+            suggestion = Suggestion(user=user, title=title, description=description, id=id)
             suggestion.save()
             messages.success(request, "Suggestion added successfully.")
             return JsonResponse({"status": "success"})
@@ -4786,5 +4782,4 @@ def add_suggestions(request):
 
 def view_suggestions(request):
     suggestion = Suggestion.objects.all()
-    suggestion_likes = SuggestionLikes.objects.all()
     return render(request, "feature_suggestion.html", {"suggestions": suggestion})

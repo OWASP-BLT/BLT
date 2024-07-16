@@ -642,7 +642,6 @@ class Suggestion(models.Model):
     user = models.CharField(max_length=100, default="Add user")
     title = models.CharField(max_length=200)
     description = models.TextField(max_length=1000, null=True, blank=True)
-    name = models.CharField(max_length=100)
     up_vote = models.IntegerField(null=True, blank=True, default=0)
     down_vote = models.IntegerField(null=True, blank=True, default=0)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

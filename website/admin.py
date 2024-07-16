@@ -296,7 +296,7 @@ class ChatBotLogAdmin(admin.ModelAdmin):
 
 
 class SuggestionsAdmin(admin.ModelAdmin):
-    list_display = ("user", "title", "description", "name", "up_vote", "id", "down_vote")
+    list_display = ("user", "title", "description", "up_vote", "id", "down_vote")
 
 
 class SuggestionLikesAdmin(admin.ModelAdmin):
