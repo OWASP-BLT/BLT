@@ -6,14 +6,7 @@
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <style>
-        .main_table a:link {
-            color: rgb(0, 0, 0);
-        }
-        .main_table a:visited {
-            color: rgb(0, 0, 0);
-        }
-    </style>
+
     {% if today %}
         <!-- make same table just have username and Pull Requests -->
         <div class="overflow-x-auto relative shadow-md sm:rounded-lg py-8 px-10 bg-white dark:bg-[#f7f7f7] my-20 mx-8">
