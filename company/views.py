@@ -9,6 +9,7 @@ from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import URLValidator
+from django.db import transaction
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.http import Http404
@@ -42,17 +43,17 @@ def get_email_domain(email):
 
 
 def validate_company_user(func):
-    def wrapper(self, request, company, *args, **kwargs):
+    def wrapper(self, request, id, *args, **kwargs):
         company = (
             Company.objects.filter(Q(admin=request.user) | Q(managers__in=[request.user]))
-            .filter(company_id=company)
+            .filter(id=id)
             .first()
         )
 
         if company is None:
             return redirect("company_view")
 
-        return func(self, request, company.company_id, *args, **kwargs)
+        return func(self, request, company.id, *args, **kwargs)
 
     return wrapper
 
@@ -81,7 +82,7 @@ def company_view(request, *args, **kwargs):
 
     company = Company.objects.filter(Q(admin=user) | Q(managers__in=[user])).first()
 
-    return redirect("company_analytics", company=company.company_id)
+    return redirect("company_analytics", id=company.id)
 
 
 class RegisterCompanyView(View):
@@ -111,37 +112,45 @@ class RegisterCompanyView(View):
             messages.error(request, "Company name doesn't match your email domain.")
             return redirect("register_company")
 
-        managers = User.objects.values("id").filter(email__in=data.get("email", []))
-
-        company = Company.objects.filter(name=data["company_name"]).first()
-
-        if company is not None:
-            messages.error(request, "Company already exist.")
+        if Company.objects.filter(name=company_name).exists():
+            messages.error(request, "Company already exists.")
             return redirect("register_company")
 
         company_logo = request.FILES.get("logo")
-        company_logo_file = company_logo.name.split(".")[0]
-        extension = company_logo.name.split(".")[-1]
-        company_logo.name = company_logo_file[:99] + str(uuid.uuid4()) + "." + extension
-        default_storage.save(f"company_logos/{company_logo.name}", company_logo)
-        company = Company.objects.create(
-            admin=user,
-            name=data["company_name"],
-            url=data["company_url"],
-            email=data["support_email"],
-            twitter=data["twitter_url"],
-            facebook=data["facebook_url"],
-            logo=f"company_logos/{company_logo.name}",
-            is_active=True,
-            company_id=uuid.uuid4(),
-        )
+        if company_logo:
+            company_logo_file = company_logo.name.split(".")[0]
+            extension = company_logo.name.split(".")[-1]
+            company_logo.name = f"{company_logo_file[:99]}_{uuid.uuid4()}.{extension}"
+            logo_path = default_storage.save(f"company_logos/{company_logo.name}", company_logo)
+        else:
+            logo_path = None
 
-        company.managers.set([manager["id"] for manager in managers])
-        company.save()
+        try:
+            with transaction.atomic():
+                company = Company.objects.create(
+                    admin=user,
+                    name=company_name,
+                    url=data["company_url"],
+                    email=data["support_email"],
+                    twitter=data.get("twitter_url", ""),
+                    facebook=data.get("facebook_url", ""),
+                    logo=logo_path,
+                    is_active=True,
+                )
 
-        company = Company.objects.filter(Q(admin=user) | Q(managers__in=[user])).first()
+                manager_emails = data.get("email", "").split(",")
+                managers = User.objects.filter(email__in=manager_emails)
+                company.managers.set(managers)
+                company.save()
 
-        return redirect("company_analytics", company=company.company_id)
+        except ValidationError as e:
+            messages.error(request, f"Error saving company: {e}")
+            if logo_path:
+                default_storage.delete(logo_path)
+            return render(request, "company/register_company.html")
+
+        messages.success(request, "Company registered successfully.")
+        return redirect("company_analytics", id=company.id)
 
 
 class CompanyDashboardAnalyticsView(View):
@@ -158,12 +167,12 @@ class CompanyDashboardAnalyticsView(View):
     months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
     def get_general_info(self, company):
-        total_company_bugs = Issue.objects.filter(domain__company__company_id=company).count()
-        total_bug_hunts = Hunt.objects.filter(domain__company__company_id=company).count()
-        total_domains = Domain.objects.filter(company__company_id=company).count()
-        total_money_distributed = Issue.objects.filter(
-            domain__company__company_id=company
-        ).aggregate(total_money=Sum("rewarded"))["total_money"]
+        total_company_bugs = Issue.objects.filter(domain__company__id=company).count()
+        total_bug_hunts = Hunt.objects.filter(domain__company__id=company).count()
+        total_domains = Domain.objects.filter(company__id=company).count()
+        total_money_distributed = Issue.objects.filter(domain__company__id=company).aggregate(
+            total_money=Sum("rewarded")
+        )["total_money"]
         total_money_distributed = 0 if total_money_distributed is None else total_money_distributed
 
         return {
@@ -176,7 +185,7 @@ class CompanyDashboardAnalyticsView(View):
     def get_bug_report_type_piechart_data(self, company):
         bug_report_type = (
             Issue.objects.values("label")
-            .filter(domain__company__company_id=company)
+            .filter(domain__company__id=company)
             .annotate(count=Count("label"))
         )
         bug_report_type_labels = []
@@ -195,15 +204,16 @@ class CompanyDashboardAnalyticsView(View):
 
     def get_reports_on_domain_piechart_data(self, company):
         report_piechart = (
-            Issue.objects.values("domain__name")
-            .filter(domain__company__company_id=company)
-            .annotate(count=Count("domain__name"))
+            Issue.objects.values("url")
+            .filter(domain__company__id=company)
+            .annotate(count=Count("url"))
         )
+
         report_labels = []
         report_data = []
 
         for domain_data in report_piechart:
-            report_labels.append(domain_data["domain__name"])
+            report_labels.append(domain_data["url"])
             report_data.append(domain_data["count"])
 
         return {
@@ -216,22 +226,39 @@ class CompanyDashboardAnalyticsView(View):
 
         current_year = timezone.now().year
         data_monthly = (
-            Issue.objects.filter(domain__company__company_id=company, created__year=current_year)
+            Issue.objects.filter(domain__company__id=company, created__year=current_year)
             .annotate(month=ExtractMonth("created"))
             .values("month")
             .annotate(count=Count("id"))
             .order_by("month")
         )
 
-        data = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]  # count
+        data = [0] * 12  # count
 
         for data_month in data_monthly:
-            data[data_month["month"]] = data_month["count"]
+            data[data_month["month"] - 1] = data_month["count"]
+
+        # Define month labels
+        months = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ]
 
         return {
-            "bug_monthly_report_labels": json.dumps(self.months),
+            "bug_monthly_report_labels": json.dumps(months),
             "bug_monthly_report_data": json.dumps(data),
             "max_count": max(data),
+            "current_year": current_year,
         }
 
     def bug_rate_increase_descrease_weekly(self, company, is_accepted_bugs=False):
@@ -246,25 +273,25 @@ class CompanyDashboardAnalyticsView(View):
 
         if is_accepted_bugs:
             prev_week_issue_count = Issue.objects.filter(
-                domain__company__company_id=company,
+                domain__company__id=company,
                 created__date__range=[prev_week_start_date, prev_week_end_date],
                 verified=True,
             ).count()
 
             this_week_issue_count = Issue.objects.filter(
-                domain__company__company_id=company,
+                domain__company__id=company,
                 created__date__range=[this_week_start_date, this_week_end_date],
                 verified=True,
             ).count()
 
         else:
             prev_week_issue_count = Issue.objects.filter(
-                domain__company__company_id=company,
+                domain__company__id=company,
                 created__date__range=[prev_week_start_date, prev_week_end_date],
             ).count()
 
             this_week_issue_count = Issue.objects.filter(
-                domain__company__company_id=company,
+                domain__company__id=company,
                 created__date__range=[this_week_start_date, this_week_end_date],
             ).count()
 
@@ -286,7 +313,7 @@ class CompanyDashboardAnalyticsView(View):
     def get_spent_on_bugtypes(self, company):
         spent_on_bugtypes = (
             Issue.objects.values("label")
-            .filter(domain__company__company_id=company)
+            .filter(domain__company__id=company)
             .annotate(spent=Sum("rewarded"))
         )
         labels = list(self.labels.values())
@@ -302,69 +329,69 @@ class CompanyDashboardAnalyticsView(View):
         }
 
     @validate_company_user
-    def get(self, request, company, *args, **kwargs):
+    def get(self, request, id, *args, **kwargs):
         companies = (
-            Company.objects.values("name", "company_id")
+            Company.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
         )
 
         context = {
-            "company": company,
+            "company": id,
             "companies": companies,
-            "company_obj": Company.objects.filter(company_id=company).first(),
-            "total_info": self.get_general_info(company),
-            "bug_report_type_piechart_data": self.get_bug_report_type_piechart_data(company),
-            "reports_on_domain_piechart_data": self.get_reports_on_domain_piechart_data(company),
+            "company_obj": Company.objects.filter(id=id).first(),
+            "total_info": self.get_general_info(id),
+            "bug_report_type_piechart_data": self.get_bug_report_type_piechart_data(id),
+            "reports_on_domain_piechart_data": self.get_reports_on_domain_piechart_data(id),
             "get_current_year_monthly_reported_bar_data": self.get_current_year_monthly_reported_bar_data(
-                company
+                id
             ),
-            "bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(company),
+            "bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id),
             "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(
-                company, True
+                id, True
             ),
-            "spent_on_bugtypes": self.get_spent_on_bugtypes(company),
+            "spent_on_bugtypes": self.get_spent_on_bugtypes(id),
         }
-        self.get_spent_on_bugtypes(company)
+        self.get_spent_on_bugtypes(id)
         return render(request, "company/company_analytics.html", context=context)
 
 
 class CompanyDashboardManageBugsView(View):
     @validate_company_user
-    def get(self, request, company, *args, **kwargs):
+    def get(self, request, id, *args, **kwargs):
         companies = (
-            Company.objects.values("name", "company_id")
+            Company.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
         )
 
         context = {
-            "company": company,
+            "company": id,
             "companies": companies,
-            "company_obj": Company.objects.filter(company_id=company).first(),
+            "company_obj": Company.objects.filter(id=id).first(),
         }
         return render(request, "company/company_manage_bugs.html", context=context)
 
 
 class CompanyDashboardManageDomainsView(View):
     @validate_company_user
-    def get(self, request, company, *args, **kwargs):
+    def get(self, request, id, *args, **kwargs):
         domains = (
             Domain.objects.values("id", "name", "url", "logo")
-            .filter(company__company_id=company)
+            .filter(company__id=id)
             .order_by("modified")
         )
 
         companies = (
-            Company.objects.values("name", "company_id")
+            Company.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
         )
 
         context = {
-            "company": company,
+            "company": id,
             "companies": companies,
-            "company_obj": Company.objects.filter(company_id=company).first(),
+            "company_obj": Company.objects.filter(id=id).first(),
             "domains": domains,
         }
 
@@ -381,23 +408,23 @@ class AddDomainView(View):
         return super().dispatch(request, *args, **kwargs)
 
     @validate_company_user
-    def get(self, request, company, *args, **kwargs):
+    def get(self, request, id, *args, **kwargs):
         companies = (
-            Company.objects.values("name", "company_id")
+            Company.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
         )
 
         context = {
-            "company": company,
-            "company_obj": Company.objects.filter(company_id=company).first(),
+            "company": id,
+            "company_obj": Company.objects.filter(id=id).first(),
             "companies": companies,
         }
 
         return render(request, "company/add_domain.html", context=context)
 
     @validate_company_user
-    def post(self, request, company, *args, **kwargs):
+    def post(self, request, id, *args, **kwargs):
         domain_data = {
             "name": request.POST.get("domain_name", None),
             "url": request.POST.get("domain_url", None),
@@ -408,11 +435,11 @@ class AddDomainView(View):
 
         if domain_data["name"] is None:
             messages.error(request, "Enter domain name")
-            return redirect("add_domain", company)
+            return redirect("add_domain", id)
 
         if domain_data["url"] is None:
             messages.error(request, "Enter domain url")
-            return redirect("add_domain", company)
+            return redirect("add_domain", id)
 
         parsed_url = urlparse(domain_data["url"])
         domain = (parsed_url.hostname).replace("www.", "")
@@ -420,7 +447,7 @@ class AddDomainView(View):
         domain_data["name"] = domain_data["name"].lower()
 
         managers_list = request.POST.getlist("email")
-        company_obj = Company.objects.get(company_id=company)
+        company_obj = Company.objects.get(id=id)
 
         domain_exist = Domain.objects.filter(
             Q(name=domain_data["name"]) | Q(url=domain_data["url"])
@@ -428,7 +455,7 @@ class AddDomainView(View):
 
         if domain_exist:
             messages.error(request, "Domain name or url already exist.")
-            return redirect("add_domain", company)
+            return redirect("add_domain", id)
 
         # validate domain url
         try:
@@ -440,18 +467,18 @@ class AddDomainView(View):
                         raise Exception
                 except Exception:
                     messages.error(request, "Domain does not exist.")
-                    return redirect("add_domain", company)
+                    return redirect("add_domain", id)
         except Exception as e:
             print(e)
             messages.error(request, "Domain does not exist.")
-            return redirect("add_domain", company)
+            return redirect("add_domain", id)
 
         # validate domain email
         user_email_domain = request.user.email.split("@")[-1]
 
         if domain != user_email_domain:
             messages.error(request, "your email does not match domain email. Action Denied!")
-            return redirect("add_domain", company)
+            return redirect("add_domain", id)
 
         for domain_manager_email in managers_list:
             user_email_domain = domain_manager_email.split("@")[-1]
@@ -459,7 +486,7 @@ class AddDomainView(View):
                 messages.error(
                     request, f"Manager: {domain_manager_email} does not match domain email."
                 )
-                return redirect("add_domain", company)
+                return redirect("add_domain", id)
 
         domain_logo = request.FILES.get("logo")
         domain_logo_file = domain_logo.name.split(".")[0]
@@ -485,15 +512,15 @@ class AddDomainView(View):
         domain.managers.set(domain_managers)
         domain.save()
 
-        return redirect("company_manage_domains", company)
+        return redirect("company_manage_domains", id)
 
     @validate_company_user
-    def delete(self, request, company, *args, **kwargs):
+    def delete(self, request, id, *args, **kwargs):
         domain_id = request.GET.get("domain")
         domain = get_object_or_404(Domain, id=domain_id)
         domain.delete()
         messages.success(request, "Domain deleted successfully")
-        return redirect("company_manage_domains", company)
+        return redirect("company_manage_domains", id)
 
 
 class DomainView(View):
@@ -620,15 +647,15 @@ class DomainView(View):
 
 class CompanyDashboardManageRolesView(View):
     @validate_company_user
-    def get(self, request, company, *args, **kwargs):
+    def get(self, request, id, *args, **kwargs):
         companies = (
-            Company.objects.values("name", "company_id")
+            Company.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
         )
 
         domains = Domain.objects.filter(
-            Q(company__company_id=company)
+            Q(company__id=id)
             & (Q(company__managers__in=[request.user]) | Q(company__admin=request.user))
         )
         domains_data = []
@@ -639,24 +666,24 @@ class CompanyDashboardManageRolesView(View):
             domains_data.append({"id": _id, "name": name, "managers": managers})
 
         context = {
-            "company": company,
-            "company_obj": Company.objects.filter(company_id=company).first(),
+            "company": id,
+            "company_obj": Company.objects.filter(id=id).first(),
             "companies": companies,
             "domains": domains_data,
         }
 
         return render(request, "company/company_manage_roles.html", context)
 
-    def post(self, request, company, *args, **kwargs):
+    def post(self, request, id, *args, **kwargs):
         domain = Domain.objects.filter(
-            Q(company__company_id=company)
+            Q(company__id=id)
             & Q(id=request.POST.get("domain", None))
             & (Q(company__admin=request.user) | Q(managers__in=[request.user]))
         ).first()
 
         if domain is None:
             messages.error("you are not manager of this domain.")
-            return redirect("company_manage_roles", company)
+            return redirect("company_manage_roles", id)
 
         domain_name = domain.name
         managers_list = request.POST.getlist("email", [])
@@ -668,7 +695,7 @@ class CompanyDashboardManageRolesView(View):
                 messages.error(
                     request, f"Manager: {domain_manager_email} does not match domain email."
                 )
-                return redirect("company_manage_roles", company)
+                return redirect("company_manage_roles", id)
 
         domain_managers = User.objects.filter(email__in=managers_list, is_active=True)
 
@@ -678,7 +705,7 @@ class CompanyDashboardManageRolesView(View):
         domain.save()
 
         messages.success(request, "successfully added the managers")
-        return redirect("company_manage_roles", company)
+        return redirect("company_manage_roles", id)
 
 
 class ShowBughuntView(View):
@@ -778,20 +805,20 @@ class EndBughuntView(View):
 
         hunt.result_published = True
         hunt.save()
-        company = hunt.domain.company.company_id
+        company = hunt.domain.company.id
 
         messages.success(request, f"successfully Ended Bughunt {hunt.name}")
-        return redirect("company_manage_bughunts", company)
+        return redirect("company_manage_bughunts", id=company)
 
 
 class AddHuntView(View):
-    def edit(self, request, company, companies, domains, hunt_id, *args, **kwargs):
+    def edit(self, request, id, companies, domains, hunt_id, *args, **kwargs):
         hunt = get_object_or_404(Hunt, pk=hunt_id)
         prizes = HuntPrize.objects.values().filter(hunt__id=hunt_id)
 
         context = {
-            "company": company,
-            "company_obj": Company.objects.filter(company_id=company).first(),
+            "company": id,
+            "company_obj": Company.objects.filter(id=id).first(),
             "companies": companies,
             "domains": domains,
             "hunt": hunt,
@@ -802,23 +829,23 @@ class AddHuntView(View):
         return render(request, "company/bughunt/edit_bughunt.html", context)
 
     @validate_company_user
-    def get(self, request, company, *args, **kwargs):
+    def get(self, request, id, *args, **kwargs):
         hunt_id = request.GET.get("hunt", None)
 
         companies = (
-            Company.objects.values("name", "company_id")
+            Company.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
         )
 
-        domains = Domain.objects.values("id", "name").filter(company__company_id=company)
+        domains = Domain.objects.values("id", "name").filter(company__id=id)
 
         if hunt_id is not None:
-            return self.edit(request, company, companies, domains, hunt_id, *args, **kwargs)
+            return self.edit(request, id, companies, domains, hunt_id, *args, **kwargs)
 
         context = {
-            "company": company,
-            "company_obj": Company.objects.filter(company_id=company).first(),
+            "company": id,
+            "company_obj": Company.objects.filter(id=id).first(),
             "companies": companies,
             "domains": domains,
         }
@@ -826,7 +853,7 @@ class AddHuntView(View):
         return render(request, "company/bughunt/add_bughunt.html", context)
 
     @validate_company_user
-    def post(self, request, company, *args, **kwargs):
+    def post(self, request, id, *args, **kwargs):
         data = request.POST
 
         hunt_id = data.get("hunt_id", None)  # when post is for edit hunt
@@ -839,7 +866,7 @@ class AddHuntView(View):
 
         if domain is None:
             messages.error(request, "Domain Does not exists")
-            return redirect("add_bughunt", company)
+            return redirect("add_bughunt", id)
 
         start_date = data.get("start_date", datetime.now().strftime("%m/%d/%Y"))
         end_date = data.get("end_date", datetime.now().strftime("%m/%d/%Y"))
@@ -908,14 +935,14 @@ class AddHuntView(View):
             )
 
         messages.success(request, "successfully added the managers")
-        return redirect("company_manage_bughunts", company)
+        return redirect("company_manage_bughunts", id)
 
 
 class CompanyDashboardManageBughuntView(View):
     @validate_company_user
-    def get(self, request, company, *args, **kwargs):
+    def get(self, request, id, *args, **kwargs):
         companies = (
-            Company.objects.values("name", "company_id")
+            Company.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
         )
@@ -932,7 +959,7 @@ class CompanyDashboardManageBughuntView(View):
             "end_on__day",
             "end_on__month",
             "end_on__year",
-        ).filter(domain__company__company_id=company)
+        ).filter(domain__company__id=id)
         filtered_bughunts = {
             "all": query,
             "ongoing": query.filter(result_published=False, is_published=True),
@@ -943,8 +970,8 @@ class CompanyDashboardManageBughuntView(View):
         filter_type = request.GET.get("filter", "all")
 
         context = {
-            "company": company,
-            "company_obj": Company.objects.filter(company_id=company).first(),
+            "company": id,
+            "company_obj": Company.objects.filter(id=id).first(),
             "companies": companies,
             "bughunts": filtered_bughunts.get(filter_type, []),
         }
