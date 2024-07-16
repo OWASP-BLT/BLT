@@ -637,6 +637,7 @@ class ChatBotLog(models.Model):
     def __str__(self):
         return f"Q: {self.question} | A: {self.answer} at {self.timestamp}"
 
+
 class Suggestion(models.Model):
     user = models.CharField(max_length=100, default="Add user")
     title = models.CharField(max_length=200)
@@ -657,6 +658,7 @@ class SuggestionLikes(models.Model):
 
     def __str__(self):
         return f"Suggestion {self.suggestion.id}"
+
 
 class Project(models.Model):
     name = models.CharField(max_length=255)
