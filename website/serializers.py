@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from website.models import (
     Company,
+    Contributor,
     Domain,
     Hunt,
     HuntPrize,
@@ -109,4 +110,11 @@ class CompanySerializer(serializers.ModelSerializer):
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
+        fields = "__all__"
+        read_only_fields = ("slug", "contributors")
+
+
+class ContributorsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contributor
         fields = "__all__"

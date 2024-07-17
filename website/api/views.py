@@ -667,6 +667,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
         slug = slug_base
         data["slug"] = slug
 
+        contributors = Project.get_contributors(self, data["github_url"])  # get contributors
+
         project_instance = Project(
             name=data["name"],
             slug=slug,
@@ -684,6 +686,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 project_instance.logo = logo
 
         project_instance.save()
+
+        # Set contribtors
+        if contributors:
+            project_instance.contributors.set(contributors)
 
         serializer = ProjectSerializer(project_instance)
         headers = self.get_success_headers(serializer.data)

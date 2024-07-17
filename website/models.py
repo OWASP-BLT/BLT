@@ -10,7 +10,7 @@ from captcha.fields import CaptchaField
 from colorthief import ColorThief
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
+from django.core.exceptions import MultipleObjectsReturned, ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.validators import URLValidator
@@ -638,6 +638,18 @@ class ChatBotLog(models.Model):
         return f"Q: {self.question} | A: {self.answer} at {self.timestamp}"
 
 
+class Contributor(models.Model):
+    name = models.CharField(max_length=255)
+    github_id = models.IntegerField(unique=True)
+    github_url = models.URLField()
+    avatar = models.URLField()
+    contributor_type = models.CharField(max_length=255)  # type = User, Bot ,... etc
+    contributions = models.IntegerField()
+
+    def __str__(self):
+        return self.name
+
+
 class Project(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
@@ -648,6 +660,9 @@ class Project(models.Model):
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
+    contributors = models.ManyToManyField(
+        Contributor, related_name="projects", null=True, blank=True
+    )
 
     def __str__(self):
         return self.name
@@ -662,4 +677,30 @@ class Project(models.Model):
             file_name = f"{self.slug}.png"
             self.logo.save(file_name, ContentFile(github_logo.content), save=False)
             return self.logo
+        return None
+
+    def get_contributors(self, github_url):
+        owner = github_url.split("/")
+        url = "https://api.github.com/repos/" + owner[-2] + "/" + owner[-1] + "/contributors"
+        response = requests.get(url)
+        if response.status_code == 200:
+            contributors_data = response.json()
+            contributors = []
+            for c in contributors_data:
+                try:
+                    contributor, created = Contributor.objects.get_or_create(
+                        github_id=c["id"],
+                        defaults={
+                            "name": c["login"],
+                            "github_url": c["html_url"],
+                            "avatar": c["avatar_url"],
+                            "contributor_type": c["type"],
+                            "contributions": c["contributions"],
+                        },
+                    )
+                    contributors.append(contributor)
+                except MultipleObjectsReturned:
+                    contributor = Contributor.objects.filter(github_id=c["id"]).first()
+                    contributors.append(contributor)
+            return contributors
         return None
