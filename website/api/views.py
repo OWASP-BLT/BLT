@@ -7,6 +7,7 @@ from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.db.models import Count, Q, Sum
 from django.template.loader import render_to_string
+from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.pagination import PageNumberPagination
@@ -23,6 +24,7 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Points,
+    Project,
     User,
     UserProfile,
 )
@@ -32,6 +34,7 @@ from website.serializers import (
     CompanySerializer,
     DomainSerializer,
     IssueSerializer,
+    ProjectSerializer,
     UserProfileSerializer,
 )
 from website.views import LeaderboardBase, image_validator
@@ -649,3 +652,39 @@ class CompanyViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ("id", "name")
     http_method_names = ("get", "post", "put")
+
+
+class ProjectViewSet(viewsets.ModelViewSet):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+    http_method_names = ("get", "post", "put")
+
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy()
+
+        name = data.get("name", "")
+        slug_base = slugify(name)
+        slug = slug_base
+        data["slug"] = slug
+
+        project_instance = Project(
+            name=data["name"],
+            slug=slug,
+            description=data.get("description", ""),
+            github_url=data.get("github_url", ""),
+            wiki_url=data.get("wiki_url", ""),
+            homepage_url=data.get("homepage_url", ""),
+            logo=data.get("logo", ""),
+        )
+
+        # If the logo is not provided get the logo from the repo itself
+        if project_instance.logo == "":
+            logo = project_instance.get_github_logo_save_to_storage(project_instance.github_url)
+            if logo:
+                project_instance.logo = logo
+
+        project_instance.save()
+
+        serializer = ProjectSerializer(project_instance)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

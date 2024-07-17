@@ -652,18 +652,14 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
-    # # these need to be tested
-    # def get_github_logo_save_to_storage(self):
-    #     github_logo = requests.get(f"{self.github_url}/raw/master/logo.png")
-    #     if github_logo.status_code == 200:
-    #         self.logo.save(f"{self.slug}.png", ContentFile(github_logo.content))
-    #         self.save()
-    #         return self.logo.url
-
-    # def save(self, *args, **kwargs):
-    #     if not self.logo:
-    #         self.get_github_logo_save_to_storage()
-    #     super().save(*args, **kwargs)
-
-    def get_absolute_url(self):
-        return f"/project/{self.slug}"
+    def get_github_logo_save_to_storage(self, url):
+        owner = url.split("/")
+        link = "https://avatars.githubusercontent.com/" + owner[-2]
+        github_logo = requests.get(
+            link
+        )  # the image there is of the owner so we will have this as the logo
+        if github_logo.status_code == 200:
+            file_name = f"{self.slug}.png"
+            self.logo.save(file_name, ContentFile(github_logo.content), save=False)
+            return self.logo
+        return None

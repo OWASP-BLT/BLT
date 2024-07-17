@@ -1,7 +1,17 @@
 from django.db.models import Sum
 from rest_framework import serializers
 
-from website.models import Company, Domain, Hunt, HuntPrize, Issue, Points, User, UserProfile
+from website.models import (
+    Company,
+    Domain,
+    Hunt,
+    HuntPrize,
+    Issue,
+    Points,
+    Project,
+    User,
+    UserProfile,
+)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -93,4 +103,10 @@ class BugHuntSerializer(serializers.ModelSerializer):
 class CompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
+        fields = "__all__"
+
+
+class ProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
         fields = "__all__"
