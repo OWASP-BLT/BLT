@@ -119,7 +119,10 @@
                             <div id="previewLogoDiv"
                                  class="h-16 w-16 text-gray-300 overflow-hidden rounded-2xl text-red-500">
                                 {% if domain.logo %}
-                                    <img src="{{ domain.logo.url }}" alt="Domain Logo" />
+                                    <img src="{{ domain.logo.url }}"
+                                         alt="Domain Logo"
+                                         height="64px"
+                                         width="64px" />
                                 {% else %}
                                     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                         <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" />
@@ -145,7 +148,9 @@
                                 {% if domain.webshot %}
                                     <img src="{{ domain.webshot.url }}"
                                          alt="Webshot"
-                                         class="mx-auto h-12 w-12" />
+                                         class="mx-auto h-12 w-12"
+                                         height="64px"
+                                         width="64px" />
                                 {% else %}
                                     <svg class="mx-auto h-12 w-12"
                                          viewBox="0 0 24 24"
@@ -189,10 +194,11 @@
                     {% for manager in domain.managers.all %}
                         <div class="mt-2 flex flex-row items-center w-[50%] user-selection">
                             <select name="user"
-                                    class="w-[90%] block rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" 
+                                    class="w-[90%] block rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
                                     onchange="updateUserSelections()">
                                 {% for user in users %}
-                                    <option value="{{ user.email }}" {% if user.email == manager.email %}selected{% endif %}>
+                                    <option value="{{ user.email }}"
+                                            {% if user.email == manager.email %}selected{% endif %}>
                                         {{ user.username }} ({{ user.email }})
                                     </option>
                                 {% endfor %}
