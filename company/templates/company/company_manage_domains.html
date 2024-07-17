@@ -41,7 +41,7 @@
                             <div class="flex items-center space-x-4">
                                 <div class="flex-shrink-0">
                                     <img class="w-8 h-8 rounded-full"
-                                         src="{{ MEDIA_URL }}{{ domain.logo }}"
+                                         src="{% if domain.logo %}{{ MEDIA_URL }}{{ domain.logo }}{% else %}https://via.placeholder.com/50?text=No+Logo{% endif %}"
                                          alt="Domain Logo"
                                          width="32px"
                                          height="32px">
@@ -51,15 +51,21 @@
                                     <p class="text-sm text-gray-500 truncate dark:text-gray-400">{{ domain.url }}</p>
                                 </div>
                                 <div class="inline-flex items-center text-base font-semibold text-gray-900 ">
-                                    <a href="{% url 'view_domain' domain.id %}">View</a>
+                                    <a href="{% url 'edit_domain' company domain.id %}">Edit</a>
+                                    <a class="ml-4" href="{% url 'view_domain' domain.id %}">View</a>
                                     <form id="deleteForm"
-                                          action="{% url 'add_domain' company %}?domain={{ domain.id }}"
+                                          action="{% url 'add_domain' company %}"
                                           method="post"
                                           class="inline">
                                         {% csrf_token %}
                                         <input type="hidden" name="_method" value="delete">
+                                        <input type="hidden" name="domain_id" value="{{ domain.id }}">
+                                        <button type="submit"
+                                                class="ml-4"
+                                                onclick="return confirm('Are you sure you want to delete this domain?')">
+                                            Delete
+                                        </button>
                                     </form>
-                                    <button type="button" onclick="deleteDomain()" class="ml-2">Delete</button>
                                 </div>
                             </div>
                         </li>
@@ -69,14 +75,3 @@
         </div>
     </div>
 {% endblock body %}
-{% block js %}
-    <script>
-        function deleteDomain(){
-            let deleteForm = document.getElementById("deleteForm");
-            let confirmDelete = confirm("this will delete the domain and hunts associated with it.");
-            if (confirmDelete === true){
-                deleteForm.submit();
-            }
-        }
-    </script>
-{% endblock js %}

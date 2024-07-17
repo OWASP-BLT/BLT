@@ -44,7 +44,7 @@
                          height="100%">
                 </div>
                 <div class="flex flex-col items-center -mt-20">
-                    <img src="{{ MEDIA_URL }}{{ logo }}"
+                    <img src="{% if logo %} {{ MEDIA_URL }}{{ logo }} {% else %} https://via.placeholder.com/160?text=No+Logo {% endif %}"
                          class="w-40 h-40 border-4  rounded-full"
                          width="160px"
                          height="160px"
@@ -58,10 +58,11 @@
                 </div>
                 <div class="flex-1 flex flex-col items-center lg:items-end justify-end px-8 mt-2">
                     <div class="flex items-center space-x-4 mt-2">
-                        <button class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
-                            <i class="fa-sharp fa-solid fa-bell fa-lg text-white"></i>
-                            <span>Subscribe</span>
-                        </button>
+                        <a href="{% url 'company_manage_domains' company__id %}"
+                           class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
+                            <i class="fa-sharp fa-solid fa-cog fa-lg text-white"></i>
+                            <span>Manage Domain</span>
+                        </a>
                         <a href="{% url 'report' %}"
                            class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
                             <i class="fa-sharp fa-solid fa-bug fa-lg text-white"></i>
@@ -89,12 +90,12 @@
                             </li>
                             <li class="flex border-b py-2 my-2">
                                 <span class="font-bold w-24">Joined:</span>
-                                <span class="text-gray-700">{{ created__day }}/{{ created__month }}/{{ created__year }}</span>
+                                <span class="text-gray-700">{{ created|date:"d/m/Y" }}</span>
                             </li>
                             <li class="flex items-center border-b py-2 space-x-2 my-2">
                                 <span class="font-bold w-24">Socials:</span>
-                                <a href="{{ facebook }}"
-                                   target="_blank"
+                                <a href="{% if facebook %} {{ facebook }} {% else %} # {% endif %}"
+                                   target="{% if facebook %} _blank {% endif %}"
                                    title="Facebook"
                                    rel="noopener noreferrer">
                                     <svg class="w-5 h-5"
@@ -109,8 +110,8 @@
                                         </path>
                                     </svg>
                                 </a>
-                                <a href="{{ twitter }}"
-                                   target="_blank"
+                                <a href="{% if twitter %} {{ twitter }} {% else %} # {% endif %}"
+                                   target="{% if twitter %} _blank {% endif %}"
                                    title="Twitter"
                                    rel="noopener noreferrer">
                                     <svg class="w-5 h-5"
@@ -125,8 +126,8 @@
                                         </path>
                                     </svg>
                                 </a>
-                                <a href="{{ github }}"
-                                   target="_blank"
+                                <a href="{% if github %} {{ github }} {% else %} # {% endif %}"
+                                   target="{% if github %} _blank {% endif %}"
                                    title="Github"
                                    rel="noopener noreferrer">
                                     <svg class="w-5 h-5"
@@ -150,82 +151,50 @@
                         <h4 class="text-xl text-gray-900 font-bold">Activity log</h4>
                         <div class="relative px-4">
                             <div class="absolute h-full border border-dashed border-opacity-20 border-secondary"></div>
-                            <!-- start::Timeline item -->
+                            <!-- Domain Created At -->
                             <div class="flex items-center w-full my-6 -ml-1.5">
                                 <div class="w-1/12 z-10">
                                     <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
                                 </div>
                                 <div class="w-11/12">
-                                    <p class="text-sm">Profile informations changed.</p>
-                                    <p class="text-xs text-gray-500">3 min ago</p>
+                                    <p class="text-sm">Domain created at: {{ created|date:"d/m/Y" }}</p>
+                                    <p class="text-xs text-gray-500">{{ created|timesince }} ago</p>
                                 </div>
                             </div>
-                            <!-- end::Timeline item -->
-                            <!-- start::Timeline item -->
+                            <!-- Last Modification in Domain -->
                             <div class="flex items-center w-full my-6 -ml-1.5">
                                 <div class="w-1/12 z-10">
                                     <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
                                 </div>
                                 <div class="w-11/12">
-                                    <p class="text-sm">
-                                        Connected with <a href="#" class="text-red-600 font-bold">Colby Covington</a>.
-                                    </p>
-                                    <p class="text-xs text-gray-500">15 min ago</p>
+                                    <p class="text-sm">Last modification in domain: {{ modified|date:"d/m/Y" }}</p>
+                                    <p class="text-xs text-gray-500">{{ modified|timesince }} ago</p>
                                 </div>
                             </div>
-                            <!-- end::Timeline item -->
-                            <!-- start::Timeline item -->
-                            <div class="flex items-center w-full my-6 -ml-1.5">
-                                <div class="w-1/12 z-10">
-                                    <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
+                            {% if first_bug %}
+                                <!-- First Bug in the Domain -->
+                                <div class="flex items-center w-full my-6 -ml-1.5">
+                                    <div class="w-1/12 z-10">
+                                        <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
+                                    </div>
+                                    <div class="w-11/12">
+                                        <p class="text-sm">First bug in this domain: {{ first_bug.created|date:"d/m/Y" }}</p>
+                                        <p class="text-xs text-gray-500">{{ first_bug.created|timesince }} ago</p>
+                                    </div>
                                 </div>
-                                <div class="w-11/12">
-                                    <p class="text-sm">
-                                        Invoice <a href="#" class="text-red-600 font-bold">#4563</a> was created.
-                                    </p>
-                                    <p class="text-xs text-gray-500">57 min ago</p>
+                            {% endif %}
+                            {% if last_bug %}
+                                <!-- Last Bug Created in the Domain -->
+                                <div class="flex items-center w-full my-6 -ml-1.5">
+                                    <div class="w-1/12 z-10">
+                                        <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
+                                    </div>
+                                    <div class="w-11/12">
+                                        <p class="text-sm">Last bug created in this domain: {{ last_bug.created|date:"d/m/Y" }}</p>
+                                        <p class="text-xs text-gray-500">{{ last_bug.created|timesince }} ago</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <!-- end::Timeline item -->
-                            <!-- start::Timeline item -->
-                            <div class="flex items-center w-full my-6 -ml-1.5">
-                                <div class="w-1/12 z-10">
-                                    <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
-                                </div>
-                                <div class="w-11/12">
-                                    <p class="text-sm">
-                                        Message received from <a href="#" class="text-red-600 font-bold">Cecilia Hendric</a>.
-                                    </p>
-                                    <p class="text-xs text-gray-500">1 hour ago</p>
-                                </div>
-                            </div>
-                            <!-- end::Timeline item -->
-                            <!-- start::Timeline item -->
-                            <div class="flex items-center w-full my-6 -ml-1.5">
-                                <div class="w-1/12 z-10">
-                                    <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
-                                </div>
-                                <div class="w-11/12">
-                                    <p class="text-sm">
-                                        New order received <a href="#" class="text-red-600 font-bold">#OR9653</a>.
-                                    </p>
-                                    <p class="text-xs text-gray-500">2 hours ago</p>
-                                </div>
-                            </div>
-                            <!-- end::Timeline item -->
-                            <!-- start::Timeline item -->
-                            <div class="flex items-center w-full my-6 -ml-1.5">
-                                <div class="w-1/12 z-10">
-                                    <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
-                                </div>
-                                <div class="w-11/12">
-                                    <p class="text-sm">
-                                        Message received from <a href="#" class="text-red-600 font-bold">Jane Stillman</a>.
-                                    </p>
-                                    <p class="text-xs text-gray-500">2 hours ago</p>
-                                </div>
-                            </div>
-                            <!-- end::Timeline item -->
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -312,48 +281,58 @@
             <div class="bg-white w-full p-10 my-5">
                 <div class="w-full flex justify-between">
                     <h4 class="text-xl text-gray-900 font-bold mb-5">Ongoing Bughunts</h4>
-                    <a href="" class="text-md text-blue-600">View all</a>
+                    <a href="{% url 'hunts' %}" class="text-md text-blue-600">View all</a>
                 </div>
                 <div class="flex justify-between w-full flex-wrap">
-                    {% for i in '123' %}
-                        <div class="flex w-[350px] h-[110px] border-2 border-gray-300 p-1 cursor-pointer shadow-sm hover:scale-110 hover:shadow-lg transition-all m-5 sm:mt-5">
-                            <div class="flex justify-center items-center w-[40%]">
-                                <img class="w-32 h-32 rounded-lg"
-                                     src="{{ server_url }}/media/{{ hunt.logo }}"
-                                     alt="bughunt logo"
-                                     width="128px"
-                                     height="128px">
-                            </div>
-                            <div class="flex flex-col ml-5 w-[60%]">
-                                <p class="text-xl font-extrabold mt-6">Hunt 2.0</p>
-                                <p class="tw-font-extralight text-gray-500 text-sm mt-1">https://google.com</p>
-                                <div class="flex mt-5 justify-between items-center w-[90%]">
-                                    <p class="font-bold">${{ hunt.prize }}</p>
-                                    <button class="bg-red-600 text-white w-[100px] h-[25px] font-bold">SUBMIT BUG</button>
+                    {% if ongoing_bughunts %}
+                        {% for hunt in ongoing_bughunts %}
+                            <div class="flex w-full md:w-[48%] lg:w-[30%] h-[180px] border-2 border-gray-300 p-2 cursor-pointer shadow-sm hover:scale-105 hover:shadow-lg transition-all m-2 sm:mt-5 rounded-lg">
+                                <div class="flex justify-center items-center w-[40%]">
+                                    <img class="w-32 h-32 rounded-lg" {{ hunt.logo }} src="{% if hunt.logo %} {{ MEDIA_URL }}{{ hunt.logo }} {% else %} https://via.placeholder.com/128?text=No+Logo {% endif %}" alt="bughunt logo" width="128px" height="128px">
+                                </div>
+                                <div class="flex flex-col ml-5 w-[60%]">
+                                    <p class="text-lg font-extrabold mt-6">{{ hunt.name }}</p>
+                                    <p class="tw-font-extralight text-gray-500 text-sm mt-1">{{ hunt.url }}</p>
+                                    <div class="flex mt-5 justify-between items-center w-full">
+                                        <p class="font-bold">
+                                            $
+                                            {% if hunt.total_prize %}
+                                                {{ hunt.total_prize }}
+                                            {% else %}
+                                                0
+                                            {% endif %}
+                                        </p>
+                                        <a href="{% url 'show_bughunt' hunt.id %}"
+                                           class="bg-red-600 text-white px-3 py-1 font-bold rounded-md">More info</a>
+                                    </div>
                                 </div>
                             </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center">
+                            <p class="text-xl text-red-500">No ongoing bughunts available</p>
                         </div>
-                    {% endfor %}
+                    {% endif %}
                 </div>
             </div>
             <div class="w-full flex justify-between min-h-[80vh] flex-col md:flex-row">
                 <div class="flex flex-col w-full md:w-[80%] mr-5 items-start bg-white rounded-xl p-5 overflow-x-hidden overflow-y-scroll">
                     <div class="w-full flex justify-between">
-                        <h4 class="text-xl text-gray-900 font-bold mb-5">Latest Bugs Reported</h4>
-                        <a href="" class="text-md text-blue-600">View all</a>
+                        <h4 class="text-xl text-gray-900 font-bold mb-5">Latest Bugs Reported ({{ latest_issues|length }})</h4>
+                        <a href="{% url 'index' %}" class="text-md text-blue-600">View all</a>
                     </div>
                     {% if latest_issues|length > 0 %}
                         {% for issue in latest_issues %}
                             <div class="w-full h-[200px] flex px-5 my-2 py-6 bg-white rounded-lg shadow-md hover:shadow-xl transition-all">
                                 <div class="w-[10%] mr-5 h-full flex items-center">
-                                    <img src="https://m.media-amazon.com/images/I/613zc8WKCNL.jpg"
+                                    <img src="{% if issue.first_screenshot %} {{ MEDIA_URL }}{{ issue.first_screenshot }} {% else %} https://via.placeholder.com/100?text=No+Screenshot {% endif %}"
                                          alt="bug"
                                          width="100%"
                                          height="100%">
                                 </div>
                                 <div class="w-full h-full">
                                     <div class="flex justify-between items-center">
-                                        <span class="font-light text-gray-600">Reported to {{ issue.domain__name }} on {{ issue.created__day }}/{{ issue.created__month }}/{{ issue.created__year }}</span>
+                                        <span class="font-light text-gray-600">Reported to {{ issue.domain__name }} on {{ issue.created|date:"d/m/Y" }}</span>
                                         <div>
                                             <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#{{ issue.label }}</a>
                                             <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#{{ issue.status }}</a>
@@ -372,7 +351,7 @@
                                             <a class="flex items-center"
                                                href="{% url 'profile' issue.user__username %}">
                                                 <img class="mr-3 w-10 h-10 object-cover rounded-full hidden sm:block"
-                                                     src="{{ MEDIA_URL }}{{ issue.user__userprofile__user_avatar }}"
+                                                     src="{% if issue.user__userprofile__user_avatar %} {{ MEDIA_URL }}{{ issue.user__userprofile__user_avatar }} {% else %} https://via.placeholder.com/40?text=No+Avatar {% endif %}"
                                                      alt="avatar"
                                                      width="40px"
                                                      height="40px">
@@ -380,7 +359,7 @@
                                             </a>
                                         </div>
                                         <a class="text-blue-600 hover:underline"
-                                           href="{% url 'issue_view' issue.id %}">Read more</a>
+                                           href="{% url 'issue_view2' issue.id %}">Read more</a>
                                     </div>
                                 </div>
                             </div>
@@ -394,23 +373,13 @@
                 <div class="bg-white rounded-lg shadow-xl p-8 w-full mt-5 md:w-[20%] md:mt-0 overflow-y-scroll">
                     <div class="flex items-center justify-between">
                         <h4 class="text-xl text-gray-900 font-bold">Top Testers ({{ top_testers | length }})</h4>
-                        <a href="#" title="View All">
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                 class="h-6 w-6 text-gray-500 hover:text-gray-700"
-                                 fill="none"
-                                 viewBox="0 0 24 24"
-                                 stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z">
-                                </path>
-                            </svg>
-                        </a>
                     </div>
                     <div class="flex flex-wrap justify-between mt-10">
                         {% for tester in top_testers %}
                             <a href="{% url 'profile' tester.user__username %}"
                                class="flex flex-col items-center m-5 justify-center text-gray-800 hover:text-red-600"
                                title="View Profile">
-                                <img src="{{ MEDIA_URL }}{{ tester.user__userprofile__user_avatar }}"
+                                <img src="{% if tester.user__userprofile__user_avatar %} {{ MEDIA_URL }}{{ tester.user__userprofile__user_avatar }} {% else %} https://via.placeholder.com/100?text=No+Avatar {% endif %}"
                                      class="w-[100px] rounded-full"
                                      alt="tester avatar"
                                      width="100px"
@@ -424,7 +393,8 @@
             </div>
         </div>
         <script>
-            const DATA_SET_VERTICAL_BAR_CHART_1 = JSON.parse('{{ monthly_activity_chart | safe }}');
+            document.addEventListener('DOMContentLoaded', function() {
+            const DATA_SET_VERTICAL_BAR_CHART_1 = JSON.parse('{{ monthly_activity_chart|escapejs | safe }}');
 
             const labels_vertical_bar_chart = ['January', 'February', 'Mart', 'April', 'May', 'Jun', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -460,6 +430,7 @@
                 document.getElementById('verticalBarChart'),
                 configVerticalBarChart
             );
+        });
         </script>
     </body>
 </html>
