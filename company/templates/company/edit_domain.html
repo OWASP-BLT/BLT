@@ -55,7 +55,8 @@
                                     autocomplete="company-name"
                                     class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:max-w-xs sm:text-sm sm:leading-6">
                                 {% for company in companies %}
-                                    <option value="{{ company.id }}" {% if domain.company.id == company.id %}selected{% endif %}>
+                                    <option value="{{ company.id }}"
+                                            {% if domain.company.id == company.id %}selected{% endif %}>
                                         {{ company.name }}
                                     </option>
                                 {% endfor %}
@@ -64,7 +65,9 @@
                     </div>
                     <div class="sm:col-span-2 sm:col-start-1">
                         <label for="github_url"
-                               class="block text-sm font-medium leading-6 text-gray-900">Github Repo URL (Optional)</label>
+                               class="block text-sm font-medium leading-6 text-gray-900">
+                            Github Repo URL (Optional)
+                        </label>
                         <div class="mt-2">
                             <input type="text"
                                    name="github_url"
@@ -77,7 +80,9 @@
                     </div>
                     <div class="sm:col-span-2">
                         <label for="twitter_url"
-                               class="block text-sm font-medium leading-6 text-gray-900">Domain Twitter URL (Optional)</label>
+                               class="block text-sm font-medium leading-6 text-gray-900">
+                            Domain Twitter URL (Optional)
+                        </label>
                         <div class="mt-2">
                             <input type="text"
                                    name="twitter_url"
@@ -90,7 +95,9 @@
                     </div>
                     <div class="sm:col-span-2">
                         <label for="facebook_url"
-                               class="block text-sm font-medium leading-6 text-gray-900">Domain Facebook URL (Optional)</label>
+                               class="block text-sm font-medium leading-6 text-gray-900">
+                            Domain Facebook URL (Optional)
+                        </label>
                         <div class="mt-2">
                             <input type="text"
                                    name="facebook_url"
@@ -106,9 +113,11 @@
             <div class="space-y-12">
                 <div class="border-b border-gray-900/10 pb-12">
                     <div class="col-span-full mb-5">
-                        <label for="domain_logo" class="block text-sm font-medium leading-6 text-gray-900">Domain Logo</label>
+                        <label for="domain_logo"
+                               class="block text-sm font-medium leading-6 text-gray-900">Domain Logo</label>
                         <div class="mt-2 flex items-center gap-x-3" id="previewLogo">
-                            <div id="previewLogoDiv" class="h-16 w-16 text-gray-300 overflow-hidden rounded-2xl text-red-500">
+                            <div id="previewLogoDiv"
+                                 class="h-16 w-16 text-gray-300 overflow-hidden rounded-2xl text-red-500">
                                 {% if domain.logo %}
                                     <img src="{{ domain.logo.url }}" alt="Domain Logo" />
                                 {% else %}
@@ -117,27 +126,43 @@
                                     </svg>
                                 {% endif %}
                             </div>
-                            <label for="logo" class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
+                            <label for="logo"
+                                   class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
                                 <span class="text-red-600">Upload logo</span>
-                                <input id="logo" name="logo" type="file" class="sr-only" onchange="displayLogoPreview()" />
+                                <input id="logo"
+                                       name="logo"
+                                       type="file"
+                                       class="sr-only"
+                                       onchange="displayLogoPreview()" />
                             </label>
                         </div>
                     </div>
                     <div class="col-span-full">
-                        <label for="webshot" class="block text-sm font-medium leading-6 text-gray-900">Webshot</label>
+                        <label for="webshot"
+                               class="block text-sm font-medium leading-6 text-gray-900">Webshot</label>
                         <div class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 text-red-500">
                             <div class="text-center">
                                 {% if domain.webshot %}
-                                    <img src="{{ domain.webshot.url }}" alt="Webshot" class="mx-auto h-12 w-12" />
+                                    <img src="{{ domain.webshot.url }}"
+                                         alt="Webshot"
+                                         class="mx-auto h-12 w-12" />
                                 {% else %}
-                                    <svg class="mx-auto h-12 w-12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <svg class="mx-auto h-12 w-12"
+                                         viewBox="0 0 24 24"
+                                         fill="currentColor"
+                                         aria-hidden="true">
                                         <path fill-rule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clip-rule="evenodd" />
                                     </svg>
                                 {% endif %}
                                 <div class="mt-4 flex text-sm leading-6 text-gray-600">
-                                    <label for="webshot" class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
+                                    <label for="webshot"
+                                           class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
                                         <span class="text-red-600">Upload a webshot</span>
-                                        <input id="webshot" name="webshot" type="file" class="sr-only" onchange="displayWebshotPreview()" />
+                                        <input id="webshot"
+                                               name="webshot"
+                                               type="file"
+                                               class="sr-only"
+                                               onchange="displayWebshotPreview()" />
                                     </label>
                                     <p class="pl-1">or drag and drop</p>
                                 </div>
@@ -163,7 +188,9 @@
                     <label for="user" class="block text-sm font-medium leading-6 text-gray-900">Select Domain Manager</label>
                     {% for manager in domain.managers.all %}
                         <div class="mt-2 flex flex-row items-center w-[50%] user-selection">
-                            <select name="user" class="w-[90%] block rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" onchange="updateUserSelections()">
+                            <select name="user"
+                                    class="w-[90%] block rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" 
+                                    onchange="updateUserSelections()">
                                 {% for user in users %}
                                     <option value="{{ user.email }}" {% if user.email == manager.email %}selected{% endif %}>
                                         {{ user.username }} ({{ user.email }})
