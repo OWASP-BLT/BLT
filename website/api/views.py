@@ -666,7 +666,7 @@ class ContributorViewSet(viewsets.ModelViewSet):
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    # permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
     http_method_names = ("get", "post", "put", "patch")
 
     def create(self, request, *args, **kwargs):
