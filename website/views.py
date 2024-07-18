@@ -97,7 +97,7 @@ from website.models import (
     Project,
     Subscription,
     Suggestion,
-    SuggestionLikes,
+    SuggestionVotes,
     UserProfile,
     Wallet,
     Winner,
@@ -4754,35 +4754,35 @@ def vote_suggestions(request):
         user = request.user.username
         data = json.loads(request.body)
         suggestion_id = data.get("suggestion_id")
-        suggestion = Suggestion.objects.get(id=suggestion_id)
+        suggestion = Suggestion.objects.get(suggestion_id=suggestion_id)
         up_vote = data.get("up_vote")
         down_vote = data.get("down_vote")
-        liked = SuggestionLikes.objects.filter(user=user, suggestion=suggestion).exists()
+        voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).exists()
         if not liked:
             if up_vote is True:
-                liked = SuggestionLikes.objects.create(
+                liked = SuggestionVotes.objects.create(
                     user=user, suggestion=suggestion, up_vote=True, down_vote=False
                 )
                 suggestion.up_vote += 1
             elif down_vote is True:
-                liked = SuggestionLikes.objects.create(
+                liked = SuggestionVotes.objects.create(
                     user=user, suggestion=suggestion, up_vote=False, down_vote=True
                 )
                 suggestion.down_vote += 1
         else:
             if up_vote is False:
                 suggestion.up_vote -= 1
-                liked = SuggestionLikes.objects.filter(user=user, suggestion=suggestion).delete()
+                liked = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).delete()
                 if down_vote is True:
-                    liked = SuggestionLikes.objects.create(
+                    liked = SuggestionVotes.objects.create(
                         user=user, suggestion=suggestion, down_vote=True, up_vote=False
                     )
                     suggestion.down_vote += 1
             elif down_vote is False:
                 suggestion.down_vote -= 1
-                liked = SuggestionLikes.objects.filter(user=user, suggestion=suggestion).delete()
+                liked = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).delete()
                 if up_vote is True:
-                    liked = SuggestionLikes.objects.create(
+                    liked = SuggestionVotes.objects.create(
                         user=user, suggestion=suggestion, up_vote=True, down_vote=False
                     )
                     suggestion.up_vote += 1
@@ -4797,20 +4797,24 @@ def vote_suggestions(request):
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=402)
 
 
-def set_vote(request):
+@login_required
+def set_vote_status(request):
     if request.method == "POST":
         user = request.user.username
         data = json.loads(request.body)
         id = data.get("id")
-        suggestion = Suggestion.objects.get(id=id)
-        up_vote = SuggestionLikes.objects.filter(
-            suggestion=suggestion, user=user, up_vote=True
-        ).exists()
-        down_vote = SuggestionLikes.objects.filter(
-            suggestion=suggestion, user=user, down_vote=True
-        ).exists()
-        response = {"up_vote": up_vote, "down_vote": down_vote}
-        return JsonResponse(response)
+        suggestion = Suggestion.objects.get(suggestion_id=id)
+        if suggestion:
+            up_vote = SuggestionVotes.objects.filter(
+                suggestion=suggestion, user=user, up_vote=True
+            ).exists()
+            down_vote = SuggestionVotes.objects.filter(
+                suggestion=suggestion, user=user, down_vote=True
+            ).exists()
+            response = {"up_vote": up_vote, "down_vote": down_vote}
+            return JsonResponse(response)
+        else:
+            return JsonResponse({"success": False, "error": "No suggestions"})
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
 
 
@@ -4823,7 +4827,9 @@ def add_suggestions(request):
         description = data.get("description", "")
         id = str(uuid.uuid4())
         if title and description and user:
-            suggestion = Suggestion(user=user, title=title, description=description, id=id)
+            suggestion = Suggestion(
+                user=user, title=title, description=description, suggestion_id=id
+            )
             suggestion.save()
             messages.success(request, "Suggestion added successfully.")
             return JsonResponse({"status": "success"})

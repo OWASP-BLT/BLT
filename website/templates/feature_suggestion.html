@@ -158,7 +158,7 @@
             console.log(id);
             const upvoteBtn = document.getElementById(`upvote---${id}`);
             const downvoteBtn = document.getElementById(`downvote---${id}`);
-            fetch('/set-vote/', {
+            fetch('/suggestion/set-vote-status/', {
                 method:'POST',
                 headers:{
                     'Content-Type' : 'application/json',
@@ -192,32 +192,32 @@
             return;
         }
         
-        let up_vote;
-        let down_vote;
+        let Up_Vote;
+        let Down_Vote;
 
         if (upvoteBtn.classList.contains('active')) {
             upvotesLabel.innerHTML = parseInt(upvotesLabel.innerHTML) - 1;
             upvoteBtn.classList.remove('active');
-            up_vote=false;
+            Up_Vote=false;
         }
         else {
             upvotesLabel.innerHTML = parseInt(upvotesLabel.innerHTML) + 1;
             upvoteBtn.classList.add('active');
-            up_vote = true;
+            Up_Vote = true;
 
             if (downvoteBtn.classList.contains('active')) {
                 downvoteBtn.classList.remove('active');
                 downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) - 1;
-                down_vote = false;
+                Down_Vote = false;
             }
         }
-        fetch('/vote-suggestion/', {
+        fetch('/suggestion/vote/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken'),
             },
-            body: JSON.stringify({ suggestion_id: id, up_vote: up_vote, down_vote:   down_vote }),
+            body: JSON.stringify({ suggestion_id: id, up_vote: Up_Vote, down_vote:   Down_Vote }),
         })
         .then(response => response.json())
         .then(data => {
@@ -242,33 +242,33 @@
             return;
         }
 
-        let up_vote;
-        let down_vote;
+        let Up_Vote;
+        let Down_Vote;
 
         if (downvoteBtn.classList.contains('active')) {
             downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) - 1;
             downvoteBtn.classList.remove('active');
-            down_vote = false;
+            Down_Vote = false;
         }
         else {
             downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) + 1;
             downvoteBtn.classList.add('active');
-            down_vote = true;
+            Down_Vote = true;
             
             if (upvoteBtn.classList.contains('active')) {
                 upvoteBtn.classList.remove('active');
                 upvotesLabel.innerHTML = parseInt(upvotesLabel.innerHTML) - 1;
-                up_vote = false;
+                Up_Vote = false;
             }
         }
 
-        fetch('/vote-suggestion/', {
+        fetch('/suggestion/vote/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken'), // Fetch CSRF token from cookies
             },
-            body: JSON.stringify({ suggestion_id: id, up_vote: up_vote, down_vote: down_vote }),
+            body: JSON.stringify({ suggestion_id: id, up_vote: Up_Vote, down_vote: Down_Vote }),
         })
         .then(response => response.json())
         .then(data => {
@@ -306,7 +306,7 @@
             return;
         }
 
-        fetch('/add-suggestion/', {
+        fetch('/suggestion/add/', {
             method: "POST",
             headers: {
                 'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
