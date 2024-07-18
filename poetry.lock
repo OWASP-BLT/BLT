@@ -1811,18 +1811,18 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.2.7"
+version = "0.2.9"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langchain-0.2.7-py3-none-any.whl", hash = "sha256:98e79e0b9a60a9c740b44d5b0135c85f649219308f30d373cf5f10d0efe18b87"},
-    {file = "langchain-0.2.7.tar.gz", hash = "sha256:8742f363d2890854501e0075af04fcb470600f201dec251c9bd5841e1990e73d"},
+    {file = "langchain-0.2.9-py3-none-any.whl", hash = "sha256:be23fcb29adbd5059944f1fed08fa575f0739d420b1c4127531e0fbf5663fcca"},
+    {file = "langchain-0.2.9.tar.gz", hash = "sha256:cc326a7f6347787a19882928c324433b1a79df629bba45604b2d26495ee5d69c"},
 ]
 
 [package.dependencies]
 aiohttp = ">=3.8.3,<4.0.0"
-langchain-core = ">=0.2.12,<0.3.0"
+langchain-core = ">=0.2.20,<0.3.0"
 langchain-text-splitters = ">=0.2.0,<0.3.0"
 langsmith = ">=0.1.17,<0.2.0"
 numpy = {version = ">=1,<2", markers = "python_version < \"3.12\""}
@@ -1857,13 +1857,13 @@ tenacity = ">=8.1.0,<8.4.0 || >8.4.0,<9.0.0"
 
 [[package]]
 name = "langchain-core"
-version = "0.2.19"
+version = "0.2.21"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langchain_core-0.2.19-py3-none-any.whl", hash = "sha256:5b3cd34395be274c89e822c84f0e03c4da14168c177a83921c5b9414ac7a0651"},
-    {file = "langchain_core-0.2.19.tar.gz", hash = "sha256:13043a83e5c9ab58b9f5ce2a56896e7e88b752e8891b2958960a98e71801471e"},
+    {file = "langchain_core-0.2.21-py3-none-any.whl", hash = "sha256:805b1f53e0e2424b83e3673cba1c9354105c5a5e4a1d0d768b1e70d8ac0d604d"},
+    {file = "langchain_core-0.2.21.tar.gz", hash = "sha256:3d1e28179a5d496b900ebef45e1471eaae9fb63fc570f89ded78b026fd08ba84"},
 ]
 
 [package.dependencies]
@@ -2346,13 +2346,13 @@ signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 
 [[package]]
 name = "openai"
-version = "1.35.13"
+version = "1.35.14"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.35.13-py3-none-any.whl", hash = "sha256:36ec3e93e0d1f243f69be85c89b9221a471c3e450dfd9df16c9829e3cdf63e60"},
-    {file = "openai-1.35.13.tar.gz", hash = "sha256:c684f3945608baf7d2dcc0ef3ee6f3e27e4c66f21076df0b47be45d57e6ae6e4"},
+    {file = "openai-1.35.14-py3-none-any.whl", hash = "sha256:adadf8c176e0b8c47ad782ed45dc20ef46438ee1f02c7103c4155cff79c8f68b"},
+    {file = "openai-1.35.14.tar.gz", hash = "sha256:394ba1dfd12ecec1d634c50e512d24ff1858bbc2674ffcce309b822785a058de"},
 ]
 
 [package.dependencies]
@@ -4418,4 +4418,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "fda50befafe7e9e4c49b33c4eed5170e6082a6f13b3cad8b3ad1f8fc9d0bca61"
+content-hash = "aac290a079e13d297b3b66b4b886ac086da9d6822dcc38964a78d026aa2726ff"

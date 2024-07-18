@@ -308,13 +308,14 @@ class ProjectAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "name",
+        "slug",
         "description",
-        "url",
+        "homepage_url",
         "created",
         "modified",
     )
 
-    search_fields = ["name", "description", "url"]
+    search_fields = ["name", "description", "slug"]
 
 
 # Register all models with their respective admin classes
