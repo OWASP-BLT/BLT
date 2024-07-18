@@ -538,7 +538,7 @@ urlpatterns = [
     path("blt-tomato/", blt_tomato, name="blt-tomato"),
     re_path(
         r"^api/v1/projects/",
-        ProjectViewSet.as_view({"get": "list", "post": "create"}),
+        ProjectViewSet.as_view({"get": "list", "post": "create", "patch": "update"}),
         name="projects_api",
     ),
 ]

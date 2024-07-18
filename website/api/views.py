@@ -17,6 +17,7 @@ from rest_framework.views import APIView
 
 from website.models import (
     Company,
+    Contributor,
     Domain,
     Hunt,
     HuntPrize,
@@ -32,6 +33,7 @@ from website.serializers import (
     BugHuntPrizeSerializer,
     BugHuntSerializer,
     CompanySerializer,
+    ContributorSerializer,
     DomainSerializer,
     IssueSerializer,
     ProjectSerializer,
@@ -654,10 +656,18 @@ class CompanyViewSet(viewsets.ModelViewSet):
     http_method_names = ("get", "post", "put")
 
 
+class ContributorViewSet(viewsets.ModelViewSet):
+    queryset = Contributor.objects.all()
+    serializer_class = ContributorSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    http_method_names = ("get", "post", "put")
+
+
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    http_method_names = ("get", "post", "put")
+    # permission_classes = (IsAuthenticatedOrReadOnly,)
+    http_method_names = ("get", "post", "put", "patch")
 
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
@@ -687,10 +697,52 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         project_instance.save()
 
-        # Set contribtors
+        # Set contributors
         if contributors:
             project_instance.contributors.set(contributors)
 
         serializer = ProjectSerializer(project_instance)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def list(self, request, *args, **kwargs):
+        projects = Project.objects.prefetch_related("contributors").all()
+
+        project_data = []
+        for project in projects:
+            contributors_data = []
+            for contributor in project.contributors.all():
+                contributor_info = ContributorSerializer(contributor)
+                contributors_data.append(contributor_info.data)
+            contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+            project_info = ProjectSerializer(project)
+            project_info = {
+                "id": project.id,
+                "name": project.name,
+                "slug": project.slug,
+                "description": project.description,
+                "github_url": project.github_url,
+                "wiki_url": project.wiki_url,
+                "homepage_url": project.homepage_url,
+                "logo": project.logo.url if project.logo else None,
+                "created": project.created,
+                "modified": project.modified,
+                "contributors": contributors_data,
+            }
+            project_data.append(project_info)
+
+        return Response(
+            {"count": len(project_data), "projects": project_data},
+            status=200,
+        )
+
+    def update(self, request, *args, **kwargs):
+        projects = Project.objects.prefetch_related("contributors").all()
+        for project in projects:
+            print(project.github_url)
+            contributors = Project.get_contributors(self, github_url=project.github_url)
+            project.contributors.set(contributors)
+        serializer = ProjectSerializer(projects, many=True)
+        return Response(
+            {"count": len(projects), "projects": serializer.data}, status=status.HTTP_200_OK
+        )

@@ -114,7 +114,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         read_only_fields = ("slug", "contributors")
 
 
-class ContributorsSerializer(serializers.ModelSerializer):
+class ContributorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contributor
         fields = "__all__"

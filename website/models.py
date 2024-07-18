@@ -682,6 +682,7 @@ class Project(models.Model):
     def get_contributors(self, github_url):
         owner = github_url.split("/")
         url = "https://api.github.com/repos/" + owner[-2] + "/" + owner[-1] + "/contributors"
+        print("url : " + url)
         response = requests.get(url)
         if response.status_code == 200:
             contributors_data = response.json()
