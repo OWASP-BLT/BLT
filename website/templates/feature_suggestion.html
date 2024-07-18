@@ -82,7 +82,7 @@
     }
 
     .suggestion-vote button {
-        background-color: #2b2b2b;
+        background-color: #e4e1e1;
         border: none;
         padding: 2px;
         border-radius: 5px;
@@ -116,16 +116,16 @@
                         <p>
                             <strong>User:</strong>{{ suggestion.user }}
                         </p>
-                        <p hidden id="suggestion-id---{{ suggestion.id }}">{{ suggestion.id }}</p>
+                        <p hidden id="suggestion-id---{{ suggestion.suggestion_id }}">{{ suggestion.suggestion_id }}</p>
                         <div class="suggestion-vote">
                             <button type="button"
                                     onclick="upvote(event)"
-                                    id="upvote---{{ suggestion.id }}">↑</button>
-                            <label id="up_vote-{{ suggestion.id }}">{{ suggestion.up_vote }}</label>
+                                    id="upvote---{{ suggestion.suggestion_id }}">↑</button>
+                            <label id="up_vote-{{ suggestion.suggestion_id }}">{{ suggestion.up_votes }}</label>
                             <button type="button"
                                     onclick="downvote(event)"
-                                    id="downvote---{{ suggestion.id }}">↓</button>
-                            <label id="down_vote-{{ suggestion.id }}">{{ suggestion.down_vote }}</label>
+                                    id="downvote---{{ suggestion.suggestion_id }}">↓</button>
+                            <label id="down_vote-{{ suggestion.suggestion_id }}">{{ suggestion.down_votes }}</label>
                         </div>
                     </li>
                 {% endfor %}
@@ -155,7 +155,6 @@
     function setvote(){
         document.querySelectorAll('p[id^="suggestion-id-"]').forEach(function(element) {
             const id = element.id.split('---')[1];
-            console.log(id);
             const upvoteBtn = document.getElementById(`upvote---${id}`);
             const downvoteBtn = document.getElementById(`downvote---${id}`);
             fetch('/suggestion/set-vote-status/', {
@@ -177,6 +176,7 @@
             });
         });
     }
+
 
     function upvote(event) {
         const button = event.target;
