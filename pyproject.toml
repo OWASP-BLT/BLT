@@ -80,7 +80,7 @@ psutil = "^5.9.8"
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"
 isort = "^5.13.2"
-ruff = "^0.5.2"
+ruff = "^0.5.3"
 pre-commit = "^3.7.1"
 
 [tool.isort]
