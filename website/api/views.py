@@ -666,44 +666,40 @@ class ContributorViewSet(viewsets.ModelViewSet):
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    # permission_classes = (IsAuthenticatedOrReadOnly,)
     http_method_names = ("get", "post", "put", "patch")
 
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
 
         name = data.get("name", "")
-        slug_base = slugify(name)
-        slug = slug_base
-        data["slug"] = slug
+        slug = slugify(name)
 
         contributors = Project.get_contributors(self, data["github_url"])  # get contributors
 
-        project_instance = Project(
-            name=data["name"],
-            slug=slug,
-            description=data.get("description", ""),
-            github_url=data.get("github_url", ""),
-            wiki_url=data.get("wiki_url", ""),
-            homepage_url=data.get("homepage_url", ""),
-            logo=data.get("logo", ""),
-        )
+        serializer = ProjectSerializer(data=data)
 
-        # If the logo is not provided get the logo from the repo itself
-        if project_instance.logo == "":
-            logo = project_instance.get_github_logo_save_to_storage(project_instance.github_url)
-            if logo:
-                project_instance.logo = logo
+        if serializer.is_valid():
+            project_instance = serializer.save()
+            project_instance.__setattr__("slug", slug)
 
-        project_instance.save()
+            # If the logo is not provided get the logo from the repo itself
+            if project_instance.logo == "":
+                logo = project_instance.get_github_logo_save_to_storage(project_instance.github_url)
+                if logo:
+                    project_instance.logo = logo
 
-        # Set contributors
-        if contributors:
-            project_instance.contributors.set(contributors)
+            project_instance.save()
 
-        serializer = ProjectSerializer(project_instance)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            # Set contributors
+            if contributors:
+                project_instance.contributors.set(contributors)
+
+            serializer = ProjectSerializer(project_instance)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def list(self, request, *args, **kwargs):
         projects = Project.objects.prefetch_related("contributors").all()
@@ -715,20 +711,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 contributor_info = ContributorSerializer(contributor)
                 contributors_data.append(contributor_info.data)
             contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
-            project_info = ProjectSerializer(project)
-            project_info = {
-                "id": project.id,
-                "name": project.name,
-                "slug": project.slug,
-                "description": project.description,
-                "github_url": project.github_url,
-                "wiki_url": project.wiki_url,
-                "homepage_url": project.homepage_url,
-                "logo": project.logo.url if project.logo else None,
-                "created": project.created,
-                "modified": project.modified,
-                "contributors": contributors_data,
-            }
+            project_info = ProjectSerializer(project).data
+            project_info["contributors"] = contributors_data
             project_data.append(project_info)
 
         return Response(
@@ -739,7 +723,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         projects = Project.objects.prefetch_related("contributors").all()
         for project in projects:
-            print(project.github_url)
             contributors = Project.get_contributors(self, github_url=project.github_url)
             project.contributors.set(contributors)
         serializer = ProjectSerializer(projects, many=True)

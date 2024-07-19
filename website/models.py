@@ -642,9 +642,9 @@ class Contributor(models.Model):
     name = models.CharField(max_length=255)
     github_id = models.IntegerField(unique=True)
     github_url = models.URLField()
-    avatar = models.URLField()
+    avatar_url = models.URLField()
     contributor_type = models.CharField(max_length=255)  # type = User, Bot ,... etc
-    contributions = models.IntegerField()
+    contributions = models.PositiveIntegerField()
 
     def __str__(self):
         return self.name
