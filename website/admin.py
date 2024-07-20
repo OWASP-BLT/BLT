@@ -300,7 +300,7 @@ class SuggestionAdmin(admin.ModelAdmin):
     list_display = ("user", "title", "description", "up_votes", "suggestion_id", "down_votes")
 
 
-class SuggestionLikesAdmin(admin.ModelAdmin):
+class SuggestionVotesAdmin(admin.ModelAdmin):
     list_display = ("user", "suggestion", "up_vote", "down_vote")
 
 
@@ -338,7 +338,7 @@ admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
 admin.site.register(HuntPrize)
 admin.site.register(ChatBotLog, ChatBotLogAdmin)
 admin.site.register(Suggestion, SuggestionAdmin)
-admin.site.register(SuggestionVotes, SuggestionLikesAdmin)
+admin.site.register(SuggestionVotes, SuggestionVotesAdmin)
 
 # Register missing models
 admin.site.register(InviteFriend)
