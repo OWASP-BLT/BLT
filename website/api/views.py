@@ -11,7 +11,12 @@ from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (
+    AllowAny,
+    IsAdminUser,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -659,7 +664,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
 class ContributorViewSet(viewsets.ModelViewSet):
     queryset = Contributor.objects.all()
     serializer_class = ContributorSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
     http_method_names = ("get", "post", "put")
 
 
@@ -721,11 +725,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
         )
 
     def update(self, request, *args, **kwargs):
-        projects = Project.objects.prefetch_related("contributors").all()
-        for project in projects:
-            contributors = Project.get_contributors(self, github_url=project.github_url)
-            project.contributors.set(contributors)
-        serializer = ProjectSerializer(projects, many=True)
+        if IsAdminUser.has_permission(self=self, request=request, view=""):
+            projects = Project.objects.prefetch_related("contributors").all()
+            for project in projects:
+                contributors = Project.get_contributors(self, github_url=project.github_url)
+                project.contributors.set(contributors)
+            serializer = ProjectSerializer(projects, many=True)
+            return Response(
+                {"count": len(projects), "projects": serializer.data}, status=status.HTTP_200_OK
+            )
         return Response(
-            {"count": len(projects), "projects": serializer.data}, status=status.HTTP_200_OK
+            {"success": False, "message": "Only admin's can access this api."},
+            status=status.HTTP_400_BAD_REQUEST,
         )

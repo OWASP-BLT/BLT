@@ -694,7 +694,7 @@ class Project(models.Model):
                         defaults={
                             "name": c["login"],
                             "github_url": c["html_url"],
-                            "avatar": c["avatar_url"],
+                            "avatar_url": c["avatar_url"],
                             "contributor_type": c["type"],
                             "contributions": c["contributions"],
                         },
