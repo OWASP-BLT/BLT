@@ -1082,21 +1082,6 @@ transform: scale(1);
                                                     <a class="follow_unfollow btn btn-default" name="{{ user }}">Follow</a>
                                                 {% endif %}
                                             {% endif %}
-                                            <div class="status">
-                                                <form name="_xclick"
-                                                      action="https://www.paypal.com/cgi-bin/webscr"
-                                                      method="post">
-                                                    <input type="hidden" name="cmd" value="_xclick">
-                                                    <input type="hidden"
-                                                           name="business"
-                                                           value="{{ project.paypal|default:" coderbounty@gmail.com" }}">
-                                                    <input type="hidden" name="item_name" value="tip for {{ user.username }}">
-                                                    <input type="hidden" name="currency_code" value="USD">
-                                                    <button type="submit" class="btn btn-danger">
-                                                        <i class="fa fa-money fa-lg"></i> Send a tip
-                                                    </button>
-                                                </form>
-                                            </div>
                                         </div>
                                     </li>
                                     <li>
