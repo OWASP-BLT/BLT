@@ -346,21 +346,31 @@ class Issue(models.Model):
         ordering = ["-created"]
 
 
-@receiver(post_delete, sender=Issue)
-def delete_image_on_issue_delete(sender, instance, **kwargs):
-    if instance.screenshot:
-        client = storage.Client()
-        bucket = client.bucket(settings.GS_BUCKET_NAME)
-        blob_name = instance.screenshot.name
-        blob = bucket.blob(blob_name)
-        try:
-            logger.info(f"Attempting to delete image from Google Cloud Storage: {blob_name}")
-            blob.delete()
-            logger.info(f"Successfully deleted image from Google Cloud Storage: {blob_name}")
-        except NotFound:
-            logger.warning(f"File not found in Google Cloud Storage: {blob_name}")
-        except Exception as e:
-            logger.error(f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}")
+if "storages.backends.gcloud.GoogleCloudStorage" in settings.DEFAULT_FILE_STORAGE:
+
+    @receiver(post_delete, sender=Issue)
+    def delete_image_on_issue_delete(sender, instance, **kwargs):
+        if instance.screenshot:
+            client = storage.Client()
+            bucket = client.bucket(settings.GS_BUCKET_NAME)
+            blob_name = instance.screenshot.name
+            blob = bucket.blob(blob_name)
+            try:
+                logger.info(f"Attempting to delete image from Google Cloud Storage: {blob_name}")
+                blob.delete()
+                logger.info(f"Successfully deleted image from Google Cloud Storage: {blob_name}")
+            except NotFound:
+                logger.warning(f"File not found in Google Cloud Storage: {blob_name}")
+            except Exception as e:
+                logger.error(
+                    f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}"
+                )
+else:
+
+    @receiver(post_delete, sender=Issue)
+    def delete_image_on_issue_delete(sender, instance, **kwargs):
+        if instance.screenshot:
+            instance.screenshot.delete(save=False)
 
 
 class IssueScreenshot(models.Model):
@@ -368,21 +378,31 @@ class IssueScreenshot(models.Model):
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
 
 
-@receiver(post_delete, sender=IssueScreenshot)
-def delete_image_on_post_delete(sender, instance, **kwargs):
-    if instance.image:
-        client = storage.Client()
-        bucket = client.bucket(settings.GS_BUCKET_NAME)
-        blob_name = instance.image.name
-        blob = bucket.blob(blob_name)
-        try:
-            logger.info(f"Attempting to delete image from Google Cloud Storage: {blob_name}")
-            blob.delete()
-            logger.info(f"Successfully deleted image from Google Cloud Storage: {blob_name}")
-        except NotFound:
-            logger.warning(f"File not found in Google Cloud Storage: {blob_name}")
-        except Exception as e:
-            logger.error(f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}")
+if "storages.backends.gcloud.GoogleCloudStorage" in settings.DEFAULT_FILE_STORAGE:
+
+    @receiver(post_delete, sender=IssueScreenshot)
+    def delete_image_on_post_delete(sender, instance, **kwargs):
+        if instance.image:
+            client = storage.Client()
+            bucket = client.bucket(settings.GS_BUCKET_NAME)
+            blob_name = instance.image.name
+            blob = bucket.blob(blob_name)
+            try:
+                logger.info(f"Attempting to delete image from Google Cloud Storage: {blob_name}")
+                blob.delete()
+                logger.info(f"Successfully deleted image from Google Cloud Storage: {blob_name}")
+            except NotFound:
+                logger.warning(f"File not found in Google Cloud Storage: {blob_name}")
+            except Exception as e:
+                logger.error(
+                    f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}"
+                )
+else:
+
+    @receiver(post_delete, sender=IssueScreenshot)
+    def delete_image_on_post_delete(sender, instance, **kwargs):
+        if instance.image:
+            instance.image.delete(save=False)
 
 
 @receiver(post_save, sender=Issue)

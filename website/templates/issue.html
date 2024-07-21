@@ -291,20 +291,7 @@
                                 {% else %}
                                     <h3>Reported by {{ object.user.username|default_if_none:"Anonymous" }}</h3>
                                 {% endif %}
-                                {% if object.user.username %}
-                                    <h4>Total Points of {{ object.user.username }} = {{ users_score }}</h4>
-                                    <form name="_xclick"
-                                          action="https://www.paypal.com/cgi-bin/webscr"
-                                          method="post">
-                                        <input type="hidden" name="cmd" value="_xclick">
-                                        <input type="hidden" name="business" value="coderbounty@gmail.com">
-                                        <input type="hidden"
-                                               name="item_name"
-                                               value="tip for {{ object.user.username }} on {% env 'DOMAIN_NAME' %} bug # {{ object.id }}">
-                                        <input type="hidden" name="currency_code" value="USD">
-                                        <button type="submit" class="btn btn-primary btn-xs pull-right">Send a Tip</button>
-                                    </form>
-                                {% endif %}
+                                {% if object.user.username %}<h4>Total Points of {{ object.user.username }} = {{ users_score }}</h4>{% endif %}
                             </div>
                         </div>
                     </div>
