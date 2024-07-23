@@ -4149,7 +4149,9 @@ def create_github_issue(request, id):
             screenshot_text += "![0](" + settings.FQDN + screenshot.image.url + ") \n"
 
         github_url = issue.domain.github.replace("https", "git").replace("http", "git") + ".git"
-        p = parse(github_url)
+        from giturlparse import parse as parse_github_url
+
+        p = parse_github_url(github_url)
 
         url = "https://api.github.com/repos/%s/%s/issues" % (p.owner, p.repo)
         the_user = request.user.username if request.user.is_authenticated else "Anonymous"
