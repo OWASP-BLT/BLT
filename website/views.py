@@ -298,14 +298,12 @@ class ProjectListView(ListView):
 
 def newhome(request, template="new_home.html"):
     if request.user.is_authenticated:
-        try:
-            email_record = EmailAddress.objects.get(email=request.user.email)
+        email_record = EmailAddress.objects.filter(email=request.user.email).first()
+        if email_record:
             if not email_record.verified:
                 messages.error(request, "Please verify your email address.")
-        except EmailAddress.DoesNotExist:
+        else:
             messages.error(request, "No email associated with your account. Please add an email.")
-        except AttributeError:
-            messages.error(request, "Your account does not have an email address.")
     else:
         messages.info(
             request, "You are browsing as a guest. Please log in or register for full access."
