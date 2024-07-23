@@ -636,3 +636,12 @@ class ChatBotLog(models.Model):
 
     def __str__(self):
         return f"Q: {self.question} | A: {self.answer} at {self.timestamp}"
+
+
+class MonitorIP(models.Model):
+    ip = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=255, default="", null=True, blank=True)
+    count = models.IntegerField(default=1)
+
+    def __str__(self):
+        return f"user agent : {self.user_agent} | IP : {self.ip}"

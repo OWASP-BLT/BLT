@@ -59,6 +59,7 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     IssueView3,
     JoinCompany,
     ListHunts,
+    Monitor_ip,
     OngoingHunts,
     PreviousHunts,
     SaveBiddingData,
@@ -71,6 +72,7 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
+    ban_ip,
     blt_tomato,
     change_bid_status,
     chatbot_conversation,
@@ -536,6 +538,8 @@ urlpatterns = [
     ),
     path("api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"),
     path("blt-tomato/", blt_tomato, name="blt-tomato"),
+    path("monitor-ip/", Monitor_ip, name="Monitor_ip"),
+    path("ban-ip/", ban_ip, name="ban_ip"),
 ]
 
 if settings.DEBUG:

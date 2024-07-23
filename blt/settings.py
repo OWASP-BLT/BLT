@@ -118,7 +118,13 @@ MIDDLEWARE = (
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "tz_detect.middleware.TimezoneMiddleware",
+    "blt.middleware.ip_restrict.IPRestrictMiddleware",
+    "blt.middleware.count_ip_requests.MonitorIPMiddleware",
 )
+
+RESTRICTED_IPS = [
+    "127.0.0.1",
+]
 
 TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
 
