@@ -283,7 +283,8 @@ class MonitorAdmin(admin.ModelAdmin):
         "id",
         "url",
         "keyword",
-        "created",        "modified",
+        "created",
+        "modified",
         "last_checked_time",
         "status",
         "user",
@@ -310,7 +311,6 @@ class ProjectAdmin(admin.ModelAdmin):
     )
 
     search_fields = ["name", "description", "slug"]
-
 
 
 # Register all models with their respective admin classes
