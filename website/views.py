@@ -4137,16 +4137,21 @@ def create_github_issue(request, id):
     # referer = request.META.get("HTTP_REFERER")
     # if not referer:
     #     return HttpResponseForbidden()
+    if not os.environ.get("GITHUB_ACCESS_TOKEN"):
+        return JsonResponse({"status": "Failed", "status_reason": "GitHub Access Token is missing"})
     if issue.github_url:
         return JsonResponse(
             {"status": "Failed", "status_reason": "GitHub Issue Exists at " + issue.github_url}
         )
-    if os.environ.get("GITHUB_ACCESS_TOKEN"):
+    if issue.domain.github:
         screenshot_text = ""
         for screenshot in screenshot_all:
             screenshot_text += "![0](" + settings.FQDN + screenshot.image.url + ") \n"
 
-        url = issue.domain.github_url
+        github_url = issue.domain.github.replace("https", "git").replace("http", "git") + ".git"
+        p = parse(github_url)
+
+        url = "https://api.github.com/repos/%s/%s/issues" % (p.owner, p.repo)
         the_user = request.user.username if request.user.is_authenticated else "Anonymous"
 
         issue_data = {
@@ -4192,7 +4197,9 @@ def create_github_issue(request, id):
             )
             return JsonResponse({"status": "Failed", "status_reason": "Failed: error is " + str(e)})
     else:
-        return JsonResponse({"status": "Failed", "status_reason": "GITHUB_ACCESS_TOKEN is missing"})
+        return JsonResponse(
+            {"status": "Failed", "status_reason": "No Github URL for this domain, please add it."}
+        )
 
 
 @login_required(login_url="/accounts/login")
