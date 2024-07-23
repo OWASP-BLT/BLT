@@ -4184,7 +4184,9 @@ def create_github_issue(request, id):
                 issue.save()
                 return JsonResponse({"status": "ok", "github_url": issue.github_url})
             else:
-                return JsonResponse({"status": "Failed", "status_reason": response.reason})
+                return JsonResponse(
+                    {"status": "Failed", "status_reason": "Issue with Github:" + response.reason}
+                )
         except Exception as e:
             send_mail(
                 "Error in GitHub issue creation for Issue ID " + str(issue.id),
@@ -4222,7 +4224,7 @@ def resolve(request, id):
             issue.save()
             return JsonResponse({"status": "ok", "issue_status": issue.status})
     else:
-        return HttpResponseForbidden()
+        return HttpResponseForbidden("not logged in or superuser or issue user")
 
 
 @receiver(user_signed_up)
