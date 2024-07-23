@@ -21,6 +21,7 @@ from website.models import (
     MonitorIP,
     Payment,
     Points,
+    Project,
     Subscription,
     Transaction,
     UserProfile,
@@ -282,8 +283,7 @@ class MonitorAdmin(admin.ModelAdmin):
         "id",
         "url",
         "keyword",
-        "created",
-        "modified",
+        "created",        "modified",
         "last_checked_time",
         "status",
         "user",
@@ -298,7 +298,23 @@ class MonitorIPAdmin(admin.ModelAdmin):
     list_display = ("ip", "user_agent", "count")
 
 
+class ProjectAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "name",
+        "slug",
+        "description",
+        "homepage_url",
+        "created",
+        "modified",
+    )
+
+    search_fields = ["name", "description", "slug"]
+
+
+
 # Register all models with their respective admin classes
+admin.site.register(Project, ProjectAdmin)
 admin.site.register(ContributorStats)
 admin.site.register(Bid, BidAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)

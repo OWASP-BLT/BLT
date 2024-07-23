@@ -10,7 +10,7 @@ from captcha.fields import CaptchaField
 from colorthief import ColorThief
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
+from django.core.exceptions import MultipleObjectsReturned, ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.validators import URLValidator
@@ -346,21 +346,31 @@ class Issue(models.Model):
         ordering = ["-created"]
 
 
-@receiver(post_delete, sender=Issue)
-def delete_image_on_issue_delete(sender, instance, **kwargs):
-    if instance.screenshot:
-        client = storage.Client()
-        bucket = client.bucket(settings.GS_BUCKET_NAME)
-        blob_name = instance.screenshot.name
-        blob = bucket.blob(blob_name)
-        try:
-            logger.info(f"Attempting to delete image from Google Cloud Storage: {blob_name}")
-            blob.delete()
-            logger.info(f"Successfully deleted image from Google Cloud Storage: {blob_name}")
-        except NotFound:
-            logger.warning(f"File not found in Google Cloud Storage: {blob_name}")
-        except Exception as e:
-            logger.error(f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}")
+if "storages.backends.gcloud.GoogleCloudStorage" in settings.DEFAULT_FILE_STORAGE:
+
+    @receiver(post_delete, sender=Issue)
+    def delete_image_on_issue_delete(sender, instance, **kwargs):
+        if instance.screenshot:
+            client = storage.Client()
+            bucket = client.bucket(settings.GS_BUCKET_NAME)
+            blob_name = instance.screenshot.name
+            blob = bucket.blob(blob_name)
+            try:
+                logger.info(f"Attempting to delete image from Google Cloud Storage: {blob_name}")
+                blob.delete()
+                logger.info(f"Successfully deleted image from Google Cloud Storage: {blob_name}")
+            except NotFound:
+                logger.warning(f"File not found in Google Cloud Storage: {blob_name}")
+            except Exception as e:
+                logger.error(
+                    f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}"
+                )
+else:
+
+    @receiver(post_delete, sender=Issue)
+    def delete_image_on_issue_delete(sender, instance, **kwargs):
+        if instance.screenshot:
+            instance.screenshot.delete(save=False)
 
 
 class IssueScreenshot(models.Model):
@@ -368,21 +378,31 @@ class IssueScreenshot(models.Model):
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
 
 
-@receiver(post_delete, sender=IssueScreenshot)
-def delete_image_on_post_delete(sender, instance, **kwargs):
-    if instance.image:
-        client = storage.Client()
-        bucket = client.bucket(settings.GS_BUCKET_NAME)
-        blob_name = instance.image.name
-        blob = bucket.blob(blob_name)
-        try:
-            logger.info(f"Attempting to delete image from Google Cloud Storage: {blob_name}")
-            blob.delete()
-            logger.info(f"Successfully deleted image from Google Cloud Storage: {blob_name}")
-        except NotFound:
-            logger.warning(f"File not found in Google Cloud Storage: {blob_name}")
-        except Exception as e:
-            logger.error(f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}")
+if "storages.backends.gcloud.GoogleCloudStorage" in settings.DEFAULT_FILE_STORAGE:
+
+    @receiver(post_delete, sender=IssueScreenshot)
+    def delete_image_on_post_delete(sender, instance, **kwargs):
+        if instance.image:
+            client = storage.Client()
+            bucket = client.bucket(settings.GS_BUCKET_NAME)
+            blob_name = instance.image.name
+            blob = bucket.blob(blob_name)
+            try:
+                logger.info(f"Attempting to delete image from Google Cloud Storage: {blob_name}")
+                blob.delete()
+                logger.info(f"Successfully deleted image from Google Cloud Storage: {blob_name}")
+            except NotFound:
+                logger.warning(f"File not found in Google Cloud Storage: {blob_name}")
+            except Exception as e:
+                logger.error(
+                    f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}"
+                )
+else:
+
+    @receiver(post_delete, sender=IssueScreenshot)
+    def delete_image_on_post_delete(sender, instance, **kwargs):
+        if instance.image:
+            instance.image.delete(save=False)
 
 
 @receiver(post_save, sender=Issue)
@@ -645,3 +665,72 @@ class MonitorIP(models.Model):
 
     def __str__(self):
         return f"user agent : {self.user_agent} | IP : {self.ip}"
+
+
+class Contributor(models.Model):
+    name = models.CharField(max_length=255)
+    github_id = models.IntegerField(unique=True)
+    github_url = models.URLField()
+    avatar_url = models.URLField()
+    contributor_type = models.CharField(max_length=255)  # type = User, Bot ,... etc
+    contributions = models.PositiveIntegerField()
+
+    def __str__(self):
+        return self.name
+
+
+class Project(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    description = models.TextField()
+    github_url = models.URLField()
+    wiki_url = models.URLField(null=True, blank=True)
+    homepage_url = models.URLField(null=True, blank=True)
+    logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+    contributors = models.ManyToManyField(
+        Contributor, related_name="projects", null=True, blank=True
+    )
+
+    def __str__(self):
+        return self.name
+
+    def get_github_logo_save_to_storage(self, url):
+        owner = url.split("/")
+        link = "https://avatars.githubusercontent.com/" + owner[-2]
+        github_logo = requests.get(
+            link
+        )  # the image there is of the owner so we will have this as the logo
+        if github_logo.status_code == 200:
+            file_name = f"{self.slug}.png"
+            self.logo.save(file_name, ContentFile(github_logo.content), save=False)
+            return self.logo
+        return None
+
+    def get_contributors(self, github_url):
+        owner = github_url.split("/")
+        url = "https://api.github.com/repos/" + owner[-2] + "/" + owner[-1] + "/contributors"
+        print("url : " + url)
+        response = requests.get(url)
+        if response.status_code == 200:
+            contributors_data = response.json()
+            contributors = []
+            for c in contributors_data:
+                try:
+                    contributor, created = Contributor.objects.get_or_create(
+                        github_id=c["id"],
+                        defaults={
+                            "name": c["login"],
+                            "github_url": c["html_url"],
+                            "avatar_url": c["avatar_url"],
+                            "contributor_type": c["type"],
+                            "contributions": c["contributions"],
+                        },
+                    )
+                    contributors.append(contributor)
+                except MultipleObjectsReturned:
+                    contributor = Contributor.objects.filter(github_id=c["id"]).first()
+                    contributors.append(contributor)
+            return contributors
+        return None
