@@ -28,6 +28,7 @@ from website.api.views import (
     IssueViewSet,
     LeaderboardApiViewSet,
     LikeIssueApiView,
+    ProjectViewSet,
     StatsApiViewset,
     UrlCheckApiViewset,
     UserIssueViewSet,
@@ -536,6 +537,11 @@ urlpatterns = [
     ),
     path("api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"),
     path("blt-tomato/", blt_tomato, name="blt-tomato"),
+    path(
+        "api/v1/projects/",
+        ProjectViewSet.as_view({"get": "list", "post": "create", "patch": "update"}),
+        name="projects_api",
+    ),
     re_path(r"^api/v1/authenticate/", AuthApiViewset.as_view(), name="auth-api"),
 ]
 
