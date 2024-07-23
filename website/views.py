@@ -4134,21 +4134,19 @@ class IssueView3(DetailView):
 def create_github_issue(request, id):
     issue = get_object_or_404(Issue, id=id)
     screenshot_all = IssueScreenshot.objects.filter(issue=issue)
-    referer = request.META.get("HTTP_REFERER")
-    if not referer:
-        return HttpResponseForbidden()
+    # referer = request.META.get("HTTP_REFERER")
+    # if not referer:
+    #     return HttpResponseForbidden()
     if issue.github_url:
-        return JsonResponse({"status": "Failed", "status_reason": "GitHub Issue Exists"})
-    if (
-        os.environ.get("GITHUB_ACCESS_TOKEN") and request.user.is_authenticated
-        # Any Authenticated user will be able to create a GitHub issue
-        # and (issue.user == request.user or request.user.is_superuser)
-    ):
+        return JsonResponse(
+            {"status": "Failed", "status_reason": "GitHub Issue Exists at " + issue.github_url}
+        )
+    if os.environ.get("GITHUB_ACCESS_TOKEN"):
         screenshot_text = ""
         for screenshot in screenshot_all:
             screenshot_text += "![0](" + settings.FQDN + screenshot.image.url + ") \n"
 
-        url = "https://api.github.com/repos/OWASP-BLT/BLT/issues"
+        url = issue.domain.github_url
         the_user = request.user.username if request.user.is_authenticated else "Anonymous"
 
         issue_data = {
@@ -4192,11 +4190,9 @@ def create_github_issue(request, id):
                 [request.user.email],
                 fail_silently=True,
             )
-            return JsonResponse({"status": "Failed", "status_reason": "Failed"})
+            return JsonResponse({"status": "Failed", "status_reason": "Failed: error is " + str(e)})
     else:
-        return JsonResponse(
-            {"status": "Failed", "status_reason": "You are not authorised to make that request"}
-        )
+        return JsonResponse({"status": "Failed", "status_reason": "GITHUB_ACCESS_TOKEN is missing"})
 
 
 @login_required(login_url="/accounts/login")
