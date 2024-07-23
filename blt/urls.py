@@ -18,6 +18,7 @@ import website.views
 from blt import settings
 from company.views import ShowBughuntView
 from website.api.views import (
+    AuthApiViewset,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
     CompanyViewSet,
@@ -535,6 +536,7 @@ urlpatterns = [
     ),
     path("api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"),
     path("blt-tomato/", blt_tomato, name="blt-tomato"),
+    re_path(r"^api/v1/authenticate/", AuthApiViewset.as_view(), name="auth-api"),
 ]
 
 if settings.DEBUG:

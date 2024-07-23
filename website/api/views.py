@@ -1,7 +1,9 @@
+import json
 import uuid
 from datetime import datetime
 
 from django.conf import settings
+from django.contrib.auth import logout
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
@@ -9,6 +11,7 @@ from django.db.models import Count, Q, Sum
 from django.template.loader import render_to_string
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.decorators import permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
@@ -23,6 +26,7 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Points,
+    Token,
     User,
     UserProfile,
 )
@@ -649,3 +653,54 @@ class CompanyViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ("id", "name")
     http_method_names = ("get", "post", "put")
+
+
+class AuthApiViewset(APIView):
+    http_method_names = ("delete", "post")
+
+    def post(self, request, *args, **kwargs):
+        req_type = request.GET.get("type")
+
+        if req_type == "login":
+            body_uni = request.body.decode("utf-8")
+            body = json.loads(body_uni)
+            username = body["user"]
+            password = body["password"]
+            try:
+                user = User.objects.get(username=username)
+                if user.check_password(password):
+                    token = Token.objects.get(user=user)
+                    return Response({"success": True, "token": token.key})
+                else:
+                    return Response({"success": False, "message": "Invalid credentials."})
+            except User.DoesNotExist:
+                return Response(
+                    {"success": False, "message": "Invalid credentials. User does not exists."}
+                )
+
+        elif req_type == "logout":
+            body_uni = request.body.decode("utf-8")
+            body = json.loads(body_uni)
+            username = body.get("user")
+            token_req = body.get("token")
+            try:
+                token = Token.objects.get(user__username=username).key
+                if token == token_req:
+                    logout(request)
+                    return Response({"success": True, "message": "Logged out successfully."})
+                else:
+                    return Response({"success": False, "message": "Invalid credentials."})
+            except Token.DoesNotExist:
+                return Response({"success": False, "message": "Invalid credentials."})
+        return Response({"success": False, "message": "Please provide a valid type."})
+
+    @permission_classes([IsAuthenticated])
+    def delete(self, request, *args, **kwargs):
+        try:
+            token = request.headers["Authorization"]
+            user = Token.objects.get(key=token).user
+            user_data = User.objects.get(username=user)
+            user_data.delete()
+            return Response({"success": True, "message": "User deleted successfully !!"})
+        except User.DoesNotExist:
+            return Response({"success": False, "message": "User does not exists."})
