@@ -33,7 +33,7 @@ from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
@@ -92,7 +92,6 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
-    MonitorIP,
     Payment,
     Points,
     Project,
@@ -4751,30 +4750,29 @@ def blt_tomato(request):
     return render(request, "blt_tomato.html", {"projects": data})
 
 
-@user_passes_test(is_admin, login_url="/admin")
-def Monitor_ip(request):
-    form = MonitorIPForm()
-    ips = MonitorIP.objects.all().order_by("-count")
-    return render(request, "ban_ip.html", {"form": form, "ips": ips})
+# @user_passes_test(is_admin, login_url="/admin")
+# def Monitor_ip(request):
+#     ips = MonitorIP.objects.all().order_by("-count")
+#     return render(request, "ban_ip.html", { "ips": ips})
 
 
-@user_passes_test(is_admin)
-def ban_ip(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            ip = data.get("ip")
+# @user_passes_test(is_admin)
+# def ban_ip(request):
+#     if request.method == "POST":
+#         try:
+#             data = json.loads(request.body)
+#             ip = data.get("ip")
 
-            if not ip:
-                return JsonResponse({"error": "IP address is required."}, status=400)
+#             if not ip:
+#                 return JsonResponse({"error": "IP address is required."}, status=400)
 
-            # Append the IP to the file
-            with open("website/restricted_ip.txt", "a") as file:
-                file.write(ip + "\n")
+#             # Append the IP to the file
+#             with open("website/restricted_ip.txt", "a") as file:
+#                 file.write(ip + "\n")
 
-            return JsonResponse({"status": "IP address added successfully."})
+#             return JsonResponse({"status": "IP address added successfully."})
 
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON."}, status=400)
+#         except json.JSONDecodeError:
+#             return JsonResponse({"error": "Invalid JSON."}, status=400)
 
-    return JsonResponse({"error": "Invalid request method."}, status=405)
+#     return JsonResponse({"error": "Invalid request method."}, status=405)

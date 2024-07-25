@@ -7,6 +7,7 @@ from import_export.admin import ImportExportModelAdmin
 from website.models import (
     IP,
     Bid,
+    BlockedIP,
     ChatBotLog,
     Company,
     CompanyAdmin,
@@ -18,7 +19,6 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
-    MonitorIP,
     Payment,
     Points,
     Project,
@@ -274,8 +274,40 @@ class IssueScreenshotAdmin(admin.ModelAdmin):
         return obj.issue.description
 
 
+def block_ip(modeladmin, request, queryset):
+    queryset.update(status="blocked")
+    for ip in queryset:
+        BlockedIP.objects.create(
+            address=ip.address, count=ip.count, user_agent_string=ip.user_agent_string
+        )
+    modeladmin.message_user(request, "Selected IPs have been blocked successfully.")
+
+
+block_ip.short_description = "Block selected IPs"
+
+
+def unblock_ip(modeladmin, request, queryset):
+    queryset.update(status="active")
+    for ip in queryset:
+        BlockedIP.objects.filter(ip=ip.address).delete()
+    modeladmin.message_user(request, "Selected IPs have ben unblocked successfully")
+
+
+unblock_ip.short_description = "Unblock selected IPs"
+
+
 class IPAdmin(admin.ModelAdmin):
-    list_display = ("id", "address", "user", "issuenumber")
+    list_display = (
+        "id",
+        "address_range",
+        "address",
+        "user",
+        "issuenumber",
+        "user_agent_string",
+        "status",
+        "count",
+    )
+    actions = [block_ip, unblock_ip]
 
 
 class MonitorAdmin(admin.ModelAdmin):
@@ -295,8 +327,8 @@ class ChatBotLogAdmin(admin.ModelAdmin):
     list_display = ("id", "question", "answer", "timestamp")
 
 
-class MonitorIPAdmin(admin.ModelAdmin):
-    list_display = ("ip", "user_agent", "count")
+class BlockedIPAdmin(admin.ModelAdmin):
+    list_display = ("address", "address_range", "user_agent_string", "count")
 
 
 class ProjectAdmin(admin.ModelAdmin):
@@ -332,7 +364,7 @@ admin.site.register(Payment, PaymentAdmin)
 admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
 admin.site.register(HuntPrize)
 admin.site.register(ChatBotLog, ChatBotLogAdmin)
-admin.site.register(MonitorIP, MonitorIPAdmin)
+admin.site.register(BlockedIP, BlockedIPAdmin)
 
 # Register missing models
 admin.site.register(InviteFriend)

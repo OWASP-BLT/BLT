@@ -521,11 +521,15 @@ post_save.connect(create_profile, sender=User)
 
 class IP(models.Model):
     address = models.CharField(max_length=25, null=True, blank=True)
+    address_range = models.GenericIPAddressField(null=True, blank=True)
+    count = models.IntegerField(default=1)
     user = models.CharField(max_length=25, null=True, blank=True)
+    user_agent_string = models.CharField(max_length=255, default="", null=True, blank=True)
     issuenumber = models.IntegerField(null=True, blank=True)
+    status = models.CharField(default="active", max_length=25)
 
     def ipaddress(self):
-        return self.ipaddress
+        return self.address
 
     def user_name(self):
         return self.user
@@ -658,13 +662,14 @@ class ChatBotLog(models.Model):
         return f"Q: {self.question} | A: {self.answer} at {self.timestamp}"
 
 
-class MonitorIP(models.Model):
-    ip = models.GenericIPAddressField(null=True, blank=True)
-    user_agent = models.CharField(max_length=255, default="", null=True, blank=True)
+class BlockedIP(models.Model):
+    address = models.GenericIPAddressField(null=True, blank=True)
+    address_range = models.GenericIPAddressField(null=True, blank=True)
+    user_agent_string = models.CharField(max_length=255, default="", null=True, blank=True)
     count = models.IntegerField(default=1)
 
     def __str__(self):
-        return f"user agent : {self.user_agent} | IP : {self.ip}"
+        return f"user agent : {self.user_agent_string} | IP : {self.ip}"
 
 
 class Contributor(models.Model):
