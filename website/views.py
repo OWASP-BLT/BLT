@@ -4759,34 +4759,40 @@ def vote_suggestions(request):
         down_vote = data.get("down_vote")
         voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).exists()
         if not voted:
+            up_vote = True if up_vote else False
+            down_vote = True if down_vote else False
+
+            if up_vote or down_vote:
+                voted = SuggestionVotes.objects.create(
+                    user=user, suggestion=suggestion, up_vote=up_vote, down_vote=down_vote
+                )
+
+                if up_vote:
+                    suggestion.up_votes += 1
+                if down_vote:
+                    suggestion.down_votes += 1
+        else:
+            if up_vote is False:
+                suggestion.up_votes -= 1
+            if down_vote is False:
+                suggestion.down_votes -= 1
+
+            voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).delete()
+
             if up_vote is True:
                 voted = SuggestionVotes.objects.create(
                     user=user, suggestion=suggestion, up_vote=True, down_vote=False
                 )
                 suggestion.up_votes += 1
-            elif down_vote is True:
+
+            if down_vote is True:
                 voted = SuggestionVotes.objects.create(
-                    user=user, suggestion=suggestion, up_vote=False, down_vote=True
+                    user=user, suggestion=suggestion, down_vote=True, up_vote=False
                 )
                 suggestion.down_votes += 1
-        else:
-            if up_vote is False:
-                suggestion.up_votes -= 1
-                voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).delete()
-                if down_vote is True:
-                    voted = SuggestionVotes.objects.create(
-                        user=user, suggestion=suggestion, down_vote=True, up_vote=False
-                    )
-                    suggestion.down_votes += 1
-            elif down_vote is False:
-                suggestion.down_votes -= 1
-                voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).delete()
-                if up_vote is True:
-                    voted = SuggestionVotes.objects.create(
-                        user=user, suggestion=suggestion, up_vote=True, down_vote=False
-                    )
-                    suggestion.up_votes += 1
-        suggestion.save()
+
+            suggestion.save()
+
         response = {
             "success": True,
             "up_vote": suggestion.up_votes,

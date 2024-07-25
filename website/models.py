@@ -677,7 +677,7 @@ class SuggestionVotes(models.Model):
     down_vote = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"Suggestion {self.suggestion.id}"
+        return f"Suggestion {self.user}"
 
 
 class Project(models.Model):
