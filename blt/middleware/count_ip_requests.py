@@ -15,9 +15,6 @@ class MonitorIPMiddleware(MiddlewareMixin):
         user_agent = request.META.get("HTTP_USER_AGENT", "")
         parsed_agent = parse(user_agent)
 
-        print(f"IP Address: {ip}")
-        print(f"User Agent: {parsed_agent}")
-
         if ip:
             # Retrieve the IP object or None if it doesn't exist
             ip_record = IP.objects.filter(address=ip).first()
