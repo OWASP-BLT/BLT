@@ -1834,20 +1834,20 @@ tenacity = ">=8.1.0,<8.4.0 || >8.4.0,<9.0.0"
 
 [[package]]
 name = "langchain-community"
-version = "0.2.9"
+version = "0.2.10"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langchain_community-0.2.9-py3-none-any.whl", hash = "sha256:b51d3adf9346a1161c1098917585b9e303cf24e2f5c71f5d232a0504edada5f2"},
-    {file = "langchain_community-0.2.9.tar.gz", hash = "sha256:1e7c180232916cbe35fe00509680dd1f805e32d7c87b5e80b3a9ec8754ecae37"},
+    {file = "langchain_community-0.2.10-py3-none-any.whl", hash = "sha256:9f4d1b5ab7f0b0a704f538e26e50fce45a461da6d2bf6b7b636d24f22fbc088a"},
+    {file = "langchain_community-0.2.10.tar.gz", hash = "sha256:3a0404bad4bd07d6f86affdb62fb3d080a456c66191754d586a409d9d6024d62"},
 ]
 
 [package.dependencies]
 aiohttp = ">=3.8.3,<4.0.0"
 dataclasses-json = ">=0.5.7,<0.7"
 langchain = ">=0.2.9,<0.3.0"
-langchain-core = ">=0.2.22,<0.3.0"
+langchain-core = ">=0.2.23,<0.3.0"
 langsmith = ">=0.1.0,<0.2.0"
 numpy = {version = ">=1,<2", markers = "python_version < \"3.12\""}
 PyYAML = ">=5.3"
@@ -4418,4 +4418,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "91e09d8937f6826e5ebad720f6af838237be70881ac17a9ac47a66bdbdf65e5e"
+content-hash = "457cf9d0c35d84dc22862adcf4d41301a2789d1d68fbb743b49c1e7abba2111a"
