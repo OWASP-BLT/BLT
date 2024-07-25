@@ -10,7 +10,7 @@ from captcha.fields import CaptchaField
 from colorthief import ColorThief
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
+from django.core.exceptions import MultipleObjectsReturned, ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.validators import URLValidator
@@ -680,6 +680,18 @@ class SuggestionVotes(models.Model):
         return f"Suggestion {self.user}"
 
 
+class Contributor(models.Model):
+    name = models.CharField(max_length=255)
+    github_id = models.IntegerField(unique=True)
+    github_url = models.URLField()
+    avatar_url = models.URLField()
+    contributor_type = models.CharField(max_length=255)  # type = User, Bot ,... etc
+    contributions = models.PositiveIntegerField()
+
+    def __str__(self):
+        return self.name
+
+
 class Project(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
@@ -690,22 +702,48 @@ class Project(models.Model):
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
+    contributors = models.ManyToManyField(
+        Contributor, related_name="projects", null=True, blank=True
+    )
 
     def __str__(self):
         return self.name
 
-    # # these need to be tested
-    # def get_github_logo_save_to_storage(self):
-    #     github_logo = requests.get(f"{self.github_url}/raw/master/logo.png")
-    #     if github_logo.status_code == 200:
-    #         self.logo.save(f"{self.slug}.png", ContentFile(github_logo.content))
-    #         self.save()
-    #         return self.logo.url
+    def get_github_logo_save_to_storage(self, url):
+        owner = url.split("/")
+        link = "https://avatars.githubusercontent.com/" + owner[-2]
+        github_logo = requests.get(
+            link
+        )  # the image there is of the owner so we will have this as the logo
+        if github_logo.status_code == 200:
+            file_name = f"{self.slug}.png"
+            self.logo.save(file_name, ContentFile(github_logo.content), save=False)
+            return self.logo
+        return None
 
-    # def save(self, *args, **kwargs):
-    #     if not self.logo:
-    #         self.get_github_logo_save_to_storage()
-    #     super().save(*args, **kwargs)
-
-    def get_absolute_url(self):
-        return f"/project/{self.slug}"
+    def get_contributors(self, github_url):
+        owner = github_url.split("/")
+        url = "https://api.github.com/repos/" + owner[-2] + "/" + owner[-1] + "/contributors"
+        print("url : " + url)
+        response = requests.get(url)
+        if response.status_code == 200:
+            contributors_data = response.json()
+            contributors = []
+            for c in contributors_data:
+                try:
+                    contributor, created = Contributor.objects.get_or_create(
+                        github_id=c["id"],
+                        defaults={
+                            "name": c["login"],
+                            "github_url": c["html_url"],
+                            "avatar_url": c["avatar_url"],
+                            "contributor_type": c["type"],
+                            "contributions": c["contributions"],
+                        },
+                    )
+                    contributors.append(contributor)
+                except MultipleObjectsReturned:
+                    contributor = Contributor.objects.filter(github_id=c["id"]).first()
+                    contributors.append(contributor)
+            return contributors
+        return None
