@@ -461,6 +461,10 @@ class AddDomainView(View):
             return redirect("add_domain", id=id)
 
         parsed_url = urlparse(domain_data["url"])
+        if parsed_url.hostname is None:
+            messages.error(request, "Invalid domain url")
+            return redirect("add_domain", id=id)
+
         domain = (parsed_url.hostname).replace("www.", "")
 
         domain_data["name"] = domain_data["name"].lower()
@@ -514,7 +518,7 @@ class AddDomainView(View):
             default_storage.save(f"logos/{domain_logo.name}", domain_logo)
             logo_name = f"logos/{domain_logo.name}"
         else:
-            logo_name = "https://via.placeholder.com/150?text=No+Image+Available"
+            logo_name = ""
 
         if request.FILES.get("webshot"):
             webshot_logo = request.FILES.get("webshot")
@@ -524,7 +528,7 @@ class AddDomainView(View):
             default_storage.save(f"webshots/{webshot_logo.name}", webshot_logo)
             webshot_logo_name = f"webshots/{webshot_logo.name}"
         else:
-            webshot_logo_name = "https://via.placeholder.com/300x200?text=No+Image+Available"
+            webshot_logo_name = ""
 
         if domain_data["facebook"] and "facebook.com" not in domain_data["facebook"]:
             messages.error(request, "Facebook url should contain facebook.com")

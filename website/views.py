@@ -302,14 +302,12 @@ class ProjectListView(ListView):
 
 def newhome(request, template="new_home.html"):
     if request.user.is_authenticated:
-        try:
-            email_record = EmailAddress.objects.get(email=request.user.email)
+        email_record = EmailAddress.objects.filter(email=request.user.email).first()
+        if email_record:
             if not email_record.verified:
                 messages.error(request, "Please verify your email address.")
-        except EmailAddress.DoesNotExist:
+        else:
             messages.error(request, "No email associated with your account. Please add an email.")
-        except AttributeError:
-            messages.error(request, "Your account does not have an email address.")
     else:
         messages.info(
             request, "You are browsing as a guest. Please log in or register for full access."
@@ -4138,21 +4136,26 @@ class IssueView3(DetailView):
 def create_github_issue(request, id):
     issue = get_object_or_404(Issue, id=id)
     screenshot_all = IssueScreenshot.objects.filter(issue=issue)
-    referer = request.META.get("HTTP_REFERER")
-    if not referer:
-        return HttpResponseForbidden()
+    # referer = request.META.get("HTTP_REFERER")
+    # if not referer:
+    #     return HttpResponseForbidden()
+    if not os.environ.get("GITHUB_ACCESS_TOKEN"):
+        return JsonResponse({"status": "Failed", "status_reason": "GitHub Access Token is missing"})
     if issue.github_url:
-        return JsonResponse({"status": "Failed", "status_reason": "GitHub Issue Exists"})
-    if (
-        os.environ.get("GITHUB_ACCESS_TOKEN") and request.user.is_authenticated
-        # Any Authenticated user will be able to create a GitHub issue
-        # and (issue.user == request.user or request.user.is_superuser)
-    ):
+        return JsonResponse(
+            {"status": "Failed", "status_reason": "GitHub Issue Exists at " + issue.github_url}
+        )
+    if issue.domain.github:
         screenshot_text = ""
         for screenshot in screenshot_all:
             screenshot_text += "![0](" + settings.FQDN + screenshot.image.url + ") \n"
 
-        url = "https://api.github.com/repos/OWASP-BLT/BLT/issues"
+        github_url = issue.domain.github.replace("https", "git").replace("http", "git") + ".git"
+        from giturlparse import parse as parse_github_url
+
+        p = parse_github_url(github_url)
+
+        url = "https://api.github.com/repos/%s/%s/issues" % (p.owner, p.repo)
         the_user = request.user.username if request.user.is_authenticated else "Anonymous"
 
         issue_data = {
@@ -4183,7 +4186,9 @@ def create_github_issue(request, id):
                 issue.save()
                 return JsonResponse({"status": "ok", "github_url": issue.github_url})
             else:
-                return JsonResponse({"status": "Failed", "status_reason": response.reason})
+                return JsonResponse(
+                    {"status": "Failed", "status_reason": "Issue with Github:" + response.reason}
+                )
         except Exception as e:
             send_mail(
                 "Error in GitHub issue creation for Issue ID " + str(issue.id),
@@ -4196,10 +4201,10 @@ def create_github_issue(request, id):
                 [request.user.email],
                 fail_silently=True,
             )
-            return JsonResponse({"status": "Failed", "status_reason": "Failed"})
+            return JsonResponse({"status": "Failed", "status_reason": "Failed: error is " + str(e)})
     else:
         return JsonResponse(
-            {"status": "Failed", "status_reason": "You are not authorised to make that request"}
+            {"status": "Failed", "status_reason": "No Github URL for this domain, please add it."}
         )
 
 
@@ -4221,7 +4226,7 @@ def resolve(request, id):
             issue.save()
             return JsonResponse({"status": "ok", "issue_status": issue.status})
     else:
-        return HttpResponseForbidden()
+        return HttpResponseForbidden("not logged in or superuser or issue user")
 
 
 @receiver(user_signed_up)
