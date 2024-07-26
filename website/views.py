@@ -4790,7 +4790,7 @@ def vote_suggestions(request):
                 )
                 suggestion.up_votes += 1
 
-            if down_vote is True:
+            if down_vote:
                 voted = SuggestionVotes.objects.create(
                     user=user, suggestion=suggestion, down_vote=True, up_vote=False
                 )
