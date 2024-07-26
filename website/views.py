@@ -4777,7 +4777,7 @@ def vote_suggestions(request):
                 if down_vote:
                     suggestion.down_votes += 1
         else:
-            if up_vote is False:
+            if not up_vote
                 suggestion.up_votes -= 1
             if down_vote is False:
                 suggestion.down_votes -= 1
