@@ -18,7 +18,7 @@ class IPRestrictMiddleware:
             # Retrieve all blocked IP addresses from the database
             blocked_addresses = BlockedIP.objects.values_list("address", flat=True)
             blocked_ips = set(blocked_addresses)
-            cache.set("blocked_ips", blocked_ips, timeout=3600)
+            cache.set("blocked_ips", blocked_ips, timeout=86400)
         return blocked_ips
 
     def __call__(self, request):
