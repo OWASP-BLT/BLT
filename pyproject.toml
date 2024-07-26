@@ -74,7 +74,7 @@ langchain-openai = "^0.1.17"
 unstructured = "^0.15.0"
 Markdown = "^3.6"
 faiss-cpu = "^1.8.0"
-openai = "^1.37.0"
+openai = "^1.37.1"
 psutil = "^5.9.8"
 
 [tool.poetry.group.dev.dependencies]
