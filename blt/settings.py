@@ -122,10 +122,6 @@ MIDDLEWARE = (
     "blt.middleware.count_ip_requests.MonitorIPMiddleware",
 )
 
-RESTRICTED_IPS = [
-    "127.0.0.1",
-]
-
 TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
 
 if DEBUG and not TESTING:
