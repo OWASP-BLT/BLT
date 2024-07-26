@@ -526,7 +526,6 @@ class IP(models.Model):
     user = models.CharField(max_length=25, null=True, blank=True)
     user_agent_string = models.CharField(max_length=255, default="", null=True, blank=True)
     issuenumber = models.IntegerField(null=True, blank=True)
-    status = models.CharField(default="active", max_length=25)
 
     def ipaddress(self):
         return self.address

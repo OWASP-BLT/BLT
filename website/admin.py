@@ -275,7 +275,6 @@ class IssueScreenshotAdmin(admin.ModelAdmin):
 
 
 def block_ip(modeladmin, request, queryset):
-    queryset.update(status="blocked")
     for ip in queryset:
         BlockedIP.objects.create(
             address=ip.address, count=ip.count, user_agent_string=ip.user_agent_string
@@ -287,7 +286,6 @@ block_ip.short_description = "Block selected IPs"
 
 
 def unblock_ip(modeladmin, request, queryset):
-    queryset.update(status="active")
     for ip in queryset:
         BlockedIP.objects.filter(ip=ip.address).delete()
     modeladmin.message_user(request, "Selected IPs have ben unblocked successfully")
@@ -304,7 +302,6 @@ class IPAdmin(admin.ModelAdmin):
         "user",
         "issuenumber",
         "user_agent_string",
-        "status",
         "count",
     )
     actions = [block_ip, unblock_ip]

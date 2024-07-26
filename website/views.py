@@ -120,10 +120,6 @@ WHITELISTED_IMAGE_TYPES = {
 from PIL import Image
 
 
-def is_admin(user):
-    return user.is_superuser
-
-
 def image_validator(img):
     try:
         filesize = img.file.size
@@ -4753,31 +4749,3 @@ def blt_tomato(request):
         project["funding_hyperlinks"] = funding_link
 
     return render(request, "blt_tomato.html", {"projects": data})
-
-
-# @user_passes_test(is_admin, login_url="/admin")
-# def Monitor_ip(request):
-#     ips = MonitorIP.objects.all().order_by("-count")
-#     return render(request, "ban_ip.html", { "ips": ips})
-
-
-# @user_passes_test(is_admin)
-# def ban_ip(request):
-#     if request.method == "POST":
-#         try:
-#             data = json.loads(request.body)
-#             ip = data.get("ip")
-
-#             if not ip:
-#                 return JsonResponse({"error": "IP address is required."}, status=400)
-
-#             # Append the IP to the file
-#             with open("website/restricted_ip.txt", "a") as file:
-#                 file.write(ip + "\n")
-
-#             return JsonResponse({"status": "IP address added successfully."})
-
-#         except json.JSONDecodeError:
-#             return JsonResponse({"error": "Invalid JSON."}, status=400)
-
-#     return JsonResponse({"error": "Invalid request method."}, status=405)
