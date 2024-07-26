@@ -4784,7 +4784,7 @@ def vote_suggestions(request):
 
             voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).delete()
 
-            if up_vote is True:
+            if up_vote:
                 voted = SuggestionVotes.objects.create(
                     user=user, suggestion=suggestion, up_vote=True, down_vote=False
                 )
