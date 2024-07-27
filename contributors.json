@@ -479,5 +479,18 @@
         "linkedin": "https://www.linkedin.com/in/nikhil25803/",
         "website": "https://github.com/nikhil25803",
         "bch_addr": ""
-    }
+    },
+    {
+        "id": 39,
+        "img": "https://avatars.githubusercontent.com/u/95343534?v=4",
+        "name": "Dhruv Trivedi",
+        "repository": "",
+        "short_description": "human",
+        "long_description": "gud human",
+        "location": "Delhi, India",
+        "twitter": "https://x.com/DhruvTr89566170",
+        "linkedin": "https://www.linkedin.com/in/dhruv-trivedi-06a767228/",
+        "website": "https://github.com/drvcodenta",
+        "bch_addr": ""
+    },
 ]
