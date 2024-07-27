@@ -11,12 +11,7 @@ from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import (
-    AllowAny,
-    IsAdminUser,
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
-)
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -722,19 +717,4 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(
             {"count": len(project_data), "projects": project_data},
             status=200,
-        )
-
-    def update(self, request, *args, **kwargs):
-        if IsAdminUser.has_permission(self=self, request=request, view=""):
-            projects = Project.objects.prefetch_related("contributors").all()
-            for project in projects:
-                contributors = Project.get_contributors(self, github_url=project.github_url)
-                project.contributors.set(contributors)
-            serializer = ProjectSerializer(projects, many=True)
-            return Response(
-                {"count": len(projects), "projects": serializer.data}, status=status.HTTP_200_OK
-            )
-        return Response(
-            {"success": False, "message": "Only admin's can access this api."},
-            status=status.HTTP_400_BAD_REQUEST,
         )
