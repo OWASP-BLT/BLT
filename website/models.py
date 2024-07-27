@@ -668,7 +668,7 @@ class BlockedIP(models.Model):
     count = models.IntegerField(default=1)
 
     def __str__(self):
-        return f"user agent : {self.user_agent_string} | IP : {self.ip}"
+        return f"user agent : {self.user_agent_string} | IP : {self.address}"
 
 
 class Contributor(models.Model):
