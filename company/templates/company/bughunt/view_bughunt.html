@@ -61,22 +61,22 @@
               integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
               crossorigin="anonymous"
               referrerpolicy="no-referrer" />
-        <title>Domain Info</title>
+        <title>Hunt Info</title>
     </head>
     <body>
         <div class="h-full bg-gray-200 p-8">
             <div class="bg-white rounded-lg shadow-xl pb-8">
                 <div class="w-full h-[250px]">
-                    {% with banner_src=hunt_obj.banner|default:"https://versohydraulic.com/bitrix/templates/aspro-allcorp/images/background.png" %}
-                        <img src="{{ MEDIA_URL }}{{ banner_src }}"
-                             class="w-full h-full rounded-tl-lg rounded-tr-lg object-cover"
-                             width="100%"
-                             height="100%"
-                             alt="banner">
-                    {% endwith %}
+                    <img src="{% if banner_src %} {{ MEDIA_URL }}{{ banner_src }} {% else %}https://versohydraulic.com/bitrix/templates/aspro-allcorp/images/background.png {% endif %}"
+                            class="w-full h-full rounded-tl-lg rounded-tr-lg object-cover"
+                            width="100%"
+                            height="100%"
+                            alt="banner">
                 </div>
                 <div class="flex flex-col items-center -mt-20">
-                    <img src="{{ MEDIA_URL }}{{ hunt_obj.logo }}"
+                    <img 
+                    
+                         src="{% if hunt_obj.logo %} {{ MEDIA_URL }}{{ hunt_obj.logo }} {% else %} https://via.placeholder.com/160?text=No+Logo {% endif %}"
                          class="w-40 h-40 border-4  rounded-full"
                          width="100"
                          height="100"
@@ -97,10 +97,11 @@
                                 <span>End Bughunt</span>
                             </a>
                         {% elif not is_hunt_manager and not hunt_obj.result_published %}
-                            <button class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
-                                <i class="fa-sharp fa-solid fa-bell fa-lg text-white"></i>
-                                <span>Subscribe</span>
-                            </button>
+                            <a href="#" onclick="history.back(); return false;"
+                                class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
+                                <i class="fa-sharp fa-solid fa-cog fa-lg text-white"></i>
+                                <span>Back</span>
+                            </a>
                             <a href="{% url 'report' %}?hunt={{ hunt_obj.id }}"
                                class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
                                 <i class="fa-sharp fa-solid fa-bug fa-lg text-white"></i>
@@ -155,76 +156,43 @@
                                     <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
                                 </div>
                                 <div class="w-11/12">
-                                    <p class="text-sm">Profile informations changed.</p>
-                                    <p class="text-xs text-gray-500">3 min ago</p>
+                                    <p class="text-sm">BugHunt created at: {{ hunt_obj.created|date:"d/m/Y" }}</p>
+                                    <p class="text-xs text-gray-500">{{ hunt_obj.created|timesince }} ago</p>
                                 </div>
                             </div>
-                            <!-- end::Timeline item -->
-                            <!-- start::Timeline item -->
                             <div class="flex items-center w-full my-6 -ml-1.5">
                                 <div class="w-1/12 z-10">
                                     <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
                                 </div>
                                 <div class="w-11/12">
-                                    <p class="text-sm">
-                                        Connected with <a href="#" class="text-red-600 font-bold">Colby Covington</a>.
-                                    </p>
-                                    <p class="text-xs text-gray-500">15 min ago</p>
+                                    <p class="text-sm">Last modification in BugHunt: {{ hunt_obj.modified|date:"d/m/Y" }}</p>
+                                    <p class="text-xs text-gray-500">{{ hunt_obj.modified|timesince }} ago</p>
                                 </div>
                             </div>
-                            <!-- end::Timeline item -->
-                            <!-- start::Timeline item -->
-                            <div class="flex items-center w-full my-6 -ml-1.5">
-                                <div class="w-1/12 z-10">
-                                    <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
+                            {% if first_bug %}
+                                <!-- First Bug in the Domain -->
+                                <div class="flex items-center w-full my-6 -ml-1.5">
+                                    <div class="w-1/12 z-10">
+                                        <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
+                                    </div>
+                                    <div class="w-11/12">
+                                        <p class="text-sm">First bug in this BugHunt: {{ first_bug.created|date:"d/m/Y" }}</p>
+                                        <p class="text-xs text-gray-500">{{ first_bug.created|timesince }} ago</p>
+                                    </div>
                                 </div>
-                                <div class="w-11/12">
-                                    <p class="text-sm">
-                                        Invoice <a href="#" class="text-red-600 font-bold">#4563</a> was created.
-                                    </p>
-                                    <p class="text-xs text-gray-500">57 min ago</p>
+                            {% endif %}
+                            {% if last_bug %}
+                                <!-- Last Bug Created in the Domain -->
+                                <div class="flex items-center w-full my-6 -ml-1.5">
+                                    <div class="w-1/12 z-10">
+                                        <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
+                                    </div>
+                                    <div class="w-11/12">
+                                        <p class="text-sm">Last bug created in this BugHunt: {{ last_bug.created|date:"d/m/Y" }}</p>
+                                        <p class="text-xs text-gray-500">{{ last_bug.created|timesince }} ago</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <!-- end::Timeline item -->
-                            <!-- start::Timeline item -->
-                            <div class="flex items-center w-full my-6 -ml-1.5">
-                                <div class="w-1/12 z-10">
-                                    <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
-                                </div>
-                                <div class="w-11/12">
-                                    <p class="text-sm">
-                                        Message received from <a href="#" class="text-red-600 font-bold">Cecilia Hendric</a>.
-                                    </p>
-                                    <p class="text-xs text-gray-500">1 hour ago</p>
-                                </div>
-                            </div>
-                            <!-- end::Timeline item -->
-                            <!-- start::Timeline item -->
-                            <div class="flex items-center w-full my-6 -ml-1.5">
-                                <div class="w-1/12 z-10">
-                                    <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
-                                </div>
-                                <div class="w-11/12">
-                                    <p class="text-sm">
-                                        New order received <a href="#" class="text-red-600 font-bold">#OR9653</a>.
-                                    </p>
-                                    <p class="text-xs text-gray-500">2 hours ago</p>
-                                </div>
-                            </div>
-                            <!-- end::Timeline item -->
-                            <!-- start::Timeline item -->
-                            <div class="flex items-center w-full my-6 -ml-1.5">
-                                <div class="w-1/12 z-10">
-                                    <div class="w-3.5 h-3.5 bg-red-600 rounded-full"></div>
-                                </div>
-                                <div class="w-11/12">
-                                    <p class="text-sm">
-                                        Message received from <a href="#" class="text-red-600 font-bold">Jane Stillman</a>.
-                                    </p>
-                                    <p class="text-xs text-gray-500">2 hours ago</p>
-                                </div>
-                            </div>
-                            <!-- end::Timeline item -->
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -442,7 +410,7 @@
                                     id="mdPreview"
                                     class="py-2 px-4 inline-block text-gray-400 font-semibold"
                                     :class="{ 'text-indigo-600': tab === 'preview' && showConvertedMarkdown === true }"
-                                    x-on:click.prevent="tab = 'preview'; convertedMarkdown()">See Description</button>
+                                    x-on:click.prevent="tab = 'preview'; convertedMarkdown()">Click for the Description</button>
                         </div>
                         <div x-show="showConvertedMarkdown">
                             <div x-html="convertedContent"
@@ -492,10 +460,6 @@
                                     </li>
                                 {% endif %}
                             </ul>
-                            <button type="button"
-                                    class="text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-200 font-medium rounded-lg text-lg px-5 py-1.5 inline-flex justify-center w-1/2 text-center">
-                                MORE INFO
-                            </button>
                         </div>
                     {% endfor %}
                 </div>
@@ -503,21 +467,21 @@
             <div class="w-full flex justify-between min-h-[80vh] flex-col md:flex-row">
                 <div class="flex flex-col w-full md:w-[80%] mr-5 items-start bg-white rounded-xl p-5 overflow-x-hidden overflow-y-scroll">
                     <div class="w-full flex justify-between">
-                        <h4 class="text-xl text-gray-900 font-bold mb-5">Latest Bugs Reported</h4>
-                        <a href="" class="text-md text-blue-600">View all</a>
+                        <h4 class="text-xl text-gray-900 font-bold mb-5">Latest Bugs Reported ({{ latest_issues|length }})</h4>
+                        <a href="{% url 'hunts' %}" class="text-md text-blue-600">View all</a>
                     </div>
                     {% if latest_issues|length > 0 %}
                         {% for issue in latest_issues %}
                             <div class="w-full h-[200px] flex px-5 my-2 py-6 bg-white rounded-lg shadow-md hover:shadow-xl transition-all">
                                 <div class="w-[10%] mr-5 h-full flex items-center">
-                                    <img src="https://m.media-amazon.com/images/I/613zc8WKCNL.jpg"
+                                    <img src="{% if issue.first_screenshot %} {{ MEDIA_URL }}{{ issue.first_screenshot }} {% else %} https://via.placeholder.com/100?text=No+Screenshot {% endif %}"
                                          alt=""
                                          width="100%"
                                          height="100%">
                                 </div>
                                 <div class="w-full h-full">
                                     <div class="flex justify-between items-center">
-                                        <span class="font-light text-gray-600">Reported to {{ issue.domain__name }} on {{ issue.created__day }}/{{ issue.created__month }}/{{ issue.created__year }}</span>
+                                        <span class="font-light text-gray-600">Reported to {{ issue.domain__name }} on {{ issue.created|date:"d/m/Y" }}</span>
                                         <div>
                                             <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#{{ issue.label }}</a>
                                             <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#{{ issue.status }}</a>
@@ -536,7 +500,7 @@
                                             <a class="flex items-center"
                                                href="{% url 'profile' issue.user__username %}">
                                                 <img class="mr-3 w-10 h-10 object-cover rounded-full hidden sm:block"
-                                                     src="{{ MEDIA_URL }}{{ issue.user__userprofile__user_avatar }}"
+                                                     src="{% if issue.user__userprofile__user_avatar %} {{ MEDIA_URL }}{{ issue.user__userprofile__user_avatar }} {% else %} https://via.placeholder.com/40?text=No+Avatar {% endif %}"
                                                      alt="avatar"
                                                      width="40px"
                                                      height="40px">
@@ -544,7 +508,7 @@
                                             </a>
                                         </div>
                                         <a class="text-blue-600 hover:underline"
-                                           href="{% url 'issue_view' issue.id %}">Read more</a>
+                                           href="{% url 'issue_view2' issue.id %}">Read more</a>
                                     </div>
                                 </div>
                             </div>
@@ -558,16 +522,6 @@
                 <div class="bg-white rounded-lg shadow-xl p-8 w-full mt-5 md:w-[20%] md:mt-0 overflow-y-scroll">
                     <div class="flex items-center justify-between">
                         <h4 class="text-xl text-gray-900 font-bold">Top Testers ({{ top_testers | length }})</h4>
-                        <a href="#" title="View All">
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                 class="h-6 w-6 text-gray-500 hover:text-gray-700"
-                                 fill="none"
-                                 viewBox="0 0 24 24"
-                                 stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z">
-                                </path>
-                            </svg>
-                        </a>
                     </div>
                     <div class="flex flex-wrap justify-between mt-10">
                         {% for tester in top_testers %}
@@ -575,7 +529,7 @@
                                class="flex flex-col items-center m-5 justify-center text-gray-800 hover:text-red-600"
                                title="View Profile">
                                 <div class="w-[100px] h-[100px] rounded-full border-[1px] border-gray-500 overflow-hidden flex items-center justify-center">
-                                    <img src="{{ MEDIA_URL }}{{ tester.user__userprofile__user_avatar }}"
+                                    <img src="{% if tester.user__userprofile__user_avatar %} {{ MEDIA_URL }}{{ tester.user__userprofile__user_avatar }} {% else %} https://via.placeholder.com/100?text=No+Avatar {% endif %}"
                                          class="object-cover"
                                          width="100%"
                                          height="100%"
@@ -589,44 +543,6 @@
                 </div>
             </div>
         </div>
-        <script>
-            const DATA_SET_VERTICAL_BAR_CHART_1 = JSON.parse('{{ monthly_activity_chart | safe }}');
-
-            const labels_vertical_bar_chart = ['January', 'February', 'Mart', 'April', 'May', 'Jun', 'July', 'August', 'September', 'October', 'November', 'December'];
-
-            const dataVerticalBarChart= {
-                labels: labels_vertical_bar_chart,
-                datasets: [
-                    {
-                        label: 'Bugs Reported',
-                        data: DATA_SET_VERTICAL_BAR_CHART_1,
-                        borderColor: 'rgb(54, 162, 235)',
-                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                    }
-                ]
-            };
-            const configVerticalBarChart = {
-                type: 'bar',
-                data: dataVerticalBarChart,
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        title: {
-                            display: true,
-                            text: 'Monthly Activity'
-                        }
-                    }
-                },
-            };
-
-            var verticalBarChart = new Chart(
-                document.getElementById('verticalBarChart'),
-                configVerticalBarChart
-            );
-        </script>
     </body>
 </html>
 <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js"></script>
@@ -685,5 +601,7 @@
         }
     }
     let prev = document.getElementById("mdPreview");
-    prev.onload(()=>prev.click())
+    prev.addEventListener('click', () => {
+        markdown();
+    });
 </script>
