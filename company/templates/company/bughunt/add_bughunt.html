@@ -136,7 +136,11 @@
                                         <label for="banner"
                                                class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
                                             <span class="text-red-600">Upload a Banner</span>
-                                            <input id="banner" name="banner" type="file" class="sr-only" onchange="displayBannerPreview()" />
+                                            <input id="banner"
+                                            name="banner"
+                                            type="file"
+                                            class="sr-only"
+                                            onchange="displayBannerPreview()" />
                                         </label>
                                         <p class="pl-1">or drag and drop</p>
                                     </div>
@@ -151,7 +155,9 @@
                 <div class="border-b border-gray-900/10 pb-12 mt-5">
                     <h2 class="text-base font-semibold leading-7 text-gray-900">Bughunt Prizes</h2>
                     <div class="bg-gray-100 w-full p-7">
-                        <h2 class="text-base font-semibold leading-7 text-gray-900 mb-4">click on the add prize button after filling the prize details</h2>
+                        <h2 class="text-base font-semibold leading-7 text-gray-900 mb-4">
+                            click on the add prize button after filling the prize details
+                        </h2>
                         <div>
                             <label for="prize_name" class="font-bold">
                                 <span class="text-red-500 mr-1">*</span>Prize Name
@@ -192,9 +198,7 @@
                             </label>
                         </div>
                         <div class="mt-3">
-                            <label for="prize_description" class="font-bold">
-                                Prize Description
-                            </label>
+                            <label for="prize_description" class="font-bold">Prize Description</label>
                             <textarea type="text"
                                       name="prize_description"
                                       id="prize_description"
