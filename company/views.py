@@ -12,9 +12,10 @@ from django.core.validators import URLValidator
 from django.db import transaction
 from django.db.models import Count, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractMonth
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 
 from website.models import Company, Domain, Hunt, HuntPrize, Issue, IssueScreenshot
@@ -718,7 +719,6 @@ class DomainView(View):
                 "github",
                 "logo",
                 "webshot",
-                "company__id",
             )
             .filter(id=pk)
             .first()
@@ -893,10 +893,7 @@ class ShowBughuntView(View):
         hunt_obj = get_object_or_404(Hunt, pk=pk)
 
         # get issues/reports that are done between hunt.start_date and hunt.end_date
-        hunt_issues = Issue.objects.filter(
-            Q(created__range=[hunt_obj.starts_on, hunt_obj.end_on])
-            & Q(domain__url=hunt_obj.domain.url)
-        )
+        hunt_issues = Issue.objects.filter(hunt__id=hunt_obj.id)
 
         # total bugs reported in this bughunt
         total_bugs = hunt_issues.count()
@@ -915,43 +912,70 @@ class ShowBughuntView(View):
         is_hunt_manager = hunt_obj.domain.managers.filter(id=request.user.id).exists()
 
         # get latest reported public issues
-        latest_issues = (
-            Issue.objects.values(
-                "id",
-                "domain__name",
-                "url",
-                "description",
-                "user__id",
-                "user__username",
-                "user__userprofile__user_avatar",
-                "label",
-                "status",
-                "verified",
-                "rewarded",
-                "created__day",
-                "created__month",
-                "created__year",
-            )
-            .filter(domain__id=hunt_obj.domain.pk, hunt__id=hunt_obj.id)
-            .order_by("-created")
-        )
-
         if is_hunt_manager:
-            latest_issues = latest_issues.filter(is_hidden=True)
+            latest_issues = (
+                Issue.objects.values(
+                    "id",
+                    "domain__name",
+                    "url",
+                    "description",
+                    "user__id",
+                    "user__username",
+                    "user__userprofile__user_avatar",
+                    "label",
+                    "status",
+                    "verified",
+                    "rewarded",
+                    "created",
+                )
+                .filter(hunt__id=hunt_obj.id, is_hidden=True)
+                .annotate(
+                    first_screenshot=Subquery(
+                        IssueScreenshot.objects.filter(issue_id=OuterRef("pk")).values("image")[:1]
+                    )
+                )
+                .order_by("-created")
+            )
         else:
-            latest_issues = latest_issues.filter(is_hidden=False)
+            latest_issues = (
+                Issue.objects.values(
+                    "id",
+                    "domain__name",
+                    "url",
+                    "description",
+                    "user__id",
+                    "user__username",
+                    "user__userprofile__user_avatar",
+                    "label",
+                    "status",
+                    "verified",
+                    "rewarded",
+                    "created",
+                )
+                .filter(hunt__id=hunt_obj.id, is_hidden=False)
+                .annotate(
+                    first_screenshot=Subquery(
+                        IssueScreenshot.objects.filter(issue_id=OuterRef("pk")).values("image")[:1]
+                    )
+                )
+                .order_by("-created")
+            )
 
         issue_labels = [label[-1] for label in Issue.labels]
         cleaned_issues = []
         for issue in latest_issues:
             cleaned_issues.append({**issue, "label": issue_labels[issue["label"]]})
 
+        # Get first and last bugs
+        first_bug = Issue.objects.filter(hunt__id=hunt_obj.id).order_by("created").first()
+        last_bug = Issue.objects.filter(hunt__id=hunt_obj.id).order_by("-created").first()
+
         # get top testers
         top_testers = (
             Issue.objects.values("user__id", "user__username", "user__userprofile__user_avatar")
             .filter(user__isnull=False)
             .annotate(count=Count("user__username"))
-            .order_by("-count")[:16]
+            .order_by("-count")[:5]
         )
 
         # bughunt prizes
@@ -968,6 +992,8 @@ class ShowBughuntView(View):
             "top_testers": top_testers,
             "latest_issues": cleaned_issues,
             "rewards": rewards,
+            "first_bug": first_bug,
+            "last_bug": last_bug,
             "is_hunt_manager": is_hunt_manager,
         }
 
@@ -1051,8 +1077,17 @@ class AddHuntView(View):
         start_date = data.get("start_date", datetime.now().strftime("%m/%d/%Y"))
         end_date = data.get("end_date", datetime.now().strftime("%m/%d/%Y"))
 
-        start_date = datetime.strptime(start_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
-        end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+        try:
+            start_date = datetime.strptime(start_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+            end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+        except ValueError:
+            messages.error(request, "Invalid Date Format")
+            return redirect("add_bughunt", id)
+
+        # apply validation for date not valid
+        if start_date > end_date:
+            messages.error(request, "Start date should be less than end date")
+            return redirect("add_bughunt", id)
 
         hunt_logo = request.FILES.get("logo", None)
         if hunt_logo is not None:
@@ -1061,12 +1096,12 @@ class AddHuntView(View):
             hunt_logo.name = hunt_logo_file[:99] + str(uuid.uuid4()) + "." + extension
             default_storage.save(f"logos/{hunt_logo.name}", hunt_logo)
 
-        webshot_logo = request.FILES.get("webshot", None)
-        if webshot_logo is not None:
-            webshot_logo_file = webshot_logo.name.split(".")[0]
-            extension = webshot_logo.name.split(".")[-1]
-            webshot_logo.name = webshot_logo_file[:99] + str(uuid.uuid4()) + "." + extension
-            default_storage.save(f"banners/{webshot_logo.name}", webshot_logo)
+        banner_logo = request.FILES.get("banner", None)
+        if banner_logo is not None:
+            banner_logo_file = banner_logo.name.split(".")[0]
+            extension = banner_logo.name.split(".")[-1]
+            banner_logo.name = banner_logo_file[:99] + str(uuid.uuid4()) + "." + extension
+            default_storage.save(f"banners/{banner_logo.name}", banner_logo)
 
         if is_edit:
             hunt.domain = domain
@@ -1082,8 +1117,8 @@ class AddHuntView(View):
 
             if hunt_logo is not None:
                 hunt.logo = f"logos/{hunt_logo.name}"
-            if webshot_logo is not None:
-                hunt.banner = f"banners/{webshot_logo.name}"
+            if banner_logo is not None:
+                hunt.banner = f"banners/{banner_logo.name}"
 
             hunt.save()
 
@@ -1157,3 +1192,40 @@ class CompanyDashboardManageBughuntView(View):
         }
 
         return render(request, "company/bughunt/company_manage_bughunts.html", context)
+
+
+@require_http_methods(["DELETE"])
+def delete_prize(request, prize_id, company_id):
+    if not request.user.company_set.filter(id=company_id).exists():
+        return JsonResponse({"success": False, "error": "User not allowed"})
+    try:
+        prize = HuntPrize.objects.get(id=prize_id)
+        prize.delete()
+        return JsonResponse({"success": True})
+    except HuntPrize.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Prize not found"})
+
+
+@require_http_methods(["PUT"])
+def edit_prize(request, prize_id, company_id):
+    if not request.user.company_set.filter(id=company_id).exists():
+        return JsonResponse({"success": False, "error": "User not allowed"})
+
+    try:
+        prize = HuntPrize.objects.get(id=prize_id)
+    except HuntPrize.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Prize not found"})
+
+    data = json.loads(request.body)
+    prize.name = data.get("prize_name", prize.name)
+    prize.value = data.get("cash_value", prize.value)
+    prize.no_of_eligible_projects = data.get(
+        "number_of_winning_projects", prize.no_of_eligible_projects
+    )
+    prize.valid_submissions_eligible = data.get(
+        "every_valid_submissions", prize.valid_submissions_eligible
+    )
+    prize.description = data.get("prize_description", prize.description)
+    prize.save()
+
+    return JsonResponse({"success": True})

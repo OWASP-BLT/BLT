@@ -3,7 +3,7 @@
 - [Video on How to setup Project BLT](https://www.youtube.com/watch?v=IYBRVRfPCK8)
   
 
-## Setting Up Development Server using Docker-compose (Recomended)
+## Setting Up Development Server using Docker-compose (Recommended)
 
 ### Install [Docker](https://docs.docker.com/get-docker/)
 
