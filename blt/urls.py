@@ -74,6 +74,7 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
+    add_suggestions,
     blt_tomato,
     change_bid_status,
     chatbot_conversation,
@@ -94,9 +95,12 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     like_issue3,
     resolve,
     select_bid,
+    set_vote_status,
     submit_pr,
     subscribe_to_domains,
+    view_suggestions,
     vote_count,
+    vote_suggestions,
     weekly_report,
 )
 
@@ -514,6 +518,10 @@ urlpatterns = [
     path("fetch-current-bid/", fetch_current_bid, name="fetch_current_bid"),
     path("Submitpr/", submit_pr, name="submit_pr"),
     path("weekly-report/", weekly_report, name="weekly_report"),
+    path("suggestion/add/", add_suggestions, name="add_suggestions"),
+    path("suggestion/", view_suggestions, name="view_suggestions"),
+    path("suggestion/vote/", vote_suggestions, name="vote_suggestions"),
+    path("suggestion/set-vote-status/", set_vote_status, name="set_vote_status"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s]+)",
         website.views.trademark_detailview,
