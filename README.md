@@ -12,15 +12,15 @@
 
   
 
-- OWASP BLT is a bug logging tool to report issues and get points, companies are held accountable.
+- OWASP BLT is a bug logging tool used to report issues and earn points. It ensures that companies are held accountable.
 
   
 
-- Users will get rewards/points for reporting bugs on Organizations / Companies.
+- Users will earn rewards or points for reporting bugs in organizations or companies.
 
   
 
-- Organizations / Companies can launch their bug hunt programs with prize pools.
+- Organizations and companies can launch their bug hunt programs with prize pools.
 
   
 
@@ -32,7 +32,7 @@
 
 # Development
 
-Make sure to run pre-commit before committing so it formats the code.  
+Make sure to run `pre-commit` before committing so it formats the code.  
 
 ### Setting Up Development Server
 
@@ -52,7 +52,7 @@ Please follow the development server setup procedure [here](https://github.com/O
 
   
 
-- use the [Installation Docs ](https://github.com/OWASP/BLT/blob/main/Setup.md) to get started.
+- Use the [Installation Docs](https://github.com/OWASP/BLT/blob/main/Setup.md) to get started.
 
   
 
@@ -147,8 +147,8 @@ The BLT code is released under [GNU Affero General Public License v3.0 (AGPL-3.0
 
   
 
-- for each new issue, create a new branch with issue-382 or similar matching the issue number - when you commit add fixes #288 to link the issue to the pull request
+- For each new issue, create a new branch with a name like issue-382 that matches the issue number. When you commit, add fixes #288 to link the issue to the pull request.
 
   
 
-- to take a github issue type a comment that says "assign to me" or /assign and it will assign it to you.
+- To take a GitHub issue, type a comment that says 'assign to me' or '/assign,' and it will be assigned to you.
