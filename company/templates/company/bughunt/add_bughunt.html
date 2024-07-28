@@ -122,7 +122,7 @@
                             </div>
                         </div>
                         <div class="col-span-full">
-                            <label for="webshot"
+                            <label for="banner"
                                    class="block text-sm font-medium leading-6 text-gray-900">Banner</label>
                             <div class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 text-red-500">
                                 <div class="text-center">
@@ -133,16 +133,21 @@
                                         <path fill-rule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clip-rule="evenodd" />
                                     </svg>
                                     <div class="mt-4 flex text-sm leading-6 text-gray-600">
-                                        <label for="webshot"
+                                        <label for="banner"
                                                class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
                                             <span class="text-red-600">Upload a Banner</span>
-                                            <input id="webshot" name="webshot" type="file" class="sr-only" />
+                                            <input id="banner"
+                                                   name="banner"
+                                                   type="file"
+                                                   class="sr-only"
+                                                   onchange="displayBannerPreview()" />
                                         </label>
                                         <p class="pl-1">or drag and drop</p>
                                     </div>
                                     <p class="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
                                 </div>
                             </div>
+                            <div id="bannerPreview" class="mt-4"></div>
                         </div>
                     </div>
                 </div>
@@ -150,6 +155,9 @@
                 <div class="border-b border-gray-900/10 pb-12 mt-5">
                     <h2 class="text-base font-semibold leading-7 text-gray-900">Bughunt Prizes</h2>
                     <div class="bg-gray-100 w-full p-7">
+                        <h2 class="text-base font-semibold leading-7 text-gray-900 mb-4">
+                            click on the add prize button after filling the prize details
+                        </h2>
                         <div>
                             <label for="prize_name" class="font-bold">
                                 <span class="text-red-500 mr-1">*</span>Prize Name
@@ -175,6 +183,7 @@
                             <label for="number_of_winning_projects" class="font-bold">Number of Winning Projects</label>
                             <input type="number"
                                    min="1"
+                                   placeholder="1 (Minimum)"
                                    id="number_of_winning_projects"
                                    name="number_of_winning_projects"
                                    class="w-full mt-2 px-2 py-2 mb-2 border-[1px] border-gray-200 outline-none">
@@ -188,27 +197,12 @@
                                 Every Valid Submissions are eligible for this prize (Cash Value Per Accepted Bug)
                             </label>
                         </div>
-                        <script>
-                        let valid_s = document.getElementById("every_valid_submissions");
-                        let winning_projects = document.getElementById("number_of_winning_projects");
-                        valid_s.addEventListener('click',()=>{
-                            if (valid_s.checked) {
-                                winning_projects.disabled = true;
-                                winning_projects.value = 1;
-                            } else {
-                                winning_projects.disabled = false;
-                                winning_projects.value = 1;
-                            }
-                        })
-                        </script>
                         <div class="mt-3">
-                            <label for="prize_description" class="font-bold">
-                                <span class="text-red-500 mr-1">*</span>Prize Description
-                            </label>
+                            <label for="prize_description" class="font-bold">Prize Description</label>
                             <textarea type="text"
                                       name="prize_description"
                                       id="prize_description"
-                                      class="w-full mt-2 px-2 py-2 mb-2 border border-[1px] border-gray-200 outline-none"></textarea>
+                                      class="w-full mt-2 px-2 py-2 mb-2 border-[1px] border-gray-200 outline-none"></textarea>
                         </div>
                         <div class="mt-3 flex flex-col">
                             <label class="font-bold">Will this prize will be paid in cryptocurrency?</label>
@@ -250,7 +244,7 @@
             </div>
         </form>
     </div>
-{% endblock content %}
+{% endblock body %}
 {% block js %}
     <script src="{% static 'company/js/hunt_controller.js' %}"></script>
 {% endblock js %}

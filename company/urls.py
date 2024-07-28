@@ -13,6 +13,8 @@ from company.views import (
     EndBughuntView,
     RegisterCompanyView,
     company_view,
+    delete_prize,
+    edit_prize,
 )
 
 urlpatterns = [
@@ -52,4 +54,6 @@ urlpatterns = [
         name="edit_domain",
     ),
     path("domain/<int:pk>/", login_required(DomainView.as_view()), name="view_domain"),
+    path("delete_prize/<int:prize_id>/<int:company_id>", delete_prize, name="delete_prize"),
+    path("edit_prize/<int:prize_id>/<int:company_id>", edit_prize, name="edit_prize"),
 ]

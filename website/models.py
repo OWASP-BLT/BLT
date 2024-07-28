@@ -658,6 +658,28 @@ class ChatBotLog(models.Model):
         return f"Q: {self.question} | A: {self.answer} at {self.timestamp}"
 
 
+class Suggestion(models.Model):
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    description = models.TextField(max_length=1000, null=True, blank=True)
+    up_votes = models.IntegerField(null=True, blank=True, default=0)
+    down_votes = models.IntegerField(null=True, blank=True, default=0)
+    suggestion_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    def __str__(self):
+        return f"{self.title} by {self.user}"
+
+
+class SuggestionVotes(models.Model):
+    suggestion = models.ForeignKey(Suggestion, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    up_vote = models.BooleanField(default=False)
+    down_vote = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Suggestion {self.user}"
+
+
 class Contributor(models.Model):
     name = models.CharField(max_length=255)
     github_id = models.IntegerField(unique=True)

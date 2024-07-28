@@ -96,6 +96,8 @@ from website.models import (
     Points,
     Project,
     Subscription,
+    Suggestion,
+    SuggestionVotes,
     UserProfile,
     Wallet,
     Winner,
@@ -4749,3 +4751,108 @@ def blt_tomato(request):
         project["funding_hyperlinks"] = funding_link
 
     return render(request, "blt_tomato.html", {"projects": data})
+
+
+@login_required
+def vote_suggestions(request):
+    if request.method == "POST":
+        user = request.user
+        data = json.loads(request.body)
+        suggestion_id = data.get("suggestion_id")
+        suggestion = Suggestion.objects.get(suggestion_id=suggestion_id)
+        up_vote = data.get("up_vote")
+        down_vote = data.get("down_vote")
+        voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).exists()
+        if not voted:
+            up_vote = True if up_vote else False
+            down_vote = True if down_vote else False
+
+            if up_vote or down_vote:
+                voted = SuggestionVotes.objects.create(
+                    user=user, suggestion=suggestion, up_vote=up_vote, down_vote=down_vote
+                )
+
+                if up_vote:
+                    suggestion.up_votes += 1
+                if down_vote:
+                    suggestion.down_votes += 1
+        else:
+            if not up_vote:
+                suggestion.up_votes -= 1
+            if down_vote is False:
+                suggestion.down_votes -= 1
+
+            voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).delete()
+
+            if up_vote:
+                voted = SuggestionVotes.objects.create(
+                    user=user, suggestion=suggestion, up_vote=True, down_vote=False
+                )
+                suggestion.up_votes += 1
+
+            if down_vote:
+                voted = SuggestionVotes.objects.create(
+                    user=user, suggestion=suggestion, down_vote=True, up_vote=False
+                )
+                suggestion.down_votes += 1
+
+            suggestion.save()
+
+        response = {
+            "success": True,
+            "up_vote": suggestion.up_votes,
+            "down_vote": suggestion.down_votes,
+        }
+        return JsonResponse(response)
+
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=402)
+
+
+@login_required
+def set_vote_status(request):
+    if request.method == "POST":
+        user = request.user
+        data = json.loads(request.body)
+        id = data.get("id")
+        try:
+            suggestion = Suggestion.objects.get(suggestion_id=id)
+        except Suggestion.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Suggestion not found"}, status=404)
+
+        up_vote = SuggestionVotes.objects.filter(
+            suggestion=suggestion, user=user, up_vote=True
+        ).exists()
+        down_vote = SuggestionVotes.objects.filter(
+            suggestion=suggestion, user=user, down_vote=True
+        ).exists()
+
+        response = {"up_vote": up_vote, "down_vote": down_vote}
+        return JsonResponse(response)
+
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
+
+
+@login_required
+def add_suggestions(request):
+    if request.method == "POST":
+        user = request.user
+        data = json.loads(request.body)
+        title = data.get("title")
+        description = data.get("description", "")
+        id = str(uuid.uuid4())
+        print(description, title, id)
+        if title and description and user:
+            suggestion = Suggestion(
+                user=user, title=title, description=description, suggestion_id=id
+            )
+            suggestion.save()
+            messages.success(request, "Suggestion added successfully.")
+            return JsonResponse({"status": "success"})
+        else:
+            messages.error(request, "Please fill all the fields.")
+            return JsonResponse({"status": "error"}, status=400)
+
+
+def view_suggestions(request):
+    suggestion = Suggestion.objects.all()
+    return render(request, "feature_suggestion.html", {"suggestions": suggestion})
