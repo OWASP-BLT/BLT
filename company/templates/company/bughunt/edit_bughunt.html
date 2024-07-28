@@ -114,10 +114,17 @@
                             <div class="mt-2 flex items-center gap-x-3" id="previewLogo">
                                 <div id="previewLogoDiv"
                                      class="h-16 w-16 text-gray-300 overflow-hidden rounded-2xl text-red-500">
-                                    <img src="{{ MEDIA_URL }}/{{ hunt.logo }}"
-                                         alt=""
-                                         width="100%"
-                                         height="100%">
+                                    {% if hunt.logo %}
+                                        <img src="{{ MEDIA_URL }}/{{ hunt.logo }}"
+                                             alt=""
+                                             width="100%"
+                                             height="100%">
+                                    {% else %}
+                                        <img src="https://via.placeholder.com/100?text=No+Logo"
+                                             alt=""
+                                             width="100%"
+                                             height="100%">
+                                    {% endif %}
                                 </div>
                                 <label for="logo"
                                        class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
@@ -131,7 +138,7 @@
                             </div>
                         </div>
                         <div class="col-span-full">
-                            <label for="webshot"
+                            <label for="banner"
                                    class="block text-sm font-medium leading-6 text-gray-900">Banner</label>
                             <div class="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10 text-red-500">
                                 <div class="text-center">
@@ -142,15 +149,28 @@
                                         <path fill-rule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clip-rule="evenodd" />
                                     </svg>
                                     <div class="mt-4 flex text-sm leading-6 text-gray-600">
-                                        <label for="webshot"
+                                        <label for="banner"
                                                class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
                                             <span class="text-red-600">Upload a Banner</span>
-                                            <input id="webshot" name="webshot" type="file" class="sr-only" />
+                                            <input id="banner"
+                                                   name="banner"
+                                                   type="file"
+                                                   class="sr-only"
+                                                   onchange="displayBannerPreview()" />
                                         </label>
                                         <p class="pl-1">or drag and drop</p>
                                     </div>
                                     <p class="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
                                 </div>
+                            </div>
+                            <div id="bannerPreview" class="mt-4">
+                                {% if hunt.banner %}
+                                    <img class="m-auto"
+                                         src="{{ MEDIA_URL }}/{{ hunt.banner }}"
+                                         alt=""
+                                         width="25%"
+                                         height="25%">
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -159,6 +179,9 @@
                 <div class="border-b border-gray-900/10 pb-12 mt-5">
                     <h2 class="text-base font-semibold leading-7 text-gray-900">Bughunt Prizes</h2>
                     <div class="bg-gray-100 w-full p-7">
+                        <h2 class="text-base font-semibold leading-7 text-gray-900 mb-4">
+                            click on the add prize button after filling the prize details
+                        </h2>
                         <div>
                             <label for="prize_name" class="font-bold">
                                 <span class="text-red-500 mr-1">*</span>Prize Name
@@ -184,6 +207,7 @@
                             <label for="number_of_winning_projects" class="font-bold">Number of Winning Projects</label>
                             <input type="number"
                                    min="1"
+                                   placeholder="1 (Minimum)"
                                    id="number_of_winning_projects"
                                    name="number_of_winning_projects"
                                    class="w-full mt-2 px-2 py-2 mb-2 border-[1px] border-gray-200 outline-none">
@@ -195,29 +219,14 @@
                                    class="w-4 h-4">
                             <label for="every_valid_submissions" class="ml-2">Every Valid Submissions are eligible for this prize</label>
                         </div>
-                        <script>
-                        let valid_s = document.getElementById("every_valid_submissions");
-                        let winning_projects = document.getElementById("number_of_winning_projects");
-                        valid_s.addEventListener('click',()=>{
-                            if (valid_s.checked) {
-                                winning_projects.disabled = true;
-                                winning_projects.value = 1;
-                            } else {
-                                winning_projects.disabled = false;
-                                winning_projects.value = 1;
-                            }
-                        })
-                        </script>
                         <div class="mt-3">
-                            <label for="prize_description" class="font-bold">
-                                <span class="text-red-500 mr-1">*</span>Prize Description
-                            </label>
+                            <label for="prize_description" class="font-bold">Prize Description</label>
                             <textarea type="text"
                                       name="prize_description"
                                       id="prize_description"
-                                      class="w-full mt-2 px-2 py-2 mb-2 border border-[1px] border-gray-200 outline-none"></textarea>
+                                      class="w-full mt-2 px-2 py-2 mb-2 border-[1px] border-gray-200 outline-none"></textarea>
                         </div>
-                        <div class="mt-3 flex flex-col">
+                        <div class="mt-3 flex flex-col" id="cryptocurrencyDiv">
                             <label class="font-bold">Will this prize will be paid in cryptocurrency?</label>
                             <p class="text-[12px] text-gray-700 ml-1">
                                 Check below if your prize is paid in cryptocurrency, and list the cash value of the cryptocurrenty and specify the crypto name in Hunt description eg: $100 USD in ETH
@@ -231,6 +240,7 @@
                             </div>
                         </div>
                         <button onclick="add_prize()"
+                                id="add_prize_button"
                                 type="button"
                                 class="w-[120px] h-[40px] mt-8 bg-red-500 text-white font-bold rounded-md hover:bg-red-600 transition-all">
                             Add Prize
@@ -239,23 +249,38 @@
                     <div class="sm:col-span-4 flex overflow-x-scroll"
                          id="list-prize-container">
                         {% for prize in prizes %}
-                            <div class="bg-white rounded-lg shadow-lg p-6 w-72 mr-5">
-                                <h2 class="text-2xl font-bold mb-4 text-gray-800">{{ prize.name|slice:8 }}...</h2>
-                                <div class="mb-4">
-                                    <p class="text-red-500 font-bold">Cash Value (USD)</p>
-                                    <p class="text-gray-800">${{ prize.value }}</p>
-                                </div>
-                                <div class="mb-4">
-                                    <p class="text-gray-800 font-bold">Number of Winning Projects</p>
-                                    <p class="text-gray-600">${{ prize.no_of_eligible_projects }}</p>
-                                </div>
-                                <div class="mb-4">
-                                    <p class="text-gray-800 font-bold">Reward Valid Submissions</p>
-                                    <p class="text-gray-600">{{ prize.valid_submissions_eligible }}</p>
-                                </div>
-                                <div class="mb-4">
-                                    <p class="text-red-500 font-bold">Prize Description</p>
-                                    <p class="text-gray-800">{{ prize.description|slice:55 }}...</p>
+                            <div>
+                                <div id="prize-container-{{ prize.id }}"
+                                     class="bg-white rounded-lg shadow-lg p-6 w-72 mr-5 relative">
+                                    <!-- edit button for edit existing stuff -->
+                                    <button id="EditPrizeButton"
+                                            type="button"
+                                            onclick="editPrize(event, {{ prize.id }}, '{{ prize.name }}', {{ prize.value }}, {{ prize.no_of_eligible_projects }}, {{ prize.valid_submissions_eligible|yesno:"true,false" }}, '{{ prize.description }}', {{ company }})"
+                                            class="absolute top-2 left-2 text-red-500">Edit</button>
+                                    <button onclick="removePrize(event, {{ prize.id }}, {{ company }})"
+                                            class="absolute top-2 right-2 text-red-500">x</button>
+                                    <br>
+                                    <h2 class="text-2xl font-bold mb-4 text-gray-800">{{ prize.name|slice:8 }}...</h2>
+                                    <div class="mb-4">
+                                        <p class="text-red-500 font-bold">Cash Value (USD)</p>
+                                        <p class="text-gray-800">${{ prize.value }}</p>
+                                    </div>
+                                    <div class="mb-4">
+                                        <p class="text-gray-800 font-bold">Number of Winning Projects</p>
+                                        {% if prize.valid_submissions_eligible %}
+                                            <p class="text-gray-600">All Valid Submissions</p>
+                                        {% else %}
+                                            <p class="text-gray-600">{{ prize.no_of_eligible_projects }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="mb-4">
+                                        <p class="text-gray-800 font-bold">Reward Valid Submissions</p>
+                                        <p class="text-gray-600">{{ prize.valid_submissions_eligible }}</p>
+                                    </div>
+                                    <div class="mb-4">
+                                        <p class="text-red-500 font-bold">Prize Description</p>
+                                        <p class="text-gray-800">{{ prize.description|slice:55 }}...</p>
+                                    </div>
                                 </div>
                             </div>
                         {% endfor %}
