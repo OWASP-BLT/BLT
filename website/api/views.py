@@ -1,9 +1,7 @@
-import json
 import uuid
 from datetime import datetime
 
 from django.conf import settings
-from django.contrib.auth import logout
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
@@ -12,14 +10,8 @@ from django.template.loader import render_to_string
 from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.decorators import permission_classes
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import (
-    AllowAny,
-    IsAdminUser,
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
-)
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -728,68 +720,19 @@ class ProjectViewSet(viewsets.ModelViewSet):
             status=200,
         )
 
-    def update(self, request, *args, **kwargs):
-        if IsAdminUser.has_permission(self=self, request=request, view=""):
-            projects = Project.objects.prefetch_related("contributors").all()
-            for project in projects:
-                contributors = Project.get_contributors(self, github_url=project.github_url)
-                project.contributors.set(contributors)
-            serializer = ProjectSerializer(projects, many=True)
-            return Response(
-                {"count": len(projects), "projects": serializer.data}, status=status.HTTP_200_OK
-            )
-        return Response(
-            {"success": False, "message": "Only admin's can access this api."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
 
+class AuthApiViewset(viewsets.ModelViewSet):
+    http_method_names = ("delete",)
+    permission_classes = (IsAuthenticated,)
 
-class AuthApiViewset(APIView):
-    http_method_names = ("delete", "post")
-
-    def post(self, request, *args, **kwargs):
-        req_type = request.GET.get("type")
-
-        if req_type == "login":
-            body_uni = request.body.decode("utf-8")
-            body = json.loads(body_uni)
-            username = body["user"]
-            password = body["password"]
-            try:
-                user = User.objects.get(username=username)
-                if user.check_password(password):
-                    token = Token.objects.get(user=user)
-                    return Response({"success": True, "token": token.key})
-                else:
-                    return Response({"success": False, "message": "Invalid credentials."})
-            except User.DoesNotExist:
-                return Response(
-                    {"success": False, "message": "Invalid credentials. User does not exists."}
-                )
-
-        elif req_type == "logout":
-            body_uni = request.body.decode("utf-8")
-            body = json.loads(body_uni)
-            username = body.get("user")
-            token_req = body.get("token")
-            try:
-                token = Token.objects.get(user__username=username).key
-                if token == token_req:
-                    logout(request)
-                    return Response({"success": True, "message": "Logged out successfully."})
-                else:
-                    return Response({"success": False, "message": "Invalid credentials."})
-            except Token.DoesNotExist:
-                return Response({"success": False, "message": "Invalid credentials."})
-        return Response({"success": False, "message": "Please provide a valid type."})
-
-    @permission_classes([IsAuthenticated])
     def delete(self, request, *args, **kwargs):
         try:
-            token = request.headers["Authorization"]
-            user = Token.objects.get(key=token).user
+            token = request.headers["Authorization"].split(" ")
+            user = Token.objects.get(key=token[1]).user
             user_data = User.objects.get(username=user)
             user_data.delete()
             return Response({"success": True, "message": "User deleted successfully !!"})
+        except Token.DoesNotExist:
+            return Response({"success": False, "message": "User does not exists."})
         except User.DoesNotExist:
             return Response({"success": False, "message": "User does not exists."})
