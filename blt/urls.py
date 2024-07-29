@@ -18,6 +18,7 @@ import website.views
 from blt import settings
 from company.views import ShowBughuntView
 from website.api.views import (
+    AuthApiViewset,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
     CompanyViewSet,
@@ -549,6 +550,7 @@ urlpatterns = [
         ProjectViewSet.as_view({"get": "list", "post": "create", "patch": "update"}),
         name="projects_api",
     ),
+    path("auth/delete", AuthApiViewset.as_view({"delete": "delete"}), name="auth-delete-api"),
 ]
 
 if settings.DEBUG:
