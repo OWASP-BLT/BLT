@@ -1262,4 +1262,4 @@ def accept_bug(request, issue_id, reward_id=None):
                 prize_amount=reward.value,
             ).save()
 
-        return redirect(request.META.get("HTTP_REFERER"))
+        return redirect("show_bughunt", pk=issue.hunt.id)
