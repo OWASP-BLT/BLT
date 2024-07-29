@@ -18,7 +18,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 
-from website.models import Company, Domain, Hunt, HuntPrize, Issue, IssueScreenshot
+from website.models import Company, Domain, Hunt, HuntPrize, Issue, IssueScreenshot, Winner
 
 restricted_domain = ["gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "proton.com"]
 
@@ -928,7 +928,7 @@ class ShowBughuntView(View):
                     "rewarded",
                     "created",
                 )
-                .filter(hunt__id=hunt_obj.id, is_hidden=True)
+                .filter(hunt__id=hunt_obj.id)
                 .annotate(
                     first_screenshot=Subquery(
                         IssueScreenshot.objects.filter(issue_id=OuterRef("pk")).values("image")[:1]
@@ -979,7 +979,13 @@ class ShowBughuntView(View):
         )
 
         # bughunt prizes
-        rewards = HuntPrize.objects.values().filter(hunt__id=hunt_obj.id)
+        rewards = HuntPrize.objects.filter(hunt_id=hunt_obj.id)
+        winners_count = {
+            reward.id: Winner.objects.filter(prize_id=reward.id).count() for reward in rewards
+        }
+
+        # check winner have for this bughunt
+        winners = Winner.objects.filter(hunt_id=hunt_obj.id).select_related("prize")
 
         context = {
             "hunt_obj": hunt_obj,
@@ -992,8 +998,10 @@ class ShowBughuntView(View):
             "top_testers": top_testers,
             "latest_issues": cleaned_issues,
             "rewards": rewards,
+            "winners_count": winners_count,
             "first_bug": first_bug,
             "last_bug": last_bug,
+            "winners": winners,
             "is_hunt_manager": is_hunt_manager,
         }
 
@@ -1229,3 +1237,29 @@ def edit_prize(request, prize_id, company_id):
     prize.save()
 
     return JsonResponse({"success": True})
+
+
+def accept_bug(request, issue_id, reward_id=None):
+    with transaction.atomic():
+        issue = get_object_or_404(Issue, id=issue_id)
+
+        if reward_id == "no_reward":
+            issue.verified = True
+            issue.rewarded = 0
+            issue.save()
+            Winner(
+                hunt_id=issue.hunt.id, prize_id=None, winner_id=issue.user.id, prize_amount=0
+            ).save()
+        else:
+            reward = get_object_or_404(HuntPrize, id=reward_id)
+            issue.verified = True
+            issue.rewarded = reward.value
+            issue.save()
+            Winner(
+                hunt_id=issue.hunt.id,
+                prize_id=reward.id,
+                winner_id=issue.user.id,
+                prize_amount=reward.value,
+            ).save()
+
+        return redirect("show_bughunt", pk=issue.hunt.id)
