@@ -441,6 +441,8 @@ class Winner(models.Model):
         on_delete=models.CASCADE,
     )
     prize_distributed = models.BooleanField(default=False)
+    prize = models.ForeignKey(HuntPrize, null=True, blank=True, on_delete=models.CASCADE)
+    prize_amount = models.DecimalField(max_digits=6, decimal_places=2, default=0)
 
 
 class Points(models.Model):

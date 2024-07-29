@@ -1,3 +1,4 @@
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -55,6 +56,60 @@
         .cm-s-default .cm-variable-2 {
             color: rgb(31, 41, 55);
         }
+
+        .dropdown {
+            min-width: 160px;
+            z-index: 1000;
+        }
+
+        .pagination-button:disabled {
+            background-color: #d1d5db; /* Gray background */
+            color: #6b7280; /* Gray text */
+            cursor: not-allowed; /* Change cursor to indicate disabled */
+            box-shadow: none; /* Remove shadow for disabled state */
+        }
+
+        .crypto-address {
+        text-align: center;
+        }
+
+        .dialog {
+            /* position: relative; */
+        }
+
+        .crypto-name {
+            text-align: center;
+            width: 100%;
+            font-size: 20px;
+            color: white;
+            background-color: #ff4444;
+            display: inline-block;
+            margin: 0 auto; /* Center the element horizontally */
+        }
+
+        .navigation {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+        }
+
+        .nav-btn {
+            cursor: pointer;
+            transition: 0.4s;;
+        }
+        .nav-btn.active {
+            background: red; /* Change to whatever red color you prefer */
+            color: white; /* Change text color to contrast with the red background */
+        }
+
+        input[name="r"] {
+            position: absolute;
+            visibility: hidden;
+        }
+
         </style>
         <link rel="stylesheet"
               href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
@@ -274,123 +329,86 @@
                             <h4 class="text-xl text-gray-900 font-bold mb-5">BUGHUNT WINNERS</h4>
                         </div>
                         <div class="relative overflow-x-auto shadow-md sm:rounded-lg max-h-[550px] overflow-y-scroll">
-                            <div class="flex items-center justify-between pb-4 bg-white">
-                                <div>
-                                    <button id="dropdownActionButton"
-                                            data-dropdown-toggle="dropdownAction"
-                                            class="inline-flex items-center text-gray-500 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-medium rounded-lg text-sm px-3 py-1.5"
-                                            type="button">
-                                        <span class="sr-only">Action button</span>
-                                        Action
-                                        <svg class="w-2.5 h-2.5 ml-2.5"
-                                             aria-hidden="true"
-                                             xmlns="http://www.w3.org/2000/svg"
-                                             fill="none"
-                                             viewBox="0 0 10 6">
-                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4" />
-                                        </svg>
-                                    </button>
-                                    <!-- Dropdown menu -->
-                                    <div id="dropdownAction"
-                                         class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
-                                        <ul class="py-1 text-sm text-gray-700"
-                                            aria-labelledby="dropdownActionButton">
-                                            <li>
-                                                <a href="#" class="block px-4 py-2 hover:bg-gray-100 ">Reward</a>
-                                            </li>
-                                            <li>
-                                                <a href="#" class="block px-4 py-2 hover:bg-gray-100 ">Promote</a>
-                                            </li>
-                                            <li>
-                                                <a href="#" class="block px-4 py-2 hover:bg-gray-100 ">Activate account</a>
-                                            </li>
-                                        </ul>
-                                        <div class="py-1">
-                                            <a href="#"
-                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 ">Delete User</a>
-                                        </div>
-                                    </div>
-                                </div>
-                                <label for="table-search" class="sr-only">Search</label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                        <svg class="w-4 h-4 text-gray-500"
-                                             aria-hidden="true"
-                                             xmlns="http://www.w3.org/2000/svg"
-                                             fill="none"
-                                             viewBox="0 0 20 20">
-                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
-                                        </svg>
-                                    </div>
-                                    <input type="text"
-                                           id="table-search-users"
-                                           class="block p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 "
-                                           placeholder="Search for users">
-                                </div>
-                            </div>
-                            <table class="w-full text-sm text-left text-gray-500">
+                            <table id="winnersTable" class="w-full text-sm text-left text-gray-500">
                                 <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                                     <tr>
-                                        <th scope="col" class="px-6 py-3">Name</th>
-                                        <th scope="col" class="px-6 py-3">Position</th>
-                                        <th scope="col" class="px-6 py-3">Accepted Bugs</th>
-                                        <th scope="col" class="px-6 py-3">View Bugs</th>
+                                        <th scope="col" class="px-6 py-3">Winner</th>
+                                        <th scope="col" class="px-6 py-3">Prize</th>
+                                        <th scope="col" class="px-6 py-3">Amount</th>
+                                        <th scope="col" class="px-6 py-3">Action</th>
                                     </tr>
                                 </thead>
-                                {% if not hunt_obj.result_published %}
-                                    <div class="w-full flex my-5 justify-center">
-                                        <p class="text-red-500">No winners announced yet</p>
-                                    </div>
-                                {% else %}
-                                    <tbody>
-                                        {% for winner in bughunt_leaderboard|slice:":4" %}
-                                            <tr class="bg-white border-b">
-                                                <th scope="row"
-                                                    class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap">
-                                                    <img class="w-10 h-10 rounded-full"
-                                                         src="data:image/jpeg;base64,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"
-                                                         alt="Jese image"
-                                                         width="40px"
-                                                         height="40px">
-                                                    <div class="pl-3">
-                                                        <div class="text-base font-semibold">{{ winner.user__username }}</div>
-                                                    </div>
-                                                </th>
-                                                <td class="px-6 py-4">WINNER</td>
-                                                <td class="px-6 py-4">
-                                                    <div class="flex items-center">10</div>
-                                                </td>
-                                                <td class="px-6 py-4">
-                                                    <a href="#" class="font-medium text-blue-600 hover:underline">View Bugs</a>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                        {% for runner in bughunt_leaderboard|slice:"4:" %}
-                                            <tr class="bg-white border-b">
-                                                <th scope="row"
-                                                    class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap">
-                                                    <img class="w-10 h-10 rounded-full"
-                                                         src="data:image/jpeg;base64,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"
-                                                         alt="Jese image"
-                                                         width="40px"
-                                                         height="40px">
-                                                    <div class="pl-3">
-                                                        <div class="text-base font-semibold">Neil Sims</div>
-                                                        <div class="font-normal text-gray-500">neil.sims@flowbite.com</div>
-                                                    </div>
-                                                </th>
-                                                <td class="px-6 py-4">RUNNER UP</td>
-                                                <td class="px-6 py-4">
-                                                    <div class="flex items-center">10</div>
-                                                </td>
-                                                <td class="px-6 py-4">
-                                                    <a href="#" class="font-medium text-blue-600 hover:underline">View Bugs</a>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                {% endif %}
+                                <tbody id="winnersBody">
+                                    {% for winner in winners %}
+                                        <tr class="winner-row bg-white border-b">
+                                            <td scope="row"
+                                                class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap">
+                                                <img class="rounded-full"
+                                                     src="{% if winner.winner.userprofile.user_avatar %} {{ MEDIA_URL }}{{ winner.winner.userprofile.user_avatar }} {% else %} https://via.placeholder.com/100?text=No+Avatar {% endif %}"
+                                                     alt="avatar"
+                                                     width="40"
+                                                     height="40">
+                                                <div class="pl-3">
+                                                    <a href="{% url 'profile' winner.winner.username %}"
+                                                       class="font-medium text-gray-900 hover:text-gray-600">{{ winner.winner.username }}</a>
+                                                    <div class="font-normal text-gray-500">{{ winner.winner.email }}</div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4">{{ winner.prize.name }}</td>
+                                            <td class="px-6 py-4">{{ winner.prize.value }}</td>
+                                            <td class="px-6 py-4">
+                                                <button type="button"
+                                                        id="openModal-{{ winner.winner.id }}"
+                                                        class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors duration-300 ease-in-out"
+                                                        onclick="openModal('{{ winner.winner.userprofile.btc_address }}', '{{ winner.winner.userprofile.eth_address }}', '{{ winner.winner.userprofile.bch_address }}', '{{ winner.winner.id }}')">
+                                                    Pay The Prize
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <dialog id="dialog-{{ winner.winner.id }}" class="dialog">
+                                            <input type="radio"
+                                                   name="r"
+                                                   id="bch-{{ winner.winner.id }}"
+                                                   checked
+                                                   class="active">
+                                            <input type="radio" name="r" id="eth-{{ winner.winner.id }}">
+                                            <input type="radio" name="r" id="btc-{{ winner.winner.id }}">
+                                            <div class="navigation">
+                                                <button class="nav-btn border font-medium px-4 py-2 hover:bg-red-500 mx-2"
+                                                        id="bch-btn-{{ winner.winner.id }}">BCH</button>
+                                                <button class="nav-btn border font-medium px-4 py-2 hover:bg-red-500 mx-2"
+                                                        id="eth-btn-{{ winner.winner.id }}">Ethereum</button>
+                                                <button class="nav-btn border font-medium px-4 py-2 hover:bg-red-500 mx-2"
+                                                        id="btc-btn-{{ winner.winner.id }}">Bitcoin</button>
+                                            </div>
+                                            <div id="slideshow-{{ winner.winner.id }}" class="slideshow mt-[50px]">
+                                                <img id="qr-image-{{ winner.winner.id }}"
+                                                     alt="QR Code"
+                                                     height="300"
+                                                     width="400">
+                                                <p id="crypto-name-{{ winner.winner.id }}"
+                                                   class="crypto-name font-semibold"></p>
+                                                <p id="crypto-address-{{ winner.winner.id }}" class="crypto-address"></p>
+                                            </div>
+                                            <!-- app css in tailwind a close button which take whole width of the dialog -->
+                                            <button id="close-{{ winner.winner.id }}"
+                                                    class="w-full bg-red-600 text-white font-bold py-2">Close</button>
+                                        </dialog>
+                                    {% endfor %}
+                                </tbody>
                             </table>
+                        </div>
+                        <!-- Pagination Controls -->
+                        <div id="paginationControls" class="flex justify-center mt-5">
+                            <button id="prevPage"
+                                    class="pagination-button px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors duration-300 ease-in-out">
+                                Previous
+                            </button>
+                            <span id="pageInfo" class="mx-4 text-gray-700 font-medium"></span>
+                            <button id="nextPage"
+                                    class="pagination-button px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-colors duration-300 ease-in-out">
+                                Next
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -490,11 +508,37 @@
                                                 <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500">#Accepted</a>
                                                 <a class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500"># ${{ issue.rewarded }}</a>
                                             {% endif %}
+                                            {% if is_hunt_manager and issue.user__id and not issue.verified and not hunt_obj.result_published %}
+                                                <button id="accept-btn-{{ issue.id }}"
+                                                        class="px-2 py-1 mx-2 bg-red-600 text-white font-bold rounded hover:bg-red-500"
+                                                        onclick="toggleDropdown({{ issue.id }})">Accept Bug</button>
+                                                <div id="dropdown-{{ issue.id }}"
+                                                     class="dropdown border hidden absolute bg-white shadow-lg rounded mt-2">
+                                                    <a href="{% url 'accept_bug' issue.id 'no_reward' %}"
+                                                       class="block px-4 py-2 text-gray-800 hover:bg-red-500 hover:text-white">Accept without reward</a>
+                                                    {% if rewards|length > 0 %}
+                                                        {% for reward in rewards %}
+                                                            {% if reward.valid_submissions_eligible %}
+                                                                <a href="{% url 'accept_bug' issue.id reward.id %}"
+                                                                   class="block px-4 py-2 text-gray-800 hover:bg-red-500 hover:text-white">Reward: {{ reward.name }} - ${{ reward.value }}</a>
+                                                            {% else %}
+                                                                {% if winners_count|get_item:reward.id < reward.no_of_eligible_projects %}
+                                                                    <a href="{% url 'accept_bug' issue.id reward.id %}"
+                                                                       class="block px-4 py-2 text-gray-800 hover:bg-red-500 hover:text-white">Reward: {{ reward.name }} - ${{ reward.value }}</a>
+                                                                {% endif %}
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    {% else %}
+                                                        <a href="#"
+                                                           class="block px-4 py-2 text-gray-800 hover:bg-red-500 hover:text-white">No rewards available</a>
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
                                         </div>
                                     </div>
                                     <div class="mt-2">
                                         <a class="text-xl text-black font-bold hover:text-gray-700"
-                                           href="{% url 'issue_view' issue.id %}">{{ issue.description }}</a>
+                                           href="{% url 'issue_view2' issue.id %}">{{ issue.description }}</a>
                                     </div>
                                     <div class="flex justify-between items-center mt-4">
                                         <div>
@@ -605,4 +649,148 @@
     prev.addEventListener('click', () => {
         markdown();
     });
+
+    let openDropdownId = null;
+
+    function toggleDropdown(issueId) {
+        const dropdown = document.getElementById(`dropdown-${issueId}`);
+        const button = document.getElementById(`accept-btn-${issueId}`);
+
+        if (openDropdownId && openDropdownId !== issueId) {
+            // Close the previously open dropdown
+            document.getElementById(`dropdown-${openDropdownId}`).classList.add('hidden');
+            document.getElementById(`accept-btn-${openDropdownId}`).textContent = 'Accept Bug';
+        }
+
+        if (dropdown.classList.contains('hidden')) {
+            // Open the new dropdown
+            dropdown.classList.remove('hidden');
+            button.textContent = 'Accept Bug';
+            openDropdownId = issueId;
+        } else {
+            // Close the current dropdown
+            dropdown.classList.add('hidden');
+            button.textContent = 'Accept Bug';
+            openDropdownId = null;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const rowsPerPage = 5;
+        const table = document.getElementById('winnersTable');
+        const rows = Array.from(table.getElementsByClassName('winner-row'));
+        const totalRows = rows.length;
+        const totalPages = Math.ceil(totalRows / rowsPerPage);
+        let currentPage = 1;
+
+        function showPage(page) {
+            rows.forEach((row, index) => {
+                row.style.display = (index >= (page - 1) * rowsPerPage && index < page * rowsPerPage) ? '' : 'none';
+            });
+            document.getElementById('pageInfo').textContent = `Page ${page} of ${totalPages}`;
+
+            // Update button states
+            document.getElementById('prevPage').disabled = page === 1;
+            document.getElementById('nextPage').disabled = page === totalPages;
+        }
+
+        document.getElementById('prevPage').addEventListener('click', function () {
+            if (currentPage > 1) {
+                currentPage--;
+                showPage(currentPage);
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', function () {
+            if (currentPage < totalPages) {
+                currentPage++;
+                showPage(currentPage);
+            }
+        });
+
+        // Initial page load
+        showPage(currentPage);
+    });
+
+    const openModal = (btc, eth, bch, userId) => {
+        // Close any existing modals
+        document.querySelectorAll('dialog[open]').forEach(dialog => dialog.close());
+
+        // Set up the crypto options
+        const cryptoOptions = [
+            { name: 'Bitcoin Cash', address: bch },
+            { name: 'Ethereum', address: eth },
+            { name: 'Bitcoin', address: btc }
+        ];
+        
+        let currentIndex = 0;
+
+        const updateSlide = () => {
+            let { name, address } = cryptoOptions[currentIndex];
+            if (address === '' || address === 'None') {
+                address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
+                document.getElementById('crypto-name-' + userId).textContent = `No address: Will go to BLT Donation`;
+                document.getElementById('qr-image-' + userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+                document.getElementById('crypto-address-' + userId).textContent = `BCH: ${address}`;
+            } else {
+                document.getElementById('crypto-name-' + userId).textContent = name;
+                document.getElementById('qr-image-' + userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+                document.getElementById('crypto-address-' + userId).textContent = `${address}`;
+            }
+        };
+
+        updateSlide();
+
+        
+        // Set up the navigation buttons
+        const bchBtn = document.getElementById('bch-btn-' + userId);
+        const ethBtn = document.getElementById('eth-btn-' + userId);
+        const btcBtn = document.getElementById('btc-btn-' + userId);
+
+        // Open the corresponding modal
+        const dialog = document.getElementById('dialog-' + userId);
+        if (dialog) {
+            dialog.showModal();
+            bchBtn.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close the modal when the close button is clicked
+        document.getElementById('close-' + userId).addEventListener('click', function() {
+            if (dialog) {
+                dialog.close();
+                bchBtn.classList.remove('active');
+                ethBtn.classList.remove('active');
+                btcBtn.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        bchBtn.addEventListener('click', () => {
+            currentIndex = 0;
+            updateSlide();
+            // add active class to the button and remove it from the others
+            bchBtn.classList.add('active');
+            ethBtn.classList.remove('active');
+            btcBtn.classList.remove('active');
+        });
+
+        ethBtn.addEventListener('click', () => {
+            currentIndex = 1;
+            updateSlide();
+            // add active class to the button and remove it from the others
+            bchBtn.classList.remove('active');
+            ethBtn.classList.add('active');
+            btcBtn.classList.remove('active');
+        });
+
+        btcBtn.addEventListener('click', () => {
+            currentIndex = 2;
+            updateSlide();
+            // add active class to the button and remove it from the others
+            bchBtn.classList.remove('active');
+            ethBtn.classList.remove('active');
+            btcBtn.classList.add('active');
+        });
+    };
 </script>
