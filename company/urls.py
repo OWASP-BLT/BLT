@@ -14,6 +14,7 @@ from company.views import (
     RegisterCompanyView,
     accept_bug,
     company_view,
+    delete_manager,
     delete_prize,
     edit_prize,
 )
@@ -59,4 +60,5 @@ urlpatterns = [
     path("edit_prize/<int:prize_id>/<int:company_id>", edit_prize, name="edit_prize"),
     path("accept_bug/<int:issue_id>/<str:reward_id>/", accept_bug, name="accept_bug"),
     path("accept_bug/<int:issue_id>/<str:no_reward>/", accept_bug, name="accept_bug_no_reward"),
+    path("delete_manager/<int:manager_id>/<int:domain_id>/", delete_manager, name="delete_manager"),
 ]
