@@ -94,14 +94,24 @@ from website.models import (
     Monitor,
     Payment,
     Points,
+    Project,
     Subscription,
+    Suggestion,
+    SuggestionVotes,
     UserProfile,
     Wallet,
     Winner,
 )
 
 from .bot import conversation_chain, is_api_key_valid, load_vector_store
-from .forms import CaptchaForm, HuntForm, MonitorForm, UserDeleteForm, UserProfileForm
+from .forms import (
+    CaptchaForm,
+    GitHubURLForm,
+    HuntForm,
+    MonitorForm,
+    UserDeleteForm,
+    UserProfileForm,
+)
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
@@ -148,6 +158,50 @@ def rebuild_safe_url(url):
     parsed_url = urlparse(url)
     # Rebuild the URL with scheme, netloc, and path only
     return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", ""))
+
+
+class ProjectDetailView(DetailView):
+    model = Project
+
+
+class ProjectListView(ListView):
+    model = Project
+    context_object_name = "projects"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = GitHubURLForm()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = GitHubURLForm(request.POST)
+        if form.is_valid():
+            github_url = form.cleaned_data["github_url"]
+            api_url = github_url.replace("github.com", "api.github.com/repos")
+            response = requests.get(api_url)
+            if response.status_code == 200:
+                data = response.json()
+                project, created = Project.objects.get_or_create(
+                    github_url=github_url,
+                    defaults={
+                        "name": data["name"],
+                        "slug": data["name"].lower(),
+                        "description": data["description"],
+                        "wiki_url": data["html_url"],
+                        "homepage_url": data.get("homepage", ""),
+                        "logo": data["owner"]["avatar_url"],  # assuming avatar_url for logo
+                    },
+                )
+                if created:
+                    messages.success(request, "Project added successfully.")
+                else:
+                    messages.info(request, "Project already exists.")
+            else:
+                messages.error(request, "Failed to fetch project from GitHub.")
+            return redirect("project_list")
+        context = self.get_context_data()
+        context["form"] = form
+        return self.render_to_response(context)
 
 
 # # @cache_page(60 * 60 * 24)
@@ -246,14 +300,12 @@ def rebuild_safe_url(url):
 
 def newhome(request, template="new_home.html"):
     if request.user.is_authenticated:
-        try:
-            email_record = EmailAddress.objects.get(email=request.user.email)
+        email_record = EmailAddress.objects.filter(email=request.user.email).first()
+        if email_record:
             if not email_record.verified:
                 messages.error(request, "Please verify your email address.")
-        except EmailAddress.DoesNotExist:
+        else:
             messages.error(request, "No email associated with your account. Please add an email.")
-        except AttributeError:
-            messages.error(request, "Your account does not have an email address.")
     else:
         messages.info(
             request, "You are browsing as a guest. Please log in or register for full access."
@@ -4171,21 +4223,26 @@ class IssueView3(DetailView):
 def create_github_issue(request, id):
     issue = get_object_or_404(Issue, id=id)
     screenshot_all = IssueScreenshot.objects.filter(issue=issue)
-    referer = request.META.get("HTTP_REFERER")
-    if not referer:
-        return HttpResponseForbidden()
+    # referer = request.META.get("HTTP_REFERER")
+    # if not referer:
+    #     return HttpResponseForbidden()
+    if not os.environ.get("GITHUB_ACCESS_TOKEN"):
+        return JsonResponse({"status": "Failed", "status_reason": "GitHub Access Token is missing"})
     if issue.github_url:
-        return JsonResponse({"status": "Failed", "status_reason": "GitHub Issue Exists"})
-    if (
-        os.environ.get("GITHUB_ACCESS_TOKEN") and request.user.is_authenticated
-        # Any Authenticated user will be able to create a GitHub issue
-        # and (issue.user == request.user or request.user.is_superuser)
-    ):
+        return JsonResponse(
+            {"status": "Failed", "status_reason": "GitHub Issue Exists at " + issue.github_url}
+        )
+    if issue.domain.github:
         screenshot_text = ""
         for screenshot in screenshot_all:
             screenshot_text += "![0](" + settings.FQDN + screenshot.image.url + ") \n"
 
-        url = "https://api.github.com/repos/OWASP-BLT/BLT/issues"
+        github_url = issue.domain.github.replace("https", "git").replace("http", "git") + ".git"
+        from giturlparse import parse as parse_github_url
+
+        p = parse_github_url(github_url)
+
+        url = "https://api.github.com/repos/%s/%s/issues" % (p.owner, p.repo)
         the_user = request.user.username if request.user.is_authenticated else "Anonymous"
 
         issue_data = {
@@ -4216,7 +4273,9 @@ def create_github_issue(request, id):
                 issue.save()
                 return JsonResponse({"status": "ok", "github_url": issue.github_url})
             else:
-                return JsonResponse({"status": "Failed", "status_reason": response.reason})
+                return JsonResponse(
+                    {"status": "Failed", "status_reason": "Issue with Github:" + response.reason}
+                )
         except Exception as e:
             send_mail(
                 "Error in GitHub issue creation for Issue ID " + str(issue.id),
@@ -4229,10 +4288,10 @@ def create_github_issue(request, id):
                 [request.user.email],
                 fail_silently=True,
             )
-            return JsonResponse({"status": "Failed", "status_reason": "Failed"})
+            return JsonResponse({"status": "Failed", "status_reason": "Failed: error is " + str(e)})
     else:
         return JsonResponse(
-            {"status": "Failed", "status_reason": "You are not authorised to make that request"}
+            {"status": "Failed", "status_reason": "No Github URL for this domain, please add it."}
         )
 
 
@@ -4254,7 +4313,7 @@ def resolve(request, id):
             issue.save()
             return JsonResponse({"status": "ok", "issue_status": issue.status})
     else:
-        return HttpResponseForbidden()
+        return HttpResponseForbidden("not logged in or superuser or issue user")
 
 
 @receiver(user_signed_up)
@@ -4781,3 +4840,108 @@ def blt_tomato(request):
         project["funding_hyperlinks"] = funding_link
 
     return render(request, "blt_tomato.html", {"projects": data})
+
+
+@login_required
+def vote_suggestions(request):
+    if request.method == "POST":
+        user = request.user
+        data = json.loads(request.body)
+        suggestion_id = data.get("suggestion_id")
+        suggestion = Suggestion.objects.get(suggestion_id=suggestion_id)
+        up_vote = data.get("up_vote")
+        down_vote = data.get("down_vote")
+        voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).exists()
+        if not voted:
+            up_vote = True if up_vote else False
+            down_vote = True if down_vote else False
+
+            if up_vote or down_vote:
+                voted = SuggestionVotes.objects.create(
+                    user=user, suggestion=suggestion, up_vote=up_vote, down_vote=down_vote
+                )
+
+                if up_vote:
+                    suggestion.up_votes += 1
+                if down_vote:
+                    suggestion.down_votes += 1
+        else:
+            if not up_vote:
+                suggestion.up_votes -= 1
+            if down_vote is False:
+                suggestion.down_votes -= 1
+
+            voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).delete()
+
+            if up_vote:
+                voted = SuggestionVotes.objects.create(
+                    user=user, suggestion=suggestion, up_vote=True, down_vote=False
+                )
+                suggestion.up_votes += 1
+
+            if down_vote:
+                voted = SuggestionVotes.objects.create(
+                    user=user, suggestion=suggestion, down_vote=True, up_vote=False
+                )
+                suggestion.down_votes += 1
+
+            suggestion.save()
+
+        response = {
+            "success": True,
+            "up_vote": suggestion.up_votes,
+            "down_vote": suggestion.down_votes,
+        }
+        return JsonResponse(response)
+
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=402)
+
+
+@login_required
+def set_vote_status(request):
+    if request.method == "POST":
+        user = request.user
+        data = json.loads(request.body)
+        id = data.get("id")
+        try:
+            suggestion = Suggestion.objects.get(suggestion_id=id)
+        except Suggestion.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Suggestion not found"}, status=404)
+
+        up_vote = SuggestionVotes.objects.filter(
+            suggestion=suggestion, user=user, up_vote=True
+        ).exists()
+        down_vote = SuggestionVotes.objects.filter(
+            suggestion=suggestion, user=user, down_vote=True
+        ).exists()
+
+        response = {"up_vote": up_vote, "down_vote": down_vote}
+        return JsonResponse(response)
+
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
+
+
+@login_required
+def add_suggestions(request):
+    if request.method == "POST":
+        user = request.user
+        data = json.loads(request.body)
+        title = data.get("title")
+        description = data.get("description", "")
+        id = str(uuid.uuid4())
+        print(description, title, id)
+        if title and description and user:
+            suggestion = Suggestion(
+                user=user, title=title, description=description, suggestion_id=id
+            )
+            suggestion.save()
+            messages.success(request, "Suggestion added successfully.")
+            return JsonResponse({"status": "success"})
+        else:
+            messages.error(request, "Please fill all the fields.")
+            return JsonResponse({"status": "error"}, status=400)
+
+
+def view_suggestions(request):
+    suggestion = Suggestion.objects.all()
+    return render(request, "feature_suggestion.html", {"suggestions": suggestion})

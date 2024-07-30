@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}
+    Project Detail - {{ project.name }}
+{% endblock title %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container">
+        <div class="project-header">
+            {% if project.logo %}
+                <img src="{{ project.logo }}"
+                     alt="{{ project.name }} logo"
+                     class="project-logo"
+                     height="150"
+                     width="150">
+            {% endif %}
+            <h2>{{ project.name }}</h2>
+        </div>
+        <p>{{ project.description }}</p>
+        <div class="project-links">
+            <a href="{{ project.github_url }}" target="_blank" title="GitHub">
+                <i class="fab fa-github"></i> GitHub
+            </a>
+            {% if project.wiki_url %}
+                <a href="{{ project.wiki_url }}" target="_blank" title="Wiki">
+                    <i class="fas fa-book"></i> Wiki
+                </a>
+            {% endif %}
+            {% if project.homepage_url %}
+                <a href="{{ project.homepage_url }}" target="_blank" title="Homepage">
+                    <i class="fas fa-home"></i> Homepage
+                </a>
+            {% endif %}
+        </div>
+        <div class="project-stats">
+            <h3>Top Contributors</h3>
+            <div class="contributors">
+                {% for contributor in project.get_top_contributors %}
+                    <div class="contributor">
+                        <img src="{{ contributor.avatar_url }}"
+                             alt="{{ contributor.name }}"
+                             class="contributor-avatar"
+                             height="40"
+                             width="40">
+                        <p>{{ contributor.name }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <style>
+.container {
+    margin-top: 30px;
+}
+
+.project-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.project-logo {
+    max-width: 150px;
+    margin-right: 20px;
+}
+
+h2 {
+    margin: 0;
+    font-size: 32px;
+}
+
+.project-links a {
+    display: inline-block;
+    margin-right: 1rem;
+    text-decoration: none;
+    color: #007bff;
+    font-size: 18px;
+}
+
+.project-links a i {
+    margin-right: 0.3rem;
+}
+
+.project-links a:hover {
+    text-decoration: underline;
+}
+
+.project-stats {
+    margin-top: 30px;
+}
+
+.project-stats h3 {
+    margin-bottom: 15px;
+}
+
+.contributors {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.contributor {
+    margin-right: 20px;
+    text-align: center;
+}
+
+.contributor-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+}
+    </style>
+{% endblock content %}

@@ -7,6 +7,7 @@ from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.db.models import Count, Q, Sum
 from django.template.loader import render_to_string
+from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.pagination import PageNumberPagination
@@ -16,6 +17,7 @@ from rest_framework.views import APIView
 
 from website.models import (
     Company,
+    Contributor,
     Domain,
     Hunt,
     HuntPrize,
@@ -23,6 +25,8 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Points,
+    Project,
+    Token,
     User,
     UserProfile,
 )
@@ -30,8 +34,10 @@ from website.serializers import (
     BugHuntPrizeSerializer,
     BugHuntSerializer,
     CompanySerializer,
+    ContributorSerializer,
     DomainSerializer,
     IssueSerializer,
+    ProjectSerializer,
     UserProfileSerializer,
 )
 from website.views import LeaderboardBase, image_validator
@@ -649,3 +655,84 @@ class CompanyViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ("id", "name")
     http_method_names = ("get", "post", "put")
+
+
+class ContributorViewSet(viewsets.ModelViewSet):
+    queryset = Contributor.objects.all()
+    serializer_class = ContributorSerializer
+    http_method_names = ("get", "post", "put")
+
+
+class ProjectViewSet(viewsets.ModelViewSet):
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+    # permission_classes = (IsAuthenticatedOrReadOnly,)
+    http_method_names = ("get", "post", "put", "patch")
+
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy()
+
+        name = data.get("name", "")
+        slug = slugify(name)
+
+        contributors = Project.get_contributors(self, data["github_url"])  # get contributors
+
+        serializer = ProjectSerializer(data=data)
+
+        if serializer.is_valid():
+            project_instance = serializer.save()
+            project_instance.__setattr__("slug", slug)
+
+            # If the logo is not provided get the logo from the repo itself
+            if project_instance.logo == "":
+                logo = project_instance.get_github_logo_save_to_storage(project_instance.github_url)
+                if logo:
+                    project_instance.logo = logo
+
+            project_instance.save()
+
+            # Set contributors
+            if contributors:
+                project_instance.contributors.set(contributors)
+
+            serializer = ProjectSerializer(project_instance)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def list(self, request, *args, **kwargs):
+        projects = Project.objects.prefetch_related("contributors").all()
+
+        project_data = []
+        for project in projects:
+            contributors_data = []
+            for contributor in project.contributors.all():
+                contributor_info = ContributorSerializer(contributor)
+                contributors_data.append(contributor_info.data)
+            contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+            project_info = ProjectSerializer(project).data
+            project_info["contributors"] = contributors_data
+            project_data.append(project_info)
+
+        return Response(
+            {"count": len(project_data), "projects": project_data},
+            status=200,
+        )
+
+
+class AuthApiViewset(viewsets.ModelViewSet):
+    http_method_names = ("delete",)
+    permission_classes = (IsAuthenticated,)
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            token = request.headers["Authorization"].split(" ")
+            user = Token.objects.get(key=token[1]).user
+            user_data = User.objects.get(username=user)
+            user_data.delete()
+            return Response({"success": True, "message": "User deleted successfully !!"})
+        except Token.DoesNotExist:
+            return Response({"success": False, "message": "User does not exists."})
+        except User.DoesNotExist:
+            return Response({"success": False, "message": "User does not exists."})

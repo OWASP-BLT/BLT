@@ -18,6 +18,7 @@ import website.views
 from blt import settings
 from company.views import ShowBughuntView
 from website.api.views import (
+    AuthApiViewset,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
     CompanyViewSet,
@@ -27,6 +28,7 @@ from website.api.views import (
     IssueViewSet,
     LeaderboardApiViewSet,
     LikeIssueApiView,
+    ProjectViewSet,
     StatsApiViewset,
     UrlCheckApiViewset,
     UserIssueViewSet,
@@ -61,6 +63,8 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     ListHunts,
     OngoingHunts,
     PreviousHunts,
+    ProjectDetailView,
+    ProjectListView,
     SaveBiddingData,
     ScoreboardView,
     SpecificIssuesView,
@@ -93,9 +97,12 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     like_issue3,
     resolve,
     select_bid,
+    set_vote_status,
     submit_pr,
     subscribe_to_domains,
+    view_suggestions,
     vote_count,
+    vote_suggestions,
     weekly_report,
 )
 
@@ -406,11 +413,7 @@ urlpatterns = [
         TemplateView.as_view(template_name="coming_soon.html"),
         name="googleplayapp",
     ),
-    re_path(
-        r"^projects/$",
-        TemplateView.as_view(template_name="projects.html"),
-        name="projects",
-    ),
+    re_path(r"^projects/$", ProjectListView.as_view(), name="project_list"),
     re_path(r"^apps/$", TemplateView.as_view(template_name="apps.html"), name="apps"),
     re_path(
         r"^deletions/$",
@@ -458,6 +461,7 @@ urlpatterns = [
     re_path(r"^api/v1/createwallet/$", website.views.create_wallet, name="create_wallet"),
     re_path(r"^api/v1/count/$", website.views.issue_count, name="api_count"),
     re_path(r"^api/v1/contributors/$", website.views.contributors, name="api_contributor"),
+    path("project/<slug:slug>/", ProjectDetailView.as_view(), name="project_view"),
     re_path(
         r"^api/v1/createissues/$",
         csrf_exempt(IssueCreate.as_view()),
@@ -518,6 +522,10 @@ urlpatterns = [
     path("fetch-current-bid/", fetch_current_bid, name="fetch_current_bid"),
     path("Submitpr/", submit_pr, name="submit_pr"),
     path("weekly-report/", weekly_report, name="weekly_report"),
+    path("suggestion/add/", add_suggestions, name="add_suggestions"),
+    path("suggestion/", view_suggestions, name="view_suggestions"),
+    path("suggestion/vote/", vote_suggestions, name="vote_suggestions"),
+    path("suggestion/set-vote-status/", set_vote_status, name="set_vote_status"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s]+)",
         website.views.trademark_detailview,
@@ -540,6 +548,12 @@ urlpatterns = [
     ),
     path("api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"),
     path("blt-tomato/", blt_tomato, name="blt-tomato"),
+    path(
+        "api/v1/projects/",
+        ProjectViewSet.as_view({"get": "list", "post": "create", "patch": "update"}),
+        name="projects_api",
+    ),
+    path("auth/delete", AuthApiViewset.as_view({"delete": "delete"}), name="auth-delete-api"),
 ]
 
 if settings.DEBUG:

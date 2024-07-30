@@ -10,14 +10,15 @@ from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import URLValidator
 from django.db import transaction
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractMonth
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 
-from website.models import Company, Domain, Hunt, HuntPrize, Issue
+from website.models import Company, Domain, Hunt, HuntPrize, Issue, IssueScreenshot, Winner
 
 restricted_domain = ["gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "proton.com"]
 
@@ -365,10 +366,19 @@ class CompanyDashboardManageBugsView(View):
             .distinct()
         )
 
+        company_obj = Company.objects.filter(id=id).first()
+
+        # get all domains of this company
+        domains = Domain.objects.filter(company_id=id)
+
+        # get all issues where the url is in the domains in descending order
+        issues = Issue.objects.filter(domain__in=domains).order_by("-created")
+
         context = {
             "company": id,
             "companies": companies,
-            "company_obj": Company.objects.filter(id=id).first(),
+            "company_obj": company_obj,
+            "issues": issues,
         }
         return render(request, "company/company_manage_bugs.html", context=context)
 
@@ -404,6 +414,8 @@ class AddDomainView(View):
 
         if method == "delete":
             return self.delete(request, *args, **kwargs)
+        elif method == "put":
+            return self.put(request, *args, **kwargs)
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -415,13 +427,21 @@ class AddDomainView(View):
             .distinct()
         )
 
+        users = User.objects.filter(is_active=True)
+        domain_id = kwargs.get("domain_id")
+        domain = Domain.objects.filter(id=domain_id).first() if domain_id else None
         context = {
             "company": id,
             "company_obj": Company.objects.filter(id=id).first(),
             "companies": companies,
+            "users": users,
+            "domain": domain,  # Pass the domain to the template if it exists
         }
 
-        return render(request, "company/add_domain.html", context=context)
+        if domain:
+            return render(request, "company/edit_domain.html", context=context)
+        else:
+            return render(request, "company/add_domain.html", context=context)
 
     @validate_company_user
     def post(self, request, id, *args, **kwargs):
@@ -435,18 +455,22 @@ class AddDomainView(View):
 
         if domain_data["name"] is None:
             messages.error(request, "Enter domain name")
-            return redirect("add_domain", id)
+            return redirect("add_domain", id=id)
 
         if domain_data["url"] is None:
             messages.error(request, "Enter domain url")
-            return redirect("add_domain", id)
+            return redirect("add_domain", id=id)
 
         parsed_url = urlparse(domain_data["url"])
+        if parsed_url.hostname is None:
+            messages.error(request, "Invalid domain url")
+            return redirect("add_domain", id=id)
+
         domain = (parsed_url.hostname).replace("www.", "")
 
         domain_data["name"] = domain_data["name"].lower()
 
-        managers_list = request.POST.getlist("email")
+        managers_list = request.POST.getlist("user")
         company_obj = Company.objects.get(id=id)
 
         domain_exist = Domain.objects.filter(
@@ -455,7 +479,7 @@ class AddDomainView(View):
 
         if domain_exist:
             messages.error(request, "Domain name or url already exist.")
-            return redirect("add_domain", id)
+            return redirect("add_domain", id=id)
 
         # validate domain url
         try:
@@ -465,62 +489,200 @@ class AddDomainView(View):
                     response = requests.get(safe_url, timeout=5)
                     if response.status_code != 200:
                         raise Exception
-                except Exception:
+                except requests.exceptions.RequestException:
                     messages.error(request, "Domain does not exist.")
-                    return redirect("add_domain", id)
-        except Exception as e:
-            print(e)
-            messages.error(request, "Domain does not exist.")
-            return redirect("add_domain", id)
+                    return redirect("add_domain", id=id)
+        except ValueError:
+            messages.error(request, "URL validation error.")
+            return redirect("add_domain", id=id)
 
         # validate domain email
         user_email_domain = request.user.email.split("@")[-1]
 
-        if domain != user_email_domain:
-            messages.error(request, "your email does not match domain email. Action Denied!")
-            return redirect("add_domain", id)
+        if not domain.endswith(f".{user_email_domain}") and domain != user_email_domain:
+            messages.error(request, "Your email does not match domain email. Action Denied!")
+            return redirect("add_domain", id=id)
 
         for domain_manager_email in managers_list:
-            user_email_domain = domain_manager_email.split("@")[-1]
-            if domain != user_email_domain:
+            manager_email_domain = domain_manager_email.split("@")[-1]
+            if not domain.endswith(f".{manager_email_domain}") and domain != manager_email_domain:
                 messages.error(
                     request, f"Manager: {domain_manager_email} does not match domain email."
                 )
-                return redirect("add_domain", id)
+                return redirect("add_domain", id=id)
 
-        domain_logo = request.FILES.get("logo")
-        domain_logo_file = domain_logo.name.split(".")[0]
-        extension = domain_logo.name.split(".")[-1]
-        domain_logo.name = domain_logo_file[:99] + str(uuid.uuid4()) + "." + extension
-        default_storage.save(f"logos/{domain_logo.name}", domain_logo)
+        if request.FILES.get("logo"):
+            domain_logo = request.FILES.get("logo")
+            domain_logo_file = domain_logo.name.split(".")[0]
+            extension = domain_logo.name.split(".")[-1]
+            domain_logo.name = domain_logo_file[:99] + str(uuid.uuid4()) + "." + extension
+            default_storage.save(f"logos/{domain_logo.name}", domain_logo)
+            logo_name = f"logos/{domain_logo.name}"
+        else:
+            logo_name = ""
 
-        webshot_logo = request.FILES.get("webshot")
-        webshot_logo_file = webshot_logo.name.split(".")[0]
-        extension = webshot_logo.name.split(".")[-1]
-        webshot_logo.name = webshot_logo_file[:99] + str(uuid.uuid4()) + "." + extension
-        default_storage.save(f"webshots/{webshot_logo.name}", webshot_logo)
+        if request.FILES.get("webshot"):
+            webshot_logo = request.FILES.get("webshot")
+            webshot_logo_file = webshot_logo.name.split(".")[0]
+            extension = webshot_logo.name.split(".")[-1]
+            webshot_logo.name = webshot_logo_file[:99] + str(uuid.uuid4()) + "." + extension
+            default_storage.save(f"webshots/{webshot_logo.name}", webshot_logo)
+            webshot_logo_name = f"webshots/{webshot_logo.name}"
+        else:
+            webshot_logo_name = ""
+
+        if domain_data["facebook"] and "facebook.com" not in domain_data["facebook"]:
+            messages.error(request, "Facebook url should contain facebook.com")
+            return redirect("add_domain", id=id)
+        if domain_data["twitter"]:
+            if (
+                "twitter.com" not in domain_data["twitter"]
+                and "x.com" not in domain_data["twitter"]
+            ):
+                messages.error(request, "Twitter url should contain twitter.com or x.com")
+            return redirect("add_domain", id=id)
+        if domain_data["github"] and "github.com" not in domain_data["github"]:
+            messages.error(request, "Github url should contain github.com")
+            return redirect("add_domain", id=id)
 
         domain_managers = User.objects.filter(email__in=managers_list, is_active=True)
 
         domain = Domain.objects.create(
             **domain_data,
             company=company_obj,
-            logo=f"logos/{domain_logo.name}",
-            webshot=f"webshots/{webshot_logo.name}",
+            logo=logo_name,
+            webshot=webshot_logo_name,
         )
 
         domain.managers.set(domain_managers)
         domain.save()
 
-        return redirect("company_manage_domains", id)
+        return redirect("company_manage_domains", id=id)
+
+    @validate_company_user
+    def put(self, request, id, *args, **kwargs):
+        domain_id = kwargs.get("domain_id")
+        domain = get_object_or_404(Domain, id=domain_id)
+
+        domain_data = {
+            "name": request.POST.get("domain_name", None),
+            "url": request.POST.get("domain_url", None),
+            "github": request.POST.get("github_url", None),
+            "twitter": request.POST.get("twitter_url", None),
+            "facebook": request.POST.get("facebook_url", None),
+        }
+
+        if domain_data["name"] is None:
+            messages.error(request, "Enter domain name")
+            return redirect("edit_domain", id=id, domain_id=domain_id)
+
+        if domain_data["url"] is None:
+            messages.error(request, "Enter domain url")
+            return redirect("edit_domain", id=id, domain_id=domain_id)
+
+        parsed_url = urlparse(domain_data["url"])
+        domain_name = (parsed_url.hostname).replace("www.", "")
+
+        domain_data["name"] = domain_data["name"].lower()
+
+        managers_list = request.POST.getlist("user")
+        company_obj = Company.objects.get(id=id)
+
+        domain_exist = (
+            Domain.objects.filter(Q(name=domain_data["name"]) | Q(url=domain_data["url"]))
+            .exclude(id=domain_id)
+            .exists()
+        )
+        if domain_exist:
+            messages.error(request, "Domain name or url already exist.")
+            return redirect("edit_domain", id=id, domain_id=domain_id)
+
+        # validate domain url
+        try:
+            if is_valid_https_url(domain_data["url"]):
+                safe_url = rebuild_safe_url(domain_data["url"])
+                try:
+                    response = requests.get(safe_url, timeout=5, verify=False)
+                    if response.status_code != 200:
+                        raise Exception
+                except requests.exceptions.RequestException:
+                    messages.error(request, "Domain does not exist.")
+                    return redirect("edit_domain", id=id, domain_id=domain_id)
+        except ValueError:
+            messages.error(request, "URL validation error.")
+            return redirect("edit_domain", id=id, domain_id=domain_id)
+
+        # validate domain email
+        user_email_domain = request.user.email.split("@")[-1]
+
+        if not domain_name.endswith(f".{user_email_domain}") and domain_name != user_email_domain:
+            messages.error(request, "Your email does not match domain email. Action Denied!")
+            return redirect("edit_domain", id=id, domain_id=domain_id)
+
+        for domain_manager_email in managers_list:
+            manager_email_domain = domain_manager_email.split("@")[-1]
+            if (
+                not domain_name.endswith(f".{manager_email_domain}")
+                and domain_name != manager_email_domain
+            ):
+                messages.error(
+                    request, f"Manager: {domain_manager_email} does not match domain email."
+                )
+                return redirect("edit_domain", id=id, domain_id=domain_id)
+
+        if request.FILES.get("logo"):
+            domain_logo = request.FILES.get("logo")
+            domain_logo_file = domain_logo.name.split(".")[0]
+            extension = domain_logo.name.split(".")[-1]
+            domain_logo.name = domain_logo_file[:99] + str(uuid.uuid4()) + "." + extension
+            default_storage.save(f"logos/{domain_logo.name}", domain_logo)
+            domain.logo = f"logos/{domain_logo.name}"
+
+        if request.FILES.get("webshot"):
+            webshot_logo = request.FILES.get("webshot")
+            webshot_logo_file = webshot_logo.name.split(".")[0]
+            extension = webshot_logo.name.split(".")[-1]
+            webshot_logo.name = webshot_logo_file[:99] + str(uuid.uuid4()) + "." + extension
+            default_storage.save(f"webshots/{webshot_logo.name}", webshot_logo)
+            domain.webshot = f"webshots/{webshot_logo.name}"
+
+        if domain_data["facebook"] and "facebook.com" not in domain_data["facebook"]:
+            messages.error(request, "Facebook url should contain facebook.com")
+            return redirect("edit_domain", id=id, domain_id=domain_id)
+        if domain_data["twitter"]:
+            if (
+                "twitter.com" not in domain_data["twitter"]
+                and "x.com" not in domain_data["twitter"]
+            ):
+                messages.error(request, "Twitter url should contain twitter.com or x.com")
+                return redirect("edit_domain", id=id, domain_id=domain_id)
+        if domain_data["github"] and "github.com" not in domain_data["github"]:
+            messages.error(request, "Github url should contain github.com")
+            return redirect("edit_domain", id=id, domain_id=domain_id)
+
+        domain.name = domain_data["name"]
+        domain.url = domain_data["url"]
+        domain.github = domain_data["github"]
+        domain.twitter = domain_data["twitter"]
+        domain.facebook = domain_data["facebook"]
+        domain.company = company_obj
+
+        domain_managers = User.objects.filter(email__in=managers_list, is_active=True)
+        domain.managers.set(domain_managers)
+        domain.save()
+
+        return redirect("company_manage_domains", id=id)
 
     @validate_company_user
     def delete(self, request, id, *args, **kwargs):
-        domain_id = request.GET.get("domain")
+        domain_id = request.POST.get("domain_id", None)
         domain = get_object_or_404(Domain, id=domain_id)
+        if domain is None:
+            messages.error(request, "Domain not found.")
+            return redirect("company_manage_domains", id=id)
         domain.delete()
         messages.success(request, "Domain deleted successfully")
-        return redirect("company_manage_domains", id)
+        return redirect("company_manage_domains", id=id)
 
 
 class DomainView(View):
@@ -536,12 +698,12 @@ class DomainView(View):
             .order_by("month")
         )
 
-        data = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]  # count
+        data = [0] * 12  # Initialize a list of 12 zeros for each month
 
         for data_month in data_monthly:
-            data[data_month["month"]] = data_month["count"]
+            data[data_month["month"] - 1] = data_month["count"]
 
-        return json.dumps(data)
+        return data
 
     def get(self, request, pk, *args, **kwargs):
         domain = (
@@ -550,9 +712,8 @@ class DomainView(View):
                 "name",
                 "url",
                 "company__name",
-                "created__day",
-                "created__month",
-                "created__year",
+                "created",
+                "modified",
                 "twitter",
                 "facebook",
                 "github",
@@ -563,16 +724,17 @@ class DomainView(View):
             .first()
         )
 
-        if domain == {}:
+        if not domain:
             raise Http404("Domain not found")
 
-        total_money_distributed = Issue.objects.filter(pk=domain["id"]).aggregate(
+        total_money_distributed = Issue.objects.filter(domain__id=domain["id"]).aggregate(
             total_money=Sum("rewarded")
         )["total_money"]
         total_money_distributed = 0 if total_money_distributed is None else total_money_distributed
 
-        total_bug_reported = Issue.objects.filter(pk=domain["id"]).count()
-        total_bug_accepted = Issue.objects.filter(pk=domain["id"], verified=True).count()
+        # Query the database for the exact domain
+        total_bug_reported = Issue.objects.filter(domain__id=domain["id"]).count()
+        total_bug_accepted = Issue.objects.filter(domain__id=domain["id"], verified=True).count()
 
         is_domain_manager = Domain.objects.filter(
             Q(id=domain["id"]) & Q(managers__in=[request.user])
@@ -591,12 +753,15 @@ class DomainView(View):
                     "status",
                     "verified",
                     "rewarded",
-                    "created__day",
-                    "created__month",
-                    "created__year",
+                    "created",
                 )
                 .filter(domain__id=domain["id"])
-                .order_by("-created")[:11]
+                .annotate(
+                    first_screenshot=Subquery(
+                        IssueScreenshot.objects.filter(issue_id=OuterRef("pk")).values("image")[:1]
+                    )
+                )
+                .order_by("-created")[:5]
             )
         else:
             latest_issues = (
@@ -612,12 +777,15 @@ class DomainView(View):
                     "status",
                     "verified",
                     "rewarded",
-                    "created__day",
-                    "created__month",
-                    "created__year",
+                    "created",
                 )
                 .filter(domain__id=domain["id"], is_hidden=False)
-                .order_by("-created")[:11]
+                .annotate(
+                    first_screenshot=Subquery(
+                        IssueScreenshot.objects.filter(issue_id=OuterRef("pk")).values("image")[:1]
+                    )
+                )
+                .order_by("-created")[:5]
             )
         issue_labels = [label[-1] for label in Issue.labels]
         cleaned_issues = []
@@ -627,19 +795,31 @@ class DomainView(View):
         # get top testers
         top_testers = (
             Issue.objects.values("user__id", "user__username", "user__userprofile__user_avatar")
-            .filter(user__isnull=False)
+            .filter(domain__id=domain["id"], user__isnull=False)
             .annotate(count=Count("user__username"))
-            .order_by("-count")[:16]
+            .order_by("-count")[:5]
         )
 
+        # Get first and last bugs
+        first_bug = Issue.objects.filter(domain__id=domain["id"]).order_by("created").first()
+        last_bug = Issue.objects.filter(domain__id=domain["id"]).order_by("-created").first()
+
+        ongoing_bughunts = Hunt.objects.filter(domain__id=domain["id"]).annotate(
+            total_prize=Sum("huntprize__value")
+        )[:3]
         context = {
             **domain,
             "total_money_distributed": total_money_distributed,
             "total_bug_reported": total_bug_reported,
             "total_bug_accepted": total_bug_accepted,
             "latest_issues": cleaned_issues,
-            "monthly_activity_chart": self.get_current_year_monthly_reported_bar_data(domain["id"]),
+            "monthly_activity_chart": json.dumps(
+                self.get_current_year_monthly_reported_bar_data(domain["id"])
+            ),
             "top_testers": top_testers,
+            "first_bug": first_bug,
+            "last_bug": last_bug,
+            "ongoing_bughunts": ongoing_bughunts,
         }
 
         return render(request, "company/view_domain.html", context)
@@ -713,10 +893,7 @@ class ShowBughuntView(View):
         hunt_obj = get_object_or_404(Hunt, pk=pk)
 
         # get issues/reports that are done between hunt.start_date and hunt.end_date
-        hunt_issues = Issue.objects.filter(
-            Q(created__range=[hunt_obj.starts_on, hunt_obj.end_on])
-            & Q(domain__url=hunt_obj.domain.url)
-        )
+        hunt_issues = Issue.objects.filter(hunt__id=hunt_obj.id)
 
         # total bugs reported in this bughunt
         total_bugs = hunt_issues.count()
@@ -735,47 +912,80 @@ class ShowBughuntView(View):
         is_hunt_manager = hunt_obj.domain.managers.filter(id=request.user.id).exists()
 
         # get latest reported public issues
-        latest_issues = (
-            Issue.objects.values(
-                "id",
-                "domain__name",
-                "url",
-                "description",
-                "user__id",
-                "user__username",
-                "user__userprofile__user_avatar",
-                "label",
-                "status",
-                "verified",
-                "rewarded",
-                "created__day",
-                "created__month",
-                "created__year",
-            )
-            .filter(domain__id=hunt_obj.domain.pk, hunt__id=hunt_obj.id)
-            .order_by("-created")
-        )
-
         if is_hunt_manager:
-            latest_issues = latest_issues.filter(is_hidden=True)
+            latest_issues = (
+                Issue.objects.values(
+                    "id",
+                    "domain__name",
+                    "url",
+                    "description",
+                    "user__id",
+                    "user__username",
+                    "user__userprofile__user_avatar",
+                    "label",
+                    "status",
+                    "verified",
+                    "rewarded",
+                    "created",
+                )
+                .filter(hunt__id=hunt_obj.id)
+                .annotate(
+                    first_screenshot=Subquery(
+                        IssueScreenshot.objects.filter(issue_id=OuterRef("pk")).values("image")[:1]
+                    )
+                )
+                .order_by("-created")
+            )
         else:
-            latest_issues = latest_issues.filter(is_hidden=False)
+            latest_issues = (
+                Issue.objects.values(
+                    "id",
+                    "domain__name",
+                    "url",
+                    "description",
+                    "user__id",
+                    "user__username",
+                    "user__userprofile__user_avatar",
+                    "label",
+                    "status",
+                    "verified",
+                    "rewarded",
+                    "created",
+                )
+                .filter(hunt__id=hunt_obj.id, is_hidden=False)
+                .annotate(
+                    first_screenshot=Subquery(
+                        IssueScreenshot.objects.filter(issue_id=OuterRef("pk")).values("image")[:1]
+                    )
+                )
+                .order_by("-created")
+            )
 
         issue_labels = [label[-1] for label in Issue.labels]
         cleaned_issues = []
         for issue in latest_issues:
             cleaned_issues.append({**issue, "label": issue_labels[issue["label"]]})
 
+        # Get first and last bugs
+        first_bug = Issue.objects.filter(hunt__id=hunt_obj.id).order_by("created").first()
+        last_bug = Issue.objects.filter(hunt__id=hunt_obj.id).order_by("-created").first()
+
         # get top testers
         top_testers = (
             Issue.objects.values("user__id", "user__username", "user__userprofile__user_avatar")
             .filter(user__isnull=False)
             .annotate(count=Count("user__username"))
-            .order_by("-count")[:16]
+            .order_by("-count")[:5]
         )
 
         # bughunt prizes
-        rewards = HuntPrize.objects.values().filter(hunt__id=hunt_obj.id)
+        rewards = HuntPrize.objects.filter(hunt_id=hunt_obj.id)
+        winners_count = {
+            reward.id: Winner.objects.filter(prize_id=reward.id).count() for reward in rewards
+        }
+
+        # check winner have for this bughunt
+        winners = Winner.objects.filter(hunt_id=hunt_obj.id).select_related("prize")
 
         context = {
             "hunt_obj": hunt_obj,
@@ -788,6 +998,10 @@ class ShowBughuntView(View):
             "top_testers": top_testers,
             "latest_issues": cleaned_issues,
             "rewards": rewards,
+            "winners_count": winners_count,
+            "first_bug": first_bug,
+            "last_bug": last_bug,
+            "winners": winners,
             "is_hunt_manager": is_hunt_manager,
         }
 
@@ -871,8 +1085,17 @@ class AddHuntView(View):
         start_date = data.get("start_date", datetime.now().strftime("%m/%d/%Y"))
         end_date = data.get("end_date", datetime.now().strftime("%m/%d/%Y"))
 
-        start_date = datetime.strptime(start_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
-        end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+        try:
+            start_date = datetime.strptime(start_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+            end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+        except ValueError:
+            messages.error(request, "Invalid Date Format")
+            return redirect("add_bughunt", id)
+
+        # apply validation for date not valid
+        if start_date > end_date:
+            messages.error(request, "Start date should be less than end date")
+            return redirect("add_bughunt", id)
 
         hunt_logo = request.FILES.get("logo", None)
         if hunt_logo is not None:
@@ -881,12 +1104,12 @@ class AddHuntView(View):
             hunt_logo.name = hunt_logo_file[:99] + str(uuid.uuid4()) + "." + extension
             default_storage.save(f"logos/{hunt_logo.name}", hunt_logo)
 
-        webshot_logo = request.FILES.get("webshot", None)
-        if webshot_logo is not None:
-            webshot_logo_file = webshot_logo.name.split(".")[0]
-            extension = webshot_logo.name.split(".")[-1]
-            webshot_logo.name = webshot_logo_file[:99] + str(uuid.uuid4()) + "." + extension
-            default_storage.save(f"banners/{webshot_logo.name}", webshot_logo)
+        banner_logo = request.FILES.get("banner", None)
+        if banner_logo is not None:
+            banner_logo_file = banner_logo.name.split(".")[0]
+            extension = banner_logo.name.split(".")[-1]
+            banner_logo.name = banner_logo_file[:99] + str(uuid.uuid4()) + "." + extension
+            default_storage.save(f"banners/{banner_logo.name}", banner_logo)
 
         if is_edit:
             hunt.domain = domain
@@ -902,8 +1125,8 @@ class AddHuntView(View):
 
             if hunt_logo is not None:
                 hunt.logo = f"logos/{hunt_logo.name}"
-            if webshot_logo is not None:
-                hunt.banner = f"banners/{webshot_logo.name}"
+            if banner_logo is not None:
+                hunt.banner = f"banners/{banner_logo.name}"
 
             hunt.save()
 
@@ -977,3 +1200,66 @@ class CompanyDashboardManageBughuntView(View):
         }
 
         return render(request, "company/bughunt/company_manage_bughunts.html", context)
+
+
+@require_http_methods(["DELETE"])
+def delete_prize(request, prize_id, company_id):
+    if not request.user.company_set.filter(id=company_id).exists():
+        return JsonResponse({"success": False, "error": "User not allowed"})
+    try:
+        prize = HuntPrize.objects.get(id=prize_id)
+        prize.delete()
+        return JsonResponse({"success": True})
+    except HuntPrize.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Prize not found"})
+
+
+@require_http_methods(["PUT"])
+def edit_prize(request, prize_id, company_id):
+    if not request.user.company_set.filter(id=company_id).exists():
+        return JsonResponse({"success": False, "error": "User not allowed"})
+
+    try:
+        prize = HuntPrize.objects.get(id=prize_id)
+    except HuntPrize.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Prize not found"})
+
+    data = json.loads(request.body)
+    prize.name = data.get("prize_name", prize.name)
+    prize.value = data.get("cash_value", prize.value)
+    prize.no_of_eligible_projects = data.get(
+        "number_of_winning_projects", prize.no_of_eligible_projects
+    )
+    prize.valid_submissions_eligible = data.get(
+        "every_valid_submissions", prize.valid_submissions_eligible
+    )
+    prize.description = data.get("prize_description", prize.description)
+    prize.save()
+
+    return JsonResponse({"success": True})
+
+
+def accept_bug(request, issue_id, reward_id=None):
+    with transaction.atomic():
+        issue = get_object_or_404(Issue, id=issue_id)
+
+        if reward_id == "no_reward":
+            issue.verified = True
+            issue.rewarded = 0
+            issue.save()
+            Winner(
+                hunt_id=issue.hunt.id, prize_id=None, winner_id=issue.user.id, prize_amount=0
+            ).save()
+        else:
+            reward = get_object_or_404(HuntPrize, id=reward_id)
+            issue.verified = True
+            issue.rewarded = reward.value
+            issue.save()
+            Winner(
+                hunt_id=issue.hunt.id,
+                prize_id=reward.id,
+                winner_id=issue.user.id,
+                prize_amount=reward.value,
+            ).save()
+
+        return redirect("show_bughunt", pk=issue.hunt.id)

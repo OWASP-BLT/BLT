@@ -20,7 +20,10 @@ from website.models import (
     Monitor,
     Payment,
     Points,
+    Project,
     Subscription,
+    Suggestion,
+    SuggestionVotes,
     Transaction,
     UserProfile,
     Wallet,
@@ -293,7 +296,30 @@ class ChatBotLogAdmin(admin.ModelAdmin):
     list_display = ("id", "question", "answer", "timestamp")
 
 
+class SuggestionAdmin(admin.ModelAdmin):
+    list_display = ("user", "title", "description", "up_votes", "suggestion_id", "down_votes")
+
+
+class SuggestionVotesAdmin(admin.ModelAdmin):
+    list_display = ("user", "suggestion", "up_vote", "down_vote")
+
+
+class ProjectAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "name",
+        "slug",
+        "description",
+        "homepage_url",
+        "created",
+        "modified",
+    )
+
+    search_fields = ["name", "description", "slug"]
+
+
 # Register all models with their respective admin classes
+admin.site.register(Project, ProjectAdmin)
 admin.site.register(ContributorStats)
 admin.site.register(Bid, BidAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)
@@ -311,6 +337,8 @@ admin.site.register(Payment, PaymentAdmin)
 admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
 admin.site.register(HuntPrize)
 admin.site.register(ChatBotLog, ChatBotLogAdmin)
+admin.site.register(Suggestion, SuggestionAdmin)
+admin.site.register(SuggestionVotes, SuggestionVotesAdmin)
 
 # Register missing models
 admin.site.register(InviteFriend)
