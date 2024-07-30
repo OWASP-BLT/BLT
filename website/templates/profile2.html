@@ -334,9 +334,8 @@
             </div>
             <div class="flex items-center justify-between w-[17vw] max-sm:w-[100vw]">
                 <span class="text-[25px] font-['Poppins']">{{ my_score|default:0 }} <span class="text-[19px] text-[#909090]">{% trans "POINTS" %}</span></span>
-                {% if request.user == user and request.user.is_authenticated %}
+                {% if request.user != user and request.user.is_authenticated %}
                     <span class="text-[25px]">●</span>
-                    {% comment %} {% if request.user != user and request.user.is_authenticated %} {% endcomment %}
                     {% if request.user.email in followers_list %}
                         <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl follow_unfollow"
                                 name="{{ user }}">{% trans "Unfollow" %}</button>
