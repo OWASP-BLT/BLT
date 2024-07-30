@@ -1356,7 +1356,12 @@ class UserProfileDetailView2(DetailView):
         )
         context["activities"] = Issue.objects.filter(user=self.object, hunt=None).exclude(
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
-        )[0:10]
+        )[0:3]
+        context["activity_screenshots"] = {}
+        for activity in context["activities"]:
+            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(
+                issue=activity.pk
+            ).first()
         context["profile_form"] = UserProfileForm()
         context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
         context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()

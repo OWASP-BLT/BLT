@@ -14,7 +14,7 @@
         text-decoration: inherit;
     }
 
-    .fa-money {
+    .fa-money { 
         margin-right: 5px;
     }
 
@@ -153,69 +153,71 @@
         height: 30px;
         font-weight: 700;
     }
+
     .issue-hide-btn:hover {
-        color:black;
+        color: black;
         background-color: rgb(98, 207, 88);
     }
 
     .hide-issue-form {
         padding-top: 10px;
     }
-    
+
     .bottom-right {
-            position: absolute;
-            bottom: 10px;
-            right: 15px;
+        position: absolute;
+        bottom: 10px;
+        right: 15px;
     }
-    #update-overlay{
+
+    #update-overlay {
         display: flex;
-        gap:2px;
+        gap: 2px;
     }
 
     .wallet-selection {
-    display: flex;
-    gap: 2px;
+        display: flex;
+        gap: 2px;
     }
 
     .crypto-button {
-    padding: 10px;
-    margin-bottom: 0.5px;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    width: 20px; 
-    height: 20px;
+        padding: 10px;
+        margin-bottom: 0.5px;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
     }
 
     .crypto-button[data-crypto="Ethereum"] {
-    background-color: #627eea;
-    color: #fff;
+        background-color: #627eea;
+        color: #fff;
     }
 
     .crypto-button[data-crypto="Bitcoin"] {
-    background-color: #f2a900;
-    color: #fff;
+        background-color: #f2a900;
+        color: #fff;
     }
 
     .crypto-button[data-crypto="BitcoinCash"] {
-    background-color: #4cca47;
-    color: #fff;
+        background-color: #4cca47;
+        color: #fff;
     }
 
     .btn-save {
-    padding: 5px 5px;
-    font-size: 7px;
-    width: auto; 
+        padding: 5px 5px;
+        font-size: 7px;
+        width: auto;
     }
 
-    #crypto-address{
-    text-align: center;
+    #crypto-address {
+        text-align: center;
     }
 
-    #crypto-name{
+    #crypto-name {
         text-align: center;
         width: 100%;
         font-size: 20px;
@@ -228,7 +230,7 @@
     #update-overlay {
         display: flex;
         flex-direction: column;
-    }   
+    }
 
     .wallet-selection {
         display: flex;
@@ -270,10 +272,12 @@
         cursor: pointer;
         transition: 0.4s;
     }
+
     .nav-btn.active {
-        background: red; 
+        background: red;
         color: white;
     }
+
     .nav-btn:hover {
         background: #fff;
     }
@@ -283,23 +287,23 @@
         visibility: hidden;
     }
 
-    #btc:checked ~ .s1 {
+    #btc:checked~.s1 {
         margin-left: -20%;
     }
 
-    #eth:checked ~ .s1 {
+    #eth:checked~.s1 {
         margin-left: -40%;
     }
 
-    #bch:checked ~ .s1 {
+    #bch:checked~.s1 {
         margin-left: -60%;
     }
-
     </style>
 {% endblock style %}
 {% block content %}
-    <div class="!ml-[-170px] px-5 lg:mt-[10vh] font-['Ubuntu']">
-        <div class="flex flex-row ">
+    <div class="flex lg:!ml-[-170px] px-5 mt-[8vh] max-sm:!mt-[5vh] max-sm:!items-center justify-between max-sm:flex-col font-['Ubuntu'] max-sm:translate-x-5 max-sm:translate-y-5">
+        <div class="max-sm:w-[100vw] w-[25vw] flex flex-col">
+            <div class="w-[50vw] font-bold text-[20px] capitalize">{{ user.username }}</div>
             <div class="inline-block relative h-[200px] w-[200px]">
                 {% if user.userprofile.avatar %}
                     <img src="{{ user.userprofile.avatar }}"
@@ -328,34 +332,176 @@
                     </form>
                 {% endif %}
             </div>
-            <div class="flex flex-row ml-20">
-                <div class="w-[50vw] font-bold text-[20px] capitalize">{{ user.username }}</div>
-                <div>
-                    {% if request.user != user %}
-                        <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl">
-                            Send a Tip
-                        </button>
-                    {% else %}
-                        <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl">
-                            Send a Tip
-                        </button>
-                    {% endif %}
+            <div class="flex items-center justify-between w-[17vw] max-sm:w-[100vw]">
+                <span class="text-[25px] font-['Poppins']">{{ my_score|default:0 }} <span class="text-[19px] text-[#909090]">{% trans "POINTS" %}</span></span>
+                {% if request.user == user and request.user.is_authenticated %}
+                    <span class="text-[25px]">●</span>
                     {% comment %} {% if request.user != user and request.user.is_authenticated %} {% endcomment %}
-                    {% if request.user != user and request.user.is_authenticated %}
-                        {% if request.user.email in followers_list %}
-                            <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl follow_unfollow"
-                                    name="{{ user }}">{% trans "Unfollow" %}</button>
-                        {% else %}
-                            <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl follow_unfollow"
-                                    name="{{ user }}">{% trans "Follow" %}</button>
-                        {% endif %}
+                    {% if request.user.email in followers_list %}
+                        <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl follow_unfollow"
+                                name="{{ user }}">{% trans "Unfollow" %}</button>
+                    {% else %}
+                        <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl follow_unfollow"
+                                name="{{ user }}">{% trans "Follow" %}</button>
+                    {% endif %}
+                {% endif %}
+            </div>
+            <div class="mt-[2rem] !ml-0">{% include "./includes/crypto_donation.html" %}</div>
+            <div class="h-[2vh]"></div>
+            <div>
+                <div class="font-bold mb-3">
+                    Top Finding
+                    <hr>
+                </div>
+                <div class="top-findings w-[25vw] max-sm:w-full">
+                    {% if websites %}
+                        {% for website in websites %}
+                            <div class="h-[8vh] max-sm:h-[10vh] flex items-center justify-between mb-[1rem] bg-[#f4f4f4] p-5 m-2 rounded-2xl">
+                                <div class="flex items-center">
+                                    <a href="{% url 'domain' slug=website.name %}">
+                                        <img src="https://www.{{ website.name }}/favicon.ico"
+                                             height="30"
+                                             width="30"
+                                             class="mr-3"
+                                             alt="company logo"
+                                             onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                    </a>
+                                    <a href="{% url 'domain' slug=website.name %}">{{ website.name|truncatechars:15 }}</a>
+                                </div>
+                                <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl label label-default pull-right"
+                                        name="{{ user }}">{{ website.total }} Bug{{ website.total|pluralize }}</button>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-start">{% trans "Nothing Found" %}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <div class="font-bold mb-3">
+                    Recent Activity
+                    <hr>
+                </div>
+                <div class="top-findings w-[25vw] max-sm:w-full">
+                    {% if activities %}
+                        {% include "./_activity.html" %}
+                        <a href="{% url 'all_activity' %}?user={{ user.username }}"
+                           class="btn btn-default btn-block">{% trans "View All Activity by" %} {{ user.username }}</a>
+                    {% else %}
+                        <div class="text-start">{% trans "No Activity Yet" %}!</div>
                     {% endif %}
                 </div>
             </div>
         </div>
+        <div class="max-sm:w-[100vw] w-[60vw]">
+            <div>
+                <div class="text-2xl font-bold mb-4">Issue Stats <hr></div>
+                <div class="font=['Ubuntu'] max-sm:w-full w-3/4">
+                    <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=General`" class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">⚙️ {% trans "General" %} {{ bug_type_0 | length }} </div>
+                    </button>
+                    <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Number`" class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">⚠️ {% trans "Number" %} {{ bug_type_1 | length }} </div>
+                    </button>
+                    <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Functional`" class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">🏆 {% trans "Functional" %} {{ bug_type_2 | length }} </div>
+                    </button>
+                    <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Performance`" class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">⚡ {% trans "Performance" %} {{ bug_type_3 | length }} </div>
+                    </button>
+                    <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Security`" class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">⚡ {% trans "Security" %} {{ bug_type_4 | length }} </div>
+                    </button>
+                    <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Typo`" class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">✏️ {% trans "Typo" %} {{ bug_type_5 | length }} </div>
+                    </button>
+                    <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Design`" class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">🧑‍💻 {% trans "Design" %} {{ bug_type_6 | length }} </div>
+                    </button>
+                </div>
+
+
+                <div class="text-2xl font-bold my-4">User Stats <hr></div>
+                <div class="font=['Ubuntu'] max-sm:w-full w-3/4">
+                        <button>
+                            <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2 mr-3">🏆 {% trans "Bugs Reported" %} {{ total_bugs }}</div>
+                        </button>
+                        <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=open`" class="mr-3">
+                            <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">🐞 {% trans "Open Issues" %} {{ bug_type_1 | length }} </div>
+                        </button>
+                       <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=close`" class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">⌨️ {% trans "Closed Issues" %} {{ bug_type_2 | length }} </div>
+                       </button>
+                </div>
+
+
+                <div class="text-2xl font-bold my-4">Social Stats <hr></div>
+                <div class="font=['Ubuntu'] max-sm:w-full w-3/4">
+                        <button class="mr-3">
+                            <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">👤 {% trans "Followers" %} {{ followers|length }}</div>
+                        </button>
+                        <button class="mr-3">
+                            <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">👤 {% trans "Following" %} {{ following|length }} </div>
+                        </button>
+                       <button class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">📑 {% trans "Bookmarks" %} {{ bookmarks|length }}</div>
+                       </button>
+                </div>
+
+
+                <div class="text-2xl font-bold my-4">Monthly Report <hr></div>
+                <div id="chart" class="max-sm:w-full w-3/4"></div>
+                
+            </div>
+        </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script>
+        var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
+        var months = [],
+        data = [];
+    var all_data = new Array(12).fill(0);
+    var current_month = {{ current_month }};
+
+    {% for i in graph %}
+    all_data['{{i.month}}' - 1] = {{ i.c }};
+    {% endfor %}
+
+    if (current_month - 6 < 0) {
+        months = all_months.slice(current_month - 6);
+        months = months.concat(all_months.slice(0, current_month));
+        data = all_data.slice(current_month - 6);
+        data = data.concat(all_data.slice(0, current_month));
+    } else {
+        months = all_months.slice(current_month - 6, current_month);
+        data = all_data.slice(current_month - 6, current_month);
+    }
+        var options = {
+            series: [{
+            name: 'Monthly Activity',
+            data: data
+          }],
+            chart: {
+            height: 350,
+            type: 'area'
+          },
+          dataLabels: {
+            enabled: false
+          },
+          stroke: {
+            curve: 'smooth'
+          },
+          xaxis: {
+            type: 'String',
+            categories: months
+          },
+          };
+  
+          var chart = new ApexCharts(document.querySelector("#chart"), options);
+          chart.render();
+    </script>
     <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const cryptoOptions = [
             { name: 'Bitcoin Cash', address: '{{ user.userprofile.bch_address }}' },
             { name: 'Ethereum', address: '{{ user.userprofile.eth_address }}' },
@@ -371,7 +517,7 @@
                 document.getElementById('crypto-name').textContent = "No address: Will go to BLT Donation";
                 document.getElementById('crypto-address').textContent = `BCH: ${address}`;
             }
-            else{
+            else {
                 document.getElementById('crypto-name').textContent = name;
                 document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
                 document.getElementById('crypto-address').textContent = `${address}`;
@@ -380,30 +526,30 @@
 
         updateSlide();
 
-        document.getElementById('openModal').addEventListener('click', function() {
+        document.getElementById('openModal').addEventListener('click', function () {
             document.getElementById('dialog').showModal();
         });
 
-        document.getElementById('close').addEventListener('click',function(){
+        document.getElementById('close').addEventListener('click', function () {
             document.getElementById('dialog').close();
         });
 
         document.getElementById('bch-btn').classList.add('active'); // Highlight BCH button by default
-        document.getElementById('bch-btn').addEventListener('click', function() {
+        document.getElementById('bch-btn').addEventListener('click', function () {
             currentIndex = 0;
             updateSlide();
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
         });
 
-        document.getElementById('eth-btn').addEventListener('click', function() {
+        document.getElementById('eth-btn').addEventListener('click', function () {
             currentIndex = 1;
             updateSlide();
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
         });
 
-        document.getElementById('btc-btn').addEventListener('click', function() {
+        document.getElementById('btc-btn').addEventListener('click', function () {
             currentIndex = 2;
             updateSlide();
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
@@ -411,13 +557,13 @@
         });
     });
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const cryptoButtons = document.querySelectorAll('.crypto-button');
         const newCryptoAddressInput = document.getElementById('new-crypto-address');
         const selectedCryptoInput = document.getElementById('selected-crypto');
 
         cryptoButtons.forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function () {
                 const crypto = this.getAttribute('data-crypto');
                 selectedCryptoInput.value = crypto;  // Set the selected cryptocurrency value
                 newCryptoAddressInput.placeholder = `Enter new ${crypto} address`;
@@ -507,35 +653,35 @@
             }
         }
     }); {% endif %}
-    $(document).ready(function() {
-    $('body').on('click', '.follow_unfollow', function (e) {
-        e.preventDefault();
-        var usr = $(this).attr('name');
-        console.log(usr)
-        $.ajax({
-            type: 'GET',
-            url: '/follow/' + usr + '/',
-            data: {},
-            success: function (data) {
-                var txt = $('.follow_unfollow').text();
-                if (txt == "Follow")
-                    $('.follow_unfollow').text("Unfollow");
-                else
-                    $('.follow_unfollow').text("Follow");
-                $.notify("Done!", {
-                    style: "custom",
-                    className: "success"
-                });
-            },
-            error: function () {
-                $.notify("Some error occurred!", {
-                    style: "custom",
-                    className: "danger"
-                });
-            }
+    $(document).ready(function () {
+        $('body').on('click', '.follow_unfollow', function (e) {
+            e.preventDefault();
+            var usr = $(this).attr('name');
+            console.log(usr)
+            $.ajax({
+                type: 'GET',
+                url: '/follow/' + usr + '/',
+                data: {},
+                success: function (data) {
+                    var txt = $('.follow_unfollow').text();
+                    if (txt == "Follow")
+                        $('.follow_unfollow').text("Unfollow");
+                    else
+                        $('.follow_unfollow').text("Follow");
+                    $.notify("Done!", {
+                        style: "custom",
+                        className: "success"
+                    });
+                },
+                error: function () {
+                    $.notify("Some error occurred!", {
+                        style: "custom",
+                        className: "danger"
+                    });
+                }
+            });
         });
     });
-});
 
     $('body').on('click', '.list-group-item button', function (e) {
         e.preventDefault();
