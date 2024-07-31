@@ -50,12 +50,13 @@
     }
     loadQRCode();
 
-    const copyText = document.getElementsByClassName("copy_text");
+    const copyText = document.getElementsByClassName("copy_text")[0];
 
-    navigator.clipboard.writeText(textToCopy);
-      
-        $.notify("Bug details copied to clipboard!", {
-            style: "custom",
+    copyText.addEventListener("click", ()=>{
+        navigator.clipboard.writeText(copyText.innerText);
+        $.notify("Crypto Address Copied to Clipboard!", {
             className: "success"
         }); 
+    })
+    
 </script>
