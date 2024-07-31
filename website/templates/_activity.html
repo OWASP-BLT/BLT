@@ -1,63 +1,110 @@
 {% load gravatar %}
 {% load static %}
-<div class="list-group">
-    {% for activity in activities %}
-        <div class="bg-[#f4f4f4] mb-[1rem] rounded-2xl">
-            <div class="h-auto min-h-[8vh] flex items-center justify-between mb-[1rem] bg-[#f4f4f4] p-5 rounded-2xl w-fit">
-                <div class="flex items-center">
-                    <a href="{% url 'domain' slug=activity.domain_name %}">
-                        <img src="https://www.{{ activity.domain_name }}/favicon.ico"
-                             height="30"
-                             width="30"
-                             class="mr-3"
-                             alt="company logo"
-                             onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
-                    </a>
-                    <div class="w-[80%]">
-                        <a href="{{ activity.get_absolute_url }}">
-                            <div class="mb-3 text-xl">{{ activity.description|truncatechars:50 }}</div>
-                        </a>
-                        <div class="mb-2 text-xl">
-                            {{ activity.user|default:"Anonymous" }}
-                            found a bug on <a href="{% url 'domain' slug=activity.domain_name %}">{{ activity.domain_title }}</a> {{ activity.created|timesince }}
-                            ago
-                        </div>
-                        <a class="text-lg"
-                           href="{{ activity.url }}"
-                           target="_blank"
-                           rel="noopener noreferrer">
-                            <div>{{ activity.url }}</div>
-                        </a>
-                        <a class="whitespace-nowrap mb-1 text-xl"
-                           href="{{ activity.get_absolute_url }}#comments">
-                            {% if activity.comments.all|length > 0 %}{{ activity.comments.all|length }} comments{% endif %}
-                        </a>
-                    </div>
-                </div>
-                <div>
-                    <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl label label-default pull-right">
-                        {{ activity.status }}
-                    </button>
-                    <br>
-                    <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl label label-default pull-right">
-                        {{ activity.get_label_display }}
-                    </button>
-                </div>
+<style>
+    .truncate-450 {
+      display: none;
+    }
+  
+    @media only screen and (max-width: 500px) {
+      .truncate-450 {
+        display: inline;
+      }
+      .truncate-100 {
+        display: none;
+      }
+    }
+</style>
+<div class="list-group-item activity-strip overflow-hidden">
+    <div class="activity-strip-section">
+        {% if activity.user.userprofile.avatar %}
+            <img src="{{ activity.user.userprofile.avatar }}"
+                 width="100"
+                 height="100"
+                 class="img-responsive img-rounded"
+                 loading="lazy"
+                 alt="user avatar">
+        {% elif activity.user.socialaccount_set.all.0.get_avatar_url %}
+            <img src="{{ activity.user.socialaccount_set.all.0.get_avatar_url }}"
+                 width="100"
+                 height="100"
+                 class="img-responsive img-rounded"
+                 loading="lazy"
+                 alt="user avatar">
+        {% elif activity.user.email %}
+            <img src="{% gravatar_url activity.user.email 100 %}"
+                 width="100"
+                 height="100"
+                 class="img-responsive img-rounded"
+                 loading="lazy"
+                 alt="user avatar">
+        {% else %}
+            <img src="{% static 'images/dummy-user.png' %}"
+                 width="100"
+                 height="100"
+                 class="img-responsive img-rounded"
+                 loading="lazy"
+                 alt="user avatar">
+        {% endif %}
+        <div class="info">
+            <div class="flex overflow-hidden gap-3">
+                <a href="{% url 'domain' slug=activity.domain_name %}">
+                    <img src="https://www.{{ activity.domain_name }}/favicon.ico"
+                         onerror="this.onerror=null; this.style.display='none';"
+                         loading="lazy"
+                         class="h-[30px] w-[30px]"
+                         alt="domain icon"
+                         width="30px"
+                         height="30px">
+                </a>
+                {% if activity.status == "open" %}
+                    <span class="label label-success text-capitalize !leading-loose">{{ activity.status }}</span>
+                {% else %}
+                    <span class="label label-danger text-capitalize !leading-loose">{{ activity.status }}</span>
+                {% endif %}
+                <span class="label label-info !leading-loose">{{ activity.get_label_display }}</span>
             </div>
-            <div class="p-3">
-                {% for screenshot_activity,screenshot in activity_screenshots.items %}
-                    {% if activity == screenshot_activity %}
-                        <a href="{{ activity.get_absolute_url }}">
-                            <img src="{{ screenshot.image.url }}"
-                                 loading="lazy"
-                                 class="ml-3"
-                                 alt="screenshot"
-                                 width="50%"
-                                 height="50%">
-                        </a>
-                    {% endif %}
-                {% endfor %}
+            <a href="{{ activity.get_absolute_url }}">
+                <span class="truncate-450">{{ activity.description|truncatechars:60 }}</span>
+                <span class="truncate-100">{{ activity.description|truncatechars:100 }}</span>
+            </a>
+            <div class="small">
+                <a href="{{ activity.user.get_absolute_url }}"
+                   data-toggle="popover"
+                   data-tag="{{ activity.user.userprofile.get_title_display }}">
+                    {{ activity.user|default:"Anonymous" }}
+                </a>
+                found a bug on <a href="{% url 'domain' slug=activity.domain_name %}">{{ activity.domain_title }}</a> {{ activity.created|timesince }}
+                ago
             </div>
+            <div>
+                <a href="{{ activity.url }}" target="_blank">{{ activity.url }}</a>
+            </div>
+            <a class="whitespace-nowrap"
+               href="{{ activity.get_absolute_url }}#comments">
+                {% if activity.comments.all|length > 0 %}{{ activity.comments.all|length }} comments{% endif %}
+            </a>
         </div>
-    {% endfor %}
+    </div>
+    <div class="activity-screenshot">
+        {% for screenshot_activity,screenshot in activity_screenshots.items %}
+            {% if activity == screenshot_activity %}
+                <a href="{{ activity.get_absolute_url }}">
+                    <img src="{{ screenshot.image.url }}"
+                         loading="lazy"
+                         alt="screenshot"
+                         width="100%"
+                         height="100%">
+                </a>
+            {% endif %}
+        {% endfor %}
+        {% if activity.screenshot %}
+            <a href="{{ activity.get_absolute_url }}">
+                <img src="{{ activity.screenshot.url }}"
+                     loading="lazy"
+                     alt="screenshot"
+                     width="100%"
+                     height="100%">
+            </a>
+        {% endif %}
+    </div>
 </div>
