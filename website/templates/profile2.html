@@ -338,9 +338,11 @@
                     <span class="text-[25px]">●</span>
                     {% if request.user.email in followers_list %}
                         <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl follow_unfollow"
+                                onclick="followUser()"
                                 name="{{ user }}">{% trans "Unfollow" %}</button>
                     {% else %}
                         <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl follow_unfollow"
+                                onclick="followUser()"
                                 name="{{ user }}">{% trans "Follow" %}</button>
                     {% endif %}
                 {% endif %}
@@ -388,7 +390,7 @@
                         <div class="list-group">
                             {% for activity in activities %}
                                 <div class="bg-[#f4f4f4] mb-[1rem] rounded-2xl">
-                                    <div class="h-auto min-h-[8vh] flex items-center justify-between mb-[1rem] bg-[#f4f4f4] p-5 rounded-2xl w-fit">
+                                    <div class="h-auto min-h-[8vh] flex items-center justify-between mb-[1rem] bg-[#f4f4f4] p-5 rounded-2xl w-[25vw]">
                                         <div class="flex items-center">
                                             <a href="{% url 'domain' slug=activity.domain_name %}">
                                                 <img src="https://www.{{ activity.domain_name }}/favicon.ico"
@@ -442,6 +444,16 @@
                                                 </a>
                                             {% endif %}
                                         {% endfor %}
+                                        {% if activity.screenshot %}
+                                            <a href="{{ activity.get_absolute_url }}">
+                                                <img src="{{ activity.screenshot.url }}"
+                                                     loading="lazy"
+                                                     class="ml-3"
+                                                     alt="screenshot"
+                                                     width="50%"
+                                                     height="50%">
+                                            </a>
+                                        {% endif %}
                                     </div>
                                 </div>
                             {% endfor %}
@@ -573,78 +585,25 @@
           var chart = new ApexCharts(document.querySelector("#chart"), options);
           chart.render();
     </script>
-    <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        const cryptoOptions = [
-            { name: 'Bitcoin Cash', address: '{{ user.userprofile.bch_address }}' },
-            { name: 'Ethereum', address: '{{ user.userprofile.eth_address }}' },
-            { name: 'Bitcoin', address: '{{ user.userprofile.btc_address }}' },
-        ];
-
-        let currentIndex = 0;
-        const updateSlide = () => {
-            let { name, address } = cryptoOptions[currentIndex];
-            if (address == '' || address == 'None') {
-                address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
-                document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
-                document.getElementById('crypto-name').textContent = "No address: Will go to BLT Donation";
-                document.getElementById('crypto-address').textContent = `BCH: ${address}`;
+    <script>
+        async function followUser(){
+            var user = document.getElementsByClassName("follow_unfollow")[0].getAttribute("name");
+            const request = await fetch(`/follow/${user}/`)
+            if (request.status == 200){
+                $.notify("Done!", {
+                        style: "custom",
+                        className: "success"
+                    });
             }
-            else {
-                document.getElementById('crypto-name').textContent = name;
-                document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
-                document.getElementById('crypto-address').textContent = `${address}`;
+            else{
+                $.notify("Permission Denied", {
+                    style: "custom",
+                    className: "danger"
+                });
             }
         }
-
-        updateSlide();
-
-        document.getElementById('openModal').addEventListener('click', function () {
-            document.getElementById('dialog').showModal();
-        });
-
-        document.getElementById('close').addEventListener('click', function () {
-            document.getElementById('dialog').close();
-        });
-
-        document.getElementById('bch-btn').classList.add('active'); // Highlight BCH button by default
-        document.getElementById('bch-btn').addEventListener('click', function () {
-            currentIndex = 0;
-            updateSlide();
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-        });
-
-        document.getElementById('eth-btn').addEventListener('click', function () {
-            currentIndex = 1;
-            updateSlide();
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-        });
-
-        document.getElementById('btc-btn').addEventListener('click', function () {
-            currentIndex = 2;
-            updateSlide();
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-        });
-    });
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const cryptoButtons = document.querySelectorAll('.crypto-button');
-        const newCryptoAddressInput = document.getElementById('new-crypto-address');
-        const selectedCryptoInput = document.getElementById('selected-crypto');
-
-        cryptoButtons.forEach(button => {
-            button.addEventListener('click', function () {
-                const crypto = this.getAttribute('data-crypto');
-                selectedCryptoInput.value = crypto;  // Set the selected cryptocurrency value
-                newCryptoAddressInput.placeholder = `Enter new ${crypto} address`;
-                document.getElementById('crypto-name').textContent = crypto;
-            });
-        });
-    });
-
+    </script>
+    <script type="text/javascript">
     $(function () {
         $('.img-thumbnail, .upload-btn').on('mouseenter', function () {
             $('.upload-btn').show();
@@ -662,99 +621,33 @@
         });
     });
 
-    {% if activities %}
-    var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
-    var months = [],
-        data = [];
-    var all_data = new Array(12).fill(0);
-    var current_month = {{ current_month }};
-
-    {% for i in graph %}
-    all_data['{{i.month}}' - 1] = {{ i.c }};
-    {% endfor %}
-
-    if (current_month - 6 < 0) {
-        months = all_months.slice(current_month - 6);
-        months = months.concat(all_months.slice(0, current_month));
-        data = all_data.slice(current_month - 6);
-        data = data.concat(all_data.slice(0, current_month));
-    } else {
-        months = all_months.slice(current_month - 6, current_month);
-        data = all_data.slice(current_month - 6, current_month);
-    }
-
-    var ctx = document.getElementById("myChart").getContext('2d');
-    var myChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: months,
-            datasets: [{
-                label: 'Monthly Activity',
-                data: data,
-                backgroundColor: [
-                    'rgba(255, 99, 132, 0.6)',
-                    'rgba(54, 162, 235, 0.6)',
-                    'rgba(255, 206, 86, 0.6)',
-                    'rgba(75, 192, 192, 0.6)',
-                    'rgba(153, 102, 255, 0.6)',
-                    'rgba(255, 159, 64, 0.6)'
-                ],
-                borderColor: [
-                    'rgba(255,99,132,1)',
-                    'rgba(54, 162, 235, 1)',
-                    'rgba(255, 206, 86, 1)',
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(153, 102, 255, 1)',
-                    'rgba(255, 159, 64, 1)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        beginAtZero: true,
-                        fixedStepSize: 1
-                    }
-                }],
-                xAxes: [{
-                    time: {
-                        unit: 'month'
-                    }
-                }]
-            }
-        }
-    }); {% endif %}
-    $(document).ready(function () {
-        $('body').on('click', '.follow_unfollow', function (e) {
-            e.preventDefault();
-            var usr = $(this).attr('name');
-            console.log(usr)
-            $.ajax({
-                type: 'GET',
-                url: '/follow/' + usr + '/',
-                data: {},
-                success: function (data) {
-                    var txt = $('.follow_unfollow').text();
-                    if (txt == "Follow")
-                        $('.follow_unfollow').text("Unfollow");
-                    else
-                        $('.follow_unfollow').text("Follow");
-                    $.notify("Done!", {
-                        style: "custom",
-                        className: "success"
-                    });
-                },
-                error: function () {
-                    $.notify("Some error occurred!", {
-                        style: "custom",
-                        className: "danger"
-                    });
-                }
-            });
-        });
-    });
+        // $('body').on('click', '.follow_unfollow', function (e) {
+        //     e.preventDefault();
+        //     var usr = $(this).attr('name');
+        //     console.log(usr)
+        //     $.ajax({
+        //         type: 'GET',
+        //         url: '/follow/' + usr + '/',
+        //         data: {},
+        //         success: function (data) {
+        //             var txt = $('.follow_unfollow').text();
+        //             if (txt == "Follow")
+        //                 $('.follow_unfollow').text("Unfollow");
+        //             else
+        //                 $('.follow_unfollow').text("Follow");
+        //             $.notify("Done!", {
+        //                 style: "custom",
+        //                 className: "success"
+        //             });
+        //         },
+        //         error: function () {
+        //             $.notify("Some error occurred!", {
+        //                 style: "custom",
+        //                 className: "danger"
+        //             });
+        //         }
+        //     });
+        // });
 
     $('body').on('click', '.list-group-item button', function (e) {
         e.preventDefault();
