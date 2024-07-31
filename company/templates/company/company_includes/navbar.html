@@ -29,7 +29,7 @@
                  class="flex flex-row items-center cursor-pointer">
                 <div class="user-info">
                     {% if request.user.userprofile.user_avatar %}
-                        <img src="{{ MEDIA_URL }}{{ request.user.userprofile.user_avatar }}"
+                        <img src="{% if request.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ request.user.userprofile.user_avatar }}{% else %}https://via.placeholder.com/100?text=No+Avatar{% endif %}"
                              alt="company logo"
                              class="w-10 h-10 object-fill rounded-full border-[1px] border-gray-500"
                              width="40px"
@@ -47,32 +47,36 @@
                     {% endif %}
                     <span class="user-name">{{ request.user.username | slice:":7" | capfirst }}..</span>
                 </div>
-                <svg width="20"
-                     height="20"
-                     viewBox="0 0 20 20"
-                     fill="none"
-                     xmlns="http://www.w3.org/2000/svg">
-                    <path d="M16.5999 7.45837L11.1666 12.8917C10.5249 13.5334 9.4749 13.5334 8.83324 12.8917L3.3999 7.45837" stroke="#596780" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
+                {% if companies %}
+                    <svg width="20"
+                         height="20"
+                         viewBox="0 0 20 20"
+                         fill="none"
+                         xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16.5999 7.45837L11.1666 12.8917C10.5249 13.5334 9.4749 13.5334 8.83324 12.8917L3.3999 7.45837" stroke="#596780" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                {% endif %}
             </div>
-            <div id="profile_dropdown"
-                 hidden
-                 class="absolute right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                 role="menu"
-                 aria-orientation="vertical"
-                 aria-labelledby="menu-button"
-                 tabindex="-1">
-                <div class="py-1" role="none">
-                    <p class="text-gray-700 block px-4 py-2 text-lg font-semibold">Companies</p>
-                    {% for company in companies %}
-                        <a href="{% url 'company_analytics' company.id %}"
-                           class="text-gray-700 block pl-10 py-2 text-sm hover:bg-[#F3F4F6]"
-                           role="menuitem"
-                           tabindex="-1"
-                           id="menu-item-0">{{ company.name | slice:":15" | capfirst }}</a>
-                    {% endfor %}
+            {% if companies %}
+                <div id="profile_dropdown"
+                     hidden
+                     class="absolute right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                     role="menu"
+                     aria-orientation="vertical"
+                     aria-labelledby="menu-button"
+                     tabindex="-1">
+                    <div class="py-1" role="none">
+                        <p class="text-gray-700 block px-4 py-2 text-lg font-semibold">Companies</p>
+                        {% for company in companies %}
+                            <a href="{% url 'company_analytics' company.id %}"
+                               class="text-gray-700 block pl-10 py-2 text-sm hover:bg-[#F3F4F6]"
+                               role="menuitem"
+                               tabindex="-1"
+                               id="menu-item-0">{{ company.name | slice:":15" | capfirst }}</a>
+                        {% endfor %}
+                    </div>
                 </div>
-            </div>
+            {% endif %}
         </div>
     </div>
 </div>
