@@ -2061,23 +2061,6 @@ class HuntCreate(CreateView):
         self.object.save()
         return super(HuntCreate, self).form_valid(form)
 
-    def get_success_url(self):
-        # return reverse('start_hunt')
-
-        if self.request.POST.get("plan") == "Ant":
-            return (
-                "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TSZ84RQZ8RKKC"
-            )
-        if self.request.POST.get("plan") == "Wasp":
-            return (
-                "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E3EELQQ6JLXKY"
-            )
-        if self.request.POST.get("plan") == "Scorpion":
-            return (
-                "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=9R3LPM3ZN8KCC"
-            )
-        return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HH7MNY6KJGZFW"
-
 
 # TODO(b): REMOVE after _3 is ready, tested and has all features of the existing issueview, until then keep this working.
 class IssueView(DetailView):
