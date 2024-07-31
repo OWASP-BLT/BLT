@@ -354,7 +354,7 @@
                     Top Finding
                     <hr>
                 </div>
-                <div class="top-findings w-[25vw] max-sm:w-full">
+                <div class="top-findings w-[25vw] max-sm:w-full max-h-[40vh] overflow-y-scroll">
                     {% if websites %}
                         {% for website in websites %}
                             <div class="h-[8vh] max-sm:h-[10vh] flex items-center justify-between mb-[1rem] bg-[#f4f4f4] p-5 m-2 rounded-2xl">
@@ -433,7 +433,7 @@
                                     </div>
                                     <div class="p-3">
                                         {% for screenshot_activity,screenshot in activity_screenshots.items %}
-                                            {% if activity == screenshot_activity %}
+                                            {% if activity == screenshot_activity and screenshot.image.url %}
                                                 <a href="{{ activity.get_absolute_url }}">
                                                     <img src="{{ screenshot.image.url }}"
                                                          loading="lazy"
@@ -524,13 +524,13 @@
                     <hr>
                 </div>
                 <div class="font=['Ubuntu'] max-sm:w-full w-3/4">
-                    <button class="mr-3">
+                    <button class="mr-3" onclick="openFollowers();">
                         <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">👤 {% trans "Followers" %} {{ followers|length }}</div>
                     </button>
-                    <button class="mr-3">
+                    <button class="mr-3" onclick="openFollowingModal();">
                         <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">👤 {% trans "Following" %} {{ following|length }}</div>
                     </button>
-                    <button class="mr-3">
+                    <button class="mr-3" onclick="openBookmarkModal();">
                         <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">📑 {% trans "Bookmarks" %} {{ bookmarks|length }}</div>
                     </button>
                 </div>
@@ -542,6 +542,204 @@
             </div>
         </div>
     </div>
+    <div id="followers"
+         class="hidden relative z-10"
+         aria-labelledby="modal-title"
+         role="dialog"
+         aria-modal="true">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+             aria-hidden="true"></div>
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start lg:w-full">
+                            <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
+                                <div class="mt-2">
+                                    <h3>Followed By:</h3>
+                                    <br>
+                                    <p class="text-xl">
+                                        <table class="table-auto w-full border-spacing-52">
+                                            <tbody>
+                                                {% for user in followers %}
+                                                    <tr class="shadow-lg m-3 w-full rounded">
+                                                        {% if user.socialaccount_set.all.0.get_avatar_url %}
+                                                            <td>
+                                                                <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
+                                                                     height="50px"
+                                                                     width="50px"
+                                                                     alt="{{ user.username }}">
+                                                            </td>
+                                                        {% else %}
+                                                            <td>
+                                                                <img src="{% gravatar_url user.email 50 %}"
+                                                                     height="50px"
+                                                                     width="50px"
+                                                                     alt="{{ user.username }}">
+                                                            </td>
+                                                        {% endif %}
+                                                        <td>
+                                                            &nbsp; <a href="{% url 'profile' slug=user.username %}">{{ user.username }}</a>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="button"
+                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                                id="close-follow">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="following"
+         class="hidden relative z-10"
+         aria-labelledby="modal-title"
+         role="dialog"
+         aria-modal="true">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+             aria-hidden="true"></div>
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start lg:w-full">
+                            <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
+                                <div class="mt-2">
+                                    <h3>Following:</h3>
+                                    <br>
+                                    <p class="text-xl">
+                                        <table class="table-auto w-full border-spacing-52">
+                                            <tbody>
+                                                {% for user in following %}
+                                                    <tr class="shadow-lg m-3 w-full rounded">
+                                                        {% if user.socialaccount_set.all.0.get_avatar_url %}
+                                                            <td>
+                                                                <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
+                                                                     height="50px"
+                                                                     width="50px"
+                                                                     alt="{{ user.username }}">
+                                                            </td>
+                                                        {% else %}
+                                                            <td>
+                                                                <img src="{% gravatar_url user.email 50 %}"
+                                                                     height="50px"
+                                                                     width="50px"
+                                                                     alt="{{ user.username }}">
+                                                            </td>
+                                                        {% endif %}
+                                                        <td>
+                                                            &nbsp; <a href="{% url 'profile' slug=user.username %}">{{ user.username }}</a>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="button"
+                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                                id="close-following">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="Bookmark"
+         class="hidden relative z-10"
+         aria-labelledby="modal-title"
+         role="dialog"
+         aria-modal="true">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+             aria-hidden="true"></div>
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start lg:w-full">
+                            <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
+                                <div class="mt-2">
+                                    <h3>Bookmarks:</h3>
+                                    <br>
+                                    <p class="text-xl">
+                                        <table class="table-auto w-full border-spacing-52">
+                                            <tbody>
+                                                {% for i in bookmarks %}
+                                                    <tr class="shadow-lg m-3 w-full rounded">
+                                                        <div class="list-group-item">
+                                                            <button type="button"
+                                                                    class="close"
+                                                                    name="{{ i.pk }}"
+                                                                    data-dismiss="alert"
+                                                                    aria-label="Close">
+                                                                <span aria-hidden="true">×</span>
+                                                            </button>
+                                                            <a href="{{ i.get_absolute_url }}" class="list-group-item-heading">
+                                                                <strong>{{ i.description|truncatechars:50 }}</strong>
+                                                            </a>
+                                                            <span class="badge text-capitalize">{{ i.status }}</span>
+                                                            <p class="list-group-item-text">{{ i.user }}</p>
+                                                        </div>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="button"
+                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                                id="close-Bookmark">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script defer>
+    var closeFollow = document.getElementById("close-follow");
+    var openFollow = document.getElementById("followers");
+    closeFollow.addEventListener("click",()=>{
+        openFollow.style.display="none";
+    });
+    var closeFollowing = document.getElementById("close-following");
+    var openFollowing = document.getElementById("following");
+    closeFollowing.addEventListener("click",()=>{
+        openFollowing.style.display="none";
+    });
+    var closeBookmark = document.getElementById("close-Bookmark");
+    var openBookmark = document.getElementById("Bookmark");
+    closeBookmark.addEventListener("click",()=>{
+        openBookmark.style.display="none";
+    });
+
+    function openFollowers(){
+        openFollow.style.cssText = "display:block !important;"
+    }
+
+    
+    function openFollowingModal(){
+        openFollowing.style.cssText = "display:block !important;"
+    }
+
+    
+    function openBookmarkModal(){
+        openBookmark.style.cssText = "display:block !important;"
+    }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
         var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
