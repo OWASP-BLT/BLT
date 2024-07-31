@@ -11,8 +11,8 @@
             <ul class="text-2xl">
                 {% for project in projects %}
                     <li type="1" class=" my-2 py-2 px-4 shadow">
-                        <p href="{{ item.repo_url }}"
-                           class="text-primary underline inline-block">{{ project.project_name }}</p>
+                        <a href="{{ item.repo_url }}"
+                           class="text-primary underline inline-block">{{ project.project_name }}</a>
                         <button class="bg-[#d9534f] ml-4 inline-block py-1 px-2 rounded text-white">
                             <a href="{{ project.funding_hyperlinks }}" target="_blank">
                                 <span class="text-white">Donate</span>
