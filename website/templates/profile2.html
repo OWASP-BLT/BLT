@@ -301,7 +301,7 @@
     </style>
 {% endblock style %}
 {% block content %}
-{% include "includes/sidenav.html" %}
+    {% include "includes/sidenav.html" %}
     <div class="flex lg:!ml-[0px] px-5 mt-[8vh] max-sm:!mt-[5vh] max-sm:!items-center justify-between max-sm:flex-col font-['Ubuntu'] max-sm:translate-x-5 max-sm:translate-y-5">
         <div class="max-sm:w-[100vw] w-[23vw] flex flex-col">
             <div class="w-[50vw] font-bold text-[20px] capitalize">{{ user.username }}</div>
@@ -514,7 +514,6 @@
             </div>
         </div>
         <div class="max-sm:w-[100vw] w-[22vw]">
-
             <div>
                 <div class="font-bold mb-3 mt-4">
                     Top Finding
