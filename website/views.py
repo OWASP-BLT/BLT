@@ -939,10 +939,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     "report.html",
                     {"form": self.get_form(), "captcha_form": captcha_form},
                 )
-            clean_domain = (
-                obj.domain_name.replace("www.", "").replace("https://", "").replace("http://", "")
-            )
-            domain = Domain.objects.filter(name=clean_domain).first()
+            parsed_url = urlparse(obj.url)
+            clean_domain = parsed_url.netloc
+            domain = Domain.objects.filter(url=clean_domain).first()
 
             domain_exists = False if domain is None else True
 
