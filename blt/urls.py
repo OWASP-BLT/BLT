@@ -18,6 +18,7 @@ import website.views
 from blt import settings
 from company.views import ShowBughuntView
 from website.api.views import (
+    AuthApiViewset,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
     CompanyViewSet,
@@ -74,6 +75,7 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
+    UserProfileDetailView2,
     add_suggestions,
     blt_tomato,
     change_bid_status,
@@ -377,7 +379,9 @@ urlpatterns = [
         UploadCreate.as_view(),
         name="upload",
     ),
+    # TODO(b)
     re_path(r"^profile/(?P<slug>[^/]+)/$", UserProfileDetailView.as_view(), name="profile"),
+    re_path(r"^profile2/(?P<slug>[^/]+)/$", UserProfileDetailView2.as_view(), name="profile"),
     re_path(r"^domain/(?P<slug>.+)/$", DomainDetailView.as_view(), name="domain"),
     re_path(
         r"^.well-known/acme-challenge/(?P<token>[^/]+)/$",
@@ -549,6 +553,7 @@ urlpatterns = [
         ProjectViewSet.as_view({"get": "list", "post": "create", "patch": "update"}),
         name="projects_api",
     ),
+    path("auth/delete", AuthApiViewset.as_view({"delete": "delete"}), name="auth-delete-api"),
 ]
 
 if settings.DEBUG:

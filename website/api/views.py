@@ -26,6 +26,7 @@ from website.models import (
     IssueScreenshot,
     Points,
     Project,
+    Token,
     User,
     UserProfile,
 )
@@ -718,3 +719,20 @@ class ProjectViewSet(viewsets.ModelViewSet):
             {"count": len(project_data), "projects": project_data},
             status=200,
         )
+
+
+class AuthApiViewset(viewsets.ModelViewSet):
+    http_method_names = ("delete",)
+    permission_classes = (IsAuthenticated,)
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            token = request.headers["Authorization"].split(" ")
+            user = Token.objects.get(key=token[1]).user
+            user_data = User.objects.get(username=user)
+            user_data.delete()
+            return Response({"success": True, "message": "User deleted successfully !!"})
+        except Token.DoesNotExist:
+            return Response({"success": False, "message": "User does not exists."})
+        except User.DoesNotExist:
+            return Response({"success": False, "message": "User does not exists."})
