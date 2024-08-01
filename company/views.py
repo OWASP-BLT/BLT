@@ -493,7 +493,6 @@ class AddDomainView(View):
             "facebook": request.POST.get("facebook_url", None),
         }
 
-        # Check the domain url and make it clean like if it's like "https://drive.google.com/drive/u/0/home" or "https://drive.google.com" it should be "drive.google.com"
         if domain_data["url"]:
             parsed_url = urlparse(domain_data["url"])
             if parsed_url.hostname is None:
