@@ -301,19 +301,20 @@
     </style>
 {% endblock style %}
 {% block content %}
-    <div class="flex lg:!ml-[-170px] px-5 mt-[8vh] max-sm:!mt-[5vh] max-sm:!items-center justify-between max-sm:flex-col font-['Ubuntu'] max-sm:translate-x-5 max-sm:translate-y-5">
-        <div class="max-sm:w-[100vw] w-[25vw] flex flex-col">
+{% include "includes/sidenav.html" %}
+    <div class="flex lg:!ml-[0px] px-5 mt-[8vh] max-sm:!mt-[5vh] max-sm:!items-center justify-between max-sm:flex-col font-['Ubuntu'] max-sm:translate-x-5 max-sm:translate-y-5">
+        <div class="max-sm:w-[100vw] w-[23vw] flex flex-col">
             <div class="w-[50vw] font-bold text-[20px] capitalize">{{ user.username }}</div>
             <div class="inline-block relative h-[200px] w-[200px]">
                 {% if user.userprofile.avatar %}
                     <img src="{{ user.userprofile.avatar }}"
-                         class="img-responsive img-thumbnail"
+                         class="img-responsive img-thumbnail w-[200px] h-[200px] object-cover"
                          alt="avatar"
                          width="200"
                          height="200">
                 {% else %}
                     <img src="{% gravatar_url user.email 200 %}"
-                         class="img-responsive img-thumbnail"
+                         class="img-responsive img-thumbnail w-[200px] h-[200px] object-cover"
                          alt="avatar"
                          width="200"
                          height="200">
@@ -350,47 +351,18 @@
             <div class="mt-[2rem] !ml-0">{% include "./includes/crypto_donation.html" %}</div>
             <div class="h-[2vh]"></div>
             <div>
-                <div class="font-bold mb-3">
-                    Top Finding
-                    <hr>
-                </div>
-                <div class="top-findings w-[25vw] max-sm:w-full max-h-[40vh] overflow-y-scroll">
-                    {% if websites %}
-                        {% for website in websites %}
-                            <div class="h-[8vh] max-sm:h-[10vh] flex items-center justify-between mb-[1rem] bg-[#f4f4f4] p-5 m-2 rounded-2xl">
-                                <div class="flex items-center">
-                                    <a href="{% url 'domain' slug=website.name %}">
-                                        <img src="https://www.{{ website.name }}/favicon.ico"
-                                             height="30"
-                                             width="30"
-                                             class="mr-3"
-                                             alt="company logo"
-                                             onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
-                                    </a>
-                                    <a href="{% url 'domain' slug=website.name %}">{{ website.name|truncatechars:15 }}</a>
-                                </div>
-                                <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl label label-default pull-right"
-                                        name="{{ user }}">{{ website.total }} Bug{{ website.total|pluralize }}</button>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="text-start">{% trans "Nothing Found" %}</div>
-                    {% endif %}
-                </div>
-            </div>
-            <div>
-                <div class="font-bold mb-3 mt-4">
+                <div class="font-bold mb-3 mt-1">
                     Recent Activity
                     <hr>
                 </div>
-                <div class="top-findings w-[25vw] max-sm:w-full">
+                <div class="top-findings w-[20vw] max-sm:w-full">
                     {% if activities %}
                         {% load gravatar %}
                         {% load static %}
                         <div class="list-group">
                             {% for activity in activities %}
                                 <div class="bg-[#f4f4f4] mb-[1rem] rounded-2xl">
-                                    <div class="h-auto min-h-[8vh] flex items-center justify-between mb-[1rem] bg-[#f4f4f4] p-5 rounded-2xl w-[25vw]">
+                                    <div class="h-auto min-h-[8vh] flex items-center justify-between mb-[1rem] bg-[#f4f4f4] p-5 rounded-2xl w-[20vw] text-clip max-sm:w-[100vw]">
                                         <div class="flex items-center">
                                             <a href="{% url 'domain' slug=activity.domain_name %}">
                                                 <img src="https://www.{{ activity.domain_name }}/favicon.ico"
@@ -401,8 +373,8 @@
                                                      onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
                                             </a>
                                             <div class="w-[80%]">
-                                                <a href="{{ activity.get_absolute_url }}">
-                                                    <div class="mb-3 text-xl">{{ activity.description|truncatechars:50 }}</div>
+                                                <a href="{{ activity.get_absolute_url }}" class="w-[80%]">
+                                                    <div class="mb-3 text-xl">{{ activity.description|truncatechars:20 }}</div>
                                                 </a>
                                                 <div class="mb-2 text-xl">
                                                     {{ activity.user|default:"Anonymous" }}
@@ -466,13 +438,13 @@
                 </div>
             </div>
         </div>
-        <div class="max-sm:w-[100vw] w-[60vw]">
+        <div class="max-sm:w-[100vw] w-[40vw] ml-4">
             <div>
                 <div class="text-2xl font-bold mb-4">
                     Issue Stats
                     <hr>
                 </div>
-                <div class="font=['Ubuntu'] max-sm:w-full w-3/4">
+                <div class="font=['Ubuntu'] max-sm:w-full w-[40vw]">
                     <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=General`"
                             class="mr-3">
                         <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">⚙️ {% trans "General" %} {{ bug_type_0 | length }}</div>
@@ -539,6 +511,46 @@
                     <hr>
                 </div>
                 <div id="chart" class="max-sm:w-full w-3/4"></div>
+            </div>
+        </div>
+        <div class="max-sm:w-[100vw] w-[22vw]">
+
+            <div>
+                <div class="font-bold mb-3 mt-4">
+                    Top Finding
+                    <hr>
+                </div>
+                <div class="top-findings w-[20vw] max-sm:w-full">
+                    <div class=" mb-[1rem] bg-[#f4f4f4] p-5 m-2 rounded-2xl">
+                        <ul>
+                            {% if websites %}
+                                {% for website in websites %}
+                                    <li class="flex justify-between mb-3 items-center">
+                                        <div class="flex w-full">
+                                            <a href="{% url 'domain' slug=website.name %}">
+                                                <img src="https://www.{{ website.name }}/favicon.ico"
+                                                     height="20"
+                                                     width="20"
+                                                     class="mr-3"
+                                                     alt="company logo"
+                                                     onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                            </a>
+                                            <a href="{% url 'domain' slug=website.name %}">{{ website.name|truncatechars:15 }}</a>
+                                        </div>
+                                        <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl label label-default pull-right"
+                                                name="{{ user }}">
+                                            {{ website.total }} Bug{{ website.total|pluralize }}
+                                        </button>
+                                    </li>
+                                {% endfor %}
+                            {% else %}
+                                <li>
+                                    <div class="text-start">{% trans "Nothing Found" %}</div>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
