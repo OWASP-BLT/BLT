@@ -624,10 +624,11 @@ class Monitor(models.Model):
 
 class Bid(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    # link this to our issue model
     issue_url = models.URLField()
     created = models.DateTimeField(default=timezone.now)
     modified = models.DateTimeField(default=timezone.now)
-    amount = models.IntegerField()
+    amount_bch = models.DecimalField(max_digits=16, decimal_places=8, default=0)
     status = models.CharField(default="Open", max_length=10)
     pr_link = models.URLField(blank=True, null=True)
     bch_address = models.CharField(blank=True, null=True, max_length=45)
@@ -704,9 +705,7 @@ class Project(models.Model):
     logo_url = models.URLField()
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
-    contributors = models.ManyToManyField(
-        Contributor, related_name="projects", null=True, blank=True
-    )
+    contributors = models.ManyToManyField(Contributor, related_name="projects", blank=True)
 
     def __str__(self):
         return self.name

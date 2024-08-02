@@ -87,7 +87,7 @@ class BidAdmin(admin.ModelAdmin):
         "user",
         "issue_url",
         "pr_link",
-        "amount",
+        "amount_bch",
         "bch_address",
         "status",
         "created",

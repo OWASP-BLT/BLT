@@ -56,7 +56,7 @@ class BidForm(forms.ModelForm):
             "issue_url",
             "created",
             "modified",
-            "amount",
+            "amount_bch",
             "status",
             "pr_link",
             "bch_address",
