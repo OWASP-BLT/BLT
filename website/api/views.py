@@ -683,14 +683,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             project_instance = serializer.save()
             project_instance.__setattr__("slug", slug)
 
-            # If the logo is not provided get the logo from the repo itself
-            if project_instance.logo == "":
-                logo = project_instance.get_github_logo_save_to_storage(project_instance.github_url)
-                if logo:
-                    project_instance.logo = logo
-
-            project_instance.save()
-
             # Set contributors
             if contributors:
                 project_instance.contributors.set(contributors)
