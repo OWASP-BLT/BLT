@@ -4746,6 +4746,12 @@ def chatbot_conversation(request):
                     {"error": "Vector store not found"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            except Exception as e:
+                ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
+                return Response(
+                    {"error": "Error loading vector store"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
             finally:
                 if not vector_store:
                     ChatBotLog.objects.create(
