@@ -8,7 +8,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="description" content="blt make company bug tracking easy">
         <meta name="keywords" content="blt, bug, tracking, company, easy">
-        <title>{% trans "Register Company" %}</title>
+        <title>{% trans "Register Organization" %}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap"
@@ -42,23 +42,23 @@
                   enctype="multipart/form-data"
                   class="w-[96%] bg-white rounded-2xl p-10 my-5 shadow-md">
                 <div class="w-full mb-5">
-                    <p class="text-gray-300 font-satoshi font-bold text-[35px]">{% trans "Register Company" %}</p>
+                    <p class="text-gray-300 font-satoshi font-bold text-[35px]">{% trans "Register Organization" %}</p>
                 </div>
                 {% csrf_token %}
                 <div class="pb-12">
-                    <h2 class="text-base font-semibold leading-7 text-gray-900">{% trans "Company Information" %}</h2>
+                    <h2 class="text-base font-semibold leading-7 text-gray-900">{% trans "Organization Information" %}</h2>
                     <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                         <div class="sm:col-span-3">
                             <label for="domain_name"
                                    class="block text-sm font-medium leading-6 text-gray-900">
-                                {% trans "Company Name" %}
+                                {% trans "Organization Name" %}
                             </label>
                             <div class="mt-2">
                                 <input type="text"
                                        name="company_name"
                                        id="company_name"
                                        autocomplete="company_name"
-                                       placeholder="Company Name"
+                                       placeholder="Organization Name"
                                        required
                                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                             </div>
@@ -66,14 +66,14 @@
                         <div class="sm:col-span-3">
                             <label for="company_url"
                                    class="block text-sm font-medium leading-6 text-gray-900">
-                                {% trans "Company Url" %}
+                                {% trans "Organization Url" %}
                             </label>
                             <div class="mt-2">
                                 <input type="text"
                                        name="company_url"
                                        id="company_url"
                                        autocomplete="company_url"
-                                       placeholder="https://company.xyz"
+                                       placeholder="https://Organization_domain.xyz"
                                        required
                                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                             </div>
@@ -81,21 +81,21 @@
                         <div class="sm:col-span-2 sm:col-start-1">
                             <label for="support_email"
                                    class="block text-sm font-medium leading-6 text-gray-900">
-                                {% trans "Company Support Email (Optional)" %}
+                                {% trans "Organization Support Email (Optional)" %}
                             </label>
                             <div class="mt-2">
                                 <input type="email"
                                        name="support_email"
                                        id="support_email"
                                        autocomplete="email"
-                                       placeholder="company@domain.xyz"
+                                       placeholder="Organization@domain.xyz"
                                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                             </div>
                         </div>
                         <div class="sm:col-span-2">
                             <label for="twitter_url"
                                    class="block text-sm font-medium leading-6 text-gray-900">
-                                {% trans "Company Twitter URL (Optional)" %}
+                                {% trans "Organization Twitter URL (Optional)" %}
                             </label>
                             <div class="mt-2">
                                 <input type="text"
@@ -109,7 +109,7 @@
                         <div class="sm:col-span-2">
                             <label for="facebook_url"
                                    class="block text-sm font-medium leading-6 text-gray-900">
-                                {% trans "Company Facebook URL (Optional)" %}
+                                {% trans "Organization Facebook URL (Optional)" %}
                             </label>
                             <div class="mt-2">
                                 <input type="text"
@@ -127,7 +127,7 @@
                         <div class="col-span-full mb-5">
                             <label for="company_logo"
                                    class="block text-sm font-medium leading-6 text-gray-900">
-                                {% trans "Company Logo" %}
+                                {% trans "Organization Logo" %}
                             </label>
                             <div class="mt-2 flex items-center gap-x-3" id="previewLogo">
                                 <div id="previewLogoDiv"
@@ -151,7 +151,7 @@
                     </div>
                 </div>
                 <div class="pb-12 mt-5">
-                    <h2 class="text-base font-semibold leading-7 text-gray-900">{% trans "Company Managers" %}</h2>
+                    <h2 class="text-base font-semibold leading-7 text-gray-900">{% trans "Organization Managers" %}</h2>
                     <p class="mt-1 text-sm leading-6 text-gray-600">
                         {% trans "Add Emails which will be allowed to add domains" %}.
                         <br>
