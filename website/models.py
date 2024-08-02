@@ -701,7 +701,7 @@ class Project(models.Model):
     github_url = models.URLField()
     wiki_url = models.URLField(null=True, blank=True)
     homepage_url = models.URLField(null=True, blank=True)
-    logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
+    logo_url = models.URLField()
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     contributors = models.ManyToManyField(
@@ -710,18 +710,6 @@ class Project(models.Model):
 
     def __str__(self):
         return self.name
-
-    def get_github_logo_save_to_storage(self, url):
-        owner = url.split("/")
-        link = "https://avatars.githubusercontent.com/" + owner[-2]
-        github_logo = requests.get(
-            link
-        )  # the image there is of the owner so we will have this as the logo
-        if github_logo.status_code == 200:
-            file_name = f"{self.slug}.png"
-            self.logo.save(file_name, ContentFile(github_logo.content), save=False)
-            return self.logo
-        return None
 
     def get_contributors(self, github_url):
         owner = github_url.split("/")
