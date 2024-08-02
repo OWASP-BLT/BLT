@@ -737,3 +737,6 @@ class Project(models.Model):
                     contributors.append(contributor)
             return contributors
         return None
+
+    def get_top_contributors(self, limit=5):
+        return self.contributors.order_by("-contributions")[:limit]
