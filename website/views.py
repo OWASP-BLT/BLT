@@ -4735,15 +4735,26 @@ def chatbot_conversation(request):
             return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
 
         global vector_store
-        if vector_store is None:
+        if not vector_store:
             try:
                 vector_store = load_vector_store()
-            except FileNotFoundError:
-                ChatBotLog.objects.create(question=question, answer="Error: Vector store not found")
+            except FileNotFoundError as e:
+                ChatBotLog.objects.create(
+                    question=question, answer="Error: Vector store not found {e}"
+                )
                 return Response(
                     {"error": "Vector store not found"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            finally:
+                if not vector_store:
+                    ChatBotLog.objects.create(
+                        question=question, answer="Error: Vector store not loaded"
+                    )
+                    return Response(
+                        {"error": "Vector store not loaded"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
 
         # Handle the "exit" command
         if question.lower() == "exit":
