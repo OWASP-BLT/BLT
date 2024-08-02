@@ -2273,7 +2273,7 @@ def UpdateIssue(request):
                 "email/bug_updated.txt",
                 {
                     "domain": issue.domain.name,
-                    "name": issue.user.username,
+                    "name": issue.user.username if issue.user else "Anonymous",
                     "id": issue.id,
                     "username": request.user.username,
                     "action": "closed",
