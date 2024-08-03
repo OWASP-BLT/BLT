@@ -739,3 +739,30 @@ class Project(models.Model):
 
     def get_top_contributors(self, limit=5):
         return self.contributors.order_by("-contributions")[:limit]
+
+
+class Contribution(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    date_created = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=50, choices=[("open", "Open"), ("closed", "Closed")])
+    txid = models.CharField(
+        max_length=64, blank=True, null=True
+    )  # Transaction ID on the Bitcoin blockchain
+
+    def __str__(self):
+        return self.title
+
+
+class BaconToken(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    date_awarded = models.DateTimeField(auto_now_add=True)
+    contribution = models.OneToOneField(Contribution, on_delete=models.CASCADE)
+    token_id = models.CharField(
+        max_length=64, blank=True, null=True
+    )  # Token ID from the Runes protocol
+
+    def __str__(self):
+        return f"{self.user.username} - {self.amount} BACON"

@@ -119,7 +119,25 @@ WHITELISTED_IMAGE_TYPES = {
     "png": "image/png",
 }
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect, render
 from PIL import Image
+
+from .bitcoin_utils import create_bacon_token
+from .models import BaconToken, Contribution
+
+
+@login_required
+def distribute_bacon(request, contribution_id):
+    contribution = Contribution.objects.get(id=contribution_id)
+    if (
+        contribution.status == "closed"
+        and not BaconToken.objects.filter(contribution=contribution).exists()
+    ):
+        token = create_bacon_token(contribution.user, contribution)
+        if token:
+            return redirect("contribution_detail", contribution_id=contribution.id)
+    return redirect("contribution_detail", contribution_id=contribution.id)
 
 
 def image_validator(img):

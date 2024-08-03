@@ -503,6 +503,9 @@ urlpatterns = [
         csrf_exempt(TemplateView.as_view(template_name="mobile_privacy.html")),
         name="api_privacypolicy",
     ),
+    re_path(
+        r"^contribute/$", TemplateView.as_view(template_name="contribute.html"), name="contribute"
+    ),
     re_path(r"^error/", website.views.throw_error, name="post_error"),
     re_path(r"^tz_detect/", include("tz_detect.urls")),
     # re_path(r"^tellme/", include("tellme.urls")),

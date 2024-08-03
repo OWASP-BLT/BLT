@@ -1,1 +1,59 @@
-{% extends "coming_soon.html" %}
+{% extends "base.html" %}
+{% block content %}
+    <style>
+    .overview-image {
+        max-width: 100%;
+        height: auto;
+        margin-bottom: 20px;
+    }
+
+    </style>
+    <div class="container">
+        <!-- Include the left navigation -->
+        {% include "includes/sidenav.html" %}
+        <!-- Main Content Section -->
+        <div class="main-content">
+            <section id="overview">
+                <h2>Overview</h2>
+                <img src="{% static 'bacon.png' %}"
+                    alt="BACON Project Image"
+                    class="overview-image" height="100%"" width="100%">
+                    <p>
+                        BACON (Blockchain Assisted Contribution Network) is an innovative project within the OWASP BLT platform that integrates Bitcoin Core technology and the Runes protocol to reward contributors with blockchain-based incentives. By leveraging the power of blockchain, BACON ensures transparency, security, and fairness in the distribution of rewards, ultimately enhancing the quality and security of open-source software.
+                    </p>
+                </section>
+                <section id="features">
+                    <h2>Key Features</h2>
+                    <ul>
+                        <li>
+                            <strong>Incentivized Contributions:</strong> Earn BACON tokens for reporting issues and resolving bugs.
+                        </li>
+                        <li>
+                            <strong>Blockchain Transparency:</strong> All transactions are securely logged on the Bitcoin blockchain.
+                        </li>
+                        <li>
+                            <strong>Seamless Integration:</strong> BACON tokens are fully integrated within the BLT ecosystem and can be managed via the BLT platform.
+                        </li>
+                        <li>
+                            <strong>Secure Transactions:</strong> Leverage the Runes protocol to ensure all token transactions are safe and immutable.
+                        </li>
+                    </ul>
+                </section>
+                <section id="get-involved">
+                    <h2>Get Involved</h2>
+                    <p>
+                        We’re excited to have the community involved in bringing BACON to life. Whether you’re a developer, blockchain expert, or just passionate about open-source, there’s a place for you in this project.
+                    </p>
+                    <a href="{% url 'contribution_guidelines' %}" class="btn">Learn How to Contribute</a>
+                    <a href="https://github.com/owasp/BLT-BACON" class="btn">View on GitHub</a>
+                </section>
+                <section id="updates">
+                    <h2>Latest Updates</h2>
+                    <p>
+                        Stay tuned for updates as we progress through the development of the BACON project. You can follow our journey and contribute to the discussion on our community channels.
+                    </p>
+                    <a href="https://owasp.org/www-project-bug-logging-tool/" class="btn">Visit OWASP BLT Wiki</a>
+                </section>
+            </div>
+        </div>
+    {% endblock content %}
