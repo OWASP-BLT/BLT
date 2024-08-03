@@ -119,7 +119,7 @@ WHITELISTED_IMAGE_TYPES = {
     "png": "image/png",
 }
 
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import redirect, render
 from PIL import Image
 
@@ -127,7 +127,19 @@ from .bitcoin_utils import create_bacon_token
 from .models import BaconToken, Contribution
 
 
-@login_required
+def admin_required(user):
+    return user.is_superuser
+
+
+@user_passes_test(admin_required)
+def select_contribution(request):
+    contributions = Contribution.objects.filter(status="closed").exclude(
+        id__in=BaconToken.objects.values_list("contribution_id", flat=True)
+    )
+    return render(request, "select_contribution.html", {"contributions": contributions})
+
+
+@user_passes_test(admin_required)
 def distribute_bacon(request, contribution_id):
     contribution = Contribution.objects.get(id=contribution_id)
     if (
@@ -136,8 +148,14 @@ def distribute_bacon(request, contribution_id):
     ):
         token = create_bacon_token(contribution.user, contribution)
         if token:
+            messages.success(request, "Bacon distributed successfully")
             return redirect("contribution_detail", contribution_id=contribution.id)
-    return redirect("contribution_detail", contribution_id=contribution.id)
+        else:
+            messages.error(request, "Failed to distribute bacon")
+    contributions = Contribution.objects.filter(status="closed").exclude(
+        id__in=BaconToken.objects.values_list("contribution_id", flat=True)
+    )
+    return render(request, "select_contribution.html", {"contributions": contributions})
 
 
 def image_validator(img):

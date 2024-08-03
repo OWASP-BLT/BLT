@@ -508,6 +508,12 @@ urlpatterns = [
         TemplateView.as_view(template_name="contribute.html"),
         name="contribution_guidelines",
     ),
+    path("select_contribution/", website.views.select_contribution, name="select_contribution"),
+    path(
+        "distribute_bacon/<int:contribution_id>/",
+        website.views.distribute_bacon,
+        name="distribute_bacon",
+    ),
     re_path(r"^error/", website.views.throw_error, name="post_error"),
     re_path(r"^tz_detect/", include("tz_detect.urls")),
     # re_path(r"^tellme/", include("tellme.urls")),
