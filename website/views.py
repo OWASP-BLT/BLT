@@ -342,10 +342,6 @@ def newhome(request, template="new_home.html"):
                 messages.error(request, "Please verify your email address.")
         else:
             messages.error(request, "No email associated with your account. Please add an email.")
-    else:
-        messages.info(
-            request, "You are browsing as a guest. Please log in or register for full access."
-        )
 
     # Fetch and paginate issues
     issues_queryset = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
