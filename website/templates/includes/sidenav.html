@@ -46,7 +46,7 @@
                         <div class="w-8 mr-4">
                             <i class="fa fa-institution"></i>
                         </div>
-                        <span>Companies</span>
+                        <span>Organizations</span>
                     </a>
                 </li>
                 <li class="{% if request.path == '/sponsor/' %}bg-gray-200{% endif %}">
@@ -74,15 +74,6 @@
                             <i class="fa fa-trophy"></i>
                         </div>
                         <span>Users</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/teams/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'teams' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">
-                            <i class="fa fa-users"></i>
-                        </div>
-                        <span>Teams</span>
                     </a>
                 </li>
                 <li class="{% if request.path == '/hunts/' %}bg-gray-200{% endif %}">
