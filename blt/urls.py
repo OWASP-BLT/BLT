@@ -504,7 +504,9 @@ urlpatterns = [
         name="api_privacypolicy",
     ),
     re_path(
-        r"^contribute/$", TemplateView.as_view(template_name="contribute.html"), name="contribute"
+        r"^contribute/$",
+        TemplateView.as_view(template_name="contribute.html"),
+        name="contribution_guidelines",
     ),
     re_path(r"^error/", website.views.throw_error, name="post_error"),
     re_path(r"^tz_detect/", include("tz_detect.urls")),
