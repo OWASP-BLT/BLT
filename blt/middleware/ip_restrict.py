@@ -27,5 +27,4 @@ class IPRestrictMiddleware:
         if ip and ip in self.blocked_ips():
             return HttpResponseForbidden("Your IP address is restricted from accessing this site.")
 
-        response = self.get_response(request)
-        return response
+        return self.get_response(request)
