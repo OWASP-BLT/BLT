@@ -24,12 +24,8 @@ class IPRestrictMiddleware:
     def __call__(self, request):
         ip = request.META.get("REMOTE_ADDR")
 
-        if ip:
-            blocked_ips = self.blocked_ips()
-            if ip in blocked_ips:
-                return HttpResponseForbidden(
-                    "Your IP address is restricted from accessing this site."
-                )
+        if ip and ip in self.blocked_ips():
+            return HttpResponseForbidden("Your IP address is restricted from accessing this site.")
 
         response = self.get_response(request)
         return response
