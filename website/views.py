@@ -1870,6 +1870,7 @@ class StatsDetailView(TemplateView):
                 "icon": "fas fa-coins",
             },
         ]
+        context["stats"] = sorted(context["stats"], key=lambda x: int(x["count"]), reverse=True)
 
         def get_cumulative_data(queryset, date_field="created"):
             data = list(
