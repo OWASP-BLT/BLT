@@ -129,23 +129,9 @@ from dotenv import load_dotenv
 from PIL import Image
 from requests.auth import HTTPBasicAuth
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
 
 from .bitcoin_utils import create_bacon_token
 from .models import BaconToken, Contribution
-
-# Load environment variables
-load_dotenv()
-
-import os
-
-import requests
-from django.core.cache import cache
-from django.shortcuts import render
-from dotenv import load_dotenv
-from requests.auth import HTTPBasicAuth
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
 
 # Load environment variables
 load_dotenv()
@@ -167,11 +153,12 @@ def check_status(request):
         # Check Bitcoin Core Node Status
         bitcoin_rpc_user = os.getenv("BITCOIN_RPC_USER")
         bitcoin_rpc_password = os.getenv("BITCOIN_RPC_PASSWORD")
-        bitcoin_rpc_url = os.getenv("BITCOIN_RPC_URL")
+        bitcoin_rpc_host = os.getenv("BITCOIN_RPC_HOST", "127.0.0.1")
+        bitcoin_rpc_port = os.getenv("BITCOIN_RPC_PORT", "8332")
 
         try:
             response = requests.post(
-                bitcoin_rpc_url,
+                f"http://{bitcoin_rpc_host}:{bitcoin_rpc_port}",
                 json={
                     "jsonrpc": "1.0",
                     "id": "curltest",
@@ -187,17 +174,10 @@ def check_status(request):
         except Exception as e:
             print(f"Bitcoin Core Node Error: {e}")
 
-        # Check SendGrid API Status
         try:
             sg = SendGridAPIClient(os.getenv("SENDGRID_PASSWORD"))
-            message = Mail(
-                from_email="test@example.com",
-                to_emails="test@example.com",
-                subject="Status Check",
-                plain_text_content="This is a test email for checking SendGrid API status.",
-            )
-            response = sg.client.mail.send.post(request_body=message.get())
-            if response.status_code == 202:
+            response = sg.client.api_keys._(sg.api_key).get()
+            if response.status_code == 200:
                 status["sendgrid"] = True
         except Exception as e:
             print(f"SendGrid Error: {e}")
