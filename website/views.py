@@ -1770,168 +1770,153 @@ class StatsDetailView(TemplateView):
 
         # Prepare stats data for display
         context["stats"] = [
-            {"label": "Bugs", "count": Issue.objects.all().count()},
-            {"label": "Users", "count": User.objects.all().count()},
-            {"label": "Hunts", "count": Hunt.objects.all().count()},
-            {"label": "Domains", "count": Domain.objects.all().count()},
+            {"label": "Bugs", "count": Issue.objects.all().count(), "icon": "fas fa-bug"},
+            {"label": "Users", "count": User.objects.all().count(), "icon": "fas fa-users"},
+            {"label": "Hunts", "count": Hunt.objects.all().count(), "icon": "fas fa-crosshairs"},
+            {"label": "Domains", "count": Domain.objects.all().count(), "icon": "fas fa-globe"},
             {
                 "label": "Extension Users",
                 "count": int(context["extension_users"].replace(",", "")),
-            },  # Ensure it's an integer
-            {"label": "Subscriptions", "count": Subscription.objects.all().count()},
-            {"label": "Companies", "count": Company.objects.all().count()},
-            {"label": "Hunt Prizes", "count": HuntPrize.objects.all().count()},
-            {"label": "Issue Screenshots", "count": IssueScreenshot.objects.all().count()},
-            {"label": "Winners", "count": Winner.objects.all().count()},
-            {"label": "Points", "count": Points.objects.all().count()},
-            {"label": "Invitations", "count": InviteFriend.objects.all().count()},
-            {"label": "User Profiles", "count": UserProfile.objects.all().count()},
-            {"label": "IPs", "count": IP.objects.all().count()},
-            {"label": "Company Admins", "count": CompanyAdmin.objects.all().count()},
-            {"label": "Transactions", "count": Transaction.objects.all().count()},
-            {"label": "Payments", "count": Payment.objects.all().count()},
-            {"label": "Contributor Stats", "count": ContributorStats.objects.all().count()},
-            {"label": "Monitors", "count": Monitor.objects.all().count()},
-            {"label": "Bids", "count": Bid.objects.all().count()},
-            {"label": "Chatbot Logs", "count": ChatBotLog.objects.all().count()},
-            {"label": "Suggestions", "count": Suggestion.objects.all().count()},
-            {"label": "Suggestion Votes", "count": SuggestionVotes.objects.all().count()},
-            {"label": "Contributors", "count": Contributor.objects.all().count()},
-            {"label": "Projects", "count": Project.objects.all().count()},
-            {"label": "Contributions", "count": Contribution.objects.all().count()},
-            {"label": "Bacon Tokens", "count": BaconToken.objects.all().count()},
+                "icon": "fas fa-puzzle-piece",
+            },
+            {
+                "label": "Subscriptions",
+                "count": Subscription.objects.all().count(),
+                "icon": "fas fa-envelope",
+            },
+            {
+                "label": "Companies",
+                "count": Company.objects.all().count(),
+                "icon": "fas fa-building",
+            },
+            {
+                "label": "Hunt Prizes",
+                "count": HuntPrize.objects.all().count(),
+                "icon": "fas fa-gift",
+            },
+            {
+                "label": "Issue Screenshots",
+                "count": IssueScreenshot.objects.all().count(),
+                "icon": "fas fa-camera",
+            },
+            {"label": "Winners", "count": Winner.objects.all().count(), "icon": "fas fa-trophy"},
+            {"label": "Points", "count": Points.objects.all().count(), "icon": "fas fa-star"},
+            {
+                "label": "Invitations",
+                "count": InviteFriend.objects.all().count(),
+                "icon": "fas fa-envelope-open",
+            },
+            {
+                "label": "User Profiles",
+                "count": UserProfile.objects.all().count(),
+                "icon": "fas fa-id-badge",
+            },
+            {"label": "IPs", "count": IP.objects.all().count(), "icon": "fas fa-network-wired"},
+            {
+                "label": "Company Admins",
+                "count": CompanyAdmin.objects.all().count(),
+                "icon": "fas fa-user-tie",
+            },
+            {
+                "label": "Transactions",
+                "count": Transaction.objects.all().count(),
+                "icon": "fas fa-exchange-alt",
+            },
+            {
+                "label": "Payments",
+                "count": Payment.objects.all().count(),
+                "icon": "fas fa-credit-card",
+            },
+            {
+                "label": "Contributor Stats",
+                "count": ContributorStats.objects.all().count(),
+                "icon": "fas fa-chart-bar",
+            },
+            {"label": "Monitors", "count": Monitor.objects.all().count(), "icon": "fas fa-desktop"},
+            {"label": "Bids", "count": Bid.objects.all().count(), "icon": "fas fa-gavel"},
+            {
+                "label": "Chatbot Logs",
+                "count": ChatBotLog.objects.all().count(),
+                "icon": "fas fa-robot",
+            },
+            {
+                "label": "Suggestions",
+                "count": Suggestion.objects.all().count(),
+                "icon": "fas fa-lightbulb",
+            },
+            {
+                "label": "Suggestion Votes",
+                "count": SuggestionVotes.objects.all().count(),
+                "icon": "fas fa-thumbs-up",
+            },
+            {
+                "label": "Contributors",
+                "count": Contributor.objects.all().count(),
+                "icon": "fas fa-user-friends",
+            },
+            {
+                "label": "Projects",
+                "count": Project.objects.all().count(),
+                "icon": "fas fa-project-diagram",
+            },
+            {
+                "label": "Contributions",
+                "count": Contribution.objects.all().count(),
+                "icon": "fas fa-hand-holding-heart",
+            },
+            {
+                "label": "Bacon Tokens",
+                "count": BaconToken.objects.all().count(),
+                "icon": "fas fa-coins",
+            },
         ]
 
-        # Sort the stats by count in descending order
-        context["stats"] = sorted(context["stats"], key=lambda x: int(x["count"]), reverse=True)
+        def get_cumulative_data(queryset, date_field="created"):
+            data = list(
+                queryset.annotate(month=ExtractMonth(date_field))
+                .values("month")
+                .annotate(count=Count("id"))
+                .order_by("month")
+                .values_list("count", flat=True)
+            )
 
-        # Prepare sparklines data
+            cumulative_data = []
+            cumulative_sum = 0
+            for count in data:
+                cumulative_sum += count
+                cumulative_data.append(cumulative_sum)
+
+            return cumulative_data
+
+        # Prepare cumulative sparklines data
         context["sparklines_data"] = [
-            list(
-                Issue.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                User.objects.annotate(month=ExtractMonth("date_joined")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                Hunt.objects.annotate(month=ExtractMonth("created")).values_list("month", flat=True)
-            ),
-            list(
-                Domain.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
+            get_cumulative_data(Issue.objects),  # Uses "created"
+            get_cumulative_data(User.objects, date_field="date_joined"),  # Uses "date_joined"
+            get_cumulative_data(Hunt.objects),  # Uses "created"
+            get_cumulative_data(Domain.objects),  # Uses "created"
             list(range(12)),  # Dummy data for extension users, replace as needed
-            list(
-                Subscription.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                Company.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                HuntPrize.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                IssueScreenshot.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                Winner.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                Points.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                InviteFriend.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                UserProfile.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                IP.objects.annotate(month=ExtractMonth("created")).values_list("month", flat=True)
-            ),
-            list(
-                CompanyAdmin.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                Transaction.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                Payment.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                ContributorStats.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                Monitor.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                Bid.objects.annotate(month=ExtractMonth("created")).values_list("month", flat=True)
-            ),
-            list(
-                ChatBotLog.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                Suggestion.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                SuggestionVotes.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                Contributor.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                Project.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                Contribution.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
-            list(
-                BaconToken.objects.annotate(month=ExtractMonth("created")).values_list(
-                    "month", flat=True
-                )
-            ),
+            get_cumulative_data(Subscription.objects),  # Uses "created"
+            get_cumulative_data(Company.objects),  # Uses "created"
+            get_cumulative_data(HuntPrize.objects),  # Uses "created"
+            get_cumulative_data(IssueScreenshot.objects),  # Uses "created"
+            get_cumulative_data(Winner.objects),  # Uses "created"
+            get_cumulative_data(Points.objects),  # Uses "created"
+            get_cumulative_data(InviteFriend.objects),  # Uses "created"
+            get_cumulative_data(UserProfile.objects),  # Uses "created"
+            get_cumulative_data(IP.objects),  # Uses "created"
+            get_cumulative_data(CompanyAdmin.objects),  # Uses "created"
+            get_cumulative_data(Transaction.objects),  # Uses "created"
+            get_cumulative_data(Payment.objects),  # Uses "created"
+            get_cumulative_data(ContributorStats.objects),  # Uses "created"
+            get_cumulative_data(Monitor.objects),  # Uses "created"
+            get_cumulative_data(Bid.objects),  # Uses "created"
+            get_cumulative_data(ChatBotLog.objects),  # Uses "created"
+            get_cumulative_data(Suggestion.objects),  # Uses "created"
+            get_cumulative_data(SuggestionVotes.objects),  # Uses "created"
+            get_cumulative_data(Contributor.objects),  # Uses "created"
+            get_cumulative_data(Project.objects),  # Uses "created"
+            get_cumulative_data(Contribution.objects),  # Uses "created"
+            get_cumulative_data(BaconToken.objects),  # Uses "created"
         ]
 
         return context
@@ -5170,7 +5155,7 @@ def vote_suggestions(request):
         user = request.user
         data = json.loads(request.body)
         suggestion_id = data.get("suggestion_id")
-        suggestion = Suggestion.objects.get(suggestion_id=suggestion_id)
+        suggestion = Suggestion.objects.get(id=suggestion_id)
         up_vote = data.get("up_vote")
         down_vote = data.get("down_vote")
         voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).exists()
@@ -5226,7 +5211,7 @@ def set_vote_status(request):
         data = json.loads(request.body)
         id = data.get("id")
         try:
-            suggestion = Suggestion.objects.get(suggestion_id=id)
+            suggestion = Suggestion.objects.get(id=id)
         except Suggestion.DoesNotExist:
             return JsonResponse({"success": False, "error": "Suggestion not found"}, status=404)
 
@@ -5253,9 +5238,7 @@ def add_suggestions(request):
         id = str(uuid.uuid4())
         print(description, title, id)
         if title and description and user:
-            suggestion = Suggestion(
-                user=user, title=title, description=description, suggestion_id=id
-            )
+            suggestion = Suggestion(user=user, title=title, description=description, id=id)
             suggestion.save()
             messages.success(request, "Suggestion added successfully.")
             return JsonResponse({"status": "success"})

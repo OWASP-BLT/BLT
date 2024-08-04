@@ -2,60 +2,78 @@
 {% load static %}
 {% block style %}
     <style>
-.stat-card {
-    flex: 0 1 15%;
-    margin: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    background-color: #fff;
-    transition: background-color 0.3s ease, transform 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    max-width: 200px; 
-    width: 200px; 
-    height: auto; /* Set a consistent height if needed */
-}
+        .stat-card {
+            flex: 0 1 15%;
+            margin: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            background-color: #fff;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            max-width: 200px; 
+            width: 200px; 
+            height: auto; /* Set a consistent height if needed */
+        }
 
-.stat-card:hover {
-    background-color: #f1f1f1;
-    z-index: 10; /* Ensure it appears above other elements */
-    position: relative; /* Ensure the card is positioned correctly */
-}
-.stat-card:hover .sparkline {
-    transform: none; /* Prevent the sparkline from scaling */
-}
+        .stat-card:hover {
+            background-color: #f1f1f1;
+            z-index: 10; /* Ensure it appears above other elements */
+            position: relative; /* Ensure the card is positioned correctly */
+        }
+        
+        .stat-card:hover .sparkline {
+            transform: none; /* Prevent the sparkline from scaling */
+        }
 
+        .panel-heading {
+            padding: 15px;
+            text-align: center;
+        }
 
-    .panel-heading {
-        padding: 15px;
-        text-align: center;
-    }
+        .panel-heading h3 {
+            font-size: 18px;
+            margin: 5px 0;
+        }
 
+        .sparkline {
+            height: 40px;
+            width: calc(100% - 20px); /* Adjusting for padding */
+            padding-top: 10px;
+            background-color: transparent;
+        }
 
-    .panel-heading h3 {
-        font-size: 18px;
-        margin: 5px 0;
-    }
+        .stats-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            align-items: flex-start; /* Align items to the start to prevent stretching */
+        }
 
-    .sparkline {
-        height: 40px;
-        width: calc(100% - 20px); /* Adjusting for padding */
-        padding-top: 10px;
-        background-color: transparent;
-    }
+        .bottom-right {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+        }
 
-    .stats-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
-    align-items: flex-start; /* Align items to the start to prevent stretching */
-}
+        .stat-title {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
 
-    .bottom-right {
-        position: absolute;
-        bottom: 10px;
-        right: 15px;
-    }
+        .stat-title i {
+            margin-right: 10px;
+            font-size: 24px; /* Adjust icon size if necessary */
+        }
+
+        .stat-count {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: left;
+        }
     </style>
 {% endblock style %}
 {% block content %}
@@ -72,9 +90,12 @@
             <div class="stat-card panel panel-primary">
                 <div class="panel-heading">
                     <div class="row">
-                        <div class="col-xs-12 text-right">
-                            <h3>{{ stat.label }}</h3>
-                            <h3>{{ stat.count }}</h3>
+                        <div class="col-xs-12">
+                            <div class="stat-title">
+                                <i class="{{ stat.icon }}"></i>
+                                <span>{{ stat.label }}</span>
+                            </div>
+                            <div class="stat-count">{{ stat.count }}</div>
                         </div>
                     </div>
                     <div class="row">
@@ -97,21 +118,21 @@
     <script type="text/javascript">
         var data = {{ sparklines_data|safe }};
         $(function() {
-    {% for stat in stats %}
-    $('#sparkline-{{ forloop.counter }}').sparkline(data[{{ forloop.counter0 }}], {
-    type: 'line',
-    width: '100%', /* Adjust as needed */
-    height: '40px',
-    lineColor: '#1ab394',
-    fillColor: false,
-    spotColor: '#1ab394',
-    minSpotColor: '#1ab394',
-    maxSpotColor: '#1ab394',
-    highlightSpotColor: '#1ab394',
-    highlightLineColor: '#f5f5f5',
-    spotRadius: 2
-});
-    {% endfor %}
-});
+        {% for stat in stats %}
+            $('#sparkline-{{ forloop.counter }}').sparkline(data[{{ forloop.counter0 }}], {
+                type: 'line',
+                width: '100%', /* Adjust as needed */
+                height: '40px',
+                lineColor: '#1ab394',
+                fillColor: false,
+                spotColor: '#1ab394',
+                minSpotColor: '#1ab394',
+                maxSpotColor: '#1ab394',
+                highlightSpotColor: '#1ab394',
+                highlightLineColor: '#f5f5f5',
+                spotRadius: 2
+            });
+        {% endfor %}
+        });
     </script>
 {% endblock content %}

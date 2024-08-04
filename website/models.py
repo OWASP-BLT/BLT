@@ -677,7 +677,6 @@ class Suggestion(models.Model):
     description = models.TextField(max_length=1000, null=True, blank=True)
     up_votes = models.IntegerField(null=True, blank=True, default=0)
     down_votes = models.IntegerField(null=True, blank=True, default=0)
-    suggestion_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
