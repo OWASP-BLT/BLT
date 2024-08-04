@@ -1795,7 +1795,7 @@ class StatsDetailView(TemplateView):
                 "icon": "fas fa-gift",
             },
             {
-                "label": "Issue Screenshots",
+                "label": "Screenshots",
                 "count": IssueScreenshot.objects.all().count(),
                 "icon": "fas fa-camera",
             },
@@ -1895,7 +1895,6 @@ class StatsDetailView(TemplateView):
             get_cumulative_data(User.objects, date_field="date_joined"),  # Uses "date_joined"
             get_cumulative_data(Hunt.objects),  # Uses "created"
             get_cumulative_data(Domain.objects),  # Uses "created"
-            list(range(12)),  # Dummy data for extension users, replace as needed
             get_cumulative_data(Subscription.objects),  # Uses "created"
             get_cumulative_data(Company.objects),  # Uses "created"
             get_cumulative_data(HuntPrize.objects),  # Uses "created"
