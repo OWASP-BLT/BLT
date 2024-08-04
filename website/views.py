@@ -1716,6 +1716,42 @@ class DomainDetailView(ListView):
         return context
 
 
+import requests
+from bs4 import BeautifulSoup
+from django.db.models.functions import ExtractMonth
+from django.views.generic import TemplateView
+
+from .models import (
+    IP,
+    BaconToken,
+    Bid,
+    ChatBotLog,
+    Company,
+    CompanyAdmin,
+    Contribution,
+    Contributor,
+    ContributorStats,
+    Domain,
+    Hunt,
+    HuntPrize,
+    InviteFriend,
+    Issue,
+    IssueScreenshot,
+    Monitor,
+    Payment,
+    Points,
+    Project,
+    Subscription,
+    Suggestion,
+    SuggestionVotes,
+    Transaction,
+    User,
+    UserProfile,
+    Wallet,
+    Winner,
+)
+
+
 class StatsDetailView(TemplateView):
     template_name = "stats.html"
 
@@ -1723,31 +1759,181 @@ class StatsDetailView(TemplateView):
         context = super(StatsDetailView, self).get_context_data(*args, **kwargs)
 
         response = requests.get(settings.EXTENSION_URL)
-        soup = BeautifulSoup(response.text)
+        soup = BeautifulSoup(response.text, "html.parser")
 
         stats = ""
         for item in soup.findAll("span", {"class": "e-f-ih"}):
             stats = item.attrs["title"]
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["extension_users"] = stats.replace(" users", "")
-        context["bug_count"] = Issue.objects.all().count()
-        context["user_count"] = User.objects.all().count()
-        context["hunt_count"] = Hunt.objects.all().count()
-        context["domain_count"] = Domain.objects.all().count()
-        context["user_graph"] = (
-            User.objects.annotate(month=ExtractMonth("date_joined"))
-            .values("month")
-            .annotate(c=Count("id"))
-            .order_by()
-        )
-        context["graph"] = (
-            Issue.objects.annotate(month=ExtractMonth("created"))
-            .values("month")
-            .annotate(c=Count("id"))
-            .order_by()
-        )
-        context["pie_chart"] = Issue.objects.values("label").annotate(c=Count("label")).order_by()
+        context["extension_users"] = stats.replace(" users", "") or "0"
+
+        # Prepare stats data for display
+        context["stats"] = [
+            {"label": "Bugs", "count": Issue.objects.all().count()},
+            {"label": "Users", "count": User.objects.all().count()},
+            {"label": "Hunts", "count": Hunt.objects.all().count()},
+            {"label": "Domains", "count": Domain.objects.all().count()},
+            {
+                "label": "Extension Users",
+                "count": int(context["extension_users"].replace(",", "")),
+            },  # Ensure it's an integer
+            {"label": "Subscriptions", "count": Subscription.objects.all().count()},
+            {"label": "Companies", "count": Company.objects.all().count()},
+            {"label": "Hunt Prizes", "count": HuntPrize.objects.all().count()},
+            {"label": "Issue Screenshots", "count": IssueScreenshot.objects.all().count()},
+            {"label": "Winners", "count": Winner.objects.all().count()},
+            {"label": "Points", "count": Points.objects.all().count()},
+            {"label": "Invitations", "count": InviteFriend.objects.all().count()},
+            {"label": "User Profiles", "count": UserProfile.objects.all().count()},
+            {"label": "IPs", "count": IP.objects.all().count()},
+            {"label": "Company Admins", "count": CompanyAdmin.objects.all().count()},
+            {"label": "Transactions", "count": Transaction.objects.all().count()},
+            {"label": "Payments", "count": Payment.objects.all().count()},
+            {"label": "Contributor Stats", "count": ContributorStats.objects.all().count()},
+            {"label": "Monitors", "count": Monitor.objects.all().count()},
+            {"label": "Bids", "count": Bid.objects.all().count()},
+            {"label": "Chatbot Logs", "count": ChatBotLog.objects.all().count()},
+            {"label": "Suggestions", "count": Suggestion.objects.all().count()},
+            {"label": "Suggestion Votes", "count": SuggestionVotes.objects.all().count()},
+            {"label": "Contributors", "count": Contributor.objects.all().count()},
+            {"label": "Projects", "count": Project.objects.all().count()},
+            {"label": "Contributions", "count": Contribution.objects.all().count()},
+            {"label": "Bacon Tokens", "count": BaconToken.objects.all().count()},
+        ]
+
+        # Sort the stats by count in descending order
+        context["stats"] = sorted(context["stats"], key=lambda x: int(x["count"]), reverse=True)
+
+        # Prepare sparklines data
+        context["sparklines_data"] = [
+            list(
+                Issue.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                User.objects.annotate(month=ExtractMonth("date_joined")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                Hunt.objects.annotate(month=ExtractMonth("created")).values_list("month", flat=True)
+            ),
+            list(
+                Domain.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(range(12)),  # Dummy data for extension users, replace as needed
+            list(
+                Subscription.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                Company.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                HuntPrize.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                IssueScreenshot.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                Winner.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                Points.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                InviteFriend.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                UserProfile.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                IP.objects.annotate(month=ExtractMonth("created")).values_list("month", flat=True)
+            ),
+            list(
+                CompanyAdmin.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                Transaction.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                Payment.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                ContributorStats.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                Monitor.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                Bid.objects.annotate(month=ExtractMonth("created")).values_list("month", flat=True)
+            ),
+            list(
+                ChatBotLog.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                Suggestion.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                SuggestionVotes.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                Contributor.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                Project.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                Contribution.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+            list(
+                BaconToken.objects.annotate(month=ExtractMonth("created")).values_list(
+                    "month", flat=True
+                )
+            ),
+        ]
+
         return context
 
 

@@ -96,7 +96,7 @@ class BidAdmin(admin.ModelAdmin):
 
 
 class WalletAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "current_balance", "created_at")
+    list_display = ("id", "user", "current_balance", "created")
 
 
 class PaymentAdmin(admin.ModelAdmin):
@@ -293,7 +293,7 @@ class MonitorAdmin(admin.ModelAdmin):
 
 
 class ChatBotLogAdmin(admin.ModelAdmin):
-    list_display = ("id", "question", "answer", "timestamp")
+    list_display = ("id", "question", "answer", "created")
 
 
 class SuggestionAdmin(admin.ModelAdmin):

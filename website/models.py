@@ -41,6 +41,7 @@ class Subscription(models.Model):
     hunt_per_domain = models.IntegerField(null=False, blank=True)
     number_of_domains = models.IntegerField(null=False, blank=True)
     feature = models.BooleanField(default=True)
+    created = models.DateTimeField(auto_now_add=True)
 
 
 class Company(models.Model):
@@ -222,6 +223,7 @@ class HuntPrize(models.Model):
     )  # all valid submissions are winners in this prize
     prize_in_crypto = models.BooleanField(default=False)
     description = models.TextField(null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
         return self.hunt.name + self.name
@@ -376,6 +378,7 @@ else:
 class IssueScreenshot(models.Model):
     image = models.ImageField(upload_to="screenshots", validators=[validate_image])
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
+    created = models.DateTimeField(auto_now_add=True)
 
 
 if "storages.backends.gcloud.GoogleCloudStorage" in settings.DEFAULT_FILE_STORAGE:
@@ -443,6 +446,7 @@ class Winner(models.Model):
     prize_distributed = models.BooleanField(default=False)
     prize = models.ForeignKey(HuntPrize, null=True, blank=True, on_delete=models.CASCADE)
     prize_amount = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    created = models.DateTimeField(auto_now_add=True)
 
 
 class Points(models.Model):
@@ -459,6 +463,7 @@ class InviteFriend(models.Model):
     recipients = models.ManyToManyField(User, related_name="received_invites", blank=True)
     referral_code = models.CharField(max_length=100, default=uuid.uuid4, editable=False)
     point_by_referral = models.IntegerField(default=0)
+    created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Invite from {self.sender}"
@@ -496,6 +501,7 @@ class UserProfile(models.Model):
     btc_address = models.CharField(max_length=100, blank=True, null=True)
     bch_address = models.CharField(max_length=100, blank=True, null=True)
     eth_address = models.CharField(max_length=100, blank=True, null=True)
+    created = models.DateTimeField(auto_now_add=True)
 
     def avatar(self, size=36):
         if self.user_avatar:
@@ -525,6 +531,7 @@ class IP(models.Model):
     address = models.CharField(max_length=25, null=True, blank=True)
     user = models.CharField(max_length=25, null=True, blank=True)
     issuenumber = models.IntegerField(null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
 
     def ipaddress(self):
         return self.ipaddress
@@ -546,13 +553,14 @@ class CompanyAdmin(models.Model):
     company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
+    created = models.DateTimeField(auto_now_add=True)
 
 
 class Wallet(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     account_id = models.TextField(null=True, blank=True)
     current_balance = models.DecimalField(max_digits=6, decimal_places=2, default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(auto_now_add=True)
 
     def deposit(self, value):
         self.transaction_set.create(
@@ -580,13 +588,14 @@ class Transaction(models.Model):
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
     value = models.DecimalField(max_digits=6, decimal_places=2)
     running_balance = models.DecimalField(max_digits=6, decimal_places=2)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(auto_now_add=True)
 
 
 class Payment(models.Model):
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
     value = models.DecimalField(max_digits=6, decimal_places=2)
     active = models.BooleanField(default=True)
+    created = models.DateTimeField(auto_now_add=True)
 
 
 class ContributorStats(models.Model):
@@ -598,6 +607,7 @@ class ContributorStats(models.Model):
     comments = models.IntegerField(default=0)
     assigned_issues = models.IntegerField(default=0)
     last_updated = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.username
@@ -655,10 +665,10 @@ class Bid(models.Model):
 class ChatBotLog(models.Model):
     question = models.TextField()
     answer = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Q: {self.question} | A: {self.answer} at {self.timestamp}"
+        return f"Q: {self.question} | A: {self.answer} at {self.created}"
 
 
 class Suggestion(models.Model):
@@ -668,6 +678,7 @@ class Suggestion(models.Model):
     up_votes = models.IntegerField(null=True, blank=True, default=0)
     down_votes = models.IntegerField(null=True, blank=True, default=0)
     suggestion_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.title} by {self.user}"
@@ -678,6 +689,7 @@ class SuggestionVotes(models.Model):
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     up_vote = models.BooleanField(default=False)
     down_vote = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Suggestion {self.user}"
@@ -690,6 +702,7 @@ class Contributor(models.Model):
     avatar_url = models.URLField()
     contributor_type = models.CharField(max_length=255)  # type = User, Bot ,... etc
     contributions = models.PositiveIntegerField()
+    created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
@@ -745,7 +758,7 @@ class Contribution(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     description = models.TextField()
-    date_created = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=50, choices=[("open", "Open"), ("closed", "Closed")])
     txid = models.CharField(
         max_length=64, blank=True, null=True
@@ -758,7 +771,7 @@ class Contribution(models.Model):
 class BaconToken(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    date_awarded = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(auto_now_add=True)
     contribution = models.OneToOneField(Contribution, on_delete=models.CASCADE)
     token_id = models.CharField(
         max_length=64, blank=True, null=True
