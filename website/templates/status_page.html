@@ -35,7 +35,7 @@
     <div class="status-container">
         <div class="status-item">
             <div class="status-dot {% if status.bitcoin %}green{% else %}red{% endif %}"></div>
-            <span>Bitcoin Node</span>
+            <span>Bitcoin Node ({{ status.bitcoin }})</span>
             {% if status.bitcoin %}
                 <span class="block-info">Block: {{ status.bitcoin_block }}</span>
                 <a class="explorer-link"
@@ -45,11 +45,11 @@
         </div>
         <div class="status-item">
             <div class="status-dot {% if status.sendgrid %}green{% else %}red{% endif %}"></div>
-            <span>SendGrid API</span>
+            <span>SendGrid API ({{ status.sendgrid }})</span>
         </div>
         <div class="status-item">
             <div class="status-dot {% if status.github %}green{% else %}red{% endif %}"></div>
-            <span>GitHub API</span>
+            <span>GitHub API ({{ status.github }})</span>
         </div>
     </div>
 {% endblock content %}

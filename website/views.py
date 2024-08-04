@@ -188,7 +188,8 @@ def check_status(request):
             headers = {"Authorization": f"token {github_token}"}
             response = requests.get("https://api.github.com/user", headers=headers)
             if response.status_code == 200:
-                status["github"] = True
+                if not response.json().get("error"):
+                    status["github"] = True
         except Exception as e:
             print(f"GitHub API Error: {e}")
 
