@@ -182,16 +182,34 @@ def check_status(request):
         except Exception as e:
             print(f"SendGrid Error: {e}")
 
-        # Check GitHub API Status
+        # Check GitHub Repo Access
         github_token = os.getenv("GITHUB_ACCESS_TOKEN")
-        try:
-            headers = {"Authorization": f"token {github_token}"}
-            response = requests.get("https://api.github.com/user", headers=headers)
-            if response.status_code == 200:
-                if not response.json().get("errors"):
-                    status["github"] = True
-        except Exception as e:
-            print(f"GitHub API Error: {e}")
+
+        if not github_token:
+            print(
+                "GitHub Access Token not found. Please set the GITHUB_ACCESS_TOKEN environment variable."
+            )
+            status["github_repo_access"] = False
+        else:
+            try:
+                headers = {"Authorization": f"token {github_token}"}
+                response = requests.get("https://api.github.com/user/repos", headers=headers)
+
+                print(f"Response Status Code: {response.status_code}")
+                print(f"Response Content: {response.json()}")
+
+                if response.status_code == 200:
+                    status["github_repo_access"] = True
+                    print("GitHub API token has repository access.")
+                else:
+                    status["github_repo_access"] = False
+                    print(
+                        f"GitHub API token check failed with status code {response.status_code}: {response.json().get('message', 'No message provided')}"
+                    )
+
+            except requests.exceptions.RequestException as e:
+                status["github_repo_access"] = False
+                print(f"GitHub API Error: {e}")
 
         # Cache the status for 1 minute (60 seconds)
         cache.set("service_status", status, timeout=60)
