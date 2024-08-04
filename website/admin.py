@@ -23,6 +23,8 @@ from website.models import (
     Points,
     Project,
     Subscription,
+    Suggestion,
+    SuggestionVotes,
     Transaction,
     UserProfile,
     Wallet,
@@ -86,7 +88,7 @@ class BidAdmin(admin.ModelAdmin):
         "user",
         "issue_url",
         "pr_link",
-        "amount",
+        "amount_bch",
         "bch_address",
         "status",
         "created",
@@ -95,7 +97,7 @@ class BidAdmin(admin.ModelAdmin):
 
 
 class WalletAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "current_balance", "created_at")
+    list_display = ("id", "user", "current_balance", "created")
 
 
 class PaymentAdmin(admin.ModelAdmin):
@@ -321,7 +323,15 @@ class MonitorAdmin(admin.ModelAdmin):
 
 
 class ChatBotLogAdmin(admin.ModelAdmin):
-    list_display = ("id", "question", "answer", "timestamp")
+    list_display = ("id", "question", "answer", "created")
+
+
+class SuggestionAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "title", "description", "up_votes", "down_votes")
+
+
+class SuggestionVotesAdmin(admin.ModelAdmin):
+    list_display = ("user", "suggestion", "up_vote", "down_vote")
 
 
 class BlockedIPAdmin(admin.ModelAdmin):
@@ -362,6 +372,8 @@ admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
 admin.site.register(HuntPrize)
 admin.site.register(ChatBotLog, ChatBotLogAdmin)
 admin.site.register(BlockedIP, BlockedIPAdmin)
+admin.site.register(Suggestion, SuggestionAdmin)
+admin.site.register(SuggestionVotes, SuggestionVotesAdmin)
 
 # Register missing models
 admin.site.register(InviteFriend)

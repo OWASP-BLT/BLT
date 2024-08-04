@@ -22,10 +22,10 @@
             {% for project in projects %}
                 <a href="{% url 'project_view' project.slug %}" class="project-link">
                     <li class="project-item">
-                        {% if project.logo %}
-                            <img src="{{ project.logo }}"
+                        {% if project.logo_url %}
+                            <img src="{{ project.logo_url }}"
                                  alt="{{ project.name }} logo"
-                                 class="project-logo"
+                                 class="project logo"
                                  height="100"
                                  width="100">
                         {% endif %}

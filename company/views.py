@@ -12,12 +12,13 @@ from django.core.validators import URLValidator
 from django.db import transaction
 from django.db.models import Count, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractMonth
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 
-from website.models import Company, Domain, Hunt, HuntPrize, Issue, IssueScreenshot
+from website.models import Company, Domain, Hunt, HuntPrize, Issue, IssueScreenshot, Winner
 
 restricted_domain = ["gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "proton.com"]
 
@@ -44,16 +45,44 @@ def get_email_domain(email):
 
 def validate_company_user(func):
     def wrapper(self, request, id, *args, **kwargs):
-        company = (
-            Company.objects.filter(Q(admin=request.user) | Q(managers__in=[request.user]))
-            .filter(id=id)
-            .first()
-        )
+        company = Company.objects.filter(id=id).first()
 
-        if company is None:
+        if not company:
             return redirect("company_view")
 
-        return func(self, request, company.id, *args, **kwargs)
+        # Check if the user is the admin of the company
+        if company.admin == request.user:
+            return func(self, request, company.id, *args, **kwargs)
+
+        # Check if the user is a manager of the company
+        if company.managers.filter(id=request.user.id).exists():
+            return func(self, request, company.id, *args, **kwargs)
+
+        # Get all domains where the user is a manager
+        user_domains = Domain.objects.filter(managers=request.user)
+
+        # Check if any of these domains belong to the company
+        if user_domains.filter(company=company).exists():
+            return func(self, request, company.id, *args, **kwargs)
+
+        return redirect("company_view")
+
+    return wrapper
+
+
+def check_company_or_manager(func):
+    def wrapper(self, request, *args, **kwargs):
+        user = request.user
+
+        if not user.is_authenticated:
+            return redirect("/accounts/login/")
+
+        # Check if the user is an admin or manager of any company
+        if not Company.objects.filter(Q(admin=user) | Q(managers=user)).exists():
+            messages.error(request, "You are not authorized to access this resource.")
+            return redirect("company_view")
+
+        return func(self, request, *args, **kwargs)
 
     return wrapper
 
@@ -65,8 +94,8 @@ def company_view(request, *args, **kwargs):
         messages.info(request, "Email not verified.")
         return redirect("/")
 
-    if user is None or isinstance(user, AnonymousUser):
-        messages.error(request, "Login with company or domain provided email.")
+    if isinstance(user, AnonymousUser):
+        messages.error(request, "Login with company or domain-provided email.")
         return redirect("/accounts/login/")
 
     domain = get_email_domain(user.email)
@@ -75,12 +104,19 @@ def company_view(request, *args, **kwargs):
         messages.error(request, "Login with company or domain provided email.")
         return redirect("/")
 
-    user_companies = Company.objects.filter(Q(admin=user) | Q(managers__in=[user]))
-    if user_companies.first() is None:
-        messages.error(request, "You do not have a company, create one.")
-        return redirect("register_company")
+    user_companies = Company.objects.filter(Q(admin=user) | Q(managers=user))
+    if not user_companies.exists():
+        # Check if the user is a manager of any domain
+        user_domains = Domain.objects.filter(managers=user)
 
-    company = Company.objects.filter(Q(admin=user) | Q(managers__in=[user])).first()
+        # Check if any of these domains belong to a company
+        companies_with_user_domains = Company.objects.filter(domain__in=user_domains)
+        if not companies_with_user_domains.exists():
+            messages.error(request, "You do not have a company, create one.")
+            return redirect("register_company")
+
+    # Get the company to redirect to
+    company = user_companies.first() or companies_with_user_domains.first()
 
     return redirect("company_analytics", id=company.id)
 
@@ -170,7 +206,11 @@ class CompanyDashboardAnalyticsView(View):
         total_company_bugs = Issue.objects.filter(domain__company__id=company).count()
         total_bug_hunts = Hunt.objects.filter(domain__company__id=company).count()
         total_domains = Domain.objects.filter(company__id=company).count()
-        total_money_distributed = Issue.objects.filter(domain__company__id=company).aggregate(
+        # Step 1: Retrieve all hunt IDs associated with the specified company
+        hunt_ids = Hunt.objects.filter(domain__company__id=company).values_list("id", flat=True)
+
+        # Step 2: Sum the rewarded values from issues that have a hunt_id in the hunt_ids list
+        total_money_distributed = Issue.objects.filter(hunt_id__in=hunt_ids).aggregate(
             total_money=Sum("rewarded")
         )["total_money"]
         total_money_distributed = 0 if total_money_distributed is None else total_money_distributed
@@ -443,6 +483,7 @@ class AddDomainView(View):
             return render(request, "company/add_domain.html", context=context)
 
     @validate_company_user
+    @check_company_or_manager
     def post(self, request, id, *args, **kwargs):
         domain_data = {
             "name": request.POST.get("domain_name", None),
@@ -452,17 +493,19 @@ class AddDomainView(View):
             "facebook": request.POST.get("facebook_url", None),
         }
 
+        if domain_data["url"]:
+            parsed_url = urlparse(domain_data["url"])
+            if parsed_url.hostname is None:
+                messages.error(request, "Invalid domain url")
+                return redirect("add_domain", id=id)
+            domain_data["url"] = parsed_url.netloc
+
         if domain_data["name"] is None:
             messages.error(request, "Enter domain name")
             return redirect("add_domain", id=id)
 
         if domain_data["url"] is None:
             messages.error(request, "Enter domain url")
-            return redirect("add_domain", id=id)
-
-        parsed_url = urlparse(domain_data["url"])
-        if parsed_url.hostname is None:
-            messages.error(request, "Invalid domain url")
             return redirect("add_domain", id=id)
 
         domain = (parsed_url.hostname).replace("www.", "")
@@ -559,6 +602,7 @@ class AddDomainView(View):
         return redirect("company_manage_domains", id=id)
 
     @validate_company_user
+    @check_company_or_manager
     def put(self, request, id, *args, **kwargs):
         domain_id = kwargs.get("domain_id")
         domain = get_object_or_404(Domain, id=domain_id)
@@ -673,6 +717,7 @@ class AddDomainView(View):
         return redirect("company_manage_domains", id=id)
 
     @validate_company_user
+    @check_company_or_manager
     def delete(self, request, id, *args, **kwargs):
         domain_id = request.POST.get("domain_id", None)
         domain = get_object_or_404(Domain, id=domain_id)
@@ -718,7 +763,6 @@ class DomainView(View):
                 "github",
                 "logo",
                 "webshot",
-                "company__id",
             )
             .filter(id=pk)
             .first()
@@ -834,22 +878,39 @@ class CompanyDashboardManageRolesView(View):
             .distinct()
         )
 
+        company_url = Company.objects.filter(id=id).first().url
+        parsed_url = urlparse(company_url).netloc
+        company_domain = parsed_url.replace("www.", "")
+        company_users = User.objects.filter(email__endswith=f"@{company_domain}").values(
+            "id", "username", "email"
+        )
+
+        # Convert company_users QuerySet to list of dicts
+        company_users_list = list(company_users)
+
         domains = Domain.objects.filter(
             Q(company__id=id)
             & (Q(company__managers__in=[request.user]) | Q(company__admin=request.user))
-        )
+            | Q(managers=request.user)
+        ).distinct()
+
         domains_data = []
         for domain in domains:
             _id = domain.id
             name = domain.name
-            managers = domain.managers.values("username", "userprofile__user_avatar").all()
-            domains_data.append({"id": _id, "name": name, "managers": managers})
+            company_admin = domain.company.admin
+            # Convert managers QuerySet to list of dicts
+            managers = list(domain.managers.values("id", "username", "userprofile__user_avatar"))
+            domains_data.append(
+                {"id": _id, "name": name, "managers": managers, "company_admin": company_admin}
+            )
 
         context = {
             "company": id,
             "company_obj": Company.objects.filter(id=id).first(),
-            "companies": companies,
+            "companies": list(companies),  # Convert companies QuerySet to list of dicts
             "domains": domains_data,
+            "company_users": company_users_list,  # Use the converted list
         }
 
         return render(request, "company/company_manage_roles.html", context)
@@ -857,7 +918,7 @@ class CompanyDashboardManageRolesView(View):
     def post(self, request, id, *args, **kwargs):
         domain = Domain.objects.filter(
             Q(company__id=id)
-            & Q(id=request.POST.get("domain", None))
+            & Q(id=request.POST.get("domain_id"))
             & (Q(company__admin=request.user) | Q(managers__in=[request.user]))
         ).first()
 
@@ -865,24 +926,23 @@ class CompanyDashboardManageRolesView(View):
             messages.error("you are not manager of this domain.")
             return redirect("company_manage_roles", id)
 
-        domain_name = domain.name
-        managers_list = request.POST.getlist("email", [])
+        if not request.POST.getlist("user[]"):
+            messages.error(request, "No user selected.")
+            return redirect("company_manage_roles", id)
 
-        # validate emails for domain
-        for domain_manager_email in managers_list:
-            user_email_domain = domain_manager_email.split("@")[-1]
-            if domain_name != user_email_domain:
-                messages.error(
-                    request, f"Manager: {domain_manager_email} does not match domain email."
-                )
-                return redirect("company_manage_roles", id)
-
-        domain_managers = User.objects.filter(email__in=managers_list, is_active=True)
+        managers_list = request.POST.getlist("user[]")
+        domain_managers = User.objects.filter(username__in=managers_list, is_active=True)
 
         for manager in domain_managers:
-            domain.managers.add(manager.id)
-
-        domain.save()
+            user_email_domain = manager.email.split("@")[-1]
+            company_url = domain.company.url
+            parsed_url = urlparse(company_url).netloc
+            company_domain = parsed_url.replace("www.", "")
+            if user_email_domain == company_domain:
+                domain.managers.add(manager.id)
+            else:
+                messages.error(request, f"Manager: {manager.email} does not match domain email.")
+                return redirect("company_manage_roles", id)
 
         messages.success(request, "successfully added the managers")
         return redirect("company_manage_roles", id)
@@ -893,10 +953,7 @@ class ShowBughuntView(View):
         hunt_obj = get_object_or_404(Hunt, pk=pk)
 
         # get issues/reports that are done between hunt.start_date and hunt.end_date
-        hunt_issues = Issue.objects.filter(
-            Q(created__range=[hunt_obj.starts_on, hunt_obj.end_on])
-            & Q(domain__url=hunt_obj.domain.url)
-        )
+        hunt_issues = Issue.objects.filter(hunt__id=hunt_obj.id)
 
         # total bugs reported in this bughunt
         total_bugs = hunt_issues.count()
@@ -912,50 +969,89 @@ class ShowBughuntView(View):
             .order_by("-count")[:16]
         )
 
-        is_hunt_manager = hunt_obj.domain.managers.filter(id=request.user.id).exists()
+        # Get the company associated with the domain of the hunt
+        company = hunt_obj.domain.company
 
-        # get latest reported public issues
-        latest_issues = (
-            Issue.objects.values(
-                "id",
-                "domain__name",
-                "url",
-                "description",
-                "user__id",
-                "user__username",
-                "user__userprofile__user_avatar",
-                "label",
-                "status",
-                "verified",
-                "rewarded",
-                "created__day",
-                "created__month",
-                "created__year",
-            )
-            .filter(domain__id=hunt_obj.domain.pk, hunt__id=hunt_obj.id)
-            .order_by("-created")
+        # Check if the user is either a manager of the domain or the admin of the company
+        is_hunt_manager = hunt_obj.domain.managers.filter(id=request.user.id).exists() or (
+            company and company.admin == request.user
         )
 
+        # get latest reported public issues
         if is_hunt_manager:
-            latest_issues = latest_issues.filter(is_hidden=True)
+            latest_issues = (
+                Issue.objects.values(
+                    "id",
+                    "domain__name",
+                    "url",
+                    "description",
+                    "user__id",
+                    "user__username",
+                    "user__userprofile__user_avatar",
+                    "label",
+                    "status",
+                    "verified",
+                    "rewarded",
+                    "created",
+                )
+                .filter(hunt__id=hunt_obj.id)
+                .annotate(
+                    first_screenshot=Subquery(
+                        IssueScreenshot.objects.filter(issue_id=OuterRef("pk")).values("image")[:1]
+                    )
+                )
+                .order_by("-created")
+            )
         else:
-            latest_issues = latest_issues.filter(is_hidden=False)
+            latest_issues = (
+                Issue.objects.values(
+                    "id",
+                    "domain__name",
+                    "url",
+                    "description",
+                    "user__id",
+                    "user__username",
+                    "user__userprofile__user_avatar",
+                    "label",
+                    "status",
+                    "verified",
+                    "rewarded",
+                    "created",
+                )
+                .filter(hunt__id=hunt_obj.id, is_hidden=False)
+                .annotate(
+                    first_screenshot=Subquery(
+                        IssueScreenshot.objects.filter(issue_id=OuterRef("pk")).values("image")[:1]
+                    )
+                )
+                .order_by("-created")
+            )
 
         issue_labels = [label[-1] for label in Issue.labels]
         cleaned_issues = []
         for issue in latest_issues:
             cleaned_issues.append({**issue, "label": issue_labels[issue["label"]]})
 
+        # Get first and last bugs
+        first_bug = Issue.objects.filter(hunt__id=hunt_obj.id).order_by("created").first()
+        last_bug = Issue.objects.filter(hunt__id=hunt_obj.id).order_by("-created").first()
+
         # get top testers
         top_testers = (
             Issue.objects.values("user__id", "user__username", "user__userprofile__user_avatar")
             .filter(user__isnull=False)
             .annotate(count=Count("user__username"))
-            .order_by("-count")[:16]
+            .order_by("-count")[:5]
         )
 
         # bughunt prizes
-        rewards = HuntPrize.objects.values().filter(hunt__id=hunt_obj.id)
+        rewards = HuntPrize.objects.filter(hunt_id=hunt_obj.id)
+        winners_count = {
+            reward.id: Winner.objects.filter(prize_id=reward.id).count() for reward in rewards
+        }
+
+        # check winner have for this bughunt
+        winners = Winner.objects.filter(hunt_id=hunt_obj.id).select_related("prize")
 
         context = {
             "hunt_obj": hunt_obj,
@@ -968,6 +1064,10 @@ class ShowBughuntView(View):
             "top_testers": top_testers,
             "latest_issues": cleaned_issues,
             "rewards": rewards,
+            "winners_count": winners_count,
+            "first_bug": first_bug,
+            "last_bug": last_bug,
+            "winners": winners,
             "is_hunt_manager": is_hunt_manager,
         }
 
@@ -978,7 +1078,13 @@ class EndBughuntView(View):
     def get(self, request, pk, *args, **kwargs):
         hunt = get_object_or_404(Hunt, pk=pk)
 
-        is_hunt_manager = hunt.domain.managers.filter(id=request.user.id).exists()
+        # Get the company associated with the domain of the hunt
+        company = hunt.domain.company
+
+        # Check if the user is either a manager of the domain or the admin of the company
+        is_hunt_manager = hunt.domain.managers.filter(id=request.user.id).exists() or (
+            company and company.admin == request.user
+        )
 
         if not is_hunt_manager:
             return Http404("User not allowed")
@@ -1033,6 +1139,7 @@ class AddHuntView(View):
         return render(request, "company/bughunt/add_bughunt.html", context)
 
     @validate_company_user
+    @check_company_or_manager
     def post(self, request, id, *args, **kwargs):
         data = request.POST
 
@@ -1051,8 +1158,17 @@ class AddHuntView(View):
         start_date = data.get("start_date", datetime.now().strftime("%m/%d/%Y"))
         end_date = data.get("end_date", datetime.now().strftime("%m/%d/%Y"))
 
-        start_date = datetime.strptime(start_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
-        end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+        try:
+            start_date = datetime.strptime(start_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+            end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+        except ValueError:
+            messages.error(request, "Invalid Date Format")
+            return redirect("add_bughunt", id)
+
+        # apply validation for date not valid
+        if start_date > end_date:
+            messages.error(request, "Start date should be less than end date")
+            return redirect("add_bughunt", id)
 
         hunt_logo = request.FILES.get("logo", None)
         if hunt_logo is not None:
@@ -1061,12 +1177,12 @@ class AddHuntView(View):
             hunt_logo.name = hunt_logo_file[:99] + str(uuid.uuid4()) + "." + extension
             default_storage.save(f"logos/{hunt_logo.name}", hunt_logo)
 
-        webshot_logo = request.FILES.get("webshot", None)
-        if webshot_logo is not None:
-            webshot_logo_file = webshot_logo.name.split(".")[0]
-            extension = webshot_logo.name.split(".")[-1]
-            webshot_logo.name = webshot_logo_file[:99] + str(uuid.uuid4()) + "." + extension
-            default_storage.save(f"banners/{webshot_logo.name}", webshot_logo)
+        banner_logo = request.FILES.get("banner", None)
+        if banner_logo is not None:
+            banner_logo_file = banner_logo.name.split(".")[0]
+            extension = banner_logo.name.split(".")[-1]
+            banner_logo.name = banner_logo_file[:99] + str(uuid.uuid4()) + "." + extension
+            default_storage.save(f"banners/{banner_logo.name}", banner_logo)
 
         if is_edit:
             hunt.domain = domain
@@ -1082,8 +1198,8 @@ class AddHuntView(View):
 
             if hunt_logo is not None:
                 hunt.logo = f"logos/{hunt_logo.name}"
-            if webshot_logo is not None:
-                hunt.banner = f"banners/{webshot_logo.name}"
+            if banner_logo is not None:
+                hunt.banner = f"banners/{banner_logo.name}"
 
             hunt.save()
 
@@ -1157,3 +1273,92 @@ class CompanyDashboardManageBughuntView(View):
         }
 
         return render(request, "company/bughunt/company_manage_bughunts.html", context)
+
+
+@require_http_methods(["DELETE"])
+def delete_prize(request, prize_id, company_id):
+    if not request.user.company_set.filter(id=company_id).exists():
+        return JsonResponse({"success": False, "error": "User not allowed"})
+    try:
+        prize = HuntPrize.objects.get(id=prize_id)
+        prize.delete()
+        return JsonResponse({"success": True})
+    except HuntPrize.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Prize not found"})
+
+
+@require_http_methods(["PUT"])
+def edit_prize(request, prize_id, company_id):
+    if not request.user.company_set.filter(id=company_id).exists():
+        return JsonResponse({"success": False, "error": "User not allowed"})
+
+    try:
+        prize = HuntPrize.objects.get(id=prize_id)
+    except HuntPrize.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Prize not found"})
+
+    data = json.loads(request.body)
+    prize.name = data.get("prize_name", prize.name)
+    prize.value = data.get("cash_value", prize.value)
+    prize.no_of_eligible_projects = data.get(
+        "number_of_winning_projects", prize.no_of_eligible_projects
+    )
+    prize.valid_submissions_eligible = data.get(
+        "every_valid_submissions", prize.valid_submissions_eligible
+    )
+    prize.description = data.get("prize_description", prize.description)
+    prize.save()
+
+    return JsonResponse({"success": True})
+
+
+def accept_bug(request, issue_id, reward_id=None):
+    with transaction.atomic():
+        issue = get_object_or_404(Issue, id=issue_id)
+
+        if reward_id == "no_reward":
+            issue.verified = True
+            issue.rewarded = 0
+            issue.save()
+            Winner(
+                hunt_id=issue.hunt.id, prize_id=None, winner_id=issue.user.id, prize_amount=0
+            ).save()
+        else:
+            reward = get_object_or_404(HuntPrize, id=reward_id)
+            issue.verified = True
+            issue.rewarded = reward.value
+            issue.save()
+            Winner(
+                hunt_id=issue.hunt.id,
+                prize_id=reward.id,
+                winner_id=issue.user.id,
+                prize_amount=reward.value,
+            ).save()
+
+        return redirect("show_bughunt", pk=issue.hunt.id)
+
+
+@require_http_methods(["DELETE"])
+def delete_manager(request, manager_id, domain_id):
+    try:
+        domain = Domain.objects.get(id=domain_id)
+        manager = User.objects.get(id=manager_id)
+
+        # Ensure the request user is allowed to perform this action
+        if not (request.user == domain.company.admin):
+            # return error with not permission msg
+            return JsonResponse(
+                {"success": False, "message": "You do not have permission to delete this manager."},
+                status=403,
+            )
+
+        if manager in domain.managers.all():
+            domain.managers.remove(manager)
+            return JsonResponse({"success": True})
+
+        return JsonResponse({"success": False, "message": "Manager not found in domain."})
+
+    except Domain.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Domain not found."})
+    except User.DoesNotExist:
+        return JsonResponse({"success": False, "message": "User not found."})

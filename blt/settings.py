@@ -522,3 +522,9 @@ ACCESS_TOKEN_SECRET = os.environ.get("ACCESS_TOKEN_SECRET")
 # USPTO
 
 USPTO_API = os.environ.get("USPTO_API")
+
+
+BITCOIN_RPC_USER = os.environ.get("BITCOIN_RPC_USER", "yourusername")
+BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "yourpassword")
+BITCOIN_RPC_HOST = os.environ.get("BITCOIN_RPC_HOST", "localhost")
+BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")
