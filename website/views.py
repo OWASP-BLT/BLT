@@ -189,7 +189,7 @@ def check_status(request):
             print(
                 "GitHub Access Token not found. Please set the GITHUB_ACCESS_TOKEN environment variable."
             )
-            status["github_repo_access"] = False
+            status["github"] = False
         else:
             try:
                 headers = {"Authorization": f"token {github_token}"}
@@ -199,16 +199,16 @@ def check_status(request):
                 print(f"Response Content: {response.json()}")
 
                 if response.status_code == 200:
-                    status["github_repo_access"] = True
+                    status["github"] = True
                     print("GitHub API token has repository access.")
                 else:
-                    status["github_repo_access"] = False
+                    status["github"] = False
                     print(
                         f"GitHub API token check failed with status code {response.status_code}: {response.json().get('message', 'No message provided')}"
                     )
 
             except requests.exceptions.RequestException as e:
-                status["github_repo_access"] = False
+                status["github"] = False
                 print(f"GitHub API Error: {e}")
 
         # Cache the status for 1 minute (60 seconds)
