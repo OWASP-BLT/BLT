@@ -103,7 +103,8 @@ def load_vector_store():
         or not default_storage.listdir(str(db_folder_path))[1]
     ):
         ChatBotLog.objects.create(
-            question="File was not there", answer=f"Folder Str: {str(db_folder_path)}"
+            question="File was not there for default_storage",
+            answer=f"Folder Str: {str(db_folder_path)}",
         )
         return None
 

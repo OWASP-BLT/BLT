@@ -5018,6 +5018,8 @@ def chatbot_conversation(request):
             )
 
         question = request.data.get("question", "")
+        if not question:
+            return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
         check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
         if not check_api:
             ChatBotLog.objects.create(question=question, answer="Error: Invalid API Key")
