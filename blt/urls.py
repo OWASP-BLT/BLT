@@ -434,6 +434,7 @@ urlpatterns = [
         csrf_exempt(InboundParseWebhookView.as_view()),
         name="inbound_event_webhook_callback",
     ),
+    re_path(r"status/", website.views.check_status, name="check_status"),
     re_path(r"^issue/comment/add/$", comments.views.add_comment, name="add_comment"),
     re_path(r"^issue/comment/delete/$", comments.views.delete_comment, name="delete_comment"),
     re_path(r"^comment/autocomplete/$", comments.views.autocomplete, name="autocomplete"),

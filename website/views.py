@@ -119,12 +119,104 @@ WHITELISTED_IMAGE_TYPES = {
     "png": "image/png",
 }
 
+import os
+
+import requests
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.cache import cache
 from django.shortcuts import redirect, render
+from dotenv import load_dotenv
 from PIL import Image
+from requests.auth import HTTPBasicAuth
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 from .bitcoin_utils import create_bacon_token
 from .models import BaconToken, Contribution
+
+# Load environment variables
+load_dotenv()
+
+import os
+
+import requests
+from django.core.cache import cache
+from django.shortcuts import render
+from dotenv import load_dotenv
+from requests.auth import HTTPBasicAuth
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+
+# Load environment variables
+load_dotenv()
+
+
+def check_status(request):
+    # Check if the status is already cached
+    status = cache.get("service_status")
+
+    if not status:
+        # Initialize the status dictionary
+        status = {
+            "bitcoin": False,
+            "bitcoin_block": None,
+            "sendgrid": False,
+            "github": False,
+        }
+
+        # Check Bitcoin Core Node Status
+        bitcoin_rpc_user = os.getenv("BITCOIN_RPC_USER")
+        bitcoin_rpc_password = os.getenv("BITCOIN_RPC_PASSWORD")
+        bitcoin_rpc_url = os.getenv("BITCOIN_RPC_URL")
+
+        try:
+            response = requests.post(
+                bitcoin_rpc_url,
+                json={
+                    "jsonrpc": "1.0",
+                    "id": "curltest",
+                    "method": "getblockchaininfo",
+                    "params": [],
+                },
+                auth=HTTPBasicAuth(bitcoin_rpc_user, bitcoin_rpc_password),
+            )
+            if response.status_code == 200:
+                data = response.json().get("result", {})
+                status["bitcoin"] = True
+                status["bitcoin_block"] = data.get("blocks", None)
+        except Exception as e:
+            print(f"Bitcoin Core Node Error: {e}")
+
+        # Check SendGrid API Status
+        try:
+            sg = SendGridAPIClient(os.getenv("SENDGRID_PASSWORD"))
+            message = Mail(
+                from_email="test@example.com",
+                to_emails="test@example.com",
+                subject="Status Check",
+                plain_text_content="This is a test email for checking SendGrid API status.",
+            )
+            response = sg.client.mail.send.post(request_body=message.get())
+            if response.status_code == 202:
+                status["sendgrid"] = True
+        except Exception as e:
+            print(f"SendGrid Error: {e}")
+
+        # Check GitHub API Status
+        github_token = os.getenv("GITHUB_ACCESS_TOKEN")
+        try:
+            headers = {"Authorization": f"token {github_token}"}
+            response = requests.get("https://api.github.com/user", headers=headers)
+            if response.status_code == 200:
+                status["github"] = True
+        except Exception as e:
+            print(f"GitHub API Error: {e}")
+
+        # Cache the status for 1 minute (60 seconds)
+        cache.set("service_status", status, timeout=60)
+
+    # Pass the status to the template
+    return render(request, "status_page.html", {"status": status})
 
 
 def admin_required(user):

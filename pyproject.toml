@@ -77,6 +77,7 @@ faiss-cpu = "^1.8.0"
 openai = "^1.37.1"
 psutil = "^5.9.8"
 python-bitcoinrpc = "^1.0"
+sendgrid = "^6.11.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.2.0"
