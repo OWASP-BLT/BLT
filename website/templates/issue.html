@@ -143,12 +143,6 @@
     <div class="row">
         <div class="col-lg-12">
             <h3 class="page-header">
-                <div>
-                    View this issue in:
-                    <a href="{% url 'issue_view' object.id %}">v1</a> |
-                    <a href="{% url 'issue_view2' object.id %}">v2</a> |
-                    <a href="{% url 'issue_view3' object.id %}">v3</a>
-                </div>
                 <span class="editables">
                     <span class="issue-desc">{{ object.description }}</span>
                     <span class="pull-right">

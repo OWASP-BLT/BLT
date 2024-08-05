@@ -56,8 +56,6 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     InboundParseWebhookView,
     InviteCreate,
     IssueCreate,
-    IssueView,
-    IssueView2,
     IssueView3,
     JoinCompany,
     ListHunts,
@@ -339,9 +337,9 @@ urlpatterns = [
     # delete_comment
     path("issue2/comment/delete/", website.views.delete_comment, name="delete_comment"),
     # TODO(b): REMOVE after _3 is ready / and 3/
-    re_path(r"^issue/(?P<slug>\w+)/$", IssueView3.as_view(), name="issue_view3"),
-    re_path(r"^issue2/(?P<slug>\w+)/$", IssueView2.as_view(), name="issue_view2"),
-    re_path(r"^issue3/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
+    re_path(r"^issue/(?P<slug>\w+)/$", IssueView3.as_view(), name="issue_view"),
+    # re_path(r"^issue2/(?P<slug>\w+)/$", IssueView2.as_view(), name="issue_view2"),
+    # re_path(r"^issue3/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
     re_path(r"^follow/(?P<user>[^/]+)/", website.views.follow_user, name="follow_user"),
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
     re_path(r"^label_activity/$", SpecificIssuesView.as_view(), name="all_activitys"),

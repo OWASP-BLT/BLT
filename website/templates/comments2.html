@@ -311,7 +311,7 @@
 
                 $.ajax({
                     type: 'POST',
-                    url: "/issue2/comment/delete/",
+                    url: "/issue/comment/delete/",
                     data: {
                         "comment_pk": clickedElement.attr('data-name'),
                         "issue_pk": '{{ object.pk|safe }}',

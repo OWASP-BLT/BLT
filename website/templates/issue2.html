@@ -107,12 +107,6 @@
             <div class="w-full max-w-full">
                 <div class="w-full flex items-center flex-col">
                     <div class="w-full flex items-center flex-col">
-                        <div>
-                            View this issue in:
-                            <a href="{% url 'issue_view' object.id %}">v1</a> |
-                            <a href="{% url 'issue_view2' object.id %}">v2</a> |
-                            <a href="{% url 'issue_view3' object.id %}">v3</a>
-                        </div>
                         <p class="text-gray-800">
                             <strong>Published on</strong>
                             <span class="font-light text-2xl">{{ object.created }}</span>
