@@ -94,7 +94,12 @@ def embed_documents_and_save(embed_docs):
         print(f"PKL Path: {index_pkl_path}")
 
         # Load the FAISS index from the local temporary directory
-        db = FAISS.load_local(str(index_faiss_path), str(index_pkl_path), embeddings)
+        db = FAISS.load_local(
+            str(index_faiss_path),
+            str(index_pkl_path),
+            embeddings,
+            allow_dangerous_deserialization=True,
+        )
 
         # Add new documents to the index
         db.add_documents(embed_docs)
@@ -134,7 +139,12 @@ def load_vector_store():
         print(f"PKL Path: {index_pkl_path}")
 
         # Load the FAISS index from the local temporary directory
-        db = FAISS.load_local(str(index_faiss_path), str(index_pkl_path), embeddings)
+        db = FAISS.load_local(
+            str(index_faiss_path),
+            str(index_pkl_path),
+            embeddings,
+            allow_dangerous_deserialization=True,
+        )
 
     return db
 
