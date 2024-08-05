@@ -2380,7 +2380,12 @@ class IssueView(DetailView):
         try:
             if self.request.user.is_authenticated:
                 try:
-                    objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
+                    objectget = IP.objects.get(
+                        user=self.request.user,
+                        issuenumber=self.object.id,
+                        path=request.path,
+                        agent=request.META["HTTP_USER_AGENT"],
+                    )
                     self.object.save()
                 except:
                     ipdetails.save()
@@ -2389,7 +2394,10 @@ class IssueView(DetailView):
             else:
                 try:
                     objectget = IP.objects.get(
-                        address=get_client_ip(request), issuenumber=self.object.id
+                        address=get_client_ip(request),
+                        issuenumber=self.object.id,
+                        path=request.path,
+                        agent=request.META["HTTP_USER_AGENT"],
                     )
                     self.object.save()
                 except Exception as e:

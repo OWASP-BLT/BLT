@@ -276,7 +276,7 @@ class IssueScreenshotAdmin(admin.ModelAdmin):
 
 
 class IPAdmin(admin.ModelAdmin):
-    list_display = ("id", "address", "user", "issuenumber")
+    list_display = ("id", "address", "user", "issuenumber", "created", "agent", "path")
 
 
 class MonitorAdmin(admin.ModelAdmin):
