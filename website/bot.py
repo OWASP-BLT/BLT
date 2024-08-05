@@ -1,3 +1,4 @@
+import tempfile
 from pathlib import Path
 
 import openai
@@ -75,22 +76,41 @@ def embed_documents_and_save(embed_docs):
 
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
-    # Check if the folder exists in the storage system
-    if default_storage.exists(db_folder_path) and default_storage.listdir(db_folder_path):
-        # Load the FAISS index directly from the storage
-        index_faiss = default_storage.open(f"{db_folder_path}/index.faiss")
-        index_pkl = default_storage.open(f"{db_folder_path}/index.pkl")
-        db = FAISS.load_local(
-            index_faiss, index_pkl, embeddings, allow_dangerous_deserialization=True
-        )
-        # Add new documents to the index
-        db.add_documents(embed_docs)
-    else:
-        # Create a new FAISS index if it doesn't exist
-        db = FAISS.from_documents(embed_docs, embeddings)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        index_faiss_path = Path(tmpdir) / "index.faiss"
+        index_pkl_path = Path(tmpdir) / "index.pkl"
 
-    # Save the updated FAISS index directly to Django's storage
-    db.save_local(db_folder_path)
+        # Download index.faiss and index.pkl to local temporary directory
+        with default_storage.open(f"{db_folder_path}/index.faiss", "rb") as fsrc, open(
+            index_faiss_path, "wb"
+        ) as fdst:
+            fdst.write(fsrc.read())
+
+        with default_storage.open(f"{db_folder_path}/index.pkl", "rb") as fsrc, open(
+            index_pkl_path, "wb"
+        ) as fdst:
+            fdst.write(fsrc.read())
+
+        # Load the FAISS index from the local temporary directory
+        if index_faiss_path.exists() and index_pkl_path.exists():
+            db = FAISS.load_local(
+                index_faiss_path, index_pkl_path, embeddings, allow_dangerous_deserialization=True
+            )
+            # Add new documents to the index
+            db.add_documents(embed_docs)
+        else:
+            # Create a new FAISS index if it doesn't exist
+            db = FAISS.from_documents(embed_docs, embeddings)
+
+        # Save the updated FAISS index back to the cloud storage
+        db.save_local(str(index_faiss_path.parent))
+
+        # Upload the updated files back to Google Cloud Storage
+        with open(index_faiss_path, "rb") as fsrc:
+            default_storage.save(f"{db_folder_path}/index.faiss", fsrc)
+
+        with open(index_pkl_path, "rb") as fsrc:
+            default_storage.save(f"{db_folder_path}/index.pkl", fsrc)
 
     return db
 
@@ -99,10 +119,25 @@ def load_vector_store():
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
     db_folder_path = "faiss_index"
 
-    # Load the FAISS index directly from the storage
-    index_faiss = default_storage.open(f"{db_folder_path}/index.faiss")
-    index_pkl = default_storage.open(f"{db_folder_path}/index.pkl")
-    db = FAISS.load_local(index_faiss, index_pkl, embeddings, allow_dangerous_deserialization=True)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        index_faiss_path = Path(tmpdir) / "index.faiss"
+        index_pkl_path = Path(tmpdir) / "index.pkl"
+
+        # Download index.faiss and index.pkl to local temporary directory
+        with default_storage.open(f"{db_folder_path}/index.faiss", "rb") as fsrc, open(
+            index_faiss_path, "wb"
+        ) as fdst:
+            fdst.write(fsrc.read())
+
+        with default_storage.open(f"{db_folder_path}/index.pkl", "rb") as fsrc, open(
+            index_pkl_path, "wb"
+        ) as fdst:
+            fdst.write(fsrc.read())
+
+        # Load the FAISS index from the local temporary directory
+        db = FAISS.load_local(
+            index_faiss_path, index_pkl_path, embeddings, allow_dangerous_deserialization=True
+        )
 
     return db
 
