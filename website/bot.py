@@ -153,6 +153,12 @@ def load_vector_store():
     temp_dir, db_folder_str, temp_db_path = get_temp_db_path(db_folder_path)
 
     try:
+        # Log the directory listing
+        if default_storage.exists(db_folder_str):
+            log_chat(
+                f"Directory listing for {db_folder_str}: {default_storage.listdir(db_folder_str)}"
+            )
+
         # Check if the file exists in the storage system and download files, if not exist return None
         if (
             not default_storage.exists(db_folder_str)
