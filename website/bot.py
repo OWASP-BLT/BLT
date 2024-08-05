@@ -91,22 +91,23 @@ def embed_documents_and_save(embed_docs):
         ) as fdst:
             fdst.write(fsrc.read())
 
+        # Ensure that the paths exist and are files
+        assert index_faiss_path.is_file(), f"{index_faiss_path} is not a valid file."
+        assert index_pkl_path.is_file(), f"{index_pkl_path} is not a valid file."
+
         # Load the FAISS index from the local temporary directory
-        if index_faiss_path.exists() and index_pkl_path.exists():
-            db = FAISS.load_local(
-                str(index_faiss_path),
-                str(index_pkl_path),
-                embeddings,
-                allow_dangerous_deserialization=True,
-            )
-            # Add new documents to the index
-            db.add_documents(embed_docs)
-        else:
-            # Create a new FAISS index if it doesn't exist
-            db = FAISS.from_documents(embed_docs, embeddings)
+        db = FAISS.load_local(
+            str(index_faiss_path),
+            str(index_pkl_path),
+            embeddings,
+            allow_dangerous_deserialization=True,
+        )
+
+        # Add new documents to the index
+        db.add_documents(embed_docs)
 
         # Save the updated FAISS index back to the cloud storage
-        db.save_local(tmpdir)
+        db.save_local(str(tmpdir))
 
         # Upload the updated files back to Google Cloud Storage
         with open(index_faiss_path, "rb") as fsrc:
@@ -136,6 +137,10 @@ def load_vector_store():
             index_pkl_path, "wb"
         ) as fdst:
             fdst.write(fsrc.read())
+
+        # Ensure that the paths exist and are files
+        assert index_faiss_path.is_file(), f"{index_faiss_path} is not a valid file."
+        assert index_pkl_path.is_file(), f"{index_pkl_path} is not a valid file."
 
         # Load the FAISS index from the local temporary directory
         db = FAISS.load_local(
