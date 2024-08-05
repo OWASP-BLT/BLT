@@ -4496,6 +4496,11 @@ class IssueView3(DetailView):
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["status"] = Issue.objects.filter(id=self.object.id).get().status
+        context["github_issues_url"] = (
+            str(Issue.objects.filter(id=self.object.id).get().domain.github) + "/issues"
+        )
+        context["email_clicks"] = Issue.objects.filter(id=self.object.id).get().domain.clicks
+        context["email_events"] = Issue.objects.filter(id=self.object.id).get().domain.email_event
         if not self.object.github_url:
             context["github_link"] = "empty"
         else:
