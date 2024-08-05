@@ -2,12 +2,14 @@ import tempfile
 from pathlib import Path
 
 import openai
+from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from dotenv import find_dotenv, load_dotenv
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationSummaryMemory
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
+    DirectoryLoader,
     Docx2txtLoader,
     PyPDFLoader,
     TextLoader,
@@ -43,23 +45,18 @@ def load_document(file_path):
         ".md": UnstructuredMarkdownLoader,
     }
 
-    extension = Path(file_path).suffix
+    file_path = Path(file_path)
+    extension = file_path.suffix
     Loader = loaders.get(extension)
 
     if Loader is None:
         raise ValueError(f"Unsupported file format: {extension}")
 
-    with default_storage.open(file_path) as f:
-        return Loader(f).load()
+    return Loader(file_path).load()
 
 
 def load_directory(dir_path):
-    files = default_storage.listdir(dir_path)[1]
-    documents = []
-    for file_name in files:
-        file_path = Path(dir_path) / file_name
-        documents.extend(load_document(file_path))
-    return documents
+    return DirectoryLoader(dir_path).load()
 
 
 def split_document(chunk_size, chunk_overlap, document):
@@ -71,80 +68,81 @@ def split_document(chunk_size, chunk_overlap, document):
     return text_splitter.split_documents(document)
 
 
+def get_temp_db_path(db_folder_path):
+    temp_dir = tempfile.TemporaryDirectory()
+    db_folder_str = str(db_folder_path)
+    temp_db_path = Path(temp_dir.name) / db_folder_path
+    temp_db_path.mkdir(parents=True, exist_ok=True)
+    return temp_dir, db_folder_str, temp_db_path
+
+
 def embed_documents_and_save(embed_docs):
-    db_folder_path = "faiss_index"
+    db_folder_path = Path("faiss_index")
 
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        index_faiss_path = Path(tmpdir) / "index.faiss"
-        index_pkl_path = Path(tmpdir) / "index.pkl"
+    # Temporary directory for local operations
+    temp_dir, db_folder_str, temp_db_path = get_temp_db_path(db_folder_path)
 
-        # Download index.faiss and index.pkl to the local temporary directory
-        with default_storage.open(f"{db_folder_path}/index.faiss", "rb") as fsrc:
-            with open(index_faiss_path, "wb") as fdst:
-                fdst.write(fsrc.read())
+    # Check if the folder exists in the storage system and download files
+    if default_storage.exists(db_folder_str) and default_storage.listdir(db_folder_str):
+        # Download all files from the storage folder to the temp directory
+        for file_name in default_storage.listdir(db_folder_str)[1]:
+            with default_storage.open(db_folder_path / file_name, "rb") as f:
+                content = f.read()
+            with open(temp_db_path / file_name, "wb") as temp_file:
+                temp_file.write(content)
 
-        with default_storage.open(f"{db_folder_path}/index.pkl", "rb") as fsrc:
-            with open(index_pkl_path, "wb") as fdst:
-                fdst.write(fsrc.read())
-
-        # Debug: Print paths to ensure correctness
-        print(f"FAISS Path: {index_faiss_path}")
-        print(f"PKL Path: {index_pkl_path}")
-
-        # Load the FAISS index from the local temporary directory
-        db = FAISS.load_local(
-            str(index_faiss_path),
-            str(index_pkl_path),
-            embeddings,
-            allow_dangerous_deserialization=True,
-        )
-
+        # Load the FAISS index from the temp directory
+        db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=True)
         # Add new documents to the index
         db.add_documents(embed_docs)
+    else:
+        # Create a new FAISS index if it doesn't exist
+        db = FAISS.from_documents(embed_docs, embeddings)
 
-        # Save the updated FAISS index back to the cloud storage
-        db.save_local(str(tmpdir))
+    # Save the updated FAISS index back to the temp directory
+    db.save_local(temp_db_path)
 
-        # Upload the updated files back to Google Cloud Storage
-        with open(index_faiss_path, "rb") as fsrc:
-            default_storage.save(f"{db_folder_path}/index.faiss", fsrc)
+    # Clean up the storage directory before uploading the new files
+    if default_storage.exists(db_folder_str):
+        for file_name in default_storage.listdir(db_folder_str)[1]:
+            default_storage.delete(db_folder_path / file_name)
 
-        with open(index_pkl_path, "rb") as fsrc:
-            default_storage.save(f"{db_folder_path}/index.pkl", fsrc)
+    # Upload the updated files back to Django's storage
+    for file in temp_db_path.rglob("*"):
+        if file.is_file():
+            with open(file, "rb") as f:
+                content = f.read()
+            default_storage.save(
+                str(db_folder_path / file.relative_to(temp_db_path)), ContentFile(content)
+            )
+    temp_dir.cleanup()
 
     return db
 
 
 def load_vector_store():
-    db_folder_path = "faiss_index"
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    db_folder_path = Path("faiss_index")
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        index_faiss_path = Path(tmpdir) / "index.faiss"
-        index_pkl_path = Path(tmpdir) / "index.pkl"
+    temp_dir, db_folder_str, temp_db_path = get_temp_db_path(db_folder_path)
 
-        # Download index.faiss and index.pkl to the local temporary directory
-        with default_storage.open(f"{db_folder_path}/index.faiss", "rb") as fsrc:
-            with open(index_faiss_path, "wb") as fdst:
-                fdst.write(fsrc.read())
+    # Check if the file exists in the storage system and download files, if not exist return None
+    if not default_storage.exists(db_folder_str) or not default_storage.listdir(db_folder_str)[1]:
+        temp_dir.cleanup()
+        return None
 
-        with default_storage.open(f"{db_folder_path}/index.pkl", "rb") as fsrc:
-            with open(index_pkl_path, "wb") as fdst:
-                fdst.write(fsrc.read())
+    # Download all files from the storage folder to the temp directory
+    for file_name in default_storage.listdir(db_folder_str)[1]:
+        with default_storage.open(db_folder_path / file_name, "rb") as f:
+            content = f.read()
+        with open(temp_db_path / file_name, "wb") as temp_file:
+            temp_file.write(content)
 
-        # Debug: Print paths to ensure correctness
-        print(f"FAISS Path: {index_faiss_path}")
-        print(f"PKL Path: {index_pkl_path}")
-
-        # Load the FAISS index from the local temporary directory
-        db = FAISS.load_local(
-            str(index_faiss_path),
-            str(index_pkl_path),
-            embeddings,
-            allow_dangerous_deserialization=True,
-        )
+    # Load the FAISS index from the temp directory
+    db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=True)
+    temp_dir.cleanup()
 
     return db
 
