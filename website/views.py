@@ -1069,8 +1069,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
             domain_exists = False if domain is None else True
 
             if not domain_exists:
-                domain, _ = Domain.objects.get_or_create(name=clean_domain, url=clean_domain)
-                domain.save()
+                domain = Domain.objects.filter(name=clean_domain).first()
+                if domain is None:
+                    domain = Domain.objects.create(name=clean_domain, url=clean_domain)
+                    domain.save()
 
             hunt = self.request.POST.get("hunt", None)
             if hunt is not None and hunt != "None":
