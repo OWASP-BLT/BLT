@@ -102,9 +102,11 @@ def load_vector_store():
         not default_storage.exists(str(db_folder_path))
         or not default_storage.listdir(str(db_folder_path))[1]
     ):
+        # list the root directory
+        root_directory_listing = default_storage.listdir("/")
         ChatBotLog.objects.create(
             question="File was not there for default_storage",
-            answer=f"Folder Str: {str(db_folder_path)}",
+            answer=f"Folder Str: {str(db_folder_path)} | Directory Listing: {root_directory_listing}",
         )
         return None
 
