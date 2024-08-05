@@ -23,17 +23,23 @@ from openai import OpenAI
 load_dotenv(find_dotenv(), override=True)
 
 
+def log_chat(message):
+    # Placeholder for chat log database logic.
+    # Replace this with actual database logging in your Django model.
+    print(f"LOG: {message}")
+
+
 def is_api_key_valid(api_key):
     client = OpenAI(api_key=api_key)
     try:
         client.completions.create(prompt="Hello", model="gpt-3.5-turbo-instruct", max_tokens=1)
         return True
     except openai.APIConnectionError as e:
-        print(f"Failed to connect to OpenAI API: {e}")
+        log_chat(f"Failed to connect to OpenAI API: {e}")
     except openai.RateLimitError as e:
-        print(f"OpenAI API rate limit exceeded: {e}")
+        log_chat(f"OpenAI API rate limit exceeded: {e}")
     except openai.APIError as e:
-        print(f"OpenAI API error: {e}")
+        log_chat(f"OpenAI API error: {e}")
     return False
 
 
@@ -50,12 +56,15 @@ def load_document(file_path):
     Loader = loaders.get(extension)
 
     if Loader is None:
+        log_chat(f"Unsupported file format: {extension}")
         raise ValueError(f"Unsupported file format: {extension}")
 
+    log_chat(f"Loading document from {file_path}")
     return Loader(file_path).load()
 
 
 def load_directory(dir_path):
+    log_chat(f"Loading directory from {dir_path}")
     return DirectoryLoader(dir_path).load()
 
 
@@ -65,6 +74,7 @@ def split_document(chunk_size, chunk_overlap, document):
         chunk_overlap=chunk_overlap,
         length_function=len,
     )
+    log_chat(f"Splitting document into chunks of size {chunk_size} with overlap {chunk_overlap}")
     return text_splitter.split_documents(document)
 
 
@@ -73,6 +83,7 @@ def get_temp_db_path(db_folder_path):
     db_folder_str = str(db_folder_path)
     temp_db_path = Path(temp_dir.name) / db_folder_path
     temp_db_path.mkdir(parents=True, exist_ok=True)
+    log_chat(f"Created temporary directory at {temp_db_path}")
     return temp_dir, db_folder_str, temp_db_path
 
 
@@ -81,43 +92,56 @@ def embed_documents_and_save(embed_docs):
 
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
-    # Temporary directory for local operations
     temp_dir, db_folder_str, temp_db_path = get_temp_db_path(db_folder_path)
 
-    # Check if the folder exists in the storage system and download files
-    if default_storage.exists(db_folder_str) and default_storage.listdir(db_folder_str):
-        # Download all files from the storage folder to the temp directory
-        for file_name in default_storage.listdir(db_folder_str)[1]:
-            with default_storage.open(db_folder_path / file_name, "rb") as f:
-                content = f.read()
-            with open(temp_db_path / file_name, "wb") as temp_file:
-                temp_file.write(content)
+    try:
+        # Check if the folder exists in the storage system and download files
+        if default_storage.exists(db_folder_str) and default_storage.listdir(db_folder_str):
+            log_chat(f"Downloading FAISS index from storage: {db_folder_str}")
+            # Download all files from the storage folder to the temp directory
+            for file_name in default_storage.listdir(db_folder_str)[1]:
+                with default_storage.open(db_folder_path / file_name, "rb") as f:
+                    content = f.read()
+                with open(temp_db_path / file_name, "wb") as temp_file:
+                    temp_file.write(content)
+                log_chat(f"Downloaded file {file_name} to {temp_db_path}")
 
-        # Load the FAISS index from the temp directory
-        db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=True)
-        # Add new documents to the index
-        db.add_documents(embed_docs)
-    else:
-        # Create a new FAISS index if it doesn't exist
-        db = FAISS.from_documents(embed_docs, embeddings)
+            # Load the FAISS index from the temp directory
+            db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=True)
+            log_chat(f"Loaded FAISS index from {temp_db_path}")
+            # Add new documents to the index
+            db.add_documents(embed_docs)
+            log_chat("Added new documents to the FAISS index")
+        else:
+            log_chat("No existing FAISS index found; creating new index")
+            # Create a new FAISS index if it doesn't exist
+            db = FAISS.from_documents(embed_docs, embeddings)
 
-    # Save the updated FAISS index back to the temp directory
-    db.save_local(temp_db_path)
+        # Save the updated FAISS index back to the temp directory
+        db.save_local(temp_db_path)
+        log_chat(f"Saved FAISS index to {temp_db_path}")
 
-    # Clean up the storage directory before uploading the new files
-    if default_storage.exists(db_folder_str):
-        for file_name in default_storage.listdir(db_folder_str)[1]:
-            default_storage.delete(db_folder_path / file_name)
+        # Clean up the storage directory before uploading the new files
+        if default_storage.exists(db_folder_str):
+            log_chat(f"Cleaning up storage directory: {db_folder_str}")
+            for file_name in default_storage.listdir(db_folder_str)[1]:
+                default_storage.delete(db_folder_path / file_name)
+                log_chat(f"Deleted file {file_name} from storage")
 
-    # Upload the updated files back to Django's storage
-    for file in temp_db_path.rglob("*"):
-        if file.is_file():
-            with open(file, "rb") as f:
-                content = f.read()
-            default_storage.save(
-                str(db_folder_path / file.relative_to(temp_db_path)), ContentFile(content)
-            )
-    temp_dir.cleanup()
+        # Upload the updated files back to Django's storage
+        for file in temp_db_path.rglob("*"):
+            if file.is_file():
+                with open(file, "rb") as f:
+                    content = f.read()
+                default_storage.save(
+                    str(db_folder_path / file.relative_to(temp_db_path)), ContentFile(content)
+                )
+                log_chat(f"Uploaded file {file.name} to storage")
+    except Exception as e:
+        log_chat(f"Error during FAISS index embedding and saving: {e}")
+        raise
+    finally:
+        temp_dir.cleanup()
 
     return db
 
@@ -128,21 +152,33 @@ def load_vector_store():
 
     temp_dir, db_folder_str, temp_db_path = get_temp_db_path(db_folder_path)
 
-    # Check if the file exists in the storage system and download files, if not exist return None
-    if not default_storage.exists(db_folder_str) or not default_storage.listdir(db_folder_str)[1]:
+    try:
+        # Check if the file exists in the storage system and download files, if not exist return None
+        if (
+            not default_storage.exists(db_folder_str)
+            or not default_storage.listdir(db_folder_str)[1]
+        ):
+            log_chat(f"No FAISS index found in storage: {db_folder_str}")
+            temp_dir.cleanup()
+            return None
+
+        log_chat(f"Downloading FAISS index from storage: {db_folder_str}")
+        # Download all files from the storage folder to the temp directory
+        for file_name in default_storage.listdir(db_folder_str)[1]:
+            with default_storage.open(db_folder_path / file_name, "rb") as f:
+                content = f.read()
+            with open(temp_db_path / file_name, "wb") as temp_file:
+                temp_file.write(content)
+            log_chat(f"Downloaded file {file_name} to {temp_db_path}")
+
+        # Load the FAISS index from the temp directory
+        db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=True)
+        log_chat(f"Loaded FAISS index from {temp_db_path}")
+    except Exception as e:
+        log_chat(f"Error during FAISS index loading: {e}")
+        raise
+    finally:
         temp_dir.cleanup()
-        return None
-
-    # Download all files from the storage folder to the temp directory
-    for file_name in default_storage.listdir(db_folder_str)[1]:
-        with default_storage.open(db_folder_path / file_name, "rb") as f:
-            content = f.read()
-        with open(temp_db_path / file_name, "wb") as temp_file:
-            temp_file.write(content)
-
-    # Load the FAISS index from the temp directory
-    db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=True)
-    temp_dir.cleanup()
 
     return db
 
@@ -182,4 +218,5 @@ def conversation_chain(vector_store):
         chain_type="stuff",
         combine_docs_chain_kwargs={"prompt": prompt},
     )
+    log_chat("Created conversational retrieval chain")
     return crc, memory
