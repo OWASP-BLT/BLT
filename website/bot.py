@@ -18,8 +18,6 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from openai import OpenAI
 
-from website.models import ChatBotLog
-
 load_dotenv(find_dotenv(), override=True)
 
 
@@ -97,18 +95,18 @@ def load_vector_store():
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
     db_folder_path = Path("faiss_index")
 
-    # Check if the FAISS index files exist in the storage system
-    if (
-        not default_storage.exists(str(db_folder_path))
-        or not default_storage.listdir(str(db_folder_path))[1]
-    ):
-        # list the root directory
-        root_directory_listing = default_storage.listdir("/")
-        ChatBotLog.objects.create(
-            question="File was not there for default_storage",
-            answer=f"Folder Str: {str(db_folder_path)} | Directory Listing: {root_directory_listing}",
-        )
-        return None
+    # # Check if the FAISS index files exist in the storage system
+    # if (
+    #     not default_storage.exists(str(db_folder_path))
+    #     or not default_storage.listdir(str(db_folder_path))[1]
+    # ):
+    #     # list the root directory
+    #     root_directory_listing = default_storage.listdir("/")
+    #     ChatBotLog.objects.create(
+    #         question="File was not there for default_storage",
+    #         answer=f"Folder Str: {str(db_folder_path)} | Directory Listing: {root_directory_listing}",
+    #     )
+    #     return None
 
     # Load the FAISS index directly from the storage
     db_files = [
