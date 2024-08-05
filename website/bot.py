@@ -80,20 +80,14 @@ def embed_documents_and_save(embed_docs):
         index_faiss_path = Path(tmpdir) / "index.faiss"
         index_pkl_path = Path(tmpdir) / "index.pkl"
 
-        # Download index.faiss and index.pkl to local temporary directory
-        with default_storage.open(f"{db_folder_path}/index.faiss", "rb") as fsrc, open(
-            index_faiss_path, "wb"
-        ) as fdst:
-            fdst.write(fsrc.read())
+        # Download index.faiss and index.pkl to the local temporary directory
+        with default_storage.open(f"{db_folder_path}/index.faiss", "rb") as fsrc:
+            with open(index_faiss_path, "wb") as fdst:
+                fdst.write(fsrc.read())
 
-        with default_storage.open(f"{db_folder_path}/index.pkl", "rb") as fsrc, open(
-            index_pkl_path, "wb"
-        ) as fdst:
-            fdst.write(fsrc.read())
-
-        # Ensure that the paths exist and are files
-        assert index_faiss_path.is_file(), f"{index_faiss_path} is not a valid file."
-        assert index_pkl_path.is_file(), f"{index_pkl_path} is not a valid file."
+        with default_storage.open(f"{db_folder_path}/index.pkl", "rb") as fsrc:
+            with open(index_pkl_path, "wb") as fdst:
+                fdst.write(fsrc.read())
 
         # Load the FAISS index from the local temporary directory
         db = FAISS.load_local(
@@ -120,27 +114,25 @@ def embed_documents_and_save(embed_docs):
 
 
 def load_vector_store():
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
     db_folder_path = "faiss_index"
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
     with tempfile.TemporaryDirectory() as tmpdir:
         index_faiss_path = Path(tmpdir) / "index.faiss"
         index_pkl_path = Path(tmpdir) / "index.pkl"
 
-        # Download index.faiss and index.pkl to local temporary directory
-        with default_storage.open(f"{db_folder_path}/index.faiss", "rb") as fsrc, open(
-            index_faiss_path, "wb"
-        ) as fdst:
-            fdst.write(fsrc.read())
+        # Download index.faiss and index.pkl to the local temporary directory
+        with default_storage.open(f"{db_folder_path}/index.faiss", "rb") as fsrc:
+            with open(index_faiss_path, "wb") as fdst:
+                fdst.write(fsrc.read())
 
-        with default_storage.open(f"{db_folder_path}/index.pkl", "rb") as fsrc, open(
-            index_pkl_path, "wb"
-        ) as fdst:
-            fdst.write(fsrc.read())
+        with default_storage.open(f"{db_folder_path}/index.pkl", "rb") as fsrc:
+            with open(index_pkl_path, "wb") as fdst:
+                fdst.write(fsrc.read())
 
-        # Ensure that the paths exist and are files
-        assert index_faiss_path.is_file(), f"{index_faiss_path} is not a valid file."
-        assert index_pkl_path.is_file(), f"{index_pkl_path} is not a valid file."
+        # Ensure paths are correct
+        if not index_faiss_path.exists() or not index_pkl_path.exists():
+            raise ValueError("Index files could not be found or downloaded correctly.")
 
         # Load the FAISS index from the local temporary directory
         db = FAISS.load_local(
