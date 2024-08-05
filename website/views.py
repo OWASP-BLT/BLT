@@ -736,7 +736,7 @@ class IssueBaseCreate(object):
                 settings.ACCESS_TOKEN_SECRET,
             )
 
-            blt_url = "https://%s/issue2/%d" % (
+            blt_url = "https://%s/issue/%d" % (
                 settings.DOMAIN_NAME,
                 obj.id,
             )
@@ -2836,7 +2836,7 @@ def comment_on_issue(request, issue_pk):
 
             if parent_comment is None:
                 messages.error(request, "Parent comment doesn't exist.")
-                return redirect(f"/issue2/{issue_pk}")
+                return redirect(f"/issue/{issue_pk}")
 
             Comment.objects.create(
                 parent=parent_comment,
