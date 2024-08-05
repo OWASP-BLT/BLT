@@ -78,11 +78,7 @@ def embed_documents_and_save(embed_docs):
     # Check if the folder exists in the storage system
     if default_storage.exists(db_folder_path) and default_storage.listdir(db_folder_path):
         # Load the FAISS index directly from the storage
-        db_files = [
-            default_storage.open(db_folder_path + "/" + file_name)
-            for file_name in default_storage.listdir(db_folder_path)[1]
-        ]
-        db = FAISS.load_local(db_files, embeddings, allow_dangerous_deserialization=True)
+        db = FAISS.load_local(db_folder_path, embeddings, allow_dangerous_deserialization=True)
         # Add new documents to the index
         db.add_documents(embed_docs)
     else:
@@ -100,11 +96,7 @@ def load_vector_store():
     db_folder_path = "faiss_index"
 
     # Load the FAISS index directly from the storage
-    db_files = [
-        default_storage.open(db_folder_path + "/" + file_name)
-        for file_name in default_storage.listdir(db_folder_path)[1]
-    ]
-    db = FAISS.load_local(db_files, embeddings, allow_dangerous_deserialization=True)
+    db = FAISS.load_local(db_folder_path, embeddings, allow_dangerous_deserialization=True)
 
     return db
 
