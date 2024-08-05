@@ -1,0 +1,13 @@
+<div class="mx-5 my-0 p-5 border rounded-md shadow-md">
+    <h2 class="mt-0">Compliance Status</h2>
+    <p>Summary of compliance status:</p>
+    <ul class="m-0 p-0 list-none">
+        {% for compliance in compliance_list|slice:":3" %}
+            <li class="mb-2">{{ compliance }}</li>
+        {% empty %}
+            <li class="mb-2">No compliance requirement found</li>
+        {% endfor %}
+    </ul>
+    <a href="#"
+       class="px-2 py-5 mt-2 bg-[#6ec1e4] border rounded-md shadow-md inline-block">View All Compliance Reports</a>
+</div>

@@ -1,0 +1,68 @@
+{% extends "company/company_dashboard_base.html" %}
+{% block title %}
+    Cybersecurity Dashboard
+{% endblock title %}
+{% block body %}
+    <div class="bg-[#F3F5F7] w-full h-auto flex flex-col items-center">
+        <div class="flex items-center md:justify-between w-full md:h-max mt-5 flex-col md:flex-row">
+            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Cybersecurity Dashboard</p>
+        </div>
+        <div class="w-fit h-fit grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+            {% include "company/security_dashboard/security_incidents.html" %}
+            {% include "company/security_dashboard/threat_intelligence.html" %}
+            {% include "company/security_dashboard/vulnerabilities.html" %}
+            {% include "company/security_dashboard/compliance_status.html" %}
+            {% include "company/security_dashboard/network_traffic.html" %}
+            {% include "company/security_dashboard/user_activity.html" %}
+        </div>
+    </div>
+{% endblock body %}
+{% block js %}
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.26.0/dist/apexcharts.min.js"></script>
+    <script>
+  var trafficChart = new ApexCharts(document.querySelector("#traffic-chart"), {
+    series: [{
+      name: "Inbound Traffic",
+      data: [120, 150, 100, 180, 90, 200, 150, 250, 120, 180]
+    }, {
+      name: "Outbound Traffic",
+      data: [80, 100, 50, 120, 70, 150, 100, 200, 80, 120]
+    }],
+    chart: {
+      type: 'line',
+      height: 300,
+      zoom: {
+        enabled: false
+      }
+    },
+    colors: ['#6ec1e4', '#57a2be'],
+    xaxis: {
+      categories: ['Feb 20', 'Feb 21', 'Feb 22', 'Feb 23', 'Feb 24', 'Feb 25', 'Feb 26', 'Feb 27', 'Feb 28', 'Mar 1'],
+    },
+  });
+
+  trafficChart.render();
+
+  var userChart = new ApexCharts(document.querySelector("#user-chart"), {
+    series: [{
+      name: "Active Users",
+      data: [100, 150, 200, 250, 300, 350, 400, 450, 500, 550]
+    }, {
+      name: "Inactive Users",
+      data: [50, 75, 100, 125, 150, 175, 200, 225, 250, 275]
+    }],
+    chart: {
+      type: 'line',
+      height: 400,
+      zoom: {
+        enabled: false
+      }
+    },
+    colors: ['#6ec1e4', '#57a2be'],
+    xaxis: {
+      categories: ['Feb 20', 'Feb 21', 'Feb 22', 'Feb 23', 'Feb 24', 'Feb 25', 'Feb 26', 'Feb 27', 'Feb'],
+    },
+  });
+  userChart.render();
+    </script>
+{% endblock js %}
