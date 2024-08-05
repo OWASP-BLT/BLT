@@ -94,7 +94,10 @@ def embed_documents_and_save(embed_docs):
         # Load the FAISS index from the local temporary directory
         if index_faiss_path.exists() and index_pkl_path.exists():
             db = FAISS.load_local(
-                index_faiss_path, index_pkl_path, embeddings, allow_dangerous_deserialization=True
+                str(index_faiss_path),
+                str(index_pkl_path),
+                embeddings,
+                allow_dangerous_deserialization=True,
             )
             # Add new documents to the index
             db.add_documents(embed_docs)
@@ -103,7 +106,7 @@ def embed_documents_and_save(embed_docs):
             db = FAISS.from_documents(embed_docs, embeddings)
 
         # Save the updated FAISS index back to the cloud storage
-        db.save_local(str(index_faiss_path.parent))
+        db.save_local(tmpdir)
 
         # Upload the updated files back to Google Cloud Storage
         with open(index_faiss_path, "rb") as fsrc:
@@ -136,7 +139,10 @@ def load_vector_store():
 
         # Load the FAISS index from the local temporary directory
         db = FAISS.load_local(
-            index_faiss_path, index_pkl_path, embeddings, allow_dangerous_deserialization=True
+            str(index_faiss_path),
+            str(index_pkl_path),
+            embeddings,
+            allow_dangerous_deserialization=True,
         )
 
     return db
