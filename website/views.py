@@ -138,9 +138,9 @@ load_dotenv()
 
 
 def add_domain_to_company(request):
+    domain = request.POST.get("domain")
     domain = Domain.objects.get(id=domain)
     if request.method == "POST":
-        domain = request.POST.get("domain")
         company_name = request.POST.get("company")
         company = Company.objects.filter(name=company_name).first()
 
