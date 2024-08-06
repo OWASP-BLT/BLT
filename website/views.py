@@ -137,6 +137,37 @@ from .models import BaconToken, Contribution
 load_dotenv()
 
 
+def add_domain_to_company(request):
+    if request.method == "POST":
+        domain = request.POST.get("domain")
+        company_name = request.POST.get("company")
+        company = Company.objects.filter(name=company_name).first()
+
+        domain = Domain.objects.get(id=domain)
+
+        if not company:
+            response = requests.get("https://" + domain.url)
+            soup = BeautifulSoup(response.text, "html.parser")
+            if company_name in soup.get_text():
+                company = Company.objects.create(name=company_name)
+                domain.company = company
+                domain.save()
+                messages.success(request, "Organization added successfully")
+                # back to the domain detail page
+                return redirect("domain", slug=domain.url)
+            else:
+                messages.error(request, "Organization not found in the domain")
+                return redirect("domain", slug=domain.url)
+        else:
+            domain.company = company
+            domain.save()
+            messages.success(request, "Organization added successfully")
+            # back to the domain detail page
+            return redirect("domain", slug=domain.url)
+    else:
+        return redirect("domain", slug=domain.url)
+
+
 def check_status(request):
     # Check if the status is already cached
     status = cache.get("service_status")
@@ -4945,9 +4976,11 @@ def select_bid(request):
     return render(request, "bid_selection.html")
 
 
-@login_required
 def SaveBiddingData(request):
     if request.method == "POST":
+        if not request.user.is_authenticated:
+            messages.error(request, "Please login to bid.")
+            return redirect("login")
         user = request.user.username
         url = request.POST.get("issue_url")
         amount = request.POST.get("bid_amount")

@@ -165,6 +165,9 @@ urlpatterns = [
     path("auth/facebook/url/", facebook_views.oauth2_callback),
     path("socialaccounts/", SocialAccountListView.as_view(), name="social_account_list"),
     path(
+        "add_domain_to_company/", website.views.add_domain_to_company, name="add_domain_to_company"
+    ),
+    path(
         "socialaccounts/<int:pk>/disconnect/",
         SocialAccountDisconnectView.as_view(),
         name="social_account_disconnect",
