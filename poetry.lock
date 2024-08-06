@@ -1810,18 +1810,18 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.2.11"
+version = "0.2.12"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langchain-0.2.11-py3-none-any.whl", hash = "sha256:5a7a8b4918f3d3bebce9b4f23b92d050699e6f7fb97591e8941177cf07a260a2"},
-    {file = "langchain-0.2.11.tar.gz", hash = "sha256:d7a9e4165f02dca0bd78addbc2319d5b9286b5d37c51d784124102b57e9fd297"},
+    {file = "langchain-0.2.12-py3-none-any.whl", hash = "sha256:565d2f5df1c06815d1c684400218ec4ae5e1027887aad343226fad846c54e726"},
+    {file = "langchain-0.2.12.tar.gz", hash = "sha256:fe7bd409c133017446fec54c38a5e7cb14f74e020090d7b5065374badf71e6d1"},
 ]
 
 [package.dependencies]
 aiohttp = ">=3.8.3,<4.0.0"
-langchain-core = ">=0.2.23,<0.3.0"
+langchain-core = ">=0.2.27,<0.3.0"
 langchain-text-splitters = ">=0.2.0,<0.3.0"
 langsmith = ">=0.1.17,<0.2.0"
 numpy = {version = ">=1,<2", markers = "python_version < \"3.12\""}
@@ -2346,13 +2346,13 @@ signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 
 [[package]]
 name = "openai"
-version = "1.38.0"
+version = "1.39.0"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.38.0-py3-none-any.whl", hash = "sha256:a19ef052f1676320f52183ae6f9775da6d888fbe3aec57886117163c095d9f7c"},
-    {file = "openai-1.38.0.tar.gz", hash = "sha256:30fb324bf452ecb1194ca7dbc64566a4d7aa054c6a5da857937ede7d517a220b"},
+    {file = "openai-1.39.0-py3-none-any.whl", hash = "sha256:a712553a131c59a249c474d0bb6a0414f41df36dc186d3a018fa7e600e57fb7f"},
+    {file = "openai-1.39.0.tar.gz", hash = "sha256:0cea446082f50985f26809d704a97749cb366a1ba230ef432c684a9745b3f2d9"},
 ]
 
 [package.dependencies]
@@ -4022,13 +4022,13 @@ files = [
 
 [[package]]
 name = "unstructured"
-version = "0.15.0"
+version = "0.15.1"
 description = "A library that prepares raw documents for downstream ML tasks."
 optional = false
 python-versions = "<3.13,>=3.9.0"
 files = [
-    {file = "unstructured-0.15.0-py3-none-any.whl", hash = "sha256:43538e0463aec3741eef06eaf69fc27f6fdaffa7376816c797cb25abb9b55b45"},
-    {file = "unstructured-0.15.0.tar.gz", hash = "sha256:b75deb8e46dffbe1c6f82936810a31ab9516923c3a60bd01821d7701fa13b628"},
+    {file = "unstructured-0.15.1-py3-none-any.whl", hash = "sha256:e62e2b90554bc39ea7ebe90ff17855353fbd12b7088de5bd60edcf8d5e01b44a"},
+    {file = "unstructured-0.15.1.tar.gz", hash = "sha256:9f72d6c5041f061e7a75222bded00da5f5f4468402248080eb58b870dbb1d7a5"},
 ]
 
 [package.dependencies]
@@ -4073,7 +4073,7 @@ doc = ["python-docx (>=1.1.2)"]
 docx = ["python-docx (>=1.1.2)"]
 dropbox = ["dropboxdrivefs", "fsspec"]
 elasticsearch = ["elasticsearch[async]"]
-embed-huggingface = ["huggingface", "langchain-community", "sentence-transformers"]
+embed-huggingface = ["langchain-huggingface"]
 embed-octoai = ["openai", "tiktoken"]
 embed-vertexai = ["langchain", "langchain-community", "langchain-google-vertexai"]
 embed-voyageai = ["langchain", "langchain-voyageai"]
@@ -4094,7 +4094,7 @@ msg = ["python-oxmsg"]
 notion = ["htmlBuilder", "notion-client"]
 odt = ["pypandoc", "python-docx (>=1.1.2)"]
 onedrive = ["Office365-REST-Python-Client", "bs4", "msal"]
-openai = ["langchain-community", "openai", "tiktoken"]
+openai = ["langchain-openai"]
 opensearch = ["opensearch-py"]
 org = ["pypandoc"]
 outlook = ["Office365-REST-Python-Client", "msal"]
@@ -4464,4 +4464,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "d10ce1d912cb28cffd7ffb3bd5d905f235fd4aa2fce1b23e7728dd4ffbe88a70"
+content-hash = "06ad38dc5fa06ac9e9e8b35028f80728dcc0e84d37ac868c2a153c4255cfe087"
