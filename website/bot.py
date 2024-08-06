@@ -148,43 +148,29 @@ def embed_documents_and_save(embed_docs):
 
 def load_vector_store():
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-    db_folder_path = Path("faiss_index")
+    db_folder_path = Path("faiss_index/")
 
     temp_dir, db_folder_str, temp_db_path = get_temp_db_path(db_folder_path)
 
-    try:
-        # Log the directory listing
-        if default_storage.exists(db_folder_str):
-            log_chat(
-                f"Directory listing for {db_folder_str}: {default_storage.listdir(db_folder_str)}"
-            )
-
-        # Check if the file exists in the storage system and download files, if not exist return None
-        if (
-            not default_storage.exists(db_folder_str)
-            or not default_storage.listdir(db_folder_str)[1]
-        ):
-            log_chat(f"No FAISS index found in storage: {db_folder_str}")
-            temp_dir.cleanup()
-            return None
-
-        log_chat(f"Downloading FAISS index from storage: {db_folder_str}")
-        # Download all files from the storage folder to the temp directory
-        for file_name in default_storage.listdir(db_folder_str)[1]:
-            with default_storage.open(db_folder_path / file_name, "rb") as f:
-                content = f.read()
-            with open(temp_db_path / file_name, "wb") as temp_file:
-                temp_file.write(content)
-            log_chat(f"Downloaded file {file_name} to {temp_db_path}")
-
-        # Load the FAISS index from the temp directory
-        db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=True)
-        log_chat(f"Loaded FAISS index from {temp_db_path}")
-    except Exception as e:
-        log_chat(f"Error during FAISS index loading: {e}")
-        raise
-    finally:
+    # Check if the folder exists in the storage system
+    check_db_folder_str = db_folder_str + "/index.faiss"
+    if not default_storage.exists(check_db_folder_str):
         temp_dir.cleanup()
+        ChatBotLog.objects.create(
+            question="Folder does not exist", answer=f"Folder Str: {str(db_folder_str)}"
+        )
+        return None
+
+    # Download all files from the storage folder to the temp directory
+    for file_name in default_storage.listdir(db_folder_str)[1]:
+        with default_storage.open(db_folder_path / file_name, "rb") as f:
+            content = f.read()
+        with open(temp_db_path / file_name, "wb") as temp_file:
+            temp_file.write(content)
+
+    # Load the FAISS index from the temp directory
+    db = FAISS.load_local(temp_db_path, embeddings, allow_dangerous_deserialization=True)
+    temp_dir.cleanup()
 
     return db
 
