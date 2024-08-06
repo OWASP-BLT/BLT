@@ -229,6 +229,10 @@ class HuntPrize(models.Model):
         return self.hunt.name + self.name
 
 
+class Tag(models.Model):
+    name = models.CharField(max_length=255)
+
+
 class Issue(models.Model):
     labels = (
         (0, "General"),
@@ -270,6 +274,7 @@ class Issue(models.Model):
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
     cve_id = models.CharField(max_length=16, null=True, blank=True)
     cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
+    tags = models.ManyToManyField(Tag, related_name="tags", blank=True)
 
     def __unicode__(self):
         return self.description

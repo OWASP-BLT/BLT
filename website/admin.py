@@ -24,6 +24,7 @@ from website.models import (
     Subscription,
     Suggestion,
     SuggestionVotes,
+    Tag,
     Transaction,
     UserProfile,
     Wallet,
@@ -345,3 +346,4 @@ admin.site.register(InviteFriend)
 admin.site.register(IP, IPAdmin)
 admin.site.register(Transaction)
 admin.site.register(Monitor, MonitorAdmin)
+admin.site.register(Tag)
