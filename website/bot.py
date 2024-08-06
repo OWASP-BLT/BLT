@@ -126,17 +126,19 @@ def embed_documents_and_save(embed_docs):
 
 def load_vector_store():
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-    db_folder_path = Path("faiss_index")
+    db_folder_path = Path("faiss_index/")
 
     temp_dir, db_folder_str, temp_db_path = get_temp_db_path(db_folder_path)
 
-    # check the file exists in the storage system and download files if not exist return None
-    if not default_storage.exists(db_folder_str) or not default_storage.listdir(db_folder_str)[1]:
+    # Check if the folder exists in the storage system
+    check_db_folder_str = db_folder_str + "/index.faiss"
+    if not default_storage.exists(check_db_folder_str):
         temp_dir.cleanup()
         ChatBotLog.objects.create(
-            question="File was not there", answer=f"Folder Str: {str(db_folder_str)}"
+            question="Folder does not exist", answer=f"Folder Str: {str(db_folder_str)}"
         )
         return None
+
     # Download all files from the storage folder to the temp directory
     for file_name in default_storage.listdir(db_folder_str)[1]:
         with default_storage.open(db_folder_path / file_name, "rb") as f:
