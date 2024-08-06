@@ -44,6 +44,13 @@ class Subscription(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
 
+class Tag(models.Model):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
 class Company(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_companies")
@@ -58,6 +65,7 @@ class Company(models.Model):
     modified = models.DateTimeField(auto_now=True)
     subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=False)
+    tags = models.ManyToManyField(Tag, blank=True)
 
     def __str__(self):
         return self.name
@@ -79,6 +87,7 @@ class Domain(models.Model):
     facebook = models.URLField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
+    tags = models.ManyToManyField(Tag, blank=True)
 
     def __unicode__(self):
         return self.name
@@ -270,6 +279,7 @@ class Issue(models.Model):
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
     cve_id = models.CharField(max_length=16, null=True, blank=True)
     cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
+    tags = models.ManyToManyField(Tag, blank=True)
 
     def __unicode__(self):
         return self.description
@@ -502,6 +512,7 @@ class UserProfile(models.Model):
     bch_address = models.CharField(max_length=100, blank=True, null=True)
     eth_address = models.CharField(max_length=100, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
+    tags = models.ManyToManyField(Tag, blank=True)
 
     def avatar(self, size=36):
         if self.user_avatar:
@@ -714,6 +725,7 @@ class Project(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     contributors = models.ManyToManyField(Contributor, related_name="projects", blank=True)
+    tags = models.ManyToManyField(Tag, blank=True)
 
     def __str__(self):
         return self.name
