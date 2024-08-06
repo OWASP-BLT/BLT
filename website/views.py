@@ -137,6 +137,36 @@ from .models import BaconToken, Contribution
 load_dotenv()
 
 
+def add_domain_to_company(request):
+    domain = request.POST.get("domain")
+    domain = Domain.objects.get(id=domain)
+    if request.method == "POST":
+        company_name = request.POST.get("company")
+        company = Company.objects.filter(name=company_name).first()
+
+        if not company:
+            response = requests.get(domain.url)
+            soup = BeautifulSoup(response.text, "html.parser")
+            if company_name in soup.get_text():
+                company = Company.objects.create(name=company_name)
+                domain.company = company
+                domain.save()
+                messages.success(request, "Organization added successfully")
+                # back to the domain detail page
+                return redirect("domain", slug=domain.url)
+            else:
+                messages.error(request, "Organization not found in the domain")
+                return redirect("domain", slug=domain.url)
+        else:
+            domain.company = company
+            domain.save()
+            messages.success(request, "Organization added successfully")
+            # back to the domain detail page
+            return redirect("domain", slug=domain.url)
+    else:
+        return redirect("domain", slug=domain.url)
+
+
 def check_status(request):
     # Check if the status is already cached
     status = cache.get("service_status")
@@ -736,7 +766,7 @@ class IssueBaseCreate(object):
                 settings.ACCESS_TOKEN_SECRET,
             )
 
-            blt_url = "https://%s/issue2/%d" % (
+            blt_url = "https://%s/issue/%d" % (
                 settings.DOMAIN_NAME,
                 obj.id,
             )
@@ -1069,8 +1099,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
             domain_exists = False if domain is None else True
 
             if not domain_exists:
-                domain = Domain.objects.create(name=clean_domain, url=clean_domain)
-                domain.save()
+                domain = Domain.objects.filter(name=clean_domain).first()
+                if domain is None:
+                    domain = Domain.objects.create(name=clean_domain, url=clean_domain)
+                    domain.save()
 
             hunt = self.request.POST.get("hunt", None)
             if hunt is not None and hunt != "None":
@@ -2374,6 +2406,10 @@ class IssueView(DetailView):
         ipdetails.user = self.request.user
         ipdetails.address = get_client_ip(request)
         ipdetails.issuenumber = self.object.id
+        ipdetails.path = request.path
+        ipdetails.agent = request.META["HTTP_USER_AGENT"]
+        ipdetails.referer = request.META.get("HTTP_REFERER", None)
+
         print("IP Address: ", ipdetails.address)
         print("Issue Number: ", ipdetails.issuenumber)
 
@@ -2828,7 +2864,7 @@ def comment_on_issue(request, issue_pk):
 
             if parent_comment is None:
                 messages.error(request, "Parent comment doesn't exist.")
-                return redirect(f"/issue2/{issue_pk}")
+                return redirect(f"/issue/{issue_pk}")
 
             Comment.objects.create(
                 parent=parent_comment,
@@ -4300,96 +4336,96 @@ def subscribe_to_domains(request, pk):
         return JsonResponse("SUBSCRIBED", safe=False)
 
 
-class IssueView2(DetailView):
-    model = Issue
-    slug_field = "id"
-    template_name = "issue2.html"
+# class IssueView2(DetailView):
+#     model = Issue
+#     slug_field = "id"
+#     template_name = "issue2.html"
 
-    def get(self, request, *args, **kwargs):
-        ipdetails = IP()
-        try:
-            id = int(self.kwargs["slug"])
-        except ValueError:
-            return HttpResponseNotFound("Invalid ID: ID must be an integer")
+#     def get(self, request, *args, **kwargs):
+#         ipdetails = IP()
+#         try:
+#             id = int(self.kwargs["slug"])
+#         except ValueError:
+#             return HttpResponseNotFound("Invalid ID: ID must be an integer")
 
-        self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
-        ipdetails.user = self.request.user
-        ipdetails.address = get_client_ip(request)
-        ipdetails.issuenumber = self.object.id
-        try:
-            if self.request.user.is_authenticated:
-                try:
-                    objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
-                    self.object.save()
-                except:
-                    ipdetails.save()
-                    self.object.views = (self.object.views or 0) + 1
-                    self.object.save()
-            else:
-                try:
-                    objectget = IP.objects.get(
-                        address=get_client_ip(request), issuenumber=self.object.id
-                    )
-                    self.object.save()
-                except:
-                    ipdetails.save()
-                    self.object.views = (self.object.views or 0) + 1
-                    self.object.save()
-        except Exception as e:
-            print(e)
-            # TODO: this is only an error for ipv6 currently and doesn't require us to redirect the user - we'll sort this out later
-            # messages.error(self.request, "That issue was not found."+str(e))
-            # return redirect("/")
-        return super(IssueView2, self).get(request, *args, **kwargs)
+#         self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
+#         ipdetails.user = self.request.user
+#         ipdetails.address = get_client_ip(request)
+#         ipdetails.issuenumber = self.object.id
+#         try:
+#             if self.request.user.is_authenticated:
+#                 try:
+#                     objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
+#                     self.object.save()
+#                 except:
+#                     ipdetails.save()
+#                     self.object.views = (self.object.views or 0) + 1
+#                     self.object.save()
+#             else:
+#                 try:
+#                     objectget = IP.objects.get(
+#                         address=get_client_ip(request), issuenumber=self.object.id
+#                     )
+#                     self.object.save()
+#                 except:
+#                     ipdetails.save()
+#                     self.object.views = (self.object.views or 0) + 1
+#                     self.object.save()
+#         except Exception as e:
+#             print(e)
+#             # TODO: this is only an error for ipv6 currently and doesn't require us to redirect the user - we'll sort this out later
+#             # messages.error(self.request, "That issue was not found."+str(e))
+#             # return redirect("/")
+#         return super(IssueView2, self).get(request, *args, **kwargs)
 
-    def get_context_data(self, **kwargs):
-        context = super(IssueView2, self).get_context_data(**kwargs)
-        if self.object.user_agent:
-            user_agent = parse(self.object.user_agent)
-            context["browser_family"] = user_agent.browser.family
-            context["browser_version"] = user_agent.browser.version_string
-            context["os_family"] = user_agent.os.family
-            context["os_version"] = user_agent.os.version_string
-        context["users_score"] = list(
-            Points.objects.filter(user=self.object.user)
-            .aggregate(total_score=Sum("score"))
-            .values()
-        )[0]
+#     def get_context_data(self, **kwargs):
+#         context = super(IssueView2, self).get_context_data(**kwargs)
+#         if self.object.user_agent:
+#             user_agent = parse(self.object.user_agent)
+#             context["browser_family"] = user_agent.browser.family
+#             context["browser_version"] = user_agent.browser.version_string
+#             context["os_family"] = user_agent.os.family
+#             context["os_version"] = user_agent.os.version_string
+#         context["users_score"] = list(
+#             Points.objects.filter(user=self.object.user)
+#             .aggregate(total_score=Sum("score"))
+#             .values()
+#         )[0]
 
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
-        context["all_comment"] = self.object.comments.all().order_by("-created_date")
-        context["all_users"] = User.objects.all()
-        context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
-        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
-        context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
-        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
-        context["more_issues"] = (
-            Issue.objects.filter(user=self.object.user)
-            .exclude(id=self.object.id)
-            .values("id", "description", "markdown_description", "screenshots__image")
-            .order_by("views")[:4]
-        )
-        context["subscribed_to_domain"] = False
-        context["cve_id"] = self.object.cve_id
-        context["cve_score"] = self.object.cve_score
+#         if self.request.user.is_authenticated:
+#             context["wallet"] = Wallet.objects.get(user=self.request.user)
+#         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
+#         context["all_comment"] = self.object.comments.all().order_by("-created_date")
+#         context["all_users"] = User.objects.all()
+#         context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
+#         context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
+#         context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
+#         context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
+#         context["more_issues"] = (
+#             Issue.objects.filter(user=self.object.user)
+#             .exclude(id=self.object.id)
+#             .values("id", "description", "markdown_description", "screenshots__image")
+#             .order_by("views")[:4]
+#         )
+#         context["subscribed_to_domain"] = False
+#         context["cve_id"] = self.object.cve_id
+#         context["cve_score"] = self.object.cve_score
 
-        # TODO: fix this
-        # if isinstance(self.request.user, User):
-        #     if self.request.user.is_authenticated:
-        #         context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
-        #             pk=self.request.user.userprofile.id
-        #         ).exists()
+#         # TODO: fix this
+#         # if isinstance(self.request.user, User):
+#         #     if self.request.user.is_authenticated:
+#         #         context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
+#         #             pk=self.request.user.userprofile.id
+#         #         ).exists()
 
-        if isinstance(self.request.user, User):
-            context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(
-                pk=self.object.id
-            ).exists()
+#         if isinstance(self.request.user, User):
+#             context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(
+#                 pk=self.object.id
+#             ).exists()
 
-        context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
+#         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
 
-        return context
+#         return context
 
 
 class IssueView3(DetailView):
@@ -4408,6 +4444,10 @@ class IssueView3(DetailView):
         ipdetails.user = self.request.user
         ipdetails.address = get_client_ip(request)
         ipdetails.issuenumber = self.object.id
+        ipdetails.path = request.get_full_path()
+        ipdetails.referer = request.META.get("HTTP_REFERER")
+        ipdetails.agent = request.META.get("HTTP_USER_AGENT")
+
         try:
             if self.request.user.is_authenticated:
                 try:
@@ -4488,6 +4528,11 @@ class IssueView3(DetailView):
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["status"] = Issue.objects.filter(id=self.object.id).get().status
+        context["github_issues_url"] = (
+            str(Issue.objects.filter(id=self.object.id).get().domain.github) + "/issues"
+        )
+        context["email_clicks"] = Issue.objects.filter(id=self.object.id).get().domain.clicks
+        context["email_events"] = Issue.objects.filter(id=self.object.id).get().domain.email_event
         if not self.object.github_url:
             context["github_link"] = "empty"
         else:
@@ -4930,9 +4975,11 @@ def select_bid(request):
     return render(request, "bid_selection.html")
 
 
-@login_required
 def SaveBiddingData(request):
     if request.method == "POST":
+        if not request.user.is_authenticated:
+            messages.error(request, "Please login to bid.")
+            return redirect("login")
         user = request.user.username
         url = request.POST.get("issue_url")
         amount = request.POST.get("bid_amount")
@@ -5018,6 +5065,8 @@ def chatbot_conversation(request):
             )
 
         question = request.data.get("question", "")
+        if not question:
+            return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
         check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
         if not check_api:
             ChatBotLog.objects.create(question=question, answer="Error: Invalid API Key")

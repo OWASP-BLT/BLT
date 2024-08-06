@@ -528,19 +528,15 @@ post_save.connect(create_profile, sender=User)
 
 
 class IP(models.Model):
-    address = models.CharField(max_length=25, null=True, blank=True)
-    user = models.CharField(max_length=25, null=True, blank=True)
+    address = models.CharField(max_length=39, null=True, blank=True)
+    user = models.CharField(max_length=150, null=True, blank=True)
     issuenumber = models.IntegerField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
-
-    def ipaddress(self):
-        return self.ipaddress
-
-    def user_name(self):
-        return self.user
-
-    def issue_number(self):
-        return self.issuenumber
+    agent = models.CharField(max_length=255, null=True, blank=True)
+    count = models.IntegerField(default=0)
+    path = models.CharField(max_length=255, null=True, blank=True)
+    method = models.CharField(max_length=10, null=True, blank=True)
+    referer = models.CharField(max_length=255, null=True, blank=True)
 
 
 class CompanyAdmin(models.Model):

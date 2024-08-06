@@ -1,4 +1,4 @@
-### Detailed Description of the "Reported Issue Single Details Page" UI Component and the url path is "https://blt.owasp.org/issue2/{issue_id}/" for the OWASP Bug Logging Tool (BLT) Application
+### Detailed Description of the "Reported Issue Single Details Page" UI Component and the url path is "https://blt.owasp.org/issue/{issue_id}/" for the OWASP Bug Logging Tool (BLT) Application
 
 #### 1. Component Overview
 The "Reported Issue Single Details Page" in the OWASP Bug Logging Tool (BLT) application is designed to provide a detailed view of a specific reported issue. Its primary purpose is to display all relevant information about a reported bug, including the description, status, screenshots, and user interactions such as upvotes, downvotes, and comments. This page serves as a centralized location for users to review, discuss, and manage individual bug reports.

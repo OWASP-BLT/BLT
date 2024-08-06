@@ -56,8 +56,6 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     InboundParseWebhookView,
     InviteCreate,
     IssueCreate,
-    IssueView,
-    IssueView2,
     IssueView3,
     JoinCompany,
     ListHunts,
@@ -166,6 +164,9 @@ urlpatterns = [
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),
     path("socialaccounts/", SocialAccountListView.as_view(), name="social_account_list"),
+    path(
+        "add_domain_to_company/", website.views.add_domain_to_company, name="add_domain_to_company"
+    ),
     path(
         "socialaccounts/<int:pk>/disconnect/",
         SocialAccountDisconnectView.as_view(),
@@ -338,10 +339,10 @@ urlpatterns = [
     ),
     # delete_comment
     path("issue2/comment/delete/", website.views.delete_comment, name="delete_comment"),
-    # TODO(b): REMOVE after _3 is ready
-    re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
-    re_path(r"^issue2/(?P<slug>\w+)/$", IssueView2.as_view(), name="issue_view2"),
-    re_path(r"^issue3/(?P<slug>\w+)/$", IssueView3.as_view(), name="issue_view3"),
+    # TODO(b): REMOVE after _3 is ready / and 3/
+    re_path(r"^issue/(?P<slug>\w+)/$", IssueView3.as_view(), name="issue_view"),
+    # re_path(r"^issue2/(?P<slug>\w+)/$", IssueView2.as_view(), name="issue_view2"),
+    # re_path(r"^issue3/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
     re_path(r"^follow/(?P<user>[^/]+)/", website.views.follow_user, name="follow_user"),
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
     re_path(r"^label_activity/$", SpecificIssuesView.as_view(), name="all_activitys"),
@@ -379,9 +380,9 @@ urlpatterns = [
         UploadCreate.as_view(),
         name="upload",
     ),
-    # TODO(b)
-    re_path(r"^profile/(?P<slug>[^/]+)/$", UserProfileDetailView.as_view(), name="profile"),
-    re_path(r"^profile2/(?P<slug>[^/]+)/$", UserProfileDetailView2.as_view(), name="profile"),
+    # TODO(b) remove 2/
+    re_path(r"^profile2/(?P<slug>[^/]+)/$", UserProfileDetailView.as_view(), name="profile2"),
+    re_path(r"^profile/(?P<slug>[^/]+)/$", UserProfileDetailView2.as_view(), name="profile"),
     re_path(r"^domain/(?P<slug>.+)/$", DomainDetailView.as_view(), name="domain"),
     re_path(
         r"^.well-known/acme-challenge/(?P<token>[^/]+)/$",

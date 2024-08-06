@@ -109,6 +109,14 @@
                      height="100">
                 <h3>
                     <a href="{{ domain.url }}" target="/new">{{ name }}</a>
+                    {% if not domain.company %}
+                        <form action="{% url 'add_domain_to_company' %}" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="domain" value="{{ domain.id }}">
+                            <input type="text" name="company" placeholder="Company Name">
+                            <button type="submit" class="btn btn-primary">Add to Company</button>
+                        </form>
+                    {% endif %}
                     <br />
                     {% if domain.email %}
                         <small>
