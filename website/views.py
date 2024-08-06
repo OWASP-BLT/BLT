@@ -146,7 +146,7 @@ def add_domain_to_company(request):
         domain = Domain.objects.get(id=domain)
 
         if not company:
-            response = requests.get("https://" + domain.url)
+            response = requests.get(domain.url)
             soup = BeautifulSoup(response.text, "html.parser")
             if company_name in soup.get_text():
                 company = Company.objects.create(name=company_name)
