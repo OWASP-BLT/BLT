@@ -1824,7 +1824,7 @@ aiohttp = ">=3.8.3,<4.0.0"
 langchain-core = ">=0.2.27,<0.3.0"
 langchain-text-splitters = ">=0.2.0,<0.3.0"
 langsmith = ">=0.1.17,<0.2.0"
-numpy = {version = ">=1,<2", markers = "python_version < \"3.12\""}
+numpy = {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""}
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
 requests = ">=2,<3"
@@ -1848,7 +1848,7 @@ dataclasses-json = ">=0.5.7,<0.7"
 langchain = ">=0.2.9,<0.3.0"
 langchain-core = ">=0.2.23,<0.3.0"
 langsmith = ">=0.1.0,<0.2.0"
-numpy = {version = ">=1,<2", markers = "python_version < \"3.12\""}
+numpy = {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""}
 PyYAML = ">=5.3"
 requests = ">=2,<3"
 SQLAlchemy = ">=1.4,<3"
@@ -4463,5 +4463,5 @@ multidict = ">=4.0"
 
 [metadata]
 lock-version = "2.0"
-python-versions = "3.11.2"
-content-hash = "06ad38dc5fa06ac9e9e8b35028f80728dcc0e84d37ac868c2a153c4255cfe087"
+python-versions = "3.12.3"
+content-hash = "071f0fd57806149c775c71e541d7eec0ea8e77bdb6762a4d26634755f8186f41"
