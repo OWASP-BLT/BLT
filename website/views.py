@@ -138,9 +138,9 @@ load_dotenv()
 
 
 def add_domain_to_company(request):
-    domain = request.POST.get("domain")
-    domain = Domain.objects.get(id=domain)
     if request.method == "POST":
+        domain = request.POST.get("domain")
+        domain = Domain.objects.get(id=domain)
         company_name = request.POST.get("company")
         company = Company.objects.filter(name=company_name).first()
 
@@ -164,7 +164,7 @@ def add_domain_to_company(request):
             # back to the domain detail page
             return redirect("domain", slug=domain.url)
     else:
-        return redirect("domain", slug=domain.url)
+        return redirect("index")
 
 
 def check_status(request):
@@ -346,7 +346,7 @@ class ProjectListView(ListView):
                         "description": data["description"],
                         "wiki_url": data["html_url"],
                         "homepage_url": data.get("homepage", ""),
-                        "logo": data["owner"]["avatar_url"],  # assuming avatar_url for logo
+                        "logo_url": data["owner"]["avatar_url"],
                     },
                 )
                 if created:
