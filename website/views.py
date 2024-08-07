@@ -1372,7 +1372,6 @@ def profile(request):
         return redirect("/")
 
 
-# TODO(b) remove
 class UserProfileDetailView(DetailView):
     model = get_user_model()
     slug_field = "username"
@@ -1399,7 +1398,12 @@ class UserProfileDetailView(DetailView):
         )
         context["activities"] = Issue.objects.filter(user=self.object, hunt=None).exclude(
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
-        )[0:10]
+        )[0:3]
+        context["activity_screenshots"] = {}
+        for activity in context["activities"]:
+            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(
+                issue=activity.pk
+            ).first()
         context["profile_form"] = UserProfileForm()
         context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
         context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
@@ -1534,95 +1538,6 @@ class UserProfileDetailsView(DetailView):
         if form.is_valid():
             form.save()
         return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
-
-
-class UserProfileDetailView2(DetailView):
-    model = get_user_model()
-    slug_field = "username"
-    template_name = "profile2.html"
-
-    def get(self, request, *args, **kwargs):
-        try:
-            self.object = self.get_object()
-        except Http404:
-            messages.error(self.request, "That user was not found.")
-            return redirect("/")
-        return super(UserProfileDetailView2, self).get(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        user = self.object
-        context = super(UserProfileDetailView2, self).get_context_data(**kwargs)
-        context["my_score"] = list(
-            Points.objects.filter(user=self.object).aggregate(total_score=Sum("score")).values()
-        )[0]
-        context["websites"] = (
-            Domain.objects.filter(issue__user=self.object)
-            .annotate(total=Count("issue"))
-            .order_by("-total")
-        )
-        context["activities"] = Issue.objects.filter(user=self.object, hunt=None).exclude(
-            Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
-        )[0:3]
-        context["activity_screenshots"] = {}
-        for activity in context["activities"]:
-            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(
-                issue=activity.pk
-            ).first()
-        context["profile_form"] = UserProfileForm()
-        context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
-        context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
-        context["current_month"] = datetime.now().month
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["graph"] = (
-            Issue.objects.filter(user=self.object)
-            .filter(
-                created__month__gte=(datetime.now().month - 6),
-                created__month__lte=datetime.now().month,
-            )
-            .annotate(month=ExtractMonth("created"))
-            .values("month")
-            .annotate(c=Count("id"))
-            .order_by()
-        )
-        context["total_bugs"] = Issue.objects.filter(user=self.object, hunt=None).count()
-        for i in range(0, 7):
-            context["bug_type_" + str(i)] = Issue.objects.filter(
-                user=self.object, hunt=None, label=str(i)
-            )
-
-        arr = []
-        allFollowers = user.userprofile.follower.all()
-        for userprofile in allFollowers:
-            arr.append(User.objects.get(username=str(userprofile.user)))
-        context["followers"] = arr
-
-        arr = []
-        allFollowing = user.userprofile.follows.all()
-        for userprofile in allFollowing:
-            arr.append(User.objects.get(username=str(userprofile.user)))
-        context["following"] = arr
-
-        context["followers_list"] = [
-            str(prof.user.email) for prof in user.userprofile.follower.all()
-        ]
-        context["bookmarks"] = user.userprofile.issue_saved.all()
-        context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
-        return context
-
-    @method_decorator(login_required)
-    def post(self, request, *args, **kwargs):
-        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
-        if request.FILES.get("user_avatar") and form.is_valid():
-            form.save()
-        else:
-            hide = True if request.POST.get("issues_hidden") == "on" else False
-            user_issues = Issue.objects.filter(user=request.user)
-            user_issues.update(is_hidden=hide)
-            request.user.userprofile.issues_hidden = hide
-            request.user.userprofile.save()
-        return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
-
 
 def delete_issue(request, id):
     try:
