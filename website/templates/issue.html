@@ -23,8 +23,7 @@
           content="{{ object.markdown_description|escapejs }}" />
     <meta name="keywords"
           content="{% block keywords %}BLT, bug, tracking, company, easy{% endblock keywords %}">
-    <link rel="canonical"
-          href="https://{% env 'FQDN' %}/issue/{{ object.id }}">
+    <link rel="canonical" href="https://{% env 'FQDN' %}/issue/{{ object.id }}">
     <meta property="og:url"
           content="https://{% env 'FQDN' %}/issue/{{ object.id }}" />
     <meta property="og:type" content="website" />

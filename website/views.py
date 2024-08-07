@@ -1539,6 +1539,7 @@ class UserProfileDetailsView(DetailView):
             form.save()
         return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
 
+
 def delete_issue(request, id):
     try:
         # TODO: Refactor this for a direct query instead of looping through all tokens
@@ -2300,6 +2301,7 @@ class HuntCreate(CreateView):
 
         self.object.save()
         return super(HuntCreate, self).form_valid(form)
+
 
 class IssueView(DetailView):
     model = Issue
