@@ -149,9 +149,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="sizzle_issue",
-            index=models.Index(
-                fields=["github_issue_id"], name="website_siz_github__f70fba_idx"
-            ),
+            index=models.Index(fields=["github_issue_id"], name="website_siz_github__f70fba_idx"),
         ),
         migrations.AddIndex(
             model_name="sizzle_issue",

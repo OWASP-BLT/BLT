@@ -789,25 +789,32 @@ class BaconToken(models.Model):
 
 
 class Sizzle_Issue(models.Model):
-    github_issue_id = models.CharField(max_length=100, unique=True, validators=[MinLengthValidator(1)])
+    github_issue_id = models.CharField(
+        max_length=100, unique=True, validators=[MinLengthValidator(1)]
+    )
     title = models.CharField(max_length=255, blank=False)
     description = models.TextField(blank=True)
     url = models.URLField(validators=[URLValidator()])
     status = models.CharField(max_length=100)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sizzle_issues')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sizzle_issues"
+    )
 
     class Meta:
         indexes = [
-            models.Index(fields=['github_issue_id']),
-            models.Index(fields=['user']),
+            models.Index(fields=["github_issue_id"]),
+            models.Index(fields=["user"]),
         ]
 
     def __str__(self):
         return f"Issue {self.github_issue_id}: {self.title}"
 
+
 class Sizzle_TimeLog(models.Model):
-    issue = models.ForeignKey(Sizzle_Issue, on_delete=models.CASCADE, related_name='timelogs')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='timelogs')
+    issue = models.ForeignKey(Sizzle_Issue, on_delete=models.CASCADE, related_name="timelogs")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="timelogs"
+    )
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
     duration = models.DurationField(null=True, blank=True)
@@ -820,18 +827,24 @@ class Sizzle_TimeLog(models.Model):
     def __str__(self):
         return f"TimeLog for {self.issue.title} by {self.user.username} from {self.start_time} to {self.end_time}"
 
+
 class Sizzle_ActivityLog(models.Model):
-    issue = models.ForeignKey(Sizzle_Issue, on_delete=models.CASCADE, related_name='activity_logs')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='activity_logs')
+    issue = models.ForeignKey(Sizzle_Issue, on_delete=models.CASCADE, related_name="activity_logs")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activity_logs"
+    )
     window_title = models.CharField(max_length=255)
     recorded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.issue.title} - {self.window_title} at {self.recorded_at}"
 
+
 class Sizzle_Screenshot(models.Model):
-    issue = models.ForeignKey(Sizzle_Issue, on_delete=models.CASCADE, related_name='screenshots')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='screenshots')
+    issue = models.ForeignKey(Sizzle_Issue, on_delete=models.CASCADE, related_name="screenshots")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="screenshots"
+    )
     filename = models.CharField(max_length=255)
     timestamp = models.DateTimeField(auto_now_add=True)
 
