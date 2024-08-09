@@ -798,3 +798,35 @@ class BlockedIP(models.Model):
 
     def __str__(self):
         return f"user agent : {self.user_agent_string} | IP : {self.address}"
+
+
+class TimeLog(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="timelogs"
+    )
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField(null=True, blank=True)
+    duration = models.DurationField(null=True, blank=True)
+    github_issue_url = models.URLField(null=True, blank=True)  # URL field for GitHub issue
+    created = models.DateTimeField(default=timezone.now, editable=False)
+
+    def save(self, *args, **kwargs):
+        if self.end_time and self.start_time <= self.end_time:
+            self.duration = self.end_time - self.start_time
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"TimeLog by {self.user.username} from {self.start_time} to {self.end_time}"
+
+
+class ActivityLog(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activity_logs"
+    )
+    window_title = models.CharField(max_length=255)
+    url = models.URLField(null=True, blank=True)  # URL field for activity-related URL
+    recorded_at = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(default=timezone.now, editable=False)
+
+    def __str__(self):
+        return f"ActivityLog by {self.user.username} at {self.recorded_at}"
