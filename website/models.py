@@ -13,7 +13,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import MultipleObjectsReturned, ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.core.validators import URLValidator
+from django.core.validators import MinLengthValidator, URLValidator
 from django.db import models
 from django.db.models import Count
 from django.db.models.signals import post_delete, post_save
@@ -280,7 +280,6 @@ class Issue(models.Model):
     cve_id = models.CharField(max_length=16, null=True, blank=True)
     cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
-    created = models.DateTimeField(default=timezone.now, editable=False)
 
     def __unicode__(self):
         return self.description
@@ -389,7 +388,6 @@ else:
 class IssueScreenshot(models.Model):
     image = models.ImageField(upload_to="screenshots", validators=[validate_image])
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
-    is_activity_screenshot = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
 
 
@@ -791,13 +789,11 @@ class BaconToken(models.Model):
 
 
 class TimeLog(models.Model):
-    issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="timelogs")
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="timelogs"
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="timelogs")
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
     duration = models.DurationField(null=True, blank=True)
+    github_issue_url = models.URLField(null=True, blank=True)  # URL field for GitHub issue
     created = models.DateTimeField(default=timezone.now, editable=False)
 
     def save(self, *args, **kwargs):
@@ -806,17 +802,15 @@ class TimeLog(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"TimeLog for {self.issue.title} by {self.user.username} from {self.start_time} to {self.end_time}"
+        return f"TimeLog by {self.user.username} from {self.start_time} to {self.end_time}"
 
 
 class ActivityLog(models.Model):
-    issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="activity_logs")
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activity_logs"
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activity_logs")
     window_title = models.CharField(max_length=255)
+    url = models.URLField(null=True, blank=True)  # URL field for activity-related URL
     recorded_at = models.DateTimeField(auto_now_add=True)
     created = models.DateTimeField(default=timezone.now, editable=False)
 
     def __str__(self):
-        return f"{self.issue.title} - {self.window_title} at {self.recorded_at}"
+        return f"ActivityLog by {self.user.username} at {self.recorded_at}"
