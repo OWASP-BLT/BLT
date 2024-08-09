@@ -118,6 +118,8 @@ MIDDLEWARE = (
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "tz_detect.middleware.TimezoneMiddleware",
+    "blt.middleware.ip_restrict.IPRestrictMiddleware",
+    "blt.middleware.count_ip_requests.MonitorIPMiddleware",
 )
 
 TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
@@ -360,7 +362,7 @@ LOGGING = {
         },
     },
 }
-
+DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 USERS_AVATAR_PATH = "avatars"
 AVATAR_PATH = os.path.join(MEDIA_ROOT, USERS_AVATAR_PATH)
 

@@ -786,3 +786,15 @@ class BaconToken(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.amount} BACON"
+
+
+class BlockedIP(models.Model):
+    address = models.GenericIPAddressField(null=True, blank=True)
+    reason_for_block = models.TextField(blank=True, null=True, max_length=255)
+    address_range_start = models.GenericIPAddressField(null=True, blank=True)
+    address_range_end = models.GenericIPAddressField(null=True, blank=True)
+    user_agent_string = models.CharField(max_length=255, default="", null=True, blank=True)
+    count = models.IntegerField(default=1)
+
+    def __str__(self):
+        return f"user agent : {self.user_agent_string} | IP : {self.address}"
