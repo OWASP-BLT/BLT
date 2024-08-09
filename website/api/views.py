@@ -26,6 +26,7 @@ from website.models import (
     IssueScreenshot,
     Points,
     Project,
+    Tag,
     Token,
     User,
     UserProfile,
@@ -38,6 +39,7 @@ from website.serializers import (
     DomainSerializer,
     IssueSerializer,
     ProjectSerializer,
+    TagSerializer,
     UserProfileSerializer,
 )
 from website.views import LeaderboardBase, image_validator
@@ -728,3 +730,8 @@ class AuthApiViewset(viewsets.ModelViewSet):
             return Response({"success": False, "message": "User does not exists."})
         except User.DoesNotExist:
             return Response({"success": False, "message": "User does not exists."})
+
+
+class TagApiViewset(viewsets.ModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
