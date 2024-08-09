@@ -317,7 +317,7 @@ unblock_user_agent.short_description = "Unblock selected UserAgent"
 
 class IPAdmin(admin.ModelAdmin):
     list_display = ("id", "address", "user", "issuenumber", "created", "agent", "path")
-    
+
     actions = [block_ip, unblock_ip, block_user_agent, unblock_user_agent]
 
 
