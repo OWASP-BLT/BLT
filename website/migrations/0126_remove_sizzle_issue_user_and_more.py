@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0125_sizzle_issue_sizzle_activitylog_sizzle_screenshot_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
@@ -42,9 +41,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="issue",
             name="created",
-            field=models.DateTimeField(
-                default=django.utils.timezone.now, editable=False
-            ),
+            field=models.DateTimeField(default=django.utils.timezone.now, editable=False),
         ),
         migrations.CreateModel(
             name="ActivityLog",
@@ -62,9 +59,7 @@ class Migration(migrations.Migration):
                 ("recorded_at", models.DateTimeField(auto_now_add=True)),
                 (
                     "created",
-                    models.DateTimeField(
-                        default=django.utils.timezone.now, editable=False
-                    ),
+                    models.DateTimeField(default=django.utils.timezone.now, editable=False),
                 ),
                 (
                     "issue",
@@ -101,9 +96,7 @@ class Migration(migrations.Migration):
                 ("duration", models.DurationField(blank=True, null=True)),
                 (
                     "created",
-                    models.DateTimeField(
-                        default=django.utils.timezone.now, editable=False
-                    ),
+                    models.DateTimeField(default=django.utils.timezone.now, editable=False),
                 ),
                 (
                     "issue",
