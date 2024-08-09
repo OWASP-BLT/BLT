@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0124_company_tags_domain_tags_project_tags_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
@@ -31,9 +30,7 @@ class Migration(migrations.Migration):
                 ("recorded_at", models.DateTimeField(auto_now_add=True)),
                 (
                     "created",
-                    models.DateTimeField(
-                        default=django.utils.timezone.now, editable=False
-                    ),
+                    models.DateTimeField(default=django.utils.timezone.now, editable=False),
                 ),
                 (
                     "user",
@@ -63,9 +60,7 @@ class Migration(migrations.Migration):
                 ("github_issue_url", models.URLField(blank=True, null=True)),
                 (
                     "created",
-                    models.DateTimeField(
-                        default=django.utils.timezone.now, editable=False
-                    ),
+                    models.DateTimeField(default=django.utils.timezone.now, editable=False),
                 ),
                 (
                     "user",

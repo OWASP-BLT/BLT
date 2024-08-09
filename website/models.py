@@ -13,7 +13,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import MultipleObjectsReturned, ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.core.validators import MinLengthValidator, URLValidator
+from django.core.validators import URLValidator
 from django.db import models
 from django.db.models import Count
 from django.db.models.signals import post_delete, post_save
@@ -789,7 +789,9 @@ class BaconToken(models.Model):
 
 
 class TimeLog(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="timelogs")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="timelogs"
+    )
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
     duration = models.DurationField(null=True, blank=True)
@@ -806,7 +808,9 @@ class TimeLog(models.Model):
 
 
 class ActivityLog(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activity_logs")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activity_logs"
+    )
     window_title = models.CharField(max_length=255)
     url = models.URLField(null=True, blank=True)  # URL field for activity-related URL
     recorded_at = models.DateTimeField(auto_now_add=True)
