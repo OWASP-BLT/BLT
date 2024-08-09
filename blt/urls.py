@@ -30,6 +30,7 @@ from website.api.views import (
     LikeIssueApiView,
     ProjectViewSet,
     StatsApiViewset,
+    TagApiViewset,
     UrlCheckApiViewset,
     UserIssueViewSet,
     UserProfileViewSet,
@@ -547,6 +548,7 @@ urlpatterns = [
         name="projects_api",
     ),
     path("auth/delete", AuthApiViewset.as_view({"delete": "delete"}), name="auth-delete-api"),
+    path("api/v1/tags", TagApiViewset.as_view({"get": "list", "post": "create"}), name="tags-api"),
 ]
 
 if settings.DEBUG:
