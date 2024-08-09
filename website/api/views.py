@@ -11,12 +11,7 @@ from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import (
-    AllowAny,
-    IsAdminUser,
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
-)
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -31,6 +26,7 @@ from website.models import (
     IssueScreenshot,
     Points,
     Project,
+    Token,
     User,
     UserProfile,
 )
@@ -687,14 +683,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             project_instance = serializer.save()
             project_instance.__setattr__("slug", slug)
 
-            # If the logo is not provided get the logo from the repo itself
-            if project_instance.logo == "":
-                logo = project_instance.get_github_logo_save_to_storage(project_instance.github_url)
-                if logo:
-                    project_instance.logo = logo
-
-            project_instance.save()
-
             # Set contributors
             if contributors:
                 project_instance.contributors.set(contributors)
@@ -724,17 +712,19 @@ class ProjectViewSet(viewsets.ModelViewSet):
             status=200,
         )
 
-    def update(self, request, *args, **kwargs):
-        if IsAdminUser.has_permission(self=self, request=request, view=""):
-            projects = Project.objects.prefetch_related("contributors").all()
-            for project in projects:
-                contributors = Project.get_contributors(self, github_url=project.github_url)
-                project.contributors.set(contributors)
-            serializer = ProjectSerializer(projects, many=True)
-            return Response(
-                {"count": len(projects), "projects": serializer.data}, status=status.HTTP_200_OK
-            )
-        return Response(
-            {"success": False, "message": "Only admin's can access this api."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+
+class AuthApiViewset(viewsets.ModelViewSet):
+    http_method_names = ("delete",)
+    permission_classes = (IsAuthenticated,)
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            token = request.headers["Authorization"].split(" ")
+            user = Token.objects.get(key=token[1]).user
+            user_data = User.objects.get(username=user)
+            user_data.delete()
+            return Response({"success": True, "message": "User deleted successfully !!"})
+        except Token.DoesNotExist:
+            return Response({"success": False, "message": "User does not exists."})
+        except User.DoesNotExist:
+            return Response({"success": False, "message": "User does not exists."})

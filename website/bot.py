@@ -20,6 +20,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from openai import OpenAI
 
+from website.models import ChatBotLog
+
 load_dotenv(find_dotenv(), override=True)
 
 
@@ -131,6 +133,9 @@ def load_vector_store():
     # check the file exists in the storage system and download files if not exist return None
     if not default_storage.exists(db_folder_str) or not default_storage.listdir(db_folder_str)[1]:
         temp_dir.cleanup()
+        ChatBotLog.objects.create(
+            question="File was not there", answer=f"Folder Str: {str(db_folder_str)}"
+        )
         return None
     # Download all files from the storage folder to the temp directory
     for file_name in default_storage.listdir(db_folder_str)[1]:

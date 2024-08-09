@@ -18,6 +18,7 @@ import website.views
 from blt import settings
 from company.views import ShowBughuntView
 from website.api.views import (
+    AuthApiViewset,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
     CompanyViewSet,
@@ -74,6 +75,8 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
+    UserProfileDetailView2,
+    add_suggestions,
     blt_tomato,
     change_bid_status,
     chatbot_conversation,
@@ -94,9 +97,12 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     like_issue3,
     resolve,
     select_bid,
+    set_vote_status,
     submit_pr,
     subscribe_to_domains,
+    view_suggestions,
     vote_count,
+    vote_suggestions,
     weekly_report,
 )
 
@@ -373,7 +379,9 @@ urlpatterns = [
         UploadCreate.as_view(),
         name="upload",
     ),
+    # TODO(b)
     re_path(r"^profile/(?P<slug>[^/]+)/$", UserProfileDetailView.as_view(), name="profile"),
+    re_path(r"^profile2/(?P<slug>[^/]+)/$", UserProfileDetailView2.as_view(), name="profile"),
     re_path(r"^domain/(?P<slug>.+)/$", DomainDetailView.as_view(), name="domain"),
     re_path(
         r"^.well-known/acme-challenge/(?P<token>[^/]+)/$",
@@ -426,6 +434,7 @@ urlpatterns = [
         csrf_exempt(InboundParseWebhookView.as_view()),
         name="inbound_event_webhook_callback",
     ),
+    re_path(r"status/", website.views.check_status, name="check_status"),
     re_path(r"^issue/comment/add/$", comments.views.add_comment, name="add_comment"),
     re_path(r"^issue/comment/delete/$", comments.views.delete_comment, name="delete_comment"),
     re_path(r"^comment/autocomplete/$", comments.views.autocomplete, name="autocomplete"),
@@ -495,6 +504,17 @@ urlpatterns = [
         csrf_exempt(TemplateView.as_view(template_name="mobile_privacy.html")),
         name="api_privacypolicy",
     ),
+    re_path(
+        r"^contribute/$",
+        TemplateView.as_view(template_name="contribute.html"),
+        name="contribution_guidelines",
+    ),
+    path("select_contribution/", website.views.select_contribution, name="select_contribution"),
+    path(
+        "distribute_bacon/<int:contribution_id>/",
+        website.views.distribute_bacon,
+        name="distribute_bacon",
+    ),
     re_path(r"^error/", website.views.throw_error, name="post_error"),
     re_path(r"^tz_detect/", include("tz_detect.urls")),
     # re_path(r"^tellme/", include("tellme.urls")),
@@ -514,6 +534,10 @@ urlpatterns = [
     path("fetch-current-bid/", fetch_current_bid, name="fetch_current_bid"),
     path("Submitpr/", submit_pr, name="submit_pr"),
     path("weekly-report/", weekly_report, name="weekly_report"),
+    path("suggestion/add/", add_suggestions, name="add_suggestions"),
+    path("suggestion/", view_suggestions, name="view_suggestions"),
+    path("suggestion/vote/", vote_suggestions, name="vote_suggestions"),
+    path("suggestion/set-vote-status/", set_vote_status, name="set_vote_status"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s]+)",
         website.views.trademark_detailview,
@@ -541,6 +565,7 @@ urlpatterns = [
         ProjectViewSet.as_view({"get": "list", "post": "create", "patch": "update"}),
         name="projects_api",
     ),
+    path("auth/delete", AuthApiViewset.as_view({"delete": "delete"}), name="auth-delete-api"),
 ]
 
 if settings.DEBUG:

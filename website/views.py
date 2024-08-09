@@ -96,6 +96,8 @@ from website.models import (
     Points,
     Project,
     Subscription,
+    Suggestion,
+    SuggestionVotes,
     UserProfile,
     Wallet,
     Winner,
@@ -117,7 +119,134 @@ WHITELISTED_IMAGE_TYPES = {
     "png": "image/png",
 }
 
+import os
+
+import requests
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.cache import cache
+from django.shortcuts import redirect, render
+from dotenv import load_dotenv
 from PIL import Image
+from requests.auth import HTTPBasicAuth
+from sendgrid import SendGridAPIClient
+
+from .bitcoin_utils import create_bacon_token
+from .models import BaconToken, Contribution
+
+# Load environment variables
+load_dotenv()
+
+
+def check_status(request):
+    # Check if the status is already cached
+    status = cache.get("service_status")
+
+    if not status:
+        # Initialize the status dictionary
+        status = {
+            "bitcoin": False,
+            "bitcoin_block": None,
+            "sendgrid": False,
+            "github": False,
+        }
+
+        # Check Bitcoin Core Node Status
+        bitcoin_rpc_user = os.getenv("BITCOIN_RPC_USER")
+        bitcoin_rpc_password = os.getenv("BITCOIN_RPC_PASSWORD")
+        bitcoin_rpc_host = os.getenv("BITCOIN_RPC_HOST", "127.0.0.1")
+        bitcoin_rpc_port = os.getenv("BITCOIN_RPC_PORT", "8332")
+
+        try:
+            response = requests.post(
+                f"http://{bitcoin_rpc_host}:{bitcoin_rpc_port}",
+                json={
+                    "jsonrpc": "1.0",
+                    "id": "curltest",
+                    "method": "getblockchaininfo",
+                    "params": [],
+                },
+                auth=HTTPBasicAuth(bitcoin_rpc_user, bitcoin_rpc_password),
+            )
+            if response.status_code == 200:
+                data = response.json().get("result", {})
+                status["bitcoin"] = True
+                status["bitcoin_block"] = data.get("blocks", None)
+        except Exception as e:
+            print(f"Bitcoin Core Node Error: {e}")
+
+        try:
+            sg = SendGridAPIClient(os.getenv("SENDGRID_PASSWORD"))
+            response = sg.client.api_keys._(sg.api_key).get()
+            if response.status_code == 200:
+                status["sendgrid"] = True
+        except Exception as e:
+            print(f"SendGrid Error: {e}")
+
+        # Check GitHub Repo Access
+        github_token = os.getenv("GITHUB_ACCESS_TOKEN")
+
+        if not github_token:
+            print(
+                "GitHub Access Token not found. Please set the GITHUB_ACCESS_TOKEN environment variable."
+            )
+            status["github"] = False
+        else:
+            try:
+                headers = {"Authorization": f"token {github_token}"}
+                response = requests.get("https://api.github.com/user/repos", headers=headers)
+
+                print(f"Response Status Code: {response.status_code}")
+                print(f"Response Content: {response.json()}")
+
+                if response.status_code == 200:
+                    status["github"] = True
+                    print("GitHub API token has repository access.")
+                else:
+                    status["github"] = False
+                    print(
+                        f"GitHub API token check failed with status code {response.status_code}: {response.json().get('message', 'No message provided')}"
+                    )
+
+            except requests.exceptions.RequestException as e:
+                status["github"] = False
+                print(f"GitHub API Error: {e}")
+
+        # Cache the status for 1 minute (60 seconds)
+        cache.set("service_status", status, timeout=60)
+
+    # Pass the status to the template
+    return render(request, "status_page.html", {"status": status})
+
+
+def admin_required(user):
+    return user.is_superuser
+
+
+@user_passes_test(admin_required)
+def select_contribution(request):
+    contributions = Contribution.objects.filter(status="closed").exclude(
+        id__in=BaconToken.objects.values_list("contribution_id", flat=True)
+    )
+    return render(request, "select_contribution.html", {"contributions": contributions})
+
+
+@user_passes_test(admin_required)
+def distribute_bacon(request, contribution_id):
+    contribution = Contribution.objects.get(id=contribution_id)
+    if (
+        contribution.status == "closed"
+        and not BaconToken.objects.filter(contribution=contribution).exists()
+    ):
+        token = create_bacon_token(contribution.user, contribution)
+        if token:
+            messages.success(request, "Bacon distributed successfully")
+            return redirect("contribution_detail", contribution_id=contribution.id)
+        else:
+            messages.error(request, "Failed to distribute bacon")
+    contributions = Contribution.objects.filter(status="closed").exclude(
+        id__in=BaconToken.objects.values_list("contribution_id", flat=True)
+    )
+    return render(request, "select_contribution.html", {"contributions": contributions})
 
 
 def image_validator(img):
@@ -304,10 +433,6 @@ def newhome(request, template="new_home.html"):
                 messages.error(request, "Please verify your email address.")
         else:
             messages.error(request, "No email associated with your account. Please add an email.")
-    else:
-        messages.info(
-            request, "You are browsing as a guest. Please log in or register for full access."
-        )
 
     # Fetch and paginate issues
     issues_queryset = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
@@ -937,10 +1062,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     "report.html",
                     {"form": self.get_form(), "captcha_form": captcha_form},
                 )
-            clean_domain = (
-                obj.domain_name.replace("www.", "").replace("https://", "").replace("http://", "")
-            )
-            domain = Domain.objects.filter(name=clean_domain).first()
+            parsed_url = urlparse(obj.url)
+            clean_domain = parsed_url.netloc
+            domain = Domain.objects.filter(url=clean_domain).first()
 
             domain_exists = False if domain is None else True
 
@@ -1216,6 +1340,7 @@ def profile(request):
         return redirect("/")
 
 
+# TODO(b) remove
 class UserProfileDetailView(DetailView):
     model = get_user_model()
     slug_field = "username"
@@ -1379,6 +1504,94 @@ class UserProfileDetailsView(DetailView):
         return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
 
 
+class UserProfileDetailView2(DetailView):
+    model = get_user_model()
+    slug_field = "username"
+    template_name = "profile2.html"
+
+    def get(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+        except Http404:
+            messages.error(self.request, "That user was not found.")
+            return redirect("/")
+        return super(UserProfileDetailView2, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        user = self.object
+        context = super(UserProfileDetailView2, self).get_context_data(**kwargs)
+        context["my_score"] = list(
+            Points.objects.filter(user=self.object).aggregate(total_score=Sum("score")).values()
+        )[0]
+        context["websites"] = (
+            Domain.objects.filter(issue__user=self.object)
+            .annotate(total=Count("issue"))
+            .order_by("-total")
+        )
+        context["activities"] = Issue.objects.filter(user=self.object, hunt=None).exclude(
+            Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+        )[0:3]
+        context["activity_screenshots"] = {}
+        for activity in context["activities"]:
+            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(
+                issue=activity.pk
+            ).first()
+        context["profile_form"] = UserProfileForm()
+        context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
+        context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
+        context["current_month"] = datetime.now().month
+        if self.request.user.is_authenticated:
+            context["wallet"] = Wallet.objects.get(user=self.request.user)
+        context["graph"] = (
+            Issue.objects.filter(user=self.object)
+            .filter(
+                created__month__gte=(datetime.now().month - 6),
+                created__month__lte=datetime.now().month,
+            )
+            .annotate(month=ExtractMonth("created"))
+            .values("month")
+            .annotate(c=Count("id"))
+            .order_by()
+        )
+        context["total_bugs"] = Issue.objects.filter(user=self.object, hunt=None).count()
+        for i in range(0, 7):
+            context["bug_type_" + str(i)] = Issue.objects.filter(
+                user=self.object, hunt=None, label=str(i)
+            )
+
+        arr = []
+        allFollowers = user.userprofile.follower.all()
+        for userprofile in allFollowers:
+            arr.append(User.objects.get(username=str(userprofile.user)))
+        context["followers"] = arr
+
+        arr = []
+        allFollowing = user.userprofile.follows.all()
+        for userprofile in allFollowing:
+            arr.append(User.objects.get(username=str(userprofile.user)))
+        context["following"] = arr
+
+        context["followers_list"] = [
+            str(prof.user.email) for prof in user.userprofile.follower.all()
+        ]
+        context["bookmarks"] = user.userprofile.issue_saved.all()
+        context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
+        return context
+
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
+        if request.FILES.get("user_avatar") and form.is_valid():
+            form.save()
+        else:
+            hide = True if request.POST.get("issues_hidden") == "on" else False
+            user_issues = Issue.objects.filter(user=request.user)
+            user_issues.update(is_hidden=hide)
+            request.user.userprofile.issues_hidden = hide
+            request.user.userprofile.save()
+        return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
+
+
 def delete_issue(request, id):
     try:
         # TODO: Refactor this for a direct query instead of looping through all tokens
@@ -1503,6 +1716,42 @@ class DomainDetailView(ListView):
         return context
 
 
+import requests
+from bs4 import BeautifulSoup
+from django.db.models.functions import ExtractMonth
+from django.views.generic import TemplateView
+
+from .models import (
+    IP,
+    BaconToken,
+    Bid,
+    ChatBotLog,
+    Company,
+    CompanyAdmin,
+    Contribution,
+    Contributor,
+    ContributorStats,
+    Domain,
+    Hunt,
+    HuntPrize,
+    InviteFriend,
+    Issue,
+    IssueScreenshot,
+    Monitor,
+    Payment,
+    Points,
+    Project,
+    Subscription,
+    Suggestion,
+    SuggestionVotes,
+    Transaction,
+    User,
+    UserProfile,
+    Wallet,
+    Winner,
+)
+
+
 class StatsDetailView(TemplateView):
     template_name = "stats.html"
 
@@ -1510,31 +1759,166 @@ class StatsDetailView(TemplateView):
         context = super(StatsDetailView, self).get_context_data(*args, **kwargs)
 
         response = requests.get(settings.EXTENSION_URL)
-        soup = BeautifulSoup(response.text)
+        soup = BeautifulSoup(response.text, "html.parser")
 
         stats = ""
         for item in soup.findAll("span", {"class": "e-f-ih"}):
             stats = item.attrs["title"]
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["extension_users"] = stats.replace(" users", "")
-        context["bug_count"] = Issue.objects.all().count()
-        context["user_count"] = User.objects.all().count()
-        context["hunt_count"] = Hunt.objects.all().count()
-        context["domain_count"] = Domain.objects.all().count()
-        context["user_graph"] = (
-            User.objects.annotate(month=ExtractMonth("date_joined"))
-            .values("month")
-            .annotate(c=Count("id"))
-            .order_by()
-        )
-        context["graph"] = (
-            Issue.objects.annotate(month=ExtractMonth("created"))
-            .values("month")
-            .annotate(c=Count("id"))
-            .order_by()
-        )
-        context["pie_chart"] = Issue.objects.values("label").annotate(c=Count("label")).order_by()
+        context["extension_users"] = stats.replace(" users", "") or "0"
+
+        # Prepare stats data for display
+        context["stats"] = [
+            {"label": "Bugs", "count": Issue.objects.all().count(), "icon": "fas fa-bug"},
+            {"label": "Users", "count": User.objects.all().count(), "icon": "fas fa-users"},
+            {"label": "Hunts", "count": Hunt.objects.all().count(), "icon": "fas fa-crosshairs"},
+            {"label": "Domains", "count": Domain.objects.all().count(), "icon": "fas fa-globe"},
+            {
+                "label": "Extension Users",
+                "count": int(context["extension_users"].replace(",", "")),
+                "icon": "fas fa-puzzle-piece",
+            },
+            {
+                "label": "Subscriptions",
+                "count": Subscription.objects.all().count(),
+                "icon": "fas fa-envelope",
+            },
+            {
+                "label": "Companies",
+                "count": Company.objects.all().count(),
+                "icon": "fas fa-building",
+            },
+            {
+                "label": "Hunt Prizes",
+                "count": HuntPrize.objects.all().count(),
+                "icon": "fas fa-gift",
+            },
+            {
+                "label": "Screenshots",
+                "count": IssueScreenshot.objects.all().count(),
+                "icon": "fas fa-camera",
+            },
+            {"label": "Winners", "count": Winner.objects.all().count(), "icon": "fas fa-trophy"},
+            {"label": "Points", "count": Points.objects.all().count(), "icon": "fas fa-star"},
+            {
+                "label": "Invitations",
+                "count": InviteFriend.objects.all().count(),
+                "icon": "fas fa-envelope-open",
+            },
+            {
+                "label": "User Profiles",
+                "count": UserProfile.objects.all().count(),
+                "icon": "fas fa-id-badge",
+            },
+            {"label": "IPs", "count": IP.objects.all().count(), "icon": "fas fa-network-wired"},
+            {
+                "label": "Company Admins",
+                "count": CompanyAdmin.objects.all().count(),
+                "icon": "fas fa-user-tie",
+            },
+            {
+                "label": "Transactions",
+                "count": Transaction.objects.all().count(),
+                "icon": "fas fa-exchange-alt",
+            },
+            {
+                "label": "Payments",
+                "count": Payment.objects.all().count(),
+                "icon": "fas fa-credit-card",
+            },
+            {
+                "label": "Contributor Stats",
+                "count": ContributorStats.objects.all().count(),
+                "icon": "fas fa-chart-bar",
+            },
+            {"label": "Monitors", "count": Monitor.objects.all().count(), "icon": "fas fa-desktop"},
+            {"label": "Bids", "count": Bid.objects.all().count(), "icon": "fas fa-gavel"},
+            {
+                "label": "Chatbot Logs",
+                "count": ChatBotLog.objects.all().count(),
+                "icon": "fas fa-robot",
+            },
+            {
+                "label": "Suggestions",
+                "count": Suggestion.objects.all().count(),
+                "icon": "fas fa-lightbulb",
+            },
+            {
+                "label": "Suggestion Votes",
+                "count": SuggestionVotes.objects.all().count(),
+                "icon": "fas fa-thumbs-up",
+            },
+            {
+                "label": "Contributors",
+                "count": Contributor.objects.all().count(),
+                "icon": "fas fa-user-friends",
+            },
+            {
+                "label": "Projects",
+                "count": Project.objects.all().count(),
+                "icon": "fas fa-project-diagram",
+            },
+            {
+                "label": "Contributions",
+                "count": Contribution.objects.all().count(),
+                "icon": "fas fa-hand-holding-heart",
+            },
+            {
+                "label": "Bacon Tokens",
+                "count": BaconToken.objects.all().count(),
+                "icon": "fas fa-coins",
+            },
+        ]
+        context["stats"] = sorted(context["stats"], key=lambda x: int(x["count"]), reverse=True)
+
+        def get_cumulative_data(queryset, date_field="created"):
+            data = list(
+                queryset.annotate(month=ExtractMonth(date_field))
+                .values("month")
+                .annotate(count=Count("id"))
+                .order_by("month")
+                .values_list("count", flat=True)
+            )
+
+            cumulative_data = []
+            cumulative_sum = 0
+            for count in data:
+                cumulative_sum += count
+                cumulative_data.append(cumulative_sum)
+
+            return cumulative_data
+
+        # Prepare cumulative sparklines data
+        context["sparklines_data"] = [
+            get_cumulative_data(Issue.objects),  # Uses "created"
+            get_cumulative_data(User.objects, date_field="date_joined"),  # Uses "date_joined"
+            get_cumulative_data(Hunt.objects),  # Uses "created"
+            get_cumulative_data(Domain.objects),  # Uses "created"
+            get_cumulative_data(Subscription.objects),  # Uses "created"
+            get_cumulative_data(Company.objects),  # Uses "created"
+            get_cumulative_data(HuntPrize.objects),  # Uses "created"
+            get_cumulative_data(IssueScreenshot.objects),  # Uses "created"
+            get_cumulative_data(Winner.objects),  # Uses "created"
+            get_cumulative_data(Points.objects),  # Uses "created"
+            get_cumulative_data(InviteFriend.objects),  # Uses "created"
+            get_cumulative_data(UserProfile.objects),  # Uses "created"
+            get_cumulative_data(IP.objects),  # Uses "created"
+            get_cumulative_data(CompanyAdmin.objects),  # Uses "created"
+            get_cumulative_data(Transaction.objects),  # Uses "created"
+            get_cumulative_data(Payment.objects),  # Uses "created"
+            get_cumulative_data(ContributorStats.objects),  # Uses "created"
+            get_cumulative_data(Monitor.objects),  # Uses "created"
+            get_cumulative_data(Bid.objects),  # Uses "created"
+            get_cumulative_data(ChatBotLog.objects),  # Uses "created"
+            get_cumulative_data(Suggestion.objects),  # Uses "created"
+            get_cumulative_data(SuggestionVotes.objects),  # Uses "created"
+            get_cumulative_data(Contributor.objects),  # Uses "created"
+            get_cumulative_data(Project.objects),  # Uses "created"
+            get_cumulative_data(Contribution.objects),  # Uses "created"
+            get_cumulative_data(BaconToken.objects),  # Uses "created"
+        ]
+
         return context
 
 
@@ -1970,23 +2354,6 @@ class HuntCreate(CreateView):
         self.object.save()
         return super(HuntCreate, self).form_valid(form)
 
-    def get_success_url(self):
-        # return reverse('start_hunt')
-
-        if self.request.POST.get("plan") == "Ant":
-            return (
-                "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TSZ84RQZ8RKKC"
-            )
-        if self.request.POST.get("plan") == "Wasp":
-            return (
-                "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E3EELQQ6JLXKY"
-            )
-        if self.request.POST.get("plan") == "Scorpion":
-            return (
-                "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=9R3LPM3ZN8KCC"
-            )
-        return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HH7MNY6KJGZFW"
-
 
 # TODO(b): REMOVE after _3 is ready, tested and has all features of the existing issueview, until then keep this working.
 class IssueView(DetailView):
@@ -2200,7 +2567,7 @@ def UpdateIssue(request):
                 "email/bug_updated.txt",
                 {
                     "domain": issue.domain.name,
-                    "name": issue.user.username,
+                    "name": issue.user.username if issue.user else "Anonymous",
                     "id": issue.id,
                     "username": request.user.username,
                     "action": "closed",
@@ -4639,55 +5006,86 @@ DAILY_REQUEST_LIMIT = 10
 
 @api_view(["POST"])
 def chatbot_conversation(request):
-    # Rate Limit Check
-    today = datetime.now(timezone.utc).date()
-    rate_limit_key = f"global_daily_requests_{today}"
-    request_count = cache.get(rate_limit_key, 0)
+    try:
+        # Rate Limit Check
+        today = datetime.now(timezone.utc).date()
+        rate_limit_key = f"global_daily_requests_{today}"
+        request_count = cache.get(rate_limit_key, 0)
 
-    if request_count >= DAILY_REQUEST_LIMIT:
-        return Response(
-            {"error": "Daily request limit exceeded."}, status=status.HTTP_429_TOO_MANY_REQUESTS
-        )
-
-    question = request.data.get("question", "")
-    check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
-    if not check_api:
-        return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
-
-    # Apply validation for question
-    if not question or not isinstance(question, str):
-        return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
-
-    global vector_store
-    if vector_store is None:
-        try:
-            vector_store = load_vector_store()
-        except FileNotFoundError:
+        if request_count >= DAILY_REQUEST_LIMIT:
             return Response(
-                {"error": "Vector store not found"},
-                status=status.HTTP_400_BAD_REQUEST,
+                {"error": "Daily request limit exceeded."}, status=status.HTTP_429_TOO_MANY_REQUESTS
             )
 
-    # Handle the "exit" command
-    if question.lower() == "exit":
-        # if buffer is present in the session then delete it
+        question = request.data.get("question", "")
+        check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
+        if not check_api:
+            ChatBotLog.objects.create(question=question, answer="Error: Invalid API Key")
+            return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Apply validation for question
+        if not question or not isinstance(question, str):
+            ChatBotLog.objects.create(question=question, answer="Error: Invalid question")
+            return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
+
+        global vector_store
+        if not vector_store:
+            try:
+                vector_store = load_vector_store()
+            except FileNotFoundError as e:
+                ChatBotLog.objects.create(
+                    question=question, answer="Error: Vector store not found {e}"
+                )
+                return Response(
+                    {"error": "Vector store not found"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            except Exception as e:
+                ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
+                return Response(
+                    {"error": "Error loading vector store"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            finally:
+                if not vector_store:
+                    ChatBotLog.objects.create(
+                        question=question, answer="Error: Vector store not loaded"
+                    )
+                    return Response(
+                        {"error": "Vector store not loaded"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+
+        # Handle the "exit" command
+        if question.lower() == "exit":
+            # if buffer is present in the session then delete it
+            if "buffer" in request.session:
+                del request.session["buffer"]
+            return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
+
+        crc, memory = conversation_chain(vector_store)
         if "buffer" in request.session:
-            del request.session["buffer"]
-        return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
+            memory.buffer = request.session["buffer"]
 
-    crc, memory = conversation_chain(vector_store)
-    if "buffer" in request.session:
-        memory.buffer = request.session["buffer"]
+        try:
+            response = crc.invoke({"question": question})
+        except Exception as e:
+            error_message = f"Error: {str(e)}"
+            ChatBotLog.objects.create(question=question, answer=error_message)
+            return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Increment the request count
+        cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
+        request.session["buffer"] = memory.buffer
 
-    response = crc.invoke({"question": question})
-    # Increment the request count
-    cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
-    request.session["buffer"] = memory.buffer
+        # Log the conversation
+        ChatBotLog.objects.create(question=question, answer=response["answer"])
 
-    # Log the conversation
-    ChatBotLog.objects.create(question=question, answer=response["answer"])
+        return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
 
-    return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
+    except Exception as e:
+        error_message = f"Error: {str(e)}"
+        ChatBotLog.objects.create(question=request.data.get("question", ""), answer=error_message)
+        return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 def weekly_report(request):
@@ -4749,3 +5147,106 @@ def blt_tomato(request):
         project["funding_hyperlinks"] = funding_link
 
     return render(request, "blt_tomato.html", {"projects": data})
+
+
+@login_required
+def vote_suggestions(request):
+    if request.method == "POST":
+        user = request.user
+        data = json.loads(request.body)
+        suggestion_id = data.get("suggestion_id")
+        suggestion = Suggestion.objects.get(id=suggestion_id)
+        up_vote = data.get("up_vote")
+        down_vote = data.get("down_vote")
+        voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).exists()
+        if not voted:
+            up_vote = True if up_vote else False
+            down_vote = True if down_vote else False
+
+            if up_vote or down_vote:
+                voted = SuggestionVotes.objects.create(
+                    user=user, suggestion=suggestion, up_vote=up_vote, down_vote=down_vote
+                )
+
+                if up_vote:
+                    suggestion.up_votes += 1
+                if down_vote:
+                    suggestion.down_votes += 1
+        else:
+            if not up_vote:
+                suggestion.up_votes -= 1
+            if down_vote is False:
+                suggestion.down_votes -= 1
+
+            voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).delete()
+
+            if up_vote:
+                voted = SuggestionVotes.objects.create(
+                    user=user, suggestion=suggestion, up_vote=True, down_vote=False
+                )
+                suggestion.up_votes += 1
+
+            if down_vote:
+                voted = SuggestionVotes.objects.create(
+                    user=user, suggestion=suggestion, down_vote=True, up_vote=False
+                )
+                suggestion.down_votes += 1
+
+            suggestion.save()
+
+        response = {
+            "success": True,
+            "up_vote": suggestion.up_votes,
+            "down_vote": suggestion.down_votes,
+        }
+        return JsonResponse(response)
+
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=402)
+
+
+@login_required
+def set_vote_status(request):
+    if request.method == "POST":
+        user = request.user
+        data = json.loads(request.body)
+        id = data.get("id")
+        try:
+            suggestion = Suggestion.objects.get(id=id)
+        except Suggestion.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Suggestion not found"}, status=404)
+
+        up_vote = SuggestionVotes.objects.filter(
+            suggestion=suggestion, user=user, up_vote=True
+        ).exists()
+        down_vote = SuggestionVotes.objects.filter(
+            suggestion=suggestion, user=user, down_vote=True
+        ).exists()
+
+        response = {"up_vote": up_vote, "down_vote": down_vote}
+        return JsonResponse(response)
+
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
+
+
+@login_required
+def add_suggestions(request):
+    if request.method == "POST":
+        user = request.user
+        data = json.loads(request.body)
+        title = data.get("title")
+        description = data.get("description", "")
+        id = str(uuid.uuid4())
+        print(description, title, id)
+        if title and description and user:
+            suggestion = Suggestion(user=user, title=title, description=description, id=id)
+            suggestion.save()
+            messages.success(request, "Suggestion added successfully.")
+            return JsonResponse({"status": "success"})
+        else:
+            messages.error(request, "Please fill all the fields.")
+            return JsonResponse({"status": "error"}, status=400)
+
+
+def view_suggestions(request):
+    suggestion = Suggestion.objects.all()
+    return render(request, "feature_suggestion.html", {"suggestions": suggestion})

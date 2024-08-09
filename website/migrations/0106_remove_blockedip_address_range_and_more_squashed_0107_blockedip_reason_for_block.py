@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     replaces = [
         ("website", "0106_remove_blockedip_address_range_and_more"),
         ("website", "0107_blockedip_reason_for_block"),

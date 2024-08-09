@@ -23,6 +23,8 @@ from website.models import (
     Points,
     Project,
     Subscription,
+    Suggestion,
+    SuggestionVotes,
     Transaction,
     UserProfile,
     Wallet,
@@ -86,7 +88,7 @@ class BidAdmin(admin.ModelAdmin):
         "user",
         "issue_url",
         "pr_link",
-        "amount",
+        "amount_bch",
         "bch_address",
         "status",
         "created",
@@ -95,7 +97,7 @@ class BidAdmin(admin.ModelAdmin):
 
 
 class WalletAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "current_balance", "created_at")
+    list_display = ("id", "user", "current_balance", "created")
 
 
 class PaymentAdmin(admin.ModelAdmin):
@@ -276,9 +278,7 @@ class IssueScreenshotAdmin(admin.ModelAdmin):
 
 def block_ip(modeladmin, request, queryset):
     for ip in queryset:
-        BlockedIP.objects.create(
-            address=ip.address, count=ip.count
-        )
+        BlockedIP.objects.create(address=ip.address, count=ip.count)
     modeladmin.message_user(request, "Selected IPs have been blocked successfully.")
 
 
@@ -293,23 +293,26 @@ def unblock_ip(modeladmin, request, queryset):
 
 unblock_ip.short_description = "Unblock selected IPs"
 
+
 def block_user_agent(modeladmin, request, queryset):
     for ip in queryset:
-        BlockedIP.objects.create(
-            user_agent_string=ip.user_agent_string
-        )
-    
+        BlockedIP.objects.create(user_agent_string=ip.user_agent_string)
+
     modeladmin.message_user(request, "Selected UserAgent have been blocked successfully.")
 
-block_user_agent.short_description ="Block selected UserAgent"
+
+block_user_agent.short_description = "Block selected UserAgent"
+
 
 def unblock_user_agent(modeladmin, request, queryset):
     for ip in queryset:
         BlockedIP.objects.filter(user_agent_string=ip.user_agent_string).delete()
-    
+
     modeladmin.message_user(request, "Selected UserAgent have been unblocked successfully.")
 
-unblock_user_agent.short_description ="Unblock selected UserAgent"
+
+unblock_user_agent.short_description = "Unblock selected UserAgent"
+
 
 class IPAdmin(admin.ModelAdmin):
     list_display = (
@@ -338,11 +341,26 @@ class MonitorAdmin(admin.ModelAdmin):
 
 
 class ChatBotLogAdmin(admin.ModelAdmin):
-    list_display = ("id", "question", "answer", "timestamp")
+    list_display = ("id", "question", "answer", "created")
+
+
+class SuggestionAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "title", "description", "up_votes", "down_votes")
+
+
+class SuggestionVotesAdmin(admin.ModelAdmin):
+    list_display = ("user", "suggestion", "up_vote", "down_vote")
 
 
 class BlockedIPAdmin(admin.ModelAdmin):
-    list_display = ("address", "reason_for_block", "address_range_start", "address_range_end", "user_agent_string", "count")
+    list_display = (
+        "address",
+        "reason_for_block",
+        "address_range_start",
+        "address_range_end",
+        "user_agent_string",
+        "count",
+    )
 
 
 class ProjectAdmin(admin.ModelAdmin):
@@ -379,6 +397,8 @@ admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
 admin.site.register(HuntPrize)
 admin.site.register(ChatBotLog, ChatBotLogAdmin)
 admin.site.register(BlockedIP, BlockedIPAdmin)
+admin.site.register(Suggestion, SuggestionAdmin)
+admin.site.register(SuggestionVotes, SuggestionVotesAdmin)
 
 # Register missing models
 admin.site.register(InviteFriend)

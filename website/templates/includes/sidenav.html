@@ -46,7 +46,16 @@
                         <div class="w-8 mr-4">
                             <i class="fa fa-institution"></i>
                         </div>
-                        <span>Companies</span>
+                        <span>Organizations</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/sponsor/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'sponsor' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <div class="w-8 mr-4">
+                            <i class="fa fa-handshake"></i>
+                        </div>
+                        <span>Sponsor</span>
                     </a>
                 </li>
                 <li class="{% if request.path == '/scoreboard/' %}bg-gray-200{% endif %}">
@@ -65,15 +74,6 @@
                             <i class="fa fa-trophy"></i>
                         </div>
                         <span>Users</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/teams/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'teams' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">
-                            <i class="fa fa-users"></i>
-                        </div>
-                        <span>Teams</span>
                     </a>
                 </li>
                 <li class="{% if request.path == '/hunts/' %}bg-gray-200{% endif %}">
@@ -146,6 +146,15 @@
                             <i class="fa fa-tv"></i>
                         </div>
                         <span>BLTV</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/contribute/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'contribution_guidelines' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <div class="w-8 mr-4">
+                            <i class="fa fa-handshake"></i>
+                        </div>
+                        <span>Contribute</span>
                     </a>
                 </li>
                 <li class="{% if request.path == '/contributors/' %}bg-gray-200{% endif %}">
@@ -221,6 +230,24 @@
                                  alt="ant">
                         </div>
                         <span>BLT Tomato</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/view-suggestion/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'view_suggestions' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <div class="w-8 mr-4">
+                            <i class="fa fa-comment"></i>
+                        </div>
+                        <span>Suggestions</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/status/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'check_status' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <div class="w-8 mr-4">
+                            <i class="fa fa-check-circle"></i>
+                        </div>
+                        <span>Status</span>
                     </a>
                 </li>
                 <li>

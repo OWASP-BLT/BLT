@@ -165,7 +165,13 @@ label {
             <h2>Current Bids</h2>
             {% if bids %}
                 <ul>
-                    {% for bid in bids %}<li>${{ bid.amount }} on {{ bid.issue.title }} by {{ bid.user.username }}</li>{% endfor %}
+                    {% for bid in bids %}
+                        <li>
+                            ${{ bid.amount_bch }} on
+                            <a href="{{ bid.issue_url }}">{{ bid.issue_url }}</a>
+                            by <a href="{{ bid.user.get_absolute_url }}">{{ bid.user.username }}</a>
+                        </li>
+                    {% endfor %}
                 </ul>
             {% else %}
                 <p>No bids to display.</p>

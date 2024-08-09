@@ -1,8 +1,11 @@
+import ipaddress
+
 from django.core.cache import cache
 from django.http import HttpResponseForbidden
 from user_agents import parse
+
 from website.models import BlockedIP
-import ipaddress
+
 
 class IPRestrictMiddleware:
     """
@@ -37,13 +40,13 @@ class IPRestrictMiddleware:
             if start_int <= ip_int <= end_int:
                 return True
         return False
-    
+
     def blocked_agents(self):
-        blocked_agents=cache.get("blocked_agents")
+        blocked_agents = cache.get("blocked_agents")
         if blocked_agents is None:
-            blocked_user_agents = BlockedIP.objects.values_list("user_agent_string",flat=True)
+            blocked_user_agents = BlockedIP.objects.values_list("user_agent_string", flat=True)
             blocked_agents = set(blocked_user_agents)
-            cache.set("blocked_agents",blocked_agents, timeout=86400)
+            cache.set("blocked_agents", blocked_agents, timeout=86400)
         return blocked_agents
 
     def __call__(self, request):
@@ -53,10 +56,15 @@ class IPRestrictMiddleware:
 
         if ip:
             if ip in self.blocked_ips():
-                return HttpResponseForbidden("Your IP address is restricted from accessing this site.")
+                return HttpResponseForbidden(
+                    "Your IP address is restricted from accessing this site."
+                )
             blocked_ip_ranges = self.blocked_ip_ranges()
             if self.ip_in_range(ip, blocked_ip_ranges):
-                return HttpResponseForbidden("Your IP address is restricted from accessing this site.")
+                return HttpResponseForbidden(
+                    "Your IP address is restricted from accessing this site."
+                )
         if parsed_agent and parsed_agent in self.blocked_agents():
             return HttpResponseForbidden("Your IP address is restricted from accessing this site.")
+
         return self.get_response(request)
