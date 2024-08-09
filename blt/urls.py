@@ -30,11 +30,12 @@ from website.api.views import (
     LikeIssueApiView,
     ProjectViewSet,
     StatsApiViewset,
+    TagApiViewset,
     UrlCheckApiViewset,
     UserIssueViewSet,
     UserProfileViewSet,
 )
-from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 etc; AutoLabel,
+from website.views import (  # TODO AutoLabel,
     AllIssuesView,
     CompanySettings,
     ContributorStatsView,
@@ -57,8 +58,6 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     InviteCreate,
     IssueCreate,
     IssueView,
-    IssueView2,
-    IssueView3,
     JoinCompany,
     ListHunts,
     OngoingHunts,
@@ -75,7 +74,6 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
-    UserProfileDetailView2,
     add_suggestions,
     blt_tomato,
     change_bid_status,
@@ -83,18 +81,12 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     contributors_view,
     create_github_issue,
     deletions,
-    dislike_issue2,
-    dislike_issue3,
     facebook_callback,
     fetch_current_bid,
-    flag_issue2,
-    flag_issue3,
     generate_bid_image,
     get_unique_issues,
     github_callback,
     google_callback,
-    like_issue2,
-    like_issue3,
     resolve,
     select_bid,
     set_vote_status,
@@ -166,6 +158,9 @@ urlpatterns = [
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),
     path("socialaccounts/", SocialAccountListView.as_view(), name="social_account_list"),
+    path(
+        "add_domain_to_company/", website.views.add_domain_to_company, name="add_domain_to_company"
+    ),
     path(
         "socialaccounts/<int:pk>/disconnect/",
         SocialAccountDisconnectView.as_view(),
@@ -294,7 +289,6 @@ urlpatterns = [
         name="user_profile",
     ),
     path(settings.ADMIN_URL + "/", admin.site.urls),
-    # TODO(b): REMOVE after _3 is ready
     re_path(r"^like_issue/(?P<issue_pk>\d+)/$", website.views.like_issue, name="like_issue"),
     re_path(
         r"^dislike_issue/(?P<issue_pk>\d+)/$",
@@ -302,14 +296,7 @@ urlpatterns = [
         name="dislike_issue",
     ),
     re_path(r"^flag_issue/(?P<issue_pk>\d+)/$", website.views.flag_issue, name="flag_issue"),
-    re_path(r"^like_issue2/(?P<issue_pk>\d+)/$", like_issue2, name="like_issue2"),
-    re_path(r"^dislike_issue2/(?P<issue_pk>\d+)/$", dislike_issue2, name="dislike_issue2"),
-    re_path(r"^flag_issue2/(?P<issue_pk>\d+)/$", flag_issue2, name="flag_issue2"),
-    re_path(r"^like_issue3/(?P<issue_pk>\d+)/$", like_issue3, name="like_issue3"),
-    re_path(r"^dislike_issue3/(?P<issue_pk>\d+)/$", dislike_issue3, name="dislike_issue3"),
-    re_path(r"^flag_issue3/(?P<issue_pk>\d+)/$", flag_issue3, name="flag_issue3"),
     re_path(r"^resolve/(?P<id>\w+)/$", resolve, name="resolve"),
-    # TODO(b) track this
     re_path(r"^create_github_issue/(?P<id>\w+)/$", create_github_issue, name="create_github_issue"),
     re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
@@ -338,10 +325,7 @@ urlpatterns = [
     ),
     # delete_comment
     path("issue2/comment/delete/", website.views.delete_comment, name="delete_comment"),
-    # TODO(b): REMOVE after _3 is ready
     re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
-    re_path(r"^issue2/(?P<slug>\w+)/$", IssueView2.as_view(), name="issue_view2"),
-    re_path(r"^issue3/(?P<slug>\w+)/$", IssueView3.as_view(), name="issue_view3"),
     re_path(r"^follow/(?P<user>[^/]+)/", website.views.follow_user, name="follow_user"),
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
     re_path(r"^label_activity/$", SpecificIssuesView.as_view(), name="all_activitys"),
@@ -379,9 +363,7 @@ urlpatterns = [
         UploadCreate.as_view(),
         name="upload",
     ),
-    # TODO(b)
     re_path(r"^profile/(?P<slug>[^/]+)/$", UserProfileDetailView.as_view(), name="profile"),
-    re_path(r"^profile2/(?P<slug>[^/]+)/$", UserProfileDetailView2.as_view(), name="profile"),
     re_path(r"^domain/(?P<slug>.+)/$", DomainDetailView.as_view(), name="domain"),
     re_path(
         r"^.well-known/acme-challenge/(?P<token>[^/]+)/$",
@@ -566,6 +548,7 @@ urlpatterns = [
         name="projects_api",
     ),
     path("auth/delete", AuthApiViewset.as_view({"delete": "delete"}), name="auth-delete-api"),
+    path("api/v1/tags", TagApiViewset.as_view({"get": "list", "post": "create"}), name="tags-api"),
 ]
 
 if settings.DEBUG:

@@ -25,6 +25,7 @@ from website.models import (
     Subscription,
     Suggestion,
     SuggestionVotes,
+    Tag,
     Transaction,
     UserProfile,
     Wallet,
@@ -315,15 +316,8 @@ unblock_user_agent.short_description = "Unblock selected UserAgent"
 
 
 class IPAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "address_range",
-        "address",
-        "user",
-        "issuenumber",
-        "user_agent_string",
-        "count",
-    )
+    list_display = ("id", "address", "user", "issuenumber", "created", "agent", "path")
+    
     actions = [block_ip, unblock_ip, block_user_agent, unblock_user_agent]
 
 
@@ -405,3 +399,4 @@ admin.site.register(InviteFriend)
 admin.site.register(IP, IPAdmin)
 admin.site.register(Transaction)
 admin.site.register(Monitor, MonitorAdmin)
+admin.site.register(Tag)
