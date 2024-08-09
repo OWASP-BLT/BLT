@@ -362,7 +362,7 @@ LOGGING = {
         },
     },
 }
-
+DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 USERS_AVATAR_PATH = "avatars"
 AVATAR_PATH = os.path.join(MEDIA_ROOT, USERS_AVATAR_PATH)
 
