@@ -16,14 +16,9 @@ class MonitorIPMiddleware(MiddlewareMixin):
         parsed_agent = parse(user_agent)
 
         if ip:
-            # Retrieve the IP object or None if it doesn't exist
             ip_record = IP.objects.filter(address=ip).first()
 
             if ip_record:
-                # Update the count and save
                 ip_record.user_agent_string = parsed_agent
                 ip_record.count += 1
                 ip_record.save()
-                print(f"Updated IP record with address {ip}. New count: {ip_record.count}")
-            else:
-                print(f"IP {ip} does not exist in the database.")

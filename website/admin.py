@@ -277,7 +277,7 @@ class IssueScreenshotAdmin(admin.ModelAdmin):
 def block_ip(modeladmin, request, queryset):
     for ip in queryset:
         BlockedIP.objects.create(
-            address=ip.address, count=ip.count, user_agent_string=ip.user_agent_string
+            address=ip.address, count=ip.count
         )
     modeladmin.message_user(request, "Selected IPs have been blocked successfully.")
 
@@ -293,6 +293,23 @@ def unblock_ip(modeladmin, request, queryset):
 
 unblock_ip.short_description = "Unblock selected IPs"
 
+def block_user_agent(modeladmin, request, queryset):
+    for ip in queryset:
+        BlockedIP.objects.create(
+            user_agent_string=ip.user_agent_string
+        )
+    
+    modeladmin.message_user(request, "Selected UserAgent have been blocked successfully.")
+
+block_user_agent.short_description ="Block selected UserAgent"
+
+def unblock_user_agent(modeladmin, request, queryset):
+    for ip in queryset:
+        BlockedIP.objects.filter(user_agent_string=ip.user_agent_string).delete()
+    
+    modeladmin.message_user(request, "Selected UserAgent have been unblocked successfully.")
+
+unblock_user_agent.short_description ="Unblock selected UserAgent"
 
 class IPAdmin(admin.ModelAdmin):
     list_display = (
@@ -304,7 +321,7 @@ class IPAdmin(admin.ModelAdmin):
         "user_agent_string",
         "count",
     )
-    actions = [block_ip, unblock_ip]
+    actions = [block_ip, unblock_ip, block_user_agent, unblock_user_agent]
 
 
 class MonitorAdmin(admin.ModelAdmin):
@@ -325,7 +342,7 @@ class ChatBotLogAdmin(admin.ModelAdmin):
 
 
 class BlockedIPAdmin(admin.ModelAdmin):
-    list_display = ("address", "address_range", "user_agent_string", "count")
+    list_display = ("address", "reason_for_block", "address_range_start", "address_range_end", "user_agent_string", "count")
 
 
 class ProjectAdmin(admin.ModelAdmin):
