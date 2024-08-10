@@ -2,54 +2,105 @@
 {% load gravatar %}
 {% block style %}
     <style>
-    .list-group-item img {
-        width: 50px;
-        height: 50px;
-    }
+        .list-group-item img {
+            width: 50px;
+            height: 50px;
+        }
 
-    .list-group-item .badge {
-        margin-top: 15px;
-    }
+        .list-group-item .badge {
+            margin-top: 15px;
+        }
 
-    .list-group-item a {
-        text-decoration: none;
-        margin-left: 10px;
-    }
+        .list-group-item a {
+            text-decoration: none;
+            margin-left: 10px;
+        }
 
-    @media (min-height: 800px) and (min-width: 992px) {
-    .col-md-8 {
-        width: 66.66666667%;
-    }}
-    @media (min-height: 800px) and (min-width: 360px) {
-    .col-md-8 {
-        width: 90%;
-        font-size: small;
-    }}
+        @media (min-height: 800px) and (min-width: 992px) {
+            .col-md-8 {
+                width: 66.66666667%;
+            }
+        }
+        
+        @media (min-height: 800px) and (min-width: 360px) {
+            .col-md-8 {
+                width: 90%;
+                font-size: small;
+            }
+        }
 
-    .silver {
-        background-color: lightblue;
-        color: #333;
-    }
+        .silver {
+            background-color: lightblue;
+            color: #333;
+        }
 
-    .gold {
-        background-color: #D4AF37;
-        color: #333;
-    }
+        .gold {
+            background-color: #D4AF37;
+            color: #333;
+        }
 
-    .bronze {
-        background-color: #C9AE5D;
-        color: #333;
-    }
+        .bronze {
+            background-color: #C9AE5D;
+            color: #333;
+        }
 
-    .profileimage {
-        border-radius: 50%;
-    }
+        .profileimage {
+            border-radius: 50%;
+        }
 
-    .titleuser {
-        position: absolute;
-        margin-top: 12px;
-        margin-left: 5px;
-    }
+        .titleuser {
+            position: absolute;
+            margin-top: 12px;
+            margin-left: 5px;
+        }
+
+        /* Styles for tag pills */
+        .tag-pill {
+            display: inline-block;
+            padding: 0.4em 0.8em;
+            margin: 0.2em;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #fff;
+            background-color: #007bff;
+            border-radius: 15px;
+            border: 1px solid #007bff;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            text-decoration: none;
+        }
+
+        .tag-pill:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+            color: #fff;
+        }
+
+        /* Alternative colors for variety */
+        .tag-pill.tag-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+
+        .tag-pill.tag-success {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+
+        .tag-pill.tag-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .tag-pill.tag-warning {
+            background-color: #ffc107;
+            border-color: #ffc107;
+            color: #212529;
+        }
+
+        .tag-pill.tag-info {
+            background-color: #17a2b8;
+            border-color: #17a2b8;
+        }
     </style>
 {% endblock style %}
 {% block content %}
@@ -59,6 +110,22 @@
             <h1 class="page-header">Global Leaderboard</h1>
         </div>
     </div>
+    {% if user_related_tags %}
+        <div class="row flex justify-center">
+            <div class="col-md-8">
+                <div class="list-group">
+                    <div class="tag-container">
+                        {% for tag in user_related_tags %}
+                            <a href="?tag={{ tag.name }}"
+                               class="tag-pill {% cycle 'tag-primary' 'tag-secondary' 'tag-success' 'tag-danger' 'tag-warning' 'tag-info' %}">
+                                {{ tag.name }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     <div class="row flex justify-center">
         <div class="col-md-8">
             <div class="list-group">

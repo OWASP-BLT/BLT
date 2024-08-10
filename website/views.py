@@ -131,10 +131,26 @@ from requests.auth import HTTPBasicAuth
 from sendgrid import SendGridAPIClient
 
 from .bitcoin_utils import create_bacon_token
-from .models import BaconToken, Contribution
+from .forms import UserProfileForm
+from .models import BaconToken, Contribution, Tag, UserProfile
 
 # Load environment variables
 load_dotenv()
+
+
+@login_required
+def profile_edit(request):
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == "POST":
+        form = UserProfileForm(request.POST, request.FILES, instance=user_profile)
+        if form.is_valid():
+            form.save()
+            return redirect("profile", slug=request.user.username)
+    else:
+        form = UserProfileForm(instance=user_profile)
+
+    return render(request, "profile_edit.html", {"form": form})
 
 
 def add_domain_to_company(request):
@@ -2039,6 +2055,9 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(GlobalLeaderboardView, self).get_context_data(*args, **kwargs)
+
+        user_related_tags = Tag.objects.filter(userprofile__isnull=False).distinct()
+        context["user_related_tags"] = user_related_tags
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)

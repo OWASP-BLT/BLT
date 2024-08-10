@@ -506,8 +506,12 @@ class UserProfile(models.Model):
     issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
     issues_hidden = models.BooleanField(default=False)
 
-    subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains")
-    subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users")
+    subscribed_domains = models.ManyToManyField(
+        Domain, related_name="user_subscribed_domains", blank=True
+    )
+    subscribed_users = models.ManyToManyField(
+        User, related_name="user_subscribed_users", blank=True
+    )
     btc_address = models.CharField(max_length=100, blank=True, null=True)
     bch_address = models.CharField(max_length=100, blank=True, null=True)
     eth_address = models.CharField(max_length=100, blank=True, null=True)
