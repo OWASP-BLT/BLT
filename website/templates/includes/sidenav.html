@@ -4,76 +4,51 @@
        aria-label="Sidebar">
     <style>
         .sidenav {
-  margin-top: 15px;
-}
-		.no-scrollbar::-webkit-scrollbar {
-			display: none;
-		}
-		/* Hide scrollbar for IE, Edge, and Firefox */
-		.no-scrollbar {
-			-ms-overflow-style: none; /* IE and Edge */
-			scrollbar-width: none; /* Firefox */
-		}
-		a:link {
-			color: black;
-			background-color: transparent;
-			text-decoration: none;
+            margin-top: 15px;
         }
-		a:hover {
-			text-decoration: none;
-			color: red;
-		}
-		a:visited {
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        a:link {
+            color: black;
+            background-color: transparent;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: none;
+            color: red;
+        }
+        a:visited {
             color: black;
         }
-	
     </style>
     <div class="h-full px-11 overflow-y-auto bg-white flex flex-col justify-between no-scrollbar sidenav">
         <div class="overflow-auto no-scrollbar">
             <ul class="font-medium text-2xl mt-6 mb-0">
-                <li class="{% if request.path == '' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'index' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">
-                            <i class="fa fa-exclamation-circle"></i>
-                        </div>
-                        <span>Issues</span>
-                    </a>
+                <!-- Engage and Contribute -->
+                <li>
+                    <span class="text-gray-500 text-sm">Engage and Contribute</span>
                 </li>
-                <li class="{% if request.path == '/companies/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'domain_lists' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">
-                            <i class="fa fa-institution"></i>
-                        </div>
-                        <span>Organizations</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/sponsor/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'sponsor' %}"
+                <li class="{% if request.path == '/contribute/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'contribution_guidelines' %}"
                        class="flex items-center w-full text-black no-underline p-2">
                         <div class="w-8 mr-4">
                             <i class="fa fa-handshake"></i>
                         </div>
-                        <span>Sponsor</span>
+                        <span>Contribute</span>
                     </a>
                 </li>
-                <li class="{% if request.path == '/scoreboard/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'scoreboard' %}"
+                <li class="{% if request.path == '/bidding/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'BiddingData' %}"
                        class="flex items-center w-full text-black no-underline p-2">
                         <div class="w-8 mr-4">
-                            <i class="fa fa-ranking-star"></i>
+                            <i class="fas fa-hand-holding-usd"></i>
                         </div>
-                        <span>Scoreboard</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/leaderboard/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'leaderboard_global' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">
-                            <i class="fa fa-trophy"></i>
-                        </div>
-                        <span>Users</span>
+                        <span>Bid on Bugs</span>
                     </a>
                 </li>
                 <li class="{% if request.path == '/hunts/' %}bg-gray-200{% endif %}">
@@ -85,6 +60,28 @@
                         <span>Bug Bounties</span>
                     </a>
                 </li>
+                <li class="{% if request.path == '/contributors/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'contributors' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <div class="w-8 mr-4">
+                            <i class="fa fa-code" aria-hidden="true"></i>
+                        </div>
+                        <span>Contributors</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/view-suggestion/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'view_suggestions' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <div class="w-8 mr-4">
+                            <i class="fa fa-comment"></i>
+                        </div>
+                        <span>Suggestions</span>
+                    </a>
+                </li>
+                <!-- Security and Development -->
+                <li class="mt-4">
+                    <span class="text-gray-500 text-sm">Security and Development</span>
+                </li>
                 <li class="{% if request.path == '/projects/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'project_list' %}"
                        class="flex items-center w-full text-black no-underline p-2">
@@ -94,76 +91,71 @@
                         <span>Projects</span>
                     </a>
                 </li>
-                <li class="{% if request.path == '/apps/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'apps' %}"
+                <li class="{% if request.path == '' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'index' %}"
                        class="flex items-center w-full text-black no-underline p-2">
                         <div class="w-8 mr-4">
-                            <i class="fa fa-file-code-o"></i>
+                            <i class="fa fa-exclamation-circle"></i>
                         </div>
-                        <span>Apps</span>
+                        <span>Issues</span>
                     </a>
                 </li>
-                <li class="{% if request.path == '/deletions/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'deletions' %}"
+                <li class="{% if request.path == '/releases/' %}bg-gray-200{% endif %}">
+                    <a href="https://github.com/OWASP-BLT/BLT/releases/"
                        class="flex items-center w-full text-black no-underline p-2">
                         <div class="w-8 mr-4">
-                            <i class="fa fa-trash"></i>
+                            <i class="fa fa-star"></i>
                         </div>
-                        <span>Deletions</span>
+                        <span>Releases</span>
                     </a>
                 </li>
-                <li class="{% if request.path == '/trademarks/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'trademark_search' %}"
+                <li class="{% if request.path == '/developer_api/' %}bg-gray-200{% endif %}">
+                    <a href="https://blt.owasp.org/swagger/"
                        class="flex items-center w-full text-black no-underline p-2">
                         <div class="w-8 mr-4">
-                            <i class="fa fa-trademark"></i>
+                            <i class="fas fa-cogs"></i>
                         </div>
-                        <span>Trademarks</span>
+                        <span>Developer API</span>
                     </a>
                 </li>
-                <li class="{% if request.path == '/bacon/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'bacon' %}"
+                <li class="{% if request.path == '/documentation/' %}bg-gray-200{% endif %}">
+                    <a href="https://github.com/OWASP/BLT/blob/main/Setup.md"
                        class="flex items-center w-full text-black no-underline p-2">
                         <div class="w-8 mr-4">
-                            <i class="fa-solid fa-bacon"></i>
+                            <i class="fa fa-file"></i>
                         </div>
-                        <span>BACON</span>
+                        <span>Documentation</span>
                     </a>
                 </li>
-                <li class="{% if request.path == '/sitemap/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'sitemap' %}"
+                <li class="{% if request.path == '/dev_guides/' %}bg-gray-200{% endif %}">
+                    <a href="https://github.com/OWASP/BLT#readme"
                        class="flex items-center w-full text-black no-underline p-2">
                         <div class="w-8 mr-4">
-                            <i class="fa-solid fa-map"></i>
+                            <i class="fa fa-code-fork"></i>
                         </div>
-                        <span>Sitemap</span>
+                        <span>Dev Guides</span>
                     </a>
                 </li>
-                <li class="{% if request.path == '/bltv/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'bltv' %}"
+                <!-- Community and Activity Monitoring -->
+                <li class="mt-4">
+                    <span class="text-gray-500 text-sm">Community and Activity Monitoring</span>
+                </li>
+                <li class="{% if request.path == '/leaderboard/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'leaderboard_global' %}"
                        class="flex items-center w-full text-black no-underline p-2">
                         <div class="w-8 mr-4">
-                            <i class="fa fa-tv"></i>
+                            <i class="fa fa-trophy"></i>
                         </div>
-                        <span>BLTV</span>
+                        <span>Users</span>
                     </a>
                 </li>
-                <li class="{% if request.path == '/contribute/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'contribution_guidelines' %}"
+                <li class="{% if request.path == '/scoreboard/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'scoreboard' %}"
                        class="flex items-center w-full text-black no-underline p-2">
                         <div class="w-8 mr-4">
-                            <i class="fa fa-handshake"></i>
+                            <i class="fa fa-ranking-star"></i>
                         </div>
-                        <span>Contribute</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/contributors/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'contributors' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">
-                            <i class="fa fa-code" aria-hidden="true"></i>
-                        </div>
-                        <span>Contributors</span>
+                        <span>Scoreboard</span>
                     </a>
                 </li>
                 <li class="{% if request.path == '/contributor-stats/' %}bg-gray-200{% endif %}">
@@ -184,33 +176,6 @@
                         <span>Daily Activity</span>
                     </a>
                 </li>
-                <li class="{% if request.path == '/about/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'about' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">
-                            <i class="fa fa-info"></i>
-                        </div>
-                        <span>About Us</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/bidding/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'BiddingData' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">
-                            <i class="fas fa-hand-holding-usd"></i>
-                        </div>
-                        <span>Bid on Bugs</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/terms/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'terms' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">
-                            <i class="fa-solid fa-file-contract"></i>
-                        </div>
-                        <span>Terms</span>
-                    </a>
-                </li>
                 <li class="{% if request.path == '/stats/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'stats' %}"
                        class="flex items-center w-full text-black no-underline p-2">
@@ -220,38 +185,18 @@
                         <span>Stats</span>
                     </a>
                 </li>
-                <li class="{% if request.path == '/blt-tomato/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'blt-tomato' %}"
+                <!-- Tools and Platforms -->
+                <li class="mt-4">
+                    <span class="text-gray-500 text-sm">Tools and Platforms</span>
+                </li>
+                <li class="{% if request.path == '/apps/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'apps' %}"
                        class="flex items-center w-full text-black no-underline p-2">
                         <div class="w-8 mr-4">
-                            <img src="{% static 'img/tomato-svgrepo-com.svg' %}"
-                                 width="100"
-                                 height="100"
-                                 alt="ant">
+                            <i class="fa fa-file-code-o"></i>
                         </div>
-                        <span>BLT Tomato</span>
+                        <span>Apps</span>
                     </a>
-                </li>
-                <li class="{% if request.path == '/view-suggestion/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'view_suggestions' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">
-                            <i class="fa fa-comment"></i>
-                        </div>
-                        <span>Suggestions</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/status/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'check_status' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">
-                            <i class="fa fa-check-circle"></i>
-                        </div>
-                        <span>Status</span>
-                    </a>
-                </li>
-                <li>
-                    <div class="border-t-2 border-gray-200"></div>
                 </li>
                 <li>
                     <a href="https://apps.apple.com/us/app/owasp-blt/id6448071954"
@@ -271,55 +216,40 @@
                         <span>iPhone app</span>
                     </a>
                 </li>
-                <li>
-                    <a href="https://github.com/OWASP/BLT#readme"
-                       rel="noopener noreferrer"
+                <li class="{% if request.path == '/bltv/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'bltv' %}"
                        class="flex items-center w-full text-black no-underline p-2">
                         <div class="w-8 mr-4">
-                            <i class="fa fa-code-fork"></i>
+                            <i class="fa fa-tv"></i>
                         </div>
-                        <span>Dev Guides</span>
+                        <span>BLTV</span>
                     </a>
                 </li>
-                <li>
-                    <a href="https://github.com/OWASP/BLT/releases"
+                <li class="{% if request.path == '/blt-tomato/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'blt-tomato' %}"
                        class="flex items-center w-full text-black no-underline p-2">
                         <div class="w-8 mr-4">
-                            <i class="fa fa-star"></i>
+                            <img src="{% static 'img/tomato-svgrepo-com.svg' %}"
+                                 width="100"
+                                 height="100"
+                                 alt="BLT Tomato">
                         </div>
-                        <span>Releases</span>
+                        <span>BLT Tomato</span>
                     </a>
                 </li>
-                <li>
-                    <a href="https://blt.owasp.org/swagger/"
+                <li class="{% if request.path == '/bacon/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'bacon' %}"
                        class="flex items-center w-full text-black no-underline p-2">
                         <div class="w-8 mr-4">
-                            <i class="fas fa-cogs"></i>
+                            <i class="fa-solid fa-bacon"></i>
                         </div>
-                        <span>Developer API</span>
+                        <span>BACON</span>
                     </a>
                 </li>
-                <li>
-                    <a href="https://github.com/OWASP/BLT/blob/main/Setup.md"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">
-                            <i class="fa fa-file"></i>
-                        </div>
-                        <span>Documentation</span>
-                    </a>
+                <!-- Awareness and Outreach -->
+                <li class="mt-4">
+                    <span class="text-gray-500 text-sm">Awareness and Outreach</span>
                 </li>
-                <!-- <li>
-                    <a href="{% url 'googleplayapp' %}" class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-4 h-4 mr-4"> 
-                            
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="w-4 h-4" viewBox="0 0 512 512">
-                                <path d="M99.617 8.057a50.191 50.191 0 00-38.815-6.713l230.932 230.933 74.846-74.846L99.617 8.057zM32.139 20.116c-6.441 8.563-10.148 19.077-10.148 30.199v411.358c0 11.123 3.708 21.636 10.148 30.199l235.877-235.877L32.139 20.116zM464.261 212.087l-67.266-37.637-81.544 81.544 81.548 81.548 67.273-37.64c16.117-9.03 25.738-25.442 25.738-43.908s-9.621-34.877-25.749-43.907zM291.733 279.711L60.815 510.629c3.786.891 7.639 1.371 11.492 1.371a50.275 50.275 0 0027.31-8.07l266.965-149.372-74.849-74.847z">
-                                </path>
-                            </svg>
-                        </div>
-                        <span>Android App</span>
-                    </a>
-</li> -->
                 <li>
                     <a href="https://www.facebook.com/groups/owaspfoundation/"
                        class="flex items-center w-full text-black no-underline p-2"
@@ -349,7 +279,8 @@
                                  width="0.88em"
                                  height="1em"
                                  viewBox="0 0 448 512">
-                                <path fill="currentColor" d="M64 32C28.7 32 0 60.7 0 96v320c0 35.3 28.7 64 64 64h320c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64zm297.1 84L257.3 234.6L379.4 396h-95.6L209 298.1L123.3 396H75.8l111-126.9L69.7 116h98l67.7 89.5l78.2-89.5zm-37.8 251.6L153.4 142.9h-28.3l171.8 224.7h26.3z" />
+                                <path fill="currentColor" d="M64 32C28.7 32 0 60.7 0 96v320c0 35.3 28.7 64 64 64h320c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64zm297.1 84L257.3 234.6L379.4 396h-95.6L209 298.1L123.3 396H75.8l111-126.9L69.7 116h98l67.7 89.5l78.2-89.5zm-37.8 251.6L153.4 142.9h-28.3l171.8 224.7h26.3z">
+                                </path>
                             </svg>
                         </div>
                         <span>Twitter (X)</span>
@@ -365,17 +296,65 @@
                         <span>Project Page</span>
                     </a>
                 </li>
+                <!-- Platform Health and Governance -->
+                <li class="mt-4">
+                    <span class="text-gray-500 text-sm">Platform Health and Governance</span>
+                </li>
+                <li class="{% if request.path == '/status/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'check_status' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <div class="w-8 mr-4">
+                            <i class="fa fa-check-circle"></i>
+                        </div>
+                        <span>Status</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/terms/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'terms' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <div class="w-8 mr-4">
+                            <i class="fa-solid fa-file-contract"></i>
+                        </div>
+                        <span>Terms</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/sitemap/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'sitemap' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <div class="w-8 mr-4">
+                            <i class="fa-solid fa-map"></i>
+                        </div>
+                        <span>Sitemap</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/trademarks/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'trademark_search' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <div class="w-8 mr-4">
+                            <i class="fa fa-trademark"></i>
+                        </div>
+                        <span>Trademarks</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/deletions/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'deletions' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <div class="w-8 mr-4">
+                            <i class="fa fa-trash"></i>
+                        </div>
+                        <span>Deletions</span>
+                    </a>
+                </li>
             </ul>
         </div>
     </div>
     <script>
-		document.addEventListener('DOMContentLoaded', function () {
-			const hamburgerButton = document.getElementById('hamburger-button');
-			const sidebar = document.getElementById('sidebar');
-			hamburgerButton.addEventListener('click', function () {
-				sidebar.classList.toggle('-translate-x-full');
-			});
-		});
-	
+        document.addEventListener('DOMContentLoaded', function () {
+            const hamburgerButton = document.getElementById('hamburger-button');
+            const sidebar = document.getElementById('sidebar');
+            hamburgerButton.addEventListener('click', function () {
+                sidebar.classList.toggle('-translate-x-full');
+            });
+        });
     </script>
 </aside>
