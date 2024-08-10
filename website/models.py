@@ -18,6 +18,7 @@ from django.db import models
 from django.db.models import Count
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
+from django.template.defaultfilters import slugify
 from django.utils import timezone
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
@@ -46,6 +47,13 @@ class Subscription(models.Model):
 
 class Tag(models.Model):
     name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        # make the slug using slugify
+        self.slug = slugify(self.name)
+        super(Tag, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -517,6 +525,11 @@ class UserProfile(models.Model):
     eth_address = models.CharField(max_length=100, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField(Tag, blank=True)
+    x_username = models.CharField(max_length=50, blank=True, null=True)
+    linkedin_url = models.URLField(blank=True, null=True)
+    github_url = models.URLField(blank=True, null=True)
+    website_url = models.URLField(blank=True, null=True)
+    discounted_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def avatar(self, size=36):
         if self.user_avatar:

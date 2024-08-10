@@ -35,6 +35,52 @@
                                   rows="4"
                                   class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">{{ form.description.value }}</textarea>
                     </div>
+                    <!-- Discounted Hourly Rate -->
+                    <div class="mb-4">
+                        <label for="id_discounted_hourly_rate"
+                               class="block text-sm font-medium text-gray-700">Discounted Hourly Rate $/hr</label>
+                        <input type="number"
+                               name="discounted_hourly_rate"
+                               id="id_discounted_hourly_rate"
+                               value="{{ form.discounted_hourly_rate.value }}"
+                               class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <!-- LinkedIn URL -->
+                    <div class="mb-4">
+                        <label for="id_linkedin_url" class="block text-sm font-medium text-gray-700">LinkedIn URL</label>
+                        <input type="url"
+                               name="linkedin_url"
+                               id="id_linkedin_url"
+                               value="{{ form.linkedin_url.value|default_if_none:"" }}"
+                               class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <!-- GitHub URL -->
+                    <div class="mb-4">
+                        <label for="id_github_url" class="block text-sm font-medium text-gray-700">GitHub URL</label>
+                        <input type="url"
+                               name="github_url"
+                               id="id_github_url"
+                               value="{{ form.github_url.value|default_if_none:"" }}"
+                               class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <!-- X username -->
+                    <div class="mb-4">
+                        <label for="id_x_username" class="block text-sm font-medium text-gray-700">X Username</label>
+                        <input type="text"
+                               name="x_username"
+                               id="id_x_username"
+                               value="{{ form.x_username.value|default_if_none:"" }}"
+                               class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <!-- Website URL -->
+                    <div class="mb-4">
+                        <label for="id_website_url" class="block text-sm font-medium text-gray-700">Website URL</label>
+                        <input type="url"
+                               name="website_url"
+                               id="id_website_url"
+                               value="{{ form.website_url.value|default_if_none:"" }}"
+                               class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
                     <!-- Issues Hidden -->
                     <div class="mb-4">
                         <label for="id_issues_hidden"
@@ -54,7 +100,7 @@
                         <input type="text"
                                name="btc_address"
                                id="id_btc_address"
-                               value="{{ form.btc_address.value }}"
+                               value="{{ form.btc_address.value|default_if_none:"" }}"
                                class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     </div>
                     <!-- BCH Address -->
@@ -63,7 +109,7 @@
                         <input type="text"
                                name="bch_address"
                                id="id_bch_address"
-                               value="{{ form.bch_address.value }}"
+                               value="{{ form.bch_address.value|default_if_none:"" }}"
                                class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     </div>
                     <!-- ETH Address -->
@@ -72,7 +118,7 @@
                         <input type="text"
                                name="eth_address"
                                id="id_eth_address"
-                               value="{{ form.eth_address.value }}"
+                               value="{{ form.eth_address.value|default_if_none:"" }}"
                                class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     </div>
                     <!-- Tags -->

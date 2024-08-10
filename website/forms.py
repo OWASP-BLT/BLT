@@ -89,6 +89,11 @@ class UserProfileForm(forms.ModelForm):
             "tags",
             "subscribed_domains",
             "subscribed_users",
+            "linkedin_url",
+            "x_username",
+            "website_url",
+            "discounted_hourly_rate",
+            "github_url",
         ]
         widgets = {
             "tags": forms.CheckboxSelectMultiple(),

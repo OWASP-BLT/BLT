@@ -73,6 +73,15 @@
                         <div class="w-8 mr-4">
                             <i class="fa fa-trophy"></i>
                         </div>
+                        <span>Leaderboard</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/users/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'users' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <div class="w-8 mr-4">
+                            <i class="fa fa-trophy"></i>
+                        </div>
                         <span>Users</span>
                     </a>
                 </li>

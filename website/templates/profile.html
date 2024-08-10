@@ -14,7 +14,6 @@
         text-decoration: inherit;
     }
 
-
     .list-group .label-default {
         margin-top: 3px;
     }
@@ -81,10 +80,6 @@
         display: none;
         width: 200px;
     }
-
-
-
-
 
     .scroll {
         max-height: 1100px;
@@ -259,6 +254,21 @@
     #bch:checked~.s1 {
         margin-left: -60%;
     }
+
+    /* Added styles for description and discounted hourly rate */
+    .profile-description,
+    .profile-rate {
+        max-width: 100%;
+        word-wrap: break-word;
+        margin-top: 1rem;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .profile-rate {
+        color: #ff5722;
+        font-weight: bold;
+    }
     </style>
 {% endblock style %}
 {% block content %}
@@ -317,6 +327,16 @@
             {% endif %}
             <div class="mt-[2rem] !ml-0">{% include "./includes/crypto_donation.html" %}</div>
             <div class="h-[2vh]"></div>
+            {% if user.userprofile.description %}
+                <div>Bio / Description</div>
+                <div class="profile-description">{{ user.userprofile.description }}</div>
+                <hr>
+            {% endif %}
+            {% if user.userprofile.discounted_hourly_rate %}
+                <div>Discounted Hourly Rate</div>
+                <div class="profile-rate">{{ user.userprofile.discounted_hourly_rate }}</div>
+                <hr>
+            {% endif %}
             <div>
                 <div class="font-bold mb-3 mt-1">
                     Recent Activity
@@ -479,7 +499,8 @@
                 </div>
                 <div class="font=['Ubuntu'] max-sm:w-full w-3/4">
                     {% for tag in user_related_tags %}
-                        <button class="mr-3">
+                        <button class="mr-3"
+                                onclick="window.location.href=`{% url 'users' %}?tag={{ tag.name }}`">
                             <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">{{ tag.name }}</div>
                         </button>
                     {% endfor %}

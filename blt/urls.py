@@ -505,6 +505,8 @@ urlpatterns = [
     path("robots.txt", website.views.robots_txt),
     path("ads.txt", website.views.ads_txt),
     re_path(r"^contributors/$", contributors_view, name="contributors"),
+    # users
+    path("users/", website.views.users_view, name="users"),
     path("company/", include("company.urls")),
     path("sponsor/", website.views.sponsor_view, name="sponsor"),
     path("companies/", DomainListView.as_view(), name="domain_lists"),

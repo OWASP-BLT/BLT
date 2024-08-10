@@ -110,22 +110,6 @@
             <h1 class="page-header">Global Leaderboard</h1>
         </div>
     </div>
-    {% if user_related_tags %}
-        <div class="row flex justify-center">
-            <div class="col-md-8">
-                <div class="list-group">
-                    <div class="tag-container">
-                        {% for tag in user_related_tags %}
-                            <a href="?tag={{ tag.name }}"
-                               class="tag-pill {% cycle 'tag-primary' 'tag-secondary' 'tag-success' 'tag-danger' 'tag-warning' 'tag-info' %}">
-                                {{ tag.name }}
-                            </a>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% endif %}
     <div class="row flex justify-center">
         <div class="col-md-8">
             <div class="list-group">
