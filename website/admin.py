@@ -25,6 +25,7 @@ from website.models import (
     Suggestion,
     SuggestionVotes,
     Trademark,
+    Tag,
     Transaction,
     UserProfile,
     Wallet,
@@ -319,6 +320,11 @@ class ProjectAdmin(admin.ModelAdmin):
     search_fields = ["name", "description", "slug"]
 
 
+class TagAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "created")
+    prepopulated_fields = {"slug": ("name",)}
+
+
 # Register all models with their respective admin classes
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(ContributorStats)
@@ -347,3 +353,4 @@ admin.site.register(IP, IPAdmin)
 admin.site.register(Transaction)
 admin.site.register(Monitor, MonitorAdmin)
 admin.site.register(Trademark)
+admin.site.register(Tag, TagAdmin)

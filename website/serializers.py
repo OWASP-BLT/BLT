@@ -10,6 +10,7 @@ from website.models import (
     Issue,
     Points,
     Project,
+    Tag,
     User,
     UserProfile,
 )
@@ -65,6 +66,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "total_score",
             "activities",
         )
+
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = "__all__"
 
 
 class IssueSerializer(serializers.ModelSerializer):

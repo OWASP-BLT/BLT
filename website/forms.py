@@ -69,3 +69,34 @@ class GitHubURLForm(forms.Form):
         required=True,
         widget=forms.TextInput(attrs={"placeholder": "Add any Github URL"}),
     )
+
+
+from django import forms
+
+from .models import UserProfile
+
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = [
+            "user_avatar",
+            "description",
+            "issues_hidden",
+            "btc_address",
+            "bch_address",
+            "eth_address",
+            "tags",
+            "subscribed_domains",
+            "subscribed_users",
+            "linkedin_url",
+            "x_username",
+            "website_url",
+            "discounted_hourly_rate",
+            "github_url",
+        ]
+        widgets = {
+            "tags": forms.CheckboxSelectMultiple(),
+            "subscribed_domains": forms.CheckboxSelectMultiple(),
+            "subscribed_users": forms.CheckboxSelectMultiple(),
+        }
