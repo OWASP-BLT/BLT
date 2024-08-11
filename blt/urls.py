@@ -18,6 +18,7 @@ import website.views
 from blt import settings
 from company.views import ShowBughuntView
 from website.api.views import (
+    ActivityLogViewSet,
     AuthApiViewset,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
@@ -31,6 +32,7 @@ from website.api.views import (
     ProjectViewSet,
     StatsApiViewset,
     TagApiViewset,
+    TimeLogViewSet,
     UrlCheckApiViewset,
     UserIssueViewSet,
     UserProfileViewSet,
@@ -105,6 +107,8 @@ router.register(r"issues", IssueViewSet, basename="issues")
 router.register(r"userissues", UserIssueViewSet, basename="userissues")
 router.register(r"profile", UserProfileViewSet, basename="profile")
 router.register(r"domain", DomainViewSet, basename="domain")
+router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
+router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 
 from allauth.socialaccount.providers.facebook import views as facebook_views
 from allauth.socialaccount.providers.github import views as github_views
