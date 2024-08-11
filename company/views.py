@@ -18,7 +18,16 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 
-from website.models import Company, Domain, Hunt, HuntPrize, Issue, IssueScreenshot, Winner
+from website.models import (
+    Company,
+    Domain,
+    Hunt,
+    HuntPrize,
+    Issue,
+    IssueScreenshot,
+    Trademark,
+    Winner,
+)
 
 restricted_domain = ["gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "proton.com"]
 
@@ -469,12 +478,14 @@ class AddDomainView(View):
         users = User.objects.filter(is_active=True)
         domain_id = kwargs.get("domain_id")
         domain = Domain.objects.filter(id=domain_id).first() if domain_id else None
+        trademarks = Trademark.objects.filter(domain__id=domain_id).values if domain_id else None
         context = {
             "company": id,
             "company_obj": Company.objects.filter(id=id).first(),
             "companies": companies,
             "users": users,
             "domain": domain,  # Pass the domain to the template if it exists
+            "trademarks": trademarks,
         }
 
         if domain:
@@ -485,13 +496,22 @@ class AddDomainView(View):
     @validate_company_user
     @check_company_or_manager
     def post(self, request, id, *args, **kwargs):
+        domain_id = kwargs.get("domain_id")
         domain_data = {
             "name": request.POST.get("domain_name", None),
             "url": request.POST.get("domain_url", None),
             "github": request.POST.get("github_url", None),
             "twitter": request.POST.get("twitter_url", None),
             "facebook": request.POST.get("facebook_url", None),
+            "trademarkInput": request.POST.get("trademarkInput", None),
+            "remove-button": request.POST.get("removedTrademarks", None),
         }
+
+        removed_trademarks = domain_data["remove-button"]
+        if removed_trademarks:
+            trademark_ids = removed_trademarks.split(",")
+            for trademark_id in trademark_ids:
+                Trademark.objects.filter(id=trademark_id).delete()
 
         if domain_data["url"]:
             parsed_url = urlparse(domain_data["url"])
@@ -597,6 +617,15 @@ class AddDomainView(View):
         )
 
         domain.managers.set(domain_managers)
+
+        trademark_name = domain_data["trademarkInput"]
+        if trademark_name:
+            trademark = Trademark.objects.create(
+                name=trademark_name,
+                domain=Domain.objects.get(id=domain_id),
+            )
+            trademark.save()
+
         domain.save()
 
         return redirect("company_manage_domains", id=id)
@@ -613,7 +642,14 @@ class AddDomainView(View):
             "github": request.POST.get("github_url", None),
             "twitter": request.POST.get("twitter_url", None),
             "facebook": request.POST.get("facebook_url", None),
+            "trademarkInput": request.POST.get("trademarkInput", None),
+            "remove-button": request.POST.get("removedTrademarks", None),
         }
+        removed_trademarks = domain_data["remove-button"]
+        if removed_trademarks:
+            trademark_ids = removed_trademarks.split(",")
+            for trademark_id in trademark_ids:
+                Trademark.objects.filter(id=trademark_id).delete()
 
         if domain_data["name"] is None:
             messages.error(request, "Enter domain name")
@@ -712,6 +748,15 @@ class AddDomainView(View):
 
         domain_managers = User.objects.filter(email__in=managers_list, is_active=True)
         domain.managers.set(domain_managers)
+
+        trademark_name = domain_data["trademarkInput"]
+        if trademark_name:
+            trademark = Trademark.objects.create(
+                name=trademark_name,
+                domain=Domain.objects.get(id=domain_id),
+            )
+            trademark.save()
+
         domain.save()
 
         return redirect("company_manage_domains", id=id)
@@ -844,6 +889,7 @@ class DomainView(View):
             .order_by("-count")[:5]
         )
 
+        trademarks = Trademark.objects.filter(domain__id=domain["id"])
         # Get first and last bugs
         first_bug = Issue.objects.filter(domain__id=domain["id"]).order_by("created").first()
         last_bug = Issue.objects.filter(domain__id=domain["id"]).order_by("-created").first()
@@ -864,6 +910,7 @@ class DomainView(View):
             "first_bug": first_bug,
             "last_bug": last_bug,
             "ongoing_bughunts": ongoing_bughunts,
+            "trademarks": trademarks,
         }
 
         return render(request, "company/view_domain.html", context)

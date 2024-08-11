@@ -774,3 +774,11 @@ class BaconToken(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.amount} BACON"
+
+
+class Trademark(models.Model):
+    name = models.TextField(max_length=200, null=True, blank=True)
+    domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name + "_" + self.domain.name
