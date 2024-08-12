@@ -4542,9 +4542,8 @@ def trademark_detailview(request, slug):
 @csrf_exempt
 def update_bch_address(request):
     if request.method == "POST":
-        data = json.loads(request.body)
-        selected_crypto = data.get("selected_crypto")
-        new_address = data.get("new_address")
+        selected_crypto = request.POST.get("selected_crypto")
+        new_address = request.POST.get("new_address")
         if selected_crypto and new_address:
             try:
                 user_profile = request.user.userprofile
