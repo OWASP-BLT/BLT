@@ -161,9 +161,7 @@ class IssueViewSet(viewsets.ModelViewSet):
         # Check if there is an image in the `screenshot` field of the Issue table
         if issue.screenshot:
             # If an image exists in the Issue table, return it along with additional images from IssueScreenshot
-            screenshots = [
-                request.build_absolute_uri(issue.screenshot.url)
-            ] + [
+            screenshots = [request.build_absolute_uri(issue.screenshot.url)] + [
                 request.build_absolute_uri(screenshot.image.url)
                 for screenshot in issue.screenshots.all()
             ]
