@@ -14,10 +14,6 @@
         text-decoration: inherit;
     }
 
-    .fa-money { 
-        margin-right: 5px;
-    }
-
     .list-group .label-default {
         margin-top: 3px;
     }
@@ -83,46 +79,6 @@
     .upload {
         display: none;
         width: 200px;
-    }
-
-    .fa-cogs {
-        color: white;
-    }
-
-    .fa-exclamation-triangle {
-        color: #ff4444;
-    }
-
-    .fa-trophy {
-        color: #FF8800;
-    }
-
-    .fa-flash {
-        color: #00C851;
-    }
-
-    .fa-lock {
-        color: #0099CC;
-    }
-
-    .fa-eraser {
-        color: white;
-    }
-
-    .fa-code {
-        color: #ef6c00;
-    }
-
-    .fa-star {
-        color: #0099CC;
-    }
-
-    .fa-bug {
-        color: #00C851;
-    }
-
-    .fa-code-fork {
-        color: #ff4444;
     }
 
     .scroll {
@@ -298,11 +254,26 @@
     #bch:checked~.s1 {
         margin-left: -60%;
     }
+
+    /* Added styles for description and discounted hourly rate */
+    .profile-description,
+    .profile-rate {
+        max-width: 100%;
+        word-wrap: break-word;
+        margin-top: 1rem;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .profile-rate {
+        color: #ff5722;
+        font-weight: bold;
+    }
     </style>
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="flex lg:!ml-[0px] px-5 mt-[8vh] max-sm:!mt-[5vh] max-sm:!items-center justify-between max-sm:flex-col font-['Ubuntu'] max-sm:translate-x-5 max-sm:translate-y-5">
+    <div class="flex lg:!ml-[0px] px-5 mt-[4vh] max-sm:!mt-[5vh] max-sm:!items-center justify-between max-sm:flex-col font-['Ubuntu'] max-sm:translate-x-5 max-sm:translate-y-5">
         <div class="max-sm:w-[100vw] w-[20vw] flex flex-col">
             <div class="w-[20vw] font-bold text-[20px] capitalize">{{ user.username }}</div>
             <div class="inline-block relative h-[200px] w-[200px]">
@@ -348,8 +319,24 @@
                     {% endif %}
                 {% endif %}
             </div>
+            <!--add a link here to edit the profile /profile/edit -->
+            {% if request.user == user %}
+                <div class="mt-[2rem] !ml-0">
+                    <a href="{% url 'profile_edit' %}" class="btn btn-primary btn-block">Edit Profile</a>
+                </div>
+            {% endif %}
             <div class="mt-[2rem] !ml-0">{% include "./includes/crypto_donation.html" %}</div>
             <div class="h-[2vh]"></div>
+            {% if user.userprofile.description %}
+                <div>Bio / Description</div>
+                <div class="profile-description">{{ user.userprofile.description }}</div>
+                <hr>
+            {% endif %}
+            {% if user.userprofile.discounted_hourly_rate %}
+                <div>Discounted Hourly Rate</div>
+                <div class="profile-rate">{{ user.userprofile.discounted_hourly_rate }}</div>
+                <hr>
+            {% endif %}
             <div>
                 <div class="font-bold mb-3 mt-1">
                     Recent Activity
@@ -447,31 +434,31 @@
                 <div class="font=['Ubuntu'] max-sm:w-full w-[37vw]">
                     <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=General`"
                             class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">⚙️ {% trans "General" %} {{ bug_type_0 | length }}</div>
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⚙️ {% trans "General" %} {{ bug_type_0 | length }}</div>
                     </button>
                     <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Number`"
                             class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">⚠️ {% trans "Number" %} {{ bug_type_1 | length }}</div>
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⚠️ {% trans "Number" %} {{ bug_type_1 | length }}</div>
                     </button>
                     <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Functional`"
                             class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">🏆 {% trans "Functional" %} {{ bug_type_2 | length }}</div>
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">🏆 {% trans "Functional" %} {{ bug_type_2 | length }}</div>
                     </button>
                     <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Performance`"
                             class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">⚡ {% trans "Performance" %} {{ bug_type_3 | length }}</div>
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⚡ {% trans "Performance" %} {{ bug_type_3 | length }}</div>
                     </button>
                     <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Security`"
                             class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">⚡ {% trans "Security" %} {{ bug_type_4 | length }}</div>
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⚡ {% trans "Security" %} {{ bug_type_4 | length }}</div>
                     </button>
                     <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Typo`"
                             class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">✏️ {% trans "Typo" %} {{ bug_type_5 | length }}</div>
+                        <div class="bg-[#f4f4f4] rounded-2xl p-2 m-2">✏️ {% trans "Typo" %} {{ bug_type_5 | length }}</div>
                     </button>
                     <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=Design`"
                             class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">🧑‍💻 {% trans "Design" %} {{ bug_type_6 | length }}</div>
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">🧑‍💻 {% trans "Design" %} {{ bug_type_6 | length }}</div>
                     </button>
                 </div>
                 <div class="text-2xl font-bold my-4">
@@ -479,16 +466,16 @@
                     <hr>
                 </div>
                 <div class="font=['Ubuntu'] max-sm:w-full w-3/4">
-                    <button>
-                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2 mr-3">🏆 {% trans "Bugs Reported" %} {{ total_bugs }}</div>
+                    <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}`">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2 mr-3">🏆 {% trans "Bugs Reported" %} {{ total_bugs }}</div>
                     </button>
                     <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=open`"
                             class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">🐞 {% trans "Open Issues" %} {{ bug_type_1 | length }}</div>
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">🐞 {% trans "Open Issues" %} {{ bug_type_1 | length }}</div>
                     </button>
                     <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=close`"
                             class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">⌨️ {% trans "Closed Issues" %} {{ bug_type_2 | length }}</div>
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⌨️ {% trans "Closed Issues" %} {{ bug_type_2 | length }}</div>
                     </button>
                 </div>
                 <div class="text-2xl font-bold my-4">
@@ -497,14 +484,26 @@
                 </div>
                 <div class="font=['Ubuntu'] max-sm:w-full w-3/4">
                     <button class="mr-3" onclick="openFollowers();">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">👤 {% trans "Followers" %} {{ followers|length }}</div>
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">👤 {% trans "Followers" %} {{ followers|length }}</div>
                     </button>
                     <button class="mr-3" onclick="openFollowingModal();">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">👤 {% trans "Following" %} {{ following|length }}</div>
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">👤 {% trans "Following" %} {{ following|length }}</div>
                     </button>
                     <button class="mr-3" onclick="openBookmarkModal();">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-5 m-2">📑 {% trans "Bookmarks" %} {{ bookmarks|length }}</div>
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">📑 {% trans "Bookmarks" %} {{ bookmarks|length }}</div>
                     </button>
+                </div>
+                <div class="text-2xl font-bold my-4">
+                    User Tags
+                    <hr>
+                </div>
+                <div class="font=['Ubuntu'] max-sm:w-full w-3/4">
+                    {% for tag in user_related_tags %}
+                        <button class="mr-3"
+                                onclick="window.location.href=`{% url 'users' %}?tag={{ tag.name }}`">
+                            <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">{{ tag.name }}</div>
+                        </button>
+                    {% endfor %}
                 </div>
                 <div class="text-2xl font-bold my-4">
                     Monthly Report
@@ -519,7 +518,7 @@
                     Top Finding
                     <hr>
                 </div>
-                <div class="top-findings w-[20vw] max-sm:w-full max-h-[40vh] overflow-scroll">
+                <div class="top-findings w-[20vw] max-sm:w-full max-h-[40vh]">
                     <div class=" mb-[1rem] bg-[#f4f4f4] p-5 m-2 rounded-2xl">
                         <ul>
                             {% if websites %}

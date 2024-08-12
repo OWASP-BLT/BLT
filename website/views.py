@@ -131,10 +131,26 @@ from requests.auth import HTTPBasicAuth
 from sendgrid import SendGridAPIClient
 
 from .bitcoin_utils import create_bacon_token
-from .models import BaconToken, Contribution
+from .forms import UserProfileForm
+from .models import BaconToken, Contribution, Tag, UserProfile
 
 # Load environment variables
 load_dotenv()
+
+
+@login_required
+def profile_edit(request):
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == "POST":
+        form = UserProfileForm(request.POST, request.FILES, instance=user_profile)
+        if form.is_valid():
+            form.save()
+            return redirect("profile", slug=request.user.username)
+    else:
+        form = UserProfileForm(instance=user_profile)
+
+    return render(request, "profile_edit.html", {"form": form})
 
 
 def add_domain_to_company(request):
@@ -1443,6 +1459,10 @@ class UserProfileDetailView(DetailView):
             str(prof.user.email) for prof in user.userprofile.follower.all()
         ]
         context["bookmarks"] = user.userprofile.issue_saved.all()
+        # tags
+        context["user_related_tags"] = (
+            UserProfile.objects.filter(user=self.object).first().tags.all()
+        )
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
         return context
 
@@ -2039,6 +2059,9 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(GlobalLeaderboardView, self).get_context_data(*args, **kwargs)
+
+        user_related_tags = Tag.objects.filter(userprofile__isnull=False).distinct()
+        context["user_related_tags"] = user_related_tags
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -3873,6 +3896,32 @@ def handler404(request, exception):
 
 def handler500(request, exception=None):
     return render(request, "500.html", {}, status=500)
+
+
+def users_view(request, *args, **kwargs):
+    context = {}
+
+    # Get all tags related to all user profiles
+    context["user_related_tags"] = Tag.objects.filter(userprofile__isnull=False).distinct()
+
+    # Get all tags in the system
+    context["tags"] = Tag.objects.all()
+
+    # Check if a specific tag is being requested
+    tag_name = request.GET.get("tag")
+    if tag_name:
+        # Check if the requested tag exists in user_related_tags
+        if context["user_related_tags"].filter(name=tag_name).exists():
+            context["tag"] = tag_name
+            context["users"] = UserProfile.objects.filter(tags__name=tag_name)
+        else:
+            context["users"] = UserProfile.objects.none()  # No users if the tag isn't found
+    else:
+        # Default filter: Show users with the tag "BLT Contributor"
+        context["tag"] = "BLT Contributors"
+        context["users"] = UserProfile.objects.filter(tags__name="BLT Contributors")
+
+    return render(request, "users.html", context=context)
 
 
 def contributors_view(request, *args, **kwargs):
