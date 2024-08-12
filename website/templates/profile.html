@@ -882,17 +882,6 @@
         });
     });
 
-
-    var cryptoEdit = document.getElementById("cryptoEdit");
-
-    function openEditCrypto(){
-        cryptoEdit.classList.remove("hidden");
-    }
-
-    var close = document.getElementById("close-cryptoEdit");
-    close.addEventListener("click", ()=>{
-        cryptoEdit.classList.add("hidden");
-    })
     </script>
     <script src="{% static 'js/validate-btc.js' %}"></script>
 {% endblock content %}
