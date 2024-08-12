@@ -566,6 +566,8 @@ class IP(models.Model):
     method = models.CharField(max_length=10, null=True, blank=True)
     referer = models.CharField(max_length=255, null=True, blank=True)
 
+    def __str__(self):
+        return f"{self.address} - {self.path}"
 
 class CompanyAdmin(models.Model):
     role = (
