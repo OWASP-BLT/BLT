@@ -56,6 +56,7 @@ def navigation_click_counts(request):
             menu_item["url"] = path
             menu_items_dict[path] = menu_item
 
+    # Sort the menu items based on the clicks
     sorted_menu_items = sorted(menu_items_dict.values(), key=lambda x: x["clicks"], reverse=True)
 
     return {"menu_items": sorted_menu_items}
