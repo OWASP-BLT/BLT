@@ -28,7 +28,7 @@ function validateBCH(address) {
      * Params: BCH Address
      * ***/
     if (address == null || address == "" || address == " ") {
-        return false;
+        return "empty";
     }
     if (address.startsWith("bitcoincash:")) {
         address = address.slice(12);
@@ -50,7 +50,7 @@ function validateEthereum(address) {
     let regex = new RegExp(/^(0x)?[0-9a-fA-F]{40}$/);
 
     if (address == null || address == "" || address == " ") {
-        return false;
+        return "empty";
     } else if (regex.test(address) == true) {
         return true;
     } else {
@@ -65,11 +65,51 @@ function validateBitCoin(address) {
      * ***/
     let regex = new RegExp(/^(bc1|[13])[a-km-zA-HJ-NP-Z1-9]{25,34}$/);
     if (address == null || address == "" || address == " ") {
-        return false;
+        return "empty";
     } else if (regex.test(address) == true) {
         return true;
     } else {
         return false;
+    }
+}
+
+async function CryptoEditForm(crypto, selected_c) {
+    if(selected_c == "BTC"){
+        selected_c = "Bitcoin"
+        var isValidAddress = validateBitCoin(crypto);
+    }else if(selected_c == "BCH"){
+        selected_c = "BitcoinCash"
+        var isValidAddress = validateBCH(crypto);
+    }else if(selected_c == "ETH"){
+        selected_c = "Ethereum"
+        var isValidAddress = validateEthereum(crypto);
+    }else{
+        $.notify("Please select a Crypto Address", {
+            style: "custom",
+            className: "danger"
+        });
+        return;
+    }
+    if(isValidAddress == true){
+        const data = {
+            selected_crypto: selected_c,
+            new_address: crypto
+          };          
+        const request = await fetch("/update_bch_address/", {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data),
+        });
+        if(request.status == 200){
+            window.location.reload();
+        }
+    }else{
+        $.notify("Please enter a valid Crypto Address", {
+            style: "custom",
+            className: "danger"
+        });
     }
 }
 // TEST THE VALIDATORS

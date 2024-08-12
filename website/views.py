@@ -4231,7 +4231,6 @@ class IssueView(DetailView):
             context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(
                 pk=self.object.id
             ).exists()
-
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["status"] = Issue.objects.filter(id=self.object.id).get().status
         context["github_issues_url"] = (
@@ -4540,10 +4539,12 @@ def trademark_detailview(request, slug):
 #                     headers=headers,
 #                 )
 #         mail.logout()
+@csrf_exempt
 def update_bch_address(request):
     if request.method == "POST":
-        selected_crypto = request.POST.get("selected_crypto")
-        new_address = request.POST.get("new_address")
+        data = json.loads(request.body)
+        selected_crypto = data.get("selected_crypto")
+        new_address = data.get("new_address")
         if selected_crypto and new_address:
             try:
                 user_profile = request.user.userprofile
