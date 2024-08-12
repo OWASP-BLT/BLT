@@ -4539,7 +4539,6 @@ def trademark_detailview(request, slug):
 #                     headers=headers,
 #                 )
 #         mail.logout()
-@csrf_exempt
 def update_bch_address(request):
     if request.method == "POST":
         selected_crypto = request.POST.get("selected_crypto")
