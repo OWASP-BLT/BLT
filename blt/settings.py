@@ -118,7 +118,7 @@ MIDDLEWARE = (
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "tz_detect.middleware.TimezoneMiddleware",
-    "website.middleware.LogRequestMiddleware"
+    "website.middleware.LogRequestMiddleware",
 )
 
 TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
@@ -164,7 +164,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.i18n",
-                "website.context_processors.navigation_click_counts"
+                "website.context_processors.navigation_click_counts",
             ],
             "loaders": [
                 (

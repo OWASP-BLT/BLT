@@ -569,6 +569,7 @@ class IP(models.Model):
     def __str__(self):
         return f"{self.address} - {self.path}"
 
+
 class CompanyAdmin(models.Model):
     role = (
         (0, "Admin"),
