@@ -4,67 +4,131 @@ from django.core.cache import cache
 from django.http import HttpResponseForbidden
 from user_agents import parse
 
-from website.models import BlockedIP
+from website.models import IP, Blocked
 
 
 class IPRestrictMiddleware:
     """
-    Middleware to restrict access based on client IP addresses.
+    Middleware to restrict access based on client IP addresses and user agents.
     """
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def blocked_ips(self):
+        """
+        Retrieve blocked IP addresses from cache or database.
+        """
         blocked_ips = cache.get("blocked_ips")
         if blocked_ips is None:
-            blocked_addresses = BlockedIP.objects.values_list("address", flat=True)
-            blocked_ips = set(blocked_addresses)
+            blocked_addresses = Blocked.objects.values_list("address", flat=True)
+            blocked_ips = set(filter(None, blocked_addresses))
             cache.set("blocked_ips", blocked_ips, timeout=86400)
         return blocked_ips
 
-    def blocked_ip_ranges(self):
-        blocked_ip_ranges = cache.get("blocked_ip_ranges")
-        if blocked_ip_ranges is None:
-            blocked_ip_start = BlockedIP.objects.values_list("address_range_start", flat=True)
-            blocked_ip_end = BlockedIP.objects.values_list("address_range_end", flat=True)
-            blocked_ip_ranges = list(zip(blocked_ip_start, blocked_ip_end))
-            cache.set("blocked_ip_ranges", blocked_ip_ranges, timeout=86400)
-        return blocked_ip_ranges
+    def ip_in_ips(self, ip, blocked_ips):
+        if blocked_ips is None:
+            return False
+        return ip in blocked_ips
 
-    def ip_in_range(self, ip, ip_ranges):
-        ip_int = int(ipaddress.IPv4Address(ip))
-        for start, end in ip_ranges:
-            start_int = int(ipaddress.IPv4Address(start))
-            end_int = int(ipaddress.IPv4Address(end))
-            if start_int <= ip_int <= end_int:
-                return True
-        return False
+    def blocked_ip_network(self):
+        """
+        Retrieve blocked IP networks from cache or database.
+        """
+        blocked_ip_network = cache.get("blocked_ip_network")
+        if blocked_ip_network is None:
+            blocked_network = Blocked.objects.values_list("ip_network", flat=True)
+            blocked_ip_network = [
+                ipaddress.ip_network(range_str, strict=False)
+                for range_str in filter(None, blocked_network)
+            ]
+            cache.set("blocked_ip_network", blocked_ip_network, timeout=86400)
+        return blocked_ip_network or []
+
+    def ip_in_range(self, ip, blocked_ip_network):
+        """
+        Check if the IP address is within any of the blocked IP networks.
+        """
+        if not blocked_ip_network:
+            return False
+        ip_obj = ipaddress.ip_address(ip)
+        return any(ip_obj in ip_range for ip_range in blocked_ip_network if ip_range)
 
     def blocked_agents(self):
+        """
+        Retrieve blocked user agents from cache or database.
+        """
         blocked_agents = cache.get("blocked_agents")
-        if blocked_agents is None:
-            blocked_user_agents = BlockedIP.objects.values_list("user_agent_string", flat=True)
-            blocked_agents = set(blocked_user_agents)
-            cache.set("blocked_agents", blocked_agents, timeout=86400)
+        if blocked_agents is None or blocked_agents == []:
+            blocked_user_agents = Blocked.objects.values_list("user_agent_string", flat=True)
+            if blocked_user_agents:
+                blocked_agents = set(blocked_user_agents)
+                cache.set("blocked_agents", blocked_agents, timeout=86400)
+                return blocked_agents
+            else:
+                return None
         return blocked_agents
 
+    def is_user_agent_blocked(self, user_agent, blocked_agents):
+        """
+        Check if the user agent is in the list of blocked user agents.
+        """
+        user_agent_str = str(user_agent).strip()
+
+        if not blocked_agents:
+            return False
+        blocked_agents = [str(agent).strip() for agent in blocked_agents if str(agent).strip()]
+
+        for blocked_agent in blocked_agents:
+            blocked_agent_str = str(blocked_agent).strip()
+            if blocked_agent_str.lower() in user_agent_str.lower():
+                return True
+
+        return False
+
+    def delete_all_info(self):
+        Blocked.objects.all().delete()
+        cache.delete("blocked_ips")
+        cache.delete("blocked_ip_network")
+        cache.delete("blocked_agents")
+
     def __call__(self, request):
+        """
+        Process the request and restrict access based on IP address and user agent.
+        """
         ip = request.META.get("REMOTE_ADDR")
-        user_agent = request.META.get("HTTP_USER_AGENT", "")
-        parsed_agent = parse(user_agent)
+        agent = request.META.get("HTTP_USER_AGENT", "")
+        user_agent = parse(agent)
+        # If you want to clear everything use this
+        # self.delete_all_info()
+
+        if (
+            self.ip_in_ips(ip, self.blocked_ips())
+            or self.ip_in_range(ip, self.blocked_ip_network())
+            or self.is_user_agent_blocked(user_agent, self.blocked_agents())
+        ):
+            if self.ip_in_ips(ip, self.blocked_ips()) or self.ip_in_range(
+                ip, self.blocked_ip_network()
+            ):
+                return HttpResponseForbidden(
+                    "Your IP address is restricted from accessing this site."
+                )
+            if self.is_user_agent_blocked(user_agent, self.blocked_agents()):
+                return HttpResponseForbidden(
+                    "Your user agent is restricted from accessing this site."
+                )
+
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(",")[0].strip()
+        else:
+            ip = request.META.get("REMOTE_ADDR")
 
         if ip:
-            if ip in self.blocked_ips():
-                return HttpResponseForbidden(
-                    "Your IP address is restricted from accessing this site."
-                )
-            blocked_ip_ranges = self.blocked_ip_ranges()
-            if self.ip_in_range(ip, blocked_ip_ranges):
-                return HttpResponseForbidden(
-                    "Your IP address is restricted from accessing this site."
-                )
-        if parsed_agent and parsed_agent in self.blocked_agents():
-            return HttpResponseForbidden("Your IP address is restricted from accessing this site.")
+            ip_record = IP.objects.filter(address=ip).first()
+            if ip_record:
+                ip_record.agent = parse(agent)
+                ip_record.count += 1
+                ip_record.save()
 
         return self.get_response(request)

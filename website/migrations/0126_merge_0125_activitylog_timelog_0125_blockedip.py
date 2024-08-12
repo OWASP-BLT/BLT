@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0125_activitylog_timelog"),
         ("website", "0125_blockedip"),

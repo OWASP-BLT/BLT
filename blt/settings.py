@@ -119,7 +119,6 @@ MIDDLEWARE = (
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "tz_detect.middleware.TimezoneMiddleware",
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
-    "blt.middleware.count_ip_requests.MonitorIPMiddleware",
 )
 
 TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"

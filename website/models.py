@@ -10,6 +10,7 @@ from captcha.fields import CaptchaField
 from colorthief import ColorThief
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.core.exceptions import MultipleObjectsReturned, ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -788,16 +789,33 @@ class BaconToken(models.Model):
         return f"{self.user.username} - {self.amount} BACON"
 
 
-class BlockedIP(models.Model):
+class Blocked(models.Model):
     address = models.GenericIPAddressField(null=True, blank=True)
     reason_for_block = models.TextField(blank=True, null=True, max_length=255)
-    address_range_start = models.GenericIPAddressField(null=True, blank=True)
-    address_range_end = models.GenericIPAddressField(null=True, blank=True)
+    ip_network = models.GenericIPAddressField(null=True, blank=True)
     user_agent_string = models.CharField(max_length=255, default="", null=True, blank=True)
     count = models.IntegerField(default=1)
+    created = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return f"user agent : {self.user_agent_string} | IP : {self.address}"
+
+
+@receiver(post_save, sender=Blocked)
+@receiver(post_delete, sender=Blocked)
+def clear_blocked_cache(sender, instance=None, **kwargs):
+    """
+    Clears the cache when a Blocked instance is created, updated, or deleted.
+    """
+    cache.delete("blocked_ips")
+    cache.delete("blocked_ip_network")
+    cache.delete("blocked_agents")
+    blocked_ips = Blocked.objects.values_list("address", flat=True)
+    blocked_ip_network = Blocked.objects.values_list("ip_network", flat=True)
+    blocked_agents = Blocked.objects.values_list("user_agent_string", flat=True)
+    cache.set("blocked_ips", blocked_ips, timeout=86400)
+    cache.set("blocked_ip_network", blocked_ip_network, timeout=86400)
+    cache.set("blocked_agents", blocked_agents, timeout=86400)
 
 
 class TimeLog(models.Model):
