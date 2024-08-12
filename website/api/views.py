@@ -150,16 +150,14 @@ class IssueViewSet(viewsets.ModelViewSet):
         if issue is None:
             return {}
 
-        screenshots = (
-            [
-                # replacing space with url space notation
-                request.build_absolute_uri(screenshot.image.url)
-                for screenshot in issue.screenshots.all()
-            ]
-            + [request.build_absolute_uri(issue.screenshot.url)]
-            if issue.screenshot
-            else []
-        )
+        screenshots = [
+            # replacing space with url space notation
+            request.build_absolute_uri(screenshot.image.url)
+            for screenshot in issue.screenshots.all()
+        ]
+
+        if len(issue.screenshot.name) != 0:
+            screenshots.append(request.build_absolute_uri(issue.screenshot.url))
 
         is_upvoted = False
         is_flagged = False
