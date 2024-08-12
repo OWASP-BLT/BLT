@@ -73,45 +73,45 @@ function validateBitCoin(address) {
     }
 }
 
-async function CryptoEditForm(crypto, selected_c) {
-    if(selected_c == "BTC"){
-        selected_c = "Bitcoin"
-        var isValidAddress = validateBitCoin(crypto);
-    }else if(selected_c == "BCH"){
-        selected_c = "BitcoinCash"
-        var isValidAddress = validateBCH(crypto);
-    }else if(selected_c == "ETH"){
-        selected_c = "Ethereum"
-        var isValidAddress = validateEthereum(crypto);
-    }else{
-        $.notify("Please select a Crypto Address", {
-            style: "custom",
-            className: "danger"
-        });
-        return;
-    }
-    if(isValidAddress == true){
-        const data = {
-            selected_crypto: selected_c,
-            new_address: crypto
-          };          
-        const request = await fetch("/update_bch_address/", {
-            method: 'POST',
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data),
-        });
-        if(request.status == 200){
-            window.location.reload();
-        }
-    }else{
-        $.notify("Please enter a valid Crypto Address", {
-            style: "custom",
-            className: "danger"
-        });
-    }
-}
+// async function CryptoEditForm(crypto, selected_c) {
+//     if(selected_c == "BTC"){
+//         selected_c = "Bitcoin"
+//         var isValidAddress = validateBitCoin(crypto);
+//     }else if(selected_c == "BCH"){
+//         selected_c = "BitcoinCash"
+//         var isValidAddress = validateBCH(crypto);
+//     }else if(selected_c == "ETH"){
+//         selected_c = "Ethereum"
+//         var isValidAddress = validateEthereum(crypto);
+//     }else{
+//         $.notify("Please select a Crypto Address", {
+//             style: "custom",
+//             className: "danger"
+//         });
+//         return;
+//     }
+//     if(isValidAddress == true){
+//         const data = {
+//             selected_crypto: selected_c,
+//             new_address: crypto
+//           };          
+//         const request = await fetch("/update_bch_address/", {
+//             method: 'POST',
+//             headers: {
+//                 "Content-Type": "application/json"
+//             },
+//             body: JSON.stringify(data),
+//         });
+//         if(request.status == 200){
+//             window.location.reload();
+//         }
+//     }else{
+//         $.notify("Please enter a valid Crypto Address", {
+//             style: "custom",
+//             className: "danger"
+//         });
+//     }
+// }
 // TEST THE VALIDATORS
 // BitCoin VALIDATOR
 // Uncomment the below code
