@@ -4231,7 +4231,6 @@ class IssueView(DetailView):
             context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(
                 pk=self.object.id
             ).exists()
-
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["status"] = Issue.objects.filter(id=self.object.id).get().status
         context["github_issues_url"] = (
