@@ -158,16 +158,19 @@ class IssueViewSet(viewsets.ModelViewSet):
         if issue is None:
             return {}
 
-        screenshots = (
-            [
-                # replacing space with url space notation
+        # Check if there is an image in the `screenshot` field of the Issue table
+        if issue.screenshot:
+            # If an image exists in the Issue table, return it along with additional images from IssueScreenshot
+            screenshots = [request.build_absolute_uri(issue.screenshot.url)] + [
                 request.build_absolute_uri(screenshot.image.url)
                 for screenshot in issue.screenshots.all()
             ]
-            + [request.build_absolute_uri(issue.screenshot.url)]
-            if issue.screenshot
-            else []
-        )
+        else:
+            # If no image exists in the Issue table, return only the images from IssueScreenshot
+            screenshots = [
+                request.build_absolute_uri(screenshot.image.url)
+                for screenshot in issue.screenshots.all()
+            ]
 
         is_upvoted = False
         is_flagged = False
