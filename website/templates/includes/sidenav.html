@@ -33,7 +33,8 @@
             <ul class="font-medium text-2xl mt-6 mb-0">
                 {% for item in menu_items %}
                     <li class="{% if request.path == item.url %}bg-gray-200{% endif %}">
-                        <a href="{{ item.url }}" class="flex items-center w-full text-black no-underline p-2">
+                        <a href="{{ item.url }}"
+                           class="flex items-center w-full text-black no-underline p-2">
                             <div class="w-8 mr-4">{{ item.icon }}</div>
                             <span>{{ item.name }}</span>
                         </a>

@@ -1,4 +1,5 @@
 from django.core.cache import cache
+
 from .utils import get_navigation_click_counts
 
 MENU_ITEMS = {
@@ -29,7 +30,7 @@ MENU_ITEMS = {
     "/": {
         "name": "Issues",
         "icon": "⚠️",
-    }
+    },
 }
 
 
@@ -60,4 +61,3 @@ def navigation_click_counts(request):
     sorted_menu_items = sorted(menu_items_dict.values(), key=lambda x: x["clicks"], reverse=True)
 
     return {"menu_items": sorted_menu_items}
-
