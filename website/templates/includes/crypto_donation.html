@@ -8,27 +8,27 @@
              width="32px"
              height="32px">
         <div class="ml-3" id="crypto">
-            {% if object.user.userprofile.btc_address %}
-                {% include "./tiny-cards.html" with insideIFCondition=True left="BTC" right=object.user.userprofile.btc_address lessWidth=True %}
+            {% if user.userprofile.btc_address %}
+                {% include "./tiny-cards.html" with insideIFCondition=True left="BTC" right=user.userprofile.btc_address|slice:":40" lessWidth=True editCrypto=True %}
             {% endif %}
-            {% if object.user.userprofile.bch_address %}
-                {% include "./tiny-cards.html" with insideIFCondition=True left="BCH" right=object.user.userprofile.bch_address lessWidth=True %}
+            {% if user.userprofile.bch_address %}
+                {% include "./tiny-cards.html" with insideIFCondition=True left="BCH" right=user.userprofile.bch_address|slice:":40" lessWidth=True editCrypto=True %}
             {% endif %}
-            {% if object.user.userprofile.eth_address %}
-                {% include "./tiny-cards.html" with insideIFCondition=True left="ETH" right=object.user.userprofile.eth_address lessWidth=True %}
+            {% if user.userprofile.eth_address %}
+                {% include "./tiny-cards.html" with insideIFCondition=True left="ETH" right=user.userprofile.eth_address|slice:":40" lessWidth=True editCrypto=True %}
             {% endif %}
         </div>
-        <div class="hidden" id="no-crypto">
-            {% include "./tiny-cards.html" with left="BCH" right="qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc" lessWidth=True %}
+        <div class="hidden max-sm:w-[100%] max-sm:overflow-hidden" id="no-crypto">
+            {% include "./tiny-cards.html" with left="BCH" right="qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc" lessWidth=True editCrypto=True %}
             <i class="ml-[3%] text-[12px]">No Address, will go to BLT Donation</i>
         </div>
     </div>
 </div>
 <script>
     function loadQRCode(){
-        var btc_address = "{{object.user.userprofile.btc_address}}";
-        var bch_address = "{{object.user.userprofile.bch_address}}";
-        var eth_address = "{{object.user.userprofile.eth_address}}";
+        var btc_address = "{{user.userprofile.btc_address}}";
+        var bch_address = "{{user.userprofile.bch_address}}";
+        var eth_address = "{{user.userprofile.eth_address}}";
 
         if(btc_address != "None" && btc_address != ""){
             document.getElementById('crypto-qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${btc_address}&size=400x300`;
