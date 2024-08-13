@@ -2,7 +2,6 @@ import ipaddress
 
 from django.core.cache import cache
 from django.db import transaction
-from django.db.models import F
 from django.http import HttpResponseForbidden
 
 from website.models import IP, Blocked
@@ -101,8 +100,13 @@ class IPRestrictMiddleware:
                 ip_records = IP.objects.select_for_update().filter(address=ip)
                 if ip_records.exists():
                     count_sum = sum(record.count for record in ip_records)
-                    new_count = min(F("count") + count_sum, MAX_COUNT)
                     ip_record = ip_records.first()
+
+                    # Calculate the new count and ensure it doesn't exceed the MAX_COUNT
+                    new_count = ip_record.count + count_sum
+                    if new_count > MAX_COUNT:
+                        new_count = MAX_COUNT
+
                     ip_record.agent = agent
                     ip_record.count = new_count
                     ip_record.path = request.path
