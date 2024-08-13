@@ -1,7 +1,7 @@
 import ipaddress
 
 from django.core.cache import cache
-from django.db import transaction
+from django.db import models, transaction
 from django.http import HttpResponseForbidden
 
 from website.models import IP, Blocked
