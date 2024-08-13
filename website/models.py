@@ -814,7 +814,8 @@ class Blocked(models.Model):
     ip_network = models.GenericIPAddressField(null=True, blank=True)
     user_agent_string = models.CharField(max_length=255, default="", null=True, blank=True)
     count = models.IntegerField(default=1)
-    created = models.DateField(null=True, blank=True)
+    created = models.DateField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"user agent : {self.user_agent_string} | IP : {self.address}"
