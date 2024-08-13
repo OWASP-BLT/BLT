@@ -78,6 +78,28 @@ class IPRestrictMiddleware:
         user_agent_str = str(user_agent).strip().lower()
         return any(blocked_agent.lower() in user_agent_str for blocked_agent in blocked_agents)
 
+    def increment_block_count(self, ip=None, network=None, user_agent=None):
+        """
+        Increment the block count for a specific IP, network, or user agent in the Blocked model.
+        """
+        with transaction.atomic():
+            if ip:
+                blocked_entry = Blocked.objects.select_for_update().filter(address=ip).first()
+            elif network:
+                blocked_entry = (
+                    Blocked.objects.select_for_update().filter(ip_network=network).first()
+                )
+            elif user_agent:
+                blocked_entry = (
+                    Blocked.objects.select_for_update().filter(user_agent_string=user_agent).first()
+                )
+            else:
+                return  # Nothing to increment
+
+            if blocked_entry:
+                blocked_entry.count = models.F("count") + 1
+                blocked_entry.save(update_fields=["count"])
+
     def __call__(self, request):
         ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get(
             "REMOTE_ADDR", ""
@@ -88,11 +110,20 @@ class IPRestrictMiddleware:
         blocked_ip_network = self.blocked_ip_network()
         blocked_agents = self.blocked_agents()
 
-        if (
-            self.ip_in_ips(ip, blocked_ips)
-            or self.ip_in_range(ip, blocked_ip_network)
-            or self.is_user_agent_blocked(agent, blocked_agents)
-        ):
+        if self.ip_in_ips(ip, blocked_ips):
+            self.increment_block_count(ip=ip)
+            return HttpResponseForbidden()
+
+        if self.ip_in_range(ip, blocked_ip_network):
+            # Find the specific network that caused the block and increment its count
+            for network in blocked_ip_network:
+                if ipaddress.ip_address(ip) in network:
+                    self.increment_block_count(network=str(network))
+                    break
+            return HttpResponseForbidden()
+
+        if self.is_user_agent_blocked(agent, blocked_agents):
+            self.increment_block_count(user_agent=agent)
             return HttpResponseForbidden()
 
         if ip:
