@@ -98,14 +98,14 @@ class IPRestrictMiddleware:
         """
         ip = request.META.get("REMOTE_ADDR")
         agent = request.META.get("HTTP_USER_AGENT", "")
-        user_agent = parse(agent)
+        #user_agent = parse(agent)
         # If you want to clear everything use this
         # self.delete_all_info()
 
         if (
             self.ip_in_ips(ip, self.blocked_ips())
             or self.ip_in_range(ip, self.blocked_ip_network())
-            or self.is_user_agent_blocked(user_agent, self.blocked_agents())
+            or self.is_user_agent_blocked(agent, self.blocked_agents())
         ):
             if self.ip_in_ips(ip, self.blocked_ips()) or self.ip_in_range(
                 ip, self.blocked_ip_network()
@@ -113,7 +113,7 @@ class IPRestrictMiddleware:
                 return HttpResponseForbidden(
                     "Your IP address is restricted from accessing this site."
                 )
-            if self.is_user_agent_blocked(user_agent, self.blocked_agents()):
+            if self.is_user_agent_blocked(agent, self.blocked_agents()):
                 return HttpResponseForbidden(
                     "Your user agent is restricted from accessing this site."
                 )
@@ -126,10 +126,10 @@ class IPRestrictMiddleware:
 
         if ip:
             ip_record, created = IP.objects.get_or_create(
-                address=ip, defaults={"agent": parse(agent), "count": 1, "path": request.path}
+                address=ip, defaults={"agent": agent, "count": 1, "path": request.path}
             )
             if not created:
-                ip_record.agent = parse(agent)
+                ip_record.agent = agent
                 ip_record.count += 1
                 ip_record.path = request.path
                 ip_record.save()
