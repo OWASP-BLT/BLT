@@ -564,7 +564,7 @@ class IP(models.Model):
     issuenumber = models.IntegerField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     agent = models.CharField(max_length=255, null=True, blank=True)
-    count = models.IntegerField(default=0)
+    count = models.BigIntegerField(default=1)
     path = models.CharField(max_length=255, null=True, blank=True)
     method = models.CharField(max_length=10, null=True, blank=True)
     referer = models.CharField(max_length=255, null=True, blank=True)

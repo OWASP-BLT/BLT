@@ -1,10 +1,13 @@
 import ipaddress
 
 from django.core.cache import cache
-from django.db import models, transaction
+from django.db import transaction
+from django.db.models import F
 from django.http import HttpResponseForbidden
 
 from website.models import IP, Blocked
+
+MAX_COUNT = 2147483647
 
 
 class IPRestrictMiddleware:
@@ -77,9 +80,6 @@ class IPRestrictMiddleware:
         return any(blocked_agent.lower() in user_agent_str for blocked_agent in blocked_agents)
 
     def __call__(self, request):
-        """
-        Process the request and restrict access based on IP address and user agent.
-        """
         ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get(
             "REMOTE_ADDR", ""
         )
@@ -100,11 +100,11 @@ class IPRestrictMiddleware:
             with transaction.atomic():
                 ip_records = IP.objects.select_for_update().filter(address=ip)
                 if ip_records.exists():
-                    # Aggregate the count and delete duplicates
                     count_sum = sum(record.count for record in ip_records)
+                    new_count = min(F("count") + count_sum, MAX_COUNT)
                     ip_record = ip_records.first()
                     ip_record.agent = agent
-                    ip_record.count = models.F("count") + count_sum
+                    ip_record.count = new_count
                     ip_record.path = request.path
                     ip_record.save(update_fields=["agent", "count", "path"])
 
