@@ -189,6 +189,7 @@ class IssueViewSet(viewsets.ModelViewSet):
         return Response(self.get_issue_info(request, Issue.objects.filter(id=pk).first()))
 
     def create(self, request, *args, **kwargs):
+        print(request.data)
         screenshot_count = len(self.request.FILES.getlist("screenshots"))
         if screenshot_count == 0:
             return Response(
@@ -200,14 +201,17 @@ class IssueViewSet(viewsets.ModelViewSet):
         data = super().create(request, *args, **kwargs).data
         issue = Issue.objects.filter(id=data["id"]).first()
 
+        print(issue)
+
         for screenshot in self.request.FILES.getlist("screenshots"):
             if image_validator(screenshot):
                 filename = screenshot.name
                 screenshot.name = (
                     f"{filename[:10]}{str(uuid.uuid4())[:40]}.{filename.split('.')[-1]}"
                 )
-                default_storage.save(f"screenshots/{screenshot.name}", screenshot)
-                IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}")
+                file_path = default_storage.save(f"screenshots/{screenshot.name}", screenshot)
+                # Create the IssueScreenshot object and associate it with the issue
+                IssueScreenshot.objects.create(image=file_path, issue=issue)
             else:
                 return Response({"error": "Invalid image"}, status=status.HTTP_400_BAD_REQUEST)
 
