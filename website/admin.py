@@ -241,6 +241,11 @@ class UserProfileAdmin(admin.ModelAdmin):
         "flagged_count",
         "subscribed_domains_count",
         "subscribed_users_count",
+        "x_username",
+        "linkedin_url",
+        "github_url",
+        "website_url",
+        "discounted_hourly_rate",
     )
 
     def follow_count(self, obj):
