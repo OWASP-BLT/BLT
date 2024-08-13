@@ -1,6 +1,7 @@
 import ipaddress
 
 from django.core.cache import cache
+from django.db import transaction
 from django.http import HttpResponseForbidden
 
 from website.models import IP, Blocked
@@ -123,13 +124,17 @@ class IPRestrictMiddleware:
             ip = request.META.get("REMOTE_ADDR")
 
         if ip:
-            ip_record, created = IP.objects.get_or_create(
-                address=ip, defaults={"agent": agent, "count": 1, "path": request.path}
-            )
-            if not created:
-                ip_record.agent = agent
-                ip_record.count += 1
-                ip_record.path = request.path
-                ip_record.save()
+            with transaction.atomic():
+                ip_record, created = IP.objects.get_or_create(
+                    address=ip, defaults={"agent": agent, "count": 1, "path": request.path}
+                )
+                if not created:
+                    # Filter by address and update the first one
+                    ip_records = IP.objects.filter(address=ip)
+                    ip_record = ip_records.first()  # Get the first record
+                    ip_record.agent = agent
+                    ip_record.count += 1
+                    ip_record.path = request.path
+                    ip_record.save()
 
         return self.get_response(request)
