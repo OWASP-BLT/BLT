@@ -504,14 +504,12 @@ class AddDomainView(View):
             "twitter": request.POST.get("twitter_url", None),
             "facebook": request.POST.get("facebook_url", None),
             "trademarkInput": request.POST.get("trademarkInput", None),
-            "remove-button": request.POST.get("removedTrademarks", None),
+            "remove-trademark": request.POST.get("removedTrademarks", None),
         }
 
-        removed_trademarks = domain_data["remove-button"]
+        removed_trademarks = domain_data["remove-trademark"]
         if removed_trademarks:
-            trademark_ids = removed_trademarks.split(",")
-            for trademark_id in trademark_ids:
-                Trademark.objects.filter(id=trademark_id).delete()
+            Trademark.objects.filter(id__in=removed_trademarks.split(",")).delete()
 
         if domain_data["url"]:
             parsed_url = urlparse(domain_data["url"])
@@ -643,9 +641,9 @@ class AddDomainView(View):
             "twitter": request.POST.get("twitter_url", None),
             "facebook": request.POST.get("facebook_url", None),
             "trademarkInput": request.POST.get("trademarkInput", None),
-            "remove-button": request.POST.get("removedTrademarks", None),
+            "remove-trademark": request.POST.get("removedTrademarks", None),
         }
-        removed_trademarks = domain_data["remove-button"]
+        removed_trademarks = domain_data["remove-trademark"]
         if removed_trademarks:
             trademark_ids = removed_trademarks.split(",")
             for trademark_id in trademark_ids:
