@@ -1,3 +1,4 @@
+import json
 import uuid
 from datetime import datetime
 
@@ -178,6 +179,9 @@ class IssueViewSet(viewsets.ModelViewSet):
             is_upvoted = request.user.userprofile.issue_upvoted.filter(id=issue.id).exists()
             is_flagged = request.user.userprofile.issue_flaged.filter(id=issue.id).exists()
 
+        tag_serializer = TagSerializer(issue.tags.all(), many=True)
+        tags = tag_serializer.data
+
         return {
             **IssueSerializer(issue).data,
             "closed_by": issue.closed_by.username if issue.closed_by else None,
@@ -186,6 +190,7 @@ class IssueViewSet(viewsets.ModelViewSet):
             "screenshots": screenshots,
             "upvotes": issue.upvoted.count(),
             "upvotted": is_upvoted,
+            "tags": tags,
         }
 
     def list(self, request, *args, **kwargs):
@@ -202,6 +207,26 @@ class IssueViewSet(viewsets.ModelViewSet):
         return Response(self.get_issue_info(request, Issue.objects.filter(id=pk).first()))
 
     def create(self, request, *args, **kwargs):
+        request.data._mutable = True
+
+        # Since the tags field is json encoded we need to decode it
+        tags = None
+        try:
+            if "tags" in request.data:
+                tags_json = request.data.get("tags")
+                if isinstance(tags_json, list):
+                    tags_json = tags_json[0]
+                tags = json.loads(tags_json)
+
+                if isinstance(tags, list) and any(isinstance(i, list) for i in tags):
+                    tags = [item for sublist in tags for item in sublist]
+
+                del request.data["tags"]
+        except (ValueError, MultiValueDictKeyError) as e:
+            return Response({"error": "Invalid tags format."}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            request.data._mutable = False
+
         screenshot_count = len(self.request.FILES.getlist("screenshots"))
         if screenshot_count == 0:
             return Response(
@@ -213,14 +238,19 @@ class IssueViewSet(viewsets.ModelViewSet):
         data = super().create(request, *args, **kwargs).data
         issue = Issue.objects.filter(id=data["id"]).first()
 
+        if tags:
+            issue.tags.add(*tags)
+
         for screenshot in self.request.FILES.getlist("screenshots"):
             if image_validator(screenshot):
                 filename = screenshot.name
                 screenshot.name = (
                     f"{filename[:10]}{str(uuid.uuid4())[:40]}.{filename.split('.')[-1]}"
                 )
-                default_storage.save(f"screenshots/{screenshot.name}", screenshot)
-                IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}")
+                file_path = default_storage.save(f"screenshots/{screenshot.name}", screenshot)
+
+                # Create the IssueScreenshot object and associate it with the issue
+                IssueScreenshot.objects.create(image=file_path, issue=issue)
             else:
                 return Response({"error": "Invalid image"}, status=status.HTTP_400_BAD_REQUEST)
 
