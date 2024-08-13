@@ -21,7 +21,7 @@ class IPRestrictMiddleware:
         """
         cached_data = cache.get(cache_key)
         if cached_data is None:
-            cached_data = list(filter(None, queryset))
+            cached_data = list(filter(None, queryset))  # Filter out None values
             cache.set(cache_key, cached_data, timeout=timeout)
         return cached_data
 
@@ -37,10 +37,16 @@ class IPRestrictMiddleware:
         Retrieve blocked IP networks from cache or database.
         """
         blocked_network = Blocked.objects.values_list("ip_network", flat=True)
-        blocked_ip_network = [
-            ipaddress.ip_network(range_str, strict=False)
-            for range_str in self.get_cached_data("blocked_ip_network", blocked_network)
-        ]
+        blocked_ip_network = []
+
+        for range_str in self.get_cached_data("blocked_ip_network", blocked_network):
+            try:
+                network = ipaddress.ip_network(range_str, strict=False)
+                blocked_ip_network.append(network)
+            except ValueError:
+                # Log the error or handle it as needed, but skip invalid networks
+                continue
+
         return blocked_ip_network
 
     def blocked_agents(self):
