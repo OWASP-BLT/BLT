@@ -304,7 +304,7 @@
                     </form>
                 {% endif %}
             </div>
-            <div class="flex items-center justify-between w-[17vw] max-sm:w-[100vw]">
+            <div class="flex items-center justify-between w-[17vw] max-sm:w-[70vw]">
                 <span class="text-[25px] font-['Poppins']">{{ my_score|default:0 }} <span class="text-[19px] text-[#909090]">{% trans "POINTS" %}</span></span>
                 {% if request.user != user and request.user.is_authenticated %}
                     <span class="text-[25px]">●</span>
@@ -365,14 +365,14 @@
                                                 </a>
                                                 <div class="mb-2 text-xl">
                                                     {{ activity.user|default:"Anonymous" }}
-                                                    found a bug on <a href="{% url 'domain' slug=activity.domain_name %}">{{ activity.domain_title }}</a> {{ activity.created|timesince }}
+                                                    found a bug on <a href="{% url 'domain' slug=activity.domain_name %}">{{ activity.domain_title }}</a> - {{ activity.created|timesince }}
                                                     ago
                                                 </div>
                                                 <a class="text-lg"
                                                    href="{{ activity.url }}"
                                                    target="_blank"
                                                    rel="noopener noreferrer">
-                                                    <div>{{ activity.url }}</div>
+                                                    <div>{{ activity.url|truncatechars:30 }}</div>
                                                 </a>
                                                 <a class="whitespace-nowrap mb-1 text-xl"
                                                    href="{{ activity.get_absolute_url }}#comments">
@@ -802,6 +802,7 @@
                         style: "custom",
                         className: "success"
                     });
+                    window.location.reload();
             }
             else{
                 $.notify("Permission Denied", {
@@ -880,5 +881,7 @@
             }
         });
     });
+
     </script>
+    <script src="{% static 'js/validate-btc.js' %}"></script>
 {% endblock content %}
