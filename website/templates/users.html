@@ -36,7 +36,7 @@
         <div class="flex items-center justify-center flex-wrap gap-4 p-4">
             {% for user in users %}
                 <div class="group card w-[250px] h-[400px] m-5 flex flex-col items-center justify-between hover:bg-red-600 transition duration-200">
-                    <img src="{{ user.img }}"
+                    <img src="{{ user.user_avatar.url }}"
                          class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
                          width="100px"
                          height="100px"
@@ -45,7 +45,9 @@
                         {{ user.user.username }}
                     </div>
                     <div class="transition duration-200 group-hover:text-purple-800  text-purple-600 text-2xl">{{ user.location }}</div>
-                    <p class="transition duration-200 group-hover:text-white text-gray-600 text-center px-10">{{ user.description }}</p>
+                    <p class="transition duration-200 group-hover:text-white text-gray-600 text-center px-10">
+                        {{ user.role|slice:":30" }}
+                    </p>
                     <p class="transition duration-200 group-hover:text-white text-gray-600 text-center px-10 py-4 bg-gray-100 rounded-md shadow-md">
                         <span class="font-semibold text-lg">Discounted Hourly Rate:</span>
                         <span class="text-green-600 font-bold text-xl">${{ user.discounted_hourly_rate }}</span>

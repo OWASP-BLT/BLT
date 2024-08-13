@@ -228,6 +228,7 @@ class UserProfileAdmin(admin.ModelAdmin):
         "user",
         "user_avatar",
         "get_title_display",
+        "role",
         "description",
         "winnings",
         "issues_hidden",
