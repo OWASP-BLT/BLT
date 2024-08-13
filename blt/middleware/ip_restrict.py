@@ -125,10 +125,13 @@ class IPRestrictMiddleware:
             ip = request.META.get("REMOTE_ADDR")
 
         if ip:
-            ip_record = IP.objects.filter(address=ip).first()
-            if ip_record:
+            ip_record, created = IP.objects.get_or_create(
+                address=ip, defaults={"agent": parse(agent), "count": 1, "path": request.path}
+            )
+            if not created:
                 ip_record.agent = parse(agent)
                 ip_record.count += 1
+                ip_record.path = request.path
                 ip_record.save()
 
         return self.get_response(request)
