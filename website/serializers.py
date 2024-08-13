@@ -9,6 +9,7 @@ from website.models import (
     Hunt,
     HuntPrize,
     Issue,
+    IssueScreenshot,
     Points,
     Project,
     Tag,
@@ -76,12 +77,19 @@ class TagSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class IssueScreenshotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IssueScreenshot
+        fields = "__all__"
+
+
 class IssueSerializer(serializers.ModelSerializer):
     """
     Serializer for Issue Model
     """
 
     user = UserSerializer(read_only=True)
+    screenshots = IssueScreenshotSerializer(many=True, required=False)
 
     class Meta:
         model = Issue

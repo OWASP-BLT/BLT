@@ -135,7 +135,9 @@ handler500 = "website.views.handler500"
 
 urlpatterns = [
     path(
-        "api/companies/", CompanyViewSet.as_view({"get": "list", "post": "create"}), name="company"
+        "api/v1/companies/",
+        CompanyViewSet.as_view({"get": "list", "post": "create"}),
+        name="company",
     ),
     path("invite-friend/", website.views.invite_friend, name="invite_friend"),
     path("referral/", website.views.referral_signup, name="referral_signup"),
