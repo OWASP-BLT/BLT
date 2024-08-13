@@ -73,7 +73,8 @@ class IPRestrictMiddleware:
 
     def is_user_agent_blocked(self, user_agent, blocked_agents):
         """
-        Check if the user agent is in the list of blocked user agents.
+        Check if the user agent is in the list of blocked user agents by checking if the
+        full user agent string contains any of the blocked substrings.
         """
         user_agent_str = str(user_agent).strip().lower()
         return any(blocked_agent.lower() in user_agent_str for blocked_agent in blocked_agents)
@@ -90,8 +91,17 @@ class IPRestrictMiddleware:
                     Blocked.objects.select_for_update().filter(ip_network=network).first()
                 )
             elif user_agent:
+                # Correct lookup: find if any user_agent_string is a substring of the user_agent
                 blocked_entry = (
-                    Blocked.objects.select_for_update().filter(user_agent_string=user_agent).first()
+                    Blocked.objects.select_for_update()
+                    .filter(
+                        user_agent_string__in=[
+                            agent
+                            for agent in Blocked.objects.values_list("user_agent_string", flat=True)
+                            if agent.lower() in user_agent.lower()
+                        ]
+                    )
+                    .first()
                 )
             else:
                 return  # Nothing to increment
@@ -130,11 +140,10 @@ class IPRestrictMiddleware:
             with transaction.atomic():
                 ip_records = IP.objects.select_for_update().filter(address=ip)
                 if ip_records.exists():
-                    count_sum = sum(record.count for record in ip_records)
                     ip_record = ip_records.first()
 
                     # Calculate the new count and ensure it doesn't exceed the MAX_COUNT
-                    new_count = ip_record.count + count_sum
+                    new_count = ip_record.count + 1
                     if new_count > MAX_COUNT:
                         new_count = MAX_COUNT
 
