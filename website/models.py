@@ -507,6 +507,7 @@ class UserProfile(models.Model):
     user = AutoOneToOneField("auth.user", related_name="userprofile", on_delete=models.CASCADE)
     user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
     title = models.IntegerField(choices=title, default=0)
+    role = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")

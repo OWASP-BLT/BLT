@@ -29,6 +29,12 @@
                     </div>
                     <!-- Description -->
                     <div class="mb-4">
+                        <label for="id_role" class="block text-sm font-medium text-gray-700">Role</label>
+                        <textarea name="role"
+                                  id="id_role"
+                                  rows="1"
+                                  class="mt-1 block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                  maxlength="255">{{ form.role.value }}</textarea>
                         <label for="id_description" class="block text-sm font-medium text-gray-700">Description</label>
                         <textarea name="description"
                                   id="id_description"

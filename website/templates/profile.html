@@ -327,6 +327,11 @@
             {% endif %}
             <div class="mt-[2rem] !ml-0">{% include "./includes/crypto_donation.html" %}</div>
             <div class="h-[2vh]"></div>
+            {% if user.userprofile.role %}
+                <div>Role</div>
+                <div class="profile-description">{{ user.userprofile.role }}</div>
+                <hr>
+            {% endif %}
             {% if user.userprofile.description %}
                 <div>Bio / Description</div>
                 <div class="profile-description">{{ user.userprofile.description }}</div>
