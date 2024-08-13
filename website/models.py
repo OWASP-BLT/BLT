@@ -532,6 +532,7 @@ class UserProfile(models.Model):
     github_url = models.URLField(blank=True, null=True)
     website_url = models.URLField(blank=True, null=True)
     discounted_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    modified = models.DateTimeField(auto_now=True)
 
     def avatar(self, size=36):
         if self.user_avatar:

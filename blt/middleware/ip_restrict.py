@@ -2,7 +2,6 @@ import ipaddress
 
 from django.core.cache import cache
 from django.http import HttpResponseForbidden
-from user_agents import parse
 
 from website.models import IP, Blocked
 
@@ -98,7 +97,6 @@ class IPRestrictMiddleware:
         """
         ip = request.META.get("REMOTE_ADDR")
         agent = request.META.get("HTTP_USER_AGENT", "")
-        #user_agent = parse(agent)
         # If you want to clear everything use this
         # self.delete_all_info()
 
