@@ -826,12 +826,22 @@ def clear_blocked_cache(sender, instance=None, **kwargs):
     """
     Clears the cache when a Blocked instance is created, updated, or deleted.
     """
+    # Clear the cache
     cache.delete("blocked_ips")
     cache.delete("blocked_ip_network")
     cache.delete("blocked_agents")
+
+    # Retrieve valid blocked IPs, IP networks, and user agents
     blocked_ips = Blocked.objects.values_list("address", flat=True)
     blocked_ip_network = Blocked.objects.values_list("ip_network", flat=True)
     blocked_agents = Blocked.objects.values_list("user_agent_string", flat=True)
+
+    # Filter out None or invalid values
+    blocked_ips = [ip for ip in blocked_ips if ip is not None]
+    blocked_ip_network = [network for network in blocked_ip_network if network is not None]
+    blocked_agents = [agent for agent in blocked_agents if agent is not None]
+
+    # Set the cache with valid values
     cache.set("blocked_ips", blocked_ips, timeout=86400)
     cache.set("blocked_ip_network", blocked_ip_network, timeout=86400)
     cache.set("blocked_agents", blocked_agents, timeout=86400)
