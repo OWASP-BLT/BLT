@@ -18,6 +18,7 @@ from django.db import models
 from django.db.models import Count
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
+from django.template.defaultfilters import slugify
 from django.utils import timezone
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
@@ -46,6 +47,13 @@ class Subscription(models.Model):
 
 class Tag(models.Model):
     name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        # make the slug using slugify
+        self.slug = slugify(self.name)
+        super(Tag, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -506,13 +514,22 @@ class UserProfile(models.Model):
     issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
     issues_hidden = models.BooleanField(default=False)
 
-    subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains")
-    subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users")
+    subscribed_domains = models.ManyToManyField(
+        Domain, related_name="user_subscribed_domains", blank=True
+    )
+    subscribed_users = models.ManyToManyField(
+        User, related_name="user_subscribed_users", blank=True
+    )
     btc_address = models.CharField(max_length=100, blank=True, null=True)
     bch_address = models.CharField(max_length=100, blank=True, null=True)
     eth_address = models.CharField(max_length=100, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField(Tag, blank=True)
+    x_username = models.CharField(max_length=50, blank=True, null=True)
+    linkedin_url = models.URLField(blank=True, null=True)
+    github_url = models.URLField(blank=True, null=True)
+    website_url = models.URLField(blank=True, null=True)
+    discounted_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def avatar(self, size=36):
         if self.user_avatar:
@@ -786,3 +803,35 @@ class BaconToken(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.amount} BACON"
+
+
+class TimeLog(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="timelogs"
+    )
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField(null=True, blank=True)
+    duration = models.DurationField(null=True, blank=True)
+    github_issue_url = models.URLField(null=True, blank=True)  # URL field for GitHub issue
+    created = models.DateTimeField(default=timezone.now, editable=False)
+
+    def save(self, *args, **kwargs):
+        if self.end_time and self.start_time <= self.end_time:
+            self.duration = self.end_time - self.start_time
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"TimeLog by {self.user.username} from {self.start_time} to {self.end_time}"
+
+
+class ActivityLog(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activity_logs"
+    )
+    window_title = models.CharField(max_length=255)
+    url = models.URLField(null=True, blank=True)  # URL field for activity-related URL
+    recorded_at = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(default=timezone.now, editable=False)
+
+    def __str__(self):
+        return f"ActivityLog by {self.user.username} at {self.recorded_at}"

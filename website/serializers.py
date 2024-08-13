@@ -2,6 +2,7 @@ from django.db.models import Sum
 from rest_framework import serializers
 
 from website.models import (
+    ActivityLog,
     Company,
     Contributor,
     Domain,
@@ -12,6 +13,7 @@ from website.models import (
     Points,
     Project,
     Tag,
+    TimeLog,
     User,
     UserProfile,
 )
@@ -133,3 +135,23 @@ class ContributorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contributor
         fields = "__all__"
+
+
+class TimeLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TimeLog
+        fields = ["id", "user", "start_time", "end_time", "duration", "github_issue_url", "created"]
+        read_only_fields = [
+            "id",
+            "user",
+            "end_time",
+            "duration",
+            "created",
+        ]  # These fields will be managed automatically
+
+
+class ActivityLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ActivityLog
+        fields = ["id", "user", "window_title", "url", "recorded_at", "created"]
+        read_only_fields = ["id", "user", "recorded_at", "created"]  # Auto-filled fields

@@ -18,6 +18,7 @@ import website.views
 from blt import settings
 from company.views import ShowBughuntView
 from website.api.views import (
+    ActivityLogViewSet,
     AuthApiViewset,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
@@ -31,6 +32,7 @@ from website.api.views import (
     ProjectViewSet,
     StatsApiViewset,
     TagApiViewset,
+    TimeLogViewSet,
     UrlCheckApiViewset,
     UserIssueViewSet,
     UserProfileViewSet,
@@ -105,6 +107,8 @@ router.register(r"issues", IssueViewSet, basename="issues")
 router.register(r"userissues", UserIssueViewSet, basename="userissues")
 router.register(r"profile", UserProfileViewSet, basename="profile")
 router.register(r"domain", DomainViewSet, basename="domain")
+router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
+router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 
 from allauth.socialaccount.providers.facebook import views as facebook_views
 from allauth.socialaccount.providers.github import views as github_views
@@ -307,6 +311,7 @@ urlpatterns = [
     re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
     re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
+    path("profile/edit/", website.views.profile_edit, name="profile_edit"),
     re_path(
         r"^unsave_issue/(?P<issue_pk>\d+)/$",
         website.views.unsave_issue,
@@ -506,6 +511,8 @@ urlpatterns = [
     path("robots.txt", website.views.robots_txt),
     path("ads.txt", website.views.ads_txt),
     re_path(r"^contributors/$", contributors_view, name="contributors"),
+    # users
+    path("users/", website.views.users_view, name="users"),
     path("company/", include("company.urls")),
     path("sponsor/", website.views.sponsor_view, name="sponsor"),
     path("companies/", DomainListView.as_view(), name="domain_lists"),
