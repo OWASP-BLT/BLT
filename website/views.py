@@ -1,6 +1,7 @@
 import base64
 import io
 import json
+import logging
 import os
 import re
 import time
@@ -8,7 +9,6 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-import logging
 from collections import deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
