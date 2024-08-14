@@ -261,7 +261,7 @@ EMAIL_PORT = 1025
 
 REPORT_EMAIL = os.environ.get("REPORT_EMAIL", "blank")
 REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "blank")
-
+DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 if "DATABASE_URL" in os.environ:
     DEBUG = False
     EMAIL_HOST = "smtp.sendgrid.net"
@@ -361,7 +361,6 @@ LOGGING = {
         },
     },
 }
-DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 USERS_AVATAR_PATH = "avatars"
 AVATAR_PATH = os.path.join(MEDIA_ROOT, USERS_AVATAR_PATH)
 
