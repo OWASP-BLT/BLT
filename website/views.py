@@ -1291,7 +1291,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 return JsonResponse("Created", safe=False)
             else:
                 self.process_issue(self.request.user, obj, domain_exists, domain)
-                return HttpResponseRedirect(redirect_url + "/")
+                return HttpResponseRedirect("/")
 
         return create_issue(self, form)
 
