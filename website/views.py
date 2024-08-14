@@ -1280,7 +1280,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 self.request.session["issue"] = obj.id
                 self.request.session["created"] = domain_exists
                 self.request.session["domain"] = domain.id
-                # login_url = reverse("account_login")
                 messages.success(self.request, "Bug added!")
                 return HttpResponseRedirect("/")
 
