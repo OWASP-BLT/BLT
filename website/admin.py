@@ -1,12 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.template.defaultfilters import truncatechars
+from django.utils import timezone
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
 from website.models import (
     IP,
     Bid,
+    Blocked,
     ChatBotLog,
     Company,
     CompanyAdmin,
@@ -228,6 +230,7 @@ class UserProfileAdmin(admin.ModelAdmin):
         "user",
         "user_avatar",
         "get_title_display",
+        "role",
         "description",
         "winnings",
         "issues_hidden",
@@ -241,6 +244,11 @@ class UserProfileAdmin(admin.ModelAdmin):
         "flagged_count",
         "subscribed_domains_count",
         "subscribed_users_count",
+        "x_username",
+        "linkedin_url",
+        "github_url",
+        "website_url",
+        "discounted_hourly_rate",
     )
 
     def follow_count(self, obj):
@@ -276,8 +284,60 @@ class IssueScreenshotAdmin(admin.ModelAdmin):
         return obj.issue.description
 
 
+def block_ip(modeladmin, request, queryset):
+    for ip in queryset:
+        Blocked.objects.create(address=ip.address, count=ip.count, created=timezone.now())
+
+    modeladmin.message_user(request, "Selected IPs have been blocked successfully.")
+
+
+block_ip.short_description = "Block selected IPs"
+
+
+def unblock_ip(modeladmin, request, queryset):
+    for ip in queryset:
+        Blocked.objects.filter(ip=ip.address).delete()
+    modeladmin.message_user(request, "Selected IPs have ben unblocked successfully")
+
+
+unblock_ip.short_description = "Unblock selected IPs"
+
+
+def block_user_agent(modeladmin, request, queryset):
+    for ip in queryset:
+        Blocked.objects.create(user_agent_string=ip.agent, count=ip.count, created=timezone.now())
+
+    modeladmin.message_user(request, "Selected UserAgent have been blocked successfully.")
+
+
+block_user_agent.short_description = "Block selected UserAgent"
+
+
+def unblock_user_agent(modeladmin, request, queryset):
+    for ip in queryset:
+        Blocked.objects.filter(user_agent_string=ip.agent).delete()
+
+    modeladmin.message_user(request, "Selected UserAgent have been unblocked successfully.")
+
+
+unblock_user_agent.short_description = "Unblock selected UserAgent"
+
+
 class IPAdmin(admin.ModelAdmin):
-    list_display = ("id", "address", "user", "issuenumber", "created", "agent", "path")
+    list_display = (
+        "id",
+        "address",
+        "user",
+        "issuenumber",
+        "count",
+        "created",
+        "agent",
+        "path",
+        "method",
+        "referer",
+    )
+
+    actions = [block_ip, unblock_ip, block_user_agent, unblock_user_agent]
 
 
 class MonitorAdmin(admin.ModelAdmin):
@@ -305,6 +365,17 @@ class SuggestionVotesAdmin(admin.ModelAdmin):
     list_display = ("user", "suggestion", "up_vote", "down_vote")
 
 
+class BlockedAdmin(admin.ModelAdmin):
+    list_display = (
+        "address",
+        "reason_for_block",
+        "ip_network",
+        "user_agent_string",
+        "count",
+        "created",
+    )
+
+
 class ProjectAdmin(admin.ModelAdmin):
     list_display = (
         "id",
@@ -315,7 +386,6 @@ class ProjectAdmin(admin.ModelAdmin):
         "created",
         "modified",
     )
-
     search_fields = ["name", "description", "slug"]
 
 
@@ -343,6 +413,7 @@ admin.site.register(Payment, PaymentAdmin)
 admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
 admin.site.register(HuntPrize)
 admin.site.register(ChatBotLog, ChatBotLogAdmin)
+admin.site.register(Blocked, BlockedAdmin)
 admin.site.register(Suggestion, SuggestionAdmin)
 admin.site.register(SuggestionVotes, SuggestionVotesAdmin)
 

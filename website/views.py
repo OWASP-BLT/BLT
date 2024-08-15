@@ -1304,9 +1304,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 self.request.session["issue"] = obj.id
                 self.request.session["created"] = domain_exists
                 self.request.session["domain"] = domain.id
-                login_url = reverse("account_login")
                 messages.success(self.request, "Bug added!")
-                return HttpResponseRedirect("{}?next={}".format(login_url, redirect_url))
+                return HttpResponseRedirect("/")
 
             if tokenauth:
                 self.process_issue(
@@ -1315,7 +1314,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 return JsonResponse("Created", safe=False)
             else:
                 self.process_issue(self.request.user, obj, domain_exists, domain)
-                return HttpResponseRedirect(redirect_url + "/")
+                return HttpResponseRedirect("/")
 
         return create_issue(self, form)
 
