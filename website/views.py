@@ -4840,7 +4840,7 @@ def chatbot_conversation(request):
         return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
 
     except Exception as e:
-        logger.error(f"An error occurred: {str(e)}")
+        logger.error(f"An error occurred: {e}")
         error_message = "An unexpected error occurred. Please try again later"
         ChatBotLog.objects.create(question=request.data.get("question", ""), answer=error_message)
         return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
