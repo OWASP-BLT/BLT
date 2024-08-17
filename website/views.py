@@ -4826,7 +4826,7 @@ def chatbot_conversation(request):
         try:
             response = crc.invoke({"question": question})
         except Exception as e:
-            logger.error(f"An error occurred: {str(e)}")
+            logger.error(f"An error occurred: {e}")
             error_message = "An unexpected error occurred. Please try again later"
             ChatBotLog.objects.create(question=question, answer=error_message)
             return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
