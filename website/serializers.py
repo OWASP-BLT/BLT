@@ -47,10 +47,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def get_activities(self, instance):
         issues = Points.objects.filter(user=instance.user, score__gt=0).values("issue__id")
         return [issue["issue__id"] for issue in issues]
+    
 
     user = UserSerializer(read_only=True)
     total_score = serializers.SerializerMethodField(method_name="get_total_score")
     activities = serializers.SerializerMethodField(method_name="get_activities")
+
 
     class Meta:
         model = UserProfile
@@ -68,6 +70,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "issue_flaged",
             "total_score",
             "activities",
+            "recommendations",
         )
 
 

@@ -101,6 +101,7 @@ from website.models import (
     UserProfile,
     Wallet,
     Winner,
+    Recommendation,
 )
 
 from .bot import conversation_chain, is_api_key_valid, load_vector_store
@@ -1463,6 +1464,10 @@ class UserProfileDetailView(DetailView):
             UserProfile.objects.filter(user=self.object).first().tags.all()
         )
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
+        # Recommendations
+        recommendations = Recommendation.objects.filter(recommender=user)
+        context["recommendations"] = recommendations
+
         return context
 
     @method_decorator(login_required)
@@ -1549,6 +1554,11 @@ class UserProfileDetailsView(DetailView):
             str(prof.user.email) for prof in user.userprofile.follower.all()
         ]
         context["bookmarks"] = user.userprofile.issue_saved.all()
+
+        # Recommendations
+        recommendations = Recommendation.objects.filter(recommender=user)
+        context["recommendations"] = recommendations
+
         return context
 
     @method_decorator(login_required)
@@ -5003,3 +5013,36 @@ def add_suggestions(request):
 def view_suggestions(request):
     suggestion = Suggestion.objects.all()
     return render(request, "feature_suggestion.html", {"suggestions": suggestion})
+
+
+@login_required
+def recommend_user(request):
+    users = User.objects.exclude(id=request.user.id)[:10]  # Exclude current user and limit to 10
+
+    if request.method == 'POST':
+        recommended_user_id = request.POST.get('recommended_user')
+        try:
+            recommended_user = User.objects.get(id=recommended_user_id)
+            if Recommendation.objects.filter(recommender=request.user, recommended_user=recommended_user).exists():
+                messages.error(request, "You have already recommended this user.")
+            else:
+                Recommendation.objects.create(recommender=request.user, recommended_user=recommended_user)
+                messages.success(request, "Recommendation added successfully!")
+                
+        except User.DoesNotExist:
+            messages.error(request, "User not found.")
+
+        return redirect('/recommend')  
+
+    return render(request, 'recommend_user.html', {'users': users})
+        
+
+
+
+
+
+
+
+
+
+

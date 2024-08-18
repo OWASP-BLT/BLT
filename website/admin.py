@@ -31,6 +31,7 @@ from website.models import (
     UserProfile,
     Wallet,
     Winner,
+    Recommendation,
 )
 
 
@@ -209,6 +210,9 @@ class PointsAdmin(admin.ModelAdmin):
 
 admin.site.unregister(User)
 
+class RecommendationAdmin(admin.ModelAdmin):
+    list_display = ('recommender', 'recommended_user', 'created_at')
+    search_fields = ('recommender__username', 'recommended_user__username')
 
 class UserAdmin(ImportExportModelAdmin):
     resource_class = UserResource
@@ -244,6 +248,7 @@ class UserProfileAdmin(admin.ModelAdmin):
         "flagged_count",
         "subscribed_domains_count",
         "subscribed_users_count",
+        "recommendation_count",
         "x_username",
         "linkedin_url",
         "github_url",
@@ -271,6 +276,9 @@ class UserProfileAdmin(admin.ModelAdmin):
 
     def subscribed_users_count(self, obj):
         return obj.subscribed_users.count()
+    
+    def recommendation_count(self, obj):
+        return obj.recommendations.count() 
 
 
 class IssueScreenshotAdmin(admin.ModelAdmin):
@@ -416,6 +424,7 @@ admin.site.register(ChatBotLog, ChatBotLogAdmin)
 admin.site.register(Blocked, BlockedAdmin)
 admin.site.register(Suggestion, SuggestionAdmin)
 admin.site.register(SuggestionVotes, SuggestionVotesAdmin)
+admin.site.register(Recommendation, RecommendationAdmin)
 
 # Register missing models
 admin.site.register(InviteFriend)

@@ -199,6 +199,13 @@
                         <span>Suggestions</span>
                     </a>
                 </li>
+                <li class="{% if request.path == '/recommend/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'recommend_user' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <div class="w-8 mr-4">📄</div>
+                        <span>Recommend</span>
+                    </a>
+                </li>
                 <li class="{% if request.path == '/status/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'check_status' %}"
                        class="flex items-center w-full text-black no-underline p-2">
