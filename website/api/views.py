@@ -710,7 +710,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     # permission_classes = (IsAuthenticatedOrReadOnly,)
-    http_method_names = ("get", "post", "put", "patch")
+    http_method_names = ("get", "post")
 
     def create(self, request, *args, **kwargs):
         data = request.data.copy()

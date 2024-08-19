@@ -751,13 +751,23 @@ class Project(models.Model):
         return self.name
 
     def get_contributors(self, github_url):
-        owner = github_url.split("/")
-        url = "https://api.github.com/repos/" + owner[-2] + "/" + owner[-1] + "/contributors"
-        print("url : " + url)
-        response = requests.get(url)
-        if response.status_code == 200:
+        owner_repo = github_url.rstrip("/").split("/")[-2:]
+        repo_name = f"{owner_repo[0]}/{owner_repo[1]}"
+        contributors = []
+
+        page = 1
+        while True:
+            url = f"https://api.github.com/repos/{repo_name}/contributors?per_page=100&page={page}"
+            print(f"Fetching contributors from URL: {url}")
+            response = requests.get(url, headers={"Content-Type": "application/json"})
+
+            if response.status_code != 200:
+                break
+
             contributors_data = response.json()
-            contributors = []
+            if not contributors_data:
+                break
+
             for c in contributors_data:
                 try:
                     contributor, created = Contributor.objects.get_or_create(
@@ -774,8 +784,10 @@ class Project(models.Model):
                 except MultipleObjectsReturned:
                     contributor = Contributor.objects.filter(github_id=c["id"]).first()
                     contributors.append(contributor)
-            return contributors
-        return None
+
+            page += 1
+
+        return contributors if contributors else None
 
     def get_top_contributors(self, limit=5):
         return self.contributors.order_by("-contributions")[:limit]
