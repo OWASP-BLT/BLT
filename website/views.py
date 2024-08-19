@@ -3353,7 +3353,9 @@ class DomainList(TemplateView):
 def is_valid_url(url):
     try:
         parsed_url = urlparse(url)
-        if parsed_url.scheme not in ["http", "https", "localhost"]:
+        if parsed_url.scheme not in ["http", "https"]:
+            return False
+        if re.match(r"^(localhost|127\.|10\.|172\.16\.|192\.168\.)", parsed_url.hostname):
             return False
         return True
     except Exception as e:
