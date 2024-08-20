@@ -164,8 +164,15 @@ def add_domain_to_company(request):
         company = Company.objects.filter(name=company_name).first()
 
         try:
-            response = requests.get(domain.url)
-            soup = BeautifulSoup(response.text, "html.parser")
+            response = requests.get(domain.url, allow_redirects=False)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, "html.parser")
+            else:
+                messages.error(
+                    request,
+                    f"Unexpected status code: {response.status_code}. The URL might be redirecting.",
+                )
+                return redirect("index")
         except requests.RequestException as e:
             messages.error(request, f"Failed to fetch URL: {e}")
             return redirect("index")
@@ -3353,9 +3360,12 @@ class DomainList(TemplateView):
 def is_valid_url(url):
     try:
         parsed_url = urlparse(url)
-        if parsed_url.scheme not in ["http", "https"]:
+        if parsed_url.scheme not in {"http", "https"}:
             return False
-        if re.match(r"^(localhost|127\.|10\.|172\.16\.|192\.168\.)", parsed_url.hostname):
+        if re.match(
+            r"^(localhost|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})$",
+            parsed_url.hostname,
+        ):
             return False
         return True
     except Exception as e:
