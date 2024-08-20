@@ -10,6 +10,7 @@ from captcha.fields import CaptchaField
 from colorthief import ColorThief
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.core.exceptions import MultipleObjectsReturned, ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -512,6 +513,7 @@ class UserProfile(models.Model):
     user = AutoOneToOneField("auth.user", related_name="userprofile", on_delete=models.CASCADE)
     user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
     title = models.IntegerField(choices=title, default=0)
+    role = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
@@ -536,6 +538,7 @@ class UserProfile(models.Model):
     github_url = models.URLField(blank=True, null=True)
     website_url = models.URLField(blank=True, null=True)
     discounted_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    modified = models.DateTimeField(auto_now=True)
 
     def avatar(self, size=36):
         if self.user_avatar:
@@ -567,7 +570,7 @@ class IP(models.Model):
     issuenumber = models.IntegerField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     agent = models.CharField(max_length=255, null=True, blank=True)
-    count = models.IntegerField(default=0)
+    count = models.BigIntegerField(default=1)
     path = models.CharField(max_length=255, null=True, blank=True)
     method = models.CharField(max_length=10, null=True, blank=True)
     referer = models.CharField(max_length=255, null=True, blank=True)
@@ -754,13 +757,23 @@ class Project(models.Model):
         return self.name
 
     def get_contributors(self, github_url):
-        owner = github_url.split("/")
-        url = "https://api.github.com/repos/" + owner[-2] + "/" + owner[-1] + "/contributors"
-        print("url : " + url)
-        response = requests.get(url)
-        if response.status_code == 200:
+        owner_repo = github_url.rstrip("/").split("/")[-2:]
+        repo_name = f"{owner_repo[0]}/{owner_repo[1]}"
+        contributors = []
+
+        page = 1
+        while True:
+            url = f"https://api.github.com/repos/{repo_name}/contributors?per_page=100&page={page}"
+            print(f"Fetching contributors from URL: {url}")
+            response = requests.get(url, headers={"Content-Type": "application/json"})
+
+            if response.status_code != 200:
+                break
+
             contributors_data = response.json()
-            contributors = []
+            if not contributors_data:
+                break
+
             for c in contributors_data:
                 try:
                     contributor, created = Contributor.objects.get_or_create(
@@ -777,8 +790,10 @@ class Project(models.Model):
                 except MultipleObjectsReturned:
                     contributor = Contributor.objects.filter(github_id=c["id"]).first()
                     contributors.append(contributor)
-            return contributors
-        return None
+
+            page += 1
+
+        return contributors if contributors else None
 
     def get_top_contributors(self, limit=5):
         return self.contributors.order_by("-contributions")[:limit]
@@ -809,6 +824,46 @@ class BaconToken(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.amount} BACON"
+
+
+class Blocked(models.Model):
+    address = models.GenericIPAddressField(null=True, blank=True)
+    reason_for_block = models.TextField(blank=True, null=True, max_length=255)
+    ip_network = models.GenericIPAddressField(null=True, blank=True)
+    user_agent_string = models.CharField(max_length=255, default="", null=True, blank=True)
+    count = models.IntegerField(default=1)
+    created = models.DateField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"user agent : {self.user_agent_string} | IP : {self.address}"
+
+
+@receiver(post_save, sender=Blocked)
+@receiver(post_delete, sender=Blocked)
+def clear_blocked_cache(sender, instance=None, **kwargs):
+    """
+    Clears the cache when a Blocked instance is created, updated, or deleted.
+    """
+    # Clear the cache
+    cache.delete("blocked_ips")
+    cache.delete("blocked_ip_network")
+    cache.delete("blocked_agents")
+
+    # Retrieve valid blocked IPs, IP networks, and user agents
+    blocked_ips = Blocked.objects.values_list("address", flat=True)
+    blocked_ip_network = Blocked.objects.values_list("ip_network", flat=True)
+    blocked_agents = Blocked.objects.values_list("user_agent_string", flat=True)
+
+    # Filter out None or invalid values
+    blocked_ips = [ip for ip in blocked_ips if ip is not None]
+    blocked_ip_network = [network for network in blocked_ip_network if network is not None]
+    blocked_agents = [agent for agent in blocked_agents if agent is not None]
+
+    # Set the cache with valid values
+    cache.set("blocked_ips", blocked_ips, timeout=86400)
+    cache.set("blocked_ip_network", blocked_ip_network, timeout=86400)
+    cache.set("blocked_agents", blocked_agents, timeout=86400)
 
 
 class TimeLog(models.Model):
