@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+f
+{% block content %}
+    {% load custom_tags %}
+    <style>
+        .row{
+            margin-left: 10px;
+            margin-top: 60px;
+        }
+    </style>
+    <script src="{% static 'js/jquery.validate.js' %}"></script>
+    <script src="{% static 'js/activity.js' %}"></script>
+    <div class="row" data-intro="View latest activities here." data-step="3">
+        <div class="col-md-8">
+            <h1 class="page-sub-header">{% trans "Private Issue" %}</h1>
+            <div class="list-group">
+                {% for activity in activities %}
+                    <button type="button"
+                            class="btn btn-primary btn-sm float-right"
+                            data-toggle="modal"
+                            data-target="#manageViewersModal">
+                        <a href="{% url 'grant_access' user_pk=user_pk issue_pk=activity.id %}">Manage Viewers</a>
+                    </button>
+                    {% include "_activity.html" %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="w-full h-[30rem] flex flex-col  space-y-14 items-center">
+        <p class="text-5xl text-center mt-20 font-sans sm:text-6xl lg:text-7xl">
+            {% trans "Find Bugs, Win Points and Prizes" %}
+        </p>
+        <hr class="w-full bg-black" />
+        <section class="hero">
+            <div class="text-slider">
+                <ul>
+                    <li class="text-slider-list">
+                        <h2 class="text-slider-line active-line animated fadeInUp text-4xl">
+                            {% trans "Fix issues on websites, apps or hardware (+3 points)" %}
+                        </h2>
+                    </li>
+                    <li class="text-slider-list">
+                        <h2 class="text-slider-line animated fadeInUp text-4xl">{% trans "Verify other bug reports(+2 points)" %}</h2>
+                    </li>
+                    <li class="text-slider-list">
+                        <h2 class="text-slider-line animated fadeInUp text-4xl">
+                            {% trans "Invite friends (when they signup , get +1 point)" %}
+                        </h2>
+                    </li>
+                    <li class="text-slider-list">
+                        <h2 class="text-slider-line animated fadeInUp text-4xl">{% trans "Find a bug on a new site or app (+4 points)" %}</h2>
+                    </li>
+                </ul>
+            </div>
+        </section>
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <h1 class="page-sub-header">
+                {% env 'PROJECT_NAME' %} is 100% {% trans "free to use" %}, {% trans "Open Source and a non-commercial" %}, {% trans "not for profit initiative" %}.
+            </h1>
+        </div>
+    </div>
+    <script>
+    function example(relative_path){
+        window.location.href = relative_path;
+    }
+    </script>
+{% endblock content %}

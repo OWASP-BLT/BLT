@@ -34,7 +34,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import serializers
@@ -95,6 +95,7 @@ from website.models import (
     Payment,
     Points,
     Project,
+    RequestIssueAccess,
     Subscription,
     Suggestion,
     SuggestionVotes,
@@ -104,6 +105,7 @@ from website.models import (
 )
 
 from .bot import conversation_chain, is_api_key_valid, load_vector_store
+from .decorator import private_access_check
 from .forms import (
     CaptchaForm,
     GitHubURLForm,
@@ -469,6 +471,139 @@ class ProjectListView(ListView):
 #         "ended_hunts": False if latest_hunts_filter is None else True,
 #     }
 #     return render(request, template, context)
+
+
+class authenticate_handling(UserPassesTestMixin, LoginRequiredMixin):
+    def test_func(self, **kwargs):
+        pk = self.kwargs.get("slug")
+        try:
+            issue = Issue.objects.get(id=pk)
+            issue_user = issue.user
+            issue_viewer = issue.viewer.all()
+            if issue.is_hidden:
+                if issue_user == self.request.user:
+                    return True
+                elif self.request.user in issue_viewer:
+                    return True
+                else:
+                    return False
+            else:
+                return True
+        except:
+            return False
+
+
+@login_required(login_url="/accounts/login")
+@private_access_check()
+def private_issue(request, user_pk):
+    activities = Issue.objects.filter(Q(user_id=user_pk) & Q(is_hidden=True))
+    context = {"activities": activities, "user_pk": user_pk}
+    return render(request, "private_issue.html", context)
+
+
+@login_required(login_url="/accounts/login")
+@private_access_check()
+def grant_access(request, user_pk, issue_pk):
+    request_access = RequestIssueAccess.objects.filter(issue=issue_pk)
+    issue = Issue.objects.get(id=issue_pk)
+
+    if request.method == "POST":
+        if request.POST.get("grant_access"):
+            if request.POST.get("select_user") is not None:
+                selected_user = request.POST.get("select_user")
+                r = RequestIssueAccess.objects.get(issue=issue_pk, user=selected_user)
+                try:
+                    msg_plain = render_to_string(
+                        "email/granted_access.txt", {"name": r.user, "issue_pk": issue_pk}
+                    )
+                    msg_html = render_to_string(
+                        "email/granted_access.txt", {"name": r.user, "issue_pk": issue_pk}
+                    )
+
+                    send_mail(
+                        "Access Granted for Private Issue",
+                        msg_plain,
+                        settings.EMAIL_TO_STRING,
+                        [r.user.email],
+                        html_message=msg_html,
+                    )
+
+                    issue.viewer.add(selected_user)
+                    r.delete()
+                    messages.success(request, "Viewership Successfully granted")
+                    return redirect("/")
+                except Exception as e:
+                    messages.error(request, "Email could not be sent. Please try again !")
+            else:
+                messages.error(request, "Please select an option")
+
+        elif request.POST.get("cancel"):
+            if request.POST.get("select_user") is not None:
+                selected_user = request.POST.get("select_user")
+                request_access = RequestIssueAccess.objects.get(user=selected_user, issue=issue_pk)
+                request_access.delete()
+                messages.success(request, "Request Declined")
+
+            elif request.POST.get("select_viewer") is not None:
+                selected_viewer = request.POST.get("select_viewer")
+                issue = Issue.objects.get(id=issue_pk)
+                issue.viewer.remove(selected_viewer)
+                messages.success(request, "Viewer Deleted")
+
+            else:
+                messages.error(request, "Please select an option")
+
+    context = {"requesters": request_access, "viewers": issue.viewer.all()}
+
+    return render(request, "grant_access.html", context)
+
+
+@login_required(login_url="/accounts/login")
+def request_access(request, issue_pk):
+    try:
+        issue = Issue.objects.get(id=issue_pk)
+        r = RequestIssueAccess.objects.filter(user=request.user, issue=issue_pk).exists()
+        if r is False:
+            if issue.is_hidden is True and (request.user not in issue.viewer.all()):
+                if request.method == "POST":
+                    try:
+                        msg_plain = render_to_string(
+                            "email/request_access.txt",
+                            {"name": issue.user, "requester": request.user, "issue_pk": issue_pk},
+                        )
+                        msg_html = render_to_string(
+                            "email/request_access.txt",
+                            {"name": issue.user, "requester": request.user, "issue_pk": issue_pk},
+                        )
+
+                        send_mail(
+                            "Request Access for private issue",
+                            msg_plain,
+                            settings.EMAIL_TO_STRING,
+                            [issue.user.email],
+                            html_message=msg_html,
+                        )
+                        messages.success(request, "Email request has been sent to owner")
+                        message = request.POST.get("text-box")
+                        print(message)
+                        request_access = RequestIssueAccess(
+                            issue=issue, user=request.user, message=message
+                        )
+                        request_access.save()
+                        return redirect("/")
+                    except:
+                        messages.error(request, "Email could not be sent. Please try again !")
+                else:
+                    return render(request, "request_access.html")
+            else:
+                return redirect("issue_view", slug=int(issue_pk))
+
+        messages.success(request, "Request has Already been sent Please Wait for approval")
+        return redirect("/")
+
+    except Issue.DoesNotExist:
+        messages.error(request, "Issue Does not Exist")
+        return redirect("/")
 
 
 def newhome(request, template="new_home.html"):
@@ -1421,6 +1556,7 @@ class UserProfileDetailView(DetailView):
             ).first()
         context["profile_form"] = UserProfileForm()
         context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
+        context["private_issue"] = Issue.objects.filter(user=self.object, is_hidden=True).count()
         context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
         context["current_month"] = datetime.now().month
         if self.request.user.is_authenticated:
@@ -1463,6 +1599,7 @@ class UserProfileDetailView(DetailView):
             UserProfile.objects.filter(user=self.object).first().tags.all()
         )
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
+        context["user_pk"] = user.id
         return context
 
     @method_decorator(login_required)
@@ -2325,7 +2462,7 @@ class HuntCreate(CreateView):
         return super(HuntCreate, self).form_valid(form)
 
 
-class IssueView(DetailView):
+class IssueView(authenticate_handling, DetailView):
     model = Issue
     slug_field = "id"
     template_name = "issue.html"
@@ -2410,6 +2547,12 @@ class IssueView(DetailView):
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
 
         return context
+
+    def handle_no_permission(self):
+        try:
+            return super(IssueView, self).handle_no_permission()
+        except:
+            return redirect("request_access/")
 
 
 @login_required(login_url="/accounts/login")
@@ -4133,7 +4276,7 @@ def subscribe_to_domains(request, pk):
         return JsonResponse("SUBSCRIBED", safe=False)
 
 
-class IssueView(DetailView):
+class IssueView(authenticate_handling, DetailView):
     model = Issue
     slug_field = "id"
     template_name = "issue.html"
@@ -4243,6 +4386,12 @@ class IssueView(DetailView):
             context["github_link"] = self.object.github_url
 
         return context
+
+    def handle_no_permission(self):
+        try:
+            return super(IssueView, self).handle_no_permission()
+        except:
+            return redirect("request_access/")
 
 
 def create_github_issue(request, id):

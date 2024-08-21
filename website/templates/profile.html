@@ -482,6 +482,12 @@
                             class="mr-3">
                         <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⌨️ {% trans "Closed Issues" %} {{ bug_type_2 | length }}</div>
                     </button>
+                    {% if user_pk == request.user.id %}
+                        <button onclick="window.location.href=`{% url 'private_issue' user_pk=user_pk %}`"
+                                class="mr-3">
+                            <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">🕵️‍♂️ {% trans "Private Issues" %} {{ private_issue }}</div>
+                        </button>
+                    {% endif %}
                 </div>
                 <div class="text-2xl font-bold my-4">
                     Social Stats

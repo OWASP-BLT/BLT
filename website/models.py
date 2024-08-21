@@ -289,6 +289,7 @@ class Issue(models.Model):
     cve_id = models.CharField(max_length=16, null=True, blank=True)
     cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
+    viewer = models.ManyToManyField(User, null=True, blank=True, related_name="viewer")
 
     def __unicode__(self):
         return self.description
@@ -392,6 +393,12 @@ else:
     def delete_image_on_issue_delete(sender, instance, **kwargs):
         if instance.screenshot:
             instance.screenshot.delete(save=False)
+
+
+class RequestIssueAccess(models.Model):
+    issue = models.ForeignKey(Issue, null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    message = models.CharField(max_length=100, null=True, blank=True)
 
 
 class IssueScreenshot(models.Model):
