@@ -823,9 +823,12 @@ class BaconToken(models.Model):
 class Trademark(models.Model):
     name = models.TextField(max_length=200, null=True, blank=True)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.name + "_" + self.domain.name
+        return self.name + "_" + self.domain.name + "_" + self.company.name
+
+
 class Blocked(models.Model):
     address = models.GenericIPAddressField(null=True, blank=True)
     reason_for_block = models.TextField(blank=True, null=True, max_length=255)
