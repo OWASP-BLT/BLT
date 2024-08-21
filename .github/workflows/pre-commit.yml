@@ -1,0 +1,40 @@
+name: Github Pre-Commit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write  # Allows the action to push changes back to the repository
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'  # Specify your Python version
+
+      - name: Install dependencies
+        run: |
+          python -m venv venv
+          . venv/bin/activate
+          pip install --upgrade pip
+          pip install pre-commit
+
+      - name: Run pre-commit
+        run: |
+          . venv/bin/activate
+          pre-commit run --all-files
+
+      - name: Commit changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Apply pre-commit fixes" || echo "No changes to commit"
+          git push origin ${{ github.head_ref }}
