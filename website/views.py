@@ -1400,8 +1400,9 @@ class UserProfileDetailView(DetailView):
             messages.error(self.request, "That user was not found.")
             return redirect("/")
         return super(UserProfileDetailView, self).get(request, *args, **kwargs)
-
+   
     def get_context_data(self, **kwargs):
+        print("fs2")
         user = self.object
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
         context["my_score"] = list(
@@ -1464,14 +1465,28 @@ class UserProfileDetailView(DetailView):
             UserProfile.objects.filter(user=self.object).first().tags.all()
         )
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
-        # Recommendations
+      
         recommendations = Recommendation.objects.filter(recommender=user)
         context["recommendations"] = recommendations
-
+        context["users"] = User.objects.exclude(id=self.request.user.id)[:4]
+        
         return context
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
+        
+        if 'recommended_user' in request.POST:
+            recommended_user_id = request.POST.get('recommended_user')
+            try:
+                recommended_user = User.objects.get(id=recommended_user_id)
+                if Recommendation.objects.filter(recommender=request.user, recommended_user=recommended_user).exists():
+                    messages.error(request, "You have already recommended this user.")
+                else:
+                    Recommendation.objects.create(recommender=request.user, recommended_user=recommended_user)
+                    messages.success(request, "Recommendation added successfully!")
+            except User.DoesNotExist:
+                messages.error(request, "User not found.")
+        
         form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
         if request.FILES.get("user_avatar") and form.is_valid():
             form.save()
@@ -1481,8 +1496,9 @@ class UserProfileDetailView(DetailView):
             user_issues.update(is_hidden=hide)
             request.user.userprofile.issues_hidden = hide
             request.user.userprofile.save()
-        return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
-
+        
+        return redirect(self.request.path_info)
+              
 
 class UserProfileDetailsView(DetailView):
     model = get_user_model()
@@ -5013,36 +5029,3 @@ def add_suggestions(request):
 def view_suggestions(request):
     suggestion = Suggestion.objects.all()
     return render(request, "feature_suggestion.html", {"suggestions": suggestion})
-
-
-@login_required
-def recommend_user(request):
-    users = User.objects.exclude(id=request.user.id)[:10]  # Exclude current user and limit to 10
-
-    if request.method == 'POST':
-        recommended_user_id = request.POST.get('recommended_user')
-        try:
-            recommended_user = User.objects.get(id=recommended_user_id)
-            if Recommendation.objects.filter(recommender=request.user, recommended_user=recommended_user).exists():
-                messages.error(request, "You have already recommended this user.")
-            else:
-                Recommendation.objects.create(recommender=request.user, recommended_user=recommended_user)
-                messages.success(request, "Recommendation added successfully!")
-                
-        except User.DoesNotExist:
-            messages.error(request, "User not found.")
-
-        return redirect('/recommend')  
-
-    return render(request, 'recommend_user.html', {'users': users})
-        
-
-
-
-
-
-
-
-
-
-

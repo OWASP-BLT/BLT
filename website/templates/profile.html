@@ -269,6 +269,31 @@
         color: #ff5722;
         font-weight: bold;
     }
+
+    /* Added styles for Recommendations */
+    .recommend-user {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .red-btn {
+        background-color: #cc0000;
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .red-btn:hover {
+        background-color: #990000;
+    }
+    .error {
+        color: #cc0000;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
     </style>
 {% endblock style %}
 {% block content %}
@@ -518,6 +543,34 @@
                     <hr>
                 </div>
                 <div id="chart" class="max-sm:w-full w-3/4"></div>
+
+
+                <div>
+                    <div class="text-2xl font-bold my-4 pl-2">
+                        Spot a Talent? Recommend Now!
+                    </div>
+                
+                    <form method="POST" action="{% url 'profile' slug=user.username %}" class="recommend-user">
+                        {% csrf_token %}
+                        
+                        <label for="search_user" class="pr-2">Search for a user:</label>
+                        <input type="text" id="search_user" onkeyup="filterUsers()" placeholder="Start typing a name...">
+                        
+                        <div id="user_list">
+                            {% for user in users %}
+                                <div>
+                                    <input type="radio" name="recommended_user" value="{{ user.id }}" id="user_{{ user.id }}">
+                                    <label for="user_{{ user.id }}">{{ user.username }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    
+                        <button class="red-btn" type="submit">Recommend</button>
+                    </form>
+                </div>
+                
+
+
             </div>
         </div>
         <div class="max-sm:w-[100vw] w-[22vw]">
@@ -696,7 +749,7 @@
                                                             </td>
                                                         {% else %}
                                                             <td>
-                                                                <img src="{% gravatar_url recommendation.recommender.email 50 %}" height="50px" width="50px" alt="{{ recommendation.recommended_user.username }}">
+                                                                <img src="{% gravatar_url recommendation.recommended_user.email 50 %}" height="50px" width="50px" alt="{{ recommendation.recommended_user.username }}">
                                                             </td>
                                                         {% endif %}
                                                         <td>
@@ -813,6 +866,25 @@
     function openBookmarkModal(){
         openBookmark.style.cssText = "display:block !important;"
     }
+
+    function filterUsers() {
+    const input = document.getElementById('search_user');
+    const filter = input.value.toLowerCase();
+    const userList = document.getElementById('user_list');
+    const users = userList.getElementsByTagName('div');
+
+    for (let i = 0; i < users.length; i++) {
+        const label = users[i].getElementsByTagName('label')[0];
+        if (label) {
+            const textValue = label.textContent || label.innerText;
+            if (textValue.toLowerCase().indexOf(filter) > -1) {
+                users[i].style.display = "";
+            } else {
+                users[i].style.display = "none";
+            }
+        }
+    }
+}
     </script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>

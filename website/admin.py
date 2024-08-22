@@ -424,7 +424,6 @@ admin.site.register(ChatBotLog, ChatBotLogAdmin)
 admin.site.register(Blocked, BlockedAdmin)
 admin.site.register(Suggestion, SuggestionAdmin)
 admin.site.register(SuggestionVotes, SuggestionVotesAdmin)
-admin.site.register(Recommendation, RecommendationAdmin)
 
 # Register missing models
 admin.site.register(InviteFriend)

@@ -98,7 +98,6 @@ from website.views import (  # TODO AutoLabel,
     vote_count,
     vote_suggestions,
     weekly_report,
-    recommend_user,
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
@@ -530,7 +529,6 @@ urlpatterns = [
     path("suggestion/", view_suggestions, name="view_suggestions"),
     path("suggestion/vote/", vote_suggestions, name="vote_suggestions"),
     path("suggestion/set-vote-status/", set_vote_status, name="set_vote_status"),
-    path("recommend/", recommend_user, name="recommend_user"),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s]+)",
         website.views.trademark_detailview,
