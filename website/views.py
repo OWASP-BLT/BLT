@@ -1402,7 +1402,6 @@ class UserProfileDetailView(DetailView):
         return super(UserProfileDetailView, self).get(request, *args, **kwargs)
    
     def get_context_data(self, **kwargs):
-        print("fs2")
         user = self.object
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
         context["my_score"] = list(
@@ -1468,7 +1467,7 @@ class UserProfileDetailView(DetailView):
       
         recommendations = Recommendation.objects.filter(recommender=user)
         context["recommendations"] = recommendations
-        context["users"] = User.objects.exclude(id=self.request.user.id)[:4]
+        context["all_users"] = User.objects.exclude(id=self.request.user.id)
         
         return context
 

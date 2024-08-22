@@ -281,6 +281,7 @@
         background-color: #cc0000;
         color: #fff;
         border: none;
+        margin : 10px;
         padding: 10px 20px;
         border-radius: 4px;
         cursor: pointer;
@@ -293,6 +294,23 @@
         color: #cc0000;
         font-weight: bold;
         margin-bottom: 15px;
+    }
+
+    #user_list {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 5px;
+    }
+    
+    .user-item {
+        padding: 5px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .user-item:last-child {
+        border-bottom: none;
     }
     </style>
 {% endblock style %}
@@ -552,19 +570,19 @@
                 
                     <form method="POST" action="{% url 'profile' slug=user.username %}" class="recommend-user">
                         {% csrf_token %}
-                        
+                
                         <label for="search_user" class="pr-2">Search for a user:</label>
                         <input type="text" id="search_user" onkeyup="filterUsers()" placeholder="Start typing a name...">
-                        
+                
                         <div id="user_list">
-                            {% for user in users %}
-                                <div>
+                            {% for user in all_users %}
+                                <div class="user-item">
                                     <input type="radio" name="recommended_user" value="{{ user.id }}" id="user_{{ user.id }}">
                                     <label for="user_{{ user.id }}">{{ user.username }}</label>
                                 </div>
                             {% endfor %}
                         </div>
-                    
+                
                         <button class="red-btn" type="submit">Recommend</button>
                     </form>
                 </div>
@@ -868,23 +886,22 @@
     }
 
     function filterUsers() {
-    const input = document.getElementById('search_user');
-    const filter = input.value.toLowerCase();
-    const userList = document.getElementById('user_list');
-    const users = userList.getElementsByTagName('div');
+        var input, filter, userList, userItems, label, i, txtValue;
+        input = document.getElementById('search_user');
+        filter = input.value.toLowerCase();
+        userList = document.getElementById('user_list');
+        userItems = userList.getElementsByClassName('user-item');
 
-    for (let i = 0; i < users.length; i++) {
-        const label = users[i].getElementsByTagName('label')[0];
-        if (label) {
-            const textValue = label.textContent || label.innerText;
-            if (textValue.toLowerCase().indexOf(filter) > -1) {
-                users[i].style.display = "";
+        for (i = 0; i < userItems.length; i++) {
+            label = userItems[i].getElementsByTagName('label')[0];
+            txtValue = label.textContent || label.innerText;
+            if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                userItems[i].style.display = "";
             } else {
-                users[i].style.display = "none";
+                userItems[i].style.display = "none";
             }
         }
     }
-}
     </script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
