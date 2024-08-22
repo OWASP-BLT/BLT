@@ -1,0 +1,16 @@
+<div class="mx-5 my-0 p-5 border rounded-md shadow-md">
+    <h2 class="mt-0">Summary of Security Incidents</h2>
+    <ul class="m-0 p-0 list-none">
+        {% for incident in security_incidents|slice:":3" %}
+            <li class="mb-2">
+                Incident #{{ forloop.counter }} - Severity: {{ incident.severity }},
+                Status: {{ incident.status }}, Affected Systems: {{
+                incident.affected_systems }}
+            </li>
+        {% empty %}
+            <li class="mb-2">No security incidents for this time period</li>
+        {% endfor %}
+    </ul>
+    <a href="#"
+       class="px-2 py-5 mt-2 bg-[#6ec1e4] border rounded-md shadow-md inline-block">View All Incidents</a>
+</div>

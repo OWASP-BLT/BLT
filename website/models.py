@@ -79,6 +79,20 @@ class Company(models.Model):
     def __str__(self):
         return self.name
 
+    def get_logo(self):
+        if self.logo:
+            return self.logo.url
+        image_request = requests.get("https://logo.clearbit.com/" + self.name)
+        try:
+            if image_request.status_code == 200:
+                image_content = ContentFile(image_request.content)
+                self.logo.save(self.name + ".jpg", image_content)
+                return self.logo.url
+
+        except:
+            favicon_url = self.url + "/favicon.ico"
+            return favicon_url
+
 
 class Domain(models.Model):
     company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)

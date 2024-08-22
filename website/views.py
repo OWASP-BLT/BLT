@@ -3348,6 +3348,72 @@ class DomainList(TemplateView):
         return render(request, self.template_name, context)
 
 
+class CompanyList(TemplateView):
+    model = Company
+    template_name = "security_dashboard/company_list.html"
+    paginate_by = 20
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        companies = Company.objects.all()
+
+        paginator = Paginator(companies, self.paginate_by)
+        page = self.request.GET.get("page")
+
+        try:
+            paginated_companies = paginator.page(page)
+        except PageNotAnInteger:
+            paginated_companies = paginator.page(1)
+        except EmptyPage:
+            paginated_companies = paginator.page(paginator.num_pages)
+
+        context["companies"] = paginated_companies
+        return context
+
+
+class SecurityDashboardView(View):
+    def get(self, request, pk, *args, **kwargs):
+        context = {
+            "company": pk,
+            "security_incidents": [
+                {
+                    "severity": "High",
+                    "status": "In Progress",
+                    "affected_systems": ["Server A", "Server B"],
+                },
+                {
+                    "severity": "Medium",
+                    "status": "Resolved",
+                    "affected_systems": ["Server C", "Server D"],
+                },
+                {
+                    "severity": "Low",
+                    "status": "Resolved",
+                    "affected_systems": ["Printer E"],
+                },
+            ],
+            "threat_intelligence": [
+                "Malware attack detected on external network",
+                "Phishing attempt on employee email accounts",
+                "SQL injection attempt on web server",
+            ],
+            "network_traffic": "Real-time graph of network traffic:",
+            "user_activity": "Real-time graph of user activity:",
+            "vulnerabilities": "sample_vulnerabilities",
+            "compliance_list": [
+                "PCI DSS: Compliant",
+                "ISO 27001: Non-Compliant",
+                "GDPR: Compliant",
+            ],
+        }
+
+        return render(
+            request,
+            "security_dashboard/company_dashboard.html",
+            context,
+        )
+
+
 @login_required(login_url="/accounts/login")
 def add_or_update_domain(request):
     if request.method == "POST":
