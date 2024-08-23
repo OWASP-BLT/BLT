@@ -98,6 +98,7 @@ from website.models import (
     Subscription,
     Suggestion,
     SuggestionVotes,
+    TimeLog,
     UserProfile,
     Wallet,
     Winner,
@@ -5003,3 +5004,73 @@ def add_suggestions(request):
 def view_suggestions(request):
     suggestion = Suggestion.objects.all()
     return render(request, "feature_suggestion.html", {"suggestions": suggestion})
+
+
+def sizzle(request):
+    # Check if the user is authenticated; if not, redirect to the home page with a message
+    if not request.user.is_authenticated:
+        messages.error(request, "Please login to access the Sizzle page.")
+        return redirect("index")
+
+    # Initialize the variable to store Sizzle tracking data
+    sizzle_data = None
+
+    # Fetch the latest TimeLog entry for the current user
+    last_data = TimeLog.objects.filter(user=request.user).order_by("-created").first()
+
+    if last_data:
+        # Fetch all TimeLog entries created on the same date as the last_data entry
+        all_data = TimeLog.objects.filter(
+            user=request.user, created__date=last_data.created.date()
+        ).order_by("created")
+
+        # Calculate the total duration for all the entries on the same date
+        total_duration = sum((entry.duration for entry in all_data if entry.duration), timedelta())
+
+        # Format total duration to minutes and seconds
+        total_duration_seconds = total_duration.total_seconds()
+        formatted_duration = (
+            f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
+        )
+
+        # Get the first entry's GitHub issue URL and extract the repository path and issue number
+        github_issue_url = all_data.first().github_issue_url
+        repo_path = "/".join(
+            github_issue_url.split("/")[3:5]
+        )  # Extracts 'OWASP-BLT/BLT' or any other repo
+        issue_number = github_issue_url.split("/")[-1]
+
+        # Fetch the issue title from GitHub API
+        try:
+            issue_title = get_github_issue_title(repo_path, issue_number)
+        except Exception as e:
+            issue_title = f"Issue #{issue_number}"
+            messages.warning(request, "Failed to fetch the issue title from GitHub.")
+
+        # Format start time and date to human-readable format
+        start_time = all_data.first().start_time.strftime("%I:%M %p")
+        date = last_data.created.strftime("%d %B %Y")  # Example: '14 August 2024'
+
+        # Prepare sizzle_data with human-readable format
+        sizzle_data = {
+            "issue_title": issue_title,
+            "duration": formatted_duration,
+            "start_time": start_time,
+            "date": date,
+        }
+
+    return render(request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data})
+
+
+def get_github_issue_title(repo_path, issue_number):
+    """Helper function to fetch the title of a GitHub issue."""
+    github_api_url = f"https://api.github.com/repos/{repo_path}/issues/{issue_number}"
+    response = requests.get(github_api_url)
+
+    if response.status_code == 200:
+        issue_data = response.json()
+        return issue_data.get("title", f"Issue #{issue_number}")
+    elif response.status_code == 404:
+        raise ValueError(f"Issue #{issue_number} not found in repository {repo_path}.")
+    else:
+        response.raise_for_status()  # Raise an error for any other HTTP issues
