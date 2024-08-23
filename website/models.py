@@ -261,6 +261,37 @@ class HuntPrize(models.Model):
         return self.hunt.name + self.name
 
 
+class SecurityIncident(models.Model):
+    severity_levels = (
+        (0, "Low"),
+        (1, "Medium"),
+        (2, "High"),
+        (3, "Critical"),
+    )
+    allowed_incident_status = (
+        (0, "Open"),
+        (1, "In Progress"),
+        (2, "Resolved"),
+    )
+    company = models.ForeignKey(Company, null=False, blank=False, on_delete=models.CASCADE)
+    severity_level = models.PositiveSmallIntegerField(choices=severity_levels, default=0)
+    incident_status = models.PositiveSmallIntegerField(choices=allowed_incident_status, default=0)
+    description = models.TextField()
+    title = models.CharField(max_length=200, default="")
+    occurance_date = models.DateField(auto_now_add=True)
+    created = models.DateTimeField(auto_now_add=True)
+    tags = models.ManyToManyField(Tag, blank=True)
+
+    def __str__(self) -> str:
+        return self.title
+
+    def get_severity_level(self):
+        return self.severity_levels[self.severity_level][1]
+
+    def get_incident_status(self):
+        return self.allowed_incident_status[self.incident_status][1]
+
+
 class Issue(models.Model):
     labels = (
         (0, "General"),

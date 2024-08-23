@@ -132,7 +132,7 @@ from sendgrid import SendGridAPIClient
 
 from .bitcoin_utils import create_bacon_token
 from .forms import UserProfileForm
-from .models import BaconToken, Contribution, Tag, UserProfile
+from .models import BaconToken, Contribution, SecurityIncident, Tag, UserProfile
 
 # Load environment variables
 load_dotenv()
@@ -3373,25 +3373,10 @@ class CompanyList(TemplateView):
 
 class SecurityDashboardView(View):
     def get(self, request, pk, *args, **kwargs):
+        security_incidents = SecurityIncident.objects.filter(company=pk)
         context = {
             "company": pk,
-            "security_incidents": [
-                {
-                    "severity": "High",
-                    "status": "In Progress",
-                    "affected_systems": ["Server A", "Server B"],
-                },
-                {
-                    "severity": "Medium",
-                    "status": "Resolved",
-                    "affected_systems": ["Server C", "Server D"],
-                },
-                {
-                    "severity": "Low",
-                    "status": "Resolved",
-                    "affected_systems": ["Printer E"],
-                },
-            ],
+            "security_incidents": security_incidents,
             "threat_intelligence": [
                 "Malware attack detected on external network",
                 "Phishing attempt on employee email accounts",

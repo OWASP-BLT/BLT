@@ -23,6 +23,7 @@ from website.models import (
     Payment,
     Points,
     Project,
+    SecurityIncident,
     Subscription,
     Suggestion,
     SuggestionVotes,
@@ -42,6 +43,11 @@ class UserResource(resources.ModelResource):
 class DomainResource(resources.ModelResource):
     class Meta:
         model = Domain
+
+
+class SecurityIncidentResource(resources.ModelResource):
+    class Meta:
+        model = SecurityIncident
 
 
 class SubscriptionResource(resources.ModelResource):
@@ -389,6 +395,18 @@ class ProjectAdmin(admin.ModelAdmin):
     search_fields = ["name", "description", "slug"]
 
 
+class SecurityIncidentAdmin(ImportExportModelAdmin):
+    resource_class = SecurityIncidentResource
+    list_display = (
+        "company",
+        "severity_level",
+        "incident_status",
+        "description",
+        "occurance_date",
+    )
+    search_fields = ["company__name"]
+
+
 class TagAdmin(admin.ModelAdmin):
     list_display = ("name", "slug", "created")
     prepopulated_fields = {"slug": ("name",)}
@@ -416,6 +434,7 @@ admin.site.register(ChatBotLog, ChatBotLogAdmin)
 admin.site.register(Blocked, BlockedAdmin)
 admin.site.register(Suggestion, SuggestionAdmin)
 admin.site.register(SuggestionVotes, SuggestionVotesAdmin)
+admin.site.register(SecurityIncident, SecurityIncidentAdmin)
 
 # Register missing models
 admin.site.register(InviteFriend)

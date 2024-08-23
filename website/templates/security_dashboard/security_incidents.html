@@ -1,11 +1,16 @@
 <div class="mx-5 my-0 p-5 border rounded-md shadow-md">
-    <h2 class="mt-0">Summary of Security Incidents</h2>
+    <h2 class="m-2 text-4xl font-bold">Security Incidents</h2>
     <ul class="m-0 p-0 list-none">
         {% for incident in security_incidents|slice:":3" %}
-            <li class="mb-2">
-                Incident #{{ forloop.counter }} - Severity: {{ incident.severity }},
-                Status: {{ incident.status }}, Affected Systems: {{
-                incident.affected_systems }}
+            <li class="m-4" title="{{ incident.description }}">
+                {% if incident.get_severity_level == "Low" %}
+                    <span class="px-2 py-1 bg-[#f6e05e] rounded-md">Low</span>
+                {% elif incident.get_severity_level == "Medium" %}
+                    <span class="px-2 py-1 bg-[#f6ad55] rounded-md">Medium</span>
+                {% elif incident.get_severity_level == "High" %}
+                    <span class="px-2 py-1 bg-[#f56565] rounded-md">High</span>
+                {% endif %}
+                {{ incident.title }} - {{ incident.get_incident_status }}
             </li>
         {% empty %}
             <li class="mb-2">No security incidents for this time period</li>
