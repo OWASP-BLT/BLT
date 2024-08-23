@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container mx-auto mt-8">
+        <h1 class="text-blue-500 text-3xl mt-8 mb-6">Manage View access to hidden Issue.</h1>
+        <form method="post" action="#">
+            <h2 class="text-xl mb-4">User who has view access:</h2>
+            <div class="mb-4">
+                {% for viewer in viewers %}
+                    <input type="radio"
+                           id="select_viewer"
+                           name="select_viewer"
+                           value="{{ viewer.id }}"
+                           class="mr-2">
+                    <label for="select_viewer">
+                        <a href="{% url 'profile' slug=viewer %}" class="text-blue-500">{{ viewer }}</a>
+                    </label>
+                    <br>
+                {% endfor %}
+            </div>
+            {% for requester in requesters %}
+                <p class="mb-2">{{ requester.message }}</p>
+                <input type="radio"
+                       id="select_user"
+                       name="select_user"
+                       value="{{ requester.user.id }}"
+                       class="mr-2">
+                <label for="select_user">
+                    Requested By: <a href="{% url 'profile' slug=requester.user %}" class="text-blue-500">{{ requester.user }}</a>
+                </label>
+                <br>
+            {% endfor %}
+            {% csrf_token %}
+            <p class="text-red-500 mb-4">
+                Warning: Granting access would allow the user to view the hidden Issue reported to the company.
+            </p>
+            <div class="flex justify-between">
+                <button id="grant_access_button"
+                        name="grant_access"
+                        type="submit"
+                        class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                        value="grant_access">Grant Access</button>
+                <a href="../../"
+                   class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Back</a>
+                <button value="cancel"
+                        id="request-button"
+                        name="cancel"
+                        type="cancel"
+                        class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Decline
+                </button>
+            </div>
+        </form>
+    </div>
+{% endblock content %}

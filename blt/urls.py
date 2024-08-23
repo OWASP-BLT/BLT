@@ -558,6 +558,22 @@ urlpatterns = [
     ),
     path("auth/delete", AuthApiViewset.as_view({"delete": "delete"}), name="auth-delete-api"),
     path("api/v1/tags", TagApiViewset.as_view({"get": "list", "post": "create"}), name="tags-api"),
+    path(
+        "issue/<int:issue_pk>/request_access/",
+        website.views.request_access,
+        name="issue_request_access",
+    ),
+    path(
+        "issue2/<int:issue_pk>/request_access/",
+        website.views.request_access,
+        name="issue_request_access",
+    ),
+    path("private/<int:user_pk>/issue/", website.views.private_issue, name="private_issue"),
+    path(
+        "private/<int:user_pk>/issue/<int:issue_pk>/grant_access/",
+        website.views.grant_access,
+        name="grant_access",
+    ),
 ]
 
 if settings.DEBUG:

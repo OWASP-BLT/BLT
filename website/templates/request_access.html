@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container mx-auto mt-8">
+        <h1 class="text-blue-500 mb-6 mt-8">This issue has been hidden by the user that reported it.</h1>
+        <form method="post" action="#">
+            {% csrf_token %}
+            <textarea id="text-box"
+                      name="text-box"
+                      rows="4"
+                      cols="30"
+                      class="w-full px-4 py-2 border border-gray-300 rounded mb-4">Could you please let me access this issue?</textarea>
+            <button id="request-button"
+                    value="request_access"
+                    name="request"
+                    type="submit"
+                    class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Request Access
+            </button>
+        </form>
+        <button id="home-button"
+                type="button"
+                class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            <a href="{% url 'index' %}">Home</a>
+        </button>
+    </div>
+{% endblock content %}
