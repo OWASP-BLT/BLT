@@ -8,7 +8,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-from collections import deque
+from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -63,6 +63,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
@@ -5008,6 +5009,7 @@ def view_suggestions(request):
 
 def sizzle(request):
     # Check if the user is authenticated; if not, redirect to the home page with a message
+    print(request.user)
     if not request.user.is_authenticated:
         messages.error(request, "Please login to access the Sizzle page.")
         return redirect("index")
@@ -5035,17 +5037,9 @@ def sizzle(request):
 
         # Get the first entry's GitHub issue URL and extract the repository path and issue number
         github_issue_url = all_data.first().github_issue_url
-        repo_path = "/".join(
-            github_issue_url.split("/")[3:5]
-        )  # Extracts 'OWASP-BLT/BLT' or any other repo
-        issue_number = github_issue_url.split("/")[-1]
 
         # Fetch the issue title from GitHub API
-        try:
-            issue_title = get_github_issue_title(repo_path, issue_number)
-        except Exception as e:
-            issue_title = f"Issue #{issue_number}"
-            messages.warning(request, "Failed to fetch the issue title from GitHub.")
+        issue_title = get_github_issue_title(github_issue_url)
 
         # Format start time and date to human-readable format
         start_time = all_data.first().start_time.strftime("%I:%M %p")
@@ -5062,15 +5056,79 @@ def sizzle(request):
     return render(request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data})
 
 
-def get_github_issue_title(repo_path, issue_number):
-    """Helper function to fetch the title of a GitHub issue."""
-    github_api_url = f"https://api.github.com/repos/{repo_path}/issues/{issue_number}"
-    response = requests.get(github_api_url)
+def TimeLogListAPIView(request):
+    print(request.user)
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
-    if response.status_code == 200:
-        issue_data = response.json()
-        return issue_data.get("title", f"Issue #{issue_number}")
-    elif response.status_code == 404:
-        raise ValueError(f"Issue #{issue_number} not found in repository {repo_path}.")
-    else:
-        response.raise_for_status()  # Raise an error for any other HTTP issues
+    start_date_str = request.GET.get("start_date")
+    end_date_str = request.GET.get("end_date")
+
+    if not start_date_str or not end_date_str:
+        return JsonResponse(
+            {"error": "Both start_date and end_date are required."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    start_date = parse_datetime(start_date_str)
+    end_date = parse_datetime(end_date_str)
+
+    if not start_date or not end_date:
+        return JsonResponse({"error": "Invalid date format."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Fetch the time logs within the specified date range for the authenticated user
+    time_logs = TimeLog.objects.filter(
+        user=request.user, created__range=[start_date, end_date]
+    ).order_by("created")
+
+    # Group time logs by date
+    grouped_logs = defaultdict(list)
+    for log in time_logs:
+        date_str = log.created.strftime("%Y-%m-%d")
+        grouped_logs[date_str].append(log)
+
+    # Prepare the final structured response
+    response_data = []
+    for date, logs in grouped_logs.items():
+        first_log = logs[0]
+        total_duration = sum((log.duration for log in logs if log.duration), timedelta())
+
+        # Format total duration to minutes and seconds
+        total_duration_seconds = total_duration.total_seconds()
+        formatted_duration = (
+            f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
+        )
+
+        # Fetch the issue title using GitHub API (for the first log of the day)
+        issue_title = get_github_issue_title(first_log.github_issue_url)
+
+        # Format start time and date to human-readable format
+        start_time = first_log.start_time.strftime("%I:%M %p")
+        formatted_date = first_log.created.strftime("%d %B %Y")  # Example: '14 August 2024'
+
+        # Prepare the day's data
+        day_data = {
+            "issue_title": issue_title,
+            "duration": formatted_duration,
+            "start_time": start_time,
+            "date": formatted_date,
+        }
+
+        response_data.append(day_data)
+
+    return JsonResponse(response_data, safe=False, status=status.HTTP_200_OK)
+
+
+def get_github_issue_title(github_issue_url):
+    """Helper function to fetch the title of a GitHub issue."""
+    try:
+        repo_path = "/".join(github_issue_url.split("/")[3:5])
+        issue_number = github_issue_url.split("/")[-1]
+        github_api_url = f"https://api.github.com/repos/{repo_path}/issues/{issue_number}"
+        response = requests.get(github_api_url)
+        if response.status_code == 200:
+            issue_data = response.json()
+            return issue_data.get("title", "No Title")
+        return f"Issue #{issue_number}"
+    except Exception:
+        return "No Title"

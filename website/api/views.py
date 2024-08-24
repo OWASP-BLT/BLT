@@ -1,9 +1,7 @@
 import json
 import uuid
-from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime
 
-import requests
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -12,7 +10,6 @@ from django.core.mail import send_mail
 from django.db.models import Count, Q, Sum
 from django.template.loader import render_to_string
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
@@ -849,77 +846,3 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
             raise ParseError(detail=str(e))
         except Exception as e:
             raise ParseError(detail="An unexpected error occurred while creating the activity log.")
-
-
-class TimeLogListAPIView(APIView):
-    def get(self, request, *args, **kwargs):
-        start_date_str = request.query_params.get("start_date")
-        end_date_str = request.query_params.get("end_date")
-
-        if not start_date_str or not end_date_str:
-            return Response(
-                {"error": "Both start_date and end_date are required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        start_date = parse_datetime(start_date_str)
-        end_date = parse_datetime(end_date_str)
-
-        if not start_date or not end_date:
-            return Response({"error": "Invalid date format."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Fetch the time logs within the specified date range
-        time_logs = TimeLog.objects.filter(created__range=[start_date, end_date]).order_by(
-            "created"
-        )
-
-        # Group time logs by date
-        grouped_logs = defaultdict(list)
-        for log in time_logs:
-            date_str = log.created.strftime("%Y-%m-%d")
-            grouped_logs[date_str].append(log)
-
-        # Prepare the final structured response
-        response_data = []
-        for date, logs in grouped_logs.items():
-            first_log = logs[0]
-            total_duration = sum((log.duration for log in logs if log.duration), timedelta())
-
-            # Format total duration to minutes and seconds
-            total_duration_seconds = total_duration.total_seconds()
-            formatted_duration = (
-                f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
-            )
-
-            # Fetch the issue title using GitHub API (for the first log of the day)
-            issue_title = self.get_github_issue_title(first_log.github_issue_url)
-
-            # Format start time and date to human-readable format
-            start_time = first_log.start_time.strftime("%I:%M %p")
-            formatted_date = first_log.created.strftime("%d %B %Y")  # Example: '14 August 2024'
-
-            # Prepare the day's data
-            day_data = {
-                "issue_title": issue_title,
-                "duration": formatted_duration,
-                "start_time": start_time,
-                "date": formatted_date,
-            }
-
-            response_data.append(day_data)
-
-        return Response(response_data, status=status.HTTP_200_OK)
-
-    def get_github_issue_title(self, github_issue_url):
-        """Helper function to fetch the title of a GitHub issue."""
-        try:
-            repo_path = "/".join(github_issue_url.split("/")[3:5])
-            issue_number = github_issue_url.split("/")[-1]
-            github_api_url = f"https://api.github.com/repos/{repo_path}/issues/{issue_number}"
-            response = requests.get(github_api_url)
-            if response.status_code == 200:
-                issue_data = response.json()
-                return issue_data.get("title", "No Title")
-            return f"Issue #{issue_number}"
-        except Exception:
-            return "No Title"
