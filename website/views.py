@@ -132,7 +132,7 @@ from sendgrid import SendGridAPIClient
 
 from .bitcoin_utils import create_bacon_token
 from .forms import UserProfileForm
-from .models import BaconToken, Contribution, Tag, UserProfile
+from .models import BaconToken, Contribution, SecurityIncident, Tag, UserProfile
 
 # Load environment variables
 load_dotenv()
@@ -3346,6 +3346,65 @@ class DomainList(TemplateView):
             domain = self.model.objects.filter(pk=domain_admin.domain.pk)
         context = {"domains": domain}
         return render(request, self.template_name, context)
+
+
+class CompanyList(TemplateView):
+    model = Company
+    template_name = "security_dashboard/company_list.html"
+    paginate_by = 20
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        companies = Company.objects.all()
+
+        paginator = Paginator(companies, self.paginate_by)
+        page = self.request.GET.get("page")
+
+        try:
+            paginated_companies = paginator.page(page)
+        except PageNotAnInteger:
+            paginated_companies = paginator.page(1)
+        except EmptyPage:
+            paginated_companies = paginator.page(paginator.num_pages)
+
+        context["companies"] = paginated_companies
+        return context
+
+
+class SecurityDashboardView(View):
+    def get(self, request, pk, *args, **kwargs):
+        security_incidents = SecurityIncident.objects.filter(company=pk)
+
+        # Vulnerabilities are Issues which are labelled as security issue
+        # For now, show only those issues which are not hidden
+        # Later, we can add hidden issues to only to company admins
+        vulnerabilities = Issue.objects.filter(
+            domain__company=pk, label=4, is_hidden=False
+        ).order_by("created")
+
+        context = {
+            "company": pk,
+            "security_incidents": security_incidents,
+            "threat_intelligence": [
+                "Malware attack detected on external network",
+                "Phishing attempt on employee email accounts",
+                "SQL injection attempt on web server",
+            ],
+            "network_traffic": "Real-time graph of network traffic:",
+            "user_activity": "Real-time graph of user activity:",
+            "vulnerabilities": vulnerabilities,
+            "compliance_list": [
+                "PCI DSS: Compliant",
+                "ISO 27001: Non-Compliant",
+                "GDPR: Compliant",
+            ],
+        }
+
+        return render(
+            request,
+            "security_dashboard/company_dashboard.html",
+            context,
+        )
 
 
 @login_required(login_url="/accounts/login")

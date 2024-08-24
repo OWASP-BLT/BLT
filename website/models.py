@@ -79,6 +79,20 @@ class Company(models.Model):
     def __str__(self):
         return self.name
 
+    def get_logo(self):
+        if self.logo:
+            return self.logo.url
+        image_request = requests.get("https://logo.clearbit.com/" + self.name)
+        try:
+            if image_request.status_code == 200:
+                image_content = ContentFile(image_request.content)
+                self.logo.save(self.name + ".jpg", image_content)
+                return self.logo.url
+
+        except:
+            favicon_url = self.url + "/favicon.ico"
+            return favicon_url
+
 
 class Domain(models.Model):
     company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
@@ -245,6 +259,37 @@ class HuntPrize(models.Model):
 
     def __str__(self) -> str:
         return self.hunt.name + self.name
+
+
+class SecurityIncident(models.Model):
+    severity_levels = (
+        (0, "Low"),
+        (1, "Medium"),
+        (2, "High"),
+        (3, "Critical"),
+    )
+    allowed_incident_status = (
+        (0, "Open"),
+        (1, "In Progress"),
+        (2, "Resolved"),
+    )
+    company = models.ForeignKey(Company, null=False, blank=False, on_delete=models.CASCADE)
+    severity_level = models.PositiveSmallIntegerField(choices=severity_levels, default=0)
+    incident_status = models.PositiveSmallIntegerField(choices=allowed_incident_status, default=0)
+    description = models.TextField()
+    title = models.CharField(max_length=200, default="")
+    occurance_date = models.DateField(auto_now_add=True)
+    created = models.DateTimeField(auto_now_add=True)
+    tags = models.ManyToManyField(Tag, blank=True)
+
+    def __str__(self) -> str:
+        return self.title
+
+    def get_severity_level(self):
+        return self.severity_levels[self.severity_level][1]
+
+    def get_incident_status(self):
+        return self.allowed_incident_status[self.incident_status][1]
 
 
 class Issue(models.Model):

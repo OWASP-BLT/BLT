@@ -1,0 +1,13 @@
+<div class="mx-5 my-0 p-5 border rounded-md shadow-md">
+    <h2 class="mt-0">Threat Intelligence</h2>
+    <p>Real-time feed of the latest threat intelligence:</p>
+    <ul class="m-0 p-0 list-none">
+        {% for threat_news in threat_intelligence|slice:":3" %}
+            <li class="mb-2">{{ threat_news }}</li>
+        {% empty %}
+            <li class="mb-2">No security incidents for this time period</li>
+        {% endfor %}
+    </ul>
+    <a href="#"
+       class="px-2 py-5 mt-2 bg-[#6ec1e4] border rounded-md shadow-md inline-block">View All Threats</a>
+</div>

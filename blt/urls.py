@@ -39,6 +39,7 @@ from website.api.views import (
 )
 from website.views import (  # TODO AutoLabel,
     AllIssuesView,
+    CompanyList,
     CompanySettings,
     ContributorStatsView,
     CreateHunt,
@@ -68,6 +69,7 @@ from website.views import (  # TODO AutoLabel,
     ProjectListView,
     SaveBiddingData,
     ScoreboardView,
+    SecurityDashboardView,
     SpecificIssuesView,
     SpecificMonthLeaderboardView,
     StatsDetailView,
@@ -294,7 +296,20 @@ urlpatterns = [
         UserProfileDetailsView.as_view(),
         name="user_profile",
     ),
+    # Security Dashboard routes
+    re_path(
+        r"^securitydashboard/$",
+        CompanyList.as_view(),
+        name="security_dashboard_list",
+    ),
+    path(
+        "securitydashboard/<int:pk>",
+        SecurityDashboardView.as_view(),
+        name="security_dashboard_company",
+    ),
+    # Admin routes
     path(settings.ADMIN_URL + "/", admin.site.urls),
+    # Issue routes
     re_path(r"^like_issue/(?P<issue_pk>\d+)/$", website.views.like_issue, name="like_issue"),
     re_path(
         r"^dislike_issue/(?P<issue_pk>\d+)/$",

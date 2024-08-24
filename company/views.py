@@ -1275,6 +1275,50 @@ class CompanyDashboardManageBughuntView(View):
         return render(request, "company/bughunt/company_manage_bughunts.html", context)
 
 
+class CompanyDashboardSecurityDashboardView(View):
+    @validate_company_user
+    def get(self, request, id, *args, **kwargs):
+        context = {
+            "company": id,
+            "security_incidents": [
+                {
+                    "severity": "High",
+                    "status": "In Progress",
+                    "affected_systems": ["Server A", "Server B"],
+                },
+                {
+                    "severity": "Medium",
+                    "status": "Resolved",
+                    "affected_systems": ["Server C", "Server D"],
+                },
+                {
+                    "severity": "Low",
+                    "status": "Resolved",
+                    "affected_systems": ["Printer E"],
+                },
+            ],
+            "threat_intelligence": [
+                "Malware attack detected on external network",
+                "Phishing attempt on employee email accounts",
+                "SQL injection attempt on web server",
+            ],
+            "network_traffic": "Real-time graph of network traffic:",
+            "user_activity": "Real-time graph of user activity:",
+            "vulnerabilities": "sample_vulnerabilities",
+            "compliance_list": [
+                "PCI DSS: Compliant",
+                "ISO 27001: Non-Compliant",
+                "GDPR: Compliant",
+            ],
+        }
+
+        return render(
+            request,
+            "company/security_dashboard/company_security_dashboard.html",
+            context,
+        )
+
+
 @require_http_methods(["DELETE"])
 def delete_prize(request, prize_id, company_id):
     if not request.user.company_set.filter(id=company_id).exists():

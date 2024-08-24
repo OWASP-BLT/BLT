@@ -1,0 +1,11 @@
+<div class="mx-5 my-0 p-5 border rounded-md shadow-md">
+    <h2 class="mt-0">Vulnerabilities Discovered</h2>
+    <p>Real-time feed of the latest Vulnerabilities:</p>
+    <ul class="m-0 p-0 list-none">
+        {{ vulnerabilities|default:"No vulnerabilities found" }}
+    </ul>
+    {% if vulnerabilities %}
+        <a href="#"
+           class="px-2 py-5 mt-2 bg-[#6ec1e4] border rounded-md shadow-md inline-block">View All Vulnerabilities</a>
+    {% endif %}
+</div>
