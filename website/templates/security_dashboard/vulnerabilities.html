@@ -1,8 +1,13 @@
 <div class="mx-5 my-0 p-5 border rounded-md shadow-md">
-    <h2 class="mt-0">Vulnerabilities Discovered</h2>
-    <p>Real-time feed of the latest Vulnerabilities:</p>
+    <h2 class="m-2 text-4xl font-bold">Vulnerabilities Discovered</h2>
     <ul class="m-0 p-0 list-none">
-        {{ vulnerabilities|default:"No vulnerabilities found" }}
+        {% for vulnerability in vulnerabilities|slice:":3" %}
+            <li class="m-4"">
+                {{ forloop.counter }}. {{ vulnerability.description }} - {{ vulnerability.status }}
+            </li>
+        {% empty %}
+            <li class="mb-4">No vulnerabilities reported till now</li>
+        {% endfor %}
     </ul>
     {% if vulnerabilities %}
         <a href="#"

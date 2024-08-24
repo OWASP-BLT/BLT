@@ -3374,6 +3374,14 @@ class CompanyList(TemplateView):
 class SecurityDashboardView(View):
     def get(self, request, pk, *args, **kwargs):
         security_incidents = SecurityIncident.objects.filter(company=pk)
+
+        # Vulnerabilities are Issues which are labelled as security issue
+        # For now, show only those issues which are not hidden
+        # Later, we can add hidden issues to only to company admins
+        vulnerabilities = Issue.objects.filter(
+            domain__company=pk, label=4, is_hidden=False
+        ).order_by("created")
+
         context = {
             "company": pk,
             "security_incidents": security_incidents,
@@ -3384,7 +3392,7 @@ class SecurityDashboardView(View):
             ],
             "network_traffic": "Real-time graph of network traffic:",
             "user_activity": "Real-time graph of user activity:",
-            "vulnerabilities": "sample_vulnerabilities",
+            "vulnerabilities": vulnerabilities,
             "compliance_list": [
                 "PCI DSS: Compliant",
                 "ISO 27001: Non-Compliant",
