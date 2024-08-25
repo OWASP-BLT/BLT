@@ -1,10 +1,60 @@
 {% extends "base.html" %}
 {% load static %}
+{% load i18n %}
 {% load gravatar %}
 {% load email_obfuscator %}
 {% load socialaccount %}
 {% providers_media_js %}
+{% block head %}
+    <link href="https://fonts.googleapis.com/css2?family=Poppins"
+          rel="stylesheet">
+{% endblock head %}
 {% block style %}
+    <style>
+    .unrated {
+        position: absolute;
+        left: 130px;
+        top: 8px;
+        padding: 10px;
+        font-weight: bolder;
+    }
+    
+    .silver {
+        background-color: lightblue;
+        color: #333;
+        position: absolute;
+        left: 140px;
+        top: 8px;
+        padding: 10px;
+        font-weight: bolder;
+    }
+    
+    span.blue a{
+        color: #7CB9F0 !important;
+    }
+    
+    .gold {
+        background-color: #D4AF37;
+        color: #333;
+        position: absolute;
+        left: 155px;
+        top: 8px;
+        padding: 10px;
+        font-weight: bolder;
+    }
+    
+    .bronze {
+        background-color: #C9AE5D;
+        color: #333;
+        position: absolute;
+        left: 140px;
+        top: 8px;
+        padding: 10px;
+        font-weight: bolder;
+    }
+    </style>
+{% endblock style %}
+{% comment %} {% block style %}
     <style>
     .alt-img {
         padding-top: 25px;
@@ -81,7 +131,7 @@
         margin-right: 5px; /* Add some spacing between icon and text */
     }
 
-    </style>
+</style>
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
@@ -97,16 +147,8 @@
     <div class="jumbotron">
         <div class="row">
             <div class="col-lg-10 col-md-10 header">
-                <img src="{{ domain.get_logo }}"
-                     height="100"
-                     width="100"
-                     alt="logo"
-                     onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
-                <img src="{% static 'img/logo-small-transparent.png' %}"
-                     class="alt-img"
-                     alt="logo"
-                     width="100"
-                     height="100">
+                <img src="{{ domain.get_logo }}" height="100" width="100" alt="logo" onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';">
+                <img src="{% static 'img/logo-small-transparent.png' %}" class="alt-img" alt="logo" width="100" height="100">
                 <h3>
                     <a href="{{ domain.url }}" target="/new">{{ name }}</a>
                     {% if not domain.company %}
@@ -130,9 +172,7 @@
                 </h3>
             </div>
             <div class="col-lg-2 col-md-2">
-                <form action="https://www.paypal.com/cgi-bin/webscr"
-                      method="post"
-                      target="_top">
+                <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
                     <input type="hidden" name="cmd" value="_s-xclick">
                     <input type="hidden" name="hosted_button_id" value="SC7E9NRCWHGTL">
                     <input type="hidden" name="hcustom" value="{{ domian.name }}">
@@ -143,29 +183,18 @@
             </div>
             {% if twitter_url %}
                 <div class="col-lg-1 col-md-1">
-                    <a class="tweet-btn btn btn-xs"
-                       href="{{ twitter_url }}"
-                       rel="noopener noreferrer">
+                    <a class="tweet-btn btn btn-xs" href="{{ twitter_url }}" rel="noopener noreferrer">
                         <i class="fab fa-twitter"></i> Tweet
                     </a>
                 </div>
             {% endif %}
         </div>
     </div>
-    <!-- <div class="row charts">
-        <div class="col-md-6">
-            <canvas id="barChart" width="400" height="400"></canvas>
-        </div>
-        <div class="col-md-6">
-            <canvas id="pieChart" width="400" height="400"></canvas>
-        </div>
-    </div> -->
     <div class="row">
         <div class="col-lg-9">
             <div class="pull-left text-center">
                 {% if opened.has_previous %}
-                    <a href="?open={{ opened.previous_page_number }}"
-                       class="btn btn-default">Prev</a>
+                    <a href="?open={{ opened.previous_page_number }}" class="btn btn-default">Prev</a>
                 {% endif %}
                 <span>Page {{ opened.number }} of {{ opened.paginator.num_pages }}</span>
                 {% if opened.has_next %}<a href="?open={{ opened.next_page_number }}" class="btn btn-default">Next</a>{% endif %}
@@ -188,8 +217,7 @@
                     </div>
                     <div class="text-center">
                         {% if opened.has_previous %}
-                            <a href="?open={{ opened.previous_page_number }}"
-                               class="btn btn-default">Prev</a>
+                            <a href="?open={{ opened.previous_page_number }}" class="btn btn-default">Prev</a>
                         {% endif %}
                         <span>Page {{ opened.number }} of {{ opened.paginator.num_pages }}</span>
                         {% if opened.has_next %}<a href="?open={{ opened.next_page_number }}" class="btn btn-default">Next</a>{% endif %}
@@ -205,8 +233,7 @@
                     </div>
                     <div class="text-center">
                         {% if closed.has_previous %}
-                            <a href="?close={{ closed.previous_page_number }}"
-                               class="btn btn-default">Prev</a>
+                            <a href="?close={{ closed.previous_page_number }}" class="btn btn-default">Prev</a>
                         {% endif %}
                         <span>Page {{ closed.number }} of {{ closed.paginator.num_pages }}</span>
                         {% if closed.has_next %}<a href="?close={{ closed.next_page_number }}" class="btn btn-default">Next</a>{% endif %}
@@ -223,15 +250,9 @@
                     {% for leader in leaderboard %}
                         <div class="list-group-item">
                             {% if leader.socialaccount_set.all.0.get_avatar_url %}
-                                <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
-                                     width="50"
-                                     height="50"
-                                     alt="{{ leader.username }}">
+                                <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" width="50" height="50" alt="{{ leader.username }}">
                             {% else %}
-                                <img src="{% gravatar_url leader.email 50 %}"
-                                     width="50"
-                                     height="50"
-                                     alt="{{ leader.username }}">
+                                <img src="{% gravatar_url leader.email 50 %}" width="50" height="50" alt="{{ leader.username }}">
                             {% endif %}
                             <a href="{% url 'profile' slug=leader.username %}">{{ leader.username }}</a>
                             <span class="badge">{{ leader.total }} bug{{ leader.total|pluralize }}</span>
@@ -245,13 +266,8 @@
         <div class="col-lg-3 col-md-3 ">
             {% if domain.webshot %}
                 <div class="col-lg-12">
-                    <a href="https://{{ domain.url }}"
-                       rel="noopener noreferrer"
-                       target="_new">
-                        <img src="{{ domain.webshot.url }}"
-                             width="100%"
-                             height="100%"
-                             alt="{{ domain.url }}">
+                    <a href="https://{{ domain.url }}" rel="noopener noreferrer" target="_new">
+                        <img src="{{ domain.webshot.url }}" width="100%" height="100%" alt="{{ domain.url }}">
                     </a>
                 </div>
             {% endif %}
@@ -354,5 +370,271 @@
             }]
         }
     });
+</script>
+{% endblock content %} {% endcomment %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="flex lg:!ml-[0px] px-5 mt-[4vh] max-sm:!mt-[5vh] max-sm:!items-center justify-between max-sm:flex-col font-['Ubuntu'] max-sm:translate-x-5 max-sm:translate-y-5">
+        <div class="max-sm:w-[100vw] w-[20vw] flex flex-col">
+            <div class="inline-block relative h-[200px] w-[200px]">
+                {% if domain.get_logo %}
+                    <img src="{{ domain.get_logo }}"
+                         class="img-responsive img-thumbnail w-[200px] h-[200px] object-cover"
+                         alt="avatar"
+                         width="200"
+                         height="200">
+                {% else %}
+                    <img src="{% gravatar_url user.email 200 %}"
+                         class="img-responsive img-thumbnail w-[200px] h-[200px] object-cover"
+                         alt="avatar"
+                         width="200"
+                         height="200">
+                {% endif %}
+            </div>
+            <div class="h-[2vh]"></div>
+            <div>
+                <div class="font-bold mb-3 mt-1">
+                    Recent Activity
+                    <hr>
+                </div>
+                <div class="relative right-0">
+                    <ul class="relative flex flex-wrap p-1 list-none rounded-xl bg-blue-gray-50/60"
+                        data-tabs="tabs"
+                        role="list">
+                        <li class="z-30 flex-auto text-center">
+                            <a class="z-30 flex items-center justify-center w-full px-0 py-1 mb-0 transition-all ease-in-out border-0 rounded-lg cursor-pointer text-slate-700 bg-inherit"
+                               data-tab-target=""
+                               active=""
+                               role="tab"
+                               aria-selected="true"
+                               aria-controls="app">
+                                <span class="ml-1">Open [{{ opened_net.count }}]</span>
+                            </a>
+                        </li>
+                        <li class="z-30 flex-auto text-center">
+                            <a class="z-30 flex items-center justify-center w-full px-0 py-1 mb-0 transition-all ease-in-out border-0 rounded-lg cursor-pointer text-slate-700 bg-inherit"
+                               data-tab-target=""
+                               role="tab"
+                               aria-selected="false"
+                               aria-controls="message">
+                                <span class="ml-1">Closed [{{ closed_net.count }}]</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <div data-tab-content="" class="p-5">
+                        <div class="block opacity-100" id="app" role="tabpanel">
+                            <p class="block font-sans text-base antialiased font-light leading-relaxed text-inherit text-blue-gray-500">
+                                {% for activity in opened %}
+                                    {% include "includes/_new_activity.html" %}
+                                {% endfor %}
+                                <div class="text-center">
+                                    {% if opened.has_previous %}
+                                        <a href="?open={{ opened.previous_page_number }}"
+                                           class="btn btn-default">Prev</a>
+                                    {% endif %}
+                                    <span>Page {{ opened.number }} of {{ opened.paginator.num_pages }}</span>
+                                    {% if opened.has_next %}<a href="?open={{ opened.next_page_number }}" class="btn btn-default">Next</a>{% endif %}
+                                </div>
+                            </p>
+                        </div>
+                        <div class="hidden opacity-0" id="message" role="tabpanel">
+                            <p class="block font-sans text-base antialiased font-light leading-relaxed text-inherit text-blue-gray-500">
+                                {% if activity in closed %}
+                                    {% for activity in closed %}
+                                        {% include "includes/_new_activity.html" %}
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-start">{% trans "No Activity Yet!" %}</div>
+                                {% endif %}
+                                <div class="text-center">
+                                    {% if closed.has_previous %}
+                                        <a href="?close={{ closed.previous_page_number }}"
+                                           class="btn btn-default">Prev</a>
+                                    {% endif %}
+                                    <span>Page {{ closed.number }} of {{ closed.paginator.num_pages }}</span>
+                                    {% if closed.has_next %}<a href="?close={{ closed.next_page_number }}" class="btn btn-default">Next</a>{% endif %}
+                                </div>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="max-sm:w-[100vw] w-[37vw] ml-4">
+            <div>
+                <div class="company-info flex flex-row justify-between">
+                    <div class="one">
+                        <a href="{{ domain.url }}"
+                           class="font-bold text-[20px] capitalize"
+                           target="/new">{{ name }}</a>
+                        {% if domain.email %}
+                            <small class="uppercase flex flex-col text-[#909090]">
+                                <span class="blue">{{ domain.email|obfuscate_mailto }}</span>
+                                {% if domain.email_event %}
+                                    Last email {{ domain.email_event|default:"" }} {{ domain.modified|timesince }} ago
+                                    <br>
+                                    Clicks {{ domain.clicks|default:"0" }}
+                                {% endif %}
+                            </small>
+                        {% endif %}
+                    </div>
+                    <div class="two flex flex-col w-[40%] items-center justify-between">
+                        <form action="{% url 'add_domain_to_company' %}" method="post">
+                            {% if domain.company %}
+                                {% csrf_token %}
+                                <input type="hidden" name="domain" value="{{ domain.id }}">
+                                <input type="text" name="company" placeholder="Company Name">
+                                <button type="submit"
+                                        class="bg-[#E5F2FE] font-['Poppins'] font-bold rounded-2xl p-3 m-2">
+                                    ➕ Add to Company
+                                </button>
+                            {% endif %}
+                            <button type="submit"
+                                    class="bg-[#E5F2FE] font-['Poppins'] font-bold rounded-2xl p-3 m-2">
+                                ✉️ Subscribe to {{ name }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="text-2xl font-bold my-4">
+                    Issue Stats
+                    <hr>
+                </div>
+                <div class="font=['Ubuntu'] max-sm:w-full w-[37vw]">
+                    <button class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⚙️ {% trans "General" %} {{ bug_type_0 | length }}</div>
+                    </button>
+                    <button class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⚠️ {% trans "Number" %} {{ bug_type_1 | length }}</div>
+                    </button>
+                    <button class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">🏆 {% trans "Functional" %} {{ bug_type_2 | length }}</div>
+                    </button>
+                    <button class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⚡ {% trans "Performance" %} {{ bug_type_3 | length }}</div>
+                    </button>
+                    <button class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⚡ {% trans "Security" %} {{ bug_type_4 | length }}</div>
+                    </button>
+                    <button class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-2 m-2">✏️ {% trans "Typo" %} {{ bug_type_5 | length }}</div>
+                    </button>
+                    <button class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">🧑‍💻 {% trans "Design" %} {{ bug_type_6 | length }}</div>
+                    </button>
+                </div>
+                <div class="text-2xl font-bold my-4">
+                    Domain Stats
+                    <hr>
+                </div>
+                <div class="font=['Ubuntu'] max-sm:w-full w-[37vw]">
+                    <button>
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2 mr-3">🏆 {% trans "Bugs Reported" %} {{ total_bugs }}</div>
+                    </button>
+                    <button class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">🐞 {% trans "Open Issues" %} {{ bug_type_1 | length }}</div>
+                    </button>
+                    <button class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⌨️ {% trans "Closed Issues" %} {{ bug_type_2 | length }}</div>
+                    </button>
+                </div>
+                <div class="text-2xl font-bold my-4">
+                    Monthly Report
+                    <hr>
+                </div>
+                <div id="chart" class="max-sm:w-full w-3/4"></div>
+            </div>
+        </div>
+        <div class="max-sm:w-[100vw] w-[22vw]">
+            <div>
+                <div class="font-bold mb-3 mt-4">
+                    Top Hunters
+                    <hr>
+                </div>
+                <div class="top-findings w-[20vw] max-sm:w-full max-h-[40vh]">
+                    <div class=" mb-[1rem] bg-[#f4f4f4] p-5 m-2 rounded-2xl">
+                        <ul>
+                            {% if leaderboard %}
+                                {% for leader in leaderboard %}
+                                    <li class="flex justify-between mb-3 items-center">
+                                        <div class="flex w-full">
+                                            <a href="{% url 'profile' slug=leader.username %}">
+                                                {% if leader.socialaccount_set.all.0.get_avatar_url %}
+                                                    <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
+                                                         height="20"
+                                                         width="20"
+                                                         class="mr-3"
+                                                         alt="{{ leader.username }}"
+                                                         onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                                {% else %}
+                                                    <img src="{% gravatar_url leader.email 50 %}"
+                                                         height="20"
+                                                         width="20"
+                                                         class="mr-3"
+                                                         alt="{{ leader.username }}"
+                                                         onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                                {% endif %}
+                                            </a>
+                                            <a href="{% url 'profile' slug=leader.username %}">{{ leader.username }}</a>
+                                        </div>
+                                        <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl label label-default pull-right"
+                                                name="{{ user }}">
+                                            {{ leader.total }} Bug{{ leader.total|pluralize }}
+                                        </button>
+                                    </li>
+                                {% endfor %}
+                            {% else %}
+                                <li>
+                                    <div class="text-start">{% trans "Nothing Found" %}</div>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script>
+        var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
+        var months = [],
+        data = [];
+    var all_data = new Array(12).fill(0);
+    var current_month = {{ current_month }};
+    {% for i in domain_graph %}all_data['{{i.month}}' - 1] = {{ i.c }};{% endfor %}
+
+    if (current_month - 6 < 0) {
+        months = all_months.slice(current_month - 6);
+        months = months.concat(all_months.slice(0, current_month));
+        data = all_data.slice(current_month - 6);
+        data = data.concat(all_data.slice(0, current_month));
+    } else {
+        months = all_months.slice(current_month - 6, current_month);
+        data = all_data.slice(current_month - 6, current_month);
+    }
+        var options = {
+            series: [{
+            name: 'Monthly Activity',
+            data: data
+          }],
+            chart: {
+            height: 350,
+            type: 'area'
+          },
+          dataLabels: {
+            enabled: false
+          },
+          stroke: {
+            curve: 'smooth'
+          },
+          xaxis: {
+            type: 'String',
+            categories: months
+          },
+          };
+  
+          var chart = new ApexCharts(document.querySelector("#chart"), options);
+          chart.render();
     </script>
+    <script src="https://unpkg.com/@material-tailwind/html@latest/scripts/tabs.js"></script>
 {% endblock content %}

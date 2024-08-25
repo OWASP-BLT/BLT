@@ -1635,7 +1635,7 @@ class DomainDetailView(ListView):
 
         context["name"] = parsed_url.netloc.split(".")[-2:][0].title()
 
-        paginator = Paginator(open_issue, 10)
+        paginator = Paginator(open_issue, 3)
         page = self.request.GET.get("open")
         try:
             openissue_paginated = paginator.page(page)
@@ -1644,7 +1644,7 @@ class DomainDetailView(ListView):
         except EmptyPage:
             openissue_paginated = paginator.page(paginator.num_pages)
 
-        paginator = Paginator(close_issue, 10)
+        paginator = Paginator(close_issue, 3)
         page = self.request.GET.get("close")
         try:
             closeissue_paginated = paginator.page(page)
@@ -1674,12 +1674,25 @@ class DomainDetailView(ListView):
             .annotate(c=Count("id"))
             .order_by()
         )
+        for i in range(0, 7):
+            context["bug_type_" + str(i)] = Issue.objects.filter(
+                domain=context["domain"], hunt=None, label=str(i)
+            )
+        context["total_bugs"] = Issue.objects.filter(domain=context["domain"], hunt=None).count()
         context["pie_chart"] = (
             Issue.objects.filter(domain=context["domain"], hunt=None)
             .values("label")
             .annotate(c=Count("label"))
             .order_by()
         )
+        context["activities"] = Issue.objects.filter(domain=context["domain"], hunt=None).exclude(
+            Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+        )[0:3]
+        context["activity_screenshots"] = {}
+        for activity in context["activities"]:
+            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(
+                issue=activity.pk
+            ).first()
         context["twitter_url"] = "https://twitter.com/%s" % domain.get_or_set_x_url(domain.get_name)
 
         return context
