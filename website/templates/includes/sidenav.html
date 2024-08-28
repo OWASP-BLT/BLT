@@ -52,6 +52,13 @@
                         <span>Sponsor</span>
                     </a>
                 </li>
+                <li class="{% if request.path == '/sizzle/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'sizzle' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <div class="w-8 mr-4">⏱️</div>
+                        <span>Sizzle</span>
+                    </a>
+                </li>
                 <li class="{% if request.path == '/scoreboard/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'scoreboard' %}"
                        class="flex items-center w-full text-black no-underline p-2">
