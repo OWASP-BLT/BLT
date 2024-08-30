@@ -82,7 +82,7 @@ sendgrid = "^6.11.0"
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
 isort = "^5.13.2"
-ruff = "^0.6.2"
+ruff = "^0.6.3"
 pre-commit = "^3.8.0"
 
 [tool.isort]
