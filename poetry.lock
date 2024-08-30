@@ -965,13 +965,13 @@ Django = ">=4.2"
 
 [[package]]
 name = "django-gravatar2"
-version = "1.4.4"
+version = "1.4.5"
 description = "Essential Gravatar support for Django. Features helper methods, templatetags and a full test suite!"
 optional = false
 python-versions = "*"
 files = [
-    {file = "django-gravatar2-1.4.4.tar.gz", hash = "sha256:c813280967511ced93eea0359f60e5369c35b3311efe565c3e5d4ab35c10c9ee"},
-    {file = "django_gravatar2-1.4.4-py2.py3-none-any.whl", hash = "sha256:545a6c2c5c624c7635dec29c7bc0be1a2cb89c9b8821af8616ae9838827cc35b"},
+    {file = "django_gravatar2-1.4.5-py2.py3-none-any.whl", hash = "sha256:7e6c8f63f59b0077d42402531684807ea6295867ebd2195a638d87b851f0d41c"},
+    {file = "django_gravatar2-1.4.5.tar.gz", hash = "sha256:2dbb56465e395dd8b3920d4017e27a4756912cc2ad9b11ba48cf143871a80364"},
 ]
 
 [[package]]
@@ -4552,4 +4552,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "55819043469d9af94fc1d58ba6e502f9c1fac93eadade2437567795de607ab94"
+content-hash = "73a5192080ceb76192d7ecd41749d78c93e3a11a830c05d7a7e7d9db9e90ff07"
