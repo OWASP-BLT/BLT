@@ -4140,13 +4140,13 @@ files = [
 
 [[package]]
 name = "unstructured"
-version = "0.15.9"
+version = "0.15.10"
 description = "A library that prepares raw documents for downstream ML tasks."
 optional = false
 python-versions = "<3.13,>=3.9.0"
 files = [
-    {file = "unstructured-0.15.9-py3-none-any.whl", hash = "sha256:ddbb043461cfb9efa1d48a18e62e3b43ff4e0cec25fbf0f28bf345589c1af4d2"},
-    {file = "unstructured-0.15.9.tar.gz", hash = "sha256:de26d0e38bac4aa3ae2950f175d0c53a5ccae5c45806b67f55a4af8dea4c407a"},
+    {file = "unstructured-0.15.10-py3-none-any.whl", hash = "sha256:7bc9a300f6ec7c9f0cc61305c0765f17dd8a6fff77460fcb0ada94a0a0358406"},
+    {file = "unstructured-0.15.10.tar.gz", hash = "sha256:d77abe8bd12ae645b23ae04c5e6089acdd7fa5bc4005da1d0f2f88809cca5008"},
 ]
 
 [package.dependencies]
@@ -4186,7 +4186,7 @@ clarifai = ["clarifai"]
 confluence = ["atlassian-python-api"]
 csv = ["pandas"]
 databricks-volumes = ["databricks-sdk"]
-delta-table = ["deltalake", "fsspec"]
+delta-table = ["deltalake (<=0.19.1)", "fsspec"]
 discord = ["discord-py"]
 doc = ["python-docx (>=1.1.2)"]
 docx = ["python-docx (>=1.1.2)"]
@@ -4583,4 +4583,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "49551ae07d12ae0cc3f3976e75bf1c12376191ad77603243d6d5157309ab7449"
+content-hash = "73e434f9eca15948a977f75c062a18cf235e9f8127b106fb9fefffabfd2d50cc"
