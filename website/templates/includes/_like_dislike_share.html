@@ -150,7 +150,7 @@
         var issue_pk = $(this).attr('name');
         $.ajax({
             type: 'GET',
-            url: '/like_issue3/' + issue_pk + '/',
+            url: '/like_issue/' + issue_pk + '/',
             data: {},
             success: function (data) {
                 window.location.reload();
@@ -178,7 +178,7 @@
         var issue_pk = document.getElementById("dislike-btn").getAttribute("name");
         $.ajax({
             type: 'GET',
-            url: '/dislike_issue3/' + issue_pk + '/',
+            url: '/dislike_issue/' + issue_pk + '/',
             data: {},
             success: function (data) {
                 window.location.reload();
@@ -204,7 +204,7 @@
         var issue_pk = $(this).attr('name');
         $.ajax({
             type: 'GET',
-            url: '/flag_issue3/' + issue_pk + '/',
+            url: '/flag_issue/' + issue_pk + '/',
             data: {},
             success: function (data) {
                 // Test this behaviour

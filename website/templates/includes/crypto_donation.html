@@ -1,0 +1,62 @@
+{% load static %}
+<div class=" {% if included_in_issue_page %} max-sm:ml-[3.45%] ml-[10%] {% else %} ml-0 {% endif %} ">
+    <div class="flex justify-start items-center">
+        <img class="w-[80px] h-[80px] p-1 object-cover border-2 border-[#7e22ce] border-solid"
+             src="{% static 'gif/loader.gif' %}"
+             alt="crypto address qr code"
+             id="crypto-qr-image"
+             width="32px"
+             height="32px">
+        <div class="ml-3" id="crypto">
+            {% if user.userprofile.btc_address %}
+                {% include "./tiny-cards.html" with insideIFCondition=True left="BTC" right=user.userprofile.btc_address|slice:":40" lessWidth=True editCrypto=True %}
+            {% endif %}
+            {% if user.userprofile.bch_address %}
+                {% include "./tiny-cards.html" with insideIFCondition=True left="BCH" right=user.userprofile.bch_address|slice:":40" lessWidth=True editCrypto=True %}
+            {% endif %}
+            {% if user.userprofile.eth_address %}
+                {% include "./tiny-cards.html" with insideIFCondition=True left="ETH" right=user.userprofile.eth_address|slice:":40" lessWidth=True editCrypto=True %}
+            {% endif %}
+        </div>
+        <div class="hidden max-sm:w-[100%] max-sm:overflow-hidden" id="no-crypto">
+            {% include "./tiny-cards.html" with left="BCH" right="qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc" lessWidth=True editCrypto=True %}
+            <i class="ml-[3%] text-[12px]">No Address, will go to BLT Donation</i>
+        </div>
+    </div>
+</div>
+<script>
+    function loadQRCode(){
+        var btc_address = "{{user.userprofile.btc_address}}";
+        var bch_address = "{{user.userprofile.bch_address}}";
+        var eth_address = "{{user.userprofile.eth_address}}";
+
+        if(btc_address != "None" && btc_address != ""){
+            document.getElementById('crypto-qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${btc_address}&size=400x300`;
+        }else if(bch_address != "None" && bch_address != ""){
+            document.getElementById('crypto-qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${bch_address}&size=400x300`;
+        }else if(eth_address != "None" && eth_address != ""){
+            document.getElementById('crypto-qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${eth_address}&size=400x300`;
+        }else{
+            // User has not set their crypto addresses
+            // Show BLT QR code
+            var showBLT = document.getElementById("no-crypto");
+            showBLT.style.cssText = "display: block !important";
+            var hideUser = document.getElementById("crypto");
+            hideUser.style.cssText = "display: none !important";
+            bch_address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
+            document.getElementById('crypto-qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${bch_address}&size=400x300`;
+        }
+
+    }
+    loadQRCode();
+
+    const copyText = document.getElementsByClassName("copy_text")[0];
+
+    copyText.addEventListener("click", ()=>{
+        navigator.clipboard.writeText(copyText.innerText);
+        $.notify("Crypto Address Copied to Clipboard!", {
+            className: "success"
+        }); 
+    })
+    
+</script>

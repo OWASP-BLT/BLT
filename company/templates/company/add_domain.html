@@ -44,7 +44,7 @@
                     </div>
                     <div class="sm:col-span-3">
                         <label for="company"
-                               class="block text-sm font-medium leading-6 text-gray-900 ">Company</label>
+                               class="block text-sm font-medium leading-6 text-gray-900 ">Organization</label>
                         <div class="mt-2">
                             <select id="company"
                                     name="company"
@@ -136,13 +136,18 @@
                                     <label for="webshot"
                                            class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
                                         <span class="text-red-600">Upload a webshot</span>
-                                        <input id="webshot" name="webshot" type="file" class="sr-only" />
+                                        <input id="webshot"
+                                               name="webshot"
+                                               type="file"
+                                               class="sr-only"
+                                               onchange="displayWebshotPreview()" />
                                     </label>
                                     <p class="pl-1">or drag and drop</p>
                                 </div>
                                 <p class="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
                             </div>
                         </div>
+                        <div id="webshotPreview" class="mt-4"></div>
                     </div>
                 </div>
             </div>
@@ -152,13 +157,13 @@
                     Add Emails which will be allowed to start hunts and manage reported bugs.
                     Email should be domain mail and should be registerd user on BLT.
                 </p>
-                <button onclick="add_email_container()"
+                <button onclick="add_user_selection()"
                         type="button"
                         class="w-[120px] h-[40px] bg-red-500 text-white font-bold rounded-md mt-2 hover:bg-red-600 transition-all">
-                    Add Email
+                    Add User
                 </button>
-                <div class="sm:col-span-4 mt-5" id="email-container">
-                    <label for="email" class="block text-sm font-medium leading-6 text-gray-900">Email address</label>
+                <div class="sm:col-span-4 mt-5" id="user-selection-container">
+                    <label for="user" class="block text-sm font-medium leading-6 text-gray-900">Select Domain Manager</label>
                 </div>
             </div>
             <div class="border-b border-gray-900/10 pb-12 mt-5">
@@ -199,9 +204,6 @@
                 </div>
             </div>
             <div class="mt-6 flex items-center justify-end gap-x-6">
-                <button type="button"
-                        onclick="cancelForm()"
-                        class="text-md font-semibold leading-6 text-gray-900">Cancel</button>
                 <button type="submit"
                         class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
                     Save
@@ -212,36 +214,51 @@
 {% endblock body %}
 {% block js %}
     <script>
-        function remove_email_container(){
-            let email_container = document.getElementById("email-container");
-            let lst_child = email_container.lastElementChild;
-            email_container.removeChild(lst_child);
+        function remove_user_selection(event) {
+            let user_container = document.getElementById("user-selection-container");
+            let parentDiv = event.target.closest('.user-selection');
+            user_container.removeChild(parentDiv);
+            updateUserSelections();
         }
 
-        function add_email_container(){
-            const email_container_child_html = document.createElement('div');
-            email_container_child_html.innerHTML = `
-                <div class="mt-2 flex flex-row items-center w-[50%]">
-                    <input name="email" type="email" autocomplete="email" required class="w-[90%] block rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
-                    <button type="button" onclick="remove_email_container()">
-                        <i class="fa-sharp fa-solid fa-trash fa-lg text-[#596780] ml-4 hover:text-black"></i>   
-                    </button>
-                </div>
+        function add_user_selection() {
+            const user_selection_child_html = document.createElement('div');
+            user_selection_child_html.classList.add('mt-2', 'flex', 'flex-row', 'items-center', 'w-[50%]', 'user-selection');
+            user_selection_child_html.innerHTML = `
+                <select name="user" class="w-[90%] block rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" onchange="updateUserSelections()">
+                    ${getUserOptions([])}
+                </select>
+                <button type="button" onclick="remove_user_selection(event)">
+                    <i class="fa-sharp fa-solid fa-trash fa-lg text-[#596780] ml-4 hover:text-black"></i>
+                </button>
             `;
 
-            let email_container = document.getElementById("email-container");
-            email_container.appendChild(email_container_child_html)
+            let user_container = document.getElementById("user-selection-container");
+            user_container.appendChild(user_selection_child_html);
+            updateUserSelections();
         }
 
-    </script>
-    <script>
-        function cancelForm(){
-            let deleteForm = document.getElementById("deleteForm");
-            let confirmDelete = confirm("Are you sure you want to cancel, your progress would be lost.");
-            if (confirmDelete === true){
-                deleteForm.submit();
-            }
+        function getUserOptions(excludeList) {
+            let optionsHtml = '<option value="" disabled selected>Select a user</option>';
+            {% for user in users %}
+                if (!excludeList.includes('{{ user.email }}')) {
+                    optionsHtml += `<option value="{{ user.email }}">{{ user.username }} ({{ user.email }})</option>`;
+                }
+            {% endfor %}
+            return optionsHtml;
         }
+
+        function updateUserSelections() {
+            const selects = document.querySelectorAll('#user-selection-container select');
+            const selectedUsers = Array.from(selects).map(select => select.value);
+
+            selects.forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = getUserOptions(selectedUsers.filter(user => user !== currentValue));
+                select.value = currentValue;  // Preserve the current value after options are updated
+            });
+        }
+
 
 
         function displayLogoPreview() {
@@ -265,5 +282,41 @@
             }
         }
 
+        function displayWebshotPreview() {
+            var fileInput = document.getElementById("webshot");
+            var previewDiv = document.getElementById("webshotPreview");
+
+            if (fileInput.files.length > 0) {
+                var file = fileInput.files[0];
+                var reader = new FileReader();
+
+                reader.onload = function(event) {
+                    var img = new Image();
+                    img.src = event.target.result;
+
+                    img.onload = function() {
+                        var canvas = document.createElement("canvas");
+                        var ctx = canvas.getContext("2d");
+
+                        var maxDim = 300;
+                        var scale = Math.min(maxDim / img.width, maxDim / img.height);
+
+                        canvas.width = img.width * scale;
+                        canvas.height = img.height * scale;
+
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                        previewDiv.innerHTML = "";
+                        previewDiv.style.display = "flex";
+                        previewDiv.style.justifyContent = "center";
+                        previewDiv.appendChild(canvas);
+                    };
+                };
+
+                reader.readAsDataURL(file);
+            } else {
+                previewDiv.innerHTML = "";
+            }
+        }
     </script>
 {% endblock js %}

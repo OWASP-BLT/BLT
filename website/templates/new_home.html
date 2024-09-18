@@ -40,7 +40,7 @@
             var issue_pk = issue_pk;
             $.ajax({
                 type: 'GET',
-                url: '/like_issue2/' + issue_pk + '/',
+                url: '/like_issue/' + issue_pk + '/',
                 data: {},
                 success: function (data) {
 
@@ -64,7 +64,7 @@
             var issue_pk = issue_pk;
             $.ajax({
                 type: 'GET',
-                url: '/dislike_issue2/' + issue_pk + '/',
+                url: '/dislike_issue/' + issue_pk + '/',
                 data: {},
                 success: function (data) {
                     var likesvg = $('#likeSvg' + issue_pk);
@@ -87,7 +87,7 @@
             var issue_pk = issue_pk;
             $.ajax({
                 type: 'GET',
-                url: '/flag_issue2/' + issue_pk + '/',
+                url: '/flag_issue/' + issue_pk + '/',
                 data: {},
                 success: function (data) {
                     // Toggle the color of the SVG

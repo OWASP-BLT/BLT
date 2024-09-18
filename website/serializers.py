@@ -1,7 +1,22 @@
 from django.db.models import Sum
 from rest_framework import serializers
 
-from website.models import Company, Domain, Hunt, HuntPrize, Issue, Points, User, UserProfile
+from website.models import (
+    ActivityLog,
+    Company,
+    Contributor,
+    Domain,
+    Hunt,
+    HuntPrize,
+    Issue,
+    IssueScreenshot,
+    Points,
+    Project,
+    Tag,
+    TimeLog,
+    User,
+    UserProfile,
+)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -56,12 +71,25 @@ class UserProfileSerializer(serializers.ModelSerializer):
         )
 
 
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = "__all__"
+
+
+class IssueScreenshotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IssueScreenshot
+        fields = "__all__"
+
+
 class IssueSerializer(serializers.ModelSerializer):
     """
     Serializer for Issue Model
     """
 
     user = UserSerializer(read_only=True)
+    screenshots = IssueScreenshotSerializer(many=True, required=False)
 
     class Meta:
         model = Issue
@@ -94,3 +122,36 @@ class CompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = "__all__"
+
+
+class ProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = "__all__"
+        read_only_fields = ("slug", "contributors")
+
+
+class ContributorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contributor
+        fields = "__all__"
+
+
+class TimeLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TimeLog
+        fields = ["id", "user", "start_time", "end_time", "duration", "github_issue_url", "created"]
+        read_only_fields = [
+            "id",
+            "user",
+            "end_time",
+            "duration",
+            "created",
+        ]  # These fields will be managed automatically
+
+
+class ActivityLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ActivityLog
+        fields = ["id", "user", "window_title", "url", "recorded_at", "created"]
+        read_only_fields = ["id", "user", "recorded_at", "created"]  # Auto-filled fields

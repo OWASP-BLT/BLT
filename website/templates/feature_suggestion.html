@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <style>
+    .container {
+        display: flex;
+        margin-top: 40px;
+    }
+
+    .list-section {
+        flex: 2;
+        padding: 10px;
+        overflow-y: auto;
+    }
+
+    .form-section {
+        flex: 1;
+        padding: 10px;
+        position: sticky;
+        top: 0;
+    }
+
+    .form-section form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .form-section form input,
+    .form-section form textarea,
+    .form-section form button {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+
+    .form-section form button {
+        background-color: #28a745;
+        color: white;
+        cursor: pointer;
+    }
+
+    .suggestion-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .suggestion-list li {
+        background-color: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    #heading-container {
+        text-align: center;
+    }
+
+    #heading {
+        font-size: 50px;
+        font-weight: bold;
+        color: white;
+        margin-top: 40px;
+        background-color: #e53e3e;
+        padding: 10px;
+        border-radius: 5px;
+        display: inline-block;
+    }
+
+    #semiheading {
+        font-size: 30px;
+        margin-left: 70px;
+    }
+
+    a {
+        padding-left: 5px;
+    }
+
+    .suggestion-vote button {
+        background-color: #e4e1e1;
+        border: none;
+        padding: 2px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-right: 5px;
+        transition: background-color 0.3s;
+    }
+
+    .suggestion-vote button.active {
+        background-color: red;
+        color: white;
+    }
+    .suggestion-list li h1{
+        font-size: 20px;
+    }
+    </style>
+    <div id="heading-container">
+        <h1 id="heading">Suggest Features</h1>
+    </div>
+    <div class="container">
+        <div class="list-section">
+            <ul class="suggestion-list">
+                {% for suggestion in suggestions %}
+                    <li>
+                        <h1>
+                            <strong>{{ suggestion.title }}</strong>
+                        </h1>
+                        <p>
+                            <strong>Description:</strong> {{ suggestion.description }}
+                        </p>
+                        <p>
+                            <strong>User:</strong>{{ suggestion.user }}
+                        </p>
+                        <p hidden id="suggestion-id---{{ suggestion.suggestion_id }}">{{ suggestion.suggestion_id }}</p>
+                        <div class="suggestion-vote">
+                            <button type="button"
+                                    onclick="upvote(event)"
+                                    id="upvote---{{ suggestion.suggestion_id }}">↑</button>
+                            <label id="up_vote-{{ suggestion.suggestion_id }}">{{ suggestion.up_votes }}</label>
+                            <button type="button"
+                                    onclick="downvote(event)"
+                                    id="downvote---{{ suggestion.suggestion_id }}">↓</button>
+                            <label id="down_vote-{{ suggestion.suggestion_id }}">{{ suggestion.down_votes }}</label>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="form-section">
+            <h2 id="semiheading">Suggest us Features</h2>
+            <form id="suggestionForm">
+                {% csrf_token %}
+                <label>Title</label>
+                <input type="text" id="title" name="title" placeholder="Your suggestion">
+                <label>Description</label>
+                <textarea id="description"
+                          name="description"
+                          rows="4"
+                          placeholder="Description of your suggestion (optional)"></textarea>
+                <br>
+                <button type="submit" onclick="Savefeature()">Post Suggestion</button>
+            </form>
+        </div>
+    </div>
+    <script>
+    window.onload = function() {
+        setvote();
+    };
+
+    function setvote(){
+        document.querySelectorAll('p[id^="suggestion-id-"]').forEach(function(element) {
+            const id = element.id.split('---')[1];
+            const upvoteBtn = document.getElementById(`upvote---${id}`);
+            const downvoteBtn = document.getElementById(`downvote---${id}`);
+            fetch('/suggestion/set-vote-status/', {
+                method:'POST',
+                headers:{
+                    'Content-Type' : 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body : JSON.stringify({id:id}),
+            })
+            .then(response=>response.json())
+            .then(data=>{
+                if(data.up_vote){
+                    upvoteBtn.classList.add('active');
+                }
+                else if(data.down_vote){
+                    downvoteBtn.classList.add('active');
+                }
+            });
+        });
+    }
+
+
+    function upvote(event) {
+        const button = event.target;
+        const id = button.id.split('---')[1];
+        
+        const upvoteBtn = document.getElementById(`upvote---${id}`);
+        const downvoteBtn = document.getElementById(`downvote---${id}`);
+        const upvotesLabel = document.getElementById(`up_vote-${id}`);
+        const downvotesLabel = document.getElementById(`down_vote-${id}`);
+
+        if (!upvoteBtn || !downvoteBtn || !upvotesLabel || !downvotesLabel) {
+            console.error('Element not found for id:', id);
+            return;
+        }
+        
+        let Up_Vote;
+        let Down_Vote;
+
+        if (upvoteBtn.classList.contains('active')) {
+            upvotesLabel.innerHTML = parseInt(upvotesLabel.innerHTML) - 1;
+            upvoteBtn.classList.remove('active');
+            Up_Vote=false;
+        }
+        else {
+            upvotesLabel.innerHTML = parseInt(upvotesLabel.innerHTML) + 1;
+            upvoteBtn.classList.add('active');
+            Up_Vote = true;
+
+            if (downvoteBtn.classList.contains('active')) {
+                downvoteBtn.classList.remove('active');
+                downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) - 1;
+                Down_Vote = false;
+            }
+        }
+        fetch('/suggestion/vote/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({ suggestion_id: id, up_vote: Up_Vote, down_vote:   Down_Vote }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Vote saved:', data.votes);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+    function downvote(event) {
+        const button = event.target;
+        const id = button.id.split('---')[1];
+
+        const upvoteBtn = document.getElementById(`upvote---${id}`);
+        const downvoteBtn = document.getElementById(`downvote---${id}`);
+        const upvotesLabel = document.getElementById(`up_vote-${id}`);
+        const downvotesLabel = document.getElementById(`down_vote-${id}`);
+
+        if (!upvoteBtn || !downvoteBtn || !upvotesLabel || !downvotesLabel) {
+            console.error('Element not found for id:', id);
+            return;
+        }
+
+        let Up_Vote;
+        let Down_Vote;
+
+        if (downvoteBtn.classList.contains('active')) {
+            downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) - 1;
+            downvoteBtn.classList.remove('active');
+            Down_Vote = false;
+        }
+        else {
+            downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) + 1;
+            downvoteBtn.classList.add('active');
+            Down_Vote = true;
+            
+            if (upvoteBtn.classList.contains('active')) {
+                upvoteBtn.classList.remove('active');
+                upvotesLabel.innerHTML = parseInt(upvotesLabel.innerHTML) - 1;
+                Up_Vote = false;
+            }
+        }
+
+        fetch('/suggestion/vote/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'), // Fetch CSRF token from cookies
+            },
+            body: JSON.stringify({ suggestion_id: id, up_vote: Up_Vote, down_vote: Down_Vote }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Vote saved:', data.votes);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+
+    function Savefeature() {
+        const form = document.getElementById("suggestionForm");
+        const formData = new FormData(form);
+        const title = formData.get('title');
+        const description = formData.get('description');
+
+        if (!title) {
+            alert('Please fill all the required fields.');
+            return;
+        }
+
+        fetch('/suggestion/add/', {
+            method: "POST",
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({title: title,description: description}),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                form.reset();
+            } else {
+                alert('Error: Please fill all the fields.');
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+    </script>
+{% endblock content %}

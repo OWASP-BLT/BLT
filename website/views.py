@@ -8,7 +8,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-from collections import deque
+from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -63,6 +63,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
@@ -95,14 +96,25 @@ from website.models import (
     Notification,
     Payment,
     Points,
+    Project,
     Subscription,
+    Suggestion,
+    SuggestionVotes,
+    TimeLog,
     UserProfile,
     Wallet,
     Winner,
 )
 
 from .bot import conversation_chain, is_api_key_valid, load_vector_store
-from .forms import CaptchaForm, HuntForm, MonitorForm, UserDeleteForm, UserProfileForm
+from .forms import (
+    CaptchaForm,
+    GitHubURLForm,
+    HuntForm,
+    MonitorForm,
+    UserDeleteForm,
+    UserProfileForm,
+)
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
@@ -110,7 +122,180 @@ WHITELISTED_IMAGE_TYPES = {
     "png": "image/png",
 }
 
+import os
+
+import requests
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.cache import cache
+from django.shortcuts import redirect, render
+from dotenv import load_dotenv
 from PIL import Image
+from requests.auth import HTTPBasicAuth
+from sendgrid import SendGridAPIClient
+
+from .bitcoin_utils import create_bacon_token
+from .forms import UserProfileForm
+from .models import BaconToken, Contribution, Tag, UserProfile
+
+# Load environment variables
+load_dotenv()
+
+
+@login_required
+def profile_edit(request):
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == "POST":
+        form = UserProfileForm(request.POST, request.FILES, instance=user_profile)
+        if form.is_valid():
+            form.save()
+            return redirect("profile", slug=request.user.username)
+    else:
+        form = UserProfileForm(instance=user_profile)
+
+    return render(request, "profile_edit.html", {"form": form})
+
+
+def add_domain_to_company(request):
+    if request.method == "POST":
+        domain = request.POST.get("domain")
+        domain = Domain.objects.get(id=domain)
+        company_name = request.POST.get("company")
+        company = Company.objects.filter(name=company_name).first()
+
+        if not company:
+            response = requests.get(domain.url)
+            soup = BeautifulSoup(response.text, "html.parser")
+            if company_name in soup.get_text():
+                company = Company.objects.create(name=company_name)
+                domain.company = company
+                domain.save()
+                messages.success(request, "Organization added successfully")
+                # back to the domain detail page
+                return redirect("domain", slug=domain.url)
+            else:
+                messages.error(request, "Organization not found in the domain")
+                return redirect("domain", slug=domain.url)
+        else:
+            domain.company = company
+            domain.save()
+            messages.success(request, "Organization added successfully")
+            # back to the domain detail page
+            return redirect("domain", slug=domain.url)
+    else:
+        return redirect("index")
+
+
+def check_status(request):
+    # Check if the status is already cached
+    status = cache.get("service_status")
+
+    if not status:
+        # Initialize the status dictionary
+        status = {
+            "bitcoin": False,
+            "bitcoin_block": None,
+            "sendgrid": False,
+            "github": False,
+        }
+
+        # Check Bitcoin Core Node Status
+        bitcoin_rpc_user = os.getenv("BITCOIN_RPC_USER")
+        bitcoin_rpc_password = os.getenv("BITCOIN_RPC_PASSWORD")
+        bitcoin_rpc_host = os.getenv("BITCOIN_RPC_HOST", "127.0.0.1")
+        bitcoin_rpc_port = os.getenv("BITCOIN_RPC_PORT", "8332")
+
+        try:
+            response = requests.post(
+                f"http://{bitcoin_rpc_host}:{bitcoin_rpc_port}",
+                json={
+                    "jsonrpc": "1.0",
+                    "id": "curltest",
+                    "method": "getblockchaininfo",
+                    "params": [],
+                },
+                auth=HTTPBasicAuth(bitcoin_rpc_user, bitcoin_rpc_password),
+            )
+            if response.status_code == 200:
+                data = response.json().get("result", {})
+                status["bitcoin"] = True
+                status["bitcoin_block"] = data.get("blocks", None)
+        except Exception as e:
+            print(f"Bitcoin Core Node Error: {e}")
+
+        try:
+            sg = SendGridAPIClient(os.getenv("SENDGRID_PASSWORD"))
+            response = sg.client.api_keys._(sg.api_key).get()
+            if response.status_code == 200:
+                status["sendgrid"] = True
+        except Exception as e:
+            print(f"SendGrid Error: {e}")
+
+        # Check GitHub Repo Access
+        github_token = os.getenv("GITHUB_ACCESS_TOKEN")
+
+        if not github_token:
+            print(
+                "GitHub Access Token not found. Please set the GITHUB_ACCESS_TOKEN environment variable."
+            )
+            status["github"] = False
+        else:
+            try:
+                headers = {"Authorization": f"token {github_token}"}
+                response = requests.get("https://api.github.com/user/repos", headers=headers)
+
+                print(f"Response Status Code: {response.status_code}")
+                print(f"Response Content: {response.json()}")
+
+                if response.status_code == 200:
+                    status["github"] = True
+                    print("GitHub API token has repository access.")
+                else:
+                    status["github"] = False
+                    print(
+                        f"GitHub API token check failed with status code {response.status_code}: {response.json().get('message', 'No message provided')}"
+                    )
+
+            except requests.exceptions.RequestException as e:
+                status["github"] = False
+                print(f"GitHub API Error: {e}")
+
+        # Cache the status for 1 minute (60 seconds)
+        cache.set("service_status", status, timeout=60)
+
+    # Pass the status to the template
+    return render(request, "status_page.html", {"status": status})
+
+
+def admin_required(user):
+    return user.is_superuser
+
+
+@user_passes_test(admin_required)
+def select_contribution(request):
+    contributions = Contribution.objects.filter(status="closed").exclude(
+        id__in=BaconToken.objects.values_list("contribution_id", flat=True)
+    )
+    return render(request, "select_contribution.html", {"contributions": contributions})
+
+
+@user_passes_test(admin_required)
+def distribute_bacon(request, contribution_id):
+    contribution = Contribution.objects.get(id=contribution_id)
+    if (
+        contribution.status == "closed"
+        and not BaconToken.objects.filter(contribution=contribution).exists()
+    ):
+        token = create_bacon_token(contribution.user, contribution)
+        if token:
+            messages.success(request, "Bacon distributed successfully")
+            return redirect("contribution_detail", contribution_id=contribution.id)
+        else:
+            messages.error(request, "Failed to distribute bacon")
+    contributions = Contribution.objects.filter(status="closed").exclude(
+        id__in=BaconToken.objects.values_list("contribution_id", flat=True)
+    )
+    return render(request, "select_contribution.html", {"contributions": contributions})
 
 
 def image_validator(img):
@@ -149,6 +334,50 @@ def rebuild_safe_url(url):
     parsed_url = urlparse(url)
     # Rebuild the URL with scheme, netloc, and path only
     return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", ""))
+
+
+class ProjectDetailView(DetailView):
+    model = Project
+
+
+class ProjectListView(ListView):
+    model = Project
+    context_object_name = "projects"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = GitHubURLForm()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = GitHubURLForm(request.POST)
+        if form.is_valid():
+            github_url = form.cleaned_data["github_url"]
+            api_url = github_url.replace("github.com", "api.github.com/repos")
+            response = requests.get(api_url)
+            if response.status_code == 200:
+                data = response.json()
+                project, created = Project.objects.get_or_create(
+                    github_url=github_url,
+                    defaults={
+                        "name": data["name"],
+                        "slug": data["name"].lower(),
+                        "description": data["description"],
+                        "wiki_url": data["html_url"],
+                        "homepage_url": data.get("homepage", ""),
+                        "logo_url": data["owner"]["avatar_url"],
+                    },
+                )
+                if created:
+                    messages.success(request, "Project added successfully.")
+                else:
+                    messages.info(request, "Project already exists.")
+            else:
+                messages.error(request, "Failed to fetch project from GitHub.")
+            return redirect("project_list")
+        context = self.get_context_data()
+        context["form"] = form
+        return self.render_to_response(context)
 
 
 # # @cache_page(60 * 60 * 24)
@@ -247,18 +476,12 @@ def rebuild_safe_url(url):
 
 def newhome(request, template="new_home.html"):
     if request.user.is_authenticated:
-        try:
-            email_record = EmailAddress.objects.get(email=request.user.email)
+        email_record = EmailAddress.objects.filter(email=request.user.email).first()
+        if email_record:
             if not email_record.verified:
                 messages.error(request, "Please verify your email address.")
-        except EmailAddress.DoesNotExist:
+        else:
             messages.error(request, "No email associated with your account. Please add an email.")
-        except AttributeError:
-            messages.error(request, "Your account does not have an email address.")
-    else:
-        messages.info(
-            request, "You are browsing as a guest. Please log in or register for full access."
-        )
 
     # Fetch and paginate issues
     issues_queryset = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
@@ -586,7 +809,7 @@ class IssueBaseCreate(object):
                 settings.ACCESS_TOKEN_SECRET,
             )
 
-            blt_url = "https://%s/issue2/%d" % (
+            blt_url = "https://%s/issue/%d" % (
                 settings.DOMAIN_NAME,
                 obj.id,
             )
@@ -912,16 +1135,17 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     "report.html",
                     {"form": self.get_form(), "captcha_form": captcha_form},
                 )
-            clean_domain = (
-                obj.domain_name.replace("www.", "").replace("https://", "").replace("http://", "")
-            )
-            domain = Domain.objects.filter(name=clean_domain).first()
+            parsed_url = urlparse(obj.url)
+            clean_domain = parsed_url.netloc
+            domain = Domain.objects.filter(url=clean_domain).first()
 
             domain_exists = False if domain is None else True
 
             if not domain_exists:
-                domain = Domain.objects.create(name=clean_domain, url=clean_domain)
-                domain.save()
+                domain = Domain.objects.filter(name=clean_domain).first()
+                if domain is None:
+                    domain = Domain.objects.create(name=clean_domain, url=clean_domain)
+                    domain.save()
 
             hunt = self.request.POST.get("hunt", None)
             if hunt is not None and hunt != "None":
@@ -1083,9 +1307,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 self.request.session["issue"] = obj.id
                 self.request.session["created"] = domain_exists
                 self.request.session["domain"] = domain.id
-                login_url = reverse("account_login")
                 messages.success(self.request, "Bug added!")
-                return HttpResponseRedirect("{}?next={}".format(login_url, redirect_url))
+                return HttpResponseRedirect("/")
 
             if tokenauth:
                 self.process_issue(
@@ -1094,7 +1317,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 return JsonResponse("Created", safe=False)
             else:
                 self.process_issue(self.request.user, obj, domain_exists, domain)
-                return HttpResponseRedirect(redirect_url + "/")
+                return HttpResponseRedirect("/")
 
         return create_issue(self, form)
 
@@ -1217,7 +1440,12 @@ class UserProfileDetailView(DetailView):
         )
         context["activities"] = Issue.objects.filter(user=self.object, hunt=None).exclude(
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
-        )[0:10]
+        )[0:3]
+        context["activity_screenshots"] = {}
+        for activity in context["activities"]:
+            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(
+                issue=activity.pk
+            ).first()
         context["profile_form"] = UserProfileForm()
         context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
         context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
@@ -1257,6 +1485,10 @@ class UserProfileDetailView(DetailView):
             str(prof.user.email) for prof in user.userprofile.follower.all()
         ]
         context["bookmarks"] = user.userprofile.issue_saved.all()
+        # tags
+        context["user_related_tags"] = (
+            UserProfile.objects.filter(user=self.object).first().tags.all()
+        )
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
         return context
 
@@ -1428,7 +1660,7 @@ class DomainDetailView(ListView):
 
         context["name"] = parsed_url.netloc.split(".")[-2:][0].title()
 
-        paginator = Paginator(open_issue, 10)
+        paginator = Paginator(open_issue, 3)
         page = self.request.GET.get("open")
         try:
             openissue_paginated = paginator.page(page)
@@ -1437,7 +1669,7 @@ class DomainDetailView(ListView):
         except EmptyPage:
             openissue_paginated = paginator.page(paginator.num_pages)
 
-        paginator = Paginator(close_issue, 10)
+        paginator = Paginator(close_issue, 3)
         page = self.request.GET.get("close")
         try:
             closeissue_paginated = paginator.page(page)
@@ -1467,15 +1699,64 @@ class DomainDetailView(ListView):
             .annotate(c=Count("id"))
             .order_by()
         )
+        for i in range(0, 7):
+            context["bug_type_" + str(i)] = Issue.objects.filter(
+                domain=context["domain"], hunt=None, label=str(i)
+            )
+        context["total_bugs"] = Issue.objects.filter(domain=context["domain"], hunt=None).count()
         context["pie_chart"] = (
             Issue.objects.filter(domain=context["domain"], hunt=None)
             .values("label")
             .annotate(c=Count("label"))
             .order_by()
         )
+        context["activities"] = Issue.objects.filter(domain=context["domain"], hunt=None).exclude(
+            Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+        )[0:3]
+        context["activity_screenshots"] = {}
+        for activity in context["activities"]:
+            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(
+                issue=activity.pk
+            ).first()
         context["twitter_url"] = "https://twitter.com/%s" % domain.get_or_set_x_url(domain.get_name)
 
         return context
+
+
+import requests
+from bs4 import BeautifulSoup
+from django.db.models.functions import ExtractMonth
+from django.views.generic import TemplateView
+
+from .models import (
+    IP,
+    BaconToken,
+    Bid,
+    ChatBotLog,
+    Company,
+    CompanyAdmin,
+    Contribution,
+    Contributor,
+    ContributorStats,
+    Domain,
+    Hunt,
+    HuntPrize,
+    InviteFriend,
+    Issue,
+    IssueScreenshot,
+    Monitor,
+    Payment,
+    Points,
+    Project,
+    Subscription,
+    Suggestion,
+    SuggestionVotes,
+    Transaction,
+    User,
+    UserProfile,
+    Wallet,
+    Winner,
+)
 
 
 class StatsDetailView(TemplateView):
@@ -1485,31 +1766,166 @@ class StatsDetailView(TemplateView):
         context = super(StatsDetailView, self).get_context_data(*args, **kwargs)
 
         response = requests.get(settings.EXTENSION_URL)
-        soup = BeautifulSoup(response.text)
+        soup = BeautifulSoup(response.text, "html.parser")
 
         stats = ""
         for item in soup.findAll("span", {"class": "e-f-ih"}):
             stats = item.attrs["title"]
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["extension_users"] = stats.replace(" users", "")
-        context["bug_count"] = Issue.objects.all().count()
-        context["user_count"] = User.objects.all().count()
-        context["hunt_count"] = Hunt.objects.all().count()
-        context["domain_count"] = Domain.objects.all().count()
-        context["user_graph"] = (
-            User.objects.annotate(month=ExtractMonth("date_joined"))
-            .values("month")
-            .annotate(c=Count("id"))
-            .order_by()
-        )
-        context["graph"] = (
-            Issue.objects.annotate(month=ExtractMonth("created"))
-            .values("month")
-            .annotate(c=Count("id"))
-            .order_by()
-        )
-        context["pie_chart"] = Issue.objects.values("label").annotate(c=Count("label")).order_by()
+        context["extension_users"] = stats.replace(" users", "") or "0"
+
+        # Prepare stats data for display
+        context["stats"] = [
+            {"label": "Bugs", "count": Issue.objects.all().count(), "icon": "fas fa-bug"},
+            {"label": "Users", "count": User.objects.all().count(), "icon": "fas fa-users"},
+            {"label": "Hunts", "count": Hunt.objects.all().count(), "icon": "fas fa-crosshairs"},
+            {"label": "Domains", "count": Domain.objects.all().count(), "icon": "fas fa-globe"},
+            {
+                "label": "Extension Users",
+                "count": int(context["extension_users"].replace(",", "")),
+                "icon": "fas fa-puzzle-piece",
+            },
+            {
+                "label": "Subscriptions",
+                "count": Subscription.objects.all().count(),
+                "icon": "fas fa-envelope",
+            },
+            {
+                "label": "Companies",
+                "count": Company.objects.all().count(),
+                "icon": "fas fa-building",
+            },
+            {
+                "label": "Hunt Prizes",
+                "count": HuntPrize.objects.all().count(),
+                "icon": "fas fa-gift",
+            },
+            {
+                "label": "Screenshots",
+                "count": IssueScreenshot.objects.all().count(),
+                "icon": "fas fa-camera",
+            },
+            {"label": "Winners", "count": Winner.objects.all().count(), "icon": "fas fa-trophy"},
+            {"label": "Points", "count": Points.objects.all().count(), "icon": "fas fa-star"},
+            {
+                "label": "Invitations",
+                "count": InviteFriend.objects.all().count(),
+                "icon": "fas fa-envelope-open",
+            },
+            {
+                "label": "User Profiles",
+                "count": UserProfile.objects.all().count(),
+                "icon": "fas fa-id-badge",
+            },
+            {"label": "IPs", "count": IP.objects.all().count(), "icon": "fas fa-network-wired"},
+            {
+                "label": "Company Admins",
+                "count": CompanyAdmin.objects.all().count(),
+                "icon": "fas fa-user-tie",
+            },
+            {
+                "label": "Transactions",
+                "count": Transaction.objects.all().count(),
+                "icon": "fas fa-exchange-alt",
+            },
+            {
+                "label": "Payments",
+                "count": Payment.objects.all().count(),
+                "icon": "fas fa-credit-card",
+            },
+            {
+                "label": "Contributor Stats",
+                "count": ContributorStats.objects.all().count(),
+                "icon": "fas fa-chart-bar",
+            },
+            {"label": "Monitors", "count": Monitor.objects.all().count(), "icon": "fas fa-desktop"},
+            {"label": "Bids", "count": Bid.objects.all().count(), "icon": "fas fa-gavel"},
+            {
+                "label": "Chatbot Logs",
+                "count": ChatBotLog.objects.all().count(),
+                "icon": "fas fa-robot",
+            },
+            {
+                "label": "Suggestions",
+                "count": Suggestion.objects.all().count(),
+                "icon": "fas fa-lightbulb",
+            },
+            {
+                "label": "Suggestion Votes",
+                "count": SuggestionVotes.objects.all().count(),
+                "icon": "fas fa-thumbs-up",
+            },
+            {
+                "label": "Contributors",
+                "count": Contributor.objects.all().count(),
+                "icon": "fas fa-user-friends",
+            },
+            {
+                "label": "Projects",
+                "count": Project.objects.all().count(),
+                "icon": "fas fa-project-diagram",
+            },
+            {
+                "label": "Contributions",
+                "count": Contribution.objects.all().count(),
+                "icon": "fas fa-hand-holding-heart",
+            },
+            {
+                "label": "Bacon Tokens",
+                "count": BaconToken.objects.all().count(),
+                "icon": "fas fa-coins",
+            },
+        ]
+        context["stats"] = sorted(context["stats"], key=lambda x: int(x["count"]), reverse=True)
+
+        def get_cumulative_data(queryset, date_field="created"):
+            data = list(
+                queryset.annotate(month=ExtractMonth(date_field))
+                .values("month")
+                .annotate(count=Count("id"))
+                .order_by("month")
+                .values_list("count", flat=True)
+            )
+
+            cumulative_data = []
+            cumulative_sum = 0
+            for count in data:
+                cumulative_sum += count
+                cumulative_data.append(cumulative_sum)
+
+            return cumulative_data
+
+        # Prepare cumulative sparklines data
+        context["sparklines_data"] = [
+            get_cumulative_data(Issue.objects),  # Uses "created"
+            get_cumulative_data(User.objects, date_field="date_joined"),  # Uses "date_joined"
+            get_cumulative_data(Hunt.objects),  # Uses "created"
+            get_cumulative_data(Domain.objects),  # Uses "created"
+            get_cumulative_data(Subscription.objects),  # Uses "created"
+            get_cumulative_data(Company.objects),  # Uses "created"
+            get_cumulative_data(HuntPrize.objects),  # Uses "created"
+            get_cumulative_data(IssueScreenshot.objects),  # Uses "created"
+            get_cumulative_data(Winner.objects),  # Uses "created"
+            get_cumulative_data(Points.objects),  # Uses "created"
+            get_cumulative_data(InviteFriend.objects),  # Uses "created"
+            get_cumulative_data(UserProfile.objects),  # Uses "created"
+            get_cumulative_data(IP.objects),  # Uses "created"
+            get_cumulative_data(CompanyAdmin.objects),  # Uses "created"
+            get_cumulative_data(Transaction.objects),  # Uses "created"
+            get_cumulative_data(Payment.objects),  # Uses "created"
+            get_cumulative_data(ContributorStats.objects),  # Uses "created"
+            get_cumulative_data(Monitor.objects),  # Uses "created"
+            get_cumulative_data(Bid.objects),  # Uses "created"
+            get_cumulative_data(ChatBotLog.objects),  # Uses "created"
+            get_cumulative_data(Suggestion.objects),  # Uses "created"
+            get_cumulative_data(SuggestionVotes.objects),  # Uses "created"
+            get_cumulative_data(Contributor.objects),  # Uses "created"
+            get_cumulative_data(Project.objects),  # Uses "created"
+            get_cumulative_data(Contribution.objects),  # Uses "created"
+            get_cumulative_data(BaconToken.objects),  # Uses "created"
+        ]
+
         return context
 
 
@@ -1682,6 +2098,9 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(GlobalLeaderboardView, self).get_context_data(*args, **kwargs)
+
+        user_related_tags = Tag.objects.filter(userprofile__isnull=False).distinct()
+        context["user_related_tags"] = user_related_tags
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -1945,25 +2364,7 @@ class HuntCreate(CreateView):
         self.object.save()
         return super(HuntCreate, self).form_valid(form)
 
-    def get_success_url(self):
-        # return reverse('start_hunt')
 
-        if self.request.POST.get("plan") == "Ant":
-            return (
-                "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TSZ84RQZ8RKKC"
-            )
-        if self.request.POST.get("plan") == "Wasp":
-            return (
-                "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E3EELQQ6JLXKY"
-            )
-        if self.request.POST.get("plan") == "Scorpion":
-            return (
-                "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=9R3LPM3ZN8KCC"
-            )
-        return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HH7MNY6KJGZFW"
-
-
-# TODO(b): REMOVE after _3 is ready, tested and has all features of the existing issueview, until then keep this working.
 class IssueView(DetailView):
     model = Issue
     slug_field = "id"
@@ -1982,6 +2383,10 @@ class IssueView(DetailView):
         ipdetails.user = self.request.user
         ipdetails.address = get_client_ip(request)
         ipdetails.issuenumber = self.object.id
+        ipdetails.path = request.path
+        ipdetails.agent = request.META["HTTP_USER_AGENT"]
+        ipdetails.referer = request.META.get("HTTP_REFERER", None)
+
         print("IP Address: ", ipdetails.address)
         print("Issue Number: ", ipdetails.issuenumber)
 
@@ -2175,7 +2580,7 @@ def UpdateIssue(request):
                 "email/bug_updated.txt",
                 {
                     "domain": issue.domain.name,
-                    "name": issue.user.username,
+                    "name": issue.user.username if issue.user else "Anonymous",
                     "id": issue.id,
                     "username": request.user.username,
                     "action": "closed",
@@ -2276,86 +2681,6 @@ def follow_user(request, user):
         return HttpResponse("Success")
 
 
-# TODO(b): remove after _3 is ready
-@login_required(login_url="/accounts/login")
-def like_issue(request, issue_pk):
-    context = {}
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
-
-    if userprof in UserProfile.objects.filter(issue_downvoted=issue):
-        userprof.issue_downvoted.remove(issue)
-
-    if userprof in UserProfile.objects.filter(issue_upvoted=issue):
-        userprof.issue_upvoted.remove(issue)
-    else:
-        userprof.issue_upvoted.add(issue)
-        liked_user = issue.user
-        liker_user = request.user
-        issue_pk = issue.pk
-        msg_plain = render_to_string(
-            "email/issue_liked.txt",
-            {
-                "liker_user": liker_user.username,
-                "liked_user": liked_user.username,
-                "issue_pk": issue_pk,
-            },
-        )
-        msg_html = render_to_string(
-            "email/issue_liked.txt",
-            {
-                "liker_user": liker_user.username,
-                "liked_user": liked_user.username,
-                "issue_pk": issue_pk,
-            },
-        )
-
-        send_mail(
-            "Your issue got an upvote!!",
-            msg_plain,
-            settings.EMAIL_TO_STRING,
-            [liked_user.email],
-            html_message=msg_html,
-        )
-
-    userprof.save()
-    total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
-    context["object"] = issue
-    context["likes"] = total_votes
-    context["likers"] = UserProfile.objects.filter(issue_upvoted=issue)
-    context["dislikes"] = UserProfile.objects.filter(issue_downvoted=issue).count()
-    context["dislikers"] = UserProfile.objects.filter(issue_downvoted=issue)
-
-    return render(request, "_likes_and_dislikes.html", context)
-
-
-@login_required(login_url="/accounts/login")
-def dislike_issue(request, issue_pk):
-    context = {}
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
-
-    if userprof in UserProfile.objects.filter(issue_upvoted=issue):
-        userprof.issue_upvoted.remove(issue)
-
-    if userprof in UserProfile.objects.filter(issue_downvoted=issue):
-        userprof.issue_downvoted.remove(issue)
-    else:
-        userprof.issue_downvoted.add(issue)
-
-    userprof.save()
-    total_downvotes = UserProfile.objects.filter(issue_downvoted=issue).count()
-    context["object"] = issue
-    context["likes"] = UserProfile.objects.filter(issue_upvoted=issue).count()
-    context["likers"] = UserProfile.objects.filter(issue_upvoted=issue)
-    context["dislikes"] = total_downvotes
-    context["dislikers"] = UserProfile.objects.filter(issue_downvoted=issue)
-
-    return render(request, "_likes_and_dislikes.html", context)
-
-
 @login_required(login_url="/accounts/login")
 def save_issue(request, issue_pk):
     issue_pk = int(issue_pk)
@@ -2436,7 +2761,7 @@ def comment_on_issue(request, issue_pk):
 
             if parent_comment is None:
                 messages.error(request, "Parent comment doesn't exist.")
-                return redirect(f"/issue2/{issue_pk}")
+                return redirect(f"/issue/{issue_pk}")
 
             Comment.objects.create(
                 parent=parent_comment,
@@ -3612,6 +3937,32 @@ def handler500(request, exception=None):
     return render(request, "500.html", {}, status=500)
 
 
+def users_view(request, *args, **kwargs):
+    context = {}
+
+    # Get all tags related to all user profiles
+    context["user_related_tags"] = Tag.objects.filter(userprofile__isnull=False).distinct()
+
+    # Get all tags in the system
+    context["tags"] = Tag.objects.all()
+
+    # Check if a specific tag is being requested
+    tag_name = request.GET.get("tag")
+    if tag_name:
+        # Check if the requested tag exists in user_related_tags
+        if context["user_related_tags"].filter(name=tag_name).exists():
+            context["tag"] = tag_name
+            context["users"] = UserProfile.objects.filter(tags__name=tag_name)
+        else:
+            context["users"] = UserProfile.objects.none()  # No users if the tag isn't found
+    else:
+        # Default filter: Show users with the tag "BLT Contributor"
+        context["tag"] = "BLT Contributors"
+        context["users"] = UserProfile.objects.filter(tags__name="BLT Contributors")
+
+    return render(request, "users.html", context=context)
+
+
 def contributors_view(request, *args, **kwargs):
     contributors_file_path = os.path.join(settings.BASE_DIR, "contributors.json")
 
@@ -3700,94 +4051,8 @@ class DomainListView(ListView):
         return context
 
 
-# TODO(b): Remove like_issue2 and like_issue, dislike_issue,dislike_issue2,flag_issue2,flag_issue after ready
 @login_required(login_url="/accounts/login")
-def flag_issue2(request, issue_pk):
-    context = {}
-    issue_pk = int(issue_pk)
-    issue = Issue.objects.get(pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
-    if userprof in UserProfile.objects.filter(issue_flaged=issue):
-        userprof.issue_flaged.remove(issue)
-    else:
-        userprof.issue_flaged.add(issue)
-        issue_pk = issue.pk
-
-    userprof.save()
-    total_flag_votes = UserProfile.objects.filter(issue_flaged=issue).count()
-    context["object"] = issue
-    context["flags"] = total_flag_votes
-    return render(request, "includes/_flags2.html", context)
-
-
-@login_required(login_url="/accounts/login")
-def like_issue2(request, issue_pk):
-    context = {}
-    issue_pk = int(issue_pk)
-    issue = get_object_or_404(Issue, pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
-
-    if UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists():
-        userprof.issue_downvoted.remove(issue)
-    if UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists():
-        userprof.issue_upvoted.remove(issue)
-    else:
-        userprof.issue_upvoted.add(issue)
-        liked_user = issue.user
-        liker_user = request.user
-        issue_pk = issue.pk
-        msg_plain = render_to_string(
-            "email/issue_liked.txt",
-            {
-                "liker_user": liker_user.username,
-                "liked_user": liked_user.username,
-                "issue_pk": issue_pk,
-            },
-        )
-        msg_html = render_to_string(
-            "email/issue_liked.txt",
-            {
-                "liker_user": liker_user.username,
-                "liked_user": liked_user.username,
-                "issue_pk": issue_pk,
-            },
-        )
-
-        send_mail(
-            "Your issue got an upvote!!",
-            msg_plain,
-            settings.EMAIL_TO_STRING,
-            [liked_user.email],
-            html_message=msg_html,
-        )
-
-    total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
-    context["object"] = issue
-    context["likes"] = total_votes
-    return render(request, "includes/_likes2.html", context)
-
-
-@login_required(login_url="/accounts/login")
-def dislike_issue2(request, issue_pk):
-    context = {}
-    issue_pk = int(issue_pk)
-    issue = get_object_or_404(Issue, pk=issue_pk)
-    userprof = UserProfile.objects.get(user=request.user)
-
-    if UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists():
-        userprof.issue_upvoted.remove(issue)
-    if UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists():
-        userprof.issue_downvoted.remove(issue)
-    else:
-        userprof.issue_downvoted.add(issue)
-    total_votes = UserProfile.objects.filter(issue_downvoted=issue).count()
-    context["object"] = issue
-    context["dislikes"] = total_votes
-    return render(request, "includes/_dislike2.html", context)
-
-
-@login_required(login_url="/accounts/login")
-def flag_issue3(request, issue_pk):
+def flag_issue(request, issue_pk):
     context = {}
     issue_pk = int(issue_pk)
     issue = Issue.objects.get(pk=issue_pk)
@@ -3809,7 +4074,7 @@ def flag_issue3(request, issue_pk):
 
 
 @login_required(login_url="/accounts/login")
-def like_issue3(request, issue_pk):
+def like_issue(request, issue_pk):
     context = {}
     issue_pk = int(issue_pk)
     issue = get_object_or_404(Issue, pk=issue_pk)
@@ -3858,7 +4123,7 @@ def like_issue3(request, issue_pk):
 
 
 @login_required(login_url="/accounts/login")
-def dislike_issue3(request, issue_pk):
+def dislike_issue(request, issue_pk):
     context = {}
     issue_pk = int(issue_pk)
     issue = get_object_or_404(Issue, pk=issue_pk)
@@ -3908,10 +4173,10 @@ def subscribe_to_domains(request, pk):
         return JsonResponse("SUBSCRIBED", safe=False)
 
 
-class IssueView2(DetailView):
+class IssueView(DetailView):
     model = Issue
     slug_field = "id"
-    template_name = "issue2.html"
+    template_name = "issue.html"
 
     def get(self, request, *args, **kwargs):
         ipdetails = IP()
@@ -3924,6 +4189,10 @@ class IssueView2(DetailView):
         ipdetails.user = self.request.user
         ipdetails.address = get_client_ip(request)
         ipdetails.issuenumber = self.object.id
+        ipdetails.path = request.get_full_path()
+        ipdetails.referer = request.META.get("HTTP_REFERER")
+        ipdetails.agent = request.META.get("HTTP_USER_AGENT")
+
         try:
             if self.request.user.is_authenticated:
                 try:
@@ -3948,102 +4217,10 @@ class IssueView2(DetailView):
             # TODO: this is only an error for ipv6 currently and doesn't require us to redirect the user - we'll sort this out later
             # messages.error(self.request, "That issue was not found."+str(e))
             # return redirect("/")
-        return super(IssueView2, self).get(request, *args, **kwargs)
+        return super(IssueView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        context = super(IssueView2, self).get_context_data(**kwargs)
-        if self.object.user_agent:
-            user_agent = parse(self.object.user_agent)
-            context["browser_family"] = user_agent.browser.family
-            context["browser_version"] = user_agent.browser.version_string
-            context["os_family"] = user_agent.os.family
-            context["os_version"] = user_agent.os.version_string
-        context["users_score"] = list(
-            Points.objects.filter(user=self.object.user)
-            .aggregate(total_score=Sum("score"))
-            .values()
-        )[0]
-
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
-        context["all_comment"] = self.object.comments.all().order_by("-created_date")
-        context["all_users"] = User.objects.all()
-        context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
-        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
-        context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
-        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
-        context["more_issues"] = (
-            Issue.objects.filter(user=self.object.user)
-            .exclude(id=self.object.id)
-            .values("id", "description", "markdown_description", "screenshots__image")
-            .order_by("views")[:4]
-        )
-        context["subscribed_to_domain"] = False
-        context["cve_id"] = self.object.cve_id
-        context["cve_score"] = self.object.cve_score
-
-        # TODO: fix this
-        # if isinstance(self.request.user, User):
-        #     if self.request.user.is_authenticated:
-        #         context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
-        #             pk=self.request.user.userprofile.id
-        #         ).exists()
-
-        if isinstance(self.request.user, User):
-            context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(
-                pk=self.object.id
-            ).exists()
-
-        context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
-
-        return context
-
-
-class IssueView3(DetailView):
-    model = Issue
-    slug_field = "id"
-    template_name = "issue3.html"
-
-    def get(self, request, *args, **kwargs):
-        ipdetails = IP()
-        try:
-            id = int(self.kwargs["slug"])
-        except ValueError:
-            return HttpResponseNotFound("Invalid ID: ID must be an integer")
-
-        self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
-        ipdetails.user = self.request.user
-        ipdetails.address = get_client_ip(request)
-        ipdetails.issuenumber = self.object.id
-        try:
-            if self.request.user.is_authenticated:
-                try:
-                    objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
-                    self.object.save()
-                except:
-                    ipdetails.save()
-                    self.object.views = (self.object.views or 0) + 1
-                    self.object.save()
-            else:
-                try:
-                    objectget = IP.objects.get(
-                        address=get_client_ip(request), issuenumber=self.object.id
-                    )
-                    self.object.save()
-                except:
-                    ipdetails.save()
-                    self.object.views = (self.object.views or 0) + 1
-                    self.object.save()
-        except Exception as e:
-            print(e)
-            # TODO: this is only an error for ipv6 currently and doesn't require us to redirect the user - we'll sort this out later
-            # messages.error(self.request, "That issue was not found."+str(e))
-            # return redirect("/")
-        return super(IssueView3, self).get(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super(IssueView3, self).get_context_data(**kwargs)
+        context = super(IssueView, self).get_context_data(**kwargs)
         if self.object.user_agent:
             user_agent = parse(self.object.user_agent)
             context["browser_family"] = user_agent.browser.family
@@ -4093,9 +4270,13 @@ class IssueView3(DetailView):
             context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(
                 pk=self.object.id
             ).exists()
-
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
         context["status"] = Issue.objects.filter(id=self.object.id).get().status
+        context["github_issues_url"] = (
+            str(Issue.objects.filter(id=self.object.id).get().domain.github) + "/issues"
+        )
+        context["email_clicks"] = Issue.objects.filter(id=self.object.id).get().domain.clicks
+        context["email_events"] = Issue.objects.filter(id=self.object.id).get().domain.email_event
         if not self.object.github_url:
             context["github_link"] = "empty"
         else:
@@ -4107,21 +4288,26 @@ class IssueView3(DetailView):
 def create_github_issue(request, id):
     issue = get_object_or_404(Issue, id=id)
     screenshot_all = IssueScreenshot.objects.filter(issue=issue)
-    referer = request.META.get("HTTP_REFERER")
-    if not referer:
-        return HttpResponseForbidden()
+    # referer = request.META.get("HTTP_REFERER")
+    # if not referer:
+    #     return HttpResponseForbidden()
+    if not os.environ.get("GITHUB_ACCESS_TOKEN"):
+        return JsonResponse({"status": "Failed", "status_reason": "GitHub Access Token is missing"})
     if issue.github_url:
-        return JsonResponse({"status": "Failed", "status_reason": "GitHub Issue Exists"})
-    if (
-        os.environ.get("GITHUB_ACCESS_TOKEN") and request.user.is_authenticated
-        # Any Authenticated user will be able to create a GitHub issue
-        # and (issue.user == request.user or request.user.is_superuser)
-    ):
+        return JsonResponse(
+            {"status": "Failed", "status_reason": "GitHub Issue Exists at " + issue.github_url}
+        )
+    if issue.domain.github:
         screenshot_text = ""
         for screenshot in screenshot_all:
             screenshot_text += "![0](" + settings.FQDN + screenshot.image.url + ") \n"
 
-        url = "https://api.github.com/repos/OWASP-BLT/BLT/issues"
+        github_url = issue.domain.github.replace("https", "git").replace("http", "git") + ".git"
+        from giturlparse import parse as parse_github_url
+
+        p = parse_github_url(github_url)
+
+        url = "https://api.github.com/repos/%s/%s/issues" % (p.owner, p.repo)
         the_user = request.user.username if request.user.is_authenticated else "Anonymous"
 
         issue_data = {
@@ -4152,7 +4338,9 @@ def create_github_issue(request, id):
                 issue.save()
                 return JsonResponse({"status": "ok", "github_url": issue.github_url})
             else:
-                return JsonResponse({"status": "Failed", "status_reason": response.reason})
+                return JsonResponse(
+                    {"status": "Failed", "status_reason": "Issue with Github:" + response.reason}
+                )
         except Exception as e:
             send_mail(
                 "Error in GitHub issue creation for Issue ID " + str(issue.id),
@@ -4165,10 +4353,10 @@ def create_github_issue(request, id):
                 [request.user.email],
                 fail_silently=True,
             )
-            return JsonResponse({"status": "Failed", "status_reason": "Failed"})
+            return JsonResponse({"status": "Failed", "status_reason": "Failed: error is " + str(e)})
     else:
         return JsonResponse(
-            {"status": "Failed", "status_reason": "You are not authorised to make that request"}
+            {"status": "Failed", "status_reason": "No Github URL for this domain, please add it."}
         )
 
 
@@ -4190,7 +4378,7 @@ def resolve(request, id):
             issue.save()
             return JsonResponse({"status": "ok", "issue_status": issue.status})
     else:
-        return HttpResponseForbidden()
+        return HttpResponseForbidden("not logged in or superuser or issue user")
 
 
 @receiver(user_signed_up)
@@ -4531,9 +4719,11 @@ def select_bid(request):
     return render(request, "bid_selection.html")
 
 
-@login_required
 def SaveBiddingData(request):
     if request.method == "POST":
+        if not request.user.is_authenticated:
+            messages.error(request, "Please login to bid.")
+            return redirect("login")
         user = request.user.username
         url = request.POST.get("issue_url")
         amount = request.POST.get("bid_amount")
@@ -4607,55 +4797,88 @@ DAILY_REQUEST_LIMIT = 10
 
 @api_view(["POST"])
 def chatbot_conversation(request):
-    # Rate Limit Check
-    today = datetime.now(timezone.utc).date()
-    rate_limit_key = f"global_daily_requests_{today}"
-    request_count = cache.get(rate_limit_key, 0)
+    try:
+        # Rate Limit Check
+        today = datetime.now(timezone.utc).date()
+        rate_limit_key = f"global_daily_requests_{today}"
+        request_count = cache.get(rate_limit_key, 0)
 
-    if request_count >= DAILY_REQUEST_LIMIT:
-        return Response(
-            {"error": "Daily request limit exceeded."}, status=status.HTTP_429_TOO_MANY_REQUESTS
-        )
-
-    question = request.data.get("question", "")
-    check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
-    if not check_api:
-        return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
-
-    # Apply validation for question
-    if not question or not isinstance(question, str):
-        return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
-
-    global vector_store
-    if vector_store is None:
-        try:
-            vector_store = load_vector_store()
-        except FileNotFoundError:
+        if request_count >= DAILY_REQUEST_LIMIT:
             return Response(
-                {"error": "Vector store not found"},
-                status=status.HTTP_400_BAD_REQUEST,
+                {"error": "Daily request limit exceeded."}, status=status.HTTP_429_TOO_MANY_REQUESTS
             )
 
-    # Handle the "exit" command
-    if question.lower() == "exit":
-        # if buffer is present in the session then delete it
+        question = request.data.get("question", "")
+        if not question:
+            return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
+        check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
+        if not check_api:
+            ChatBotLog.objects.create(question=question, answer="Error: Invalid API Key")
+            return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Apply validation for question
+        if not question or not isinstance(question, str):
+            ChatBotLog.objects.create(question=question, answer="Error: Invalid question")
+            return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
+
+        global vector_store
+        if not vector_store:
+            try:
+                vector_store = load_vector_store()
+            except FileNotFoundError as e:
+                ChatBotLog.objects.create(
+                    question=question, answer="Error: Vector store not found {e}"
+                )
+                return Response(
+                    {"error": "Vector store not found"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            except Exception as e:
+                ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
+                return Response(
+                    {"error": "Error loading vector store"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            finally:
+                if not vector_store:
+                    ChatBotLog.objects.create(
+                        question=question, answer="Error: Vector store not loaded"
+                    )
+                    return Response(
+                        {"error": "Vector store not loaded"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+
+        # Handle the "exit" command
+        if question.lower() == "exit":
+            # if buffer is present in the session then delete it
+            if "buffer" in request.session:
+                del request.session["buffer"]
+            return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
+
+        crc, memory = conversation_chain(vector_store)
         if "buffer" in request.session:
-            del request.session["buffer"]
-        return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
+            memory.buffer = request.session["buffer"]
 
-    crc, memory = conversation_chain(vector_store)
-    if "buffer" in request.session:
-        memory.buffer = request.session["buffer"]
+        try:
+            response = crc.invoke({"question": question})
+        except Exception as e:
+            error_message = f"Error: {str(e)}"
+            ChatBotLog.objects.create(question=question, answer=error_message)
+            return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Increment the request count
+        cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
+        request.session["buffer"] = memory.buffer
 
-    response = crc.invoke({"question": question})
-    # Increment the request count
-    cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
-    request.session["buffer"] = memory.buffer
+        # Log the conversation
+        ChatBotLog.objects.create(question=question, answer=response["answer"])
 
-    # Log the conversation
-    ChatBotLog.objects.create(question=question, answer=response["answer"])
+        return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
 
-    return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
+    except Exception as e:
+        error_message = f"Error: {str(e)}"
+        ChatBotLog.objects.create(question=request.data.get("question", ""), answer=error_message)
+        return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 def weekly_report(request):
@@ -4717,3 +4940,233 @@ def blt_tomato(request):
         project["funding_hyperlinks"] = funding_link
 
     return render(request, "blt_tomato.html", {"projects": data})
+
+
+@login_required
+def vote_suggestions(request):
+    if request.method == "POST":
+        user = request.user
+        data = json.loads(request.body)
+        suggestion_id = data.get("suggestion_id")
+        suggestion = Suggestion.objects.get(id=suggestion_id)
+        up_vote = data.get("up_vote")
+        down_vote = data.get("down_vote")
+        voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).exists()
+        if not voted:
+            up_vote = True if up_vote else False
+            down_vote = True if down_vote else False
+
+            if up_vote or down_vote:
+                voted = SuggestionVotes.objects.create(
+                    user=user, suggestion=suggestion, up_vote=up_vote, down_vote=down_vote
+                )
+
+                if up_vote:
+                    suggestion.up_votes += 1
+                if down_vote:
+                    suggestion.down_votes += 1
+        else:
+            if not up_vote:
+                suggestion.up_votes -= 1
+            if down_vote is False:
+                suggestion.down_votes -= 1
+
+            voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).delete()
+
+            if up_vote:
+                voted = SuggestionVotes.objects.create(
+                    user=user, suggestion=suggestion, up_vote=True, down_vote=False
+                )
+                suggestion.up_votes += 1
+
+            if down_vote:
+                voted = SuggestionVotes.objects.create(
+                    user=user, suggestion=suggestion, down_vote=True, up_vote=False
+                )
+                suggestion.down_votes += 1
+
+            suggestion.save()
+
+        response = {
+            "success": True,
+            "up_vote": suggestion.up_votes,
+            "down_vote": suggestion.down_votes,
+        }
+        return JsonResponse(response)
+
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=402)
+
+
+@login_required
+def set_vote_status(request):
+    if request.method == "POST":
+        user = request.user
+        data = json.loads(request.body)
+        id = data.get("id")
+        try:
+            suggestion = Suggestion.objects.get(id=id)
+        except Suggestion.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Suggestion not found"}, status=404)
+
+        up_vote = SuggestionVotes.objects.filter(
+            suggestion=suggestion, user=user, up_vote=True
+        ).exists()
+        down_vote = SuggestionVotes.objects.filter(
+            suggestion=suggestion, user=user, down_vote=True
+        ).exists()
+
+        response = {"up_vote": up_vote, "down_vote": down_vote}
+        return JsonResponse(response)
+
+    return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
+
+
+@login_required
+def add_suggestions(request):
+    if request.method == "POST":
+        user = request.user
+        data = json.loads(request.body)
+        title = data.get("title")
+        description = data.get("description", "")
+        id = str(uuid.uuid4())
+        print(description, title, id)
+        if title and description and user:
+            suggestion = Suggestion(user=user, title=title, description=description, id=id)
+            suggestion.save()
+            messages.success(request, "Suggestion added successfully.")
+            return JsonResponse({"status": "success"})
+        else:
+            messages.error(request, "Please fill all the fields.")
+            return JsonResponse({"status": "error"}, status=400)
+
+
+def view_suggestions(request):
+    suggestion = Suggestion.objects.all()
+    return render(request, "feature_suggestion.html", {"suggestions": suggestion})
+
+
+def sizzle(request):
+    # Check if the user is authenticated; if not, redirect to the home page with a message
+    print(request.user)
+    if not request.user.is_authenticated:
+        messages.error(request, "Please login to access the Sizzle page.")
+        return redirect("index")
+
+    # Initialize the variable to store Sizzle tracking data
+    sizzle_data = None
+
+    # Fetch the latest TimeLog entry for the current user
+    last_data = TimeLog.objects.filter(user=request.user).order_by("-created").first()
+
+    if last_data:
+        # Fetch all TimeLog entries created on the same date as the last_data entry
+        all_data = TimeLog.objects.filter(
+            user=request.user, created__date=last_data.created.date()
+        ).order_by("created")
+
+        # Calculate the total duration for all the entries on the same date
+        total_duration = sum((entry.duration for entry in all_data if entry.duration), timedelta())
+
+        # Format total duration to minutes and seconds
+        total_duration_seconds = total_duration.total_seconds()
+        formatted_duration = (
+            f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
+        )
+
+        # Get the first entry's GitHub issue URL and extract the repository path and issue number
+        github_issue_url = all_data.first().github_issue_url
+
+        # Fetch the issue title from GitHub API
+        issue_title = get_github_issue_title(github_issue_url)
+
+        # Format start time and date to human-readable format
+        start_time = all_data.first().start_time.strftime("%I:%M %p")
+        date = last_data.created.strftime("%d %B %Y")  # Example: '14 August 2024'
+
+        # Prepare sizzle_data with human-readable format
+        sizzle_data = {
+            "issue_title": issue_title,
+            "duration": formatted_duration,
+            "start_time": start_time,
+            "date": date,
+        }
+
+    return render(request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data})
+
+
+def TimeLogListAPIView(request):
+    print(request.user)
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+
+    start_date_str = request.GET.get("start_date")
+    end_date_str = request.GET.get("end_date")
+
+    if not start_date_str or not end_date_str:
+        return JsonResponse(
+            {"error": "Both start_date and end_date are required."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    start_date = parse_datetime(start_date_str)
+    end_date = parse_datetime(end_date_str)
+
+    if not start_date or not end_date:
+        return JsonResponse({"error": "Invalid date format."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Fetch the time logs within the specified date range for the authenticated user
+    time_logs = TimeLog.objects.filter(
+        user=request.user, created__range=[start_date, end_date]
+    ).order_by("created")
+
+    # Group time logs by date
+    grouped_logs = defaultdict(list)
+    for log in time_logs:
+        date_str = log.created.strftime("%Y-%m-%d")
+        grouped_logs[date_str].append(log)
+
+    # Prepare the final structured response
+    response_data = []
+    for date, logs in grouped_logs.items():
+        first_log = logs[0]
+        total_duration = sum((log.duration for log in logs if log.duration), timedelta())
+
+        # Format total duration to minutes and seconds
+        total_duration_seconds = total_duration.total_seconds()
+        formatted_duration = (
+            f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
+        )
+
+        # Fetch the issue title using GitHub API (for the first log of the day)
+        issue_title = get_github_issue_title(first_log.github_issue_url)
+
+        # Format start time and date to human-readable format
+        start_time = first_log.start_time.strftime("%I:%M %p")
+        formatted_date = first_log.created.strftime("%d %B %Y")  # Example: '14 August 2024'
+
+        # Prepare the day's data
+        day_data = {
+            "issue_title": issue_title,
+            "duration": formatted_duration,
+            "start_time": start_time,
+            "date": formatted_date,
+        }
+
+        response_data.append(day_data)
+
+    return JsonResponse(response_data, safe=False, status=status.HTTP_200_OK)
+
+
+def get_github_issue_title(github_issue_url):
+    """Helper function to fetch the title of a GitHub issue."""
+    try:
+        repo_path = "/".join(github_issue_url.split("/")[3:5])
+        issue_number = github_issue_url.split("/")[-1]
+        github_api_url = f"https://api.github.com/repos/{repo_path}/issues/{issue_number}"
+        response = requests.get(github_api_url)
+        if response.status_code == 200:
+            issue_data = response.json()
+            return issue_data.get("title", "No Title")
+        return f"Issue #{issue_number}"
+    except Exception:
+        return "No Title"

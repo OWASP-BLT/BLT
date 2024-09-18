@@ -8,7 +8,28 @@ from .models import Bid, Monitor, UserProfile
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ("user_avatar",)
+        fields = [
+            "user_avatar",
+            "description",
+            "issues_hidden",
+            "btc_address",
+            "bch_address",
+            "eth_address",
+            "tags",
+            "subscribed_domains",
+            "subscribed_users",
+            "linkedin_url",
+            "x_username",
+            "website_url",
+            "discounted_hourly_rate",
+            "github_url",
+            "role",
+        ]
+        widgets = {
+            "tags": forms.CheckboxSelectMultiple(),
+            "subscribed_domains": forms.CheckboxSelectMultiple(),
+            "subscribed_users": forms.CheckboxSelectMultiple(),
+        }
 
 
 class UserDeleteForm(forms.Form):
@@ -56,8 +77,16 @@ class BidForm(forms.ModelForm):
             "issue_url",
             "created",
             "modified",
-            "amount",
+            "amount_bch",
             "status",
             "pr_link",
             "bch_address",
         ]
+
+
+class GitHubURLForm(forms.Form):
+    github_url = forms.URLField(
+        label="GitHub URL",
+        required=True,
+        widget=forms.TextInput(attrs={"placeholder": "Add any Github URL"}),
+    )
