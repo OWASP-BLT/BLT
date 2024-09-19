@@ -131,7 +131,7 @@ class Domain(models.Model):
             return self.logo.url
         image_request = requests.get("https://logo.clearbit.com/" + self.name)
         try:
-            if image_request.status_code == 200:
+            if (image_request.status_code == 200):
                 image_content = ContentFile(image_request.content)
                 self.logo.save(self.name + ".jpg", image_content)
                 return self.logo.url
@@ -742,6 +742,9 @@ class Project(models.Model):
     wiki_url = models.URLField(null=True, blank=True)
     homepage_url = models.URLField(null=True, blank=True)
     logo_url = models.URLField()
+    stars = models.IntegerField(default=0)
+    forks = models.IntegerField(default=0)
+    external_links = models.JSONField(default=list, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     contributors = models.ManyToManyField(Contributor, related_name="projects", blank=True)
@@ -791,6 +794,31 @@ class Project(models.Model):
 
     def get_top_contributors(self, limit=5):
         return self.contributors.order_by("-contributions")[:limit]
+
+    def fetch_stars_and_forks(self):
+        owner_repo = self.github_url.rstrip("/").split("/")[-2:]
+        repo_name = f"{owner_repo[0]}/{owner_repo[1]}"
+        url = f"https://api.github.com/repos/{repo_name}"
+        response = requests.get(url, headers={"Content-Type": "application/json"})
+
+        if response.status_code == 200:
+            repo_data = response.json()
+            self.stars = repo_data.get("stargazers_count", 0)
+            self.forks = repo_data.get("forks_count", 0)
+            self.save()
+
+    def fetch_freshness(self):
+        owner_repo = self.github_url.rstrip("/").split("/")[-2:]
+        repo_name = f"{owner_repo[0]}/{owner_repo[1]}"
+        url = f"https://api.github.com/repos/{repo_name}/commits"
+        response = requests.get(url, headers={"Content-Type": "application/json"})
+
+        if response.status_code == 200:
+            commits_data = response.json()
+            if commits_data:
+                last_commit_date = commits_data[0]["commit"]["committer"]["date"]
+                return last_commit_date
+        return None
 
 
 class Contribution(models.Model):

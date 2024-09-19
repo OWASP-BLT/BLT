@@ -46,6 +46,36 @@
                 {% endfor %}
             </div>
         </div>
+        <div class="additional-metadata">
+            <h3>Additional Metadata</h3>
+            <p>Freshness: {{ project.freshness }}</p>
+            <p>Stars: {{ project.stars }}</p>
+            <p>Forks: {{ project.forks }}</p>
+            <div class="external-links">
+                <h4>External Links</h4>
+                <ul>
+                    {% for link in project.external_links %}
+                        <li><a href="{{ link.url }}" target="_blank">{{ link.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="project-tags">
+            <h3>Tags</h3>
+            <ul>
+                {% for tag in project.tags.all %}
+                    <li>{{ tag.name }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="related-projects">
+            <h3>Related Projects</h3>
+            <ul>
+                {% for related_project in project.related_projects %}
+                    <li><a href="{% url 'project_view' related_project.slug %}">{{ related_project.name }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
     <style>
 .container {
@@ -106,6 +136,49 @@ h2 {
     width: 80px;
     height: 80px;
     border-radius: 50%;
+    margin-bottom: 10px;
+}
+
+.additional-metadata {
+    margin-top: 30px;
+}
+
+.external-links ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.external-links li {
+    margin-bottom: 10px;
+}
+
+.project-tags {
+    margin-top: 30px;
+}
+
+.project-tags ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.project-tags li {
+    display: inline-block;
+    background-color: #f1f1f1;
+    padding: 5px 10px;
+    margin-right: 5px;
+    border-radius: 5px;
+}
+
+.related-projects {
+    margin-top: 30px;
+}
+
+.related-projects ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.related-projects li {
     margin-bottom: 10px;
 }
     </style>

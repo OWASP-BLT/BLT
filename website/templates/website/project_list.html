@@ -60,6 +60,28 @@
                                     {% endfor %}
                                 </div>
                             </div>
+                            <div class="additional-metadata">
+                                <h4>Additional Metadata</h4>
+                                <p>Freshness: {{ project.freshness }}</p>
+                                <p>Stars: {{ project.stars }}</p>
+                                <p>Forks: {{ project.forks }}</p>
+                                <div class="external-links">
+                                    <h4>External Links</h4>
+                                    <ul>
+                                        {% for link in project.external_links %}
+                                            <li><a href="{{ link.url }}" target="_blank">{{ link.name }}</a></li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="project-tags">
+                                <h4>Tags</h4>
+                                <ul>
+                                    {% for tag in project.tags.all %}
+                                        <li>{{ tag.name }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
                         </div>
                     </li>
                 </a>
@@ -200,6 +222,36 @@ header nav a:hover {
     height: 40px;
     border-radius: 50%;
     margin-right: 0.5rem;
+}
+
+.additional-metadata {
+    margin-top: 1rem;
+}
+
+.external-links ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.external-links li {
+    margin-bottom: 0.5rem;
+}
+
+.project-tags {
+    margin-top: 1rem;
+}
+
+.project-tags ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.project-tags li {
+    display: inline-block;
+    background-color: #f1f1f1;
+    padding: 5px 10px;
+    margin-right: 5px;
+    border-radius: 5px;
 }
     </style>
 {% endblock content %}
