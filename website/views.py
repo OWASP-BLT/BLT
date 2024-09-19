@@ -1,6 +1,7 @@
 import base64
 import io
 import json
+import logging
 import os
 import re
 import time
@@ -138,6 +139,8 @@ from .models import BaconToken, Contribution, Tag, UserProfile
 
 # Load environment variables
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -4838,7 +4841,8 @@ def chatbot_conversation(request):
         try:
             response = crc.invoke({"question": question})
         except Exception as e:
-            error_message = f"Error: {str(e)}"
+            logger.error(f"An error occurred: {e}")
+            error_message = "An unexpected error occurred. Please try again later"
             ChatBotLog.objects.create(question=question, answer=error_message)
             return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         # Increment the request count
@@ -4851,7 +4855,8 @@ def chatbot_conversation(request):
         return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
 
     except Exception as e:
-        error_message = f"Error: {str(e)}"
+        logger.error(f"An error occurred: {e}")
+        error_message = "An unexpected error occurred. Please try again later"
         ChatBotLog.objects.create(question=request.data.get("question", ""), answer=error_message)
         return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
