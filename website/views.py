@@ -158,28 +158,37 @@ def profile_edit(request):
 def add_domain_to_company(request):
     if request.method == "POST":
         domain = request.POST.get("domain")
-        domain = Domain.objects.get(id=domain)
+        try:
+            domain = Domain.objects.get(id=domain)
+        except Domain.DoesNotExist:
+            return HttpResponseBadRequest("Invalid domain ID")
         company_name = request.POST.get("company")
         company = Company.objects.filter(name=company_name).first()
 
-        if not company:
-            response = requests.get(domain.url)
-            soup = BeautifulSoup(response.text, "html.parser")
-            if company_name in soup.get_text():
-                company = Company.objects.create(name=company_name)
-                domain.company = company
-                domain.save()
-                messages.success(request, "Organization added successfully")
-                # back to the domain detail page
-                return redirect("domain", slug=domain.url)
+        try:
+            response = requests.get(domain.url, allow_redirects=False)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, "html.parser")
             else:
-                messages.error(request, "Organization not found in the domain")
-                return redirect("domain", slug=domain.url)
-        else:
+                messages.error(
+                    request,
+                    f"Unexpected status code: {response.status_code}. The URL might be redirecting.",
+                )
+                return redirect("index")
+        except requests.RequestException as e:
+            messages.error(request, f"Failed to fetch URL: {e}")
+            return redirect("index")
+
+        if company_name in soup.get_text():
+            company = Company.objects.filter(name=company_name).first()
+            if not company:
+                company = Company.objects.create(name=company_name)
             domain.company = company
             domain.save()
             messages.success(request, "Organization added successfully")
-            # back to the domain detail page
+            return redirect("domain", slug=domain.url)
+        else:
+            messages.error(request, "Organization not found in the domain")
             return redirect("domain", slug=domain.url)
     else:
         return redirect("index")
@@ -3363,6 +3372,21 @@ class DomainList(TemplateView):
         return render(request, self.template_name, context)
 
 
+def is_valid_url(url):
+    try:
+        parsed_url = urlparse(url)
+        if parsed_url.scheme not in {"http", "https"}:
+            return False
+        if re.match(
+            r"^(localhost|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})$",
+            parsed_url.hostname,
+        ):
+            return False
+        return True
+    except Exception as e:
+        return False
+
+
 @login_required(login_url="/accounts/login")
 def add_or_update_domain(request):
     if request.method == "POST":
@@ -3380,6 +3404,9 @@ def add_or_update_domain(request):
                     domain.logo = request.FILES["logo"]
                 except:
                     pass
+                if not is_valid_url(request.POST["url"]):
+                    return HttpResponseBadRequest("Invalid or Restricted URL")
+                domain.url = request.POST["url"]
                 domain.save()
                 return HttpResponse("Domain Updated")
             except:
