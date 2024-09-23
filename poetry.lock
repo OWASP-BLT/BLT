@@ -4140,13 +4140,13 @@ files = [
 
 [[package]]
 name = "unstructured"
-version = "0.15.12"
+version = "0.15.13"
 description = "A library that prepares raw documents for downstream ML tasks."
 optional = false
 python-versions = "<3.13,>=3.9.0"
 files = [
-    {file = "unstructured-0.15.12-py3-none-any.whl", hash = "sha256:a789c8bfde6da99bb9985301b19a8ed06e1c226f447921683a939d3412f72403"},
-    {file = "unstructured-0.15.12.tar.gz", hash = "sha256:22af44a9c949f9239d2eab2826e002fbbbbdb534a1698d3319a107f982feac2b"},
+    {file = "unstructured-0.15.13-py3-none-any.whl", hash = "sha256:6885add1bb1e4e428cf76f160f4a6f5aed6e707b3b22e69c716efb19a4957dbf"},
+    {file = "unstructured-0.15.13.tar.gz", hash = "sha256:3d62573d8f0caca9211ce5e7f2705d8c7ab67e4427bd18259e218a19bbb21c25"},
 ]
 
 [package.dependencies]
@@ -4181,7 +4181,7 @@ azure-cognitive-search = ["azure-search-documents"]
 bedrock = ["boto3", "langchain-community"]
 biomed = ["bs4"]
 box = ["boxfs", "fsspec"]
-chroma = ["chromadb", "importlib-metadata (>=8.2.0)", "tenacity (==8.5.0)", "typer (<=0.9.0)"]
+chroma = ["chromadb (>0.4.14)", "importlib-metadata (>=8.2.0)", "tenacity (==8.5.0)", "typer (<=0.9.0)"]
 clarifai = ["clarifai"]
 confluence = ["atlassian-python-api"]
 csv = ["pandas"]
@@ -4583,4 +4583,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "2bb217a2f2749b3baaf6a7cf39c1db53c315b1039201f5996d983a79bfa8b720"
+content-hash = "9d497459f4e9c45f2b4260158a74a2caf5f37f368c697d81f25781c11555774a"
