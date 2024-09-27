@@ -20,6 +20,7 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
+    Notification,
     Payment,
     Points,
     Project,
@@ -413,6 +414,7 @@ admin.site.register(Winner, WinnerAdmin)
 admin.site.register(Payment, PaymentAdmin)
 admin.site.register(IssueScreenshot, IssueScreenshotAdmin)
 admin.site.register(HuntPrize)
+admin.site.register(Notification)
 admin.site.register(ChatBotLog, ChatBotLogAdmin)
 admin.site.register(Blocked, BlockedAdmin)
 admin.site.register(Suggestion, SuggestionAdmin)
