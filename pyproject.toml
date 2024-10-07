@@ -83,7 +83,7 @@ sendgrid = "^6.11.0"
 black = "^24.8.0"
 isort = "^5.13.2"
 ruff = "^0.6.5"
-pre-commit = "^3.8.0"
+pre-commit = "^4.0.0"
 
 [tool.isort]
 known_first_party = ["blt"]
