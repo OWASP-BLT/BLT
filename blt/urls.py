@@ -16,13 +16,13 @@ from rest_framework import permissions, routers
 import comments.views
 import website.views
 from blt import settings
-from company.views import ShowBughuntView
+from organization.views import ShowBughuntView
 from website.api.views import (
     ActivityLogViewSet,
     AuthApiViewset,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
-    CompanyViewSet,
+    OrganizationViewSet,
     DomainViewSet,
     FlagIssueApiView,
     InviteFriendApiViewset,
@@ -39,7 +39,7 @@ from website.api.views import (
 )
 from website.views import (  # TODO AutoLabel,
     AllIssuesView,
-    CompanySettings,
+    OrganizationSettings,
     ContributorStatsView,
     CreateHunt,
     CustomObtainAuthToken,
@@ -60,7 +60,7 @@ from website.views import (  # TODO AutoLabel,
     InviteCreate,
     IssueCreate,
     IssueView,
-    JoinCompany,
+    JoinOrganization,
     ListHunts,
     OngoingHunts,
     PreviousHunts,
@@ -135,9 +135,9 @@ handler500 = "website.views.handler500"
 
 urlpatterns = [
     path(
-        "api/v1/companies/",
-        CompanyViewSet.as_view({"get": "list", "post": "create"}),
-        name="company",
+        "api/v1/organizations/",
+        OrganizationViewSet.as_view({"get": "list", "post": "create"}),
+        name="organization",
     ),
     path("invite-friend/", website.views.invite_friend, name="invite_friend"),
     path("referral/", website.views.referral_signup, name="referral_signup"),
@@ -165,7 +165,7 @@ urlpatterns = [
     path("auth/facebook/url/", facebook_views.oauth2_callback),
     path("socialaccounts/", SocialAccountListView.as_view(), name="social_account_list"),
     path(
-        "add_domain_to_company/", website.views.add_domain_to_company, name="add_domain_to_company"
+        "add_domain_to_organization/", website.views.add_domain_to_organization, name="add_domain_to_organization"
     ),
     path(
         "socialaccounts/<int:pk>/disconnect/",
@@ -186,9 +186,9 @@ urlpatterns = [
     re_path(r"^$", website.views.newhome, name="index"),
     # re_path(r"^newhome/$", website.views.index, name="newhome"),
     re_path(
-        r"^dashboard/company/$",
-        website.views.company_dashboard,
-        name="company_dashboard_home",
+        r"^dashboard/organization/$",
+        website.views.organization_dashboard,
+        name="organization_dashboard_home",
     ),
     re_path(
         r"^dashboard/user/profile/addbalance$",
@@ -203,29 +203,29 @@ urlpatterns = [
     ),
     re_path(r"^dashboard/admin$", website.views.admin_dashboard, name="admin_dashboard"),
     re_path(
-        r"^dashboard/admin/company$",
-        website.views.admin_company_dashboard,
-        name="admin_company_dashboard",
+        r"^dashboard/admin/organization$",
+        website.views.admin_organization_dashboard,
+        name="admin_organization_dashboard",
     ),
     re_path(
-        r"^dashboard/admin/company/addorupdate$",
-        website.views.add_or_update_company,
-        name="add_or_update_company",
+        r"^dashboard/admin/organization/addorupdate$",
+        website.views.add_or_update_organization,
+        name="add_or_update_organization",
     ),
     re_path(
-        r"^dashboard/company/domain/addorupdate$",
+        r"^dashboard/organization/domain/addorupdate$",
         website.views.add_or_update_domain,
         name="add_or_update_domain",
     ),
     path(
-        "dashboard/company/domain/<int:pk>/",
-        website.views.company_dashboard_domain_detail,
-        name="company_dashboard_domain_detail",
+        "dashboard/organization/domain/<int:pk>/",
+        website.views.organization_dashboard_domain_detail,
+        name="organization_dashboard_domain_detail",
     ),
     path(
-        "dashboard/company/hunt/<int:pk>/",
-        website.views.company_dashboard_hunt_detail,
-        name="company_dashboard_hunt_detail",
+        "dashboard/organization/hunt/<int:pk>/",
+        website.views.organization_dashboard_hunt_detail,
+        name="organization_dashboard_hunt_detail",
     ),
     path("dashboard/user/hunt/<int:pk>/", website.views.view_hunt, name="view_hunt"),
     path(
@@ -239,52 +239,52 @@ urlpatterns = [
         name="hunt_results",
     ),
     path(
-        "dashboard/company/hunt/<int:pk>/edit",
-        website.views.company_dashboard_hunt_edit,
-        name="company_dashboard_hunt_edit",
+        "dashboard/organization/hunt/<int:pk>/edit",
+        website.views.organization_dashboard_hunt_edit,
+        name="organization_dashboard_hunt_edit",
     ),
     path(
-        "dashboard/admin/company/<int:pk>/",
-        website.views.admin_company_dashboard_detail,
-        name="admin_company_dashboard_detail",
+        "dashboard/admin/organization/<int:pk>/",
+        website.views.admin_organization_dashboard_detail,
+        name="admin_organization_dashboard_detail",
     ),
-    re_path(r"^dashboard/company/hunt/create$", CreateHunt.as_view(), name="create_hunt"),
+    re_path(r"^dashboard/organization/hunt/create$", CreateHunt.as_view(), name="create_hunt"),
     path("hunt/<int:pk>", ShowBughuntView.as_view(), name="show_bughunt"),
-    re_path(r"^dashboard/company/hunt/drafts$", DraftHunts.as_view(), name="draft_hunts"),
+    re_path(r"^dashboard/organization/hunt/drafts$", DraftHunts.as_view(), name="draft_hunts"),
     re_path(
-        r"^dashboard/company/hunt/upcoming$",
+        r"^dashboard/organization/hunt/upcoming$",
         UpcomingHunts.as_view(),
         name="upcoming_hunts",
     ),
     re_path(
-        r"^dashboard/company/hunt/previous$",
+        r"^dashboard/organization/hunt/previous$",
         PreviousHunts.as_view(),
         name="previous_hunts",
     ),
     path(
-        "dashboard/company/hunt/previous/<int:pk>/",
-        website.views.company_hunt_results,
-        name="company_hunt_results",
+        "dashboard/organization/hunt/previous/<int:pk>/",
+        website.views.organization_hunt_results,
+        name="organization_hunt_results",
     ),
     re_path(
-        r"^dashboard/company/hunt/ongoing$",
+        r"^dashboard/organization/hunt/ongoing$",
         OngoingHunts.as_view(),
         name="ongoing_hunts",
     ),
-    re_path(r"^dashboard/company/domains$", DomainList.as_view(), name="domain_list"),
+    re_path(r"^dashboard/organization/domains$", DomainList.as_view(), name="domain_list"),
     re_path(
-        r"^dashboard/company/settings$",
-        CompanySettings.as_view(),
-        name="company-settings",
+        r"^dashboard/organization/settings$",
+        OrganizationSettings.as_view(),
+        name="organization-settings",
     ),
-    re_path(r"^join$", JoinCompany.as_view(), name="join"),
+    re_path(r"^join$", JoinOrganization.as_view(), name="join"),
     re_path(
-        r"^dashboard/company/settings/role/update$",
+        r"^dashboard/organization/settings/role/update$",
         website.views.update_role,
         name="update-role",
     ),
     re_path(
-        r"^dashboard/company/settings/role/add$",
+        r"^dashboard/organization/settings/role/add$",
         website.views.add_role,
         name="add-role",
     ),
@@ -513,9 +513,9 @@ urlpatterns = [
     re_path(r"^contributors/$", contributors_view, name="contributors"),
     # users
     path("users/", website.views.users_view, name="users"),
-    path("company/", include("company.urls")),
+    path("organization/", include("organization.urls")),
     path("sponsor/", website.views.sponsor_view, name="sponsor"),
-    path("companies/", DomainListView.as_view(), name="domain_lists"),
+    path("organizations/", DomainListView.as_view(), name="domain_lists"),
     path("trademarks/", website.views.trademark_search, name="trademark_search"),
     path("generate_bid_image/<int:bid_amount>/", generate_bid_image, name="generate_bid_image"),
     path("bidding/", SaveBiddingData, name="BiddingData"),

@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from website.models import (
     ActivityLog,
-    Company,
+    Organization,
     Contributor,
     Domain,
     Hunt,
@@ -118,9 +118,9 @@ class BugHuntSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class CompanySerializer(serializers.ModelSerializer):
+class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Company
+        model = Organization
         fields = "__all__"
 
 
