@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0135_add_project_metadata"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
@@ -48,9 +47,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "logo",
-                    models.ImageField(
-                        blank=True, null=True, upload_to="organization_logos"
-                    ),
+                    models.ImageField(blank=True, null=True, upload_to="organization_logos"),
                 ),
                 ("url", models.URLField()),
                 ("email", models.EmailField(blank=True, max_length=254, null=True)),
@@ -110,9 +107,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "role",
-                    models.IntegerField(
-                        choices=[(0, "Admin"), (1, "Moderator")], default=0
-                    ),
+                    models.IntegerField(choices=[(0, "Admin"), (1, "Moderator")], default=0),
                 ),
                 ("is_active", models.BooleanField(default=True)),
                 ("created", models.DateTimeField(auto_now_add=True)),
