@@ -11,24 +11,24 @@ from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
+from organization.views import ShowBughuntView
 from rest_framework import permissions, routers
 
 import comments.views
 import website.views
 from blt import settings
-from organization.views import ShowBughuntView
 from website.api.views import (
     ActivityLogViewSet,
     AuthApiViewset,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
-    OrganizationViewSet,
     DomainViewSet,
     FlagIssueApiView,
     InviteFriendApiViewset,
     IssueViewSet,
     LeaderboardApiViewSet,
     LikeIssueApiView,
+    OrganizationViewSet,
     ProjectViewSet,
     StatsApiViewset,
     TagApiViewset,
@@ -39,7 +39,6 @@ from website.api.views import (
 )
 from website.views import (  # TODO AutoLabel,
     AllIssuesView,
-    OrganizationSettings,
     ContributorStatsView,
     CreateHunt,
     CustomObtainAuthToken,
@@ -63,6 +62,7 @@ from website.views import (  # TODO AutoLabel,
     JoinOrganization,
     ListHunts,
     OngoingHunts,
+    OrganizationSettings,
     PreviousHunts,
     ProjectDetailView,
     ProjectListView,
@@ -165,7 +165,9 @@ urlpatterns = [
     path("auth/facebook/url/", facebook_views.oauth2_callback),
     path("socialaccounts/", SocialAccountListView.as_view(), name="social_account_list"),
     path(
-        "add_domain_to_organization/", website.views.add_domain_to_organization, name="add_domain_to_organization"
+        "add_domain_to_organization/",
+        website.views.add_domain_to_organization,
+        name="add_domain_to_organization",
     ),
     path(
         "socialaccounts/<int:pk>/disconnect/",

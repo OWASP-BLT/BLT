@@ -22,7 +22,6 @@ from rest_framework.views import APIView
 
 from website.models import (
     ActivityLog,
-    Organization,
     Contributor,
     Domain,
     Hunt,
@@ -30,6 +29,7 @@ from website.models import (
     InviteFriend,
     Issue,
     IssueScreenshot,
+    Organization,
     Points,
     Project,
     Tag,
@@ -42,10 +42,10 @@ from website.serializers import (
     ActivityLogSerializer,
     BugHuntPrizeSerializer,
     BugHuntSerializer,
-    OrganizationSerializer,
     ContributorSerializer,
     DomainSerializer,
     IssueSerializer,
+    OrganizationSerializer,
     ProjectSerializer,
     TagSerializer,
     TimeLogSerializer,

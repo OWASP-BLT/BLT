@@ -295,7 +295,9 @@ if "DATABASE_URL" in os.environ:
     )
 
     if not os.environ.get("SENTRY_DSN"):
-        raise ValueError("SENTRY_DSN environment variable is not set. Please set it to enable Sentry.")
+        raise ValueError(
+            "SENTRY_DSN environment variable is not set. Please set it to enable Sentry."
+        )
 
 else:
     if not TESTING:

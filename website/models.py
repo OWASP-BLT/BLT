@@ -131,7 +131,7 @@ class Domain(models.Model):
             return self.logo.url
         image_request = requests.get("https://logo.clearbit.com/" + self.name)
         try:
-            if (image_request.status_code == 200):
+            if image_request.status_code == 200:
                 image_content = ContentFile(image_request.content)
                 self.logo.save(self.name + ".jpg", image_content)
                 return self.logo.url

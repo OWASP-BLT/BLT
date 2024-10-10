@@ -3,13 +3,13 @@ from rest_framework import serializers
 
 from website.models import (
     ActivityLog,
-    Organization,
     Contributor,
     Domain,
     Hunt,
     HuntPrize,
     Issue,
     IssueScreenshot,
+    Organization,
     Points,
     Project,
     Tag,

@@ -69,7 +69,9 @@
                                     <h4>External Links</h4>
                                     <ul>
                                         {% for link in project.external_links %}
-                                            <li><a href="{{ link.url }}" target="_blank">{{ link.name }}</a></li>
+                                            <li>
+                                                <a href="{{ link.url }}" target="_blank">{{ link.name }}</a>
+                                            </li>
                                         {% endfor %}
                                     </ul>
                                 </div>
@@ -77,9 +79,7 @@
                             <div class="project-tags">
                                 <h4>Tags</h4>
                                 <ul>
-                                    {% for tag in project.tags.all %}
-                                        <li>{{ tag.name }}</li>
-                                    {% endfor %}
+                                    {% for tag in project.tags.all %}<li>{{ tag.name }}</li>{% endfor %}
                                 </ul>
                             </div>
                         </div>

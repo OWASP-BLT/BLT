@@ -16,7 +16,7 @@ from .models import Issue, IssueScreenshot
 os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 
 
-class  MySeleniumTests(LiveServerTestCase):
+class MySeleniumTests(LiveServerTestCase):
     fixtures = ["initial_data.json"]
 
     @classmethod

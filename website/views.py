@@ -84,8 +84,6 @@ from website.models import (
     IP,
     Bid,
     ChatBotLog,
-    Organization,
-    OrganizationAdmin,
     ContributorStats,
     Domain,
     Hunt,
@@ -93,6 +91,8 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
+    Organization,
+    OrganizationAdmin,
     Payment,
     Points,
     Project,
@@ -662,7 +662,9 @@ def admin_organization_dashboard(request, template="admin_dashboard_organization
 
 
 @login_required(login_url="/accounts/login")
-def admin_organization_dashboard_detail(request, pk, template="admin_dashboard_organization_detail.html"):
+def admin_organization_dashboard_detail(
+    request, pk, template="admin_dashboard_organization_detail.html"
+):
     user = request.user
     if user.is_superuser:
         if not user.is_active:
@@ -1708,8 +1710,6 @@ from .models import (
     BaconToken,
     Bid,
     ChatBotLog,
-    Organization,
-    OrganizationAdmin,
     Contribution,
     Contributor,
     ContributorStats,
@@ -1720,6 +1720,8 @@ from .models import (
     Issue,
     IssueScreenshot,
     Monitor,
+    Organization,
+    OrganizationAdmin,
     Payment,
     Points,
     Project,
@@ -3329,7 +3331,9 @@ def add_or_update_organization(request):
             except:
                 organization.is_active = False
             try:
-                organization.subscription = Subscription.objects.get(name=request.POST["subscription"])
+                organization.subscription = Subscription.objects.get(
+                    name=request.POST["subscription"]
+                )
             except:
                 pass
             try:
@@ -3406,7 +3410,9 @@ def add_or_update_domain(request):
 
 
 @login_required(login_url="/accounts/login")
-def organization_dashboard_domain_detail(request, pk, template="organization_dashboard_domain_detail.html"):
+def organization_dashboard_domain_detail(
+    request, pk, template="organization_dashboard_domain_detail.html"
+):
     user = request.user
     domain_admin = OrganizationAdmin.objects.get(user=request.user)
     try:
@@ -3422,7 +3428,9 @@ def organization_dashboard_domain_detail(request, pk, template="organization_das
 
 
 @login_required(login_url="/accounts/login")
-def organization_dashboard_hunt_detail(request, pk, template="organization_dashboard_hunt_detail.html"):
+def organization_dashboard_hunt_detail(
+    request, pk, template="organization_dashboard_hunt_detail.html"
+):
     hunt = get_object_or_404(Hunt, pk=pk)
     return render(request, template, {"hunt": hunt})
 
