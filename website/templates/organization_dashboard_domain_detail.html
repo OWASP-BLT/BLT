@@ -1,20 +1,36 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
+{% load tz_detect %}
 {% block content %}
     <section>
-        {% include "includes/admin_sidenav.html" %}
+        {% include "includes/organization_sidenav.html" %}
     </section>
+    <style>
+        .bottom-right {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+        }
+    </style>
+    <div class="bottom-right">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization_dashboard_domain_detail.html">
+            <i class="fab fa-github"></i>
+        </a>
+        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
+            <i class="fab fa-figma"></i>
+        </a>
+    </div>
     <div>
         <div class="col_3">
-            <form id="add-or-update-company">
+            <form id="add-or-update-domain">
                 {% csrf_token %}
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal">×</button>
-                        <h4 class="modal-title">Edit Organization</h4>
+                        <h4 class="modal-title">Edit Domain</h4>
                     </div>
                     <div class="modal-body">
-                        <input type="hidden" name="id" value="{{ company.pk }}" />
+                        <input type="hidden" name="id" value="{{ domain.pk }}" />
                         <div class="form-group">
                             <label for="name">Name:</label>
                             <input type="text"
@@ -22,23 +38,16 @@
                                    required
                                    class="form-control"
                                    id="name"
-                                   value="{{ company.name }}">
+                                   value="{{ domain.name }}">
                         </div>
                         <div class="form-group">
                             <label for="url">Website:</label>
-                            <input type="url"
+                            <input disabled=""
+                                   type="url"
                                    name="url"
                                    class="form-control"
                                    id="url"
-                                   value="{{ company.url }}">
-                        </div>
-                        <div class="form-group">
-                            <label for="admin">Admin:</label>
-                            <input type="email"
-                                   name="admin"
-                                   class="form-control"
-                                   id="admin"
-                                   value="{{ company.admin.email }}">
+                                   value="{{ domain.url }}">
                         </div>
                         <div class="form-group">
                             <label for="logo">Logo:</label>
@@ -51,7 +60,7 @@
                                    required
                                    class="form-control"
                                    id="email"
-                                   value="{{ company.email }}">
+                                   value="{{ domain.email }}">
                         </div>
                         <div class="form-group">
                             <label for="github">Github:</label>
@@ -59,26 +68,7 @@
                                    name="github"
                                    class="form-control"
                                    id="github"
-                                   value="{{ company.github }}">
-                        </div>
-                        <div class="form-group">
-                            <label for="subscription">Subscription:</label>
-                            <input type="text"
-                                   name="subscription"
-                                   class="form-control"
-                                   id="subscription"
-                                   value="{{ company.subscription.name }}">
-                        </div>
-                        <div class="form-group">
-                            <label class="checkbox-inline col-sm-12">
-                                {% if company.is_active %}
-                                    <input name="verify" type="checkbox" checked>
-                                    Verify
-                                </label>
-                            {% else %}
-                                <input name="verify" type="checkbox">
-                                <label class="checkbox-inline col-sm-12">Verify</label>
-                            {% endif %}
+                                   value="{{ domain.github }}">
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -95,4 +85,5 @@
             <div class="clearfix"></div>
         </div>
     </div>
+    {% tz_detect %}
 {% endblock content %}

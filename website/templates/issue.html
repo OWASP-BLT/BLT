@@ -22,7 +22,7 @@
     <meta property="og:description"
           content="{{ object.markdown_description|escapejs }}" />
     <meta name="keywords"
-          content="{% block keywords %}BLT, bug, tracking, company, easy{% endblock keywords %}">
+          content="{% block keywords %}BLT, bug, tracking, organization, easy{% endblock keywords %}">
     <link rel="canonical" href="https://{% env 'FQDN' %}/issue/{{ object.id }}">
     <meta property="og:url"
           content="https://{% env 'FQDN' %}/issue/{{ object.id }}" />
@@ -107,7 +107,7 @@
             {% include "./includes/issue_right_info.html" %}
         </div>
     </div>
-    <script src="{% static '/company/js/md_editor.js' %}"></script>
+    <script src="{% static '/organization/js/md_editor.js' %}"></script>
     <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.1.0/dist/markdown-it.min.js"></script>
     <script>
