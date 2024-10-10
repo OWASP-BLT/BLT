@@ -20,7 +20,7 @@
       console.log(serializedData)
       $.ajax({
             type: 'POST',
-            url: "/dashboard/company/settings/role/update",
+            url: "/dashboard/organization/settings/role/update",
             data: serializedData,
             success: function (response) {
               window.location.reload();
@@ -46,7 +46,7 @@
       var value = ($( this ).serializeArray())[1].value;
       $.ajax({
             type: 'POST',
-            url: "/dashboard/company/hunt/"+value+"/edit",
+            url: "/dashboard/organization/hunt/"+value+"/edit",
             data: serializedData,
             success: function (response) {
               window.location.reload();
@@ -113,7 +113,7 @@
       serializedData.push({name:"date2", value: date2});
       $.ajax({
             type: 'POST',
-            url: "/dashboard/company/hunt/create",
+            url: "/dashboard/organization/hunt/create",
             data: $.param(serializedData),
             success: function (response) {
               window.location.reload();
@@ -131,7 +131,7 @@
       console.log(serializedData)
       $.ajax({
             type: 'POST',
-            url: "/dashboard/company/settings/role/add",
+            url: "/dashboard/organization/settings/role/add",
             data: serializedData,
             success: function (response) {
               window.location.reload();
@@ -144,13 +144,13 @@
     });
 
 
-  $("#add-or-update-company").submit(function(e){
+  $("#add-or-update-organization").submit(function(e){
     e.preventDefault();
       var serializedData = $(this).serialize();
       console.log(serializedData)
       $.ajax({
             type: 'POST',
-            url: "/dashboard/admin/company/addorupdate",
+            url: "/dashboard/admin/organization/addorupdate",
             data: serializedData,
             success: function (response) {
               window.location.reload();
@@ -169,7 +169,7 @@
       console.log(serializedData)
       $.ajax({
             type: 'POST',
-            url: "/dashboard/company/domain/addorupdate",
+            url: "/dashboard/organization/domain/addorupdate",
             data: serializedData,
             success: function (response) {
               console.log(response)

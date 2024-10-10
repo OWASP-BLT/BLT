@@ -113,7 +113,7 @@ img {
                                 {% endif %}
                                 <div class="card_content">
                                     <h2 class="card_title">{{ hunt.name }}</h2>
-                                    <p class="card_text">{{ hunt.domain.name }}, {{ hunt.domain.company.name }} - Starts on {{ hunt.starts_on }}</p>
+                                    <p class="card_text">{{ hunt.domain.name }}, {{ hunt.domain.organization.name }} - Starts on {{ hunt.starts_on }}</p>
                                     <a href="{% url 'view_hunt' hunt.pk %}">
                                         <button class="btn card_btn">Read More</button>
                                     </a>
@@ -144,7 +144,7 @@ img {
                                 {% endif %}
                                 <div class="card_content">
                                     <h2 class="card_title">{{ hunt.name }}</h2>
-                                    <p class="card_text">{{ hunt.domain.name }}, {{ hunt.domain.company.name }} - Already Started</p>
+                                    <p class="card_text">{{ hunt.domain.name }}, {{ hunt.domain.organization.name }} - Already Started</p>
                                     <a href="{% url 'view_hunt' hunt.pk %}">
                                         <button class="btn card_btn">Read More</button>
                                     </a>
@@ -175,7 +175,7 @@ img {
                                 {% endif %}
                                 <div class="card_content">
                                     <h2 class="card_title">{{ hunt.name }}</h2>
-                                    <p class="card_text">{{ hunt.domain.name }}, {{ hunt.domain.company.name }} - Ended on {{ hunt.end_on }}</p>
+                                    <p class="card_text">{{ hunt.domain.name }}, {{ hunt.domain.organization.name }} - Ended on {{ hunt.end_on }}</p>
                                     <a href="{% url 'view_hunt' hunt.pk %}">
                                         <button class="btn card_btn">Read More</button>
                                     </a>

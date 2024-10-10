@@ -76,7 +76,7 @@ INSTALLED_APPS = (
     "django.contrib.sites",
     "django.contrib.humanize",
     "website",
-    "company",
+    "organization",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
@@ -270,7 +270,7 @@ if "DATABASE_URL" in os.environ:
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     if not TESTING:
-        SECURE_SSL_REDIRECT = True
+        SECURE_SSL_REDIRECT = False
 
     GS_ACCESS_KEY_ID = os.environ.get("GS_ACCESS_KEY_ID", "blank")
     GS_SECRET_ACCESS_KEY = os.environ.get("GS_SECRET_ACCESS_KEY", "blank")
@@ -286,13 +286,18 @@ if "DATABASE_URL" in os.environ:
     from sentry_sdk.integrations.django import DjangoIntegration
 
     sentry_sdk.init(
-        dsn=os.environ.get("SENTRY_DSN", "https://key.ingest.sentry.io/project"),
+        dsn=os.environ.get("SENTRY_DSN"),
         integrations=[DjangoIntegration()],
         send_default_pii=True,
         traces_sample_rate=1.0,
         profiles_sample_rate=1.0,
         release=os.environ.get("HEROKU_RELEASE_VERSION", default=""),
     )
+
+    if not os.environ.get("SENTRY_DSN"):
+        raise ValueError(
+            "SENTRY_DSN environment variable is not set. Please set it to enable Sentry."
+        )
 
 else:
     if not TESTING:
@@ -330,7 +335,7 @@ STATIC_URL = "/static/"
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
     os.path.join(BASE_DIR, "website", "static"),
-    os.path.join(BASE_DIR, "company", "static"),
+    os.path.join(BASE_DIR, "organization", "static"),
 )
 
 ABSOLUTE_URL_OVERRIDES = {
@@ -526,3 +531,6 @@ BITCOIN_RPC_USER = os.environ.get("BITCOIN_RPC_USER", "yourusername")
 BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "yourpassword")
 BITCOIN_RPC_HOST = os.environ.get("BITCOIN_RPC_HOST", "localhost")
 BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")
+
+print("DATABASE_URL:", os.environ.get("DATABASE_URL"))
+print("SENTRY_DSN:", os.environ.get("SENTRY_DSN"))

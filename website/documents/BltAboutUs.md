@@ -67,7 +67,7 @@ Create a User Account to log into BLT.
 Describe the software or hardware bug you found.
 Attach a screenshot of the bug.
 Submit the information.
-Win money through company-sponsored Bug Bounties, tips or the Grand Prize/Jackpot.We may also have "heists" where each bug is worth a specific amount based on what the company sets.
+Win money through organization-sponsored Bug Bounties, tips or the Grand Prize/Jackpot.We may also have "heists" where each bug is worth a specific amount based on what the organization sets.
 If you participate in BLT’s sponsored Bug Bounties, you could win prize money known as tips.
 Organizations
 We want everyone to love your website.
