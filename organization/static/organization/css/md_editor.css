@@ -1,0 +1,95 @@
+#markdown-editor {
+    width: 100%;
+}
+
+#markdown-editor .toolbar {
+    background: #4f4f4f;
+    border: 1px solid #4f4f4f;
+    border-radius: 10px 10px 0 0;
+    margin: 0;
+    overflow: hidden;
+    padding: 0.5rem 10px;
+    width: 100%;
+}
+
+#markdown-editor .toolbar button {
+    background: transparent;
+    border: none;
+    color: #a5a5a5;
+    font-family: sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0.7rem;
+}
+
+#markdown-editor .toolbar button:hover,
+#markdown-editor .toolbar button.active {
+    background: #424242;
+    border-radius: 5px;
+    box-shadow: 0 0 2px #5c5c5c inset;
+    outline: 0px;
+}
+
+#markdown-editor .toolbar button:focus {
+    outline: none;
+}
+
+#markdown-editor .toolbar .group {
+    border-right: 1px solid #a5a5a5;
+    margin-right: 4px;
+    display: inline;
+}
+
+#markdown-editor #input-output {
+    height: 400px;
+    width: 100%;
+    position: relative;
+}
+
+#markdown-editor #input-output #input-area {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 10px;
+    border: 1px solid #aaa;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 10px 10px #e0e0e0;
+    resize: none;
+}
+
+#markdown-editor #input-output #input-area:focus,
+#markdown-editor #input-output #input-area:active {
+    outline: 0px;
+}
+
+#markdown-editor #input-output #output-area {
+    background: #fff;
+    border-radius: 0 0 10px 10px;
+    display: none;
+    font-family: sans-serif;
+    padding: 10px;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    overflow-y: scroll;
+}
+
+#markdown-editor #input-output p.preview-message {
+    background: #d6d6d6;
+    border-radius: 10px 10px 0 0;
+    color: #686868;
+    font-family: sans-serif;
+    position: absolute;
+    top: 93%;
+    right: 0%;
+    padding: 0.5rem 1rem;
+    user-select: none;
+    display: none;
+    opacity: 0.5;
+}
+
+#markdown-editor #input-output .show {
+    display: block !important;
+}
