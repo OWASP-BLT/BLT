@@ -4,19 +4,19 @@ from django.urls import path
 from organization.views import (
     AddDomainView,
     AddHuntView,
+    DomainView,
+    EndBughuntView,
     OrganizationDashboardAnalyticsView,
     OrganizationDashboardManageBughuntView,
     OrganizationDashboardManageBugsView,
     OrganizationDashboardManageDomainsView,
     OrganizationDashboardManageRolesView,
-    DomainView,
-    EndBughuntView,
     RegisterOrganizationView,
     accept_bug,
-    organization_view,
     delete_manager,
     delete_prize,
     edit_prize,
+    organization_view,
 )
 
 urlpatterns = [

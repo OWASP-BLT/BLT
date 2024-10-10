@@ -11,12 +11,12 @@ from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
-from organization.views import ShowBughuntView
 from rest_framework import permissions, routers
 
 import comments.views
 import website.views
 from blt import settings
+from organization.views import ShowBughuntView
 from website.api.views import (
     ActivityLogViewSet,
     AuthApiViewset,

@@ -18,7 +18,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 
-from website.models import Organization, Domain, Hunt, HuntPrize, Issue, IssueScreenshot, Winner
+from website.models import Domain, Hunt, HuntPrize, Issue, IssueScreenshot, Organization, Winner
 
 restricted_domain = ["gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "proton.com"]
 
@@ -141,7 +141,9 @@ class RegisterOrganizationView(View):
         organization_name = data.get("organization_name", "").strip().lower()
 
         if user_domain in restricted_domain:
-            messages.error(request, "Login with organization email in order to create the organization.")
+            messages.error(
+                request, "Login with organization email in order to create the organization."
+            )
             return redirect("/")
 
         if user_domain != organization_name:
@@ -157,7 +159,9 @@ class RegisterOrganizationView(View):
             organization_logo_file = organization_logo.name.split(".")[0]
             extension = organization_logo.name.split(".")[-1]
             organization_logo.name = f"{organization_logo_file[:99]}_{uuid.uuid4()}.{extension}"
-            logo_path = default_storage.save(f"organization_logos/{organization_logo.name}", organization_logo)
+            logo_path = default_storage.save(
+                f"organization_logos/{organization_logo.name}", organization_logo
+            )
         else:
             logo_path = None
 
@@ -203,11 +207,15 @@ class OrganizationDashboardAnalyticsView(View):
     months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
     def get_general_info(self, organization):
-        total_organization_bugs = Issue.objects.filter(domain__organization__id=organization).count()
+        total_organization_bugs = Issue.objects.filter(
+            domain__organization__id=organization
+        ).count()
         total_bug_hunts = Hunt.objects.filter(domain__organization__id=organization).count()
         total_domains = Domain.objects.filter(organization__id=organization).count()
         # Step 1: Retrieve all hunt IDs associated with the specified organization
-        hunt_ids = Hunt.objects.filter(domain__organization__id=organization).values_list("id", flat=True)
+        hunt_ids = Hunt.objects.filter(domain__organization__id=organization).values_list(
+            "id", flat=True
+        )
 
         # Step 2: Sum the rewarded values from issues that have a hunt_id in the hunt_ids list
         total_money_distributed = Issue.objects.filter(hunt_id__in=hunt_ids).aggregate(
@@ -461,7 +469,7 @@ class AddDomainView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         organizations = (
-             Organization.objects.values("name", "id")
+            Organization.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
         )
@@ -902,7 +910,12 @@ class OrganizationDashboardManageRolesView(View):
             # Convert managers QuerySet to list of dicts
             managers = list(domain.managers.values("id", "username", "userprofile__user_avatar"))
             domains_data.append(
-                {"id": _id, "name": name, "managers": managers, "organization_admin": organization_admin}
+                {
+                    "id": _id,
+                    "name": name,
+                    "managers": managers,
+                    "organization_admin": organization_admin,
+                }
             )
 
         context = {
