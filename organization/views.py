@@ -43,9 +43,9 @@ def get_email_domain(email):
     return domain
 
 
-def validate__user(func):
+def validate_organization_user(func):
     def wrapper(self, request, id, *args, **kwargs):
-        organization = organization.objects.filter(id=id).first()
+        organization = Organization.objects.filter(id=id).first()
 
         if not organization:
             return redirect("organization_view")
@@ -104,19 +104,19 @@ def organization_view(request, *args, **kwargs):
         messages.error(request, "Login with organization or domain provided email.")
         return redirect("/")
 
-    user_companies = Organization.objects.filter(Q(admin=user) | Q(managers=user))
-    if not user_companies.exists():
+    user_organizations = Organization.objects.filter(Q(admin=user) | Q(managers=user))
+    if not user_organizations.exists():
         # Check if the user is a manager of any domain
         user_domains = Domain.objects.filter(managers=user)
 
         # Check if any of these domains belong to a organization
-        companies_with_user_domains = Organization.objects.filter(domain__in=user_domains)
-        if not companies_with_user_domains.exists():
+        organizations_with_user_domains = Organization.objects.filter(domain__in=user_domains)
+        if not organizations_with_user_domains.exists():
             messages.error(request, "You do not have a organization, create one.")
             return redirect("register_organization")
 
     # Get the organization to redirect to
-    organization = user_companies.first() or companies_with_user_domains.first()
+    organization = user_organizations.first() or organizations_with_user_domains.first()
 
     return redirect("organization_analytics", id=organization.id)
 
@@ -378,7 +378,7 @@ class OrganizationDashboardAnalyticsView(View):
 
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        companies = (
+        organizations = (
             Organization.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
@@ -386,7 +386,7 @@ class OrganizationDashboardAnalyticsView(View):
 
         context = {
             "organization": id,
-            "companies": companies,
+            "organizations": organizations,
             "organization_obj": Organization.objects.filter(id=id).first(),
             "total_info": self.get_general_info(id),
             "bug_report_type_piechart_data": self.get_bug_report_type_piechart_data(id),
@@ -407,7 +407,7 @@ class OrganizationDashboardAnalyticsView(View):
 class OrganizationDashboardManageBugsView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        companies = (
+        organizations = (
             Organization.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
@@ -423,7 +423,7 @@ class OrganizationDashboardManageBugsView(View):
 
         context = {
             "organization": id,
-            "companies": companies,
+            "organizations": organizations,
             "organization_obj": organization_obj,
             "issues": issues,
         }
@@ -439,7 +439,7 @@ class OrganizationDashboardManageDomainsView(View):
             .order_by("modified")
         )
 
-        companies = (
+        organizations = (
             Organization.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
@@ -447,7 +447,7 @@ class OrganizationDashboardManageDomainsView(View):
 
         context = {
             "organization": id,
-            "companies": companies,
+            "organizations": organizations,
             "organization_obj": Organization.objects.filter(id=id).first(),
             "domains": domains,
         }
@@ -480,7 +480,7 @@ class AddDomainView(View):
         context = {
             "organization": id,
             "organization_obj": Organization.objects.filter(id=id).first(),
-            "companies": organizations,
+            "organizations": organizations,
             "users": users,
             "domain": domain,  # Pass the domain to the template if it exists
         }
@@ -880,7 +880,7 @@ class DomainView(View):
 class OrganizationDashboardManageRolesView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        companies = (
+        organizations = (
             Organization.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
@@ -921,7 +921,7 @@ class OrganizationDashboardManageRolesView(View):
         context = {
             "organization": id,
             "organization_obj": Organization.objects.filter(id=id).first(),
-            "companies": list(companies),  # Convert companies QuerySet to list of dicts
+            "organizations": list(organizations),  # Convert organizations QuerySet to list of dicts
             "domains": domains_data,
             "organization_users": organization_users_list,  # Use the converted list
         }
@@ -1111,14 +1111,14 @@ class EndBughuntView(View):
 
 
 class AddHuntView(View):
-    def edit(self, request, id, companies, domains, hunt_id, *args, **kwargs):
+    def edit(self, request, id, organizations, domains, hunt_id, *args, **kwargs):
         hunt = get_object_or_404(Hunt, pk=hunt_id)
         prizes = HuntPrize.objects.values().filter(hunt__id=hunt_id)
 
         context = {
             "organization": id,
             "organization_obj": Organization.objects.filter(id=id).first(),
-            "companies": companies,
+            "organizations": organizations,
             "domains": domains,
             "hunt": hunt,
             "prizes": prizes,
@@ -1131,7 +1131,7 @@ class AddHuntView(View):
     def get(self, request, id, *args, **kwargs):
         hunt_id = request.GET.get("hunt", None)
 
-        companies = (
+        organizations = (
             Organization.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
@@ -1140,12 +1140,12 @@ class AddHuntView(View):
         domains = Domain.objects.values("id", "name").filter(organization__id=id)
 
         if hunt_id is not None:
-            return self.edit(request, id, companies, domains, hunt_id, *args, **kwargs)
+            return self.edit(request, id, organizations, domains, hunt_id, *args, **kwargs)
 
         context = {
             "organization": id,
             "organization_obj": Organization.objects.filter(id=id).first(),
-            "companies": companies,
+            "organizations": organizations,
             "domains": domains,
         }
 
@@ -1250,7 +1250,7 @@ class AddHuntView(View):
 class OrganizationDashboardManageBughuntView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        companies = (
+        organizations = (
             Organization.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
@@ -1281,7 +1281,7 @@ class OrganizationDashboardManageBughuntView(View):
         context = {
             "organization": id,
             "organization_obj": Organization.objects.filter(id=id).first(),
-            "companies": companies,
+            "organizations": organizations,
             "bughunts": filtered_bughunts.get(filter_type, []),
         }
 
