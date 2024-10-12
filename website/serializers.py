@@ -129,6 +129,8 @@ class ProjectSerializer(serializers.ModelSerializer):
     stars = serializers.IntegerField()
     forks = serializers.IntegerField()
     external_links = serializers.JSONField()
+    ai_summary = serializers.CharField()
+    ai_labels = serializers.JSONField()
 
     class Meta:
         model = Project

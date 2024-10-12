@@ -160,7 +160,7 @@ class IssueViewSet(viewsets.ModelViewSet):
             return {}
 
         # Check if there is an image in the `screenshot` field of the Issue table
-        if issue.screenshot:
+        if (issue.screenshot):
             # If an image exists in the Issue table, return it along with additional images from IssueScreenshot
             screenshots = [request.build_absolute_uri(issue.screenshot.url)] + [
                 request.build_absolute_uri(screenshot.image.url)
@@ -760,10 +760,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
         query = request.query_params.get("q", "")
         projects = Project.objects.filter(
             Q(name__icontains=query)
-            | Q(description__icontains=query)
-            | Q(tags__name__icontains=query)
-            | Q(stars__icontains=query)
-            | Q(forks__icontains=query)
+            | Q(description__icontains(query))
+            | Q(tags__name__icontains(query))
+            | Q(stars__icontains(query))
+            | Q(forks__icontains(query))
         ).distinct()
 
         project_data = []
@@ -792,7 +792,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         projects = Project.objects.all()
 
         if freshness:
-            projects = projects.filter(freshness__icontains=freshness)
+            projects = projects.filter(freshness__icontains(freshness))
         if stars:
             projects = projects.filter(stars__gte=stars)
         if forks:
@@ -815,6 +815,21 @@ class ProjectViewSet(viewsets.ModelViewSet):
             {"count": len(project_data), "projects": project_data},
             status=200,
         )
+
+    @action(detail=True, methods=["put"])
+    def update_summary_and_labels(self, request, pk=None):
+        project = self.get_object()
+        summary = request.data.get("summary")
+        labels = request.data.get("labels")
+
+        if summary is not None:
+            project.ai_summary = summary
+
+        if labels is not None:
+            project.ai_labels = labels
+
+        project.save()
+        return Response(ProjectSerializer(project).data, status=status.HTTP_200_OK)
 
 
 class AuthApiViewset(viewsets.ModelViewSet):

@@ -18,6 +18,10 @@
             {{ form.as_p }}
             <button type="submit">Add Project</button>
         </form>
+        <div class="search-filter">
+            <input type="text" id="search-input" placeholder="Search projects...">
+            <button id="search-button">Search</button>
+        </div>
         <ul class="project-list">
             {% for project in projects %}
                 <a href="{% url 'project_view' project.slug %}" class="project-link">
@@ -32,6 +36,7 @@
                         <div class="project-details">
                             <h3>{{ project.name }}</h3>
                             <p>{{ project.description }}</p>
+                            <p>{{ project.ai_summary }}</p>
                             <div class="project-links">
                                 <a href="{{ project.github_url }}" target="_blank" title="GitHub">
                                     <i class="fab fa-github"></i> GitHub
@@ -79,6 +84,14 @@
                                 <ul>
                                     {% for tag in project.tags.all %}
                                         <li>{{ tag.name }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div class="ai-labels">
+                                <h4>AI-Generated Labels</h4>
+                                <ul>
+                                    {% for label in project.ai_labels %}
+                                        <li>{{ label }}</li>
                                     {% endfor %}
                                 </ul>
                             </div>
@@ -253,5 +266,37 @@ header nav a:hover {
     margin-right: 5px;
     border-radius: 5px;
 }
+
+.ai-labels {
+    margin-top: 1rem;
+}
+
+.ai-labels ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.ai-labels li {
+    display: inline-block;
+    background-color: #e1e1e1;
+    padding: 5px 10px;
+    margin-right: 5px;
+    border-radius: 5px;
+}
     </style>
+    <script>
+        document.getElementById('search-button').addEventListener('click', function() {
+            var searchInput = document.getElementById('search-input').value.toLowerCase();
+            var projectItems = document.getElementsByClassName('project-item');
+            for (var i = 0; i < projectItems.length; i++) {
+                var projectName = projectItems[i].getElementsByTagName('h3')[0].innerText.toLowerCase();
+                var projectDescription = projectItems[i].getElementsByTagName('p')[0].innerText.toLowerCase();
+                if (projectName.includes(searchInput) || projectDescription.includes(searchInput)) {
+                    projectItems[i].style.display = 'flex';
+                } else {
+                    projectItems[i].style.display = 'none';
+                }
+            }
+        });
+    </script>
 {% endblock content %}
