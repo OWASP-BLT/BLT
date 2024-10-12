@@ -98,6 +98,7 @@ from website.views import (  # TODO AutoLabel,
     vote_count,
     vote_suggestions,
     weekly_report,
+    refresh_projects,  # Added import for refresh_projects view
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
@@ -560,6 +561,7 @@ urlpatterns = [
     path("api/v1/tags", TagApiViewset.as_view({"get": "list", "post": "create"}), name="tags-api"),
     path("sizzle/", website.views.sizzle, name="sizzle"),
     path("api/timelogsreport/", website.views.TimeLogListAPIView, name="timelogsreport"),
+    path("refresh-projects/", refresh_projects, name="refresh_projects"),  # Added URL pattern for refresh_projects view
 ]
 
 if settings.DEBUG:
