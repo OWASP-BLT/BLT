@@ -78,6 +78,7 @@ openai = "^1.45.1"
 psutil = "^5.9.8"
 python-bitcoinrpc = "^1.0"
 sendgrid = "^6.11.0"
+nltk = "^3.7"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
@@ -102,3 +103,8 @@ select = ["E4", "E7", "E9", "F", "T"]
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[[tool.poetry.source]]
+name = "custom-index"
+url = "https://custom-index-url.com/simple"
+default = true
