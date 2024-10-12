@@ -76,6 +76,33 @@
                 {% endfor %}
             </ul>
         </div>
+        <div class="ai-summary">
+            <h3>AI-Generated Summary</h3>
+            <p>{{ project.ai_summary }}</p>
+        </div>
+        <div class="ai-labels">
+            <h3>AI-Generated Labels</h3>
+            <ul>
+                {% for label in project.ai_labels %}
+                    <li>{{ label }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="edit-summary-labels">
+            <h3>Edit AI-Generated Summary and Labels</h3>
+            <form method="post" action="{% url 'update_summary_and_labels' project.id %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="summary">Summary:</label>
+                    <textarea id="summary" name="summary">{{ project.ai_summary }}</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="labels">Labels:</label>
+                    <input type="text" id="labels" name="labels" value="{{ project.ai_labels|join:', ' }}">
+                </div>
+                <button type="submit">Update</button>
+            </form>
+        </div>
     </div>
     <style>
 .container {
@@ -180,6 +207,61 @@ h2 {
 
 .related-projects li {
     margin-bottom: 10px;
+}
+
+.ai-summary {
+    margin-top: 30px;
+}
+
+.ai-labels {
+    margin-top: 30px;
+}
+
+.ai-labels ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.ai-labels li {
+    display: inline-block;
+    background-color: #e1e1e1;
+    padding: 5px 10px;
+    margin-right: 5px;
+    border-radius: 5px;
+}
+
+.edit-summary-labels {
+    margin-top: 30px;
+}
+
+.edit-summary-labels .form-group {
+    margin-bottom: 15px;
+}
+
+.edit-summary-labels label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.edit-summary-labels textarea,
+.edit-summary-labels input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.edit-summary-labels button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.edit-summary-labels button:hover {
+    background-color: #0056b3;
 }
     </style>
 {% endblock content %}

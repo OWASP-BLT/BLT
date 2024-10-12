@@ -127,7 +127,7 @@ class Domain(models.Model):
         return parsed_url.netloc.split(".")[-2:][0].title()
 
     def get_logo(self):
-        if self.logo:
+        if (self.logo):
             return self.logo.url
         image_request = requests.get("https://logo.clearbit.com/" + self.name)
         try:
@@ -749,6 +749,8 @@ class Project(models.Model):
     modified = models.DateTimeField(auto_now=True)
     contributors = models.ManyToManyField(Contributor, related_name="projects", blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
+    ai_summary = models.TextField(null=True, blank=True)
+    ai_labels = models.JSONField(default=list, blank=True)
 
     def __str__(self):
         return self.name
@@ -819,6 +821,11 @@ class Project(models.Model):
                 last_commit_date = commits_data[0]["commit"]["committer"]["date"]
                 return last_commit_date
         return None
+
+    def update_ai_summary_and_labels(self, summary, labels):
+        self.ai_summary = summary
+        self.ai_labels = labels
+        self.save()
 
 
 class Contribution(models.Model):
