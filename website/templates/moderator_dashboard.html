@@ -1,0 +1,65 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h2>Pending Duplicate Approvals</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Issue ID</th>
+                <th>Description</th>
+                <th>Marked By</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for issue in pending_issues %}
+            <tr>
+                <td>{{ issue.id }}</td>
+                <td>{{ issue.description }}</td>
+                <td>{{ issue.duplicate_marked_by.username }}</td>
+                <td>
+                    <button class="btn btn-success approve-duplicate-btn" data-issue-id="{{ issue.id }}">Approve</button>
+                    <button class="btn btn-danger reject-duplicate-btn" data-issue-id="{{ issue.id }}">Reject</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('.approve-duplicate-btn').click(function() {
+            var issueId = $(this).data('issue-id');
+            $.ajax({
+                url: '{% url "approve_duplicate" %}',
+                method: 'POST',
+                data: {
+                    'issue_id': issueId,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    location.reload();
+                }
+            });
+        });
+
+        $('.reject-duplicate-btn').click(function() {
+            var issueId = $(this).data('issue-id');
+            $.ajax({
+                url: '{% url "reject_duplicate" %}',
+                method: 'POST',
+                data: {
+                    'issue_id': issueId,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    location.reload();
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

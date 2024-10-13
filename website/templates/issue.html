@@ -106,6 +106,15 @@
             {% include "./includes/issue_left_info.html" %}
             {% include "./includes/issue_right_info.html" %}
         </div>
+        <div class="mt-4">
+            <button id="mark-duplicate-btn" class="btn btn-warning">Mark as Duplicate</button>
+            <button id="validate-issue-btn" class="btn btn-success">Validate Issue</button>
+        </div>
+        <div class="mt-4">
+            <h4>Duplicate Status: {{ object.duplicate_status }}</h4>
+            <p>Marked by: {{ object.duplicate_marked_by }}</p>
+            <p>Approved by: {{ object.duplicate_approved_by }}</p>
+        </div>
     </div>
     <script src="{% static '/company/js/md_editor.js' %}"></script>
     <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->

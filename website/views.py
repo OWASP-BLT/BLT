@@ -505,8 +505,11 @@ def delete_issue(request, id):
         for screenshot in screenshots:
             screenshot.delete()
     if request.user.is_superuser or request.user == issue.user:
-        issue.delete()
-        messages.success(request, "Issue deleted")
+        if issue.duplicate_status == "approved":
+            issue.delete()
+            messages.success(request, "Issue deleted")
+        else:
+            messages.error(request, "Duplicate issue not approved by moderator")
     if tokenauth:
         return JsonResponse("Deleted", safe=False)
     else:
@@ -2504,3 +2507,46 @@ def TimeLogListAPIView(request):
         response_data.append(day_data)
 
     return JsonResponse(response_data, safe=False, status=status.HTTP_200_OK)
+
+
+@login_required(login_url="/accounts/login")
+def mark_duplicate(request, issue_id):
+    issue = get_object_or_404(Issue, id=issue_id)
+    if request.method == "POST":
+        issue.duplicate_status = "pending"
+        issue.duplicate_marked_by = request.user
+        issue.save()
+        # Notify moderators for approval (implementation depends on your notification system)
+        return JsonResponse({"status": "ok", "message": "Duplicate marking pending approval"})
+    return HttpResponseBadRequest("Invalid request method")
+
+
+@login_required(login_url="/accounts/login")
+def approve_duplicate(request, issue_id):
+    issue = get_object_or_404(Issue, id=issue_id)
+    if request.method == "POST" and request.user.is_superuser:
+        issue.duplicate_status = "approved"
+        issue.duplicate_approved_by = request.user
+        issue.save()
+        # Update points for users
+        if issue.duplicate_marked_by:
+            Points.objects.create(user=issue.duplicate_marked_by, issue=issue, score=4)
+        if issue.user:
+            Points.objects.filter(user=issue.user, issue=issue).delete()
+        return JsonResponse({"status": "ok", "message": "Duplicate marking approved"})
+    return HttpResponseBadRequest("Invalid request method")
+
+
+@login_required(login_url="/accounts/login")
+def validate_issue(request, issue_id):
+    issue = get_object_or_404(Issue, id=issue_id)
+    if request.method == "POST":
+        validation_status = request.POST.get("validation_status")
+        screenshot = request.FILES.get("screenshot")
+        if validation_status:
+            issue.validation_status = validation_status
+        if screenshot:
+            IssueScreenshot.objects.create(issue=issue, image=screenshot)
+        issue.save()
+        return JsonResponse({"status": "ok", "message": "Issue validated"})
+    return HttpResponseBadRequest("Invalid request method")
