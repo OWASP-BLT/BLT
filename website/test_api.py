@@ -146,3 +146,43 @@ class APITests(APITestCase):
             for n in range(0, count):
                 message = "Test is failed"
                 self.assertTrue(response.data["results"][n].is_hidden, message)
+
+    def test_post_bug(self):
+        url = "/api/v1/issues/"
+        data = {
+            "url": "http://example.com",
+            "description": "Test bug report",
+            "screenshot": None,
+            "label": "0",
+            "token": "test",
+            "type": "test",
+        }
+        response = self.client.post(url, data, format="multipart")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_user_signup(self):
+        url = "/auth/registration/"
+        data = {
+            "username": "newuser",
+            "password1": "NewPassword123!",
+            "password2": "NewPassword123!",
+            "email": "newuser@example.com",
+        }
+        response = self.client.post(url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_user_login(self):
+        user = get_user_model().objects.create_user(username="testuser", password="testpassword")
+        url = "/auth/login/"
+        data = {
+            "username": "testuser",
+            "password": "testpassword",
+        }
+        response = self.client.post(url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("key", response.data)
+
+    def test_issue_page_loads(self):
+        url = "/issue/1/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
