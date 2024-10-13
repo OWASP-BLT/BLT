@@ -334,9 +334,19 @@ class ProjectListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["form"] = GitHubURLForm()
+        context["sort_by"] = self.request.GET.get("sort_by", "-created")
+        context["order"] = self.request.GET.get("order", "desc")
         return context
 
     def post(self, request, *args, **kwargs):
+        if "update_projects" in request.POST:
+            print("Updating projects")
+            from django.core.management import call_command  # Add this import
+
+            call_command("update_projects")
+            messages.success(request, "Requested refresh to projects")
+            return redirect("project_list")
+
         form = GitHubURLForm(request.POST)
         if form.is_valid():
             github_url = form.cleaned_data["github_url"]
@@ -365,6 +375,18 @@ class ProjectListView(ListView):
         context = self.get_context_data()
         context["form"] = form
         return self.render_to_response(context)
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        sort_by = self.request.GET.get("sort_by", "-created")
+        order = self.request.GET.get("order", "desc")
+
+        if order == "asc" and sort_by.startswith("-"):
+            sort_by = sort_by[1:]
+        elif order == "desc" and not sort_by.startswith("-"):
+            sort_by = f"-{sort_by}"
+
+        return queryset.order_by(sort_by)
 
 
 def newhome(request, template="new_home.html"):
@@ -2654,9 +2676,8 @@ def monitor_create_view(request):
         form = MonitorForm(request.POST)
         if form.is_valid():
             monitor = form.save(commit=False)
-            monitor.user = request.user  # Assuming you have a logged-in user
+            monitor.user = request.user
             monitor.save()
-            # Redirect to a success page or render a success message
     else:
         form = MonitorForm()
     return render(request, "Moniter.html", {"form": form})
