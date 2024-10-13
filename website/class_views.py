@@ -100,7 +100,7 @@ class ProjectDetailView(DetailView):
             from django.core.management import call_command
 
             project = self.get_object()  # Use get_object() to retrieve the current object
-            call_command("update_project", project.pk)
+            call_command("update_projects", project.pk)
             messages.success(request, "Requested refresh to projects")
             return redirect("project_detail", pk=project.pk)
 
