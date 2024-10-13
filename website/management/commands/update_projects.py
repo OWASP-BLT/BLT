@@ -1,5 +1,5 @@
 import requests
-from django.core.exceptions import MultipleObjectsReturned  # Add this import
+from django.core.exceptions import MultipleObjectsReturned
 from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 
@@ -9,8 +9,20 @@ from website.models import Contributor, Project
 class Command(BaseCommand):
     help = "Update projects with their contributors and latest release from GitHub"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--project_id",
+            type=int,
+            help="Specify a project ID to update only that project",
+        )
+
     def handle(self, *args, **kwargs):
-        projects = Project.objects.prefetch_related("contributors").all()
+        project_id = kwargs.get("project_id")
+        if project_id:
+            projects = Project.objects.filter(id=project_id).prefetch_related("contributors")
+        else:
+            projects = Project.objects.prefetch_related("contributors").all()
+
         for project in projects:
             owner_repo = project.github_url.rstrip("/").split("/")[-2:]
             repo_name = f"{owner_repo[0]}/{owner_repo[1]}"
