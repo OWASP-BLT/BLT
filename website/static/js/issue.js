@@ -167,4 +167,50 @@ $(function () {
         $(this).parent().parent().prev().find('.del_comment').show();
         $(this).parent().parent().prev().find('.reply_comment').show();
     });
+
+    // P96ed
+    $('#mark-duplicate-btn').click(function() {
+        $.ajax({
+            url: '/mark_duplicate/',
+            method: 'POST',
+            data: {
+                'issue_id': $('#issue_pk').val(),
+                'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val()
+            },
+            success: function(response) {
+                alert('Issue marked as duplicate and sent for approval.');
+            }
+        });
+    });
+
+    // P966d
+    $('.approve-duplicate-btn').click(function() {
+        var issueId = $(this).data('issue-id');
+        $.ajax({
+            url: '/approve_duplicate/',
+            method: 'POST',
+            data: {
+                'issue_id': issueId,
+                'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val()
+            },
+            success: function(response) {
+                location.reload();
+            }
+        });
+    });
+
+    // P5c22
+    $('#validate-issue-btn').click(function() {
+        $.ajax({
+            url: '/validate_issue/',
+            method: 'POST',
+            data: {
+                'issue_id': $('#issue_pk').val(),
+                'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val()
+            },
+            success: function(response) {
+                alert('Issue validated successfully.');
+            }
+        });
+    });
 });

@@ -289,6 +289,13 @@ class Issue(models.Model):
     cve_id = models.CharField(max_length=16, null=True, blank=True)
     cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
+    duplicate_status = models.CharField(max_length=20, default="pending", null=True, blank=True)
+    duplicate_marked_by = models.ForeignKey(
+        User, null=True, blank=True, related_name="duplicate_marked_by", on_delete=models.CASCADE
+    )
+    duplicate_approved_by = models.ForeignKey(
+        User, null=True, blank=True, related_name="duplicate_approved_by", on_delete=models.CASCADE
+    )
 
     def __unicode__(self):
         return self.description
