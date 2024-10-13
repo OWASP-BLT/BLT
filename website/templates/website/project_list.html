@@ -8,7 +8,7 @@
     <div class="container">
         <div class="top-bar">
             <h3>Projects: {{ projects.count }}</h3>
-            <form method="post" class="add-refresh-projects-form">
+            <form method="post" class="add-project-form">
                 {% csrf_token %}
                 <div class="add-project-form">
                     <div class="form-field">
@@ -19,7 +19,7 @@
                                class="github-url-input"
                                placeholder="GitHub URL">
                     </div>
-                    <button type="button">
+                    <button type="submit">
                         <i class="fas fa-plus-circle"></i> Add Project
                     </button>
                 </form>
