@@ -1,14 +1,13 @@
 import json
 import uuid
 from datetime import datetime, timedelta
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse
 
 import requests
 from django.contrib import messages
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
-from django.core.validators import URLValidator
 from django.db import transaction
 from django.db.models import Count, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractMonth
@@ -19,23 +18,9 @@ from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 
 from website.models import Company, Domain, Hunt, HuntPrize, Issue, IssueScreenshot, Winner
+from website.utils import is_valid_https_url, rebuild_safe_url
 
 restricted_domain = ["gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "proton.com"]
-
-
-def is_valid_https_url(url):
-    validate = URLValidator(schemes=["https"])  # Only allow HTTPS URLs
-    try:
-        validate(url)
-        return True
-    except ValidationError:
-        return False
-
-
-def rebuild_safe_url(url):
-    parsed_url = urlparse(url)
-    # Rebuild the URL with scheme, netloc, and path only
-    return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", ""))
 
 
 def get_email_domain(email):
