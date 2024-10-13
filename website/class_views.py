@@ -102,7 +102,7 @@ class ProjectDetailView(DetailView):
             project = self.get_object()  # Use get_object() to retrieve the current object
             call_command("update_projects", "--project_id", project.pk)
             messages.success(request, "Requested refresh to projects")
-            return redirect("project_detail", pk=project.pk)
+            return redirect("project_view", slug=project.slug)
 
 
 class ProjectListView(ListView):
