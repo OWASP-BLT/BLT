@@ -558,6 +558,8 @@ urlpatterns = [
     ),
     path("auth/delete", AuthApiViewset.as_view({"delete": "delete"}), name="auth-delete-api"),
     path("api/v1/tags", TagApiViewset.as_view({"get": "list", "post": "create"}), name="tags-api"),
+    path("sizzle/", website.views.sizzle, name="sizzle"),
+    path("api/timelogsreport/", website.views.TimeLogListAPIView, name="timelogsreport"),
 ]
 
 if settings.DEBUG:

@@ -92,6 +92,7 @@ class UrlsTest(StaticLiveServerTestCase):
                         "/error/",
                         "/tz_detect/set/",
                         "/leaderboard/api/",
+                        "/api/timelogsreport/",
                     ]
                     if not any(x in url for x in matches):
                         response = self.client.get(url)

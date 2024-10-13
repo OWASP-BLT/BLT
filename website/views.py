@@ -9,7 +9,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-from collections import deque
+from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -21,8 +21,6 @@ import requests.exceptions
 import six
 import stripe
 import tweepy
-
-# from django_cron import CronJobBase, Schedule
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in, user_signed_up
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
@@ -64,6 +62,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
@@ -99,6 +98,7 @@ from website.models import (
     Subscription,
     Suggestion,
     SuggestionVotes,
+    TimeLog,
     UserProfile,
     Wallet,
     Winner,
@@ -135,7 +135,6 @@ from .bitcoin_utils import create_bacon_token
 from .forms import UserProfileForm
 from .models import BaconToken, Contribution, Tag, UserProfile
 
-# Load environment variables
 load_dotenv()
 
 logger = logging.getLogger(__name__)
@@ -171,7 +170,6 @@ def add_domain_to_company(request):
                 domain.company = company
                 domain.save()
                 messages.success(request, "Organization added successfully")
-                # back to the domain detail page
                 return redirect("domain", slug=domain.url)
             else:
                 messages.error(request, "Organization not found in the domain")
@@ -180,18 +178,15 @@ def add_domain_to_company(request):
             domain.company = company
             domain.save()
             messages.success(request, "Organization added successfully")
-            # back to the domain detail page
             return redirect("domain", slug=domain.url)
     else:
         return redirect("index")
 
 
 def check_status(request):
-    # Check if the status is already cached
     status = cache.get("service_status")
 
     if not status:
-        # Initialize the status dictionary
         status = {
             "bitcoin": False,
             "bitcoin_block": None,
@@ -199,7 +194,6 @@ def check_status(request):
             "github": False,
         }
 
-        # Check Bitcoin Core Node Status
         bitcoin_rpc_user = os.getenv("BITCOIN_RPC_USER")
         bitcoin_rpc_password = os.getenv("BITCOIN_RPC_PASSWORD")
         bitcoin_rpc_host = os.getenv("BITCOIN_RPC_HOST", "127.0.0.1")
@@ -231,7 +225,6 @@ def check_status(request):
         except Exception as e:
             print(f"SendGrid Error: {e}")
 
-        # Check GitHub Repo Access
         github_token = os.getenv("GITHUB_ACCESS_TOKEN")
 
         if not github_token:
@@ -260,10 +253,8 @@ def check_status(request):
                 status["github"] = False
                 print(f"GitHub API Error: {e}")
 
-        # Cache the status for 1 minute (60 seconds)
         cache.set("service_status", status, timeout=60)
 
-    # Pass the status to the template
     return render(request, "status_page.html", {"status": status})
 
 
@@ -322,7 +313,7 @@ def image_validator(img):
 
 
 def is_valid_https_url(url):
-    validate = URLValidator(schemes=["https"])  # Only allow HTTPS URLs
+    validate = URLValidator(schemes=["https"])
     try:
         validate(url)
         return True
@@ -332,12 +323,19 @@ def is_valid_https_url(url):
 
 def rebuild_safe_url(url):
     parsed_url = urlparse(url)
-    # Rebuild the URL with scheme, netloc, and path only
     return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", ""))
 
 
 class ProjectDetailView(DetailView):
     model = Project
+
+    def post(self, request, *args, **kwargs):
+        if "update_project" in request.POST:
+            from django.core.management import call_command
+
+            call_command("update_project", self.object.pk)
+            messages.success(request, "Requested refresh to projects")
+            return redirect("project_detail", pk=self.object.pk)
 
 
 class ProjectListView(ListView):
@@ -347,9 +345,19 @@ class ProjectListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["form"] = GitHubURLForm()
+        context["sort_by"] = self.request.GET.get("sort_by", "-created")
+        context["order"] = self.request.GET.get("order", "desc")
         return context
 
     def post(self, request, *args, **kwargs):
+        if "update_projects" in request.POST:
+            print("Updating projects")
+            from django.core.management import call_command  # Add this import
+
+            call_command("update_projects")
+            messages.success(request, "Requested refresh to projects")
+            return redirect("project_list")
+
         form = GitHubURLForm(request.POST)
         if form.is_valid():
             github_url = form.cleaned_data["github_url"]
@@ -379,99 +387,17 @@ class ProjectListView(ListView):
         context["form"] = form
         return self.render_to_response(context)
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        sort_by = self.request.GET.get("sort_by", "-created")
+        order = self.request.GET.get("order", "desc")
 
-# # @cache_page(60 * 60 * 24)
-# def index(request, template="index.html"):
-#     try:
-#         domains = random.sample(Domain.objects.all(), 3)
-#     except:
-#         domains = None
-#     try:
-#         if not EmailAddress.objects.get(email=request.user.email).verified:
-#             messages.error(request, "Please verify your email address")
-#     except:
-#         pass
+        if order == "asc" and sort_by.startswith("-"):
+            sort_by = sort_by[1:]
+        elif order == "desc" and not sort_by.startswith("-"):
+            sort_by = f"-{sort_by}"
 
-#     latest_hunts_filter = request.GET.get("latest_hunts", None)
-
-#     bug_count = Issue.objects.all().count()
-#     user_count = User.objects.all().count()
-#     hunt_count = Hunt.objects.all().count()
-#     domain_count = Domain.objects.all().count()
-
-#     captcha_form = CaptchaForm()
-
-#     wallet = None
-#     if request.user.is_authenticated:
-#         wallet, created = Wallet.objects.get_or_create(user=request.user)
-
-#     activity_screenshots = {}
-#     for activity in Issue.objects.all():
-#         activity_screenshots[activity] = IssueScreenshot.objects.filter(issue=activity).first()
-
-#     top_companies = (
-#         Issue.objects.values("domain__name")
-#         .annotate(count=Count("domain__name"))
-#         .order_by("-count")[:10]
-#     )
-#     top_testers = (
-#         Issue.objects.values("user__id", "user__username")
-#         .filter(user__isnull=False)
-#         .annotate(count=Count("user__username"))
-#         .order_by("-count")[:10]
-#     )
-
-#     if request.user.is_anonymous:
-#         activities = Issue.objects.exclude(Q(is_hidden=True))[0:10]
-#     else:
-#         activities = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))[0:10]
-
-#     top_hunts = Hunt.objects.values(
-#         "id",
-#         "name",
-#         "url",
-#         "logo",
-#         "starts_on",
-#         "starts_on__day",
-#         "starts_on__month",
-#         "starts_on__year",
-#         "end_on",
-#         "end_on__day",
-#         "end_on__month",
-#         "end_on__year",
-#     ).annotate(total_prize=Sum("huntprize__value"))
-
-#     if latest_hunts_filter is not None:
-#         top_hunts = top_hunts.filter(result_published=True).order_by("-created")[:3]
-#     else:
-#         top_hunts = top_hunts.filter(is_published=True, result_published=False).order_by(
-#             "-created"
-#         )[:3]
-
-#     context = {
-#         "server_url": request.build_absolute_uri("/"),
-#         "activities": activities,
-#         "domains": domains,
-#         "hunts": Hunt.objects.exclude(txn_id__isnull=True)[:4],
-#         "leaderboard": User.objects.filter(
-#             points__created__month=datetime.now().month,
-#             points__created__year=datetime.now().year,
-#         )
-#         .annotate(total_score=Sum("points__score"))
-#         .order_by("-total_score")[:10],
-#         "bug_count": bug_count,
-#         "user_count": user_count,
-#         "hunt_count": hunt_count,
-#         "domain_count": domain_count,
-#         "wallet": wallet,
-#         "captcha_form": captcha_form,
-#         "activity_screenshots": activity_screenshots,
-#         "top_companies": top_companies,
-#         "top_testers": top_testers,
-#         "top_hunts": top_hunts,
-#         "ended_hunts": False if latest_hunts_filter is None else True,
-#     }
-#     return render(request, template, context)
+        return queryset.order_by(sort_by)
 
 
 def newhome(request, template="new_home.html"):
@@ -483,19 +409,16 @@ def newhome(request, template="new_home.html"):
         else:
             messages.error(request, "No email associated with your account. Please add an email.")
 
-    # Fetch and paginate issues
     issues_queryset = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
     paginator = Paginator(issues_queryset, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    # Prefetch related screenshots only for issues on the current page
     issues_with_screenshots = page_obj.object_list.prefetch_related(
         Prefetch("screenshots", queryset=IssueScreenshot.objects.all())
     )
     bugs_screenshots = {issue: issue.screenshots.all()[:3] for issue in issues_with_screenshots}
 
-    # Filter leaderboard for current month and year
     current_time = now()
     leaderboard = User.objects.filter(
         points__created__month=current_time.month, points__created__year=current_time.year
@@ -536,7 +459,6 @@ def github_callback(request):
     ALLOWED_HOSTS = ["github.com"]
     params = urllib.parse.urlencode(request.GET)
     url = f"{settings.CALLBACK_URL_FOR_GITHUB}?{params}"
-
     return safe_redirect(url, ALLOWED_HOSTS)
 
 
@@ -544,7 +466,6 @@ def google_callback(request):
     ALLOWED_HOSTS = ["accounts.google.com"]
     params = urllib.parse.urlencode(request.GET)
     url = f"{settings.CALLBACK_URL_FOR_GOOGLE}?{params}"
-
     return safe_redirect(url, ALLOWED_HOSTS)
 
 
@@ -552,7 +473,6 @@ def facebook_callback(request):
     ALLOWED_HOSTS = ["www.facebook.com"]
     params = urllib.parse.urlencode(request.GET)
     url = f"{settings.CALLBACK_URL_FOR_FACEBOOK}?{params}"
-
     return safe_redirect(url, ALLOWED_HOSTS)
 
 
@@ -562,8 +482,6 @@ class FacebookLogin(SocialLoginView):
 
     @property
     def callback_url(self):
-        # use the same callback url as defined in your Facebook app, this url
-        # must be absolute:
         return self.request.build_absolute_uri(reverse("facebook_callback"))
 
 
@@ -573,8 +491,6 @@ class GoogleLogin(SocialLoginView):
 
     @property
     def callback_url(self):
-        # use the same callback url as defined in your Google app, this url
-        # must be absolute:
         return self.request.build_absolute_uri(reverse("google_callback"))
 
 
@@ -584,8 +500,6 @@ class GithubLogin(SocialLoginView):
 
     @property
     def callback_url(self):
-        # use the same callback url as defined in your GitHub app, this url
-        # must be absolute:
         return self.request.build_absolute_uri(reverse("github_callback"))
 
 
@@ -595,8 +509,6 @@ class FacebookConnect(SocialConnectView):
 
     @property
     def callback_url(self):
-        # use the same callback url as defined in your Facebook app, this url
-        # must be absolute:
         return self.request.build_absolute_uri(reverse("facebook_callback"))
 
 
@@ -606,8 +518,6 @@ class GithubConnect(SocialConnectView):
 
     @property
     def callback_url(self):
-        # use the same callback url as defined in your GitHub app, this url
-        # must be absolute:
         return self.request.build_absolute_uri(reverse("github_callback"))
 
 
@@ -617,8 +527,6 @@ class GoogleConnect(SocialConnectView):
 
     @property
     def callback_url(self):
-        # use the same callback url as defined in your Google app, this url
-        # must be absolute:
         return self.request.build_absolute_uri(reverse("google_callback"))
 
 
@@ -775,7 +683,6 @@ class IssueBaseCreate(object):
         print("processing process_issue for ip address: ", get_client_ip(self.request))
         p = Points.objects.create(user=user, issue=obj, score=score)
         messages.success(self.request, "Bug added ! +" + str(score))
-        # tweet feature
         try:
             auth = tweepy.Client(
                 settings.BEARER_TOKEN,
@@ -942,7 +849,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 if isinstance(self.request.POST.get("file"), six.string_types):
                     import imghdr
 
-                    # Check if the base64 string is in the "data:" format
                     data = (
                         "data:image/"
                         + self.request.POST.get("type")
@@ -952,18 +858,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     data = data.replace(" ", "")
                     data += "=" * ((4 - len(data) % 4) % 4)
                     if "data:" in data and ";base64," in data:
-                        # Break out the header from the base64 content
                         header, data = data.split(";base64,")
 
-                    # Try to decode the file. Return validation error if it fails.
                     try:
                         decoded_file = base64.b64decode(data)
                     except TypeError:
                         TypeError("invalid_image")
 
-                    # Generate file name:
-                    file_name = str(uuid.uuid4())[:12]  # 12 characters are more than enough.
-                    # Get the file name extension:
+                    file_name = str(uuid.uuid4())[:12]
                     extension = imghdr.what(file_name, decoded_file)
                     extension = "jpg" if extension == "jpeg" else extension
                     file_extension = extension
@@ -983,32 +885,19 @@ class IssueCreate(IssueBaseCreate, CreateView):
             initial["screenshot"] = "uploads\/" + self.request.POST.get("screenshot-hash") + ".png"
         return initial
 
-    # def get(self, request, *args, **kwargs):
-    #     print("processing get for ip address: ", get_client_ip(request))
-
-    #     captcha_form = CaptchaForm()
-    #     return render(
-    #         request,
-    #         self.template_name,
-    #         {"form": self.get_form(), "captcha_form": captcha_form},
-    #     )
-
     def post(self, request, *args, **kwargs):
         print("processing post for ip address: ", get_client_ip(request))
-        # resolve domain
         url = request.POST.get("url").replace("www.", "").replace("https://", "")
 
         request.POST._mutable = True
-        request.POST.update(url=url)  # only domain.com will be stored in db
+        request.POST.update(url=url)
         request.POST._mutable = False
 
-        # disable domain search on testing
         if not settings.IS_TEST:
             try:
                 if settings.DOMAIN_NAME in url:
                     print("Web site exists")
 
-                # skip domain validation check if bugreport server down
                 elif request.POST["label"] == "7":
                     pass
 
@@ -1036,14 +925,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     "report.html",
                     {"form": self.get_form(), "captcha_form": captcha_form},
                 )
-        # if not request.FILES.get("screenshots"):
-        #     messages.error(request, "Screenshot is required")
-        #     captcha_form = CaptchaForm(request.POST)
-        #     return render(
-        #         self.request,
-        #         "report.html",
-        #         {"form": self.get_form(), "captcha_form": captcha_form},
-        #     )
 
         screenshot = request.FILES.get("screenshots")
         if not screenshot:
@@ -1056,9 +937,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
             )
 
         try:
-            # Attempt to open the image to validate if it's a correct format
             img = Image.open(screenshot)
-            img.verify()  # Verify that it is, in fact, an image
+            img.verify()
         except (IOError, ValueError):
             messages.error(request, "Invalid image file.")
             captcha_form = CaptchaForm(request.POST)
@@ -1078,7 +958,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
         reporter_ip = get_client_ip(self.request)
         form.instance.reporter_ip_address = reporter_ip
 
-        # implement rate limit
         limit = 50 if self.request.user.is_authenticated else 30
         today = now().date()
         recent_issues_count = Issue.objects.filter(
@@ -1636,7 +1515,7 @@ class DomainDetailView(ListView):
 
         context["name"] = parsed_url.netloc.split(".")[-2:][0].title()
 
-        paginator = Paginator(open_issue, 10)
+        paginator = Paginator(open_issue, 3)
         page = self.request.GET.get("open")
         try:
             openissue_paginated = paginator.page(page)
@@ -1645,7 +1524,7 @@ class DomainDetailView(ListView):
         except EmptyPage:
             openissue_paginated = paginator.page(paginator.num_pages)
 
-        paginator = Paginator(close_issue, 10)
+        paginator = Paginator(close_issue, 3)
         page = self.request.GET.get("close")
         try:
             closeissue_paginated = paginator.page(page)
@@ -1675,12 +1554,25 @@ class DomainDetailView(ListView):
             .annotate(c=Count("id"))
             .order_by()
         )
+        for i in range(0, 7):
+            context["bug_type_" + str(i)] = Issue.objects.filter(
+                domain=context["domain"], hunt=None, label=str(i)
+            )
+        context["total_bugs"] = Issue.objects.filter(domain=context["domain"], hunt=None).count()
         context["pie_chart"] = (
             Issue.objects.filter(domain=context["domain"], hunt=None)
             .values("label")
             .annotate(c=Count("label"))
             .order_by()
         )
+        context["activities"] = Issue.objects.filter(domain=context["domain"], hunt=None).exclude(
+            Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+        )[0:3]
+        context["activity_screenshots"] = {}
+        for activity in context["activities"]:
+            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(
+                issue=activity.pk
+            ).first()
         context["twitter_url"] = "https://twitter.com/%s" % domain.get_or_set_x_url(domain.get_name)
 
         return context
@@ -1859,34 +1751,33 @@ class StatsDetailView(TemplateView):
 
             return cumulative_data
 
-        # Prepare cumulative sparklines data
         context["sparklines_data"] = [
-            get_cumulative_data(Issue.objects),  # Uses "created"
-            get_cumulative_data(User.objects, date_field="date_joined"),  # Uses "date_joined"
-            get_cumulative_data(Hunt.objects),  # Uses "created"
-            get_cumulative_data(Domain.objects),  # Uses "created"
-            get_cumulative_data(Subscription.objects),  # Uses "created"
-            get_cumulative_data(Company.objects),  # Uses "created"
-            get_cumulative_data(HuntPrize.objects),  # Uses "created"
-            get_cumulative_data(IssueScreenshot.objects),  # Uses "created"
-            get_cumulative_data(Winner.objects),  # Uses "created"
-            get_cumulative_data(Points.objects),  # Uses "created"
-            get_cumulative_data(InviteFriend.objects),  # Uses "created"
-            get_cumulative_data(UserProfile.objects),  # Uses "created"
-            get_cumulative_data(IP.objects),  # Uses "created"
-            get_cumulative_data(CompanyAdmin.objects),  # Uses "created"
-            get_cumulative_data(Transaction.objects),  # Uses "created"
-            get_cumulative_data(Payment.objects),  # Uses "created"
-            get_cumulative_data(ContributorStats.objects),  # Uses "created"
-            get_cumulative_data(Monitor.objects),  # Uses "created"
-            get_cumulative_data(Bid.objects),  # Uses "created"
-            get_cumulative_data(ChatBotLog.objects),  # Uses "created"
-            get_cumulative_data(Suggestion.objects),  # Uses "created"
-            get_cumulative_data(SuggestionVotes.objects),  # Uses "created"
-            get_cumulative_data(Contributor.objects),  # Uses "created"
-            get_cumulative_data(Project.objects),  # Uses "created"
-            get_cumulative_data(Contribution.objects),  # Uses "created"
-            get_cumulative_data(BaconToken.objects),  # Uses "created"
+            get_cumulative_data(Issue.objects),
+            get_cumulative_data(User.objects, date_field="date_joined"),
+            get_cumulative_data(Hunt.objects),
+            get_cumulative_data(Domain.objects),
+            get_cumulative_data(Subscription.objects),
+            get_cumulative_data(Company.objects),
+            get_cumulative_data(HuntPrize.objects),
+            get_cumulative_data(IssueScreenshot.objects),
+            get_cumulative_data(Winner.objects),
+            get_cumulative_data(Points.objects),
+            get_cumulative_data(InviteFriend.objects),
+            get_cumulative_data(UserProfile.objects),
+            get_cumulative_data(IP.objects),
+            get_cumulative_data(CompanyAdmin.objects),
+            get_cumulative_data(Transaction.objects),
+            get_cumulative_data(Payment.objects),
+            get_cumulative_data(ContributorStats.objects),
+            get_cumulative_data(Monitor.objects),
+            get_cumulative_data(Bid.objects),
+            get_cumulative_data(ChatBotLog.objects),
+            get_cumulative_data(Suggestion.objects),
+            get_cumulative_data(SuggestionVotes.objects),
+            get_cumulative_data(Contributor.objects),
+            get_cumulative_data(Project.objects),
+            get_cumulative_data(Contribution.objects),
+            get_cumulative_data(BaconToken.objects),
         ]
 
         return context
@@ -1996,18 +1887,7 @@ class SpecificIssuesView(ListView):
 
 
 class LeaderboardBase:
-    """
-    get:
-        1) ?monthly=true will give list of winners for current month
-        2) ?year=2022 will give list of winner of every month from month 1-12 else None
-
-    """
-
     def get_leaderboard(self, month=None, year=None, api=False):
-        """
-        all user scores for specified month and year
-        """
-
         data = User.objects
 
         if year and not month:
@@ -2369,8 +2249,8 @@ class IssueView(DetailView):
                     )
                     self.object.save()
                 except Exception as e:
+                    print(e)
                     pass  # pass this temporarly to avoid error
-                    # print(e)
                     # messages.error(self.request, "That issue was not found 2." + str(e))
                     # ipdetails.save()
                     # self.object.views = (self.object.views or 0) + 1
@@ -2807,9 +2687,8 @@ def monitor_create_view(request):
         form = MonitorForm(request.POST)
         if form.is_valid():
             monitor = form.save(commit=False)
-            monitor.user = request.user  # Assuming you have a logged-in user
+            monitor.user = request.user
             monitor.save()
-            # Redirect to a success page or render a success message
     else:
         form = MonitorForm()
     return render(request, "Moniter.html", {"form": form})
@@ -3743,7 +3622,6 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
                 if isinstance(request.POST.get("file"), six.string_types):
                     import imghdr
 
-                    # Check if the base64 string is in the "data:" format
                     data = (
                         "data:image/"
                         + request.POST.get("type")
@@ -3903,23 +3781,18 @@ def handler500(request, exception=None):
 def users_view(request, *args, **kwargs):
     context = {}
 
-    # Get all tags related to all user profiles
     context["user_related_tags"] = Tag.objects.filter(userprofile__isnull=False).distinct()
 
-    # Get all tags in the system
     context["tags"] = Tag.objects.all()
 
-    # Check if a specific tag is being requested
     tag_name = request.GET.get("tag")
     if tag_name:
-        # Check if the requested tag exists in user_related_tags
         if context["user_related_tags"].filter(name=tag_name).exists():
             context["tag"] = tag_name
             context["users"] = UserProfile.objects.filter(tags__name=tag_name)
         else:
             context["users"] = UserProfile.objects.none()  # No users if the tag isn't found
     else:
-        # Default filter: Show users with the tag "BLT Contributor"
         context["tag"] = "BLT Contributors"
         context["users"] = UserProfile.objects.filter(tags__name="BLT Contributors")
 
@@ -3964,7 +3837,6 @@ def sponsor_view(request):
             print(f"An error occurred: {e}")
             return None
 
-    # Example BCH address
     bch_address = "bitcoincash:qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc"
 
     balance = get_bch_balance(bch_address)
@@ -3978,15 +3850,11 @@ def safe_redirect(request: HttpRequest):
     http_referer = request.META.get("HTTP_REFERER")
     if http_referer:
         referer_url = urlparse(http_referer)
-        # Check if the referer URL's host is the same as the site's host
         if referer_url.netloc == request.get_host():
-            # Build a 'safe' version of the referer URL (without query string or fragment)
             safe_url = urlunparse(
                 (referer_url.scheme, referer_url.netloc, referer_url.path, "", "", "")
             )
             return redirect(safe_url)
-    # Redirect to the fallback path if 'HTTP_REFERER' is not provided or is not safe
-    # Build the fallback URL using the request's scheme and host
     fallback_url = f"{request.scheme}://{request.get_host()}/"
     return redirect(fallback_url)
 
@@ -4251,9 +4119,6 @@ class IssueView(DetailView):
 def create_github_issue(request, id):
     issue = get_object_or_404(Issue, id=id)
     screenshot_all = IssueScreenshot.objects.filter(issue=issue)
-    # referer = request.META.get("HTTP_REFERER")
-    # if not referer:
-    #     return HttpResponseForbidden()
     if not os.environ.get("GITHUB_ACCESS_TOKEN"):
         return JsonResponse({"status": "Failed", "status_reason": "GitHub Access Token is missing"})
     if issue.github_url:
@@ -4360,15 +4225,13 @@ def handle_user_signup(request, user, **kwargs):
 
 
 def reward_sender_with_points(sender):
-    # Create or update points for the sender
     points, created = Points.objects.get_or_create(user=sender, defaults={"score": 0})
-    points.score += 2  # Reward 2 points for each successful referral signup
+    points.score += 2
     points.save()
 
 
 def referral_signup(request):
     referral_token = request.GET.get("ref")
-    # check the referral token is present on invitefriend model or not and if present then set the referral token in the session
     if referral_token:
         try:
             invite = InviteFriend.objects.get(referral_code=referral_token)
@@ -4380,7 +4243,6 @@ def referral_signup(request):
 
 
 def invite_friend(request):
-    # check if the user is authenticated or not
     if not request.user.is_authenticated:
         return redirect("account_login")
     current_site = get_current_site(request)
@@ -4427,120 +4289,6 @@ def trademark_detailview(request, slug):
     return render(request, "trademark_detailview.html", context)
 
 
-# class CreateIssue(CronJobBase):
-#     RUN_EVERY_MINS = 1
-
-#     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
-#     code = "blt.create_issue"  # a unique code
-
-#     def do(self):
-#         from django.conf import settings
-#         import imaplib
-
-#         mail = imaplib.IMAP4_SSL("imap.gmail.com", 993)
-#         error = False
-#         mail.login(settings.REPORT_EMAIL, settings.REPORT_EMAIL_PASSWORD)
-#         mail.list()
-#         # Out: list of "folders" aka labels in gmail.
-#         mail.select("inbox")  # connect to inbox.
-#         typ, data = mail.search(None, "ALL", "UNSEEN")
-#         import email
-
-
-#         for num in data[0].split():
-#             image = False
-#             screenshot_base64 = ""
-#             url = ""
-#             label = ""
-#             token = "None"
-#             typ, data = mail.fetch(num, "(RFC822)")
-#             raw_email = (data[0][1]).decode("utf-8")
-#             email_message = email.message_from_string(raw_email)
-#             maintype = email_message.get_content_maintype()
-#             error = False
-#             for part in email_message.walk():
-#                 if part.get_content_type() == "text/plain":  # ignore attachments/html
-#                     body = part.get_payload(decode=True)
-#                     body_text = body.decode("utf-8")
-#                     words = body_text.split()
-#                     flag_word = False
-#                     for word in words:
-#                         if word.lower() == ":":
-#                             continue
-#                         if word.lower() == "url":
-#                             continue
-#                         if word.lower() == "type":
-#                             flag_word = True
-#                             continue
-#                         if not flag_word:
-#                             url = word
-#                             continue
-#                         if flag_word:
-#                             label = word
-#                 if part.get_content_maintype() == "multipart":
-#                     continue
-#                 if part.get("Content-Disposition") is None:
-#                     continue
-#                 image = True
-#                 screenshot_base64 = part
-#             sender = email_message["From"].split()[-1]
-#             address = re.sub(r"[<>]", "", sender)
-#             for user in User.objects.all():
-#                 if user.email == address:
-#                     token = Token.objects.get(user_id=user.id).key
-#                     break
-#             if label.lower() == "general":
-#                 label = 0
-#             elif label.lower() == "number error":
-#                 label = 1
-#             elif label.lower() == "functional":
-#                 label = 2
-#             elif label.lower() == "performance":
-#                 label = 3
-#             elif label.lower() == "security":
-#                 label = 4
-#             elif label.lower() == "typo":
-#                 label = 5
-#             elif label.lower() == "design":
-#                 label = 6
-#             else:
-#                 error = True
-#             if token == "None":
-#                 error = "TokenTrue"
-#             if not image:
-#                 error = True
-#             if error:
-#                 send_mail(
-#                     "Error In Your Report",
-#                     "There was something wrong with the mail you sent regarding the issue to be created. Please check the content and try again later !",
-#                     settings.EMAIL_TO_STRING,
-#                     [address],
-#                     fail_silently=False,
-#                 )
-#             elif error == "TokenTrue":
-#                 send_mail(
-#                     "You are not a user of " + settings.PROJECT_NAME,
-#                     "You are not a Registered user at " + settings.PROJECT_NAME + " .Please first Signup at " + settings.PROJECT_NAME + " and Try Again Later ! .",
-#                     settings.EMAIL_TO_STRING,
-#                     [address],
-#                     fail_silently=False,
-#                 )
-#             else:
-#                 data = {
-#                     "url": url,
-#                     "description": email_message["Subject"],
-#                     "file": str(screenshot_base64.get_payload(decode=False)),
-#                     "token": token,
-#                     "label": label,
-#                     "type": "jpg",
-#                 }
-#                 headers = {"Content-Type": "application/x-www-form-urlencoded"}
-#                 requests.post(
-#                     "https://" + settings.FQDN + "/api/v1/createissues/",
-#                     data=json.dumps(data),
-#                     headers=headers,
-#                 )
-#         mail.logout()
 def update_bch_address(request):
     if request.method == "POST":
         selected_crypto = request.POST.get("selected_crypto")
@@ -4751,17 +4499,13 @@ def submit_pr(request):
     return render(request, "submit_pr.html")
 
 
-# Global variable to store the vector store
 vector_store = None
-
-# Define the daily request limit as a variable
 DAILY_REQUEST_LIMIT = 10
 
 
 @api_view(["POST"])
 def chatbot_conversation(request):
     try:
-        # Rate Limit Check
         today = datetime.now(timezone.utc).date()
         rate_limit_key = f"global_daily_requests_{today}"
         request_count = cache.get(rate_limit_key, 0)
@@ -4779,7 +4523,6 @@ def chatbot_conversation(request):
             ChatBotLog.objects.create(question=question, answer="Error: Invalid API Key")
             return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Apply validation for question
         if not question or not isinstance(question, str):
             ChatBotLog.objects.create(question=question, answer="Error: Invalid question")
             return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
@@ -4812,9 +4555,7 @@ def chatbot_conversation(request):
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
 
-        # Handle the "exit" command
         if question.lower() == "exit":
-            # if buffer is present in the session then delete it
             if "buffer" in request.session:
                 del request.session["buffer"]
             return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
@@ -4830,11 +4571,9 @@ def chatbot_conversation(request):
             error_message = "An unexpected error occurred. Please try again later"
             ChatBotLog.objects.create(question=question, answer=error_message)
             return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        # Increment the request count
         cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
         request.session["buffer"] = memory.buffer
 
-        # Log the conversation
         ChatBotLog.objects.create(question=question, answer=response["answer"])
 
         return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
@@ -5008,3 +4747,113 @@ def add_suggestions(request):
 def view_suggestions(request):
     suggestion = Suggestion.objects.all()
     return render(request, "feature_suggestion.html", {"suggestions": suggestion})
+
+
+def sizzle(request):
+    print(request.user)
+    if not request.user.is_authenticated:
+        messages.error(request, "Please login to access the Sizzle page.")
+        return redirect("index")
+
+    sizzle_data = None
+
+    last_data = TimeLog.objects.filter(user=request.user).order_by("-created").first()
+
+    if last_data:
+        all_data = TimeLog.objects.filter(
+            user=request.user, created__date=last_data.created.date()
+        ).order_by("created")
+
+        total_duration = sum((entry.duration for entry in all_data if entry.duration), timedelta())
+
+        total_duration_seconds = total_duration.total_seconds()
+        formatted_duration = (
+            f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
+        )
+
+        github_issue_url = all_data.first().github_issue_url
+
+        issue_title = get_github_issue_title(github_issue_url)
+
+        start_time = all_data.first().start_time.strftime("%I:%M %p")
+        date = last_data.created.strftime("%d %B %Y")
+
+        sizzle_data = {
+            "issue_title": issue_title,
+            "duration": formatted_duration,
+            "start_time": start_time,
+            "date": date,
+        }
+
+    return render(request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data})
+
+
+def TimeLogListAPIView(request):
+    print(request.user)
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+
+    start_date_str = request.GET.get("start_date")
+    end_date_str = request.GET.get("end_date")
+
+    if not start_date_str or not end_date_str:
+        return JsonResponse(
+            {"error": "Both start_date and end_date are required."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    start_date = parse_datetime(start_date_str)
+    end_date = parse_datetime(end_date_str)
+
+    if not start_date or not end_date:
+        return JsonResponse({"error": "Invalid date format."}, status=status.HTTP_400_BAD_REQUEST)
+
+    time_logs = TimeLog.objects.filter(
+        user=request.user, created__range=[start_date, end_date]
+    ).order_by("created")
+
+    grouped_logs = defaultdict(list)
+    for log in time_logs:
+        date_str = log.created.strftime("%Y-%m-%d")
+        grouped_logs[date_str].append(log)
+
+    response_data = []
+    for date, logs in grouped_logs.items():
+        first_log = logs[0]
+        total_duration = sum((log.duration for log in logs if log.duration), timedelta())
+
+        total_duration_seconds = total_duration.total_seconds()
+        formatted_duration = (
+            f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
+        )
+
+        issue_title = get_github_issue_title(first_log.github_issue_url)
+
+        start_time = first_log.start_time.strftime("%I:%M %p")
+        formatted_date = first_log.created.strftime("%d %B %Y")
+
+        day_data = {
+            "issue_title": issue_title,
+            "duration": formatted_duration,
+            "start_time": start_time,
+            "date": formatted_date,
+        }
+
+        response_data.append(day_data)
+
+    return JsonResponse(response_data, safe=False, status=status.HTTP_200_OK)
+
+
+def get_github_issue_title(github_issue_url):
+    """Helper function to fetch the title of a GitHub issue."""
+    try:
+        repo_path = "/".join(github_issue_url.split("/")[3:5])
+        issue_number = github_issue_url.split("/")[-1]
+        github_api_url = f"https://api.github.com/repos/{repo_path}/issues/{issue_number}"
+        response = requests.get(github_api_url)
+        if response.status_code == 200:
+            issue_data = response.json()
+            return issue_data.get("title", "No Title")
+        return f"Issue #{issue_number}"
+    except Exception:
+        return "No Title"
