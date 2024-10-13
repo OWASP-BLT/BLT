@@ -326,6 +326,14 @@ def rebuild_safe_url(url):
 class ProjectDetailView(DetailView):
     model = Project
 
+    def post(self, request, *args, **kwargs):
+        if "update_project" in request.POST:
+            from django.core.management import call_command
+
+            call_command("update_project", self.object.pk)
+            messages.success(request, "Requested refresh to projects")
+            return redirect("project_detail", pk=self.object.pk)
+
 
 class ProjectListView(ListView):
     model = Project
