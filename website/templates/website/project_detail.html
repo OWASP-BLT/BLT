@@ -76,6 +76,10 @@
                 {% endfor %}
             </ul>
         </div>
+        <form method="post" action="{% url 'refresh_project' project.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">Refresh Project</button>
+        </form>
     </div>
     <style>
 .container {
