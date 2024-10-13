@@ -8,23 +8,29 @@
     <div class="container">
         <div class="top-bar">
             <h3>Projects: {{ projects.count }}</h3>
-            <div class="add-project-form">
-                <div class="form-field">
-                    <input type="url"
-                           id="github_url"
-                           name="github_url"
-                           required
-                           class="github-url-input"
-                           placeholder="GitHub URL">
-                </div>
-                <button type="button">
-                    <i class="fas fa-plus-circle"></i> Add Project
-                </button>
+            <form method="post" class="add-refresh-projects-form">
+                {% csrf_token %}
+                <div class="add-project-form">
+                    <div class="form-field">
+                        <input type="url"
+                               id="github_url"
+                               name="github_url"
+                               required
+                               class="github-url-input"
+                               placeholder="GitHub URL">
+                    </div>
+                    <button type="button">
+                        <i class="fas fa-plus-circle"></i> Add Project
+                    </button>
+                </form>
+                <form method="post" class="refresh-projects-form">
+                    {% csrf_token %}
+                    <button type="submit" name="update_projects" value="update_projects">
+                        <i class="fas fa-sync-alt"></i> Refresh Projects
+                    </button>
+                </form>
             </div>
             <form method="get" class="refresh-projects-form">
-                <button type="submit" name="update_projects" value="update_projects">
-                    <i class="fas fa-sync-alt"></i> Refresh Projects
-                </button>
                 <select id="sort_by"
                         name="sort_by"
                         onchange="this.form.submit()"
