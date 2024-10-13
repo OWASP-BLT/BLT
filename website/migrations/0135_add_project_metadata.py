@@ -4,7 +4,7 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('website', '0134_auto_20210915_1234'),
+        ('website', '0134_blocked_modified'),
     ]
 
     operations = [
