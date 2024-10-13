@@ -14,6 +14,7 @@
                            id="github_url"
                            name="github_url"
                            required
+                           class="github-url-input"
                            placeholder="GitHub URL">
                 </div>
                 <button type="button">
@@ -24,7 +25,10 @@
                 <button type="submit" name="update_projects" value="update_projects">
                     <i class="fas fa-sync-alt"></i> Refresh Projects
                 </button>
-                <select id="sort_by" name="sort_by" onchange="this.form.submit()">
+                <select id="sort_by"
+                        name="sort_by"
+                        onchange="this.form.submit()"
+                        class="sort-select">
                     <option value="">Sort By:</option>
                     <option value="last_updated"
                             {% if sort_by == 'last_updated' %}selected{% endif %}>Recently Updated</option>
@@ -35,7 +39,10 @@
                     <option value="contributor_count"
                             {% if sort_by == 'contributor_count' %}selected{% endif %}>Contributors</option>
                 </select>
-                <select id="order-select" name="order" onchange="this.form.submit()">
+                <select id="order-select"
+                        name="order"
+                        onchange="this.form.submit()"
+                        class="sort-select">
                     <option value="desc" {% if order == 'desc' %}selected{% endif %}>Descending</option>
                     <option value="asc" {% if order == 'asc' %}selected{% endif %}>Ascending</option>
                 </select>
@@ -65,6 +72,7 @@
                         {% endif %}
                         <div class="project-details">
                             <h3>{{ project.name }}</h3>
+                            <!-- Stats Icons Under Project Title -->
                             <div class="stats-icons">
                                 <ul>
                                     <li>
@@ -120,6 +128,7 @@
                                 </ul>
                             </div>
                             <p>{{ project.description }}</p>
+                            <!-- Contributors Section -->
                             <div class="project-stats">
                                 <p>
                                     <i class="fas fa-users"></i> Contributors: {{ project.contributor_count }}
@@ -153,9 +162,10 @@
                                     </ul>
                                 </div>
                             </div>
+                            <!-- Tags Section -->
                             <div class="project-tags">
                                 <h4>
-                                    <i class="fas fa-tags"></i> Tags
+                                    <i class="fas fa-tags"></i>Tags
                                 </h4>
                                 <ul>
                                     {% for tag in project.tags.all %}<li>{{ tag.name }}</li>{% endfor %}
@@ -167,238 +177,292 @@
             {% endfor %}
         </ul>
     </div>
+    <style>
+        .container {
+            margin-top: 30px;
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .top-bar h2 {
+            margin: 0;
+        }
+
+        .top-bar p {
+            margin: 0 0 0 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .top-bar a.github-link {
+            margin-left: 20px;
+            text-decoration: none;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
+
+        .top-bar a.github-link i {
+            margin-right: 5px;
+        }
+
+        /* Add Project Form Styling */
+        .add-project-form {
+            display: flex;
+            align-items: center;
+            margin-left: 20px;
+        }
+
+        .add-project-form .form-field {
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            flex: 1; 
+        }
+
+        .add-project-form label {
+            margin-right: 5px;
+        }
+
+        .add-project-form input,
+        .add-project-form textarea {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            flex: 1; 
+        }
+
+        .github-url-input {
+            flex: 1;
+        }
+
+        .add-project-form button {
+            padding: 0.5rem 1rem;
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .add-project-form button i {
+            margin-right: 5px;
+        }
+
+        .add-project-form button:hover {
+            background: #0056b3;
+        }
+
+        .refresh-projects-form {
+            display: flex;
+            align-items: center;
+            margin-left: 20px;
+        }
+
+        .refresh-projects-form button {
+            padding: 0.5rem 1rem;
+            background: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .refresh-projects-form button i {
+            margin-right: 5px;
+        }
+
+        .refresh-projects-form button:hover {
+            background: #218838;
+        }
+
+        .sort-select {
+            margin-left: 10px;
+            padding: 0.5rem;
+            border: 1px solid #dc3545;
+            background: #dc3545;
+            color: white;
+        }
+
+        h3 {
+            font-size: 20px;
+        }
+
+        .messages {
+            list-style: none;
+            padding: 0;
+            margin: 1rem 0;
+        }
+
+        .messages li {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid #ddd;
+        }
+
+        .messages li.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .messages li.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .project-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .project-link {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .project-item {
+            display: flex;
+            align-items: flex-start;
+            border: 1px solid #ddd;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .project-logo {
+            max-width: 100px;
+            margin-right: 1rem;
+        }
+
+        .project-logo.placeholder {
+            height: 100px;
+            width: 100px;
+            background-color: #f1f1f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .project-details {
+            flex: 1;
+        }
+
+        .stats-icons ul {
+            list-style: none;
+            padding: 0;
+            margin: 0.5rem 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .stats-icons li {
+            margin-right: 15px;
+        }
+
+        .stats-icons a {
+            text-decoration: none;
+            color: #333;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .stats-icons a:hover {
+            color: #007bff;
+        }
+
+        .stats-icons i {
+            font-size: 16px;
+            margin-right: 5px;
+        }
+
+        .project-links a {
+            display: inline-block;
+            margin-right: 0.5rem;
+            text-decoration: none;
+            color: #007bff;
+        }
+
+        .project-links a i {
+            margin-right: 0.3rem;
+        }
+
+        .project-links a:hover {
+            text-decoration: underline;
+        }
+
+        .project-stats {
+            margin-top: 1rem;
+        }
+
+        .contributors {
+            display: flex;
+            margin-top: 0.5rem;
+        }
+
+        .contributor-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .contributor-avatar.placeholder {
+            height: 40px;
+            width: 40px;
+            background-color: #f1f1f1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .additional-metadata {
+            margin-top: 1rem;
+        }
+
+        .external-links ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .external-links li {
+            margin-bottom: 0.5rem;
+        }
+
+        .external-links a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .external-links a:hover {
+            text-decoration: underline;
+        }
+
+        .project-tags {
+            margin-top: 1rem;
+        }
+
+        .project-tags ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .project-tags li {
+            display: inline-block;
+            background-color: #f1f1f1;
+            padding: 5px 10px;
+            margin-right: 5px;
+            border-radius: 5px;
+        }
+
+        .project-tags h4 i {
+            margin-right: 0.5rem;
+        }
+    </style>
 {% endblock content %}
-<style>
-    .container {
-        margin-top: 30px;
-    }
-
-    .top-bar {
-        display: flex;
-        align-items: center;
-        margin-bottom: 1rem;
-    }
-
-    .add-project-form {
-        display: flex;
-        align-items: center;
-        margin-left: 20px;
-    }
-
-    .add-project-form .form-field {
-        margin-right: 10px;
-        display: flex;
-        align-items: center;
-        flex: 1;
-    }
-
-    .add-project-form input {
-        padding: 0.5rem;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        flex: 1;
-    }
-
-    .add-project-form button {
-        padding: 0.5rem 1rem;
-        background: #007bff;
-        color: white;
-        border: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-    }
-
-    .add-project-form button:hover {
-        background: #0056b3;
-    }
-
-    .refresh-projects-form {
-        margin-left: 20px;
-        display: flex;
-        align-items: center;
-    }
-
-    .refresh-projects-form button {
-        padding: 0.5rem 1rem;
-        background: #28a745;
-        color: white;
-        border: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        margin-left: 5px;
-    }
-
-    .refresh-projects-form button:first-child {
-        margin-left: 0;
-    }
-
-    .refresh-projects-form button:hover {
-        background: #218838;
-    }
-
-    .refresh-projects-form select {
-        margin-left: 10px;
-        padding: 0.5rem;
-        border: 1px solid #dc3545;
-        background: #dc3545;
-        color: white;
-    }
-
-    .project-list {
-        list-style: none;
-        padding: 0;
-    }
-
-    .project-link {
-        text-decoration: none;
-        color: inherit;
-    }
-
-    .project-item {
-        display: flex;
-        align-items: flex-start;
-        border: 1px solid #ddd;
-        padding: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .project-logo {
-        max-width: 100px;
-        margin-right: 1rem;
-    }
-
-    .project-logo.placeholder {
-        height: 100px;
-        width: 100px;
-        background-color: #f1f1f1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .project-details {
-        flex: 1;
-    }
-
-    .stats-icons ul {
-        list-style: none;
-        padding: 0;
-        margin: 0.5rem 0;
-        display: flex;
-        align-items: center;
-    }
-
-    .stats-icons li {
-        margin-right: 15px;
-    }
-
-    .stats-icons a {
-        text-decoration: none;
-        color: #333;
-        display: flex;
-        align-items: center;
-        font-size: 14px;
-    }
-
-    .stats-icons a:hover {
-        color: #007bff;
-    }
-
-    .stats-icons i {
-        font-size: 16px;
-        margin-right: 5px;
-    }
-
-    .project-stats {
-        margin-top: 1rem;
-    }
-
-    .contributors {
-        display: flex;
-        margin-top: 0.5rem;
-    }
-
-    .contributor-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        margin-right: 0.5rem;
-    }
-
-    .contributor-avatar.placeholder {
-        height: 40px;
-        width: 40px;
-        background-color: #f1f1f1;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .additional-metadata {
-        margin-top: 1rem;
-    }
-
-    .external-links ul {
-        list-style-type: none;
-        padding: 0;
-    }
-
-    .external-links li {
-        margin-bottom: 0.5rem;
-    }
-
-    .external-links a {
-        color: #007bff;
-        text-decoration: none;
-    }
-
-    .external-links a:hover {
-        text-decoration: underline;
-    }
-
-    .project-tags {
-        margin-top: 1rem;
-    }
-
-    .project-tags ul {
-        list-style-type: none;
-        padding: 0;
-    }
-
-    .project-tags li {
-        display: inline-block;
-        background-color: #f1f1f1;
-        padding: 5px 10px;
-        margin-right: 5px;
-        border-radius: 5px;
-    }
-
-    .project-tags h4 i {
-        margin-right: 0.5rem;
-    }
-
-    .messages {
-        list-style: none;
-        padding: 0;
-        margin: 1rem 0;
-    }
-
-    .messages li {
-        padding: 0.5rem;
-        margin-bottom: 0.5rem;
-        border: 1px solid #ddd;
-    }
-
-    .messages li.success {
-        background: #d4edda;
-        color: #155724;
-    }
-
-    .messages li.error {
-        background: #f8d7da;
-        color: #721c24;
-    }
-</style>
