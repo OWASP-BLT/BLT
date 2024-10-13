@@ -54,8 +54,6 @@ class CaptchaForm(forms.Form):
     captcha = CaptchaField()
 
 
-
-
 class MonitorForm(forms.ModelForm):
     created = forms.DateTimeField(widget=forms.HiddenInput(), required=False, label="Created")
     modified = forms.DateTimeField(widget=forms.HiddenInput(), required=False, label="Modified")
