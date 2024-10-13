@@ -3,7 +3,14 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
+
         ("website", "0134_blocked_modified"),
+
+ management-cmd
+        ('website', '0134_blocked_modified'),
+        ("website", "0134_blocked_modified"),
+ main
+
     ]
 
     operations = [
