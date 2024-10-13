@@ -59,6 +59,7 @@ from website.class_views import (
     InboundParseWebhookView,
     InviteCreate,
     IssueCreate,
+    IssueView,
     JoinCompany,
     ListHunts,
     OngoingHunts,
@@ -76,7 +77,6 @@ from website.class_views import (
     UserProfileDetailView,
 )
 from website.views import (  # TODO AutoLabel,
-    IssueView,
     SaveBiddingData,
     add_suggestions,
     blt_tomato,

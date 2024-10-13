@@ -2,17 +2,15 @@ import base64
 import io
 import json
 import os
-import re
-import time
 import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-from collections import defaultdict, deque
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
-from urllib.parse import urlparse, urlsplit, urlunparse
+from urllib.parse import urlparse, urlunparse
 
 import humanize
 import requests
@@ -24,16 +22,14 @@ from allauth.account.signals import user_logged_in, user_signed_up
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import serializers
 from django.core.cache import cache
-from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.core.validators import URLValidator
 from django.db.models import Prefetch, Q, Sum
 from django.dispatch import receiver
 from django.http import (
@@ -53,19 +49,19 @@ from django.utils.dateparse import parse_datetime
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
-from django.views.generic import DetailView
+from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
+from requests.auth import HTTPBasicAuth
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from user_agents import parse
+from sendgrid import SendGridAPIClient
 
 from blt import settings
 from comments.models import Comment
 from website.class_views import IssueBaseCreate
 from website.models import (
-    IP,
     Bid,
     ChatBotLog,
     Company,
@@ -86,29 +82,11 @@ from website.models import (
     Wallet,
     Winner,
 )
-
-from .bot import conversation_chain, is_api_key_valid, load_vector_store
-from .forms import HuntForm, MonitorForm, UserProfileForm
-
-WHITELISTED_IMAGE_TYPES = {
-    "jpeg": "image/jpeg",
-    "jpg": "image/jpeg",
-    "png": "image/png",
-}
-
-import os
-
-import requests
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.core.cache import cache
-from django.shortcuts import redirect, render
-from dotenv import load_dotenv
-from PIL import Image
-from requests.auth import HTTPBasicAuth
-from sendgrid import SendGridAPIClient
+from website.utils import is_valid_https_url, rebuild_safe_url
 
 from .bitcoin_utils import create_bacon_token
-from .forms import UserProfileForm
+from .bot import conversation_chain, is_api_key_valid, load_vector_store
+from .forms import HuntForm, MonitorForm, UserProfileForm
 from .models import BaconToken, Contribution, Tag, UserProfile
 
 load_dotenv()
@@ -263,41 +241,76 @@ def distribute_bacon(request, contribution_id):
     return render(request, "select_contribution.html", {"contributions": contributions})
 
 
-def image_validator(img):
+def UpdateIssue(request):
+    if not request.POST.get("issue_pk"):
+        return HttpResponse("Missing issue ID")
+    issue = get_object_or_404(Issue, pk=request.POST.get("issue_pk"))
     try:
-        filesize = img.file.size
+        for token in Token.objects.all():
+            if request.POST["token"] == token.key:
+                request.user = User.objects.get(id=token.user_id)
+                tokenauth = True
     except:
-        filesize = img.size
+        tokenauth = False
+    if (
+        request.method == "POST"
+        and request.user.is_superuser
+        or (issue is not None and request.user == issue.user)
+    ):
+        if request.POST.get("action") == "close":
+            issue.status = "closed"
+            issue.closed_by = request.user
+            issue.closed_date = datetime.now()
 
-    extension = img.name.split(".")[-1]
-    content_type = img.content_type
-    megabyte_limit = 3.0
-    if not extension or extension.lower() not in WHITELISTED_IMAGE_TYPES.keys():
-        error = "Invalid image types"
-        return error
-    elif filesize > megabyte_limit * 1024 * 1024:
-        error = "Max file size is %sMB" % str(megabyte_limit)
-        return error
+            msg_plain = msg_html = render_to_string(
+                "email/bug_updated.txt",
+                {
+                    "domain": issue.domain.name,
+                    "name": issue.user.username if issue.user else "Anonymous",
+                    "id": issue.id,
+                    "username": request.user.username,
+                    "action": "closed",
+                },
+            )
+            subject = (
+                issue.domain.name
+                + " bug # "
+                + str(issue.id)
+                + " closed by "
+                + request.user.username
+            )
 
-    elif content_type not in WHITELISTED_IMAGE_TYPES.values():
-        error = "invalid image content-type"
-        return error
-    else:
-        return True
+        elif request.POST.get("action") == "open":
+            issue.status = "open"
+            issue.closed_by = None
+            issue.closed_date = None
+            msg_plain = msg_html = render_to_string(
+                "email/bug_updated.txt",
+                {
+                    "domain": issue.domain.name,
+                    "name": issue.domain.email.split("@")[0],
+                    "id": issue.id,
+                    "username": request.user.username,
+                    "action": "opened",
+                },
+            )
+            subject = (
+                issue.domain.name
+                + " bug # "
+                + str(issue.id)
+                + " opened by "
+                + request.user.username
+            )
 
+        mailer = settings.EMAIL_TO_STRING
+        email_to = issue.user.email
+        send_mail(subject, msg_plain, mailer, [email_to], html_message=msg_html)
+        send_mail(subject, msg_plain, mailer, [issue.domain.email], html_message=msg_html)
+        issue.save()
+        return HttpResponse("Updated")
 
-def is_valid_https_url(url):
-    validate = URLValidator(schemes=["https"])
-    try:
-        validate(url)
-        return True
-    except ValidationError:
-        return False
-
-
-def rebuild_safe_url(url):
-    parsed_url = urlparse(url)
-    return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", ""))
+    elif request.method == "POST":
+        return HttpResponse("invalid")
 
 
 def newhome(request, template="new_home.html"):
@@ -470,16 +483,6 @@ def find_key(request, token):
     raise Http404("Token or key does not exist")
 
 
-def get_client_ip(request):
-    """Extract the client's IP address from the request."""
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(",")[0]
-    else:
-        ip = request.META.get("REMOTE_ADDR")
-    return ip
-
-
 def profile(request):
     try:
         return redirect("/profile/" + request.user.username)
@@ -537,7 +540,6 @@ import requests
 from bs4 import BeautifulSoup
 
 from .models import (
-    IP,
     BaconToken,
     Bid,
     ChatBotLog,
@@ -684,93 +686,6 @@ def search_issues(request, template="search.html"):
     return HttpResponse(json.dumps({"issues": issues}), content_type="application/json")
 
 
-class IssueView(DetailView):
-    model = Issue
-    slug_field = "id"
-    template_name = "issue.html"
-
-    def get(self, request, *args, **kwargs):
-        print("getting issue id: ", self.kwargs["slug"])
-        print("getting issue id: ", self.kwargs)
-        ipdetails = IP()
-        try:
-            id = int(self.kwargs["slug"])
-        except ValueError:
-            return HttpResponseNotFound("Invalid ID: ID must be an integer")
-
-        self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
-        ipdetails.user = self.request.user
-        ipdetails.address = get_client_ip(request)
-        ipdetails.issuenumber = self.object.id
-        ipdetails.path = request.path
-        ipdetails.agent = request.META["HTTP_USER_AGENT"]
-        ipdetails.referer = request.META.get("HTTP_REFERER", None)
-
-        print("IP Address: ", ipdetails.address)
-        print("Issue Number: ", ipdetails.issuenumber)
-
-        try:
-            if self.request.user.is_authenticated:
-                try:
-                    objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
-                    self.object.save()
-                except:
-                    ipdetails.save()
-                    self.object.views = (self.object.views or 0) + 1
-                    self.object.save()
-            else:
-                try:
-                    objectget = IP.objects.get(
-                        address=get_client_ip(request), issuenumber=self.object.id
-                    )
-                    self.object.save()
-                except Exception as e:
-                    print(e)
-                    pass  # pass this temporarly to avoid error
-                    # messages.error(self.request, "That issue was not found 2." + str(e))
-                    # ipdetails.save()
-                    # self.object.views = (self.object.views or 0) + 1
-                    # self.object.save()
-        except Exception as e:
-            pass  # pass this temporarly to avoid error
-            # print(e)
-            # messages.error(self.request, "That issue was not found 1." + str(e))
-            # return redirect("/")
-        return super(IssueView, self).get(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        print("getting context data")
-        context = super(IssueView, self).get_context_data(**kwargs)
-        if self.object.user_agent:
-            user_agent = parse(self.object.user_agent)
-            context["browser_family"] = user_agent.browser.family
-            context["browser_version"] = user_agent.browser.version_string
-            context["os_family"] = user_agent.os.family
-            context["os_version"] = user_agent.os.version_string
-        context["users_score"] = list(
-            Points.objects.filter(user=self.object.user)
-            .aggregate(total_score=Sum("score"))
-            .values()
-        )[0]
-
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
-        context["all_comment"] = self.object.comments.all
-        context["all_users"] = User.objects.all()
-        context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
-        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
-        context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
-        context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
-
-        context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
-        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
-
-        context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
-
-        return context
-
-
 @login_required(login_url="/accounts/login")
 def flag_issue(request, issue_pk):
     context = {}
@@ -814,48 +729,6 @@ def IssueEdit(request):
             return HttpResponse("Unauthorised")
     else:
         return HttpResponse("POST ONLY")
-
-
-def get_email_from_domain(domain_name):
-    new_urls = deque(["http://" + domain_name])
-    processed_urls = set()
-    emails = set()
-    emails_out = set()
-    t_end = time.time() + 20
-
-    while len(new_urls) and time.time() < t_end:
-        url = new_urls.popleft()
-        processed_urls.add(url)
-        parts = urlsplit(url)
-        base_url = "{0.scheme}://{0.netloc}".format(parts)
-        path = url[: url.rfind("/") + 1] if "/" in parts.path else url
-        try:
-            response = requests.get(url)
-        except:
-            continue
-        new_emails = set(
-            re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", response.text, re.I)
-        )
-        if new_emails:
-            emails.update(new_emails)
-            break
-        soup = BeautifulSoup(response.text)
-        for anchor in soup.find_all("a"):
-            link = anchor.attrs["href"] if "href" in anchor.attrs else ""
-            if link.startswith("/"):
-                link = base_url + link
-            elif not link.startswith("http"):
-                link = path + link
-            if link not in new_urls and link not in processed_urls and link.find(domain_name) > 0:
-                new_urls.append(link)
-
-    for email in emails:
-        if email.find(domain_name) > 0:
-            emails_out.add(email)
-    try:
-        return list(emails_out)[0]
-    except:
-        return False
 
 
 @receiver(user_logged_in)
@@ -936,15 +809,6 @@ def unsave_issue(request, issue_pk):
     userprof = UserProfile.objects.get(user=request.user)
     userprof.issue_saved.remove(issue)
     return HttpResponse("OK")
-
-
-def get_client_ip(request):
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(",")[0]
-    else:
-        ip = request.META.get("REMOTE_ADDR")
-    return ip
 
 
 def get_score(request):
@@ -1953,118 +1817,6 @@ def subscribe_to_domains(request, pk):
         request.user.userprofile.subscribed_domains.add(domain)
         request.user.userprofile.save()
         return JsonResponse("SUBSCRIBED", safe=False)
-
-
-# class IssueView(DetailView):
-#     model = Issue
-#     slug_field = "id"
-#     template_name = "issue.html"
-
-#     def get(self, request, *args, **kwargs):
-#         ipdetails = IP()
-#         try:
-#             id = int(self.kwargs["slug"])
-#         except ValueError:
-#             return HttpResponseNotFound("Invalid ID: ID must be an integer")
-
-#         self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
-#         ipdetails.user = self.request.user
-#         ipdetails.address = get_client_ip(request)
-#         ipdetails.issuenumber = self.object.id
-#         ipdetails.path = request.get_full_path()
-#         ipdetails.referer = request.META.get("HTTP_REFERER")
-#         ipdetails.agent = request.META.get("HTTP_USER_AGENT")
-
-#         try:
-#             if self.request.user.is_authenticated:
-#                 try:
-#                     objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
-#                     self.object.save()
-#                 except:
-#                     ipdetails.save()
-#                     self.object.views = (self.object.views or 0) + 1
-#                     self.object.save()
-#             else:
-#                 try:
-#                     objectget = IP.objects.get(
-#                         address=get_client_ip(request), issuenumber=self.object.id
-#                     )
-#                     self.object.save()
-#                 except:
-#                     ipdetails.save()
-#                     self.object.views = (self.object.views or 0) + 1
-#                     self.object.save()
-#         except Exception as e:
-#             print(e)
-#             # TODO: this is only an error for ipv6 currently and doesn't require us to redirect the user - we'll sort this out later
-#             # messages.error(self.request, "That issue was not found."+str(e))
-#             # return redirect("/")
-#         return super(IssueView, self).get(request, *args, **kwargs)
-
-#     def get_context_data(self, **kwargs):
-#         context = super(IssueView, self).get_context_data(**kwargs)
-#         if self.object.user_agent:
-#             user_agent = parse(self.object.user_agent)
-#             context["browser_family"] = user_agent.browser.family
-#             context["browser_version"] = user_agent.browser.version_string
-#             context["os_family"] = user_agent.os.family
-#             context["os_version"] = user_agent.os.version_string
-#         context["users_score"] = list(
-#             Points.objects.filter(user=self.object.user)
-#             .aggregate(total_score=Sum("score"))
-#             .values()
-#         )[0]
-
-#         if self.request.user.is_authenticated:
-#             context["wallet"] = Wallet.objects.get(user=self.request.user)
-#             context["isLiked"] = UserProfile.objects.filter(
-#                 issue_upvoted=self.object, user=self.request.user
-#             ).exists()
-#             context["isDisliked"] = UserProfile.objects.filter(
-#                 issue_downvoted=self.object, user=self.request.user
-#             ).exists()
-#             context["isFlagged"] = UserProfile.objects.filter(
-#                 issue_flaged=self.object, user=self.request.user
-#             ).exists()
-#         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
-#         context["all_comment"] = self.object.comments.all().order_by("-created_date")
-#         context["all_users"] = User.objects.all()
-#         context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
-#         context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
-#         context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object).all()
-#         context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
-#         context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
-#         context["more_issues"] = (
-#             Issue.objects.filter(user=self.object.user)
-#             .exclude(id=self.object.id)
-#             .values("id", "description", "markdown_description", "screenshots__image")
-#             .order_by("views")[:4]
-#         )
-#         # TODO test if email works
-#         if isinstance(self.request.user, User):
-#             context["subscribed_to_domain"] = self.object.domain.user_subscribed_domains.filter(
-#                 pk=self.request.user.userprofile.id
-#             ).exists()
-#         else:
-#             context["subscribed_to_domain"] = False
-
-#         if isinstance(self.request.user, User):
-#             context["bookmarked"] = self.request.user.userprofile.issue_saved.filter(
-#                 pk=self.object.id
-#             ).exists()
-#         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
-#         context["status"] = Issue.objects.filter(id=self.object.id).get().status
-#         context["github_issues_url"] = (
-#             str(Issue.objects.filter(id=self.object.id).get().domain.github) + "/issues"
-#         )
-#         context["email_clicks"] = Issue.objects.filter(id=self.object.id).get().domain.clicks
-#         context["email_events"] = Issue.objects.filter(id=self.object.id).get().domain.email_event
-#         if not self.object.github_url:
-#             context["github_link"] = "empty"
-#         else:
-#             context["github_link"] = self.object.github_url
-
-#         return context
 
 
 def create_github_issue(request, id):

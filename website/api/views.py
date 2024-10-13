@@ -52,7 +52,7 @@ from website.serializers import (
     TimeLogSerializer,
     UserProfileSerializer,
 )
-from website.views import image_validator
+from website.utils import image_validator
 
 # API's
 

@@ -1,7 +1,15 @@
+import base64
+import json
+import os
+import uuid
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse
 
+import requests
+import six
+import stripe
+import tweepy
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
@@ -22,7 +30,13 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.db.transaction import atomic
-from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import (
+    Http404,
+    HttpResponse,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+    JsonResponse,
+)
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -35,6 +49,7 @@ from PIL import Image
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
+from user_agents import parse
 
 from blt import settings
 from website.forms import CaptchaForm, GitHubURLForm, HuntForm, UserDeleteForm, UserProfileForm
@@ -68,7 +83,7 @@ from website.models import (
     Wallet,
     Winner,
 )
-from website.views import (
+from website.utils import (
     get_client_ip,
     get_email_from_domain,
     image_validator,
@@ -1927,78 +1942,6 @@ class InboundParseWebhookView(View):
         return JsonResponse({"detail": "Inbound Sendgrid Webhook recieved"})
 
 
-def UpdateIssue(request):
-    if not request.POST.get("issue_pk"):
-        return HttpResponse("Missing issue ID")
-    issue = get_object_or_404(Issue, pk=request.POST.get("issue_pk"))
-    try:
-        for token in Token.objects.all():
-            if request.POST["token"] == token.key:
-                request.user = User.objects.get(id=token.user_id)
-                tokenauth = True
-    except:
-        tokenauth = False
-    if (
-        request.method == "POST"
-        and request.user.is_superuser
-        or (issue is not None and request.user == issue.user)
-    ):
-        if request.POST.get("action") == "close":
-            issue.status = "closed"
-            issue.closed_by = request.user
-            issue.closed_date = datetime.now()
-
-            msg_plain = msg_html = render_to_string(
-                "email/bug_updated.txt",
-                {
-                    "domain": issue.domain.name,
-                    "name": issue.user.username if issue.user else "Anonymous",
-                    "id": issue.id,
-                    "username": request.user.username,
-                    "action": "closed",
-                },
-            )
-            subject = (
-                issue.domain.name
-                + " bug # "
-                + str(issue.id)
-                + " closed by "
-                + request.user.username
-            )
-
-        elif request.POST.get("action") == "open":
-            issue.status = "open"
-            issue.closed_by = None
-            issue.closed_date = None
-            msg_plain = msg_html = render_to_string(
-                "email/bug_updated.txt",
-                {
-                    "domain": issue.domain.name,
-                    "name": issue.domain.email.split("@")[0],
-                    "id": issue.id,
-                    "username": request.user.username,
-                    "action": "opened",
-                },
-            )
-            subject = (
-                issue.domain.name
-                + " bug # "
-                + str(issue.id)
-                + " opened by "
-                + request.user.username
-            )
-
-        mailer = settings.EMAIL_TO_STRING
-        email_to = issue.user.email
-        send_mail(subject, msg_plain, mailer, [email_to], html_message=msg_html)
-        send_mail(subject, msg_plain, mailer, [issue.domain.email], html_message=msg_html)
-        issue.save()
-        return HttpResponse("Updated")
-
-    elif request.method == "POST":
-        return HttpResponse("invalid")
-
-
 class CustomObtainAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         response = super(CustomObtainAuthToken, self).post(request, *args, **kwargs)
@@ -2129,4 +2072,91 @@ class DomainListView(ListView):
             domain_paginated = paginator.page(paginator.num_pages)
 
         context["domain"] = domain_paginated
+        return context
+
+
+class IssueView(DetailView):
+    model = Issue
+    slug_field = "id"
+    template_name = "issue.html"
+
+    def get(self, request, *args, **kwargs):
+        print("getting issue id: ", self.kwargs["slug"])
+        print("getting issue id: ", self.kwargs)
+        ipdetails = IP()
+        try:
+            id = int(self.kwargs["slug"])
+        except ValueError:
+            return HttpResponseNotFound("Invalid ID: ID must be an integer")
+
+        self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
+        ipdetails.user = self.request.user
+        ipdetails.address = get_client_ip(request)
+        ipdetails.issuenumber = self.object.id
+        ipdetails.path = request.path
+        ipdetails.agent = request.META["HTTP_USER_AGENT"]
+        ipdetails.referer = request.META.get("HTTP_REFERER", None)
+
+        print("IP Address: ", ipdetails.address)
+        print("Issue Number: ", ipdetails.issuenumber)
+
+        try:
+            if self.request.user.is_authenticated:
+                try:
+                    objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
+                    self.object.save()
+                except:
+                    ipdetails.save()
+                    self.object.views = (self.object.views or 0) + 1
+                    self.object.save()
+            else:
+                try:
+                    objectget = IP.objects.get(
+                        address=get_client_ip(request), issuenumber=self.object.id
+                    )
+                    self.object.save()
+                except Exception as e:
+                    print(e)
+                    pass  # pass this temporarly to avoid error
+                    # messages.error(self.request, "That issue was not found 2." + str(e))
+                    # ipdetails.save()
+                    # self.object.views = (self.object.views or 0) + 1
+                    # self.object.save()
+        except Exception as e:
+            pass  # pass this temporarly to avoid error
+            # print(e)
+            # messages.error(self.request, "That issue was not found 1." + str(e))
+            # return redirect("/")
+        return super(IssueView, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        print("getting context data")
+        context = super(IssueView, self).get_context_data(**kwargs)
+        if self.object.user_agent:
+            user_agent = parse(self.object.user_agent)
+            context["browser_family"] = user_agent.browser.family
+            context["browser_version"] = user_agent.browser.version_string
+            context["os_family"] = user_agent.os.family
+            context["os_version"] = user_agent.os.version_string
+        context["users_score"] = list(
+            Points.objects.filter(user=self.object.user)
+            .aggregate(total_score=Sum("score"))
+            .values()
+        )[0]
+
+        if self.request.user.is_authenticated:
+            context["wallet"] = Wallet.objects.get(user=self.request.user)
+        context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
+        context["all_comment"] = self.object.comments.all
+        context["all_users"] = User.objects.all()
+        context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
+        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
+        context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
+        context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
+
+        context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
+        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
+
+        context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
+
         return context
