@@ -760,10 +760,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
         query = request.query_params.get("q", "")
         projects = Project.objects.filter(
             Q(name__icontains=query)
-            | Q(description__icontains=query)
-            | Q(tags__name__icontains=query)
-            | Q(stars__icontains=query)
-            | Q(forks__icontains=query)
+            | Q(description__icontains(query)
+            | Q(tags__name__icontains(query))
+            | Q(stars__icontains(query))
+            | Q(forks__icontains(query))
         ).distinct()
 
         project_data = []
@@ -792,7 +792,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         projects = Project.objects.all()
 
         if freshness:
-            projects = projects.filter(freshness__icontains=freshness)
+            projects = projects.filter(freshness__icontains(freshness)
         if stars:
             projects = projects.filter(stars__gte=stars)
         if forks:
