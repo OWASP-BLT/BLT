@@ -186,6 +186,7 @@ class IssueViewSet(viewsets.ModelViewSet):
         return {
             **IssueSerializer(issue).data,
             "closed_by": issue.closed_by.username if issue.closed_by else None,
+            "closed_date": issue.closed_date,
             "flagged": is_flagged,
             "flags": issue.flaged.count(),
             "screenshots": screenshots,
@@ -256,6 +257,21 @@ class IssueViewSet(viewsets.ModelViewSet):
                 return Response({"error": "Invalid image"}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(self.get_issue_info(request, issue))
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        data = request.data.copy()
+
+        if 'status' in data and data['status'] == 'closed':
+            data['closed_by'] = request.user.id
+            data['closed_date'] = timezone.now()
+
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(self.get_issue_info(request, instance))
 
 
 class LikeIssueApiView(APIView):
@@ -761,7 +777,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         query = request.query_params.get("q", "")
         projects = Project.objects.filter(
             Q(name__icontains=query)
-            | Q(description__icontains=query)
+            | Q(description__icontains(query)
             | Q(tags__name__icontains=query)
             | Q(stars__icontains=query)
             | Q(forks__icontains=query)

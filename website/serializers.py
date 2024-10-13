@@ -89,6 +89,7 @@ class IssueSerializer(serializers.ModelSerializer):
     """
 
     user = UserSerializer(read_only=True)
+    closed_by = UserSerializer(read_only=True)
     screenshots = IssueScreenshotSerializer(many=True, required=False)
 
     class Meta:

@@ -106,6 +106,26 @@
             {% include "./includes/issue_left_info.html" %}
             {% include "./includes/issue_right_info.html" %}
         </div>
+        <div class="px-10 mt-5">
+            <h3 class="font-[ubuntu] text-[17px] p-3 my-2 font-semibold">Issue Closed By</h3>
+            <p class="ml-3 text-justify text-[12px] lg:text-[14px] lg:w-11/12">
+                {% if object.closed_by %}
+                    {{ object.closed_by.username }}
+                {% else %}
+                    Not closed yet
+                {% endif %}
+            </p>
+        </div>
+        <div class="px-10 mt-5">
+            <h3 class="font-[ubuntu] text-[17px] p-3 my-2 font-semibold">Issue Closed Date</h3>
+            <p class="ml-3 text-justify text-[12px] lg:text-[14px] lg:w-11/12">
+                {% if object.closed_date %}
+                    {{ object.closed_date }}
+                {% else %}
+                    Not closed yet
+                {% endif %}
+            </p>
+        </div>
     </div>
     <script src="{% static '/company/js/md_editor.js' %}"></script>
     <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
