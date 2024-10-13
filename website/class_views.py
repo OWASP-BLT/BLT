@@ -99,9 +99,10 @@ class ProjectDetailView(DetailView):
         if "update_project" in request.POST:
             from django.core.management import call_command
 
-            call_command("update_project", self.object.pk)
+            project = self.get_object()  # Use get_object() to retrieve the current object
+            call_command("update_project", project.pk)
             messages.success(request, "Requested refresh to projects")
-            return redirect("project_detail", pk=self.object.pk)
+            return redirect("project_detail", pk=project.pk)
 
 
 class ProjectListView(ListView):
