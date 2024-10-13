@@ -53,6 +53,7 @@ from website.serializers import (
     UserProfileSerializer,
 )
 from website.utils import image_validator
+from website.management.commands.fetch_contributor_stats import recalculate_contributor_stats
 
 # API's
 
@@ -161,7 +162,7 @@ class IssueViewSet(viewsets.ModelViewSet):
             return {}
 
         # Check if there is an image in the `screenshot` field of the Issue table
-        if issue.screenshot:
+        if (issue.screenshot):
             # If an image exists in the Issue table, return it along with additional images from IssueScreenshot
             screenshots = [request.build_absolute_uri(issue.screenshot.url)] + [
                 request.build_absolute_uri(screenshot.image.url)
@@ -761,10 +762,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
         query = request.query_params.get("q", "")
         projects = Project.objects.filter(
             Q(name__icontains=query)
-            | Q(description__icontains=query)
-            | Q(tags__name__icontains=query)
-            | Q(stars__icontains=query)
-            | Q(forks__icontains=query)
+            | Q(description__icontains(query)
+            | Q(tags__name__icontains(query)
+            | Q(stars__icontains(query)
+            | Q(forks__icontains(query)
         ).distinct()
 
         project_data = []
@@ -793,13 +794,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
         projects = Project.objects.all()
 
         if freshness:
-            projects = projects.filter(freshness__icontains=freshness)
+            projects = projects.filter(freshness__icontains(freshness)
         if stars:
-            projects = projects.filter(stars__gte=stars)
+            projects = projects.filter(stars__gte(stars)
         if forks:
-            projects = projects.filter(forks__gte=forks)
+            projects = projects.filter(forks__gte(forks)
         if tags:
-            projects = projects.filter(tags__name__in=tags.split(",")).distinct()
+            projects = projects.filter(tags__name__in(tags.split(",")).distinct()
 
         project_data = []
         for project in projects:
@@ -908,3 +909,11 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
             raise ParseError(detail=str(e))
         except Exception as e:
             raise ParseError(detail="An unexpected error occurred while creating the activity log.")
+
+
+from rest_framework.decorators import api_view
+
+@api_view(['POST'])
+def project_webhook(request):
+    recalculate_contributor_stats()
+    return Response({"message": "Contributor stats recalculated successfully"}, status=status.HTTP_200_OK)

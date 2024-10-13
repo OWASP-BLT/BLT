@@ -36,6 +36,7 @@ from website.api.views import (
     UrlCheckApiViewset,
     UserIssueViewSet,
     UserProfileViewSet,
+    project_webhook,
 )
 from website.class_views import (
     AllIssuesView,
@@ -562,6 +563,7 @@ urlpatterns = [
     path("api/v1/tags", TagApiViewset.as_view({"get": "list", "post": "create"}), name="tags-api"),
     path("sizzle/", website.views.sizzle, name="sizzle"),
     path("api/timelogsreport/", website.views.TimeLogListAPIView, name="timelogsreport"),
+    path('api/v1/project-webhook/', project_webhook, name='project_webhook'),
 ]
 
 if settings.DEBUG:

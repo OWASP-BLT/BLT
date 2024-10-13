@@ -114,3 +114,8 @@ class Command(BaseCommand):
             elif data_type == "comments":
                 user = item["user"]["login"]
                 user_stats[user]["comments"] += 1
+
+
+def recalculate_contributor_stats():
+    command = Command()
+    command.handle()
