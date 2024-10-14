@@ -29,7 +29,7 @@ selenium = "^4.24.0"
 pylibmc = "^1.6.1"
 psycopg2-binary = "^2.9.9"
 boto = "^2.49.0"
-django-cors-headers = "^4.4.0"
+django-cors-headers = "^4.5.0"
 protobuf = "^4.25.3"
 django-storages = { extras = ["google"], version = "^1.14.3" }
 django-timedeltafield = "^0.7.10"
