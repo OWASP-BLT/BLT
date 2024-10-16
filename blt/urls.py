@@ -377,7 +377,7 @@ urlpatterns = [
     re_path(
         r"^.well-known/acme-challenge/(?P<token>[^/]+)/$",
         website.views.find_key,
-        name="find_key,
+        name="find_key",
     ),
     re_path(r"^accounts/profile/", website.views.profile, name="account_profile"),
     re_path(r"^delete_issue/(?P<id>\w+)/$", website.views.delete_issue, name="delete_issue"),
