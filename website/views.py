@@ -2504,3 +2504,7 @@ def TimeLogListAPIView(request):
         response_data.append(day_data)
 
     return JsonResponse(response_data, safe=False, status=status.HTTP_200_OK)
+
+
+def sizzle_docs(request):
+    return render(request, "sizzle/sizzle_docs.html")
