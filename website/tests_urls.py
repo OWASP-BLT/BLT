@@ -4,6 +4,7 @@ import os
 import chromedriver_autoinstaller
 from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from django.db import transaction
 from django.urls import reverse
 from selenium.webdriver.chrome.service import Service
 
@@ -95,11 +96,12 @@ class UrlsTest(StaticLiveServerTestCase):
                         "/api/timelogsreport/",
                     ]
                     if not any(x in url for x in matches):
-                        response = self.client.get(url)
-                        self.assertIn(response.status_code, allowed_http_codes, msg=url)
-                        self.selenium.get("%s%s" % (self.live_server_url, url))
+                        with transaction.atomic():
+                            response = self.client.get(url)
+                            self.assertIn(response.status_code, allowed_http_codes, msg=url)
+                            self.selenium.get("%s%s" % (self.live_server_url, url))
 
-                        for entry in self.selenium.get_log("browser"):
-                            self.assertNotIn("SyntaxError", str(entry), msg=url)
+                            for entry in self.selenium.get_log("browser"):
+                                self.assertNotIn("SyntaxError", str(entry), msg=url)
 
         check_urls(module.urlpatterns)
