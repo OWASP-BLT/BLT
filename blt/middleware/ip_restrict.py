@@ -152,8 +152,9 @@ class IPRestrictMiddleware:
                     ip_record.path = request.path
                     ip_record.save(update_fields=["agent", "count", "path"])
 
-                    # Delete all but the first record
-                    ip_records.exclude(pk=ip_record.pk).delete()
+                    # Check if a transaction is already active before starting a new one
+                    if not transaction.get_autocommit():
+                        ip_records.exclude(pk=ip_record.pk).delete()
                 else:
                     # If no record exists, create a new one
                     IP.objects.create(address=ip, agent=agent, count=1, path=request.path)
