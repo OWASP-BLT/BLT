@@ -46,6 +46,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
+from django.utils.html import escape
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
@@ -846,7 +847,7 @@ def comment_on_issue(request, issue_pk):
     issue = Issue.objects.filter(pk=issue_pk).first()
 
     if request.method == "POST" and isinstance(request.user, User):
-        comment = request.POST.get("comment", "")
+        comment = escape(request.POST.get("comment", ""))
         replying_to_input = request.POST.get("replying_to_input", "").split("#")
 
         if issue is None:
@@ -893,7 +894,7 @@ def update_comment(request, issue_pk, comment_pk):
     issue = Issue.objects.filter(pk=issue_pk).first()
     comment = Comment.objects.filter(pk=comment_pk).first()
     if request.method == "POST" and isinstance(request.user, User):
-        comment.text = request.POST.get("comment", "")
+        comment.text = escape(request.POST.get("comment", ""))
         comment.save()
 
     context = {
