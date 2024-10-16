@@ -2231,9 +2231,11 @@ def chatbot_conversation(request):
         try:
             response = crc.invoke({"question": question})
         except Exception as e:
-            error_message = f"Error: {str(e)}"
-            ChatBotLog.objects.create(question=question, answer=error_message)
-            return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error("Error during chatbot conversation", exc_info=True)
+            ChatBotLog.objects.create(question=question, answer="An internal error occurred.")
+            return Response({"error": "An internal error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
         request.session["buffer"] = memory.buffer
 
@@ -2242,9 +2244,11 @@ def chatbot_conversation(request):
         return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
 
     except Exception as e:
-        error_message = f"Error: {str(e)}"
-        ChatBotLog.objects.create(question=request.data.get("question", ""), answer=error_message)
-        return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error("Error during chatbot conversation", exc_info=True)
+        ChatBotLog.objects.create(question=request.data.get("question", ""), answer="An internal error occurred.")
+        return Response({"error": "An internal error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 def weekly_report(request):
