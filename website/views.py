@@ -2412,11 +2412,6 @@ def view_suggestions(request):
 
 
 def sizzle(request):
-    print(request.user)
-    if not request.user.is_authenticated:
-        messages.error(request, "Please login to access the Sizzle page.")
-        return redirect("index")
-
     sizzle_data = None
 
     last_data = TimeLog.objects.filter(user=request.user).order_by("-created").first()
@@ -2447,11 +2442,16 @@ def sizzle(request):
             "date": date,
         }
 
-    return render(request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data})
+    leaderboard = (
+        TimeLog.objects.values("user__username")
+        .annotate(total_duration=Sum("duration"))
+        .order_by("-total_duration")
+    )
+
+    return render(request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data, "leaderboard": leaderboard})
 
 
 def TimeLogListAPIView(request):
-    print(request.user)
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
