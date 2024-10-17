@@ -5,6 +5,9 @@ RUN mkdir /blt
 WORKDIR /blt
 COPY . /blt
 
+# Set environment variables
+ENV DATABASE_URL=postgres://user:password@localhost:5432/dbname
+ENV SENTRY_DSN=https://examplePublicKey@o0.ingest.sentry.io/0
 
 # Install PostgreSQL dependencies
 RUN apt-get update && \
@@ -18,7 +21,6 @@ RUN apt-get update && apt-get install -y \
         libmemcached-dev \
         libz-dev
 
-
 RUN pip install poetry 
 RUN poetry config virtualenvs.create false
 RUN poetry install
@@ -27,4 +29,3 @@ RUN python manage.py migrate
 RUN python manage.py loaddata website/fixtures/initial_data.json
 # RUN python manage.py collectstatic
 RUN python manage.py initsuperuser
-
