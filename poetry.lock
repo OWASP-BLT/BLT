@@ -4140,13 +4140,13 @@ files = [
 
 [[package]]
 name = "unstructured"
-version = "0.15.12"
+version = "0.16.0"
 description = "A library that prepares raw documents for downstream ML tasks."
 optional = false
 python-versions = "<3.13,>=3.9.0"
 files = [
-    {file = "unstructured-0.15.12-py3-none-any.whl", hash = "sha256:a789c8bfde6da99bb9985301b19a8ed06e1c226f447921683a939d3412f72403"},
-    {file = "unstructured-0.15.12.tar.gz", hash = "sha256:22af44a9c949f9239d2eab2826e002fbbbbdb534a1698d3319a107f982feac2b"},
+    {file = "unstructured-0.16.0-py3-none-any.whl", hash = "sha256:64d20c1478b81e0e0fa5f5b8c2dd70bb7b145a7092d85e0191651e7f47649094"},
+    {file = "unstructured-0.16.0.tar.gz", hash = "sha256:f36cf21da6aea6e8703e48f7130fb778a072fad861011156b8775257ce507d48"},
 ]
 
 [package.dependencies]
@@ -4173,69 +4173,24 @@ unstructured-client = "*"
 wrapt = "*"
 
 [package.extras]
-airtable = ["pyairtable"]
 all-docs = ["effdet", "google-cloud-vision", "markdown", "networkx", "onnx", "openpyxl", "pandas", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypandoc", "pypdf", "python-docx (>=1.1.2)", "python-pptx (>=1.0.1)", "unstructured-inference (==0.7.36)", "unstructured.pytesseract (>=0.3.12)", "xlrd"]
-astradb = ["astrapy"]
-azure = ["adlfs", "fsspec"]
-azure-cognitive-search = ["azure-search-documents"]
-bedrock = ["boto3", "langchain-community"]
-biomed = ["bs4"]
-box = ["boxfs", "fsspec"]
-chroma = ["chromadb", "importlib-metadata (>=8.2.0)", "tenacity (==8.5.0)", "typer (<=0.9.0)"]
-clarifai = ["clarifai"]
-confluence = ["atlassian-python-api"]
 csv = ["pandas"]
-databricks-volumes = ["databricks-sdk"]
-delta-table = ["deltalake (<=0.19.1)", "fsspec"]
-discord = ["discord-py"]
 doc = ["python-docx (>=1.1.2)"]
 docx = ["python-docx (>=1.1.2)"]
-dropbox = ["dropboxdrivefs", "fsspec"]
-elasticsearch = ["elasticsearch[async]"]
-embed-huggingface = ["langchain-huggingface"]
-embed-mixedbreadai = ["mixedbread-ai"]
-embed-octoai = ["openai", "tiktoken"]
-embed-vertexai = ["langchain", "langchain-community", "langchain-google-vertexai"]
-embed-voyageai = ["langchain", "langchain-voyageai"]
 epub = ["pypandoc"]
-gcs = ["bs4", "fsspec", "gcsfs"]
-github = ["pygithub (>1.58.0)"]
-gitlab = ["python-gitlab"]
-google-drive = ["google-api-python-client"]
-hubspot = ["hubspot-api-client", "urllib3"]
 huggingface = ["langdetect", "sacremoses", "sentencepiece", "torch", "transformers"]
 image = ["effdet", "google-cloud-vision", "onnx", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypdf", "unstructured-inference (==0.7.36)", "unstructured.pytesseract (>=0.3.12)"]
-jira = ["atlassian-python-api"]
-kafka = ["confluent-kafka"]
 local-inference = ["effdet", "google-cloud-vision", "markdown", "networkx", "onnx", "openpyxl", "pandas", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypandoc", "pypdf", "python-docx (>=1.1.2)", "python-pptx (>=1.0.1)", "unstructured-inference (==0.7.36)", "unstructured.pytesseract (>=0.3.12)", "xlrd"]
 md = ["markdown"]
-mongodb = ["pymongo"]
-notion = ["htmlBuilder", "notion-client"]
 odt = ["pypandoc", "python-docx (>=1.1.2)"]
-onedrive = ["Office365-REST-Python-Client", "bs4", "msal"]
-openai = ["langchain-openai"]
-opensearch = ["opensearch-py"]
 org = ["pypandoc"]
-outlook = ["Office365-REST-Python-Client", "msal"]
 paddleocr = ["paddlepaddle (==3.0.0b1)", "unstructured.paddleocr (==2.8.1.0)"]
 pdf = ["effdet", "google-cloud-vision", "onnx", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypdf", "unstructured-inference (==0.7.36)", "unstructured.pytesseract (>=0.3.12)"]
-pinecone = ["pinecone-client (>=3.7.1)"]
-postgres = ["psycopg2-binary"]
 ppt = ["python-pptx (>=1.0.1)"]
 pptx = ["python-pptx (>=1.0.1)"]
-qdrant = ["qdrant-client"]
-reddit = ["praw"]
 rst = ["pypandoc"]
 rtf = ["pypandoc"]
-s3 = ["fsspec", "s3fs"]
-salesforce = ["simple-salesforce"]
-sftp = ["fsspec", "paramiko"]
-sharepoint = ["Office365-REST-Python-Client", "msal"]
-singlestore = ["singlestoredb"]
-slack = ["slack-sdk"]
 tsv = ["pandas"]
-weaviate = ["weaviate-client"]
-wikipedia = ["wikipedia"]
 xlsx = ["networkx", "openpyxl", "pandas", "xlrd"]
 
 [[package]]
@@ -4583,4 +4538,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "6471b085575a833b96ba0514d914b5827053542d40b9a85c573c22ef1644af44"
+content-hash = "b91889ac0c913e1f753b939708cb7aaf95734fe423616fe949aa66558e4a5773"
