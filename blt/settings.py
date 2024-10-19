@@ -535,4 +535,3 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get("SENDGRID_USERNAME", "blank")
 EMAIL_HOST_PASSWORD = os.environ.get("SENDGRID_PASSWORD", "blank")
 DEFAULT_FROM_EMAIL = os.environ.get("FROM_EMAIL", "test@localhost")
-
