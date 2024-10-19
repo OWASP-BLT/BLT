@@ -141,12 +141,14 @@
                                 </p>
                                 <div class="contributors">
                                     {% for contributor in project.get_top_contributors %}
-                                        <img src="{{ contributor.avatar_url }}"
-                                             alt="{{ contributor.name }}"
-                                             class="contributor-avatar"
-                                             title="{{ contributor.name }}"
-                                             height="40"
-                                             width="40">
+                                        <a href="https://github.com/search?q=repo:{{ project.github_url|slice:'19:' }}+author:{{ contributor.username }}&type=issues" target="_blank">
+                                            <img src="{{ contributor.avatar_url }}"
+                                                 alt="{{ contributor.name }}"
+                                                 class="contributor-avatar"
+                                                 title="{{ contributor.name }}"
+                                                 height="40"
+                                                 width="40">
+                                        </a>
                                     {% empty %}
                                         <div class="contributor-avatar placeholder">
                                             <span>No Avatar</span>

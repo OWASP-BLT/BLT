@@ -95,11 +95,13 @@
             <div class="contributors">
                 {% for contributor in project.get_top_contributors %}
                     <div class="contributor">
-                        <img src="{{ contributor.avatar_url }}"
-                             alt="{{ contributor.name }}"
-                             class="contributor-avatar"
-                             width="50"
-                             height="50">
+                        <a href="https://github.com/search?q=repo:{{ project.github_url|slice:'19:' }}+author:{{ contributor.username }}&type=issues" target="_blank">
+                            <img src="{{ contributor.avatar_url }}"
+                                 alt="{{ contributor.name }}"
+                                 class="contributor-avatar"
+                                 width="50"
+                                 height="50">
+                        </a>
                         <!-- Added width and height attributes -->
                         <p>{{ contributor.name }}</p>
                     </div>
