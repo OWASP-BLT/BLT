@@ -526,3 +526,13 @@ BITCOIN_RPC_USER = os.environ.get("BITCOIN_RPC_USER", "yourusername")
 BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "yourpassword")
 BITCOIN_RPC_HOST = os.environ.get("BITCOIN_RPC_HOST", "localhost")
 BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")
+
+# Notify users
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.sendgrid.net"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get("SENDGRID_USERNAME", "blank")
+EMAIL_HOST_PASSWORD = os.environ.get("SENDGRID_PASSWORD", "blank")
+DEFAULT_FROM_EMAIL = os.environ.get("FROM_EMAIL", "test@localhost")
+
