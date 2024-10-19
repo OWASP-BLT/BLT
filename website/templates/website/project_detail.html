@@ -64,7 +64,7 @@
                 </div>
                 <div class="stat-item">
                     <i class="fas fa-exclamation-circle"></i>
-                    <span>{{ project.open_issues }}</span>
+                    <span>{{ project.total_issues }}</span>
                     <p>Open Issues</p>
                 </div>
                 <div class="stat-item">
@@ -95,7 +95,8 @@
             <div class="contributors">
                 {% for contributor in project.get_top_contributors %}
                     <div class="contributor">
-                        <a href="https://github.com/search?q=repo:{{ project.github_url|slice:'19:' }}+author:{{ contributor.username }}&type=issues" target="_blank">
+                        <a href="https://github.com/search?q=repo:{{ project.github_url|slice:'19:' }}+author:{{ contributor.name }}&type=issues"
+                           target="_blank">
                             <img src="{{ contributor.avatar_url }}"
                                  alt="{{ contributor.name }}"
                                  class="contributor-avatar"
