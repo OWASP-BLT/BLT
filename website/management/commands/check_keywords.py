@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
@@ -26,6 +27,10 @@ class Command(BaseCommand):
 
                 if monitor.status != new_status:
                     monitor.status = new_status
+                    monitor.save()
+
+                    user = monitor.user
+                    self.notify_user(user.username, monitor.url, user.email, new_status)
 
                 monitor.last_checked_time = timezone.now()
                 monitor.save()
@@ -35,3 +40,17 @@ class Command(BaseCommand):
                 )
             except Exception as e:
                 self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: {str(e)}"))
+
+    def notify_user(self, username, website, email, status):
+        subject = f"Website Status Update: {website} is {status}"
+        message = (
+            f"Dear {username},\n\nThe website '{website}' you are monitoring is currently {status}."
+        )
+
+        send_mail(
+            subject,
+            message,
+            None,
+            [email],
+            fail_silently=False,
+        )
