@@ -8,7 +8,7 @@
         <div class="col_3">
             {% if companys %}
                 <div class="list-group">
-                    <a href="#" class="list-group-item active">Company</a>
+                    <a href="#" class="list-group-item active">Organization</a>
                     {% for company in companys %}
                         {% if company.is_active %}
                             <a href="{% url 'admin_company_dashboard_detail' pk=company.pk %}"
@@ -21,7 +21,7 @@
                 </div>
             {% else %}
             </br>
-            no company found !
+            no Organization found !
         {% endif %}
         <div class="clearfix"></div>
     </div>
@@ -34,7 +34,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">×</button>
-                    <h4 class="modal-title">Create Company</h4>
+                    <h4 class="modal-title">Create Organization</h4>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">

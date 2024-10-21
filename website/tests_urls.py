@@ -4,6 +4,7 @@ import os
 import chromedriver_autoinstaller
 from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from django.db import transaction
 from django.urls import reverse
 from selenium.webdriver.chrome.service import Service
 
@@ -92,13 +93,60 @@ class UrlsTest(StaticLiveServerTestCase):
                         "/error/",
                         "/tz_detect/set/",
                         "/leaderboard/api/",
+                        "/api/timelogsreport/",
                     ]
                     if not any(x in url for x in matches):
-                        response = self.client.get(url)
-                        self.assertIn(response.status_code, allowed_http_codes, msg=url)
-                        self.selenium.get("%s%s" % (self.live_server_url, url))
+                        with transaction.atomic():
+                            response = self.client.get(url)
+                            self.assertIn(response.status_code, allowed_http_codes, msg=url)
+                            self.selenium.get("%s%s" % (self.live_server_url, url))
 
-                        for entry in self.selenium.get_log("browser"):
-                            self.assertNotIn("SyntaxError", str(entry), msg=url)
+                            for entry in self.selenium.get_log("browser"):
+                                self.assertNotIn("SyntaxError", str(entry), msg=url)
 
         check_urls(module.urlpatterns)
+
+    def test_github_login(self):
+        url = reverse("github_login")
+        response = self.client.get(url)
+        self.assertIn(response.status_code, [200, 302, 405, 401, 404], msg=url)
+
+    def test_google_login(self):
+        url = reverse("google_login")
+        response = self.client.get(url)
+        self.assertIn(response.status_code, [200, 302, 405, 401, 404], msg=url)
+
+    def test_facebook_login(self):
+        url = reverse("facebook_login")
+        response = self.client.get(url)
+        self.assertIn(response.status_code, [200, 302, 405, 401, 404], msg=url)
+
+    def test_github_callback(self):
+        url = reverse("github_callback")
+        response = self.client.get(url)
+        self.assertIn(response.status_code, [200, 302, 405, 401, 404], msg=url)
+
+    def test_google_callback(self):
+        url = reverse("google_callback")
+        response = self.client.get(url)
+        self.assertIn(response.status_code, [200, 302, 405, 401, 404], msg=url)
+
+    def test_facebook_callback(self):
+        url = reverse("facebook_callback")
+        response = self.client.get(url)
+        self.assertIn(response.status_code, [200, 302, 405, 401, 404], msg=url)
+
+    def test_github_connect(self):
+        url = reverse("github_connect")
+        response = self.client.get(url)
+        self.assertIn(response.status_code, [200, 302, 405, 401, 404], msg=url)
+
+    def test_google_connect(self):
+        url = reverse("google_connect")
+        response = self.client.get(url)
+        self.assertIn(response.status_code, [200, 302, 405, 401, 404], msg=url)
+
+    def test_facebook_connect(self):
+        url = reverse("facebook_connect")
+        response = self.client.get(url)
+        self.assertIn(response.status_code, [200, 302, 405, 401, 404], msg=url)

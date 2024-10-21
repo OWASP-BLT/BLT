@@ -43,7 +43,7 @@
         </div>
     </div>
     <div class="bug-desc py-2 h-[100%] font-['Barlow'] font-medium text-[#774343] text-3xl leading-10 overflow-clip">
-        <a href="{% url 'issue_view2' slug=bug.id %}">{{ bug.description|truncatechars:100 }}</a>
+        <a href="{% url 'issue_view' slug=bug.id %}">{{ bug.description|truncatechars:100 }}</a>
     </div>
     {% if bug.screenshot %}
         <div class="bug-images h-[160px] flex flex-row justify-between px-3 my-2">
@@ -201,7 +201,7 @@
             {% endwith %}
         </div>
         <a target="_blank"
-           href="https://twitter.com/intent/tweet?text=Bug Found on @{{ bug.domain_title }} - {{ bug.description }} Report: https://{% env 'FQDN' %}/issue2/{{ bug.id }}"
+           href="https://twitter.com/intent/tweet?text=Bug Found on @{{ bug.domain_title }} - {{ bug.description }} Report: https://{% env 'FQDN' %}/issue/{{ bug.id }}"
            class="w-fit flex items-center px-2 h-14 rounded-xl font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0 "
            rel="noopener noreferrer">
             <svg class="scale-125 m-3 ms-1"

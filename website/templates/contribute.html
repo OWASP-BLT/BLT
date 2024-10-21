@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container">
+        <!-- Include the left navigation -->
+        {% include "includes/sidenav.html" %}
+        <!-- Main Content Section -->
+        <div class="main-content">
+            <section id="contribute-overview">
+                <h2>Contribute to OWASP BLT</h2>
+                <p>
+                    OWASP BLT thrives on the contributions of its community. Whether you're a developer, security researcher, designer, or just passionate about making the web a safer place, there are many ways you can contribute to the BLT project.
+                </p>
+            </section>
+            <section id="ways-to-contribute">
+                <h3>Ways to Contribute</h3>
+                <ul>
+                    <li>
+                        <strong>Code Contributions:</strong> Help us develop new features, fix bugs, or improve existing code. Check out our <a href="https://github.com/owasp/blt" target="_blank">GitHub repository</a> to see open issues and start contributing.
+                    </li>
+                    <li>
+                        <strong>Report Bugs:</strong> Found a bug? Report it through the <a href="{% url 'index' %}">Bug Reporting Tool</a>. Your input helps us improve the platform.
+                    </li>
+                    <li>
+                        <strong>Documentation:</strong> Contribute to our documentation by improving the existing guides or writing new ones. Great documentation helps everyone understand and use BLT more effectively.
+                    </li>
+                    <li>
+                        <strong>Design and UX:</strong> If you have skills in design or user experience, you can help make BLT more user-friendly and visually appealing.
+                    </li>
+                    <li>
+                        <strong>Security Research:</strong> Perform security testing and contribute to making BLT more secure. You can also participate in <a href="{% url 'index' %}">private bug bounties</a> for specific security challenges.
+                    </li>
+                    <li>
+                        <strong>Community Engagement:</strong> Engage with the community by answering questions, providing feedback, and sharing your knowledge on our <a href="https://owasp.org/www-project-bug-logging-tool/"
+    target="_blank">OWASP BLT Wiki</a> and forums.
+                    </li>
+                </ul>
+            </section>
+            <section id="guidelines">
+                <h3>Contribution Guidelines</h3>
+                <p>
+                    Please review our <a href="{% url 'contribution_guidelines' %}">Contribution Guidelines</a> before making any contributions. Following these guidelines ensures that the contribution process is smooth and that your contributions can be easily integrated into the project.
+                </p>
+            </section>
+            <section id="getting-started">
+                <h3>Getting Started</h3>
+                <p>Ready to start contributing? Here are a few steps to get you going:</p>
+                <ol>
+                    <li>
+                        <strong>Join the Community:</strong> Sign up on the OWASP forums and join the conversation.
+                    </li>
+                    <li>
+                        <strong>Clone the Repository:</strong> Clone the BLT repository from GitHub to your local machine.
+                    </li>
+                    <li>
+                        <strong>Pick an Issue:</strong> Browse the <a href="https://github.com/owasp/blt/issues" target="_blank">open issues</a> and pick one that matches your skills and interests.
+                    </li>
+                    <li>
+                        <strong>Start Coding:</strong> Fork the repository, create a new branch, and start working on your issue.
+                    </li>
+                    <li>
+                        <strong>Submit a Pull Request:</strong> Once you're done, submit a pull request and our maintainers will review it.
+                    </li>
+                </ol>
+            </section>
+            <section id="resources">
+                <h3>Resources</h3>
+                <ul>
+                    <li>
+                        <a href="https://github.com/owasp/blt" target="_blank">BLT GitHub Repository</a>
+                    </li>
+                    <li>
+                        <a href="https://owasp.org/www-project-bug-logging-tool/"
+                           target="_blank">OWASP BLT Wiki</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'contribution_guidelines' %}">Contribution Guidelines</a>
+                    </li>
+                </ul>
+            </section>
+            <section id="contact">
+                <h3>Contact Us</h3>
+                <p>
+                    If you have any questions about contributing, feel free to <a href="{% url 'index' %}">contact us</a>. We're here to help you get started!
+                </p>
+            </section>
+        </div>
+    </div>
+{% endblock content %}

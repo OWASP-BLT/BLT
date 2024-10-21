@@ -30,7 +30,7 @@
                 <div class="user-info">
                     {% if request.user.userprofile.user_avatar %}
                         <img src="{% if request.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ request.user.userprofile.user_avatar }}{% else %}https://via.placeholder.com/100?text=No+Avatar{% endif %}"
-                             alt="company logo"
+                             alt="Organization logo"
                              class="w-10 h-10 object-fill rounded-full border-[1px] border-gray-500"
                              width="40px"
                              height="40px" />
@@ -66,7 +66,7 @@
                      aria-labelledby="menu-button"
                      tabindex="-1">
                     <div class="py-1" role="none">
-                        <p class="text-gray-700 block px-4 py-2 text-lg font-semibold">Companies</p>
+                        <p class="text-gray-700 block px-4 py-2 text-lg font-semibold">Organizations</p>
                         {% for company in companies %}
                             <a href="{% url 'company_analytics' company.id %}"
                                class="text-gray-700 block pl-10 py-2 text-sm hover:bg-[#F3F4F6]"

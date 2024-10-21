@@ -18,6 +18,7 @@ import website.views
 from blt import settings
 from company.views import ShowBughuntView
 from website.api.views import (
+    ActivityLogViewSet,
     AuthApiViewset,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
@@ -30,11 +31,13 @@ from website.api.views import (
     LikeIssueApiView,
     ProjectViewSet,
     StatsApiViewset,
+    TagApiViewset,
+    TimeLogViewSet,
     UrlCheckApiViewset,
     UserIssueViewSet,
     UserProfileViewSet,
 )
-from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 etc; AutoLabel,
+from website.class_views import (
     AllIssuesView,
     CompanySettings,
     ContributorStatsView,
@@ -57,15 +60,12 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     InviteCreate,
     IssueCreate,
     IssueView,
-    IssueView2,
-    IssueView3,
     JoinCompany,
     ListHunts,
     OngoingHunts,
     PreviousHunts,
     ProjectDetailView,
     ProjectListView,
-    SaveBiddingData,
     ScoreboardView,
     SpecificIssuesView,
     SpecificMonthLeaderboardView,
@@ -75,7 +75,9 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
-    UserProfileDetailView2,
+)
+from website.views import (  # TODO AutoLabel,
+    SaveBiddingData,
     add_suggestions,
     blt_tomato,
     change_bid_status,
@@ -83,18 +85,12 @@ from website.views import (  # TODO(b) IssueView,; TODO(b): REMOVE like_issue2 e
     contributors_view,
     create_github_issue,
     deletions,
-    dislike_issue2,
-    dislike_issue3,
     facebook_callback,
     fetch_current_bid,
-    flag_issue2,
-    flag_issue3,
     generate_bid_image,
     get_unique_issues,
     github_callback,
     google_callback,
-    like_issue2,
-    like_issue3,
     resolve,
     select_bid,
     set_vote_status,
@@ -113,6 +109,8 @@ router.register(r"issues", IssueViewSet, basename="issues")
 router.register(r"userissues", UserIssueViewSet, basename="userissues")
 router.register(r"profile", UserProfileViewSet, basename="profile")
 router.register(r"domain", DomainViewSet, basename="domain")
+router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
+router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 
 from allauth.socialaccount.providers.facebook import views as facebook_views
 from allauth.socialaccount.providers.github import views as github_views
@@ -139,7 +137,9 @@ handler500 = "website.views.handler500"
 
 urlpatterns = [
     path(
-        "api/companies/", CompanyViewSet.as_view({"get": "list", "post": "create"}), name="company"
+        "api/v1/companies/",
+        CompanyViewSet.as_view({"get": "list", "post": "create"}),
+        name="company",
     ),
     path("invite-friend/", website.views.invite_friend, name="invite_friend"),
     path("referral/", website.views.referral_signup, name="referral_signup"),
@@ -166,6 +166,9 @@ urlpatterns = [
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),
     path("socialaccounts/", SocialAccountListView.as_view(), name="social_account_list"),
+    path(
+        "add_domain_to_company/", website.views.add_domain_to_company, name="add_domain_to_company"
+    ),
     path(
         "socialaccounts/<int:pk>/disconnect/",
         SocialAccountDisconnectView.as_view(),
@@ -294,7 +297,6 @@ urlpatterns = [
         name="user_profile",
     ),
     path(settings.ADMIN_URL + "/", admin.site.urls),
-    # TODO(b): REMOVE after _3 is ready
     re_path(r"^like_issue/(?P<issue_pk>\d+)/$", website.views.like_issue, name="like_issue"),
     re_path(
         r"^dislike_issue/(?P<issue_pk>\d+)/$",
@@ -302,14 +304,7 @@ urlpatterns = [
         name="dislike_issue",
     ),
     re_path(r"^flag_issue/(?P<issue_pk>\d+)/$", website.views.flag_issue, name="flag_issue"),
-    re_path(r"^like_issue2/(?P<issue_pk>\d+)/$", like_issue2, name="like_issue2"),
-    re_path(r"^dislike_issue2/(?P<issue_pk>\d+)/$", dislike_issue2, name="dislike_issue2"),
-    re_path(r"^flag_issue2/(?P<issue_pk>\d+)/$", flag_issue2, name="flag_issue2"),
-    re_path(r"^like_issue3/(?P<issue_pk>\d+)/$", like_issue3, name="like_issue3"),
-    re_path(r"^dislike_issue3/(?P<issue_pk>\d+)/$", dislike_issue3, name="dislike_issue3"),
-    re_path(r"^flag_issue3/(?P<issue_pk>\d+)/$", flag_issue3, name="flag_issue3"),
     re_path(r"^resolve/(?P<id>\w+)/$", resolve, name="resolve"),
-    # TODO(b) track this
     re_path(r"^create_github_issue/(?P<id>\w+)/$", create_github_issue, name="create_github_issue"),
     re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
@@ -318,6 +313,7 @@ urlpatterns = [
     re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
     re_path(r"^save_issue/(?P<issue_pk>\d+)/$", website.views.save_issue, name="save_issue"),
+    path("profile/edit/", website.views.profile_edit, name="profile_edit"),
     re_path(
         r"^unsave_issue/(?P<issue_pk>\d+)/$",
         website.views.unsave_issue,
@@ -338,10 +334,7 @@ urlpatterns = [
     ),
     # delete_comment
     path("issue2/comment/delete/", website.views.delete_comment, name="delete_comment"),
-    # TODO(b): REMOVE after _3 is ready
     re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
-    re_path(r"^issue2/(?P<slug>\w+)/$", IssueView2.as_view(), name="issue_view2"),
-    re_path(r"^issue3/(?P<slug>\w+)/$", IssueView3.as_view(), name="issue_view3"),
     re_path(r"^follow/(?P<user>[^/]+)/", website.views.follow_user, name="follow_user"),
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
     re_path(r"^label_activity/$", SpecificIssuesView.as_view(), name="all_activitys"),
@@ -379,9 +372,7 @@ urlpatterns = [
         UploadCreate.as_view(),
         name="upload",
     ),
-    # TODO(b)
     re_path(r"^profile/(?P<slug>[^/]+)/$", UserProfileDetailView.as_view(), name="profile"),
-    re_path(r"^profile2/(?P<slug>[^/]+)/$", UserProfileDetailView2.as_view(), name="profile"),
     re_path(r"^domain/(?P<slug>.+)/$", DomainDetailView.as_view(), name="domain"),
     re_path(
         r"^.well-known/acme-challenge/(?P<token>[^/]+)/$",
@@ -434,6 +425,7 @@ urlpatterns = [
         csrf_exempt(InboundParseWebhookView.as_view()),
         name="inbound_event_webhook_callback",
     ),
+    re_path(r"status/", website.views.check_status, name="check_status"),
     re_path(r"^issue/comment/add/$", comments.views.add_comment, name="add_comment"),
     re_path(r"^issue/comment/delete/$", comments.views.delete_comment, name="delete_comment"),
     re_path(r"^comment/autocomplete/$", comments.views.autocomplete, name="autocomplete"),
@@ -503,6 +495,17 @@ urlpatterns = [
         csrf_exempt(TemplateView.as_view(template_name="mobile_privacy.html")),
         name="api_privacypolicy",
     ),
+    re_path(
+        r"^contribute/$",
+        TemplateView.as_view(template_name="contribute.html"),
+        name="contribution_guidelines",
+    ),
+    path("select_contribution/", website.views.select_contribution, name="select_contribution"),
+    path(
+        "distribute_bacon/<int:contribution_id>/",
+        website.views.distribute_bacon,
+        name="distribute_bacon",
+    ),
     re_path(r"^error/", website.views.throw_error, name="post_error"),
     re_path(r"^tz_detect/", include("tz_detect.urls")),
     # re_path(r"^tellme/", include("tellme.urls")),
@@ -510,6 +513,8 @@ urlpatterns = [
     path("robots.txt", website.views.robots_txt),
     path("ads.txt", website.views.ads_txt),
     re_path(r"^contributors/$", contributors_view, name="contributors"),
+    # users
+    path("users/", website.views.users_view, name="users"),
     path("company/", include("company.urls")),
     path("sponsor/", website.views.sponsor_view, name="sponsor"),
     path("companies/", DomainListView.as_view(), name="domain_lists"),
@@ -554,6 +559,10 @@ urlpatterns = [
         name="projects_api",
     ),
     path("auth/delete", AuthApiViewset.as_view({"delete": "delete"}), name="auth-delete-api"),
+    path("api/v1/tags", TagApiViewset.as_view({"get": "list", "post": "create"}), name="tags-api"),
+    path("sizzle/", website.views.sizzle, name="sizzle"),
+    path("sizzle-docs/", website.views.sizzle_docs, name="sizzle-docs"),
+    path("api/timelogsreport/", website.views.TimeLogListAPIView, name="timelogsreport"),
 ]
 
 if settings.DEBUG:

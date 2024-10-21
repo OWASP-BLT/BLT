@@ -1,21 +1,28 @@
+import json
 import uuid
 from datetime import datetime
 
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.db.models import Count, Q, Sum
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound, ParseError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from website.class_views import LeaderboardBase
 from website.models import (
+    ActivityLog,
     Company,
     Contributor,
     Domain,
@@ -26,11 +33,14 @@ from website.models import (
     IssueScreenshot,
     Points,
     Project,
+    Tag,
+    TimeLog,
     Token,
     User,
     UserProfile,
 )
 from website.serializers import (
+    ActivityLogSerializer,
     BugHuntPrizeSerializer,
     BugHuntSerializer,
     CompanySerializer,
@@ -38,9 +48,11 @@ from website.serializers import (
     DomainSerializer,
     IssueSerializer,
     ProjectSerializer,
+    TagSerializer,
+    TimeLogSerializer,
     UserProfileSerializer,
 )
-from website.views import LeaderboardBase, image_validator
+from website.utils import image_validator
 
 # API's
 
@@ -148,22 +160,28 @@ class IssueViewSet(viewsets.ModelViewSet):
         if issue is None:
             return {}
 
-        screenshots = (
-            [
-                # replacing space with url space notation
+        # Check if there is an image in the `screenshot` field of the Issue table
+        if issue.screenshot:
+            # If an image exists in the Issue table, return it along with additional images from IssueScreenshot
+            screenshots = [request.build_absolute_uri(issue.screenshot.url)] + [
                 request.build_absolute_uri(screenshot.image.url)
                 for screenshot in issue.screenshots.all()
             ]
-            + [request.build_absolute_uri(issue.screenshot.url)]
-            if issue.screenshot
-            else []
-        )
+        else:
+            # If no image exists in the Issue table, return only the images from IssueScreenshot
+            screenshots = [
+                request.build_absolute_uri(screenshot.image.url)
+                for screenshot in issue.screenshots.all()
+            ]
 
         is_upvoted = False
         is_flagged = False
         if request.user.is_authenticated:
             is_upvoted = request.user.userprofile.issue_upvoted.filter(id=issue.id).exists()
             is_flagged = request.user.userprofile.issue_flaged.filter(id=issue.id).exists()
+
+        tag_serializer = TagSerializer(issue.tags.all(), many=True)
+        tags = tag_serializer.data
 
         return {
             **IssueSerializer(issue).data,
@@ -173,6 +191,7 @@ class IssueViewSet(viewsets.ModelViewSet):
             "screenshots": screenshots,
             "upvotes": issue.upvoted.count(),
             "upvotted": is_upvoted,
+            "tags": tags,
         }
 
     def list(self, request, *args, **kwargs):
@@ -189,6 +208,26 @@ class IssueViewSet(viewsets.ModelViewSet):
         return Response(self.get_issue_info(request, Issue.objects.filter(id=pk).first()))
 
     def create(self, request, *args, **kwargs):
+        request.data._mutable = True
+
+        # Since the tags field is json encoded we need to decode it
+        tags = None
+        try:
+            if "tags" in request.data:
+                tags_json = request.data.get("tags")
+                if isinstance(tags_json, list):
+                    tags_json = tags_json[0]
+                tags = json.loads(tags_json)
+
+                if isinstance(tags, list) and any(isinstance(i, list) for i in tags):
+                    tags = [item for sublist in tags for item in sublist]
+
+                del request.data["tags"]
+        except (ValueError, MultiValueDictKeyError) as e:
+            return Response({"error": "Invalid tags format."}, status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            request.data._mutable = False
+
         screenshot_count = len(self.request.FILES.getlist("screenshots"))
         if screenshot_count == 0:
             return Response(
@@ -200,14 +239,19 @@ class IssueViewSet(viewsets.ModelViewSet):
         data = super().create(request, *args, **kwargs).data
         issue = Issue.objects.filter(id=data["id"]).first()
 
+        if tags:
+            issue.tags.add(*tags)
+
         for screenshot in self.request.FILES.getlist("screenshots"):
             if image_validator(screenshot):
                 filename = screenshot.name
                 screenshot.name = (
                     f"{filename[:10]}{str(uuid.uuid4())[:40]}.{filename.split('.')[-1]}"
                 )
-                default_storage.save(f"screenshots/{screenshot.name}", screenshot)
-                IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}")
+                file_path = default_storage.save(f"screenshots/{screenshot.name}", screenshot)
+
+                # Create the IssueScreenshot object and associate it with the issue
+                IssueScreenshot.objects.create(image=file_path, issue=issue)
             else:
                 return Response({"error": "Invalid image"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -667,7 +711,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     # permission_classes = (IsAuthenticatedOrReadOnly,)
-    http_method_names = ("get", "post", "put", "patch")
+    http_method_names = ("get", "post")
 
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
@@ -683,14 +727,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             project_instance = serializer.save()
             project_instance.__setattr__("slug", slug)
 
-            # If the logo is not provided get the logo from the repo itself
-            if project_instance.logo == "":
-                logo = project_instance.get_github_logo_save_to_storage(project_instance.github_url)
-                if logo:
-                    project_instance.logo = logo
-
-            project_instance.save()
-
             # Set contributors
             if contributors:
                 project_instance.contributors.set(contributors)
@@ -703,6 +739,67 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         projects = Project.objects.prefetch_related("contributors").all()
+
+        project_data = []
+        for project in projects:
+            contributors_data = []
+            for contributor in project.contributors.all():
+                contributor_info = ContributorSerializer(contributor)
+                contributors_data.append(contributor_info.data)
+            contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+            project_info = ProjectSerializer(project).data
+            project_info["contributors"] = contributors_data
+            project_data.append(project_info)
+
+        return Response(
+            {"count": len(project_data), "projects": project_data},
+            status=200,
+        )
+
+    @action(detail=False, methods=["get"])
+    def search(self, request, *args, **kwargs):
+        query = request.query_params.get("q", "")
+        projects = Project.objects.filter(
+            Q(name__icontains=query)
+            | Q(description__icontains=query)
+            | Q(tags__name__icontains=query)
+            | Q(stars__icontains=query)
+            | Q(forks__icontains=query)
+        ).distinct()
+
+        project_data = []
+        for project in projects:
+            contributors_data = []
+            for contributor in project.contributors.all():
+                contributor_info = ContributorSerializer(contributor)
+                contributors_data.append(contributor_info.data)
+            contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+            project_info = ProjectSerializer(project).data
+            project_info["contributors"] = contributors_data
+            project_data.append(project_info)
+
+        return Response(
+            {"count": len(project_data), "projects": project_data},
+            status=200,
+        )
+
+    @action(detail=False, methods=["get"])
+    def filter(self, request, *args, **kwargs):
+        freshness = request.query_params.get("freshness", None)
+        stars = request.query_params.get("stars", None)
+        forks = request.query_params.get("forks", None)
+        tags = request.query_params.get("tags", None)
+
+        projects = Project.objects.all()
+
+        if freshness:
+            projects = projects.filter(freshness__icontains=freshness)
+        if stars:
+            projects = projects.filter(stars__gte=stars)
+        if forks:
+            projects = projects.filter(forks__gte=forks)
+        if tags:
+            projects = projects.filter(tags__name__in=tags.split(",")).distinct()
 
         project_data = []
         for project in projects:
@@ -736,3 +833,78 @@ class AuthApiViewset(viewsets.ModelViewSet):
             return Response({"success": False, "message": "User does not exists."})
         except User.DoesNotExist:
             return Response({"success": False, "message": "User does not exists."})
+
+
+class TagApiViewset(viewsets.ModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+
+
+class TimeLogViewSet(viewsets.ModelViewSet):
+    queryset = TimeLog.objects.all()
+    serializer_class = TimeLogSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        try:
+            serializer.save(user=self.request.user)
+        except ValidationError as e:
+            raise ParseError(detail=str(e))
+        except Exception as e:
+            raise ParseError(detail="An unexpected error occurred while creating the time log.")
+
+    @action(detail=False, methods=["post"])
+    def start(self, request):
+        """Starts a new time log"""
+        data = request.data
+        data["start_time"] = timezone.now()  # Set start time to current tim
+
+        serializer = self.get_serializer(data=data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(
+                {"detail": "An unexpected error occurred while starting the time log."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    @action(detail=True, methods=["post"])
+    def stop(self, request, pk=None):
+        """Stops the time log and calculates duration"""
+        try:
+            timelog = self.get_object()
+        except ObjectDoesNotExist:
+            raise NotFound(detail="Time log not found.")
+
+        timelog.end_time = timezone.now()
+        if timelog.start_time:
+            timelog.duration = timelog.end_time - timelog.start_time
+
+        try:
+            timelog.save()
+            return Response(TimeLogSerializer(timelog).data, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(
+                {"detail": "An unexpected error occurred while stopping the time log."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class ActivityLogViewSet(viewsets.ModelViewSet):
+    queryset = ActivityLog.objects.all()
+    serializer_class = ActivityLogSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        try:
+            serializer.save(user=self.request.user, recorded_at=timezone.now())
+        except ValidationError as e:
+            raise ParseError(detail=str(e))
+        except Exception as e:
+            raise ParseError(detail="An unexpected error occurred while creating the activity log.")

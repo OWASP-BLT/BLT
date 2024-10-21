@@ -8,7 +8,28 @@ from .models import Bid, Monitor, UserProfile
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ("user_avatar",)
+        fields = [
+            "user_avatar",
+            "description",
+            "issues_hidden",
+            "btc_address",
+            "bch_address",
+            "eth_address",
+            "tags",
+            "subscribed_domains",
+            "subscribed_users",
+            "linkedin_url",
+            "x_username",
+            "website_url",
+            "discounted_hourly_rate",
+            "github_url",
+            "role",
+        ]
+        widgets = {
+            "tags": forms.CheckboxSelectMultiple(),
+            "subscribed_domains": forms.CheckboxSelectMultiple(),
+            "subscribed_users": forms.CheckboxSelectMultiple(),
+        }
 
 
 class UserDeleteForm(forms.Form):
@@ -33,12 +54,6 @@ class CaptchaForm(forms.Form):
     captcha = CaptchaField()
 
 
-class QuickIssueForm(forms.Form):
-    url = forms.CharField()
-    label = forms.CharField()
-    description = forms.CharField()
-
-
 class MonitorForm(forms.ModelForm):
     created = forms.DateTimeField(widget=forms.HiddenInput(), required=False, label="Created")
     modified = forms.DateTimeField(widget=forms.HiddenInput(), required=False, label="Modified")
@@ -56,7 +71,7 @@ class BidForm(forms.ModelForm):
             "issue_url",
             "created",
             "modified",
-            "amount",
+            "amount_bch",
             "status",
             "pr_link",
             "bch_address",
