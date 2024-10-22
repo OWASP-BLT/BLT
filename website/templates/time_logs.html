@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h1>Time Logs</h1>
+    <form method="post" action="{% url 'start_time_log' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="github_issue_url">GitHub Issue URL:</label>
+            <input type="url" class="form-control" id="github_issue_url" name="github_issue_url" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Start Time Log</button>
+    </form>
+
+    <h2>Existing Time Logs</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Duration</th>
+                <th>GitHub Issue URL</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in time_logs %}
+            <tr>
+                <td>{{ log.start_time }}</td>
+                <td>{{ log.end_time }}</td>
+                <td>{{ log.duration }}</td>
+                <td><a href="{{ log.github_issue_url }}" target="_blank">{{ log.github_issue_url }}</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

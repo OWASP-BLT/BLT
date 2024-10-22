@@ -2507,3 +2507,21 @@ def TimeLogListAPIView(request):
 
 def sizzle_docs(request):
     return render(request, "sizzle/sizzle_docs.html")
+
+
+@login_required
+def TimeLogListView(request):
+    time_logs = TimeLog.objects.filter(user=request.user).order_by("-start_time")
+    return render(request, "time_logs.html", {"time_logs": time_logs})
+
+
+@login_required
+def start_time_log(request):
+    if request.method == "POST":
+        github_issue_url = request.POST.get("github_issue_url")
+        if github_issue_url:
+            TimeLog.objects.create(user=request.user, start_time=now(), github_issue_url=github_issue_url)
+            messages.success(request, "Time log started successfully.")
+        else:
+            messages.error(request, "GitHub Issue URL is required.")
+    return redirect("time_logs")
