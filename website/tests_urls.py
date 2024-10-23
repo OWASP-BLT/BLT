@@ -40,6 +40,9 @@ class UrlsTest(StaticLiveServerTestCase):
         site.name = "localhost"
         site.save()
 
+        # Delete existing SocialApp instances for the providers
+        SocialApp.objects.filter(provider__in=["github", "google", "facebook"]).delete()
+
         # Create SocialApp for GitHub
         github_app = SocialApp.objects.create(
             provider="github",
