@@ -1,9 +1,8 @@
 <!-- templates/time_logs.html -->
 {% extends "base.html" %}
-{% load static %}
-
+{% load static %}   
 {% block content %}
-<style>
+    <style>
     .alert_box{
         background-color: #f8d7da;
         color: #721c24;
@@ -12,97 +11,87 @@
         padding: 10px;
         margin-top: 10px;
     }
-</style>
-
-<div class="container mt-12">
-    <!-- Include the left navigation -->
-    {% include "includes/sidenav.html" %}
-    <!-- Message Container for User Feedback -->
-    <div id="message-container" aria-live="polite"></div>
-    
-    {% if not active_time_log %}
-    <!-- Start Time Log Form -->
-    <form id="start-time-log-form" novalidate>
-        {% csrf_token %}
-        <div class="form-group">
-            <label for="github_issue_url">GitHub Issue URL:</label>
-            <input 
-                type="url" 
-                class="form-control" 
-                id="github_issue_url" 
-                name="github_issue_url" 
-                required 
-                pattern="https?://.+" 
-                aria-describedby="githubIssueHelp"
-                placeholder="https://github.com/user/repo/issues/1"
-            >
-            <small id="githubIssueHelp" class="form-text text-muted">
-                Enter a valid GitHub issue URL (e.g., https://github.com/user/repo/issues/1).
-            </small>
-            <div class="invalid-feedback">
-                Please provide a valid GitHub Issue URL.
+    </style>
+    <div class="container mt-12">
+        <!-- Include the left navigation -->
+        {% include "includes/sidenav.html" %}
+        <!-- Message Container for User Feedback -->
+        <div id="message-container" aria-live="polite"></div>
+        {% if not active_time_log %}
+            <!-- Start Time Log Form -->
+            <form id="start-time-log-form" novalidate>
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="github_issue_url">GitHub Issue URL:</label>
+                    <input type="url"
+                           class="form-control"
+                           id="github_issue_url"
+                           name="github_issue_url"
+                           required
+                           pattern="https?://.+"
+                           aria-describedby="githubIssueHelp"
+                           placeholder="https://github.com/user/repo/issues/1">
+                    <small id="githubIssueHelp" class="form-text text-muted">
+                        Enter a valid GitHub issue URL (e.g., https://github.com/user/repo/issues/1).
+                    </small>
+                    <div class="invalid-feedback">Please provide a valid GitHub Issue URL.</div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="start-button">Start Time Log</button>
+            </form>
+        {% endif %}
+        <!-- Active Time Log Section -->
+        {% if active_time_log %}
+            <div id="active-time-log" style="margin-top: 20px;">
+                <h2>Active Time Log</h2>
+                <p>
+                    GitHub Issue URL:
+                    <a href="{{ active_time_log.github_issue_url }}"
+                       id="active-issue-url"
+                       target="_blank"
+                       rel="noopener noreferrer">{{ active_time_log.github_issue_url }}</a>
+                </p>
+                <p>
+                    Elapsed Time: <span id="elapsed-time">00:00:00</span>
+                </p>
+                <button class="btn btn-danger" id="stop-button">Stop Time Log</button>
             </div>
-        </div>
-            <button type="submit" class="btn btn-primary" id="start-button">Start Time Log</button>
-    </form>    
-    {% endif %}
-
-    <!-- Active Time Log Section -->
-    {% if active_time_log %}
-        <div id="active-time-log" style="margin-top: 20px;">
-            <h2>Active Time Log</h2>
-            <p>
-                GitHub Issue URL: 
-                <a 
-                    href="{{ active_time_log.github_issue_url }}" 
-                    id="active-issue-url" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                >
-                    {{ active_time_log.github_issue_url }}
-                </a>
-            </p>
-            <p>Elapsed Time: <span id="elapsed-time">00:00:00</span></p>
-            <button class="btn btn-danger" id="stop-button">Stop Time Log</button>
-        </div>
-    {% endif %}
-
-    <!-- Existing Time Logs -->
-    <h2>Existing Time Logs</h2>
-    <table class="table table-striped" aria-describedby="existingLogsDescription">
-        <caption id="existingLogsDescription">List of all time logs with their details.</caption>
-        <thead>
-            <tr>
-                <th scope="col">Start Time</th>
-                <th scope="col">End Time</th>
-                <th scope="col">Duration</th>
-                <th scope="col">GitHub Issue URL</th>
-            </tr>
-        </thead>
-        <tbody id="time-logs-table-body">
-            {% for log in time_logs %}
-                {% if log.end_time %}
-                    <tr>
-                        <td>{{ log.start_time|date:"DATETIME_FORMAT" }}</td>
-                        <td>{{ log.end_time|date:"DATETIME_FORMAT" }}</td>
-                        <td>{{ log.duration }}</td>
-                        <td>
-                            <a href="{{ log.github_issue_url }}" target="_blank" rel="noopener noreferrer">
-                                {{ log.github_issue_url }}
-                            </a>
-                        </td>
-                    </tr>
-                {% endif %}
-            {% empty %}
+        {% endif %}
+        <!-- Existing Time Logs -->
+        <h2>Existing Time Logs</h2>
+        <table class="table table-striped"
+               aria-describedby="existingLogsDescription">
+            <caption id="existingLogsDescription">List of all time logs with their details.</caption>
+            <thead>
                 <tr>
-                    <td colspan="4" class="text-center">No time logs available.</td>
+                    <th scope="col">Start Time</th>
+                    <th scope="col">End Time</th>
+                    <th scope="col">Duration</th>
+                    <th scope="col">GitHub Issue URL</th>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<script>
+            </thead>
+            <tbody id="time-logs-table-body">
+                {% for log in time_logs %}
+                    {% if log.end_time %}
+                        <tr>
+                            <td>{{ log.start_time|date:"DATETIME_FORMAT" }}</td>
+                            <td>{{ log.end_time|date:"DATETIME_FORMAT" }}</td>
+                            <td>{{ log.duration }}</td>
+                            <td>
+                                <a href="{{ log.github_issue_url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">{{ log.github_issue_url }}</a>
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">No time logs available.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script>
     (function(){
         'use strict';
 
@@ -251,5 +240,5 @@
             });
         });
     })();
-</script>
+    </script>
 {% endblock content %}
