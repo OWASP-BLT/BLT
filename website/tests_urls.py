@@ -2,7 +2,9 @@ import importlib
 import os
 
 import chromedriver_autoinstaller
+from allauth.socialaccount.models import SocialApp
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.db import transaction
 from django.urls import reverse
@@ -31,6 +33,42 @@ class UrlsTest(StaticLiveServerTestCase):
     def tearDownClass(cls):
         cls.selenium.quit()
         super(UrlsTest, cls).tearDownClass()
+
+    def setUp(self):
+        site = Site.objects.get(pk=1)
+        site.domain = "localhost:8082"
+        site.name = "localhost"
+        site.save()
+
+        # Delete existing SocialApp instances for the providers
+        SocialApp.objects.filter(provider__in=["github", "google", "facebook"]).delete()
+
+        # Create SocialApp for GitHub
+        github_app = SocialApp.objects.create(
+            provider="github",
+            name="GitHub",
+            client_id="dummy_client_id",
+            secret="dummy_secret",
+        )
+        github_app.sites.add(site)
+
+        # Create SocialApp for Google
+        google_app = SocialApp.objects.create(
+            provider="google",
+            name="Google",
+            client_id="dummy_client_id",
+            secret="dummy_secret",
+        )
+        google_app.sites.add(site)
+
+        # Create SocialApp for Facebook
+        facebook_app = SocialApp.objects.create(
+            provider="facebook",
+            name="Facebook",
+            client_id="dummy_client_id",
+            secret="dummy_secret",
+        )
+        facebook_app.sites.add(site)
 
     def test_responses(
         self,
