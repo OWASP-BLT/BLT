@@ -754,6 +754,7 @@ class Project(models.Model):
     tags = models.ManyToManyField(Tag, blank=True)
     last_updated = models.DateTimeField(null=True, blank=True)
     total_issues = models.IntegerField(default=0)
+    visit_count = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name

@@ -104,6 +104,12 @@ class ProjectDetailView(DetailView):
             messages.success(request, "Requested refresh to projects")
             return redirect("project_view", slug=project.slug)
 
+    def get(self, request, *args, **kwargs):
+        project = self.get_object()
+        project.visit_count += 1
+        project.save()
+        return super().get(request, *args, **kwargs)
+
 
 class ProjectListView(ListView):
     model = Project
@@ -1383,7 +1389,7 @@ class DomainDetailView(ListView):
             .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
         )
         close_issue = (
-            Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
+            Issue.objects.filter(domain__name__contains(self.kwargs["slug"])
             .filter(status="closed", hunt=None)
             .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
         )
@@ -2151,7 +2157,7 @@ class IssueView(DetailView):
         context["all_comment"] = self.object.comments.all
         context["all_users"] = User.objects.all()
         context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
-        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
+        context["likers"] = UserProfile.objects.filter(issue_upvoted(self.object)
         context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
         context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
 
