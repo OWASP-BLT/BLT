@@ -67,6 +67,7 @@ from website.models import (
     ChatBotLog,
     Company,
     CompanyAdmin,
+    DailyStatusReport,
     Domain,
     Hunt,
     InviteFriend,
@@ -2528,3 +2529,24 @@ def TimeLogListView(request):
         "sizzle/time_logs.html",
         {"time_logs": time_logs, "active_time_log": active_time_log, "token": token.key},
     )
+
+
+@login_required
+def submit_daily_status(request):
+    if request.method == "POST":
+        previous_work = request.POST.get("previous_work")
+        next_plan = request.POST.get("next_plan")
+        blockers = request.POST.get("blockers")
+
+        DailyStatusReport.objects.create(
+            user=request.user,
+            date=now().date(),
+            previous_work=previous_work,
+            next_plan=next_plan,
+            blockers=blockers,
+        )
+
+        messages.success(request, "Daily status report submitted successfully.")
+        return redirect("sizzle")
+
+    return HttpResponseBadRequest("Invalid request method.")

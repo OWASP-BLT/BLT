@@ -25,6 +25,7 @@ from website.models import (
     ActivityLog,
     Company,
     Contributor,
+    DailyStatusReport,
     Domain,
     Hunt,
     HuntPrize,
@@ -761,10 +762,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
         query = request.query_params.get("q", "")
         projects = Project.objects.filter(
             Q(name__icontains=query)
-            | Q(description__icontains=query)
-            | Q(tags__name__icontains=query)
-            | Q(stars__icontains=query)
-            | Q(forks__icontains=query)
+            | Q(description__icontains(query)
+            | Q(tags__name__icontains(query)
+            | Q(stars__icontains(query)
+            | Q(forks__icontains(query)
         ).distinct()
 
         project_data = []
@@ -793,7 +794,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         projects = Project.objects.all()
 
         if freshness:
-            projects = projects.filter(freshness__icontains=freshness)
+            projects = projects.filter(freshness__icontains(freshness)
         if stars:
             projects = projects.filter(stars__gte=stars)
         if forks:
@@ -908,3 +909,46 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
             raise ParseError(detail=str(e))
         except Exception as e:
             raise ParseError(detail="An unexpected error occurred while creating the activity log.")
+
+
+class DailyStatusReportViewSet(viewsets.ModelViewSet):
+    queryset = DailyStatusReport.objects.all()
+    serializer_class = DailyStatusReportSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        try:
+            serializer.save(user=self.request.user)
+        except ValidationError as e:
+            raise ParseError(detail=str(e))
+        except Exception as e:
+            raise ParseError(detail="An unexpected error occurred while creating the daily status report.")
+
+    @action(detail=False, methods=["post"])
+    def submit(self, request):
+        """Submits a new daily status report"""
+        data = request.data
+        data["date"] = timezone.now().date()  # Set date to current date
+
+        serializer = self.get_serializer(data=data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(
+                {"detail": "An unexpected error occurred while submitting the daily status report."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    @action(detail=True, methods=["get"])
+    def retrieve(self, request, pk=None):
+        """Retrieves a daily status report"""
+        try:
+            report = self.get_object()
+        except ObjectDoesNotExist:
+            raise NotFound(detail="Daily status report not found.")
+
+        return Response(DailyStatusReportSerializer(report).data, status=status.HTTP_200_OK)
