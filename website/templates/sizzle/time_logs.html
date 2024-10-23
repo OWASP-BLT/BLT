@@ -1,0 +1,244 @@
+<!-- templates/time_logs.html -->
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    <style>
+    .alert_box{
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        border-radius: 5px;
+        padding: 10px;
+        margin-top: 10px;
+    }
+    </style>
+    <div class="container mt-12">
+        <!-- Include the left navigation -->
+        {% include "includes/sidenav.html" %}
+        <!-- Message Container for User Feedback -->
+        <div id="message-container" aria-live="polite"></div>
+        {% if not active_time_log %}
+            <!-- Start Time Log Form -->
+            <form id="start-time-log-form" novalidate>
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="github_issue_url">GitHub Issue URL:</label>
+                    <input type="url"
+                           class="form-control"
+                           id="github_issue_url"
+                           name="github_issue_url"
+                           required
+                           pattern="https?://.+"
+                           aria-describedby="githubIssueHelp"
+                           placeholder="https://github.com/user/repo/issues/1">
+                    <small id="githubIssueHelp" class="form-text text-muted">
+                        Enter a valid GitHub issue URL (e.g., https://github.com/user/repo/issues/1).
+                    </small>
+                    <div class="invalid-feedback">Please provide a valid GitHub Issue URL.</div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="start-button">Start Time Log</button>
+            </form>
+        {% endif %}
+        <!-- Active Time Log Section -->
+        {% if active_time_log %}
+            <div id="active-time-log" class="mt-5">
+                <h2>Active Time Log</h2>
+                <p>
+                    GitHub Issue URL:
+                    <a href="{{ active_time_log.github_issue_url }}"
+                       id="active-issue-url"
+                       target="_blank"
+                       rel="noopener noreferrer">{{ active_time_log.github_issue_url }}</a>
+                </p>
+                <p>
+                    Elapsed Time: <span id="elapsed-time">00:00:00</span>
+                </p>
+                <button class="btn btn-danger" id="stop-button">Stop Time Log</button>
+            </div>
+        {% endif %}
+        <!-- Existing Time Logs -->
+        <h2>Existing Time Logs</h2>
+        <table class="table table-striped"
+               aria-describedby="existingLogsDescription">
+            <caption id="existingLogsDescription">List of all time logs with their details.</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Start Time</th>
+                    <th scope="col">End Time</th>
+                    <th scope="col">Duration</th>
+                    <th scope="col">GitHub Issue URL</th>
+                </tr>
+            </thead>
+            <tbody id="time-logs-table-body">
+                {% for log in time_logs %}
+                    {% if log.end_time %}
+                        <tr>
+                            <td>{{ log.start_time|date:"DATETIME_FORMAT" }}</td>
+                            <td>{{ log.end_time|date:"DATETIME_FORMAT" }}</td>
+                            <td>{{ log.duration }}</td>
+                            <td>
+                                <a href="{{ log.github_issue_url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">{{ log.github_issue_url }}</a>
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">No time logs available.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script>
+    (function(){
+        'use strict';
+
+        // CSRF Token Setup
+        function getCookie(name) {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [key, value] = cookie.trim().split('=');
+                if (key === name) {
+                    return decodeURIComponent(value);
+                }
+            }
+            return null;
+        }
+
+        const csrftoken = getCookie('csrftoken');
+
+        // Setup AJAX with CSRF Token
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^GET|HEAD|OPTIONS|TRACE$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+
+        $(document).ready(function(){
+            const apiBaseUrl = '/api/v1/timelogs/';
+            const token = '{{ token }}'; // Ensure token is securely passed from the view
+            let timeLogId = null;
+            let timerInterval = null;
+
+            // Initialize active time log if exists
+            {% if active_time_log %}
+                timeLogId = {{ active_time_log.id }};
+                const startTime = new Date('{{ active_time_log.start_time|date:"c" }}').getTime();
+
+                function updateElapsedTime() {
+                    const now = Date.now();
+                    const elapsedMilliseconds = now - startTime;
+                    const totalSeconds = Math.floor(elapsedMilliseconds / 1000);
+
+                    const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+                    const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+                    const seconds = String(totalSeconds % 60).padStart(2, '0');
+
+                    $('#elapsed-time').text(`${hours}:${minutes}:${seconds}`);
+                }
+
+                // Initial update and start interval
+                updateElapsedTime();
+                timerInterval = setInterval(updateElapsedTime, 1000);
+            {% endif %}
+
+            // Form Validation
+            (function() {
+                const form = document.getElementById('start-time-log-form');
+                if (form) { // Check if the form exists
+                    form.addEventListener('submit', function(event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            form.classList.add('was-validated');
+                        }
+                    }, false);
+                }
+            })();
+
+            // Handle Start Time Log Form Submission
+            $('#start-time-log-form').on('submit', function(event){
+                event.preventDefault();
+                const githubIssueUrl = $('#github_issue_url').val().trim();
+
+                // Simple URL validation
+                const urlPattern = /^https?:\/\/github\.com\/[^\/]+\/[^\/]+\/issues\/\d+$/;
+                if (!urlPattern.test(githubIssueUrl)) {
+                        // Display an alert message 
+                    $('#message-container').html(`<div class="alert_box" role="alert">
+                        Please provide a valid GitHub Issue URL.
+                    </div>`);
+                    return;
+                }
+
+                $.ajax({
+                    url: apiBaseUrl + 'start/',
+                    type: 'POST',
+                    headers: {
+                        'Authorization': `Token ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    data: JSON.stringify({ 'github_issue_url': githubIssueUrl }),
+                    success: function(data){
+                        location.reload();
+                    },
+                    error: function(xhr){
+                        let error = 'An unexpected error occurred.';
+                        if (xhr.responseJSON && xhr.responseJSON.detail) {
+                            error = xhr.responseJSON.detail;
+                        } else if (xhr.status === 0) {
+                            error = 'Network error. Please check your connection.';
+                        }
+                        $('#message-container').html(`<div class="alert_box" role="alert">
+                            Error: ${error}
+                        </div>`);
+                    }
+                });
+            });
+
+            // Handle Stop Time Log Button Click
+            $('#stop-button').on('click', function(){
+                if (!timeLogId) {
+                    $('#message-container').html(`<div class="alert_box" role="alert">
+                        No active time log to stop.
+                    </div>`);
+                    return;
+                }
+
+                if (!confirm('Are you sure you want to stop the active time log?')) {
+                    return;
+                }
+
+                $.ajax({
+                    url: `${apiBaseUrl}${timeLogId}/stop/`,
+                    type: 'POST',
+                    headers: {
+                        'Authorization': `Token ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    success: function(data){
+                        // Clear the timer and update UI
+                        clearInterval(timerInterval);
+                        location.reload();
+                    },
+                    error: function(xhr){
+                        let error = 'An unexpected error occurred.';
+                        if (xhr.responseJSON && xhr.responseJSON.detail) {
+                            error = xhr.responseJSON.detail;
+                        } else if (xhr.status === 0) {
+                            error = 'Network error. Please check your connection.';
+                        }
+                        $('#message-container').html(`<div class="alert_box" role="alert">
+                            Error: ${error}
+                        </div>`);
+                    }
+                });
+            });
+        });
+    })();
+    </script>
+{% endblock content %}

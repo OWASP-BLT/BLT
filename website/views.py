@@ -2515,3 +2515,16 @@ def TimeLogListAPIView(request):
 
 def sizzle_docs(request):
     return render(request, "sizzle/sizzle_docs.html")
+
+
+@login_required
+def TimeLogListView(request):
+    time_logs = TimeLog.objects.filter(user=request.user).order_by("-start_time")
+    active_time_log = time_logs.filter(end_time__isnull=True).first()
+    # print the all details of the active time log
+    token, created = Token.objects.get_or_create(user=request.user)
+    return render(
+        request,
+        "sizzle/time_logs.html",
+        {"time_logs": time_logs, "active_time_log": active_time_log, "token": token.key},
+    )
