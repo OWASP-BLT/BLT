@@ -49,6 +49,24 @@ class UrlsTest(StaticLiveServerTestCase):
         )
         github_app.sites.add(site)
 
+        # Create SocialApp for Google
+        google_app = SocialApp.objects.create(
+            provider="google",
+            name="Google",
+            client_id="dummy_client_id",
+            secret="dummy_secret",
+        )
+        google_app.sites.add(site)
+
+        # Create SocialApp for Facebook
+        facebook_app = SocialApp.objects.create(
+            provider="facebook",
+            name="Facebook",
+            client_id="dummy_client_id",
+            secret="dummy_secret",
+        )
+        facebook_app.sites.add(site)
+
     def test_responses(
         self,
         allowed_http_codes=[200, 302, 405, 401, 404],
