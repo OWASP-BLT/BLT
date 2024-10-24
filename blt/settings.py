@@ -16,8 +16,8 @@ import environ
 from django.utils.translation import gettext_lazy as _
 
 env = environ.Env()
-# reading .env file
-environ.Env.read_env()
+# reading .env file from parent directory
+environ.Env.read_env(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -434,10 +434,38 @@ REST_FRAMEWORK = {
     },
 }
 
-SOCIALACCOUNT_PROVIDER = {
-    "github": {"scope": ("user:email",)},
-    "google": {"scope": ("user:email",)},
+SOCIALACCOUNT_PROVIDERS = {
+    "github": {
+        "SCOPE": ["user:email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+    },
+    "google": {
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+    },
+    "facebook": {
+        "METHOD": "oauth2",
+        "SCOPE": ["email"],
+        "FIELDS": [
+            "id",
+            "email",
+            "name",
+            "first_name",
+            "last_name",
+            "verified",
+            "locale",
+            "timezone",
+            "link",
+        ],
+        "EXCHANGE_TOKEN": True,
+        "LOCALE_FUNC": lambda request: "en_US",
+        "VERIFIED_EMAIL": False,
+        "VERSION": "v7.0",
+    },
 }
+
+ACCOUNT_ADAPTER = "allauth.account.adapter.DefaultAccountAdapter"
+SOCIALACCOUNT_ADAPTER = "allauth.socialaccount.adapter.DefaultSocialAccountAdapter"
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
 

@@ -1,11 +1,59 @@
 {% extends "base.html" %}
+{% load humanize %}
 {% block title %}
     Project List
 {% endblock title %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container">
-        <h2>Project List</h2>
+        <div class="top-bar">
+            <h3>Projects: {{ projects.count }}</h3>
+            <form method="post" class="add-project-form">
+                {% csrf_token %}
+                <div class="add-project-form">
+                    <div class="form-field">
+                        <input type="url"
+                               id="github_url"
+                               name="github_url"
+                               required
+                               class="github-url-input"
+                               placeholder="GitHub URL">
+                    </div>
+                    <button type="submit">
+                        <i class="fas fa-plus-circle"></i> Add Project
+                    </button>
+                </form>
+                <form method="post" class="refresh-projects-form">
+                    {% csrf_token %}
+                    <button type="submit" name="update_projects" value="update_projects">
+                        <i class="fas fa-sync-alt"></i> Refresh Projects
+                    </button>
+                </form>
+            </div>
+            <form method="get" class="refresh-projects-form">
+                <select id="sort_by"
+                        name="sort_by"
+                        onchange="this.form.submit()"
+                        class="sort-select">
+                    <option value="">Sort By:</option>
+                    <option value="last_updated"
+                            {% if sort_by == 'last_updated' %}selected{% endif %}>Recently Updated</option>
+                    <option value="stars" {% if sort_by == 'stars' %}selected{% endif %}>Stars</option>
+                    <option value="forks" {% if sort_by == 'forks' %}selected{% endif %}>Forks</option>
+                    <option value="total_issues"
+                            {% if sort_by == 'total_issues' %}selected{% endif %}>Issues</option>
+                    <option value="contributor_count"
+                            {% if sort_by == 'contributor_count' %}selected{% endif %}>Contributors</option>
+                </select>
+                <select id="order-select"
+                        name="order"
+                        onchange="this.form.submit()"
+                        class="sort-select">
+                    <option value="desc" {% if order == 'desc' %}selected{% endif %}>Descending</option>
+                    <option value="asc" {% if order == 'asc' %}selected{% endif %}>Ascending</option>
+                </select>
+            </form>
+        </div>
         {% if messages %}
             <ul class="messages">
                 {% for message in messages %}
@@ -13,11 +61,6 @@
                 {% endfor %}
             </ul>
         {% endif %}
-        <form method="post" class="add-project-form">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Add Project</button>
-        </form>
         <ul class="project-list">
             {% for project in projects %}
                 <a href="{% url 'project_view' project.slug %}" class="project-link">
@@ -25,61 +68,116 @@
                         {% if project.logo_url %}
                             <img src="{{ project.logo_url }}"
                                  alt="{{ project.name }} logo"
-                                 class="project logo"
+                                 class="project-logo"
                                  height="100"
                                  width="100">
+                        {% else %}
+                            <div class="project-logo placeholder">
+                                <span>No Logo</span>
+                            </div>
                         {% endif %}
                         <div class="project-details">
                             <h3>{{ project.name }}</h3>
-                            <p>{{ project.description }}</p>
-                            <div class="project-links">
-                                <a href="{{ project.github_url }}" target="_blank" title="GitHub">
-                                    <i class="fab fa-github"></i> GitHub
-                                </a>
-                                {% if project.wiki_url %}
-                                    <a href="{{ project.wiki_url }}" target="_blank" title="Wiki">
-                                        <i class="fas fa-book"></i> Wiki
-                                    </a>
-                                {% endif %}
-                                {% if project.homepage_url %}
-                                    <a href="{{ project.homepage_url }}" target="_blank" title="Homepage">
-                                        <i class="fas fa-home"></i> Homepage
-                                    </a>
-                                {% endif %}
+                            <!-- Stats Icons Under Project Title -->
+                            <div class="stats-icons">
+                                <ul>
+                                    <li>
+                                        <a href="{{ project.github_url }}" target="_blank" title="GitHub">
+                                            <i class="fab fa-github"></i>
+                                        </a>
+                                    </li>
+                                    {% if project.wiki_url %}
+                                        <li>
+                                            <a href="{{ project.wiki_url }}" target="_blank" title="Wiki">
+                                                <i class="fas fa-book"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {% if project.homepage_url %}
+                                        <li>
+                                            <a href="{{ project.homepage_url }}" target="_blank" title="Homepage">
+                                                <i class="fas fa-home"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    <li>
+                                        <a href="{{ project.github_url }}/stargazers"
+                                           target="_blank"
+                                           title="Stars">
+                                            <i class="fas fa-star"></i> {{ project.stars|intcomma }}
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ project.github_url }}/network/members"
+                                           target="_blank"
+                                           title="Forks">
+                                            <i class="fas fa-code-branch"></i> {{ project.forks|intcomma }}
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ project.github_url }}/issues"
+                                           target="_blank"
+                                           title="Total Issues">
+                                            <i class="fas fa-exclamation-circle"></i> {{ project.total_issues|intcomma }}
+                                        </a>
+                                    </li>
+                                    {% if project.release_name %}
+                                        <li>
+                                            <i class="fas fa-tag"></i>
+                                            <span title="{{ project.release_datetime|date:'Y-m-d H:i' }}">{{ project.release_name }}</span>
+                                        </li>
+                                    {% endif %}
+                                    <li>
+                                        <i class="fas fa-clock"></i>
+                                        <span title="{{ project.last_updated|date:'Y-m-d H:i' }}">{{ project.last_updated|timesince }}</span>
+                                    </li>
+                                </ul>
                             </div>
+                            <p>{{ project.description }}</p>
+                            <!-- Contributors Section -->
                             <div class="project-stats">
-                                <p>Top Contributors:</p>
+                                <p>
+                                    <i class="fas fa-users"></i> Contributors: {{ project.contributor_count }}
+                                </p>
                                 <div class="contributors">
                                     {% for contributor in project.get_top_contributors %}
-                                        <img src="{{ contributor.avatar_url }}"
-                                             alt="{{ contributor.name }}"
-                                             class="contributor-avatar"
-                                             title="{{ contributor.name }}"
-                                             height="40"
-                                             width="40">
+                                        <a href="https://github.com/search?q=repo:{{ project.github_url|slice:'19:' }}+author:{{ contributor.name }}&type=issues"
+                                           target="_blank">
+                                            <img src="{{ contributor.avatar_url }}"
+                                                 alt="{{ contributor.name }}"
+                                                 class="contributor-avatar"
+                                                 title="{{ contributor.name }}"
+                                                 height="40"
+                                                 width="40">
+                                        </a>
+                                    {% empty %}
+                                        <div class="contributor-avatar placeholder">
+                                            <span>No Avatar</span>
+                                        </div>
                                     {% endfor %}
                                 </div>
                             </div>
                             <div class="additional-metadata">
-                                <h4>Additional Metadata</h4>
-                                <p>Freshness: {{ project.freshness }}</p>
-                                <p>Stars: {{ project.stars }}</p>
-                                <p>Forks: {{ project.forks }}</p>
                                 <div class="external-links">
-                                    <h4>External Links</h4>
+                                    <h4>
+                                        <i class="fas fa-external-link-alt"></i> Links
+                                    </h4>
                                     <ul>
                                         {% for link in project.external_links %}
-                                            <li><a href="{{ link.url }}" target="_blank">{{ link.name }}</a></li>
+                                            <li>
+                                                <a href="{{ link.url }}" target="_blank"><i class="fas fa-link"></i> {{ link.name }}</a>
+                                            </li>
                                         {% endfor %}
                                     </ul>
                                 </div>
                             </div>
+                            <!-- Tags Section -->
                             <div class="project-tags">
-                                <h4>Tags</h4>
+                                <h4>
+                                    <i class="fas fa-tags"></i>Tags
+                                </h4>
                                 <ul>
-                                    {% for tag in project.tags.all %}
-                                        <li>{{ tag.name }}</li>
-                                    {% endfor %}
+                                    {% for tag in project.tags.all %}<li>{{ tag.name }}</li>{% endfor %}
                                 </ul>
                             </div>
                         </div>
@@ -89,169 +187,291 @@
         </ul>
     </div>
     <style>
-.container {
-    margin-top: 30px;
-}
+        .container {
+            margin-top: 30px;
+        }
 
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    background: #f8f8f8;
-    border-bottom: 1px solid #ddd;
-}
+        .top-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
 
-header h1 {
-    margin: 0;
-}
-h3 {
-   font-size: 20px;
-}
+        .top-bar h2 {
+            margin: 0;
+        }
 
-header nav a {
-    margin-left: 1rem;
-    text-decoration: none;
-    color: #333;
-}
+        .top-bar p {
+            margin: 0 0 0 20px;
+            display: flex;
+            align-items: center;
+        }
 
-header nav a:hover {
-    text-decoration: underline;
-}
+        .top-bar a.github-link {
+            margin-left: 20px;
+            text-decoration: none;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
 
-.add-project-form {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 1rem;
-}
+        .top-bar a.github-link i {
+            margin-right: 5px;
+        }
 
-.add-project-form input, .add-project-form textarea, .add-project-form button {
-    padding: 0.5rem;
-    margin-bottom: 0.5rem;
-    border: 1px solid #ddd;
-}
+        /* Add Project Form Styling */
+        .add-project-form {
+            display: flex;
+            align-items: center;
+            margin-left: 20px;
+        }
 
-.add-project-form button {
-    background: #007bff;
-    color: white;
-    border: none;
-    cursor: pointer;
-}
+        .add-project-form .form-field {
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            flex: 1; 
+        }
 
-.add-project-form button:hover {
-    background: #0056b3;
-}
+        .add-project-form label {
+            margin-right: 5px;
+        }
 
-.messages {
-    list-style: none;
-    padding: 0;
-    margin: 1rem 0;
-}
+        .add-project-form input,
+        .add-project-form textarea {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            flex: 1; 
+        }
 
-.messages li {
-    padding: 0.5rem;
-    margin-bottom: 0.5rem;
-    border: 1px solid #ddd;
-}
+        .github-url-input {
+            flex: 1;
+        }
 
-.messages li.success {
-    background: #d4edda;
-    color: #155724;
-}
+        .add-project-form button {
+            padding: 0.5rem 1rem;
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
 
-.messages li.error {
-    background: #f8d7da;
-    color: #721c24;
-}
+        .add-project-form button i {
+            margin-right: 5px;
+        }
 
-.project-list {
-    list-style: none;
-    padding: 0;
-}
+        .add-project-form button:hover {
+            background: #0056b3;
+        }
 
-.project-link {
-    text-decoration: none;
-    color: inherit;
-}
+        .refresh-projects-form {
+            display: flex;
+            align-items: center;
+            margin-left: 20px;
+        }
 
-.project-item {
-    display: flex;
-    align-items: center;
-    border: 1px solid #ddd;
-    padding: 1rem;
-    margin-bottom: 1rem;
-}
+        .refresh-projects-form button {
+            padding: 0.5rem 1rem;
+            background: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
 
-.project-logo {
-    max-width: 100px;
-    margin-right: 1rem;
-}
+        .refresh-projects-form button i {
+            margin-right: 5px;
+        }
 
-.project-details {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-}
+        .refresh-projects-form button:hover {
+            background: #218838;
+        }
 
-.project-links a {
-    display: inline-block;
-    margin-right: 0.5rem;
-    text-decoration: none;
-    color: #007bff;
-}
+        .sort-select {
+            margin-left: 10px;
+            padding: 0.5rem;
+            border: 1px solid #dc3545;
+            background: #dc3545;
+            color: white;
+        }
 
-.project-links a i {
-    margin-right: 0.3rem;
-}
+        h3 {
+            font-size: 20px;
+        }
 
-.project-links a:hover {
-    text-decoration: underline;
-}
+        .messages {
+            list-style: none;
+            padding: 0;
+            margin: 1rem 0;
+        }
 
-.project-stats {
-    margin-top: 1rem;
-}
+        .messages li {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid #ddd;
+        }
 
-.contributors {
-    display: flex;
-    margin-top: 0.5rem;
-}
+        .messages li.success {
+            background: #d4edda;
+            color: #155724;
+        }
 
-.contributor-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    margin-right: 0.5rem;
-}
+        .messages li.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
 
-.additional-metadata {
-    margin-top: 1rem;
-}
+        .project-list {
+            list-style: none;
+            padding: 0;
+        }
 
-.external-links ul {
-    list-style-type: none;
-    padding: 0;
-}
+        .project-link {
+            text-decoration: none;
+            color: inherit;
+        }
 
-.external-links li {
-    margin-bottom: 0.5rem;
-}
+        .project-item {
+            display: flex;
+            align-items: flex-start;
+            border: 1px solid #ddd;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
 
-.project-tags {
-    margin-top: 1rem;
-}
+        .project-logo {
+            max-width: 100px;
+            margin-right: 1rem;
+        }
 
-.project-tags ul {
-    list-style-type: none;
-    padding: 0;
-}
+        .project-logo.placeholder {
+            height: 100px;
+            width: 100px;
+            background-color: #f1f1f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-.project-tags li {
-    display: inline-block;
-    background-color: #f1f1f1;
-    padding: 5px 10px;
-    margin-right: 5px;
-    border-radius: 5px;
-}
+        .project-details {
+            flex: 1;
+        }
+
+        .stats-icons ul {
+            list-style: none;
+            padding: 0;
+            margin: 0.5rem 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .stats-icons li {
+            margin-right: 15px;
+        }
+
+        .stats-icons a {
+            text-decoration: none;
+            color: #333;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .stats-icons a:hover {
+            color: #007bff;
+        }
+
+        .stats-icons i {
+            font-size: 16px;
+            margin-right: 5px;
+        }
+
+        .project-links a {
+            display: inline-block;
+            margin-right: 0.5rem;
+            text-decoration: none;
+            color: #007bff;
+        }
+
+        .project-links a i {
+            margin-right: 0.3rem;
+        }
+
+        .project-links a:hover {
+            text-decoration: underline;
+        }
+
+        .project-stats {
+            margin-top: 1rem;
+        }
+
+        .contributors {
+            display: flex;
+            margin-top: 0.5rem;
+        }
+
+        .contributor-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .contributor-avatar.placeholder {
+            height: 40px;
+            width: 40px;
+            background-color: #f1f1f1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .additional-metadata {
+            margin-top: 1rem;
+        }
+
+        .external-links ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .external-links li {
+            margin-bottom: 0.5rem;
+        }
+
+        .external-links a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .external-links a:hover {
+            text-decoration: underline;
+        }
+
+        .project-tags {
+            margin-top: 1rem;
+        }
+
+        .project-tags ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .project-tags li {
+            display: inline-block;
+            background-color: #f1f1f1;
+            padding: 5px 10px;
+            margin-right: 5px;
+            border-radius: 5px;
+        }
+
+        .project-tags h4 i {
+            margin-right: 0.5rem;
+        }
     </style>
 {% endblock content %}

@@ -38,7 +38,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
-from website.views import (  # TODO AutoLabel,
+from website.class_views import (
     AllIssuesView,
     CompanySettings,
     ContributorStatsView,
@@ -67,7 +67,6 @@ from website.views import (  # TODO AutoLabel,
     PreviousHunts,
     ProjectDetailView,
     ProjectListView,
-    SaveBiddingData,
     ScoreboardView,
     SpecificIssuesView,
     SpecificMonthLeaderboardView,
@@ -77,6 +76,9 @@ from website.views import (  # TODO AutoLabel,
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
+)
+from website.views import (  # TODO AutoLabel,
+    SaveBiddingData,
     add_suggestions,
     blt_tomato,
     change_bid_status,
@@ -561,7 +563,9 @@ urlpatterns = [
     path("auth/delete", AuthApiViewset.as_view({"delete": "delete"}), name="auth-delete-api"),
     path("api/v1/tags", TagApiViewset.as_view({"get": "list", "post": "create"}), name="tags-api"),
     path("sizzle/", website.views.sizzle, name="sizzle"),
+    path("sizzle-docs/", website.views.sizzle_docs, name="sizzle-docs"),
     path("api/timelogsreport/", website.views.TimeLogListAPIView, name="timelogsreport"),
+    path("time-logs/", website.views.TimeLogListView, name="time_logs"),
 ]
 
 if settings.DEBUG:
