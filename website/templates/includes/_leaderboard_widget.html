@@ -1,0 +1,34 @@
+<div class="leaderboard-section">
+    <h3>Contributor Leaderboard</h3>
+    <form id="leaderboard-form">
+        <label for="start-date">Start Date:</label>
+        <input type="date" id="start-date" name="start-date" value="{{ default_start_date }}">
+        <button type="submit" class="btn btn-primary">Update Leaderboard</button>
+    </form>
+    <div id="leaderboard">
+        <!-- Leaderboard content will be dynamically updated here -->
+    </div>
+</div>
+
+<script>
+    document.getElementById('leaderboard-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const startDate = document.getElementById('start-date').value;
+        fetch(`/api/leaderboard/?start_date=${startDate}`)
+            .then(response => response.json())
+            .then(data => {
+                const leaderboard = document.getElementById('leaderboard');
+                leaderboard.innerHTML = '';
+                data.forEach(contributor => {
+                    const contributorElement = document.createElement('div');
+                    contributorElement.classList.add('contributor');
+                    contributorElement.innerHTML = `
+                        <p>${contributor.name}</p>
+                        <p>Pull Requests: ${contributor.pull_requests}</p>
+                    `;
+                    leaderboard.appendChild(contributorElement);
+                });
+            })
+            .catch(error => console.error('Error fetching leaderboard:', error));
+    });
+</script>

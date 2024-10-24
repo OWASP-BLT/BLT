@@ -161,7 +161,7 @@ class IssueViewSet(viewsets.ModelViewSet):
             return {}
 
         # Check if there is an image in the `screenshot` field of the Issue table
-        if issue.screenshot:
+        if (issue.screenshot):
             # If an image exists in the Issue table, return it along with additional images from IssueScreenshot
             screenshots = [request.build_absolute_uri(issue.screenshot.url)] + [
                 request.build_absolute_uri(screenshot.image.url)
@@ -476,6 +476,42 @@ class LeaderboardApiViewSet(APIView):
 
         return paginator.get_paginated_response(page)
 
+    def get_contributor_leaderboard(self, request, *args, **kwargs):
+        start_date = request.query_params.get("start_date")
+        if not start_date:
+            return Response({"error": "Start date is required"}, status=400)
+
+        try:
+            start_date = datetime.strptime(start_date, "%Y-%m-%d")
+        except ValueError:
+            return Response({"error": "Invalid start date format"}, status=400)
+
+        contributors = (
+            Contributor.objects.filter(contributions__date__gte=start_date)
+            .annotate(total_contributions=Sum("contributions"))
+            .order_by("-total_contributions")
+        )
+
+        serializer = ContributorSerializer(contributors, many=True)
+        return Response(serializer.data)
+
+    def get(self, request, format=None, *args, **kwargs):
+        filter = request.query_params.get("filter")
+        group_by_month = request.query_params.get("group_by_month")
+        leaderboard_type = request.query_params.get("leaderboard_type")
+
+        if filter:
+            return self.filter(request, *args, **kwargs)
+
+        elif group_by_month:
+            return self.group_by_month(request, *args, **kwargs)
+        elif leaderboard_type == "companies":
+            return self.company_leaderboard(request, *args, **kwargs)
+        elif leaderboard_type == "contributors":
+            return self.get_contributor_leaderboard(request, *args, **kwargs)
+        else:
+            return self.global_leaderboard(request, *args, **kwargs)
+
 
 class StatsApiViewset(APIView):
     def get(self, request, *args, **kwargs):
@@ -761,7 +797,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         query = request.query_params.get("q", "")
         projects = Project.objects.filter(
             Q(name__icontains=query)
-            | Q(description__icontains=query)
+            | Q(description__icontains(query)
             | Q(tags__name__icontains=query)
             | Q(stars__icontains=query)
             | Q(forks__icontains=query)
@@ -793,7 +829,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         projects = Project.objects.all()
 
         if freshness:
-            projects = projects.filter(freshness__icontains=freshness)
+            projects = projects.filter(freshness__icontains(freshness)
         if stars:
             projects = projects.filter(stars__gte=stars)
         if forks:

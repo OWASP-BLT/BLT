@@ -447,8 +447,7 @@ def admin_dashboard(request, template="admin_home.html"):
     user = request.user
     if user.is_superuser:
         if not user.is_active:
-            return HttpResponseRedirect("/")
-        return render(request, template)
+            return render(request, template)
     else:
         return redirect("/")
 
@@ -2507,3 +2506,35 @@ def TimeLogListAPIView(request):
 
 def sizzle_docs(request):
     return render(request, "sizzle/sizzle_docs.html")
+
+
+def update_leaderboard(request):
+    start_date = request.GET.get("start_date")
+    if not start_date:
+        return JsonResponse({"error": "Start date is required"}, status=400)
+
+    try:
+        start_date = datetime.strptime(start_date, "%Y-%m-%d")
+    except ValueError:
+        return JsonResponse({"error": "Invalid start date format"}, status=400)
+
+    contributors = (
+        Contributor.objects.filter(contributions__date__gte=start_date)
+        .annotate(total_contributions=Sum("contributions"))
+        .order_by("-total_contributions")
+    )
+
+    serializer = ContributorSerializer(contributors, many=True)
+    return JsonResponse(serializer.data, safe=False)
+
+
+def project_detail_view(request, slug):
+    project = get_object_or_404(Project, slug=slug)
+    default_start_date = datetime.now().strftime("%Y-01-01")
+
+    context = {
+        "project": project,
+        "default_start_date": default_start_date,
+    }
+
+    return render(request, "website/project_detail.html", context)
