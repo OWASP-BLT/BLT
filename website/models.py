@@ -75,6 +75,10 @@ class Company(models.Model):
     subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=False)
     tags = models.ManyToManyField(Tag, blank=True)
+    trademark_monitoring = models.BooleanField(default=False)
+    trademark_alerts = models.BooleanField(default=False)
+    resolved_issues = models.IntegerField(default=0)
+    total_issues = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name
