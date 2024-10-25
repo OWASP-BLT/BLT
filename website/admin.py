@@ -19,6 +19,7 @@ from website.models import (
     InviteFriend,
     Issue,
     IssueScreenshot,
+    Label,
     Monitor,
     Payment,
     Points,
@@ -119,6 +120,7 @@ class IssueAdmin(admin.ModelAdmin):
         "url",
         "domain",
         "description",
+        "label",
         "closed_by",
         "closed_date",
         "screenshot",
@@ -127,7 +129,7 @@ class IssueAdmin(admin.ModelAdmin):
     )
     search_fields = ["url", "description", "domain__name", "user__username"]
     inlines = [ImageInline]
-    list_filter = ["domain", "user"]
+    list_filter = ["domain", "user", "label", "tags"]
 
 
 class HuntAdmin(admin.ModelAdmin):
@@ -157,10 +159,12 @@ class DomainAdminPanel(ImportExportModelAdmin):
         "email_event",
         "twitter",
         "facebook",
+        "label",
         "created",
         "modified",
     )
     search_fields = ["name", "company__name", "url"]
+    list_filter = ["tags"]
 
 
 class CompanyUserAdmin(ImportExportModelAdmin):
@@ -192,6 +196,7 @@ class CompanyAdmins(ImportExportModelAdmin):
         "modified",
         "subscription",
     )
+    list_filter = ["tags"]
 
 
 class PointsAdmin(admin.ModelAdmin):
@@ -388,11 +393,16 @@ class ProjectAdmin(admin.ModelAdmin):
         "modified",
     )
     search_fields = ["name", "description", "slug"]
+    list_filter = ["tags"]
 
 
 class TagAdmin(admin.ModelAdmin):
     list_display = ("name", "slug", "created")
     prepopulated_fields = {"slug": ("name",)}
+
+
+class LabelAdmin(admin.ModelAdmin):
+    list_display = ("name", "created")
 
 
 # Register all models with their respective admin classes
@@ -418,6 +428,7 @@ admin.site.register(Blocked, BlockedAdmin)
 admin.site.register(Suggestion, SuggestionAdmin)
 admin.site.register(SuggestionVotes, SuggestionVotesAdmin)
 admin.site.register(TimeLog)
+admin.site.register(Label, LabelAdmin)
 
 # Register missing models
 admin.site.register(InviteFriend)
