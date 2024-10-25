@@ -60,6 +60,14 @@ class Tag(models.Model):
         return self.name
 
 
+class Label(models.Model):
+    name = models.CharField(max_length=255)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Company(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_companies")
@@ -131,7 +139,7 @@ class Domain(models.Model):
             return self.logo.url
         image_request = requests.get("https://logo.clearbit.com/" + self.name)
         try:
-            if image_request.status_code == 200:
+            if (image_request.status_code == 200):
                 image_content = ContentFile(image_request.content)
                 self.logo.save(self.name + ".jpg", image_content)
                 return self.logo.url
@@ -266,7 +274,6 @@ class Issue(models.Model):
     description = models.TextField()
     markdown_description = models.TextField(null=True, blank=True)
     captcha = CaptchaField()
-    label = models.PositiveSmallIntegerField(choices=labels, default=0)
     views = models.IntegerField(null=True, blank=True)
     verified = models.BooleanField(default=False)
     score = models.IntegerField(null=True, blank=True)
