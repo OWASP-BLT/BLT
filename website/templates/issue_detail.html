@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Issue: {{ issue.github_issue_url }}</h1>
+<img src="{% url 'dynamic_image' issue.id %}" alt="Dynamic Bid Image">
+<h2>Bids:</h2>
+<ul>
+    {% for bid in bids %}
+    <li>
+        {{ bid.coder.user.username }} bid {{ bid.amount }} BCH
+        {% if user.is_authenticated and user.repoowner %}
+            <form method="post" action="{% url 'accept_bid' bid.id %}">
+                {% csrf_token %}
+                <button type="submit">Accept Bid</button>
+            </form>
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% if user.is_authenticated and user.coder %}
+<a href="{% url 'submit_bid' issue.id %}">Submit a Bid</a>
+{% endif %}
+{% endblock %}

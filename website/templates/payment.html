@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Payment for Bid: {{ bid.id }}</h1>
+<p>Please transfer {{ bid.amount }} BCH to the following address:</p>
+<p>{{ wallet_address }}</p>
+<form method="post" action="{% url 'confirm_payment' %}">
+    {% csrf_token %}
+    <input type="hidden" name="bid_id" value="{{ bid.id }}">
+    <label for="tx_id">Transaction ID:</label>
+    <input type="text" name="tx_id" required>
+    <button type="submit">Confirm Payment</button>
+</form>
+{% endblock %}
