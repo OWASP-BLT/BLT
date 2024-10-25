@@ -146,6 +146,22 @@ class RegisterCompanyView(View):
         else:
             logo_path = None
 
+        # Validate URL
+        company_url = data.get("company_url", "").strip()
+        if not is_valid_https_url(company_url):
+            messages.error(request, "Invalid URL format. Please enter a valid URL.")
+            return redirect("register_company")
+
+        # Check if the company name exists
+        try:
+            response = requests.get(company_url, timeout=5)
+            if response.status_code != 200:
+                messages.error(request, "Company URL does not exist.")
+                return redirect("register_company")
+        except requests.exceptions.RequestException:
+            messages.error(request, "Company URL does not exist.")
+            return redirect("register_company")
+
         try:
             with transaction.atomic():
                 company = Company.objects.create(

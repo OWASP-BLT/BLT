@@ -117,3 +117,13 @@ def get_github_issue_title(github_issue_url):
         return f"Issue #{issue_number}"
     except Exception:
         return "No Title"
+
+
+def validate_company_name(company_name):
+    try:
+        response = requests.get(f"https://api.example.com/companies/{company_name}")
+        if response.status_code == 200:
+            return True
+        return False
+    except requests.exceptions.RequestException:
+        return False
