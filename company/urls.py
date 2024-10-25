@@ -17,6 +17,7 @@ from company.views import (
     delete_manager,
     delete_prize,
     edit_prize,
+    company_manage_organizations,
 )
 
 urlpatterns = [
@@ -61,4 +62,9 @@ urlpatterns = [
     path("accept_bug/<int:issue_id>/<str:reward_id>/", accept_bug, name="accept_bug"),
     path("accept_bug/<int:issue_id>/<str:no_reward>/", accept_bug, name="accept_bug_no_reward"),
     path("delete_manager/<int:manager_id>/<int:domain_id>/", delete_manager, name="delete_manager"),
+    path(
+        "<int:id>/dashboard/organizations/",
+        company_manage_organizations,
+        name="company_manage_organizations",
+    ),
 ]

@@ -8,7 +8,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="description" content="blt make company bug tracking easy">
         <meta name="keywords" content="blt, bug, tracking, company, easy">
-        <title>{% trans "Register Organization" %}</title>
+        <title>{% trans "Manage Organizations" %}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap"
@@ -29,7 +29,7 @@
             }
         </style>
         <div class="bottom-right">
-            <a href="https://github.com/OWASP-BLT/BLT/blob/main/company/templates/company/register_company.html">
+            <a href="https://github.com/OWASP-BLT/BLT/blob/main/company/templates/company/company_manage_organizations.html">
                 <i class="fab fa-github"></i>
             </a>
             <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
@@ -60,6 +60,7 @@
                                        autocomplete="company_name"
                                        placeholder="Organization Name"
                                        required
+                                       onchange="validateCompanyName()"
                                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                             </div>
                         </div>
@@ -75,6 +76,7 @@
                                        autocomplete="company_url"
                                        placeholder="https://Organization_domain.xyz"
                                        required
+                                       onchange="validateCompanyUrl()"
                                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                             </div>
                         </div>
@@ -272,8 +274,6 @@
         email_container.appendChild(email_container_child_html)
     }
 
-    </script>
-    <script>
     function cancelForm(){
         let deleteForm = document.getElementById("deleteForm");
         let confirmDelete = confirm("Are you sure you want to cancel, your progress would be lost.");
@@ -281,7 +281,6 @@
             deleteForm.submit();
         }
     }
-
 
     function displayLogoPreview() {
         var fileInput = document.getElementById("logo");
@@ -304,5 +303,25 @@
         }
     }
 
+    function validateCompanyUrl() {
+        var companyUrl = document.getElementById("company_url").value;
+        // Add your URL validation logic here
+        // For example, you can use a regular expression to validate the URL format
+        var urlPattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,4}(\/[\w-]*)*\/?$/;
+        if (!urlPattern.test(companyUrl)) {
+            alert("Invalid URL format. Please enter a valid URL.");
+        }
+    }
+
+    function validateCompanyName() {
+        var companyName = document.getElementById("company_name").value;
+        // Add your company name validation logic here
+        // For example, you can check if the company name already exists in the database
+        // You can make an AJAX request to the server to check for the existence of the company name
+        // For simplicity, let's assume the company name should be at least 3 characters long
+        if (companyName.length < 3) {
+            alert("Company name should be at least 3 characters long.");
+        }
+    }
     </script>
 </html>
