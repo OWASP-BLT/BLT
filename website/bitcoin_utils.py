@@ -56,3 +56,20 @@ def issue_asset(asset_name, amount, identifier):
 
     # The transaction ID (txid) can be used to track the issuance on the blockchain.
     return txid
+
+
+def generate_wallet_address():
+    rpc_client = get_rpc_client()
+    return rpc_client.getnewaddress()
+
+
+def verify_transaction(tx_id, amount, address):
+    rpc_client = get_rpc_client()
+    try:
+        transaction = rpc_client.gettransaction(tx_id)
+        if transaction['details'][0]['address'] == address and transaction['amount'] == amount:
+            return True
+        return False
+    except JSONRPCException as e:
+        print(f"Error verifying transaction: {e}")
+        return False

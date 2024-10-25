@@ -36,6 +36,10 @@ from website.api.views import (
     UrlCheckApiViewset,
     UserIssueViewSet,
     UserProfileViewSet,
+    submit_bid,
+    list_bids,
+    accept_bid,
+    dynamic_image,
 )
 from website.class_views import (
     AllIssuesView,
@@ -564,6 +568,10 @@ urlpatterns = [
     path("sizzle-docs/", website.views.sizzle_docs, name="sizzle-docs"),
     path("api/timelogsreport/", website.views.TimeLogListAPIView, name="timelogsreport"),
     path("time-logs/", website.views.TimeLogListView, name="time_logs"),
+    path("issue/<int:issue_id>/submit_bid/", submit_bid, name="submit_bid"),
+    path("issue/<int:issue_id>/bids/", list_bids, name="list_bids"),
+    path("bid/<int:bid_id>/accept/", accept_bid, name="accept_bid"),
+    path("dynamic_image/<int:issue_id>/", dynamic_image, name="dynamic_image"),
 ]
 
 if settings.DEBUG:

@@ -1,7 +1,6 @@
 import json
 import uuid
 from datetime import datetime
-
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -19,7 +18,6 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from website.class_views import LeaderboardBase
 from website.models import (
     ActivityLog,
@@ -38,6 +36,8 @@ from website.models import (
     Token,
     User,
     UserProfile,
+    Bid,
+    Transaction,
 )
 from website.serializers import (
     ActivityLogSerializer,
@@ -53,9 +53,16 @@ from website.serializers import (
     UserProfileSerializer,
 )
 from website.utils import image_validator
+from website.forms import BidForm
+from website.bitcoin_utils import generate_wallet_address, verify_transaction
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+from PIL import Image, ImageDraw, ImageFont
+import io
 
 # API's
-
 
 class UserIssueViewSet(viewsets.ModelViewSet):
     """
@@ -161,7 +168,7 @@ class IssueViewSet(viewsets.ModelViewSet):
             return {}
 
         # Check if there is an image in the `screenshot` field of the Issue table
-        if issue.screenshot:
+        if (issue.screenshot):
             # If an image exists in the Issue table, return it along with additional images from IssueScreenshot
             screenshots = [request.build_absolute_uri(issue.screenshot.url)] + [
                 request.build_absolute_uri(screenshot.image.url)
@@ -237,7 +244,7 @@ class IssueViewSet(viewsets.ModelViewSet):
             return Response({"error": "Max limit of 5 images!"}, status=status.HTTP_400_BAD_REQUEST)
 
         data = super().create(request, *args, **kwargs).data
-        issue = Issue.objects.filter(id=data["id"]).first()
+        issue = Issue.objects.filter(id(data["id"])).first()
 
         if tags:
             issue.tags.add(*tags)
@@ -541,7 +548,7 @@ class BugHuntApiViewset(APIView):
     def get_upcoming_hunts(self, request, fields, *args, **kwargs):
         hunts = (
             Hunt.objects.values(*fields)
-            .filter(is_published=True, starts_on__gte=datetime.now())
+            .filter(is_published(True), starts_on__gte=datetime.now())
             .order_by("starts_on")
         )
         return Response(hunts)
@@ -761,10 +768,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
         query = request.query_params.get("q", "")
         projects = Project.objects.filter(
             Q(name__icontains=query)
-            | Q(description__icontains=query)
-            | Q(tags__name__icontains=query)
-            | Q(stars__icontains=query)
-            | Q(forks__icontains=query)
+            | Q(description__icontains(query))
+            | Q(tags__name__icontains(query))
+            | Q(stars__icontains(query))
+            | Q(forks__icontains(query))
         ).distinct()
 
         project_data = []
@@ -793,11 +800,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
         projects = Project.objects.all()
 
         if freshness:
-            projects = projects.filter(freshness__icontains=freshness)
+            projects = projects.filter(freshness__icontains(freshness))
         if stars:
-            projects = projects.filter(stars__gte=stars)
+            projects = projects.filter(stars__gte(stars))
         if forks:
-            projects = projects.filter(forks__gte=forks)
+            projects = projects.filter(forks__gte(forks))
         if tags:
             projects = projects.filter(tags__name__in=tags.split(",")).distinct()
 
@@ -908,3 +915,56 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
             raise ParseError(detail=str(e))
         except Exception as e:
             raise ParseError(detail="An unexpected error occurred while creating the activity log.")
+
+
+@login_required
+def submit_bid(request, issue_id):
+    issue = get_object_or_404(Issue, id=issue_id)
+    if request.method == 'POST':
+        form = BidForm(request.POST)
+        if form.is_valid():
+            bid = form.save(commit=False)
+            bid.issue = issue
+            bid.coder = request.user.coder
+            bid.save()
+            # Update highest bid
+            if bid.amount > issue.highest_bid:
+                issue.highest_bid = bid.amount
+                issue.save()
+            return redirect('issue_detail', issue_id=issue.id)
+    else:
+        form = BidForm()
+    return render(request, 'submit_bid.html', {'form': form, 'issue': issue})
+
+
+def list_bids(request, issue_id):
+    issue = get_object_or_404(Issue, id=issue_id)
+    bids = issue.bids.order_by('-amount')
+    return render(request, 'issue_detail.html', {'issue': issue, 'bids': bids})
+
+
+@login_required
+def accept_bid(request, bid_id):
+    bid = get_object_or_404(Bid, id=bid_id)
+    if request.user.repoowner:
+        bid.accepted = True
+        bid.save()
+        # Generate wallet address for payment
+        wallet_address = generate_wallet_address()
+        # Redirect to payment page
+        return render(request, 'payment.html', {'bid': bid, 'wallet_address': wallet_address})
+    else:
+        return HttpResponse("Unauthorized", status=401)
+
+
+def dynamic_image(request, issue_id):
+    issue = get_object_or_404(Issue, id=issue_id)
+    highest_bid = issue.highest_bid
+    # Generate image
+    img = Image.new('RGB', (400, 100), color=(73, 109, 137))
+    d = ImageDraw.Draw(img)
+    font = ImageFont.load_default()
+    d.text((10, 10), f"Highest Bid: {highest_bid} BCH", fill=(255, 255, 0), font=font)
+    buffer = io.BytesIO()
+    img.save(buffer, format='PNG')
+    return HttpResponse(buffer.getvalue(), content_type='image/png')
