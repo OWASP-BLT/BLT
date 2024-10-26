@@ -761,10 +761,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
         query = request.query_params.get("q", "")
         projects = Project.objects.filter(
             Q(name__icontains=query)
-            | Q(description__icontains(query)
-            | Q(tags__name__icontains(query)
-            | Q(stars__icontains(query)
-            | Q(forks__icontains(query)
+            | Q(description__icontains=query)
+            | Q(tags__name__icontains=query)
+            | Q(stars__icontains=query)
+            | Q(forks__icontains=query)
         ).distinct()
 
         project_data = []
