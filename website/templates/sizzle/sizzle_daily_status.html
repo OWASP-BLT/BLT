@@ -35,106 +35,61 @@
             </div>
             <!-- Daily Status Report Form -->
             <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-                <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold">
-                    Daily Status Report
-                </div>
+                <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold">Daily Status Report</div>
                 <form method="post" action="{% url 'sizzle_daily_log' %}" class="p-6">
                     {% csrf_token %}
                     <div class="mb-4">
                         <label for="previous_work" class="block text-gray-700 font-semibold mb-2">What did you work on previously?</label>
-                        <textarea id="previous_work" name="previous_work" rows="3" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"></textarea>
+                        <textarea id="previous_work"
+                                  name="previous_work"
+                                  rows="3"
+                                  class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"></textarea>
                     </div>
                     <div class="mb-4">
                         <label for="next_plan" class="block text-gray-700 font-semibold mb-2">What do you plan to do next?</label>
-                        <textarea id="next_plan" name="next_plan" rows="3" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"></textarea>
+                        <textarea id="next_plan"
+                                  name="next_plan"
+                                  rows="3"
+                                  class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"></textarea>
                     </div>
                     <div class="mb-4">
                         <label for="blockers" class="block text-gray-700 font-semibold mb-2">Do you have any blockers?</label>
-                        <textarea id="blockers" name="blockers" rows="3" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"></textarea>
+                        <textarea id="blockers"
+                                  name="blockers"
+                                  rows="3"
+                                  class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"></textarea>
                     </div>
-                    <button type="submit" class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">Submit</button>
+                    <button type="submit"
+                            class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
+                        Submit
+                    </button>
                 </form>
             </div>
             <!-- Display Daily Status Reports -->
             <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-                <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold">
-                    Your Daily Status Reports
-                </div>
+                <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold">Your Daily Status Reports</div>
                 {% for report in reports %}
-                <div class="p-6 border-b border-gray-200">
-                    <h2 class="text-xl font-semibold mb-2">Date: {{ report.date }}</h2>
-                    <p><strong>What did you work on previously?</strong></p>
-                    <p>{{ report.previous_work }}</p>
-                    <p><strong>What do you plan to do next?</strong></p>
-                    <p>{{ report.next_plan }}</p>
-                    <p><strong>Do you have any blockers?</strong></p>
-                    <p>{{ report.blockers }}</p>
-                </div>
+                    <div class="p-6 border-b border-gray-200">
+                        <h2 class="text-xl font-semibold mb-2">Date: {{ report.date }}</h2>
+                        <p>
+                            <strong>What did you work on previously?</strong>
+                        </p>
+                        <p>{{ report.previous_work }}</p>
+                        <p>
+                            <strong>What do you plan to do next?</strong>
+                        </p>
+                        <p>{{ report.next_plan }}</p>
+                        <p>
+                            <strong>Do you have any blockers?</strong>
+                        </p>
+                        <p>{{ report.blockers }}</p>
+                    </div>
                 {% empty %}
-                <div class="p-6">
-                    <p>You have not submitted any daily status reports yet.</p>
-                </div>
+                    <div class="p-6">
+                        <p>You have not submitted any daily status reports yet.</p>
+                    </div>
                 {% endfor %}
             </div>
         </div>
     </div>
-    <script type="text/javascript"
-            src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
-    <script type="text/javascript"
-            src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
-    <script type="text/javascript"
-            src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-    <script type="text/javascript">
-    $(function() {
-        $('input[name="daterange"]').daterangepicker({
-            opens: 'left',
-            locale: {
-                format: 'YYYY-MM-DD'
-            }
-        }, function(start, end, label) {
-            $('#report-date').text(start.format('D.M.YYYY') + ' - ' + end.format('D.M.YYYY') + ' Report');
-    
-            // Fetch and update report logs
-            $.ajax({
-                url: '{% url "timelogsreport" %}',
-                data: {
-                    start_date: start.format('YYYY-MM-DDTHH:mm:ssZ'),
-                    end_date: end.format('YYYY-MM-DDTHH:mm:ssZ')
-                },
-                success: function(data) {
-                    // if success the report-table div will be fully clean and the new data will be added for each item in the data added like present item 
-                    $('#report-table').empty();
-                    data.forEach(function(item) {
-                        $('#report-table').append(`
-                            <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-                                <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold">
-                                    ${item.date}
-                                </div>
-                                <table class="min-w-full bg-white">
-                                    <thead>
-                                        <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
-                                            <th class="text-left py-3 px-4 border-b border-gray-200">Issue Title</th>
-                                            <th class="text-left py-3 px-4 border-b border-gray-200">Started</th>
-                                            <th class="text-left py-3 px-4 border-b border-gray-200">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td class="py-3 px-4 border-b border-gray-200">${item.issue_title}</td>
-                                            <td class="py-3 px-4 border-b border-gray-200">${item.start_time}</td>
-                                            <td class="py-3 px-4 border-b border-gray-200">${item.duration}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        `);
-                    });
-                },
-                error: function(xhr, status, error) {
-                    alert('An error occurred while fetching the report logs.');
-                }
-            });
-        });
-    });
-    </script>
 {% endblock content %}
