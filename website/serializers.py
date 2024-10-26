@@ -129,7 +129,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     stars = serializers.IntegerField()
     forks = serializers.IntegerField()
     external_links = serializers.JSONField()
-    visit_count = serializers.IntegerField()
+    repo_visit_count = serializers.IntegerField()
 
     class Meta:
         model = Project
