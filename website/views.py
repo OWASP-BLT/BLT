@@ -117,16 +117,21 @@ def add_domain_to_company(request):
         company = Company.objects.filter(name=company_name).first()
 
         if not company:
-            response = requests.get(domain.url)
-            soup = BeautifulSoup(response.text, "html.parser")
-            if company_name in soup.get_text():
-                company = Company.objects.create(name=company_name)
-                domain.company = company
-                domain.save()
-                messages.success(request, "Organization added successfully")
-                return redirect("domain", slug=domain.url)
+            parsed_url = urlparse(domain.url)
+            if is_valid_https_url(domain.url) and parsed_url.hostname and parsed_url.hostname.endswith(".trusted-domain.com"):
+                response = requests.get(domain.url)
+                soup = BeautifulSoup(response.text, "html.parser")
+                if company_name in soup.get_text():
+                    company = Company.objects.create(name=company_name)
+                    domain.company = company
+                    domain.save()
+                    messages.success(request, "Organization added successfully")
+                    return redirect("domain", slug=domain.url)
+                else:
+                    messages.error(request, "Organization not found in the domain")
+                    return redirect("domain", slug=domain.url)
             else:
-                messages.error(request, "Organization not found in the domain")
+                messages.error(request, "Invalid or untrusted domain URL")
                 return redirect("domain", slug=domain.url)
         else:
             domain.company = company
