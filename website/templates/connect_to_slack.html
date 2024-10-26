@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect to Slack</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>Connect to Slack</h1>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="slack_token">Slack Token:</label>
+                <input type="text" id="slack_token" name="slack_token" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

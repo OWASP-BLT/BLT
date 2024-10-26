@@ -58,6 +58,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from sendgrid import SendGridAPIClient
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
 
 from blt import settings
 from comments.models import Comment
@@ -2528,3 +2530,47 @@ def TimeLogListView(request):
         "sizzle/time_logs.html",
         {"time_logs": time_logs, "active_time_log": active_time_log, "token": token.key},
     )
+
+
+@login_required
+def daily_checkins(request):
+    user = request.user
+    if not user.is_authenticated:
+        return redirect("login")
+
+    checkins = TimeLog.objects.filter(user=user).order_by("-start_time")
+    return render(request, "daily_checkins.html", {"checkins": checkins})
+
+
+@login_required
+def connect_to_slack(request):
+    user = request.user
+    if not user.is_authenticated:
+        return redirect("login")
+
+    if request.method == "POST":
+        slack_token = request.POST.get("slack_token")
+        if slack_token:
+            user_profile = UserProfile.objects.get(user=user)
+            user_profile.slack_token = slack_token
+            user_profile.save()
+            messages.success(request, "Slack token saved successfully.")
+        else:
+            messages.error(request, "Please provide a valid Slack token.")
+
+    return render(request, "connect_to_slack.html")
+
+
+def send_slack_message(user, message):
+    user_profile = UserProfile.objects.get(user=user)
+    slack_token = user_profile.slack_token
+    if not slack_token:
+        return False
+
+    client = WebClient(token=slack_token)
+    try:
+        response = client.chat_postMessage(channel="#general", text=message)
+        return response["ok"]
+    except SlackApiError as e:
+        print(f"Error sending message to Slack: {e.response['error']}")
+        return False
