@@ -104,6 +104,12 @@ class ProjectDetailView(DetailView):
             messages.success(request, "Requested refresh to projects")
             return redirect("project_view", slug=project.slug)
 
+    def get(self, request, *args, **kwargs):
+        project = self.get_object()
+        project.repo_visit_count += 1
+        project.save()
+        return super().get(request, *args, **kwargs)
+
 
 class ProjectListView(ListView):
     model = Project
