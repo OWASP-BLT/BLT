@@ -45,10 +45,11 @@ from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DetailView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from user_agents import parse
 
 from blt import settings
@@ -106,9 +107,45 @@ class ProjectDetailView(DetailView):
 
     def get(self, request, *args, **kwargs):
         project = self.get_object()
-        project.repo_visit_count += 1
+        project.project_visit_count += 1
         project.save()
         return super().get(request, *args, **kwargs)
+
+
+class ProjectBadgeView(APIView):
+    def get(self, request, slug, format=None):
+        # Retrieve the project or return 404
+        project = get_object_or_404(Project, slug=slug)
+
+        # Increment the visit count
+        project.repo_visit_count += 1
+        project.save()
+
+        # Create an image with the updated visit count
+        img = Image.new("RGB", (200, 50), color=(73, 109, 137))
+        d = ImageDraw.Draw(img)
+        font = ImageFont.load_default()
+
+        # Updated line to calculate text size
+        text = f"Visits: {project.repo_visit_count}"
+        bbox = d.textbbox((0, 0), text, font=font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+
+        # Center the text in the image
+        position = ((200 - text_width) / 2, (50 - text_height) / 2)
+        d.text(position, text, font=font, fill=(255, 255, 0))
+
+        # Prepare the HTTP response with the image and cache control
+        response = HttpResponse(content_type="image/png")
+        img.save(response, "PNG")
+
+        # Set headers to prevent caching
+        response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response["Pragma"] = "no-cache"
+        response["Expires"] = "0"
+
+        return response
 
 
 class ProjectListView(ListView):
@@ -138,6 +175,9 @@ class ProjectListView(ListView):
             response = requests.get(api_url)
             if response.status_code == 200:
                 data = response.json()
+                # if the description is empty, use the name as the description
+                if not data["description"]:
+                    data["description"] = data["name"]
                 project, created = Project.objects.get_or_create(
                     github_url=github_url,
                     defaults={

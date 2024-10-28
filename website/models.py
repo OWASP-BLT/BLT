@@ -755,6 +755,7 @@ class Project(models.Model):
     last_updated = models.DateTimeField(null=True, blank=True)
     total_issues = models.IntegerField(default=0)
     repo_visit_count = models.IntegerField(default=0)
+    project_visit_count = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name
