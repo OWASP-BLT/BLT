@@ -99,6 +99,12 @@
                 </div>
             </div>
         </div>
+        <!-- Repo View Count Badge -->
+        <div class="repo-view-count-badge">
+            <h3>Repo View Count Badge</h3>
+            <p>This badge displays the number of views your repository has received:</p>
+            <pre><code>![Repo Views](https://komarev.com/ghpvc/?username=YOUR_GITHUB_USERNAME&repo=YOUR_REPO_NAME)</code></pre>
+        </div>
         <!-- Top Contributors -->
         <div class="contributors-section">
             <h3>Top Contributors</h3>
@@ -286,6 +292,19 @@
             font-size: 16px;
             color: #007bff;
             text-decoration: none;
+        }
+        .repo-view-count-badge {
+            margin-top: 50px;
+        }
+        .repo-view-count-badge pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .repo-view-count-badge code {
+            font-size: 14px;
+            color: #333;
         }
     </style>
 {% endblock content %}
