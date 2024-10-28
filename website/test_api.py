@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.db.transaction import atomic
-from django.urls import reverse, timezone
+from django.urls import reverse
+from django.utils import timezone
 from django.utils.encoding import force_str
 from rest_framework import status
 from rest_framework.test import APITestCase
