@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.db.transaction import atomic
-from django.urls import timezone, reverse
+from django.urls import reverse, timezone
 from django.utils.encoding import force_str
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -121,9 +121,7 @@ class APITests(APITestCase):
         response = self.client.get("".join([url, "upcomingHunt=1/"]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         if len(response.data):
-            self.assertGreater(
-                response.data[0]["starts_on"], timezone.now(), "Invalid Response"
-            )
+            self.assertGreater(response.data[0]["starts_on"], timezone.now(), "Invalid Response")
 
     def test_get_issues(self):
         url = "/api/v1/issues/"
