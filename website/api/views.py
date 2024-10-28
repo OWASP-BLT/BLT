@@ -908,3 +908,21 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
             raise ParseError(detail=str(e))
         except Exception as e:
             raise ParseError(detail="An unexpected error occurred while creating the activity log.")
+
+
+class ProjectBadgeView(APIView):
+    def get(self, request, slug, format=None):
+        project = Project.objects.get(slug=slug)
+        visit_count = project.visit_count
+
+        # Create an image with the visit count
+        from PIL import Image, ImageDraw, ImageFont
+
+        img = Image.new("RGB", (200, 50), color=(73, 109, 137))
+        d = ImageDraw.Draw(img)
+        font = ImageFont.load_default()
+        d.text((10, 10), f"Visits: {visit_count}", font=font, fill=(255, 255, 0))
+
+        response = HttpResponse(content_type="image/png")
+        img.save(response, "PNG")
+        return response
