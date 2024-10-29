@@ -21,7 +21,7 @@ django-annoying = "^0.10.7"
 dj-rest-auth = "^5.0.2"
 tweepy = "^4.8.0"
 user-agents = "^2.2.0"
-whitenoise = "^6.7.0"
+whitenoise = "^6.8.1"
 django-debug-toolbar = "^4.4.6"
 selenium = "^4.24.0"
 pylibmc = "^1.6.1"
@@ -72,7 +72,7 @@ pusher = "^3.3.2"
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
 isort = "^5.13.2"
-ruff = "^0.7.0"
+ruff = "^0.7.1"
 pre-commit = "^3.8.0"
 
 [tool.isort]
