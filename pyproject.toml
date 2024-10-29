@@ -6,7 +6,7 @@ authors = ["OWASP BLT <you@example.com>"]
 license = "AGPLv3"
 
 [tool.poetry.dependencies]
-python = "3.11.2"
+python = "3.10.12"
 python-dotenv = "^1.0.1"
 toml = "^0.10.2"
 Django = "^5.1.1"
@@ -67,6 +67,7 @@ Markdown = "^3.6"
 openai = "^1.52.2"
 python-bitcoinrpc = "^1.0"
 sendgrid = "^6.11.0"
+pusher = "^3.3.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
