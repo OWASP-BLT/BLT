@@ -348,15 +348,8 @@ def newhome(request, template="new_home.html"):
     return render(request, template, context)
 
 
-import pusher
-
-pusher_client = pusher.Pusher(
-    app_id=settings.PUSHER_APP_ID,
-    key=settings.PUSHER_KEY,
-    secret=settings.PUSHER_SECERT,
-    cluster=settings.PUSHER_CLUSTER,
-    ssl=True,
-)
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 
 def notification(request):
@@ -364,20 +357,11 @@ def notification(request):
     messages = [n.message for n in notification]
     notification_id = [n.id for n in notification]
 
-    # channel_layer = get_channel_layer()
-    # async_to_sync(channel_layer.group_send)(
-    #     f"notification_{request.user.id}",
-    #     {
-    #         "type": "send_notification",
-    #         "notification_id": notification_id,
-    #         "message": messages,
-    #     },
-    # )
-
-    pusher_client.trigger(
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
         f"notification_{request.user.id}",
-        "send_notification",
         {
+            "type": "send_notification",
             "notification_id": notification_id,
             "message": messages,
         },

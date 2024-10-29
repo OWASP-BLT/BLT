@@ -712,7 +712,7 @@ class FetchNotificationApiView(APIView):
         if user_id is None or not user_id.isdigit():
             return Response("Invalid User Id, ID should be integer", status=400)
         user_exists = User.objects.filter(id=user_id).exists()
-        if not user_not_exist:
+        if not user_exists:
             return Response("User Does Not Exist", status=400)
 
         notification = Notification.objects.filter(user__id=user_id).all()
@@ -728,6 +728,7 @@ class FetchNotificationApiView(APIView):
             },
         )
         return Response("OK")
+
 
 class ContributorViewSet(viewsets.ModelViewSet):
     queryset = Contributor.objects.all()
