@@ -342,32 +342,47 @@ def newhome(request, template="new_home.html"):
     context = {
         "bugs": page_obj,
         "bugs_screenshots": bugs_screenshots,
-        "leaderboard": User.objects.filter(
-            points__created__month=datetime.now().month, points__created__year=datetime.now().year
-        ),
         "room_name": "brodcast",
         "leaderboard": leaderboard,
     }
     return render(request, template, context)
 
 
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
+import pusher
+
+pusher_client = pusher.Pusher(
+    app_id=settings.PUSHER_APP_ID,
+    key=settings.PUSHER_KEY,
+    secret=settings.PUSHER_SECERT,
+    cluster=settings.PUSHER_CLUSTER,
+    ssl=True,
+)
 
 
 def notification(request):
     notification = Notification.objects.filter(user=request.user).all()
     messages = [n.message for n in notification]
     notification_id = [n.id for n in notification]
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
+
+    # channel_layer = get_channel_layer()
+    # async_to_sync(channel_layer.group_send)(
+    #     f"notification_{request.user.id}",
+    #     {
+    #         "type": "send_notification",
+    #         "notification_id": notification_id,
+    #         "message": messages,
+    #     },
+    # )
+
+    pusher_client.trigger(
         f"notification_{request.user.id}",
+        "send_notification",
         {
-            "type": "send_notification",
             "notification_id": notification_id,
             "message": messages,
         },
     )
+
     return HttpResponse("Notification Sent")
 
 

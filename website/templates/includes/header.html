@@ -174,7 +174,20 @@
         z-index: 9999;
     }
 </style>
+<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 <script>
+
+    Pusher.logToConsole = true;
+
+    var pusher = new Pusher('cd1775c464c88353c20e', {
+      cluster: 'us3'
+    });
+
+    var channel = pusher.subscribe('my-channel');
+    channel.bind('my-event', function(data) {
+      alert(JSON.stringify(data));
+    });
+
     document.addEventListener('DOMContentLoaded', function () {
         const desktopDropdownButton = document.getElementById('dropdownButton');
         const desktopDropdownMenu = document.getElementById('dropdownMenu');
@@ -522,7 +535,7 @@
     });
     });
 </script>
-<script>
+<!-- <script>
     const roomName = "{{request.user.id}}"
 
     const notificationSocket = new WebSocket(
@@ -569,5 +582,57 @@
             let notificationCount = parseInt(document.getElementById("notification-bell-count").textContent) || 0;
             notificationCount = Math.max(notificationCount - 1, 0);
             document.getElementById("notification-bell-count").textContent = notificationCount;
+    }
+</script> -->
+<script>
+    // Replace `roomName` with your channel name (using user ID for unique channel)
+    const roomName = "{{ request.user.id }}";  // Channel name for user notifications
+
+    // Initialize Pusher with your app key
+    const pusher = new Pusher('YOUR_PUSHER_APP_KEY', {
+        cluster: 'YOUR_PUSHER_CLUSTER'
+    });
+
+    // Subscribe to the channel and event for user notifications
+    const notificationChannel = pusher.subscribe(`notification_${roomName}`);
+
+    notificationChannel.bind('new-notification', function(data) {
+        const notifications = data.message;
+        for (let i = 0; i < notifications.length; i++) {
+            const notification_id = data.notification_id[i];
+            const message = notifications[i];
+
+            // Append notification to dropdown
+            document.getElementById("notifications-dropdown").innerHTML = 
+                `<li class='dropdown-item' onclick=markAsSeen(${notification_id})>${message}</li><hr class='dropdown-divider'>` + 
+                document.getElementById("notifications-dropdown").innerHTML;
+        }
+
+        // Update notification count
+        if (data.message) {
+            let notificationCount = parseInt(document.getElementById("notification-bell-count").textContent) || 0;
+            notificationCount += notifications.length;
+            document.getElementById("notification-bell-count").innerHTML = 
+                `<span class='btn__badge pulse-button' id='notification-bell-count'>${notificationCount}</span>`;
+        }
+    });
+
+    // Function to mark a notification as seen
+    function markAsSeen(notificationId) {
+        // Send an HTTP request to your backend to mark notification as seen
+        fetch('/api/mark-notification-seen/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notification_id: notificationId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let notificationCount = parseInt(document.getElementById("notification-bell-count").textContent) || 0;
+                notificationCount = Math.max(notificationCount - 1, 0);
+                document.getElementById("notification-bell-count").textContent = notificationCount;
+            }
+        })
+        .catch(error => console.error('Error marking notification as seen:', error));
     }
 </script>

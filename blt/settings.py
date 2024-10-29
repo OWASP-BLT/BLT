@@ -565,3 +565,9 @@ BITCOIN_RPC_USER = os.environ.get("BITCOIN_RPC_USER", "yourusername")
 BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "yourpassword")
 BITCOIN_RPC_HOST = os.environ.get("BITCOIN_RPC_HOST", "localhost")
 BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")
+
+# PUSHER KEY SECERT
+PUSHER_APP_ID = "1887536"
+PUSHER_KEY = "cd1775c464c88353c20e"
+PUSHER_SECERT = "4b1f404fe9e110adf1fd"
+PUSHER_CLUSTER = "us3"
