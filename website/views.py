@@ -67,6 +67,7 @@ from website.models import (
     ChatBotLog,
     Company,
     CompanyAdmin,
+    DailyStatusReport,
     Domain,
     Hunt,
     InviteFriend,
@@ -2443,7 +2444,6 @@ def view_suggestions(request):
 
 
 def sizzle(request):
-    print(request.user)
     if not request.user.is_authenticated:
         messages.error(request, "Please login to access the Sizzle page.")
         return redirect("index")
@@ -2552,3 +2552,34 @@ def TimeLogListView(request):
         "sizzle/time_logs.html",
         {"time_logs": time_logs, "active_time_log": active_time_log, "token": token.key},
     )
+
+
+@login_required
+def sizzle_daily_log(request):
+    try:
+        if request.method == "GET":
+            reports = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
+            return render(request, "sizzle/sizzle_daily_status.html", {"reports": reports})
+
+        if request.method == "POST":
+            previous_work = request.POST.get("previous_work")
+            next_plan = request.POST.get("next_plan")
+            blockers = request.POST.get("blockers")
+            print(previous_work, next_plan, blockers)
+
+            DailyStatusReport.objects.create(
+                user=request.user,
+                date=now().date(),
+                previous_work=previous_work,
+                next_plan=next_plan,
+                blockers=blockers,
+            )
+
+            messages.success(request, "Daily status report submitted successfully.")
+            return redirect("sizzle")
+
+    except Exception as e:
+        messages.error(request, f"An error occurred: {e}")
+        return redirect("sizzle")
+
+    return HttpResponseBadRequest("Invalid request method.")

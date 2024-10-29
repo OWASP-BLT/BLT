@@ -34,7 +34,7 @@
                 <li class="{% if request.path == '' %}bg-gray-200{% endif %}">
                     <a href="{% url 'index' %}"
                        class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">⚠️</div>
+                        <div class="w-8 mr-4 ml-1">⚠️</div>
                         <span>Issues</span>
                     </a>
                 </li>
@@ -111,7 +111,7 @@
                 <li class="{% if request.path == '/trademarks/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'trademark_search' %}"
                        class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">™️</div>
+                        <div class="w-8 mr-2 ml-2">ᵀᴹ</div>
                         <span>Trademarks</span>
                     </a>
                 </li>
@@ -167,7 +167,7 @@
                 <li class="{% if request.path == '/about/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'about' %}"
                        class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">ℹ️</div>
+                        <div class="w-8 mr-2 ml-3">ℹ️</div>
                         <span>About Us</span>
                     </a>
                 </li>
