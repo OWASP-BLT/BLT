@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 20px;
+    }
+
+    .blog-title {
+        font-size: 2.5em;
+        color: #333;
+        text-align: center;
+    }
+
+    .post-list {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    .post-item {
+        margin: 15px 0;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #ffffff;
+    }
+
+    .post-link {
+        text-decoration: none;
+        color: #007bff;
+        font-weight: bold;
+    }
+
+    .post-link:hover {
+        text-decoration: underline;
+    }
+
+    .no-posts-message {
+        text-align: center;
+        color: #666;
+    }
+</style>
+
+{% include "includes/sidenav.html" %}
+<h1 class="blog-title">Blog Posts</h1>
+<ul class="post-list">
+    {% for post in posts %}
+    <li class="post-item">
+        <a href="{% url 'post_detail' slug=post.slug %}" class="post-link">{{ post.title }}</a> by {{ post.author }}
+    </li>
+    {% empty %}
+    <p class="no-posts-message">No posts available.</p>
+    {% endfor %}
+</ul>
+{% endblock content %}
