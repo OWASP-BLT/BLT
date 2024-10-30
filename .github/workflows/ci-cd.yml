@@ -103,6 +103,7 @@ jobs:
         with:
           python-version: 3.11.2
       - run: pip install poetry
+      - run: poetry cache clear --all pypi
       - run: poetry install
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests

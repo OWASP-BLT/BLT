@@ -5,7 +5,6 @@ RUN mkdir /blt
 WORKDIR /blt
 COPY . /blt
 
-
 # Install PostgreSQL dependencies
 RUN apt-get update && \
     apt-get install -y postgresql-client libpq-dev && \
@@ -18,7 +17,7 @@ RUN apt-get update && apt-get install -y \
         libmemcached-dev \
         libz-dev
 
-
+RUN poetry cache clear --all pypi
 RUN pip install poetry 
 RUN poetry config virtualenvs.create false
 RUN poetry install
@@ -27,4 +26,3 @@ RUN python manage.py migrate
 RUN python manage.py loaddata website/fixtures/initial_data.json
 # RUN python manage.py collectstatic
 RUN python manage.py initsuperuser
-
