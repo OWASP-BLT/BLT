@@ -74,6 +74,7 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
+    Notification,
     Payment,
     Points,
     Subscription,
@@ -342,9 +343,32 @@ def newhome(request, template="new_home.html"):
     context = {
         "bugs": page_obj,
         "bugs_screenshots": bugs_screenshots,
+        "room_name": "brodcast",
         "leaderboard": leaderboard,
     }
     return render(request, template, context)
+
+
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
+
+def notification(request):
+    notification = Notification.objects.filter(user=request.user).all()
+    messages = [n.message for n in notification]
+    notification_id = [n.id for n in notification]
+
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f"notification_{request.user.id}",
+        {
+            "type": "send_notification",
+            "notification_id": notification_id,
+            "message": messages,
+        },
+    )
+
+    return HttpResponse("Notification Sent")
 
 
 def is_safe_url(url, allowed_hosts, allowed_paths=None):

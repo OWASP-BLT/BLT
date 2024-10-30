@@ -17,7 +17,7 @@
     "model": "website.domain",
     "pk": 55,
     "fields": {
-      "name": "example.com",
+      "name": "example1.com",
       "url": "http://example.com",
       "logo": "",
       "webshot": "",
@@ -45,7 +45,7 @@
     "model": "website.domain",
     "pk": 99,
     "fields": {
-      "name": "owasp.org",
+      "name": "owasp",
       "url": "http://owasp.org",
       "logo": "",
       "webshot": "",
