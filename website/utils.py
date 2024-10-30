@@ -7,6 +7,8 @@ import requests
 from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
+from django.core.mail import send_mail
+from website.models import Company, Domain
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
@@ -117,3 +119,23 @@ def get_github_issue_title(github_issue_url):
         return f"Issue #{issue_number}"
     except Exception:
         return "No Title"
+
+
+def search_uspto_database(term):
+    url = f"https://api.uspto.gov/trademark/v1/trademarkSearch/{term}"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {settings.USPTO_API_KEY}",
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    return None
+
+
+def send_email_alert(company, results):
+    subject = f"Trademark Alert for {company.name}"
+    message = f"Potential trademark matches found:\n\n{results}"
+    from_email = settings.DEFAULT_FROM_EMAIL
+    recipient_list = [company.email]
+    send_mail(subject, message, from_email, recipient_list)
