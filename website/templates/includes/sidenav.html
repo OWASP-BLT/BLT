@@ -31,233 +31,184 @@
     <div class="h-full px-11 overflow-y-auto bg-white flex flex-col justify-between no-scrollbar sidenav">
         <div class="overflow-auto no-scrollbar">
             <ul class="font-medium text-2xl mt-6 mb-0">
+                <li class="menu-section">
+                    <span class="menu-section-title">Organizations</span>
+                </li>
                 <li class="{% if request.path == '' %}bg-gray-200{% endif %}">
                     <a href="{% url 'index' %}"
                        class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4 ml-1">⚠️</div>
-                        <span>Issues</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/companies/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'domain_lists' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">🏛️</div>
-                        <span>Organizations</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/sponsor/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'sponsor' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">🤝</div>
-                        <span>Sponsor</span>
+                        <i class="fa fa-bug fa-lg mr-4 ml-1"></i>
+                        <span>Issues (bugs)</span>
                     </a>
                 </li>
                 <li class="{% if request.path == '/sizzle/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'sizzle' %}"
                        class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">⏱️</div>
-                        <span>Sizzle</span>
+                        <i class="fa fa-clock fa-lg mr-4"></i>
+                        <span>Sizzle (time tracking)</span>
                     </a>
                 </li>
                 <li class="{% if request.path == '/scoreboard/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'scoreboard' %}"
                        class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">🏆</div>
+                        <i class="fa fa-trophy fa-lg mr-4"></i>
                         <span>Scoreboard</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/leaderboard/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'leaderboard_global' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">🏅</div>
-                        <span>Leaderboard</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/users/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'users' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">🧑‍🤝‍🧑</div>
-                        <span>Users</span>
                     </a>
                 </li>
                 <li class="{% if request.path == '/hunts/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'hunts' %}"
                        class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">🐛</div>
-                        <span>Bug Bounties</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/projects/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'project_list' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">📦</div>
-                        <span>Projects</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/apps/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'apps' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">📱</div>
-                        <span>Apps</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/deletions/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'deletions' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">🗑️</div>
-                        <span>Deletions</span>
+                        <i class="fa fa-bug fa-lg mr-4"></i>
+                        <span>Bug bounties</span>
                     </a>
                 </li>
                 <li class="{% if request.path == '/trademarks/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'trademark_search' %}"
                        class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-2 ml-2">ᵀᴹ</div>
-                        <span>Trademarks</span>
+                        <i class="fa fa-trademark fa-lg mr-4"></i>
+                        <span>Trademark search</span>
                     </a>
                 </li>
-                <li class="{% if request.path == '/bacon/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'bacon' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">🥓</div>
-                        <span>BACON</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/sitemap/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'sitemap' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">🗺️</div>
-                        <span>Sitemap</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/bltv/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'bltv' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">📺</div>
-                        <span>BLTV</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/contribute/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'contribution_guidelines' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">✋</div>
-                        <span>Contribute</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/contributors/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'contributors' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">💻</div>
-                        <span>Contributors</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/contributor-stats/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'contributor-stats' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">📅</div>
-                        <span>Weekly Activity</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/contributor-stats/today/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'today-contributor-stats' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">🗓️</div>
-                        <span>Daily Activity</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/about/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'about' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-2 ml-3">ℹ️</div>
-                        <span>About Us</span>
-                    </a>
+                <li class="menu-section">
+                    <span class="menu-section-title">Projects</span>
                 </li>
                 <li class="{% if request.path == '/bidding/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'BiddingData' %}"
                        class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">💰</div>
-                        <span>Bid on Bugs</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/terms/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'terms' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">📜</div>
-                        <span>Terms</span>
-                    </a>
-                </li>
-                <li class="{% if request.path == '/stats/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'stats' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">📊</div>
-                        <span>Stats</span>
+                        <i class="fa fa-gavel fa-lg mr-4"></i>
+                        <span>Bid on Issues</span>
                     </a>
                 </li>
                 <li class="{% if request.path == '/blt-tomato/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'blt-tomato' %}"
                        class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">🍅</div>
-                        <span>BLT Tomato</span>
+                        <i class="fa fa-leaf fa-lg mr-4"></i>
+                        <span>Tomato (Funding)</span>
                     </a>
                 </li>
-                <li class="{% if request.path == '/view-suggestion/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'view_suggestions' %}"
+                <li class="{% if request.path == '/bacon/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'bacon' %}"
                        class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">💬</div>
-                        <span>Suggestions</span>
+                        <i class="fa fa-bacon fa-lg mr-4"></i>
+                        <span>BACON (Coin)</span>
                     </a>
                 </li>
-                <li class="{% if request.path == '/status/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'check_status' %}"
+                <li class="{% if request.path == '/contributor-stats/today/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'today-contributor-stats' %}"
                        class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">✅</div>
-                        <span>Status</span>
+                        <i class="fa fa-calendar-day fa-lg mr-4"></i>
+                        <span>Daily Activity</span>
                     </a>
                 </li>
-                <li>
-                    <div class="border-t-2 border-gray-200"></div>
+                <li class="{% if request.path == '/contributor-stats/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'contributor-stats' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <i class="fa fa-calendar-week fa-lg mr-4"></i>
+                        <span>Weekly Activity</span>
+                    </a>
+                </li>
+                <li class="menu-section">
+                    <span class="menu-section-title">Users</span>
+                </li>
+                <li class="{% if request.path == '/leaderboard/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'leaderboard_global' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <i class="fa fa-medal fa-lg mr-4"></i>
+                        <span>Leaderboard</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/contributors/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'contributors' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <i class="fa fa-users fa-lg mr-4"></i>
+                        <span>Contributors</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/deletions/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'deletions' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <i class="fa fa-trash fa-lg mr-4"></i>
+                        <span>Takedowns</span>
+                    </a>
+                </li>
+                <li class="menu-section">
+                    <span class="menu-section-title">Other</span>
                 </li>
                 <li>
                     <a href="https://apps.apple.com/us/app/owasp-blt/id6448071954"
                        class="flex items-center w-full text-black no-underline p-2"
                        rel="noopener noreferrer">
-                        <div class="w-8 h-8 mr-4">🍎</div>
+                        <i class="fa fa-apple fa-lg mr-4"></i>
                         <span>iPhone app</span>
                     </a>
                 </li>
-                <li>
-                    <a href="https://github.com/OWASP/BLT#readme"
-                       rel="noopener noreferrer"
+                <li class="{% if request.path == '/about/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'about' %}"
                        class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">🛠️</div>
-                        <span>Dev Guides</span>
+                        <i class="fa fa-info-circle fa-lg mr-4"></i>
+                        <span>About us</span>
                     </a>
                 </li>
-                <li>
-                    <a href="https://github.com/OWASP/BLT/releases"
+                <li class="{% if request.path == '/sponsor/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'sponsor' %}"
                        class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">⭐</div>
-                        <span>Releases</span>
+                        <i class="fa fa-handshake fa-lg mr-4"></i>
+                        <span>Sponsorships</span>
                     </a>
                 </li>
-                <li>
-                    <a href="https://blt.owasp.org/swagger/"
+                <li class="{% if request.path == '/donations/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'donations' %}"
                        class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">⚙️</div>
+                        <i class="fa fa-donate fa-lg mr-4"></i>
+                        <span>Donations</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/view-suggestion/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'view_suggestions' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <i class="fa fa-comments fa-lg mr-4"></i>
+                        <span>Suggestions</span>
+                    </a>
+                </li>
+                <li class="menu-section">
+                    <span class="menu-section-title">Contribute</span>
+                </li>
+                <li class="{% if request.path == '/contribute/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'contribution_guidelines' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <i class="fa fa-hand-paper fa-lg mr-4"></i>
+                        <span>Contribute</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/documentation/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'documentation' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <i class="fa fa-book fa-lg mr-4"></i>
+                        <span>Documentation</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/developer-api/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'developer_api' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <i class="fa fa-code fa-lg mr-4"></i>
                         <span>Developer API</span>
                     </a>
                 </li>
-                <li>
-                    <a href="https://github.com/OWASP/BLT/blob/main/Setup.md"
+                <li class="{% if request.path == '/bltv/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'bltv' %}"
                        class="flex items-center w-full text-black no-underline p-2">
-                        <div class="w-8 mr-4">📄</div>
-                        <span>Documentation</span>
+                        <i class="fa fa-tv fa-lg mr-4"></i>
+                        <span>BLTV</span>
                     </a>
+                </li>
+                <li class="menu-section">
+                    <span class="menu-section-title">Social</span>
                 </li>
                 <li>
                     <a href="https://www.facebook.com/groups/owaspfoundation/"
                        class="flex items-center w-full text-black no-underline p-2"
                        target="_blank">
-                        <div class="w-8 mr-4">👍</div>
+                        <i class="fa fa-facebook fa-lg mr-4"></i>
                         <span>Facebook page</span>
                     </a>
                 </li>
@@ -265,7 +216,7 @@
                     <a href="https://github.com/OWASP/BLT"
                        class="flex items-center w-full text-black no-underline p-2"
                        target="_blank">
-                        <div class="w-8 mr-4">🐱</div>
+                        <i class="fa fa-github fa-lg mr-4"></i>
                         <span>BLT on Github</span>
                     </a>
                 </li>
@@ -273,7 +224,7 @@
                     <a href="https://twitter.com/OWASP_BLT"
                        class="flex items-center w-full text-black no-underline p-2"
                        target="_blank">
-                        <div class="w-8 mr-4">🐦</div>
+                        <i class="fa fa-twitter fa-lg mr-4"></i>
                         <span>Twitter (X)</span>
                     </a>
                 </li>
@@ -281,8 +232,39 @@
                     <a href="https://owasp.org/www-project-bug-logging-tool/"
                        class="flex items-center w-full text-black no-underline p-2"
                        target="_blank">
-                        <div class="w-8 mr-4">📰</div>
-                        <span>Project Page</span>
+                        <i class="fa fa-blog fa-lg mr-4"></i>
+                        <span>Blog</span>
+                    </a>
+                </li>
+                <li class="menu-section">
+                    <span class="menu-section-title">Miscellaneous</span>
+                </li>
+                <li class="{% if request.path == '/sitemap/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'sitemap' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <i class="fa fa-sitemap fa-lg mr-4"></i>
+                        <span>Sitemap</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/status/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'check_status' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <i class="fa fa-check-circle fa-lg mr-4"></i>
+                        <span>Status</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/stats/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'stats' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <i class="fa fa-chart-bar fa-lg mr-4"></i>
+                        <span>Stats</span>
+                    </a>
+                </li>
+                <li class="{% if request.path == '/terms/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'terms' %}"
+                       class="flex items-center w-full text-black no-underline p-2">
+                        <i class="fa fa-file-contract fa-lg mr-4"></i>
+                        <span>Terms</span>
                     </a>
                 </li>
             </ul>
