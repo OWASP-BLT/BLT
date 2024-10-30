@@ -38,6 +38,8 @@ from website.models import (
     Token,
     User,
     UserProfile,
+    Contribution,
+    BaconToken,
 )
 from website.serializers import (
     ActivityLogSerializer,
@@ -53,6 +55,7 @@ from website.serializers import (
     UserProfileSerializer,
 )
 from website.utils import image_validator
+from website.bitcoin_utils import create_bacon_token
 
 # API's
 
@@ -161,7 +164,7 @@ class IssueViewSet(viewsets.ModelViewSet):
             return {}
 
         # Check if there is an image in the `screenshot` field of the Issue table
-        if issue.screenshot:
+        if (issue.screenshot):
             # If an image exists in the Issue table, return it along with additional images from IssueScreenshot
             screenshots = [request.build_absolute_uri(issue.screenshot.url)] + [
                 request.build_absolute_uri(screenshot.image.url)
@@ -254,6 +257,15 @@ class IssueViewSet(viewsets.ModelViewSet):
                 IssueScreenshot.objects.create(image=file_path, issue=issue)
             else:
                 return Response({"error": "Invalid image"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Mint and reward BACON tokens
+        contribution = Contribution.objects.create(
+            user=request.user,
+            title=f"Issue #{issue.id} Contribution",
+            description=issue.description,
+            status="open",
+        )
+        create_bacon_token(request.user, contribution)
 
         return Response(self.get_issue_info(request, issue))
 
@@ -700,6 +712,32 @@ class CompanyViewSet(viewsets.ModelViewSet):
     search_fields = ("id", "name")
     http_method_names = ("get", "post", "put")
 
+    @action(detail=True, methods=["get"])
+    def scoreboard(self, request, pk=None):
+        company = self.get_object()
+        domains = company.domain_set.all()
+        issues = Issue.objects.filter(domain__in=domains)
+        resolved_issues = issues.filter(status="closed").count()
+        total_issues = issues.count()
+        response_data = {
+            "company": company.name,
+            "resolved_issues": resolved_issues,
+            "total_issues": total_issues,
+        }
+        return Response(response_data)
+
+    @action(detail=True, methods=["post"])
+    def update_scoreboard(self, request, pk=None):
+        company = self.get_object()
+        resolved_issues = request.data.get("resolved_issues")
+        total_issues = request.data.get("total_issues")
+        if resolved_issues is not None and total_issues is not None:
+            company.resolved_issues = resolved_issues
+            company.total_issues = total_issues
+            company.save()
+            return Response({"status": "scoreboard updated"})
+        return Response({"error": "Invalid data"}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ContributorViewSet(viewsets.ModelViewSet):
     queryset = Contributor.objects.all()
@@ -761,7 +799,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         query = request.query_params.get("q", "")
         projects = Project.objects.filter(
             Q(name__icontains=query)
-            | Q(description__icontains=query)
+            | Q(description__icontains(query)
             | Q(tags__name__icontains=query)
             | Q(stars__icontains=query)
             | Q(forks__icontains=query)
@@ -793,7 +831,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         projects = Project.objects.all()
 
         if freshness:
-            projects = projects.filter(freshness__icontains=freshness)
+            projects = projects.filter(freshness__icontains(freshness)
         if stars:
             projects = projects.filter(stars__gte=stars)
         if forks:

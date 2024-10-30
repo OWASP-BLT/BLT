@@ -554,3 +554,8 @@ BITCOIN_RPC_USER = os.environ.get("BITCOIN_RPC_USER", "yourusername")
 BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "yourpassword")
 BITCOIN_RPC_HOST = os.environ.get("BITCOIN_RPC_HOST", "localhost")
 BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")
+
+# Bitcoin Core Enhancements
+BITCOIN_CORE_SCHNORR_SIGNATURES = os.environ.get("BITCOIN_CORE_SCHNORR_SIGNATURES", "enabled")
+BITCOIN_CORE_TAPROOT = os.environ.get("BITCOIN_CORE_TAPROOT", "enabled")
+BITCOIN_CORE_LIGHTNING_NETWORK = os.environ.get("BITCOIN_CORE_LIGHTNING_NETWORK", "enabled")
