@@ -44,7 +44,15 @@ Please follow the development server setup procedure [here](https://github.com/O
 
   
 
-  
+### Development Environment Setup Options
+
+We provide three options for setting up the development environment:
+
+1. **Docker**: Recommended for most users. It provides a consistent environment and simplifies dependency management.
+2. **Vagrant**: Useful if you prefer using VirtualBox and Vagrant for managing development environments.
+3. **Python Virtual Environment**: Ideal for those who prefer setting up the environment manually using Python virtual environments.
+
+For detailed setup instructions, please refer to the [Setup.md](https://github.com/OWASP/BLT/blob/main/Setup.md) file.
 
 ### Documentation
 
