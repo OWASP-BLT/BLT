@@ -145,3 +145,35 @@ class HideImage(TestCase):
 
             if "hidden" not in filename:
                 self.assertFalse(True, "files rename failed")
+
+
+class IssueCreationTests(TestCase):
+    def test_create_issue_without_image(self):
+        response = self.client.post(
+            "/api/issues/",
+            {
+                "url": "https://example.com",
+                "description": "Test issue without image",
+                "label": 0,
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Upload at least one image!", response.json()["error"])
+
+    def test_create_issue_with_image(self):
+        with open("website/static/images/dummy-user.png", "rb") as image:
+            response = self.client.post(
+                "/api/issues/",
+                {
+                    "url": "https://example.com",
+                    "description": "Test issue with image",
+                    "label": 0,
+                    "screenshots": image,
+                },
+            )
+        self.assertEqual(response.status_code, 201)
+        self.assertIn("Test issue with image", response.json()["description"])
+        self.assertTrue(Issue.objects.filter(description="Test issue with image").exists())
+        self.assertTrue(
+            IssueScreenshot.objects.filter(issue__description="Test issue with image").exists()
+        )
