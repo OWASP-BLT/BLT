@@ -54,12 +54,6 @@ class CaptchaForm(forms.Form):
     captcha = CaptchaField()
 
 
-class QuickIssueForm(forms.Form):
-    url = forms.CharField()
-    label = forms.CharField()
-    description = forms.CharField()
-
-
 class MonitorForm(forms.ModelForm):
     created = forms.DateTimeField(widget=forms.HiddenInput(), required=False, label="Created")
     modified = forms.DateTimeField(widget=forms.HiddenInput(), required=False, label="Modified")

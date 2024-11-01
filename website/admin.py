@@ -28,6 +28,7 @@ from website.models import (
     SuggestionVotes,
     Tag,
     Trademark,
+    TimeLog,
     Transaction,
     UserProfile,
     Wallet,
@@ -417,6 +418,7 @@ admin.site.register(ChatBotLog, ChatBotLogAdmin)
 admin.site.register(Blocked, BlockedAdmin)
 admin.site.register(Suggestion, SuggestionAdmin)
 admin.site.register(SuggestionVotes, SuggestionVotesAdmin)
+admin.site.register(TimeLog)
 
 # Register missing models
 admin.site.register(InviteFriend)
