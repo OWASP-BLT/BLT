@@ -1821,6 +1821,7 @@ def subscribe_to_domains(request, pk):
         return JsonResponse("SUBSCRIBED", safe=False)
 
 
+
 def create_github_issue(request, id):
     issue = get_object_or_404(Issue, id=id)
     screenshot_all = IssueScreenshot.objects.filter(issue=issue)

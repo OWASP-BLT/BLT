@@ -802,7 +802,19 @@ class IssueBaseCreate(object):
 
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
-    fields = ["url", "description", "domain", "label", "markdown_description", "cve_id"]
+    fields = [
+        "url",
+        "description",
+        "domain",
+        "label",
+        "markdown_description",
+        "cve_id",
+        "infringing_domain_name",
+        "infringing_domain_url",
+        "registration_number",
+        "serial_number",
+        "contact_information",
+    ]
     template_name = "report.html"
 
     def get_initial(self):
@@ -820,6 +832,11 @@ class IssueCreate(IssueBaseCreate, CreateView):
             self.request.POST["type"] = json_data["type"]
             self.request.POST["cve_id"] = json_data["cve_id"]
             self.request.POST["cve_score"] = json_data["cve_score"]
+            self.request.POST["infringing_domain_name"] = json_data["infringing_domain_name"]
+            self.request.POST["infringing_domain_url"] = json_data["infringing_domain_url"]
+            self.request.POST["registration_number"] = json_data["registration_number"]
+            self.request.POST["serial_number"] = json_data["serial_number"]
+            self.request.POST["contact_information"] = json_data["contact_information"]
 
             if self.request.POST.get("file"):
                 if isinstance(self.request.POST.get("file"), six.string_types):
@@ -986,6 +1003,11 @@ class IssueCreate(IssueBaseCreate, CreateView):
             obj.domain = domain
             # obj.is_hidden = bool(self.request.POST.get("private", False))
             obj.cve_score = obj.get_cve_score()
+            obj.infringing_domain_name = self.request.POST.get("infringing_domain_name")
+            obj.infringing_domain_url = self.request.POST.get("infringing_domain_url")
+            obj.registration_number = self.request.POST.get("registration_number")
+            obj.serial_number = self.request.POST.get("serial_number")
+            obj.contact_information = self.request.POST.get("contact_information")
             obj.save()
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):
@@ -1193,6 +1215,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
             .annotate(count=Count("domain__name"))
             .order_by("-count")[:30]
         )
+
+        context["infringing_domain_name"] = Issue.objects.values("infringing_domain_name")
+        context["infringing_domain_url"] = Issue.objects.values("infringing_domain_url")
+        context["registration_number"] = Issue.objects.values("registration_number")
+        context["serial_number"] = Issue.objects.values("serial_number")
+        context["contact_information"] = Issue.objects.values("contact_information")
 
         return context
 
@@ -2205,5 +2233,10 @@ class IssueView(DetailView):
         context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
+        context["infringing_domain_name"] = self.object.infringing_domain_name
+        context["infringing_domain_url"] = self.object.infringing_domain_url
+        context["registration_number"] = self.object.registration_no
+        context["serial_number"] = self.object.serial_no
+        context["contact_information"] = self.object.contact_info
 
         return context
