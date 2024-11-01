@@ -211,6 +211,37 @@
                 </div>
             </div>
             <div class="border-b border-gray-900/10 pb-12 mt-5">
+                <h2 class="text-base font-semibold leading-7 text-gray-900">Trademarks</h2>
+                <div>
+                    <label for="trademarkInput"
+                           class="block text-sm font-medium leading-6 text-gray-900">Trademark Name</label>
+                    <input name="trademarkInput"
+                           type="text"
+                           id="trademarkInput"
+                           autocomplete="trademarkInput"
+                           class="w-[90%] block rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
+                           placeholder="Enter trademark name">
+                    <button onclick="addTrademark()"
+                            type="button"
+                            class="w-[120px] h-[40px] bg-red-500 text-sm text-white font-bold rounded-md mt-2 hover:bg-red-600 transition-all">
+                        Add Trademarks
+                    </button>
+                </div>
+                <input type="hidden" name="removedTrademarks" id="removedTrademarks">
+                <div id="trademarkList" class="mt-4">
+                    {% for trademark in trademarks %}
+                        <div value="{{ trademark.id }}"
+                             name="remove-button"
+                             id="remove-button"
+                             class="flex items-center justify-between bg-gray-100 p-2 rounded-md mb-2">
+                            <span>{{ trademark.name }}</span>
+                            <br>
+                            <button type="button" onclick="removeTrademark(this)" class="text-red-600">Remove</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="border-b border-gray-900/10 pb-12 mt-5">
                 <h2 class="text-base font-semibold leading-7 text-gray-900">Notifications</h2>
                 <p class="mt-1 text-sm leading-6 text-gray-600">
                     We'll always let you know about important changes, but you pick what
@@ -263,6 +294,36 @@
             let parentDiv = event.target.closest('.user-selection');
             user_container.removeChild(parentDiv);
             updateUserSelections();
+        }
+
+        function addTrademark() {
+            const trademarkInput = document.getElementById('trademarkInput');
+            const trademarkList = document.getElementById('trademarkList');
+            const trademark = trademarkInput.value;
+            if (trademarkInput.value.trim() !== "") {
+                const trademarkItem = document.createElement('div');
+                trademarkItem.className = "flex items-center justify-between bg-gray-100 p-2 rounded-md mb-2";
+                trademarkItem.innerHTML = `
+                    <span>${trademark}</span>
+                    <button value="$trademark" type="button" onclick="removeTrademark(this)" class="text-red-600">Remove</button>
+                `;
+                trademarkList.appendChild(trademarkItem);
+            }
+        }
+        function removeTrademark(button) {
+            const trademarkItem = button.parentElement;
+            const trademarkId = trademarkItem.getAttribute('value');
+            const removedTrademarksField = document.getElementById('removedTrademarks');
+
+            let currentValue = removedTrademarksField.value;
+            if (currentValue) {
+                currentValue += ',' + trademarkId;
+            } else {
+                currentValue = trademarkId;
+            }
+            removedTrademarksField.value = currentValue;
+
+            trademarkItem.remove();
         }
 
         function add_user_selection() {
