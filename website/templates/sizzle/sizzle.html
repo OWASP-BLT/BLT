@@ -4,6 +4,16 @@
     <link rel="stylesheet"
           type="text/css"
           href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <style>
+        .docs_style {
+            background-color: #EF4444!important;
+            color: white!important;
+        }
+        /* add backgound hover */
+        .docs_style:hover {
+            background-color: #dc2626!important;
+        }
+    </style>
     <div class="container mx-auto p-6">
         <!-- Include the left navigation -->
         {% include "includes/sidenav.html" %}
@@ -18,6 +28,20 @@
                            class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer"
                            readonly />
                 </div>
+            </div>
+            <div class="flex space-x-10 items-center mb-8 mt-8">
+                <a href="{% url 'sizzle-docs' %}"
+                   class="docs_style py-2 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
+                    Sizzle Docs
+                </a>
+                <a href="{% url 'time_logs' %}"
+                   class="docs_style py-2 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
+                    Start Tracking
+                </a>
+                <a href="{% url 'sizzle_daily_log' %}"
+                   class="docs_style py-2 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
+                    Daily Status Report
+                </a>
             </div>
             <!-- Report Table -->
             <div id="report-table">

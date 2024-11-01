@@ -37,7 +37,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
-from website.views import (  # TODO AutoLabel,
+from website.class_views import (
     AllIssuesView,
     CompanySettings,
     ContributorStatsView,
@@ -64,9 +64,9 @@ from website.views import (  # TODO AutoLabel,
     ListHunts,
     OngoingHunts,
     PreviousHunts,
+    ProjectBadgeView,
     ProjectDetailView,
     ProjectListView,
-    SaveBiddingData,
     ScoreboardView,
     SpecificIssuesView,
     SpecificMonthLeaderboardView,
@@ -76,6 +76,9 @@ from website.views import (  # TODO AutoLabel,
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
+)
+from website.views import (  # TODO AutoLabel,
+    SaveBiddingData,
     add_suggestions,
     blt_tomato,
     change_bid_status,
@@ -452,6 +455,7 @@ urlpatterns = [
     re_path(r"^api/v1/count/$", website.views.issue_count, name="api_count"),
     re_path(r"^api/v1/contributors/$", website.views.contributors, name="api_contributor"),
     path("project/<slug:slug>/", ProjectDetailView.as_view(), name="project_view"),
+    path("projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"),
     re_path(
         r"^api/v1/createissues/$",
         csrf_exempt(IssueCreate.as_view()),
@@ -559,7 +563,10 @@ urlpatterns = [
     path("auth/delete", AuthApiViewset.as_view({"delete": "delete"}), name="auth-delete-api"),
     path("api/v1/tags", TagApiViewset.as_view({"get": "list", "post": "create"}), name="tags-api"),
     path("sizzle/", website.views.sizzle, name="sizzle"),
+    path("sizzle-docs/", website.views.sizzle_docs, name="sizzle-docs"),
     path("api/timelogsreport/", website.views.TimeLogListAPIView, name="timelogsreport"),
+    path("time-logs/", website.views.TimeLogListView, name="time_logs"),
+    path("sizzle-daily-log/", website.views.sizzle_daily_log, name="sizzle_daily_log"),
 ]
 
 if settings.DEBUG:
