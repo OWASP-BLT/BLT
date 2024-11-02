@@ -165,49 +165,51 @@
         class="max-sm:text-start rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[1.1rem] leading-4 p-4">
     Copy &nbsp;<i class="fa-solid fa-copy fa-lg text-red-[#4A6676]"></i>
 </button>
-<button onclick="reportspam()"
-        class="max-sm:text-start rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#00000] bg-[#ff0000] border-black-2 text-[1.1rem] leading-4 p-4">
-    Report As Spam &nbsp;
-</button>
-{% if request.user.is_superuser or request.user == object.user %}
-    {% if object.user %}
-        <form method="post"
-              action="{% url 'remove_user_from_issue' id=object.id %}"
-              class="m-0 p-0 inline  mb-3">
-            {% csrf_token %}
-            <input type="hidden" name="token" value="{{ csrf_token }}" class="m-0 p-0" />
-            <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[1.1rem] leading-4 p-4"
-                    id="report-anonymously"
-                    type="submit"
-                    onclick="return confirm('Are you sure you want to report it anonymously?')">
-                <div class="flex flex-row gap-2 items-center">
-                    <span class="max-sm:text-[12px]">Anonymous</span>
-                    <i class="fa-regular fa-user text-[13px]"></i>
-                </div>
-            </button>
-        </form>
-    {% endif %}
-    <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[1.1rem] leading-4 p-4"
-            id="edit-issue">
-        <div class="flex flex-row gap-2 items-center">
-            <span class="max-sm:text-[12px]">Edit</span>
-            <i class="fa-regular fa-pen-to-square text-[13px]"></i>
-        </div>
-    </button>
-{% endif %}
-{% if request.user.is_superuser or request.user == object.user %}
-    <a href="{% url 'delete_issue' id=object.id %}"
-       onclick="return confirm('Are you sure you want to delete this issue?')"
-       class="rounded-2xl text-[1.1rem] border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] !bg-white border-black-2 p-4 hover:!text-[#3e3446]"> Delete &nbsp;<i class="fa-solid fa-trash text-xl text-black"></i></a>
-{% endif %}
-{% if request.user.is_superuser or request.user == object.user %}
-    <button type="button"
-            onclick="resolveIssue()"
-            class="rounded-2xl h-auto border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:outline-none border-black-2  text-[1.1rem] leading-4 p-4 ">
-        {% if status == "open" %}
-            Close Issue
-        {% else %}
-            Open Issue
+<form method="post"
+      action="{% url 'spam' %}"
+      class="max-sm:text-start rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#00000] bg-[#ff0000] border-black-2 text-[1.1rem] leading-4 p-4">
+    <a
+        <button>Report As Spam &nbsp;</button>
+    </form>
+    {% if request.user.is_superuser or request.user == object.user %}
+        {% if object.user %}
+            <form method="post"
+                  action="{% url 'remove_user_from_issue' id=object.id %}"
+                  class="m-0 p-0 inline  mb-3">
+                {% csrf_token %}
+                <input type="hidden" name="token" value="{{ csrf_token }}" class="m-0 p-0" />
+                <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[1.1rem] leading-4 p-4"
+                        id="report-anonymously"
+                        type="submit"
+                        onclick="return confirm('Are you sure you want to report it anonymously?')">
+                    <div class="flex flex-row gap-2 items-center">
+                        <span class="max-sm:text-[12px]">Anonymous</span>
+                        <i class="fa-regular fa-user text-[13px]"></i>
+                    </div>
+                </button>
+            </form>
         {% endif %}
-    </button>
-{% endif %}
+        <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[1.1rem] leading-4 p-4"
+                id="edit-issue">
+            <div class="flex flex-row gap-2 items-center">
+                <span class="max-sm:text-[12px]">Edit</span>
+                <i class="fa-regular fa-pen-to-square text-[13px]"></i>
+            </div>
+        </button>
+    {% endif %}
+    {% if request.user.is_superuser or request.user == object.user %}
+        <a href="{% url 'delete_issue' id=object.id %}"
+           onclick="return confirm('Are you sure you want to delete this issue?')"
+           class="rounded-2xl text-[1.1rem] border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] !bg-white border-black-2 p-4 hover:!text-[#3e3446]"> Delete &nbsp;<i class="fa-solid fa-trash text-xl text-black"></i></a>
+    {% endif %}
+    {% if request.user.is_superuser or request.user == object.user %}
+        <button type="button"
+                onclick="resolveIssue()"
+                class="rounded-2xl h-auto border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:outline-none border-black-2  text-[1.1rem] leading-4 p-4 ">
+            {% if status == "open" %}
+                Close Issue
+            {% else %}
+                Open Issue
+            {% endif %}
+        </button>
+    {% endif %}

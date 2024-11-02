@@ -1,5 +1,4 @@
 import json
-import os
 import uuid
 from datetime import datetime
 
@@ -913,8 +912,9 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
 
 
 class SpamDetectionAPI(APIView):
-    def post(self):
-        model = joblib.load(os.path.dirname(os.path.dirname(__file__)) + "\\spam_model.pkl")
+    def post(self, request):
+        print("1")
+        model = joblib.load("spam_model.pkl")
         id = self.request["id"]
         print(id)
         issue = Issue.objects.get(id=id)

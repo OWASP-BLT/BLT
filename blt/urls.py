@@ -113,7 +113,6 @@ router.register(r"profile", UserProfileViewSet, basename="profile")
 router.register(r"domain", DomainViewSet, basename="domain")
 router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
-router.register(r"spam", SpamDetectionAPI, basename="spam")
 
 from allauth.socialaccount.providers.facebook import views as facebook_views
 from allauth.socialaccount.providers.github import views as github_views
@@ -352,6 +351,7 @@ urlpatterns = [
         EachmonthLeaderboardView.as_view(),
         name="leaderboard_eachmonth",
     ),
+    path("api/v1/spam", SpamDetectionAPI.as_view(), name="spam"),
     re_path(
         r"^api/v1/issue/like/(?P<id>\w+)/$",
         LikeIssueApiView.as_view(),
