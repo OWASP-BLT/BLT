@@ -11,7 +11,7 @@ from colorthief import ColorThief
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.core.exceptions import MultipleObjectsReturned, ValidationError
+from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.validators import URLValidator
@@ -742,54 +742,25 @@ class Project(models.Model):
     wiki_url = models.URLField(null=True, blank=True)
     homepage_url = models.URLField(null=True, blank=True)
     logo_url = models.URLField()
+    stars = models.IntegerField(default=0)
+    forks = models.IntegerField(default=0)
+    contributor_count = models.IntegerField(default=0)
+    release_name = models.CharField(max_length=255, null=True, blank=True)
+    release_datetime = models.DateTimeField(null=True, blank=True)
+    external_links = models.JSONField(default=list, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     contributors = models.ManyToManyField(Contributor, related_name="projects", blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
+    last_updated = models.DateTimeField(null=True, blank=True)
+    total_issues = models.IntegerField(default=0)
+    repo_visit_count = models.IntegerField(default=0)
+    project_visit_count = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name
 
-    def get_contributors(self, github_url):
-        owner_repo = github_url.rstrip("/").split("/")[-2:]
-        repo_name = f"{owner_repo[0]}/{owner_repo[1]}"
-        contributors = []
-
-        page = 1
-        while True:
-            url = f"https://api.github.com/repos/{repo_name}/contributors?per_page=100&page={page}"
-            print(f"Fetching contributors from URL: {url}")
-            response = requests.get(url, headers={"Content-Type": "application/json"})
-
-            if response.status_code != 200:
-                break
-
-            contributors_data = response.json()
-            if not contributors_data:
-                break
-
-            for c in contributors_data:
-                try:
-                    contributor, created = Contributor.objects.get_or_create(
-                        github_id=c["id"],
-                        defaults={
-                            "name": c["login"],
-                            "github_url": c["html_url"],
-                            "avatar_url": c["avatar_url"],
-                            "contributor_type": c["type"],
-                            "contributions": c["contributions"],
-                        },
-                    )
-                    contributors.append(contributor)
-                except MultipleObjectsReturned:
-                    contributor = Contributor.objects.filter(github_id=c["id"]).first()
-                    contributors.append(contributor)
-
-            page += 1
-
-        return contributors if contributors else None
-
-    def get_top_contributors(self, limit=5):
+    def get_top_contributors(self, limit=30):
         return self.contributors.order_by("-contributions")[:limit]
 
 
@@ -890,3 +861,15 @@ class ActivityLog(models.Model):
 
     def __str__(self):
         return f"ActivityLog by {self.user.username} at {self.recorded_at}"
+
+
+class DailyStatusReport(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    date = models.DateField()
+    previous_work = models.TextField()
+    next_plan = models.TextField()
+    blockers = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Daily Status Report by {self.user.username} on {self.date}"

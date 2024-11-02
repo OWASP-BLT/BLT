@@ -125,10 +125,19 @@ class CompanySerializer(serializers.ModelSerializer):
 
 
 class ProjectSerializer(serializers.ModelSerializer):
+    freshness = serializers.SerializerMethodField()
+    stars = serializers.IntegerField()
+    forks = serializers.IntegerField()
+    external_links = serializers.JSONField()
+    project_visit_count = serializers.IntegerField()
+
     class Meta:
         model = Project
         fields = "__all__"
         read_only_fields = ("slug", "contributors")
+
+    def get_freshness(self, obj):
+        return obj.fetch_freshness()
 
 
 class ContributorSerializer(serializers.ModelSerializer):

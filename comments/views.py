@@ -143,6 +143,7 @@ def reply_comment(request, pk):
 @login_required(login_url="/accounts/login")
 def autocomplete(request):
     q_string = request.GET.get("search", "")
+    q_string = escape(q_string)
     if len(q_string) == 0:
         return HttpResponse(
             request.GET["callback"] + "(" + json.dumps([]) + ");", content_type="application/json"
