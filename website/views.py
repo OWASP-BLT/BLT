@@ -67,6 +67,7 @@ from website.models import (
     ChatBotLog,
     Company,
     CompanyAdmin,
+    DailyStatusReport,
     Domain,
     Hunt,
     InviteFriend,
@@ -2233,7 +2234,10 @@ def chatbot_conversation(request):
             response = crc.invoke({"question": question})
         except Exception as e:
             ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
-            return Response({"error": "An internal error has occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": "An internal error has occurred."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
         request.session["buffer"] = memory.buffer
 
@@ -2242,8 +2246,13 @@ def chatbot_conversation(request):
         return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
 
     except Exception as e:
-        ChatBotLog.objects.create(question=request.data.get("question", ""), answer=f"Error: {str(e)}")
-        return Response({"error": "An internal error has occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        ChatBotLog.objects.create(
+            question=request.data.get("question", ""), answer=f"Error: {str(e)}"
+        )
+        return Response(
+            {"error": "An internal error has occurred."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
 def weekly_report(request):
@@ -2411,7 +2420,6 @@ def view_suggestions(request):
 
 
 def sizzle(request):
-    print(request.user)
     if not request.user.is_authenticated:
         messages.error(request, "Please login to access the Sizzle page.")
         return redirect("index")
@@ -2507,3 +2515,47 @@ def TimeLogListAPIView(request):
 
 def sizzle_docs(request):
     return render(request, "sizzle/sizzle_docs.html")
+
+
+@login_required
+def TimeLogListView(request):
+    time_logs = TimeLog.objects.filter(user=request.user).order_by("-start_time")
+    active_time_log = time_logs.filter(end_time__isnull=True).first()
+    # print the all details of the active time log
+    token, created = Token.objects.get_or_create(user=request.user)
+    return render(
+        request,
+        "sizzle/time_logs.html",
+        {"time_logs": time_logs, "active_time_log": active_time_log, "token": token.key},
+    )
+
+
+@login_required
+def sizzle_daily_log(request):
+    try:
+        if request.method == "GET":
+            reports = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
+            return render(request, "sizzle/sizzle_daily_status.html", {"reports": reports})
+
+        if request.method == "POST":
+            previous_work = request.POST.get("previous_work")
+            next_plan = request.POST.get("next_plan")
+            blockers = request.POST.get("blockers")
+            print(previous_work, next_plan, blockers)
+
+            DailyStatusReport.objects.create(
+                user=request.user,
+                date=now().date(),
+                previous_work=previous_work,
+                next_plan=next_plan,
+                blockers=blockers,
+            )
+
+            messages.success(request, "Daily status report submitted successfully.")
+            return redirect("sizzle")
+
+    except Exception as e:
+        messages.error(request, f"An error occurred: {e}")
+        return redirect("sizzle")
+
+    return HttpResponseBadRequest("Invalid request method.")

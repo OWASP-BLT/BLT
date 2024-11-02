@@ -64,6 +64,7 @@ from website.class_views import (
     ListHunts,
     OngoingHunts,
     PreviousHunts,
+    ProjectBadgeView,
     ProjectDetailView,
     ProjectListView,
     ScoreboardView,
@@ -454,6 +455,7 @@ urlpatterns = [
     re_path(r"^api/v1/count/$", website.views.issue_count, name="api_count"),
     re_path(r"^api/v1/contributors/$", website.views.contributors, name="api_contributor"),
     path("project/<slug:slug>/", ProjectDetailView.as_view(), name="project_view"),
+    path("projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"),
     re_path(
         r"^api/v1/createissues/$",
         csrf_exempt(IssueCreate.as_view()),
@@ -563,6 +565,8 @@ urlpatterns = [
     path("sizzle/", website.views.sizzle, name="sizzle"),
     path("sizzle-docs/", website.views.sizzle_docs, name="sizzle-docs"),
     path("api/timelogsreport/", website.views.TimeLogListAPIView, name="timelogsreport"),
+    path("time-logs/", website.views.TimeLogListView, name="time_logs"),
+    path("sizzle-daily-log/", website.views.sizzle_daily_log, name="sizzle_daily_log"),
 ]
 
 if settings.DEBUG:
