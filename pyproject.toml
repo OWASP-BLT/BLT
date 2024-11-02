@@ -7,7 +7,7 @@ license = "AGPLv3"
 
 [tool.poetry.dependencies]
 
-python = "3.11.2"
+python = "3.10.12"
 python-dotenv = "^1.0.1"
 toml = "^0.10.2"
 Django = "^5.1.1"
@@ -79,6 +79,7 @@ psutil = "^5.9.8"
 python-bitcoinrpc = "^1.0"
 sendgrid = "^6.11.0"
 joblib = "^1.4.2"
+scikit-learn = "^1.5.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
