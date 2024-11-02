@@ -1,7 +1,9 @@
 import json
+import os
 import uuid
 from datetime import datetime
 
+import joblib
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -908,3 +910,13 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
             raise ParseError(detail=str(e))
         except Exception as e:
             raise ParseError(detail="An unexpected error occurred while creating the activity log.")
+
+
+class SpamDetectionAPI(APIView):
+    def post(self):
+        model = joblib.load(os.path.dirname(os.path.dirname(__file__)) + "\\spam_model.pkl")
+        id = self.request["id"]
+        print(id)
+        issue = Issue.objects.get(id=id)
+        final = model.predict([issue.markdown_description])
+        print(final)

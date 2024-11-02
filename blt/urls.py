@@ -30,6 +30,7 @@ from website.api.views import (
     LeaderboardApiViewSet,
     LikeIssueApiView,
     ProjectViewSet,
+    SpamDetectionAPI,
     StatsApiViewset,
     TagApiViewset,
     TimeLogViewSet,
@@ -112,6 +113,7 @@ router.register(r"profile", UserProfileViewSet, basename="profile")
 router.register(r"domain", DomainViewSet, basename="domain")
 router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
+router.register(r"spam", SpamDetectionAPI, basename="spam")
 
 from allauth.socialaccount.providers.facebook import views as facebook_views
 from allauth.socialaccount.providers.github import views as github_views
