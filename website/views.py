@@ -2419,46 +2419,73 @@ def view_suggestions(request):
     return render(request, "feature_suggestion.html", {"suggestions": suggestion})
 
 
+def format_timedelta(td):
+    """
+    Helper function to format timedelta objects into 'Xh Ym Zs' format.
+    """
+    total_seconds = int(td.total_seconds())
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{hours}h {minutes}m {seconds}s"
+
+
 def sizzle(request):
-    if not request.user.is_authenticated:
-        messages.error(request, "Please login to access the Sizzle page.")
-        return redirect("index")
+    # Aggregate leaderboard data: username and total_duration
+    leaderboard_qs = (
+        TimeLog.objects.values("user__username")
+        .annotate(total_duration=Sum("duration"))
+        .order_by("-total_duration")
+    )
 
-    sizzle_data = None
-
-    last_data = TimeLog.objects.filter(user=request.user).order_by("-created").first()
-
-    if last_data:
-        all_data = TimeLog.objects.filter(
-            user=request.user, created__date=last_data.created.date()
-        ).order_by("created")
-
-        total_duration = sum((entry.duration for entry in all_data if entry.duration), timedelta())
-
-        total_duration_seconds = total_duration.total_seconds()
-        formatted_duration = (
-            f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
+    # Process leaderboard to include formatted_duration
+    leaderboard = []
+    for entry in leaderboard_qs:
+        username = entry["user__username"]
+        total_duration = entry["total_duration"] or timedelta()  # Handle None
+        formatted_duration = format_timedelta(total_duration)
+        leaderboard.append(
+            {
+                "username": username,
+                "formatted_duration": formatted_duration,
+            }
         )
 
-        github_issue_url = all_data.first().github_issue_url
+    # Initialize sizzle_data
+    sizzle_data = None
 
-        issue_title = get_github_issue_title(github_issue_url)
+    if request.user.is_authenticated:
+        last_data = TimeLog.objects.filter(user=request.user).order_by("-created").first()
 
-        start_time = all_data.first().start_time.strftime("%I:%M %p")
-        date = last_data.created.strftime("%d %B %Y")
+        if last_data:
+            all_data = TimeLog.objects.filter(
+                user=request.user, created__date=last_data.created.date()
+            ).order_by("created")
 
-        sizzle_data = {
-            "issue_title": issue_title,
-            "duration": formatted_duration,
-            "start_time": start_time,
-            "date": date,
-        }
+            total_duration = sum(
+                (entry.duration for entry in all_data if entry.duration), timedelta()
+            )
 
-    return render(request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data})
+            formatted_duration = format_timedelta(total_duration)
+
+            github_issue_url = all_data.first().github_issue_url
+            issue_title = get_github_issue_title(github_issue_url)
+
+            start_time = all_data.first().start_time.strftime("%I:%M %p")
+            date = last_data.created.strftime("%d %B %Y")
+
+            sizzle_data = {
+                "issue_title": issue_title,
+                "duration": formatted_duration,
+                "start_time": start_time,
+                "date": date,
+            }
+
+    return render(
+        request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data, "leaderboard": leaderboard}
+    )
 
 
 def TimeLogListAPIView(request):
-    print(request.user)
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
