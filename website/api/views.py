@@ -912,11 +912,9 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
 
 
 class SpamDetectionAPI(APIView):
-    def post(self, request):
-        print("1")
+    def post(self, request, *args, **kwargs):
+        id = request.POST.get("id")
         model = joblib.load("spam_model.pkl")
-        id = self.request["id"]
-        print(id)
         issue = Issue.objects.get(id=id)
-        final = model.predict([issue.markdown_description])
+        final = model.predict(issue.markdown_description)
         print(final)
