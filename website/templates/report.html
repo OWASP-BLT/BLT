@@ -309,53 +309,6 @@
                 </div>
                 <button type="button" onclick="validateCVE()">Validate</button>
             </div>
-            <div id="trademark-fields">
-                <div class="pt-5 mt-2">
-                    <label for="infringing_domain_name"
-                           class="block text-2xl font-semibold leading-6 text-gray-900">Infringing Domain Name</label>
-                    <input type="text"
-                           name="infringing_domain_name"
-                           id="infringing_domain_name"
-                           placeholder="example.com"
-                           class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6" />
-                </div>
-                <div class="pt-5 mt-2">
-                    <label for="infringing_domain_url"
-                           class="block text-2xl font-semibold leading-6 text-gray-900">Infringing Domain URL</label>
-                    <input type="text"
-                           name="infringing_domain_url"
-                           id="infringing_domain_url"
-                           placeholder="https://example.com"
-                           class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6" />
-                </div>
-                <div class="pt-5 mt-2">
-                    <label for="registration_number"
-                           class="block text-2xl font-semibold leading-6 text-gray-900">Registration Number</label>
-                    <input type="text"
-                           name="registration_number"
-                           id="registration_number"
-                           placeholder="123456789"
-                           class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6" />
-                </div>
-                <div class="pt-5 mt-2">
-                    <label for="serial_number"
-                           class="block text-2xl font-semibold leading-6 text-gray-900">Serial Number</label>
-                    <input type="text"
-                           name="serial_number"
-                           id="serial_number"
-                           placeholder="987654321"
-                           class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6" />
-                </div>
-                <div class="pt-5 mt-2">
-                    <label for="contact_information"
-                           class="block text-2xl font-semibold leading-6 text-gray-900">Contact Information</label>
-                    <input type="text"
-                           name="contact_information"
-                           id="contact_information"
-                           placeholder="Contact name, email, or phone"
-                           class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6" />
-                </div>
-            </div>
             <div id="bug-description-container"
                  class="w-[100%] flex justify-between md:pr-10 flex-wrap border-b border-gray-900/10 pb-10 my-10">
                 <div class="w-1/2">{% include "includes/md_editor.html" %}</div>
@@ -430,22 +383,6 @@
         const cveRegex = /^CVE-\d{4}-\d{4,7}$/;
         return cveRegex.test(cveNumber);
     }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const labelSelect = document.getElementById("labelSelect");
-        const trademarkFields = document.getElementById("trademark-fields");
-
-        updateFormParameters(labelSelect.value);
-
-        labelSelect.addEventListener('change', function () {
-            updateFormParameters(this.value);
-        });
-
-        function updateFormParameters(type) {
-            trademarkFields.style.display = (type === "8") ? "block" : "none";
-        }
-    });
-
 
     function validateCVE() {
         const cveInput = document.getElementById('cve_id_input').value;

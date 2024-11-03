@@ -64,37 +64,6 @@
     #bch:checked ~ .s1 {
         margin-left: -60%;
     }
-    .domain-infrig-info {
-        display: flex;
-        flex-wrap: wrap;
-        grid-template-columns: 1fr;
-        gap: 20px;
-        padding: 40px;
-        max-width: 600px;
-        margin: 0 auto;
-    }
-
-    .domain-infrig-info div {
-        border: 1px solid #bbbbbb;
-        border-radius: 8px;
-        padding: 10px;
-        background-color: #fff;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .domain-infrig-info div h3 {
-        font-size: 1em;
-        color: #000000;
-        margin: 0 0 5px 0;
-        text-transform: uppercase;
-    }
-
-    .domain-infrig-info div p {
-        font-size: 1.2em;
-        color: #000000;
-        margin: 0;
-        font-weight: bold;
-    }
     </style>
     {% include "includes/sidenav.html" %}
     <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-[#FAF9FB] font-[ubuntu] lg:pl-0 overflow-x-hidden">
@@ -127,32 +96,6 @@
                target="_blank"
                rel="noopener noreferrer">{{ object.url }}</a>
         </p>
-        <div>
-            {% if object.get_label_display == "Trademark Squatting" %}
-                <div class="domain-infrig-info">
-                    <div>
-                        <h3>Infringing Domain Name</h3>
-                        <p>{{ infringing_domain_name }}</p>
-                    </div>
-                    <div>
-                        <h3>Infringing Domain URL</h3>
-                        <p>{{ infringing_domain_url }}</p>
-                    </div>
-                    <div>
-                        <h3>Registration Number</h3>
-                        <p>{{ registration_number }}</p>
-                    </div>
-                    <div>
-                        <h3>Serial Number</h3>
-                        <p>{{ serial_number }}</p>
-                    </div>
-                    <div>
-                        <h3>Contact Info</h3>
-                        <p>{{ contact_information }}</p>
-                    </div>
-                </div>
-            {% endif %}
-        </div>
         <br>
         <div class="border-b-2 border-[#584ac080]">
             <div class="right-data max-sm:absolute top-[15%] max-sm:pt-2 max-sm:ml-[80%] ml-[3.50%] ">
