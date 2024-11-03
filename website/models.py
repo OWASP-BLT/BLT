@@ -257,6 +257,7 @@ class Issue(models.Model):
         (5, "Typo"),
         (6, "Design"),
         (7, "Server Down"),
+        (8, "Trademark Squatting"),
     )
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     team_members = models.ManyToManyField(User, related_name="reportmembers", blank=True)
@@ -268,8 +269,8 @@ class Issue(models.Model):
     captcha = CaptchaField()
     label = models.PositiveSmallIntegerField(choices=labels, default=0)
     views = models.IntegerField(null=True, blank=True)
-    verified = models.BooleanField(default=False)
-    score = models.IntegerField(null=True, blank=True)
+    verified = models.BooleanField(default(False))
+    score = models.IntegerField(null=True, blank(True))
     status = models.CharField(max_length=10, default="open", null=True, blank=True)
     user_agent = models.CharField(max_length=255, default="", null=True, blank=True)
     ocr = models.TextField(default="", null=True, blank=True)
@@ -507,7 +508,7 @@ class UserProfile(models.Model):
     user = AutoOneToOneField("auth.user", related_name="userprofile", on_delete=models.CASCADE)
     user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
     title = models.IntegerField(choices=title, default=0)
-    role = models.CharField(max_length=255, blank=True, null=True)
+    role = models.CharField(max_length=255, blank=True, null(True))
     description = models.TextField(blank=True, null=True)
     winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
@@ -562,7 +563,7 @@ class IP(models.Model):
     address = models.CharField(max_length=39, null=True, blank=True)
     user = models.CharField(max_length=150, null=True, blank=True)
     issuenumber = models.IntegerField(null=True, blank=True)
-    created = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(auto_now_add(True))
     agent = models.CharField(max_length=255, null=True, blank=True)
     count = models.BigIntegerField(default=1)
     path = models.CharField(max_length=255, null=True, blank=True)
@@ -714,7 +715,7 @@ class SuggestionVotes(models.Model):
     suggestion = models.ForeignKey(Suggestion, on_delete=models.CASCADE)
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     up_vote = models.BooleanField(default=False)
-    down_vote = models.BooleanField(default=False)
+    down_vote = models.BooleanField(default(False))
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -818,7 +819,7 @@ def clear_blocked_cache(sender, instance=None, **kwargs):
     # Retrieve valid blocked IPs, IP networks, and user agents
     blocked_ips = Blocked.objects.values_list("address", flat=True)
     blocked_ip_network = Blocked.objects.values_list("ip_network", flat=True)
-    blocked_agents = Blocked.objects.values_list("user_agent_string", flat=True)
+    blocked_agents = Blocked.objects.values_list("user_agent_string", flat(True))
 
     # Filter out None or invalid values
     blocked_ips = [ip for ip in blocked_ips if ip is not None]
