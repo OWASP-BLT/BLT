@@ -161,7 +161,7 @@ class IssueViewSet(viewsets.ModelViewSet):
             return {}
 
         # Check if there is an image in the `screenshot` field of the Issue table
-        if issue.screenshot:
+        if (issue.screenshot):
             # If an image exists in the Issue table, return it along with additional images from IssueScreenshot
             screenshots = [request.build_absolute_uri(issue.screenshot.url)] + [
                 request.build_absolute_uri(screenshot.image.url)
@@ -761,10 +761,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
         query = request.query_params.get("q", "")
         projects = Project.objects.filter(
             Q(name__icontains=query)
-            | Q(description__icontains=query)
-            | Q(tags__name__icontains=query)
-            | Q(stars__icontains=query)
-            | Q(forks__icontains=query)
+            | Q(description__icontains(query)
+            | Q(tags__name__icontains(query)
+            | Q(stars__icontains(query)
+            | Q(forks__icontains(query)
         ).distinct()
 
         project_data = []
@@ -793,11 +793,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
         projects = Project.objects.all()
 
         if freshness:
-            projects = projects.filter(freshness__icontains=freshness)
+            projects = projects.filter(freshness__icontains(freshness)
         if stars:
-            projects = projects.filter(stars__gte=stars)
+            projects = projects.filter(stars__gte(stars)
         if forks:
-            projects = projects.filter(forks__gte=forks)
+            projects = projects.filter(forks__gte(forks)
         if tags:
             projects = projects.filter(tags__name__in=tags.split(",")).distinct()
 
@@ -894,6 +894,16 @@ class TimeLogViewSet(viewsets.ModelViewSet):
                 {"detail": "An unexpected error occurred while stopping the time log."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+    def destroy(self, request, pk=None):
+        """Deletes a time log"""
+        try:
+            timelog = self.get_object()
+        except ObjectDoesNotExist:
+            raise NotFound(detail="Time log not found.")
+
+        timelog.delete()
+        return Response({"detail": "Time log deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
 
 class ActivityLogViewSet(viewsets.ModelViewSet):

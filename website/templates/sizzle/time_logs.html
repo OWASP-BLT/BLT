@@ -67,12 +67,13 @@
                     <th scope="col">End Time</th>
                     <th scope="col">Duration</th>
                     <th scope="col">GitHub Issue URL</th>
+                    <th scope="col">Actions</th>
                 </tr>
             </thead>
             <tbody id="time-logs-table-body">
                 {% for log in time_logs %}
                     {% if log.end_time %}
-                        <tr>
+                        <tr id="time-log-{{ log.id }}">
                             <td>{{ log.start_time|date:"DATETIME_FORMAT" }}</td>
                             <td>{{ log.end_time|date:"DATETIME_FORMAT" }}</td>
                             <td>{{ log.duration }}</td>
@@ -81,11 +82,14 @@
                                    target="_blank"
                                    rel="noopener noreferrer">{{ log.github_issue_url }}</a>
                             </td>
+                            <td>
+                                <button class="btn btn-danger delete-button" data-log-id="{{ log.id }}">Delete</button>
+                            </td>
                         </tr>
                     {% endif %}
                 {% empty %}
                     <tr>
-                        <td colspan="4" class="text-center">No time logs available.</td>
+                        <td colspan="5" class="text-center">No time logs available.</td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -224,6 +228,39 @@
                         // Clear the timer and update UI
                         clearInterval(timerInterval);
                         location.reload();
+                    },
+                    error: function(xhr){
+                        let error = 'An unexpected error occurred.';
+                        if (xhr.responseJSON && xhr.responseJSON.detail) {
+                            error = xhr.responseJSON.detail;
+                        } else if (xhr.status === 0) {
+                            error = 'Network error. Please check your connection.';
+                        }
+                        $('#message-container').html(`<div class="alert_box" role="alert">
+                            Error: ${error}
+                        </div>`);
+                    }
+                });
+            });
+
+            // Handle Delete Time Log Button Click
+            $('.delete-button').on('click', function(){
+                const logId = $(this).data('log-id');
+
+                if (!confirm('Are you sure you want to delete this time log?')) {
+                    return;
+                }
+
+                $.ajax({
+                    url: `${apiBaseUrl}${logId}/`,
+                    type: 'DELETE',
+                    headers: {
+                        'Authorization': `Token ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    success: function(data){
+                        // Remove the deleted log from the table
+                        $(`#time-log-${logId}`).remove();
                     },
                     error: function(xhr){
                         let error = 'An unexpected error occurred.';
