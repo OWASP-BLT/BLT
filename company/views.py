@@ -17,7 +17,16 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from django.views.generic import View
 
-from website.models import Company, Domain, Hunt, HuntPrize, Issue, IssueScreenshot, Winner
+from website.models import (
+    Company,
+    Domain,
+    Hunt,
+    HuntPrize,
+    Issue,
+    IssueScreenshot,
+    Trademark,
+    Winner,
+)
 from website.utils import is_valid_https_url, rebuild_safe_url
 
 restricted_domain = ["gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "proton.com"]
