@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse
 
+import joblib
 import requests
 import six
 import stripe
@@ -2207,3 +2208,19 @@ class IssueView(DetailView):
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
 
         return context
+
+
+class SpamDetection(View):
+    def post(self, request, *args, **kwargs):
+        id = request.POST.get("id")
+        model = joblib.load("spam_model.pkl")
+        issue = Issue.objects.get(id=id)
+        predict = [issue.description]
+        final = model.predict(predict)
+        if final[0] == "spam":
+            issue.spam = True
+            messages.success(request, "Reported as Spam")
+            return redirect("issue_view", id)
+        else:
+            messages.info(request, "Not Found as a Spam")
+            return redirect("issue_view", id)

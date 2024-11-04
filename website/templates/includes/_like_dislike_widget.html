@@ -169,6 +169,7 @@
     {% csrf_token %}
     <input type="hidden" name="id" value="{{ object.id }}">
     <button type="submit"
+            name="report_spam"
             class="max-sm:text-start rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#00000] bg-[#ff0000] border-black-2 text-[1.1rem] leading-4 p-4">
         Report As Spam &nbsp;
     </button>

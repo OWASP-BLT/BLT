@@ -2,15 +2,12 @@ import json
 import uuid
 from datetime import datetime
 
-import joblib
 from django.conf import settings
-from django.contrib import messages
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.db.models import Count, Q, Sum
-from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
@@ -911,20 +908,3 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
             raise ParseError(detail=str(e))
         except Exception as e:
             raise ParseError(detail="An unexpected error occurred while creating the activity log.")
-
-
-class SpamDetectionAPI(APIView):
-    def post(self, request, *args, **kwargs):
-        id = request.POST.get("id")
-        model = joblib.load("spam_model.pkl")
-        issue = Issue.objects.get(id=id)
-        predict = [issue.description]
-        final = model.predict(predict)
-        if final[0] == "spam":
-            issue.spam = True
-            print("True")
-            messages.success(request, "Reported as Spam")
-            return redirect("issue_view", id)
-        else:
-            messages.info(request, "Not Found as a Spam")
-            return redirect("issue_view", id)

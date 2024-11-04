@@ -30,7 +30,6 @@ from website.api.views import (
     LeaderboardApiViewSet,
     LikeIssueApiView,
     ProjectViewSet,
-    SpamDetectionAPI,
     StatsApiViewset,
     TagApiViewset,
     TimeLogViewSet,
@@ -69,6 +68,7 @@ from website.class_views import (
     ProjectDetailView,
     ProjectListView,
     ScoreboardView,
+    SpamDetection,
     SpecificIssuesView,
     SpecificMonthLeaderboardView,
     StatsDetailView,
@@ -351,7 +351,6 @@ urlpatterns = [
         EachmonthLeaderboardView.as_view(),
         name="leaderboard_eachmonth",
     ),
-    path("api/v1/spam", SpamDetectionAPI.as_view(), name="spam"),
     re_path(
         r"^api/v1/issue/like/(?P<id>\w+)/$",
         LikeIssueApiView.as_view(),
@@ -569,6 +568,7 @@ urlpatterns = [
     path("api/timelogsreport/", website.views.TimeLogListAPIView, name="timelogsreport"),
     path("time-logs/", website.views.TimeLogListView, name="time_logs"),
     path("sizzle-daily-log/", website.views.sizzle_daily_log, name="sizzle_daily_log"),
+    path("/spam", SpamDetection.as_view(), name="spam"),
 ]
 
 if settings.DEBUG:
