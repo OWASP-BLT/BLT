@@ -13,19 +13,30 @@
         font-size: 2.5em;
         color: #333;
         text-align: center;
+        margin-bottom: 20px;
     }
 
     .post-list {
-        list-style-type: none;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 15px;
         padding: 0;
+        list-style-type: none;
+        justify-items: center;
     }
 
     .post-item {
-        margin: 15px 0;
         padding: 10px;
         border: 1px solid #ccc;
         border-radius: 5px;
         background-color: #ffffff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        transition: transform 0.2s ease;
+    }
+
+    .post-item:hover {
+        transform: scale(1.05);
     }
 
     .post-link {
@@ -42,15 +53,27 @@
         text-align: center;
         color: #666;
     }
+
+    .blog_image {
+        width: 200px;
+        height: 200px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
 </style>
 
 {% include "includes/sidenav.html" %}
 <h1 class="blog-title">Blog Posts</h1>
 <ul class="post-list">
     {% for post in posts %}
-    <li class="post-item">
-        <a href="{% url 'post_detail' slug=post.slug %}" class="post-link">{{ post.title }}</a> by {{ post.author }}
-    </li>
+    <a href="{% url 'post_detail' slug=post.slug %}">
+    <div class="post-item">
+        <p class="post-link">{{ post.title }} by {{ post.author }}</p>
+        {% if post.image %}
+        <img height="200" width="200" src="{{ post.image.url }}" alt="{{ post.title }}" class="blog_image">
+        {% endif %}
+        </div>
+    </a>
     {% empty %}
     <p class="no-posts-message">No posts available.</p>
     {% endfor %}

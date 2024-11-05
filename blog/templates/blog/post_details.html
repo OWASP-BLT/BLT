@@ -37,7 +37,7 @@
         color: #444;
     }
 
-    .btn-update {
+    .b-update {
         display: inline-block;
         padding: 10px 20px;
         margin: 5px;
@@ -50,11 +50,11 @@
         text-align: center;
     }
 
-    .btn-update:hover {
+    .b-update:hover {
         background-color: #0056b3;
     }
 
-    .btn-delete {
+    .b-delete {
         display: inline-block;
         padding: 10px 20px;
         margin: 5px;
@@ -67,12 +67,21 @@
         text-align: center;
     }
 
-    .btn-delete:hover {
+    .b-delete:hover {
         background-color: #c82333;
     }
-    .btn-div{
+
+    .btn-div {
         text-align: center;
         margin-top: 20px;
+    }
+
+    .post-image img {
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
     }
 </style>
 
@@ -83,10 +92,17 @@
     <div class="post-content">
         {{ post.content|safe }}
     </div>
-    
-    <div class="btn-div">
-        <a href="{% url 'post_update' slug=post.slug %}" class="btn-update">Update Post</a>
-        <a href="{% url 'post_delete' slug=post.slug %}" class="btn-delete">Delete Post</a>
+    {% if post.image %}
+    <div class="post-image">
+        <img height="200" width="100%" src="{{ post.image.url }}" alt="{{ post.title }}">
     </div>
+    {% endif %}
+    
+    {% if request.user == post.author %}
+    <div class="btn-div">
+        <a href="{% url 'post_update' slug=post.slug %}" class="b-update">Update Post</a>
+        <a href="{% url 'post_delete' slug=post.slug %}" class="b-delete">Delete Post</a>
+    </div>
+    {% endif %}
 </article>
 {% endblock content %}

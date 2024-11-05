@@ -25,7 +25,7 @@ class PostDetailView(generic.DetailView):
 
 class PostCreateView(LoginRequiredMixin, generic.CreateView):
     model = Post
-    fields = ["title", "content"]
+    fields = ["title", "content", "image"]
     template_name = "blog/post_form.html"
 
     def form_valid(self, form):
@@ -47,7 +47,7 @@ class PostCreateView(LoginRequiredMixin, generic.CreateView):
 
 class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
     model = Post
-    fields = ["title", "content"]
+    fields = ["title", "content", "image"]
     template_name = "blog/post_form.html"
 
     def form_valid(self, form):
