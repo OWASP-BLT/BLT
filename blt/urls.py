@@ -567,6 +567,7 @@ urlpatterns = [
     path("api/timelogsreport/", website.views.TimeLogListAPIView, name="timelogsreport"),
     path("time-logs/", website.views.TimeLogListView, name="time_logs"),
     path("sizzle-daily-log/", website.views.sizzle_daily_log, name="sizzle_daily_log"),
+    path("user-sizzle-report/<str:username>/", website.views.user_sizzle_report, name="user_sizzle_report"),
 ]
 
 if settings.DEBUG:

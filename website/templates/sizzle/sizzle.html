@@ -119,7 +119,9 @@
                             <tbody>
                                 {% for user in leaderboard %}
                                     <tr>
-                                        <td class="py-3 px-4 border-b border-gray-200">{{ user.username }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">
+                                            <a href="{% url 'user_sizzle_report' user.username %}" class="text-blue-500 hover:underline">{{ user.username }}</a>
+                                        </td>
                                         <td class="py-3 px-4 border-b border-gray-200">{{ user.formatted_duration }}</td>
                                     </tr>
                                 {% endfor %}

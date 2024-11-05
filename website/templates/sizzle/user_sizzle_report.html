@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ user.username }}'s Sizzle Report</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ user.username }}'s Sizzle Report</h1>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Issue Title</th>
+                    <th>Duration</th>
+                    <th>Start Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in response_data %}
+                <tr>
+                    <td>{{ log.date }}</td>
+                    <td>{{ log.issue_title }}</td>
+                    <td>{{ log.duration }}</td>
+                    <td>{{ log.start_time }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <canvas id="timeLogChart"></canvas>
+    </div>
+    <script>
+        const ctx = document.getElementById('timeLogChart').getContext('2d');
+        const labels = {{ response_data|json_script:"labels" }};
+        const data = {{ response_data|json_script:"data" }};
+        const timeLogChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Duration (minutes)',
+                    data: data,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
