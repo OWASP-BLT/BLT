@@ -39,12 +39,13 @@ jobs:
 
       - name: Get Poetry cache directory
         id: poetry-cache
-        run: echo "::set-output name=dir::$(poetry config cache-dir)"
+        # run: echo "::set-output name=dir::$(poetry config cache-dir)"
+        run: echo "POETRY_CACHE_DIR=$(poetry config cache-dir)" >> $GITHUB_ENV
       
       - name: Cache Poetry dependencies
         uses: actions/cache@v3
         with:
-          path: ${{ steps.poetry-cache.outputs.dir }}
+          path: ${{ env.POETRY_CACHE_DIR }} 
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
