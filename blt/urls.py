@@ -62,11 +62,13 @@ from website.class_views import (
     IssueView,
     JoinCompany,
     ListHunts,
+    MaliciousIpListView,
     OngoingHunts,
     PreviousHunts,
     ProjectBadgeView,
     ProjectDetailView,
     ProjectListView,
+    ReportIpView,
     ScoreboardView,
     SpecificIssuesView,
     SpecificMonthLeaderboardView,
@@ -76,9 +78,6 @@ from website.class_views import (
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
-    ReportIpView,
-    MaliciousIpListView,
-
 )
 from website.views import (  # TODO AutoLabel,
     SaveBiddingData,
@@ -460,8 +459,7 @@ urlpatterns = [
     path("project/<slug:slug>/", ProjectDetailView.as_view(), name="project_view"),
     path("projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"),
     path("report-ip/", ReportIpView.as_view(), name="report_ip"),
-    path("malicious-ips/", MaliciousIpListView.as_view(), name='malicious_ips_list'),
-
+    path("malicious-ips/", MaliciousIpListView.as_view(), name="malicious_ips_list"),
     re_path(
         r"^api/v1/createissues/$",
         csrf_exempt(IssueCreate.as_view()),
@@ -573,7 +571,11 @@ urlpatterns = [
     path("api/timelogsreport/", website.views.TimeLogListAPIView, name="timelogsreport"),
     path("time-logs/", website.views.TimeLogListView, name="time_logs"),
     path("sizzle-daily-log/", website.views.sizzle_daily_log, name="sizzle_daily_log"),
-    path("user-sizzle-report/<str:username>/", website.views.user_sizzle_report, name="user_sizzle_report"),
+    path(
+        "user-sizzle-report/<str:username>/",
+        website.views.user_sizzle_report,
+        name="user_sizzle_report",
+    ),
 ]
 
 if settings.DEBUG:

@@ -2622,4 +2622,6 @@ def user_sizzle_report(request, username):
 
         response_data.append(day_data)
 
-    return render(request, "sizzle/user_sizzle_report.html", {"response_data": response_data, "user": user})
+    return render(
+        request, "sizzle/user_sizzle_report.html", {"response_data": response_data, "user": user}
+    )

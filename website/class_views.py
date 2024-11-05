@@ -6,10 +6,6 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse
 
-
-from django.urls import reverse_lazy
-from django.views.generic import FormView
-
 import requests
 import six
 import stripe
@@ -47,7 +43,7 @@ from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import DetailView, ListView, TemplateView, View
+from django.views.generic import DetailView, FormView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
@@ -57,7 +53,14 @@ from rest_framework.views import APIView
 from user_agents import parse
 
 from blt import settings
-from website.forms import CaptchaForm, GitHubURLForm, HuntForm, UserDeleteForm, UserProfileForm , IpReportForm
+from website.forms import (
+    CaptchaForm,
+    GitHubURLForm,
+    HuntForm,
+    IpReportForm,
+    UserDeleteForm,
+    UserProfileForm,
+)
 from website.models import (
     IP,
     BaconToken,
@@ -72,6 +75,7 @@ from website.models import (
     Hunt,
     HuntPrize,
     InviteFriend,
+    IpReport,
     Issue,
     IssueScreenshot,
     Monitor,
@@ -87,7 +91,6 @@ from website.models import (
     UserProfile,
     Wallet,
     Winner,
-    IpReport,
 )
 from website.utils import (
     get_client_ip,
@@ -1201,6 +1204,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
         return context
 
+
 class UploadCreate(View):
     template_name = "index.html"
 
@@ -2214,7 +2218,7 @@ class IssueView(DetailView):
 
 
 class ReportIpView(FormView):
-    template_name = 'report_ip.html'  
+    template_name = "report_ip.html"
     form_class = IpReportForm
     captcha = CaptchaForm()
 
@@ -2223,11 +2227,15 @@ class ReportIpView(FormView):
         captcha_form = CaptchaForm(request.POST)
         if not captcha_form.is_valid():
             messages.error(request, "Invalid CAPTCHA. Please try again.")
-            return render(request, self.template_name, {
-                "form": self.get_form(),
-                "captcha_form": captcha_form,
-            })
-        
+            return render(
+                request,
+                self.template_name,
+                {
+                    "form": self.get_form(),
+                    "captcha_form": captcha_form,
+                },
+            )
+
         # Process form and duplicate IP check
         form = self.get_form()
         if form.is_valid():
@@ -2235,15 +2243,19 @@ class ReportIpView(FormView):
             ip_type = form.cleaned_data.get("ip_type")
             if IpReport.objects.filter(ip_address=ip_address, ip_type=ip_type).exists():
                 messages.error(request, "This IP address has already been reported.")
-                return render(request, self.template_name, {
-                    "form": form,
-                    "captcha_form": captcha_form,
-                })
-                
+                return render(
+                    request,
+                    self.template_name,
+                    {
+                        "form": form,
+                        "captcha_form": captcha_form,
+                    },
+                )
+
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
-    
+
     @atomic
     def form_valid(self, form):
         # Check daily report limit per IP
@@ -2251,36 +2263,38 @@ class ReportIpView(FormView):
         limit = 50 if self.request.user.is_authenticated else 30
         today = now().date()
         recent_reports_count = IpReport.objects.filter(
-            reporter_ip_address=reporter_ip,
-            created=today
+            reporter_ip_address=reporter_ip, created=today
         ).count()
-        
+
         if recent_reports_count >= limit:
             messages.error(self.request, "You have reached the daily limit for IP reports.")
-            return render(self.request, self.template_name, {
-                "form": self.get_form(),
-                "captcha_form": CaptchaForm(),
-            })
-
+            return render(
+                self.request,
+                self.template_name,
+                {
+                    "form": self.get_form(),
+                    "captcha_form": CaptchaForm(),
+                },
+            )
 
         form.instance.reporter_ip_address = reporter_ip
         form.instance.user = self.request.user if self.request.user.is_authenticated else None
         form.save()
         messages.success(self.request, "IP report successfully submitted.")
-        
 
-        return redirect("malicious_ips_list")  
-    
+        return redirect("malicious_ips_list")
+
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)  
-        context['captcha_form'] = CaptchaForm() 
+        context = super().get_context_data(**kwargs)
+        context["captcha_form"] = CaptchaForm()
         return context
+
 
 class MaliciousIpListView(ListView):
     model = IpReport
-    template_name = 'malicious_ips_list.html' 
-    context_object_name = 'malicious_ips'  
-    paginate_by = 10  
+    template_name = "malicious_ips_list.html"
+    context_object_name = "malicious_ips"
+    paginate_by = 10
 
     def get_queryset(self):
         return IpReport.objects.all()

@@ -84,46 +84,43 @@
             font-size: 1.2em;
         }
     </style>
-
     <h1>Reported Malicious IPs</h1>
     <div class="report-container">
         {% for ip in malicious_ips %}
-        <div class="report-card" onclick="toggleExpand(this)">
-            <div class="ip-header">
-                <span class="ip-address">{{ ip.ip_address }}</span>
-                <span class="expand-icon">⬇</span>
+            <div class="report-card" onclick="toggleExpand(this)">
+                <div class="ip-header">
+                    <span class="ip-address">{{ ip.ip_address }}</span>
+                    <span class="expand-icon">⬇</span>
+                </div>
+                <div class="user-info">
+                    <i class="fas fa-user"></i> {{ ip.user.username|default:"Anonymous" }} - {{ ip.created|date:"M d, Y" }}
+                </div>
+                <div class="description-content">
+                    <p class="reason">Reason: {{ ip.malicious_activity_title }}</p>
+                    <p>{{ ip.description|default:"No additional details provided." }}</p>
+                </div>
             </div>
-            <div class="user-info">
-                <i class="fas fa-user"></i> {{ ip.user.username|default:"Anonymous" }} - {{ ip.created|date:"M d, Y" }}
-            </div>
-            <div class="description-content">
-                <p class="reason">Reason: {{ ip.malicious_activity_title}}</p>
-                <p>{{ ip.description|default:"No additional details provided." }}</p>
-            </div>
-        </div>
         {% empty %}
-        <p>No malicious IPs reported.</p>
+            <p>No malicious IPs reported.</p>
         {% endfor %}
     </div>
-
     <div class="col-md-12 text-center mt-4">
         <div class="pagination">
             {% if is_paginated %}
                 {% if page_obj.has_previous %}
                     <a href="?page=1" class="btn btn-default">First</a>
-                    <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-default">Previous</a>
+                    <a href="?page={{ page_obj.previous_page_number }}"
+                       class="btn btn-default">Previous</a>
                 {% endif %}
-
                 <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-
                 {% if page_obj.has_next %}
                     <a href="?page={{ page_obj.next_page_number }}" class="btn btn-default">Next</a>
-                    <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-default">Last</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}"
+                       class="btn btn-default">Last</a>
                 {% endif %}
             {% endif %}
         </div>
     </div>
-
     <div class="bottom-right">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/new_home.html">
             <i class="fab fa-github"></i>
@@ -132,7 +129,6 @@
             <i class="fab fa-figma"></i>
         </a>
     </div>
-
     <script>
     function toggleExpand(card) {
         const descriptionContent = card.querySelector(".description-content");

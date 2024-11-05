@@ -1,8 +1,6 @@
 import logging
 import os
 import uuid
-import ipaddress 
-
 from decimal import Decimal
 from urllib.parse import urlparse
 
@@ -879,13 +877,13 @@ class DailyStatusReport(models.Model):
 
 class IpReport(models.Model):
     IP_TYPE_CHOICES = [
-        ('ipv4', 'IPv4'),
-        ('ipv6', 'IPv6'),
+        ("ipv4", "IPv4"),
+        ("ipv6", "IPv6"),
     ]
-    
+
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    malicious_activity_title = models.CharField(max_length=255)  
-    ip_address = models.GenericIPAddressField()  
+    malicious_activity_title = models.CharField(max_length=255)
+    ip_address = models.GenericIPAddressField()
     ip_type = models.CharField(max_length=10, choices=IP_TYPE_CHOICES)
     description = models.TextField()
     created = models.DateTimeField(auto_now_add=True)
