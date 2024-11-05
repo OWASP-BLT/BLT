@@ -2214,13 +2214,10 @@ class IssueView(DetailView):
 
 
 class ReportIpView(FormView):
-    template_name = 'report_ip.html'  # Name of the HTML template for the form
+    template_name = 'report_ip.html'  
     form_class = IpReportForm
     captcha = CaptchaForm()
 
-    def is_duplicate_ip_report(ip_address, ip_type):
-        return IpReport.objects.filter(Q(ip_address=ip_address) & Q(ip_type=ip_type)).exists()
-    
     def post(self, request, *args, **kwargs):
         # Check CAPTCHA
         captcha_form = CaptchaForm(request.POST)
@@ -2255,7 +2252,7 @@ class ReportIpView(FormView):
         today = now().date()
         recent_reports_count = IpReport.objects.filter(
             reporter_ip_address=reporter_ip,
-            created__date=today
+            created=today
         ).count()
         
         if recent_reports_count >= limit:
@@ -2265,25 +2262,25 @@ class ReportIpView(FormView):
                 "captcha_form": CaptchaForm(),
             })
 
-        # Save the valid form and log the reporter's IP
+
         form.instance.reporter_ip_address = reporter_ip
         form.instance.user = self.request.user if self.request.user.is_authenticated else None
         form.save()
         messages.success(self.request, "IP report successfully submitted.")
         
-        # Redirect to a success page or summary view as needed
+
         return redirect("malicious_ips_list")  
     
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)  # Get the default context data
-        context['captcha_form'] = CaptchaForm()  # Add CAPTCHA form to the context
+        context = super().get_context_data(**kwargs)  
+        context['captcha_form'] = CaptchaForm() 
         return context
 
 class MaliciousIpListView(ListView):
     model = IpReport
-    template_name = 'malicious_ips_list.html'  # Your template file
-    context_object_name = 'malicious_ips'  # This will be the name of the variable in the template
-    paginate_by = 10  # Number of items per page
+    template_name = 'malicious_ips_list.html' 
+    context_object_name = 'malicious_ips'  
+    paginate_by = 10  
 
     def get_queryset(self):
         return IpReport.objects.all()

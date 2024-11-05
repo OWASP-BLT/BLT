@@ -67,14 +67,6 @@ class IpReportForm(forms.ModelForm):
     class Meta:
         model = IpReport
         fields = ['ip_address', 'ip_type', 'description', 'malicious_activity_title']
-        
-    def clean_ip_address(self):
-        ip_address = self.cleaned_data.get('ip_address')
-        # Check if the IP address already exists in the database
-        if IpReport.objects.filter(ip_address=ip_address).exists():
-            raise forms.ValidationError("This IP address has already been reported.")
-        
-        return ip_address
     
 class BidForm(forms.ModelForm):
     class Meta:
