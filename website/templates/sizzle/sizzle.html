@@ -13,6 +13,12 @@
         .docs_style:hover {
             background-color: #dc2626!important;
         }
+        /* Disable button styles */
+
+        .disabled-button {
+            background-color: #a1a1aa !important; /* Gray background */
+            cursor: not-allowed !important; /* Change cursor */
+        }
     </style>
     <div class="container mx-auto p-6">
         <!-- Include the left navigation -->
@@ -21,85 +27,119 @@
         <div class="main-content w-full">
             <div class="flex justify-between items-center mb-8 mt-8">
                 <h1 class="text-4xl font-semibold text-gray-800 mb-8">Your Sizzle Report</h1>
-                <div class="flex space-x-2">
-                    <input type="text"
-                           name="daterange"
-                           id="daterange"
-                           class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer"
-                           readonly />
-                </div>
+                {% if user.is_authenticated %}
+                    <div class="flex space-x-2">
+                        <input type="text"
+                               name="daterange"
+                               id="daterange"
+                               class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer"
+                               readonly />
+                    </div>
+                {% endif %}
             </div>
             <div class="flex space-x-10 items-center mb-8 mt-8">
                 <a href="{% url 'sizzle-docs' %}"
                    class="docs_style py-2 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
                     Sizzle Docs
                 </a>
-                <a href="{% url 'time_logs' %}"
-                   class="docs_style py-2 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
-                    Start Tracking
-                </a>
-                <a href="{% url 'sizzle_daily_log' %}"
-                   class="docs_style py-2 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
-                    Daily Status Report
-                </a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'time_logs' %}"
+                       class="docs_style py-2 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
+                        Start Tracking
+                    </a>
+                    <a href="{% url 'sizzle_daily_log' %}"
+                       class="docs_style py-2 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
+                        Daily Status Report
+                    </a>
+                {% endif %}
             </div>
-            <!-- Report Table -->
-            <div id="report-table">
-                <div class="bg-white shadow-lg rounded-lg overflow-hidden"
-                     id="report-item">
-                    <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold">
-                        <!-- if the sizzle data have the show here value of sizzle data "date" key value else today date -->
-                        {% if sizzle_data %}
-                            {{ sizzle_data.date }}
-                        {% else %}
-                            No Data
-                        {% endif %}
+            <!-- Report and Leaderboard Section --> <!-- new code: Rename section -->
+            <div class="flex flex-col lg:flex-row lg:space-x-10">
+                <!-- Report Table -->
+                {% if user.is_authenticated %}
+                    <div id="report-table" class="lg:w-1/2">
+                        <div class="bg-white shadow-lg rounded-lg overflow-hidden"
+                             id="report-item">
+                            <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400">
+                                <!-- if the sizzle data have the show here value of sizzle data "date" key value else today date -->
+                                {% if sizzle_data %}
+                                    {{ sizzle_data.date }}
+                                {% else %}
+                                    No Data
+                                {% endif %}
+                            </div>
+                            <table class="min-w-full bg-white">
+                                <thead>
+                                    <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
+                                        <th class="text-left py-3 px-4 border-b border-gray-200">Issue Title</th>
+                                        <th class="text-left py-3 px-4 border-b border-gray-200">Started</th>
+                                        <th class="text-left py-3 px-4 border-b border-gray-200">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="py-3 px-4 border-b border-gray-200">
+                                            {% if sizzle_data %}
+                                                {{ sizzle_data.issue_title }}
+                                            {% else %}
+                                                No Data
+                                            {% endif %}
+                                        </td>
+                                        <td class="py-3 px-4 border-b border-gray-200">
+                                            {% if sizzle_data %}
+                                                {{ sizzle_data.start_time }}
+                                            {% else %}
+                                                No Data
+                                            {% endif %}
+                                        </td>
+                                        <td class="py-3 px-4 border-b border-gray-200">
+                                            {% if sizzle_data %}
+                                                {{ sizzle_data.duration }}
+                                            {% else %}
+                                                No Data
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <table class="min-w-full bg-white">
-                        <thead>
-                            <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
-                                <th class="text-left py-3 px-4 border-b border-gray-200">Issue Title</th>
-                                <th class="text-left py-3 px-4 border-b border-gray-200">Started</th>
-                                <th class="text-left py-3 px-4 border-b border-gray-200">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="py-3 px-4 border-b border-gray-200">
-                                    {% if sizzle_data %}
-                                        {{ sizzle_data.issue_title }}
-                                    {% else %}
-                                        No Data
-                                    {% endif %}
-                                </td>
-                                <td class="py-3 px-4 border-b border-gray-200">
-                                    {% if sizzle_data %}
-                                        {{ sizzle_data.start_time }}
-                                    {% else %}
-                                        No Data
-                                    {% endif %}
-                                </td>
-                                <td class="py-3 px-4 border-b border-gray-200">
-                                    {% if sizzle_data %}
-                                        {{ sizzle_data.duration }}
-                                    {% else %}
-                                        No Data
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                {% endif %}
+                <!-- Leaderboard Section -->
+                <div class="mt-8 lg:mt-0 lg:w-1/2">
+                    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                        <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400">Leaderboard</div>
+                        <table class="min-w-full bg-white">
+                            <thead>
+                                <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
+                                    <th class="text-left py-3 px-4 border-b border-gray-200">Username</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200">Total Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in leaderboard %}
+                                    <tr>
+                                        <td class="py-3 px-4 border-b border-gray-200">
+                                            <a href="{% url 'user_sizzle_report' user.username %}" class="text-blue-500 hover:underline">{{ user.username }}</a>
+                                        </td>
+                                        <td class="py-3 px-4 border-b border-gray-200">{{ user.formatted_duration }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <script type="text/javascript"
-            src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
-    <script type="text/javascript"
-            src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
-    <script type="text/javascript"
-            src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-    <script type="text/javascript">
+    {% if user.is_authenticated %}
+        <script type="text/javascript"
+                src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+        <script type="text/javascript"
+                src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+        <script type="text/javascript"
+                src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+        <script type="text/javascript">
     $(function() {
         $('input[name="daterange"]').daterangepicker({
             opens: 'left',
@@ -151,5 +191,6 @@
             });
         });
     });
-    </script>
+        </script>
+    {% endif %}
 {% endblock content %}
