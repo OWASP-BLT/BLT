@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -24,8 +24,7 @@ jobs:
       - name: Run djlint
         run: |
           . venv/bin/activate
-          djlint --reformat .
-        files: ^company/templates/|^website/templates/
+          djlint --reformat $(git diff --name-only HEAD^ HEAD | grep -E '^company/templates/|^website/templates/')
 
       - name: Commit changes
         run: |
