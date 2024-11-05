@@ -6,6 +6,10 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse
 
+
+from django.urls import reverse_lazy
+from django.views.generic import FormView
+
 import requests
 import six
 import stripe
@@ -53,7 +57,7 @@ from rest_framework.views import APIView
 from user_agents import parse
 
 from blt import settings
-from website.forms import CaptchaForm, GitHubURLForm, HuntForm, UserDeleteForm, UserProfileForm
+from website.forms import CaptchaForm, GitHubURLForm, HuntForm, UserDeleteForm, UserProfileForm , IpReportForm
 from website.models import (
     IP,
     BaconToken,
@@ -83,6 +87,7 @@ from website.models import (
     UserProfile,
     Wallet,
     Winner,
+    IpReport,
 )
 from website.utils import (
     get_client_ip,
@@ -1196,7 +1201,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
         return context
 
-
 class UploadCreate(View):
     template_name = "index.html"
 
@@ -2207,3 +2211,79 @@ class IssueView(DetailView):
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
 
         return context
+
+
+class ReportIpView(FormView):
+    template_name = 'report_ip.html'  # Name of the HTML template for the form
+    form_class = IpReportForm
+    captcha = CaptchaForm()
+
+    def is_duplicate_ip_report(ip_address, ip_type):
+        return IpReport.objects.filter(Q(ip_address=ip_address) & Q(ip_type=ip_type)).exists()
+    
+    def post(self, request, *args, **kwargs):
+        # Check CAPTCHA
+        captcha_form = CaptchaForm(request.POST)
+        if not captcha_form.is_valid():
+            messages.error(request, "Invalid CAPTCHA. Please try again.")
+            return render(request, self.template_name, {
+                "form": self.get_form(),
+                "captcha_form": captcha_form,
+            })
+        
+        # Process form and duplicate IP check
+        form = self.get_form()
+        if form.is_valid():
+            ip_address = form.cleaned_data.get("ip_address")
+            ip_type = form.cleaned_data.get("ip_type")
+            if IpReport.objects.filter(ip_address=ip_address, ip_type=ip_type).exists():
+                messages.error(request, "This IP address has already been reported.")
+                return render(request, self.template_name, {
+                    "form": form,
+                    "captcha_form": captcha_form,
+                })
+                
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+    
+    @atomic
+    def form_valid(self, form):
+        # Check daily report limit per IP
+        reporter_ip = get_client_ip(self.request)
+        limit = 50 if self.request.user.is_authenticated else 30
+        today = now().date()
+        recent_reports_count = IpReport.objects.filter(
+            reporter_ip_address=reporter_ip,
+            created__date=today
+        ).count()
+        
+        if recent_reports_count >= limit:
+            messages.error(self.request, "You have reached the daily limit for IP reports.")
+            return render(self.request, self.template_name, {
+                "form": self.get_form(),
+                "captcha_form": CaptchaForm(),
+            })
+
+        # Save the valid form and log the reporter's IP
+        form.instance.reporter_ip_address = reporter_ip
+        form.instance.user = self.request.user if self.request.user.is_authenticated else None
+        form.save()
+        messages.success(self.request, "IP report successfully submitted.")
+        
+        # Redirect to a success page or summary view as needed
+        return redirect("malicious_ips_list")  
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)  # Get the default context data
+        context['captcha_form'] = CaptchaForm()  # Add CAPTCHA form to the context
+        return context
+
+class MaliciousIpListView(ListView):
+    model = IpReport
+    template_name = 'malicious_ips_list.html'  # Your template file
+    context_object_name = 'malicious_ips'  # This will be the name of the variable in the template
+    paginate_by = 10  # Number of items per page
+
+    def get_queryset(self):
+        return IpReport.objects.all()

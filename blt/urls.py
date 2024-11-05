@@ -76,6 +76,9 @@ from website.class_views import (
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
+    ReportIpView,
+    MaliciousIpListView,
+
 )
 from website.views import (  # TODO AutoLabel,
     SaveBiddingData,
@@ -456,6 +459,9 @@ urlpatterns = [
     re_path(r"^api/v1/contributors/$", website.views.contributors, name="api_contributor"),
     path("project/<slug:slug>/", ProjectDetailView.as_view(), name="project_view"),
     path("projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"),
+    path("report-ip/", ReportIpView.as_view(), name="report_ip"),
+    path("malicious-ips/", MaliciousIpListView.as_view(), name='malicious_ips_list'),
+
     re_path(
         r"^api/v1/createissues/$",
         csrf_exempt(IssueCreate.as_view()),

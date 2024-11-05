@@ -2,7 +2,7 @@ from captcha.fields import CaptchaField
 from django import forms
 from mdeditor.fields import MDTextFormField
 
-from .models import Bid, Monitor, UserProfile
+from .models import Bid, Monitor, UserProfile ,IpReport
 
 
 class UserProfileForm(forms.ModelForm):
@@ -63,6 +63,19 @@ class MonitorForm(forms.ModelForm):
         fields = ["url", "keyword"]
 
 
+class IpReportForm(forms.ModelForm):
+    class Meta:
+        model = IpReport
+        fields = ['ip_address', 'ip_type', 'description', 'malicious_activity_title']
+        
+    def clean_ip_address(self):
+        ip_address = self.cleaned_data.get('ip_address')
+        # Check if the IP address already exists in the database
+        if IpReport.objects.filter(ip_address=ip_address).exists():
+            raise forms.ValidationError("This IP address has already been reported.")
+        
+        return ip_address
+    
 class BidForm(forms.ModelForm):
     class Meta:
         model = Bid

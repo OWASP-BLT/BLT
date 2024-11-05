@@ -1,6 +1,8 @@
 import logging
 import os
 import uuid
+import ipaddress 
+
 from decimal import Decimal
 from urllib.parse import urlparse
 
@@ -873,3 +875,28 @@ class DailyStatusReport(models.Model):
 
     def __str__(self):
         return f"Daily Status Report by {self.user.username} on {self.date}"
+
+
+class IpReport(models.Model):
+    IP_TYPE_CHOICES = [
+        ('ipv4', 'IPv4'),
+        ('ipv6', 'IPv6'),
+    ]
+    
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    malicious_activity_title = models.CharField(max_length=255)  
+    ip_address = models.GenericIPAddressField(unique=True)  # Ensure uniqueness to prevent duplicates
+    ip_type = models.CharField(max_length=10, choices=IP_TYPE_CHOICES)
+    description = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    def clean(self):
+        # Custom validation logic to check for valid IP address
+        try:
+            ipaddress.ip_address(self.ip_address)
+        except ValueError:
+            raise ValidationError(f"{self.ip_address} is not a valid IP address.")
+
+    def __str__(self):
+        return f"{self.ip_address} ({self.ip_type}) - {self.malicious_activity_title}"

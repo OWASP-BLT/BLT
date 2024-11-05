@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <style>
+        .report-container {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+    
+        .report-card {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+    
+        .report-card:hover {
+            background-color: #f2f2f2;
+        }
+    
+        .ip-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: bold;
+        }
+    
+        .ip-address {
+            font-size: 1.1em;
+        }
+    
+        .expand-icon {
+            font-size: 1.5em; /* Increase the size of the arrow icon */
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px; /* Set a fixed width for the icon container */
+            transition: transform 0.3s ease; /* Smooth rotation transition */
+        }
+    
+        .user-info {
+            display: flex;
+            align-items: center;
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 5px;
+        }
+    
+        .user-info i {
+            margin-right: 5px;
+        }
+    
+        .description-content {
+            max-height: 0;
+            overflow: hidden; 
+            background-color: #eeeeee;
+            margin-top: 10px;
+            padding: 0 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 0.95em;
+            transition: max-height 0.5s ease, padding 0.5s ease;
+        }
+
+    .description-content.show {
+        max-height: 200px;
+        padding: 10px; 
+    }
+
+    
+        .reason {
+            font-weight: bold;
+        }
+    
+        .icon-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            font-size: 1.2em;
+        }
+    </style>
+
+    <h1>Reported Malicious IPs</h1>
+    <div class="report-container">
+        {% for ip in malicious_ips %}
+        <div class="report-card" onclick="toggleExpand(this)">
+            <div class="ip-header">
+                <span class="ip-address">{{ ip.ip_address }}</span>
+                <span class="expand-icon">⬇</span>
+            </div>
+            <div class="user-info">
+                <i class="fas fa-user"></i> {{ ip.user.username|default:"Anonymous" }} - {{ ip.created|date:"M d, Y" }}
+            </div>
+            <div class="description-content">
+                <p class="reason">Reason: {{ ip.malicious_activity_title}}</p>
+                <p>{{ ip.description|default:"No additional details provided." }}</p>
+            </div>
+        </div>
+        {% empty %}
+        <p>No malicious IPs reported.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Optional Pagination Controls -->
+    <div class="col-md-12 text-center mt-4">
+        <div class="pagination">
+            {% if is_paginated %}
+                {% if page_obj.has_previous %}
+                    <a href="?page=1" class="btn btn-default">First</a>
+                    <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-default">Previous</a>
+                {% endif %}
+
+                <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" class="btn btn-default">Next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-default">Last</a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="bottom-right">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/new_home.html">
+            <i class="fab fa-github"></i>
+        </a>
+        <a href="https://www.figma.com/file/JE0QlQ95FVpk0wG9HyFw4D/BLT-Website?type=design&node-id=0%3A1&mode=design&t=glf1ydd0YzYzsUJh-1">
+            <i class="fab fa-figma"></i>
+        </a>
+    </div>
+
+    <script>
+    function toggleExpand(card) {
+        const descriptionContent = card.querySelector(".description-content");
+        const icon = card.querySelector(".expand-icon");
+        const isExpanded = descriptionContent.classList.contains("show");
+
+        if (isExpanded) {
+            descriptionContent.classList.remove("show");
+            icon.textContent = "⬇";
+            icon.setAttribute("aria-expanded", "false");
+            icon.style.transform = "rotate(0deg)"; // Reset rotation
+        } else {
+            descriptionContent.classList.add("show");
+            icon.textContent = "⬇";
+            icon.setAttribute("aria-expanded", "true");
+            icon.style.transform = "rotate(180deg)"; // Rotate 90 degrees
+        }
+    }
+    </script>
+{% endblock content %}
