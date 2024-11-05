@@ -6,8 +6,8 @@ from . import views
 
 urlpatterns = [
     path("", views.PostListView.as_view(), name="post_list"),
-    path("post/new/", views.PostCreateView.as_view(), name="post_create"),
-    path("post/<slug:slug>/", views.PostDetailView.as_view(), name="post_detail"),
-    path("post/<slug:slug>/edit/", views.PostUpdateView.as_view(), name="post_update"),
-    path("post/<slug:slug>/delete/", views.PostDeleteView.as_view(), name="post_delete"),
+    path("new/", views.PostCreateView.as_view(), name="post_create"),
+    path("<slug:slug>/", views.PostDetailView.as_view(), name="post_detail"),
+    path("<slug:slug>/edit/", views.PostUpdateView.as_view(), name="post_update"),
+    path("<slug:slug>/delete/", views.PostDeleteView.as_view(), name="post_delete"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
