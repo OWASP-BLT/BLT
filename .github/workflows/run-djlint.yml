@@ -6,6 +6,7 @@ on:
 jobs:
   run-djlint:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,13 +19,14 @@ jobs:
       - name: Install djlint
         run: |
           python -m venv venv
-          . venv/bin/activate
+          source venv/bin/activate
           pip install djlint
 
       - name: Run djlint
         run: |
-          . venv/bin/activate
-          djlint --reformat $(git diff --name-only HEAD^ HEAD | grep -E '^company/templates/|^website/templates/')
+          source venv/bin/activate
+          files_to_check=$(find company/templates website/templates -type f -name "*.html")
+          djlint --reformat $files_to_check
 
       - name: Commit changes
         run: |
