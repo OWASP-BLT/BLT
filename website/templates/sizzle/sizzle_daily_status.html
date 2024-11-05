@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    <style>
+        .docs_style {
+            background-color: #EF4444!important;
+            color: white!important;
+        }
+        /* add backgound hover */
+        .docs_style:hover {
+            background-color: #dc2626!important;
+        }
+    </style>
+    <div class="container mx-auto p-6">
+        <!-- Include the left navigation -->
+        {% include "includes/sidenav.html" %}
+        <!-- Main Content Section -->
+        <div class="main-content w-full">
+            <div class="flex justify-between items-center mb-8 mt-8">
+                <h1 class="text-4xl font-semibold text-gray-800 mb-8">Your Sizzle Daily Status Report</h1>
+            </div>
+            <div class="flex space-x-10 items-center mb-8 mt-8">
+                <a href="{% url 'sizzle' %}"
+                   class="docs_style py-2 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
+                    Back to Sizzle
+                </a>
+                <a href="{% url 'sizzle-docs' %}"
+                   class="docs_style py-2 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
+                    Sizzle Docs
+                </a>
+                <a href="{% url 'time_logs' %}"
+                   class="docs_style py-2 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
+                    Start Tracking
+                </a>
+            </div>
+            <!-- Daily Status Report Form -->
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+                <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold">Daily Status Report</div>
+                <form method="post" action="{% url 'sizzle_daily_log' %}" class="p-6">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label for="previous_work" class="block text-gray-700 font-semibold mb-2">What did you work on previously?</label>
+                        <textarea id="previous_work"
+                                  name="previous_work"
+                                  rows="3"
+                                  class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label for="next_plan" class="block text-gray-700 font-semibold mb-2">What do you plan to do next?</label>
+                        <textarea id="next_plan"
+                                  name="next_plan"
+                                  rows="3"
+                                  class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label for="blockers" class="block text-gray-700 font-semibold mb-2">Do you have any blockers?</label>
+                        <textarea id="blockers"
+                                  name="blockers"
+                                  rows="3"
+                                  class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"></textarea>
+                    </div>
+                    <button type="submit"
+                            class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
+                        Submit
+                    </button>
+                </form>
+            </div>
+            <!-- Display Daily Status Reports -->
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+                <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold">Your Daily Status Reports</div>
+                {% for report in reports %}
+                    <div class="p-6 border-b border-gray-200">
+                        <h2 class="text-xl font-semibold mb-2">Date: {{ report.date }}</h2>
+                        <p>
+                            <strong>What did you work on previously?</strong>
+                        </p>
+                        <p>{{ report.previous_work }}</p>
+                        <p>
+                            <strong>What do you plan to do next?</strong>
+                        </p>
+                        <p>{{ report.next_plan }}</p>
+                        <p>
+                            <strong>Do you have any blockers?</strong>
+                        </p>
+                        <p>{{ report.blockers }}</p>
+                    </div>
+                {% empty %}
+                    <div class="p-6">
+                        <p>You have not submitted any daily status reports yet.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock content %}
