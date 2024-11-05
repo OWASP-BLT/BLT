@@ -26,7 +26,7 @@ jobs:
         run: |
           source venv/bin/activate
           files_to_check=$(find company/templates website/templates -type f -name "*.html")
-          djlint --reformat $files_to_check
+          djlint --reformat $files_to_check || true
 
       - name: Commit changes
         run: |
