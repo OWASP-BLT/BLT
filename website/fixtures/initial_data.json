@@ -42,16 +42,37 @@
     }
   },
   {
+    "model": "website.Company",
+    "pk": 58,
+    "fields": {
+        "admin": 1,
+        "name": "BugBug Company",
+        "description": "This is the company for admin BugBug Testing.",
+        "logo": null,
+        "url": "https://www.bugbug.com",
+        "email": "bugbug@bugbug.com",
+        "twitter": "bugbug",
+        "facebook": "https://www.facebook.com/bugbug",
+        "created": "2024-10-20T00:00:00Z",
+        "modified": "2024-10-20T00:00:00Z",
+        "subscription": null,
+        "is_active": true,
+        "tags": []
+    }
+  },
+  {
     "model": "website.domain",
     "pk": 99,
     "fields": {
-      "name": "owasp.org",
-      "url": "http://owasp.org",
+      "company" : 58,
+      "managers" : [1],
+      "name": "bugbug.com",
+      "url": "http://bugbug.com",
       "logo": "",
       "webshot": "",
       "clicks": null,
       "color": "",
-      "email": "support@example.com",
+      "email": "support@bugbug.com",
       "twitter": "",
       "facebook": "",
       "created": "2016-10-13T16:46:46Z",

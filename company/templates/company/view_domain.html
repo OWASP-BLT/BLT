@@ -279,41 +279,53 @@
                     </div>
                 </div>
             </div>
-            <div class="bg-white w-full p-10 my-5">
-                <div class="w-full flex justify-between">
-                    <h4 class="text-xl text-gray-900 font-bold mb-5">Ongoing Bughunts</h4>
-                    <a href="{% url 'hunts' %}" class="text-md text-blue-600">View all</a>
-                </div>
-                <div class="flex justify-between w-full flex-wrap">
-                    {% if ongoing_bughunts %}
-                        {% for hunt in ongoing_bughunts %}
-                            <div class="flex w-full md:w-[48%] lg:w-[30%] h-[180px] border-2 border-gray-300 p-2 cursor-pointer shadow-sm hover:scale-105 hover:shadow-lg transition-all m-2 sm:mt-5 rounded-lg">
-                                <div class="flex justify-center items-center w-[40%]">
-                                    <img class="w-32 h-32 rounded-lg" {{ hunt.logo }} src="{% if hunt.logo %} {{ MEDIA_URL }}{{ hunt.logo }} {% else %} https://via.placeholder.com/128?text=No+Logo {% endif %}" alt="bughunt logo" width="128px" height="128px">
-                                </div>
-                                <div class="flex flex-col ml-5 w-[60%]">
-                                    <p class="text-lg font-extrabold mt-6">{{ hunt.name }}</p>
-                                    <p class="tw-font-extralight text-gray-500 text-sm mt-1">{{ hunt.url }}</p>
-                                    <div class="flex mt-5 justify-between items-center w-full">
-                                        <p class="font-bold">
-                                            $
-                                            {% if hunt.total_prize %}
-                                                {{ hunt.total_prize }}
-                                            {% else %}
-                                                0
-                                            {% endif %}
-                                        </p>
-                                        <a href="{% url 'show_bughunt' hunt.id %}"
-                                           class="bg-red-600 text-white px-3 py-1 font-bold rounded-md">More info</a>
+            <div class="w-full flex justify-between min-h-[80vh] py-5 flex-col md:flex-row">
+                <div class="flex flex-col w-full md:w-[80%] mr-5 items-start bg-white rounded-xl p-5 overflow-x-hidden overflow-y-scroll">
+                    <div class="w-full flex justify-between">
+                        <h4 class="text-xl text-gray-900 font-bold mb-5">Ongoing Bughunts</h4>
+                        <a href="{% url 'hunts' %}" class="text-md text-blue-600">View all</a>
+                    </div>
+                    <div class="flex justify-between w-full flex-wrap">
+                        {% if ongoing_bughunts %}
+                            {% for hunt in ongoing_bughunts %}
+                                <div class="flex w-full md:w-[48%] lg:w-[30%] h-[180px] border-2 border-gray-300 p-2 cursor-pointer shadow-sm hover:scale-105 hover:shadow-lg transition-all m-2 sm:mt-5 rounded-lg">
+                                    <div class="flex justify-center items-center w-[40%]">
+                                        <img class="w-32 h-32 rounded-lg" {{ hunt.logo }} src="{% if hunt.logo %} {{ MEDIA_URL }}{{ hunt.logo }} {% else %} https://via.placeholder.com/128?text=No+Logo {% endif %}" alt="bughunt logo" width="128px" height="128px">
+                                    </div>
+                                    <div class="flex flex-col ml-5 w-[60%]">
+                                        <p class="text-lg font-extrabold mt-6">{{ hunt.name }}</p>
+                                        <p class="tw-font-extralight text-gray-500 text-sm mt-1">{{ hunt.url }}</p>
+                                        <div class="flex mt-5 justify-between items-center w-full">
+                                            <p class="font-bold">
+                                                $
+                                                {% if hunt.total_prize %}
+                                                    {{ hunt.total_prize }}
+                                                {% else %}
+                                                    0
+                                                {% endif %}
+                                            </p>
+                                            <a href="{% url 'show_bughunt' hunt.id %}"
+                                               class="bg-red-600 text-white px-3 py-1 font-bold rounded-md">More info</a>
+                                        </div>
                                     </div>
                                 </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="w-full h-full flex items-center justify-center">
+                                <p class="text-xl text-red-500">No ongoing bughunts available</p>
                             </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-xl p-8 w-full mt-5 md:w-[20%] md:mt-0 overflow-y-scroll">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xl text-gray-900 font-bold">Trademark</h4>
+                    </div>
+                    <div class="flex flex-col mt-5">
+                        {% for trademark in trademarks %}
+                            <p class="text-center font-bold text-lg pt-2 mt-1">{{ trademark.name }}</p>
                         {% endfor %}
-                    {% else %}
-                        <div class="w-full h-full flex items-center justify-center">
-                            <p class="text-xl text-red-500">No ongoing bughunts available</p>
-                        </div>
-                    {% endif %}
+                    </div>
                 </div>
             </div>
             <div class="w-full flex justify-between min-h-[80vh] flex-col md:flex-row">
