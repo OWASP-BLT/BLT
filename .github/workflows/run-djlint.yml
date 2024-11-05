@@ -3,6 +3,9 @@ name: Run djlint
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   run-djlint:
     runs-on: ubuntu-latest
