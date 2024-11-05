@@ -25,6 +25,7 @@ jobs:
         run: |
           . venv/bin/activate
           djlint --reformat .
+        files: ^company/templates/|^website/templates/
 
       - name: Commit changes
         run: |
