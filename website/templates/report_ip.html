@@ -113,12 +113,6 @@
                             </select>
                         </div>
                     </div>
-                    <!-- Check for Duplicates Button -->
-                    <!-- <div class="mt-8 flex justify-end">
-                    <button type="button" class="w-full h-[50px] rounded-md hover:text-white cursor-pointer bg-red-500 hover:bg-red-700 items-center justify-center flex text-2xl font-semibold text-white outline-none" id="check-duplicates">
-                        Check for Duplicates
-                    </button>
-                </div> -->
                 </div>
                 <!-- Malicious Activity Description Input -->
                 <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
@@ -168,36 +162,11 @@
         const validationResult = document.getElementById('ip_address');
 
         if (validateIP(ipInput)) {
-
-            // validationResult.style.borderColor = 'green';
             return true;
         } else {
             alert("invalid ip")
-            validationResult.style.borderColor = 'red';
             return false;
         }
     }
-
-    document.getElementById("check-duplicates").addEventListener("click", async function() {
-        const uri = document.getElementById("ip_address").value;
-        
-        const response = await fetch("/api/v1/urlcheck/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ "domain_url": uri })
-        });
-
-        const data = await response.json();
-        const duplicateList = document.getElementById("duplicate-list");
-        duplicateList.innerHTML = ""; // Clear list
-
-        data.forEach(issue => {
-            duplicateList.innerHTML += `<li>${issue.description}</li>`;
-        });
-
-        document.getElementById("duplicate-container").style.display = "block";
-    });
     </script>
 {% endblock after_js %}
