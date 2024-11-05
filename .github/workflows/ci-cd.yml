@@ -104,6 +104,8 @@ jobs:
         with:
           python-version: 3.11.2
       - run: pip install poetry
+      - name: Ensure lock file is up to date
+        run: poetry lock --no-update
       - run: poetry install
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
