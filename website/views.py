@@ -2586,3 +2586,40 @@ def sizzle_daily_log(request):
         return redirect("sizzle")
 
     return HttpResponseBadRequest("Invalid request method.")
+
+
+@login_required
+def user_sizzle_report(request, username):
+    user = get_object_or_404(User, username=username)
+    time_logs = TimeLog.objects.filter(user=user).order_by("-start_time")
+
+    grouped_logs = defaultdict(list)
+    for log in time_logs:
+        date_str = log.created.strftime("%Y-%m-%d")
+        grouped_logs[date_str].append(log)
+
+    response_data = []
+    for date, logs in grouped_logs.items():
+        first_log = logs[0]
+        total_duration = sum((log.duration for log in logs if log.duration), timedelta())
+
+        total_duration_seconds = total_duration.total_seconds()
+        formatted_duration = (
+            f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
+        )
+
+        issue_title = get_github_issue_title(first_log.github_issue_url)
+
+        start_time = first_log.start_time.strftime("%I:%M %p")
+        formatted_date = first_log.created.strftime("%d %B %Y")
+
+        day_data = {
+            "issue_title": issue_title,
+            "duration": formatted_duration,
+            "start_time": start_time,
+            "date": formatted_date,
+        }
+
+        response_data.append(day_data)
+
+    return render(request, "sizzle/user_sizzle_report.html", {"response_data": response_data, "user": user})
