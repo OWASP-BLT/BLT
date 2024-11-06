@@ -22,169 +22,171 @@
                     <button type="submit rounded-md">
                         <i class="fas fa-plus-circle"></i> Add Project
                     </button>
-                    </div>
-                </form>
-                <form method="post" class="refresh-projects-form">
-                    {% csrf_token %}
-                    <button type="submit" name="update_projects" value="update_projects">
-                        <i class="fas fa-sync-alt"></i> Refresh Projects
-                    </button>
-                </form>
-            </div>
-            <form method="get" class="refresh-projects-form justify-evenly lg:justify-start">
-                <select id="sort_by"
-                        name="sort_by"
-                        onchange="this.form.submit()"
-                        class="sort-select rounded px-4 py-2">
-                    <option value="">Sort By:</option>
-                    <option value="last_updated"
-                            {% if sort_by == 'last_updated' %}selected{% endif %}>Recently Updated</option>
-                    <option value="stars" {% if sort_by == 'stars' %}selected{% endif %}>Stars</option>
-                    <option value="forks" {% if sort_by == 'forks' %}selected{% endif %}>Forks</option>
-                    <option value="total_issues"
-                            {% if sort_by == 'total_issues' %}selected{% endif %}>Issues</option>
-                    <option value="contributor_count"
-                            {% if sort_by == 'contributor_count' %}selected{% endif %}>Contributors</option>
-                </select>
-                <select id="order-select"
-                        name="order"
-                        onchange="this.form.submit()"
-                        class="sort-select rounded px-4 py-2">
-                    <option value="desc" {% if order == 'desc' %}selected{% endif %}>Descending</option>
-                    <option value="asc" {% if order == 'asc' %}selected{% endif %}>Ascending</option>
-                </select>
+                </div>
+            </form>
+            <form method="post" class="refresh-projects-form">
+                {% csrf_token %}
+                <button type="submit" name="update_projects" value="update_projects">
+                    <i class="fas fa-sync-alt"></i> Refresh Projects
+                </button>
             </form>
         </div>
-        {% if messages %}
-            <ul class="messages">
-                {% for message in messages %}
-                    <li {% if message.tags %}class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-        <ul class="project-list px-4">
-            {% for project in projects %}
-                <a href="{% url 'project_view' project.slug %}" class="project-link">
-                    <li class="project-item rounded-md">
-                        {% if project.logo_url %}
-                            <img src="{{ project.logo_url }}"
-                                 alt="{{ project.name }} logo"
-                                 class="project-logo w-14 h-14 md:w-25 md:h-25 rounded-md">
-                        {% else %}
-                            <div class="project-logo placeholder">
-                                <span>No Logo</span>
+        <form method="get"
+              class="refresh-projects-form justify-evenly lg:justify-start">
+            <select id="sort_by"
+                    name="sort_by"
+                    onchange="this.form.submit()"
+                    class="sort-select rounded px-4 py-2">
+                <option value="">Sort By:</option>
+                <option value="last_updated"
+                        {% if sort_by == 'last_updated' %}selected{% endif %}>Recently Updated</option>
+                <option value="stars" {% if sort_by == 'stars' %}selected{% endif %}>Stars</option>
+                <option value="forks" {% if sort_by == 'forks' %}selected{% endif %}>Forks</option>
+                <option value="total_issues"
+                        {% if sort_by == 'total_issues' %}selected{% endif %}>Issues</option>
+                <option value="contributor_count"
+                        {% if sort_by == 'contributor_count' %}selected{% endif %}>Contributors</option>
+            </select>
+            <select id="order-select"
+                    name="order"
+                    onchange="this.form.submit()"
+                    class="sort-select rounded px-4 py-2">
+                <option value="desc" {% if order == 'desc' %}selected{% endif %}>Descending</option>
+                <option value="asc" {% if order == 'asc' %}selected{% endif %}>Ascending</option>
+            </select>
+        </form>
+    </div>
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li {% if message.tags %}class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <ul class="project-list px-4">
+        {% for project in projects %}
+            <a href="{% url 'project_view' project.slug %}" class="project-link">
+                <li class="project-item rounded-md">
+                    {% if project.logo_url %}
+                        <img src="{{ project.logo_url }}"
+                             alt="{{ project.name }} logo"
+                             class="project-logo w-14 h-14 md:w-25 md:h-25 rounded-md"
+                             height="auto"
+                             width="auto">
+                    {% else %}
+                        <div class="project-logo placeholder">
+                            <span>No Logo</span>
+                        </div>
+                    {% endif %}
+                    <div class="project-details">
+                        <h3>{{ project.name }}</h3>
+                        <!-- Stats Icons Under Project Title -->
+                        <div class="stats-icons">
+                            <ul>
+                                <li>
+                                    <a href="{{ project.github_url }}" target="_blank" title="GitHub">
+                                        <i class="fab fa-github"></i>
+                                    </a>
+                                </li>
+                                {% if project.wiki_url %}
+                                    <li>
+                                        <a href="{{ project.wiki_url }}" target="_blank" title="Wiki">
+                                            <i class="fas fa-book"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {% if project.homepage_url %}
+                                    <li>
+                                        <a href="{{ project.homepage_url }}" target="_blank" title="Homepage">
+                                            <i class="fas fa-home"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                <li>
+                                    <a href="{{ project.github_url }}/stargazers"
+                                       target="_blank"
+                                       title="Stars">
+                                        <i class="fas fa-star"></i> {{ project.stars|intcomma }}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ project.github_url }}/network/members"
+                                       target="_blank"
+                                       title="Forks">
+                                        <i class="fas fa-code-branch"></i> {{ project.forks|intcomma }}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ project.github_url }}/issues"
+                                       target="_blank"
+                                       title="Total Issues">
+                                        <i class="fas fa-exclamation-circle"></i> {{ project.total_issues|intcomma }}
+                                    </a>
+                                </li>
+                                {% if project.release_name %}
+                                    <li>
+                                        <i class="fas fa-tag"></i>
+                                        <span title="{{ project.release_datetime|date:'Y-m-d H:i' }}">{{ project.release_name }}</span>
+                                    </li>
+                                {% endif %}
+                                <li>
+                                    <i class="fas fa-clock"></i>
+                                    <span title="{{ project.last_updated|date:'Y-m-d H:i' }}">{{ project.last_updated|timesince }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <p>{{ project.description }}</p>
+                        <!-- Contributors Section -->
+                        <div class="project-stats flex items-center gap-4">
+                            <p>
+                                <i class="fas fa-users"></i> Contributors: {{ project.contributor_count }}
+                            </p>
+                            <div class="contributors">
+                                {% for contributor in project.get_top_contributors %}
+                                    <a href="https://github.com/search?q=repo:{{ project.github_url|slice:'19:' }}+author:{{ contributor.name }}&type=issues"
+                                       target="_blank">
+                                        <img src="{{ contributor.avatar_url }}"
+                                             alt="{{ contributor.name }}"
+                                             class="contributor-avatar w-10 h-10"
+                                             title="{{ contributor.name }}"
+                                             height="auto"
+                                             width="auto">
+                                    </a>
+                                {% empty %}
+                                    <div class="contributor-avatar p-10 placeholder text-center">
+                                        <span className="text-xs">No Avatar</span>
+                                    </div>
+                                {% endfor %}
                             </div>
-                        {% endif %}
-                        <div class="project-details">
-                            <h3>{{ project.name }}</h3>
-                            <!-- Stats Icons Under Project Title -->
-                            <div class="stats-icons">
-                                <ul>
-                                    <li>
-                                        <a href="{{ project.github_url }}" target="_blank" title="GitHub">
-                                            <i class="fab fa-github"></i>
-                                        </a>
-                                    </li>
-                                    {% if project.wiki_url %}
-                                        <li>
-                                            <a href="{{ project.wiki_url }}" target="_blank" title="Wiki">
-                                                <i class="fas fa-book"></i>
-                                            </a>
-                                        </li>
-                                    {% endif %}
-                                    {% if project.homepage_url %}
-                                        <li>
-                                            <a href="{{ project.homepage_url }}" target="_blank" title="Homepage">
-                                                <i class="fas fa-home"></i>
-                                            </a>
-                                        </li>
-                                    {% endif %}
-                                    <li>
-                                        <a href="{{ project.github_url }}/stargazers"
-                                           target="_blank"
-                                           title="Stars">
-                                            <i class="fas fa-star"></i> {{ project.stars|intcomma }}
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="{{ project.github_url }}/network/members"
-                                           target="_blank"
-                                           title="Forks">
-                                            <i class="fas fa-code-branch"></i> {{ project.forks|intcomma }}
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="{{ project.github_url }}/issues"
-                                           target="_blank"
-                                           title="Total Issues">
-                                            <i class="fas fa-exclamation-circle"></i> {{ project.total_issues|intcomma }}
-                                        </a>
-                                    </li>
-                                    {% if project.release_name %}
-                                        <li>
-                                            <i class="fas fa-tag"></i>
-                                            <span title="{{ project.release_datetime|date:'Y-m-d H:i' }}">{{ project.release_name }}</span>
-                                        </li>
-                                    {% endif %}
-                                    <li>
-                                        <i class="fas fa-clock"></i>
-                                        <span title="{{ project.last_updated|date:'Y-m-d H:i' }}">{{ project.last_updated|timesince }}</span>
-                                    </li>
-                                </ul>
-                            </div>
-                            <p>{{ project.description }}</p>
-                            <!-- Contributors Section -->
-                            <div class="project-stats flex items-center gap-4">
-                                <p>
-                                    <i class="fas fa-users"></i> Contributors: {{ project.contributor_count }}
-                                </p>
-                                <div class="contributors">
-                                    {% for contributor in project.get_top_contributors %}
-                                        <a href="https://github.com/search?q=repo:{{ project.github_url|slice:'19:' }}+author:{{ contributor.name }}&type=issues"
-                                           target="_blank">
-                                            <img src="{{ contributor.avatar_url }}"
-                                                 alt="{{ contributor.name }}"
-                                                 class="contributor-avatar"
-                                                 title="{{ contributor.name }}"
-                                                 height="40"
-                                                 width="40">
-                                        </a>
-                                    {% empty %}
-                                        <div class="contributor-avatar p-10 placeholder text-center">
-                                            <span className="text-xs">No Avatar</span>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            <div class="additional-metadata">
-                                <div class="external-links">
-                                    <h4>
-                                        <i class="fas fa-external-link-alt"></i> Links
-                                    </h4>
-                                    <ul>
-                                        {% for link in project.external_links %}
-                                            <li>
-                                                <a href="{{ link.url }}" target="_blank"><i class="fas fa-link"></i> {{ link.name }}</a>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </div>
-                            <!-- Tags Section -->
-                            <div class="project-tags">
+                        </div>
+                        <div class="additional-metadata">
+                            <div class="external-links">
                                 <h4>
-                                    <i class="fas fa-tags"></i>Tags
+                                    <i class="fas fa-external-link-alt"></i> Links
                                 </h4>
                                 <ul>
-                                    {% for tag in project.tags.all %}<li>{{ tag.name }}</li>{% endfor %}
+                                    {% for link in project.external_links %}
+                                        <li>
+                                            <a href="{{ link.url }}" target="_blank"><i class="fas fa-link"></i> {{ link.name }}</a>
+                                        </li>
+                                    {% endfor %}
                                 </ul>
                             </div>
                         </div>
-                    </li>
-                </a>
-            {% endfor %}
-        </ul>
-    </div>
+                        <!-- Tags Section -->
+                        <div class="project-tags">
+                            <h4>
+                                <i class="fas fa-tags"></i>Tags
+                            </h4>
+                            <ul>
+                                {% for tag in project.tags.all %}<li>{{ tag.name }}</li>{% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </li>
+            </a>
+        {% endfor %}
+    </ul>
     <style>
         .container {
             margin-top: 30px;

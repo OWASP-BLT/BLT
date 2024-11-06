@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 20px;
+    }
+
+    #form-title {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+        font-size: 2em;  /* Adjusted font size for better visibility */
+    }
+
+    .form-container {
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .form-container button {
+        background-color: #007bff;
+        color: black;
+        border: none;
+        border-radius: 5px;
+        padding: 10px 15px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+    }
+
+    .form-container button:hover {
+        background-color: #0056b3;
+    }
+
+    .form-field {
+        margin-bottom: 15px;
+    }
+</style>
+
+{% include "includes/sidenav.html" %}
+<h1 id="form-title">{% if form.instance.pk %}Edit{% else %}New{% endif %} Post</h1>
+
+<div class="form-container">
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <div class="form-field">
+            {{ form.title.label }}<br>
+            {{ form.title }}<br>
+            {% for error in form.title.errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+        
+        <div class="form-field">
+            {{ form.content.label }}<br>
+            {{ form.content }}<br>
+            {% for error in form.content.errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+        
+        <div class="form-field">
+            {{ form.image.label }}<br>
+            {{ form.image }}<br>
+            {% for error in form.image.errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+        
+        <button type="submit">Save</button>
+    </form>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+<script>
+    var easyMDE = new EasyMDE({ element: document.getElementById('id_content') });
+</script>
+{% endblock content %}
