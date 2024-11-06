@@ -69,7 +69,8 @@
                         {% if project.logo_url %}
                             <img src="{{ project.logo_url }}"
                                  alt="{{ project.name }} logo"
-                                 class="project-logo w-14 h-14 md:w-25 md:h-25 rounded-md">
+                                 class="project-logo w-14 h-14 md:w-25 md:h-25 rounded-md"
+                                 height="auto" width="auto">
                         {% else %}
                             <div class="project-logo placeholder">
                                 <span>No Logo</span>
@@ -145,7 +146,9 @@
                                             <img src="{{ contributor.avatar_url }}"
                                                  alt="{{ contributor.name }}"
                                                  class="contributor-avatar w-10 h-10"
-                                                 title="{{ contributor.name }}">
+                                                 title="{{ contributor.name }}"
+                                                 height="auto"
+                                                 width="auto">
                                         </a>
                                     {% empty %}
                                         <div class="contributor-avatar p-10 placeholder text-center">
