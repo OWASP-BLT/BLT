@@ -39,7 +39,7 @@
                 </div>
                 <form method="post" action="">
                     {% csrf_token %}
-                    <button type="submit" name="update_project" class="btn btn-primary">Refresh Project</button>
+                    <button type="submit" name="update_project" class="btn btn-primary mt-4">Refresh Project</button>
                 </form>
             </div>
         </div>
@@ -101,13 +101,13 @@
         </div>
         <!-- Repo View Count Badge -->
         <div class="repo-view-count-badge">
-            <h3>Repo View Count Badge</h3>
+            <h3 class="text-4xl py-4">Repo View Count Badge</h3>
             <p>This badge displays the number of views your repository has received:</p>
-            <pre><code>![Repo Views](https://blt.owasp.org/projects/{{project.slug}}/badge</code></pre>
+            <pre><code>![Repo Views](https://blt.owasp.org/projects/{{project.slug}}/badge)</code></pre>
         </div>
         <!-- Top Contributors -->
         <div class="contributors-section">
-            <h3>Top Contributors</h3>
+            <h3 class="text-4xl py-4">Top Contributors</h3>
             <div class="contributors">
                 {% for contributor in project.get_top_contributors %}
                     <div class="contributor">
@@ -127,7 +127,7 @@
         </div>
         <!-- Latest Releases -->
         <div class="latest-releases">
-            <h3>Latest Releases</h3>
+            <h3 class="text-4xl py-4">Latest Releases</h3>
             <ul>
                 {% for release in project.releases %}
                     <li>
@@ -139,7 +139,7 @@
         </div>
         <!-- Related Projects -->
         <div class="related-projects">
-            <h3>Related Projects</h3>
+            <h3 class="text-4xl py-4">Related Projects</h3>
             <ul>
                 {% for related_project in project.related_projects %}
                     <li>
@@ -213,9 +213,12 @@
         }
         .stat-item {
             background-color: #f8f9fa;
+            align-items: center;
             padding: 20px;
             text-align: center;
             border-radius: 8px;
+            display: flex;
+            flex-direction: column;
         }
         .stat-item i {
             font-size: 24px;

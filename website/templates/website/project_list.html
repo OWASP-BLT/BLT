@@ -5,10 +5,10 @@
 {% endblock title %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="container">
-        <div class="top-bar">
+    <div class="container pb-4">
+        <div class="flex flex-col lg:flex-row gap-4 top-bar">
             <h3>Projects: {{ projects.count }}</h3>
-            <form method="post" class="add-project-form">
+            <form method="post" class="flex add-project-form">
                 {% csrf_token %}
                 <div class="add-project-form">
                     <div class="form-field">
@@ -19,9 +19,10 @@
                                class="github-url-input"
                                placeholder="GitHub URL">
                     </div>
-                    <button type="submit">
+                    <button type="submit rounded-md">
                         <i class="fas fa-plus-circle"></i> Add Project
                     </button>
+                    </div>
                 </form>
                 <form method="post" class="refresh-projects-form">
                     {% csrf_token %}
@@ -30,11 +31,11 @@
                     </button>
                 </form>
             </div>
-            <form method="get" class="refresh-projects-form">
+            <form method="get" class="refresh-projects-form justify-evenly lg:justify-start">
                 <select id="sort_by"
                         name="sort_by"
                         onchange="this.form.submit()"
-                        class="sort-select">
+                        class="sort-select rounded px-4 py-2">
                     <option value="">Sort By:</option>
                     <option value="last_updated"
                             {% if sort_by == 'last_updated' %}selected{% endif %}>Recently Updated</option>
@@ -48,7 +49,7 @@
                 <select id="order-select"
                         name="order"
                         onchange="this.form.submit()"
-                        class="sort-select">
+                        class="sort-select rounded px-4 py-2">
                     <option value="desc" {% if order == 'desc' %}selected{% endif %}>Descending</option>
                     <option value="asc" {% if order == 'asc' %}selected{% endif %}>Ascending</option>
                 </select>
@@ -61,16 +62,14 @@
                 {% endfor %}
             </ul>
         {% endif %}
-        <ul class="project-list">
+        <ul class="project-list px-4">
             {% for project in projects %}
                 <a href="{% url 'project_view' project.slug %}" class="project-link">
-                    <li class="project-item">
+                    <li class="project-item rounded-md">
                         {% if project.logo_url %}
                             <img src="{{ project.logo_url }}"
                                  alt="{{ project.name }} logo"
-                                 class="project-logo"
-                                 height="100"
-                                 width="100">
+                                 class="project-logo w-14 h-14 md:w-25 md:h-25 rounded-md">
                         {% else %}
                             <div class="project-logo placeholder">
                                 <span>No Logo</span>
@@ -135,7 +134,7 @@
                             </div>
                             <p>{{ project.description }}</p>
                             <!-- Contributors Section -->
-                            <div class="project-stats">
+                            <div class="project-stats flex items-center gap-4">
                                 <p>
                                     <i class="fas fa-users"></i> Contributors: {{ project.contributor_count }}
                                 </p>
@@ -151,8 +150,8 @@
                                                  width="40">
                                         </a>
                                     {% empty %}
-                                        <div class="contributor-avatar placeholder">
-                                            <span>No Avatar</span>
+                                        <div class="contributor-avatar p-10 placeholder text-center">
+                                            <span className="text-xs">No Avatar</span>
                                         </div>
                                     {% endfor %}
                                 </div>
@@ -223,7 +222,6 @@
         .add-project-form {
             display: flex;
             align-items: center;
-            margin-left: 20px;
         }
 
         .add-project-form .form-field {
@@ -270,7 +268,6 @@
         .refresh-projects-form {
             display: flex;
             align-items: center;
-            margin-left: 20px;
         }
 
         .refresh-projects-form button {
@@ -293,7 +290,6 @@
 
         .sort-select {
             margin-left: 10px;
-            padding: 0.5rem;
             border: 1px solid #dc3545;
             background: #dc3545;
             color: white;
@@ -327,7 +323,6 @@
 
         .project-list {
             list-style: none;
-            padding: 0;
         }
 
         .project-link {
