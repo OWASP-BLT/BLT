@@ -50,13 +50,13 @@
     <div class="tm-wrapper flex flex-col gap-4 lg:gap-12 h-screen w-screen sm:h-fit sm:w-5/6 sm:rounded-2xl sm:shadow-lg sm:mx-auto py-24 px-4 lg:px-24">
         <img class="trademark-logo w-full"
              alt="Trademark Search Image"
-             src="{% static 'img/tm-search.png' %}">
+             src="{% static 'img/tm-search.png' %}
+             height="auto" width="auto">
         <form method="post" class="search-container flex flex-col gap-4 md:gap-6 lg:gap-8" role="search" id="form">
             {% csrf_token %}
-            <input class="search_input"
+            <input class="search_input w-full"
                    type="search"
                    id="query"
-                   class="w-full"
                    name="query"
                    placeholder="Search...">
             <button id="search_button" class="py-2 lg:py-4" type="submit">Search</button>
