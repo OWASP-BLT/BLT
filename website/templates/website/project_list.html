@@ -144,10 +144,8 @@
                                            target="_blank">
                                             <img src="{{ contributor.avatar_url }}"
                                                  alt="{{ contributor.name }}"
-                                                 class="contributor-avatar"
-                                                 title="{{ contributor.name }}"
-                                                 height="40"
-                                                 width="40">
+                                                 class="contributor-avatar w-10 h-10"
+                                                 title="{{ contributor.name }}">
                                         </a>
                                     {% empty %}
                                         <div class="contributor-avatar p-10 placeholder text-center">
@@ -184,7 +182,6 @@
                 </a>
             {% endfor %}
         </ul>
-    </div>
     <style>
         .container {
             margin-top: 30px;
