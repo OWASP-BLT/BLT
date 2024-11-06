@@ -87,7 +87,23 @@
                     <span>{{ project.last_commit_date }}</span>
                     <p>Last Commit</p>
                 </div>
+                <div class="stat-item">
+                    <i class="fas fa-eye"></i>
+                    <span>{{ project.project_visit_count }}</span>
+                    <p>Project Visit Count</p>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-eye"></i>
+                    <span>{{ project.repo_visit_count }}</span>
+                    <p>Repo Visit Count</p>
+                </div>
             </div>
+        </div>
+        <!-- Repo View Count Badge -->
+        <div class="repo-view-count-badge">
+            <h3>Repo View Count Badge</h3>
+            <p>This badge displays the number of views your repository has received:</p>
+            <pre><code>![Repo Views](https://blt.owasp.org/projects/{{project.slug}}/badge</code></pre>
         </div>
         <!-- Top Contributors -->
         <div class="contributors-section">
@@ -276,6 +292,19 @@
             font-size: 16px;
             color: #007bff;
             text-decoration: none;
+        }
+        .repo-view-count-badge {
+            margin-top: 50px;
+        }
+        .repo-view-count-badge pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .repo-view-count-badge code {
+            font-size: 14px;
+            color: #333;
         }
     </style>
 {% endblock content %}

@@ -754,6 +754,8 @@ class Project(models.Model):
     tags = models.ManyToManyField(Tag, blank=True)
     last_updated = models.DateTimeField(null=True, blank=True)
     total_issues = models.IntegerField(default=0)
+    repo_visit_count = models.IntegerField(default=0)
+    project_visit_count = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name
@@ -859,3 +861,15 @@ class ActivityLog(models.Model):
 
     def __str__(self):
         return f"ActivityLog by {self.user.username} at {self.recorded_at}"
+
+
+class DailyStatusReport(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    date = models.DateField()
+    previous_work = models.TextField()
+    next_plan = models.TextField()
+    blockers = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Daily Status Report by {self.user.username} on {self.date}"
