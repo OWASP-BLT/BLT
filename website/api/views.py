@@ -857,7 +857,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
     def start(self, request):
         """Starts a new time log"""
         data = request.data
-        data["start_time"] = timezone.now()  # Set start time to current tim
+        data["start_time"] = timezone.now()  # Set start time to current time
 
         serializer = self.get_serializer(data=data)
         try:
