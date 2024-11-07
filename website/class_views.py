@@ -2285,7 +2285,6 @@ class ReportIpView(FormView):
         else:
             return self.form_invalid(form)
 
-    @atomic
     def form_valid(self, form):
         # Check daily report limit per IP
         reporter_ip = get_client_ip(self.request)
