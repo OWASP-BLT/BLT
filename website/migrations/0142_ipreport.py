@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0141_project_project_visit_count_project_repo_visit_count"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
@@ -36,9 +35,7 @@ class Migration(migrations.Migration):
                 ("ip_address", models.GenericIPAddressField()),
                 (
                     "ip_type",
-                    models.CharField(
-                        choices=[("ipv4", "IPv4"), ("ipv6", "IPv6")], max_length=10
-                    ),
+                    models.CharField(choices=[("ipv4", "IPv4"), ("ipv6", "IPv6")], max_length=10),
                 ),
                 ("description", models.TextField()),
                 ("created", models.DateTimeField(auto_now_add=True)),
