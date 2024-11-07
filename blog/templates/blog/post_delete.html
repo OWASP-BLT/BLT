@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+
 {% block content %}
-    <style>
+<style>
     body {
         display: flex;
         justify-content: center;
@@ -51,13 +52,14 @@
         text-align: center;
         margin: 0;
     }
-    </style>
-    {% include "includes/sidenav.html" %}
-    <h1>Confirm Delete</h1>
-    <p class="post_content">Are you sure you want to delete the post "{{ post.title }}"?</p>
-    <form method="post" class="confirm-buttons">
-        {% csrf_token %}
-        <button type="submit" class="delete-button">Delete</button>
-        <a href="{% url 'post_detail' slug=post.slug %}" class="cancel-button">Cancel</a>
-    </form>
+</style>
+
+{% include "includes/sidenav.html" %}
+<h1>Confirm Delete</h1>
+<p class="post_content">Are you sure you want to delete the post "{{ post.title }}"?</p>
+<form method="post" class="confirm-buttons">
+    {% csrf_token %}
+    <button type="submit" class="delete-button">Delete</button>
+    <a href="{% url 'post_detail' slug=post.slug %}" class="cancel-button">Cancel</a>
+</form>
 {% endblock content %}

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+
 {% block content %}
-    <style>
+<style>
     body {
         font-family: Arial, sans-serif;
         background-color: #f4f4f4;
@@ -59,25 +60,22 @@
         border-radius: 5px;
         margin-bottom: 10px;
     }
-    </style>
-    {% include "includes/sidenav.html" %}
-    <h1 class="blog-title">Blog Posts</h1>
-    <ul class="post-list">
-        {% for post in posts %}
-            <a href="{% url 'post_detail' slug=post.slug %}">
-                <div class="post-item">
-                    <p class="post-link">{{ post.title }} by {{ post.author }}</p>
-                    {% if post.image %}
-                        <img height="200"
-                             width="200"
-                             src="{{ post.image.url }}"
-                             alt="{{ post.title }}"
-                             class="blog_image">
-                    {% endif %}
-                </div>
-            </a>
-        {% empty %}
-            <p class="no-posts-message">No posts available.</p>
-        {% endfor %}
-    </ul>
+</style>
+
+{% include "includes/sidenav.html" %}
+<h1 class="blog-title">Blog Posts</h1>
+<ul class="post-list">
+    {% for post in posts %}
+    <a href="{% url 'post_detail' slug=post.slug %}">
+    <div class="post-item">
+        <p class="post-link">{{ post.title }} by {{ post.author }}</p>
+        {% if post.image %}
+        <img height="200" width="200" src="{{ post.image.url }}" alt="{{ post.title }}" class="blog_image">
+        {% endif %}
+        </div>
+    </a>
+    {% empty %}
+    <p class="no-posts-message">No posts available.</p>
+    {% endfor %}
+</ul>
 {% endblock content %}

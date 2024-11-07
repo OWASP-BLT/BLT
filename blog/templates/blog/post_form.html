@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+
 {% block content %}
-    <style>
+<style>
     body {
         font-family: Arial, sans-serif;
         background-color: #f4f4f4;
@@ -42,45 +43,45 @@
     .form-field {
         margin-bottom: 15px;
     }
-    </style>
-    {% include "includes/sidenav.html" %}
-    <h1 id="form-title">
-        {% if form.instance.pk %}
-            Edit
-        {% else %}
-            New
-        {% endif %}
-        Post
-    </h1>
-    <div class="form-container">
-        <form method="post" enctype="multipart/form-data" novalidate>
-            {% csrf_token %}
-            <div class="form-field">
-                {{ form.title.label }}
-                <br>
-                {{ form.title }}
-                <br>
-                {% for error in form.title.errors %}<div>{{ error }}</div>{% endfor %}
-            </div>
-            <div class="form-field">
-                {{ form.content.label }}
-                <br>
-                {{ form.content }}
-                <br>
-                {% for error in form.content.errors %}<div>{{ error }}</div>{% endfor %}
-            </div>
-            <div class="form-field">
-                {{ form.image.label }}
-                <br>
-                {{ form.image }}
-                <br>
-                {% for error in form.image.errors %}<div>{{ error }}</div>{% endfor %}
-            </div>
-            <button type="submit">Save</button>
-        </form>
-    </div>
-    <link rel="stylesheet"
-          href="https://unpkg.com/easymde/dist/easymde.min.css">
-    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
-    <script>var easyMDE = new EasyMDE({ element: document.getElementById('id_content') });</script>
+</style>
+
+{% include "includes/sidenav.html" %}
+<h1 id="form-title">{% if form.instance.pk %}Edit{% else %}New{% endif %} Post</h1>
+
+<div class="form-container">
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <div class="form-field">
+            {{ form.title.label }}<br>
+            {{ form.title }}<br>
+            {% for error in form.title.errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+        
+        <div class="form-field">
+            {{ form.content.label }}<br>
+            {{ form.content }}<br>
+            {% for error in form.content.errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+        
+        <div class="form-field">
+            {{ form.image.label }}<br>
+            {{ form.image }}<br>
+            {% for error in form.image.errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+        
+        <button type="submit">Save</button>
+    </form>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+<script>
+    var easyMDE = new EasyMDE({ element: document.getElementById('id_content') });
+</script>
 {% endblock content %}
