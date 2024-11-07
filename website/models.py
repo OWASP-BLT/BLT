@@ -880,9 +880,14 @@ class IpReport(models.Model):
         ("ipv4", "IPv4"),
         ("ipv6", "IPv6"),
     ]
+    ACTIVITY_TYPE_CHOICES = [
+        ("malicious", "Malicious"),
+        ("friendly", "Friendly"),
+    ]
 
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    malicious_activity_title = models.CharField(max_length=255)
+    activity_title = models.CharField(max_length=255)
+    activity_type = models.CharField(max_length=50, choices=ACTIVITY_TYPE_CHOICES)
     ip_address = models.GenericIPAddressField()
     ip_type = models.CharField(max_length=10, choices=IP_TYPE_CHOICES)
     description = models.TextField()
@@ -890,4 +895,4 @@ class IpReport(models.Model):
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.ip_address} ({self.ip_type}) - {self.malicious_activity_title}"
+        return f"{self.ip_address} ({self.ip_type}) - {self.activity_title}"

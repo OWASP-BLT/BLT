@@ -66,7 +66,7 @@ class MonitorForm(forms.ModelForm):
 class IpReportForm(forms.ModelForm):
     class Meta:
         model = IpReport
-        fields = ["ip_address", "ip_type", "description", "malicious_activity_title"]
+        fields = ["ip_address", "ip_type", "description", "activity_title", "activity_type"]
 
 
 class BidForm(forms.ModelForm):

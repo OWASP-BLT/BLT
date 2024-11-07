@@ -18,4 +18,3 @@ requirements.txt
 *.code-workspace
 *.log
 *.exe
-poetry.lock

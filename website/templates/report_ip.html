@@ -66,22 +66,33 @@
               onsubmit="return validateReportIp()">
             {% csrf_token %}
             <div class="w-full pb-12">
-                <p class="text-5xl font-semibold leading-7 text-gray-900">REPORT MALICIOUS IP</p>
-                <!-- Malicious Activity Title and Input -->
+                <p class="text-5xl font-semibold leading-7 text-gray-900">REPORT AN IP</p>
+                <!-- Activity Title and Input -->
                 <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div class="sm:col-span-5">
-                        <label for="malicious_activity_title"
-                               class="block text-2xl font-semibold leading-6 text-gray-900">
-                            Malicious Activity Title
-                        </label>
+                        <label for="activity_title"
+                               class="block text-2xl font-semibold leading-6 text-gray-900">Activity Title</label>
                         <div class="mt-2">
-                            <input id="malicious_activity_title"
+                            <input id="activity_title"
                                    type="text"
-                                   name="malicious_activity_title"
+                                   name="activity_title"
                                    maxlength="100"
                                    required
-                                   placeholder="e.g. Phishing, Scanning etc"
+                                   placeholder="Short Title"
                                    class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6" />
+                        </div>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <label for="activity_type"
+                               class="block text-2xl font-semibold leading-6 text-gray-900">Activity Type</label>
+                        <div class="mt-2">
+                            <select name="activity_type"
+                                    id="activity_type"
+                                    required
+                                    class="block w-full rounded-md border-0 py-4 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset">
+                                <option value="friendly" selected>Friendly</option>
+                                <option value="malicious">Malicious</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -114,7 +125,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- Malicious Activity Description Input -->
+                <!-- Activity Description Input -->
                 <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div class="sm:col-span-5">
                         <label for="description"
@@ -126,7 +137,7 @@
                                       name="description"
                                       required
                                       rows="4"
-                                      placeholder="Describe the malicious activity in detail"
+                                      placeholder="Describe the activity in detail"
                                       class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"></textarea>
                         </div>
                     </div>
@@ -153,7 +164,7 @@
 {% block after_js %}
     <script type="text/javascript">
     function validateIP(ipInput) {
-        const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$|^([a-f0-9:]+:+)+[a-f0-9]+$/i; // Basic IPv4 & IPv6 pattern
+        const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$|^(?:[a-f0-9]{1,4}:){7}[a-f0-9]{1,4}$|^(?:[a-f0-9]{1,4}:){1,7}:$|^(?:[a-f0-9]{1,4}:){1,6}:[a-f0-9]{1,4}$|^(?:[a-f0-9]{1,4}:){1,5}(:[a-f0-9]{1,4}){1,2}$|^(?:[a-f0-9]{1,4}:){1,4}(:[a-f0-9]{1,4}){1,3}$|^(?:[a-f0-9]{1,4}:){1,3}(:[a-f0-9]{1,4}){1,4}$|^(?:[a-f0-9]{1,4}:){1,2}(:[a-f0-9]{1,4}){1,5}$|^[a-f0-9]{1,4}(:[a-f0-9]{1,4}){1,6}$|^:((?::[a-f0-9]{1,4}){1,7}|:)$$/i;
         return ipPattern.test(ipInput);
     }
 

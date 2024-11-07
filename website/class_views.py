@@ -1,4 +1,5 @@
 import base64
+import ipaddress
 import json
 import os
 import uuid
@@ -2222,6 +2223,22 @@ class ReportIpView(FormView):
     form_class = IpReportForm
     captcha = CaptchaForm()
 
+    def is_valid_ip(self, ip_address, ip_type):
+        """
+        Validates an IP address format based on the specified type (IPv4 or IPv6).
+        """
+        try:
+            if ip_type == "ipv4":
+                ipaddress.IPv4Address(ip_address)
+                return True
+            elif ip_type == "ipv6":
+                ipaddress.IPv6Address(ip_address)
+                return True
+            else:
+                return False
+        except ValueError:
+            return False
+
     def post(self, request, *args, **kwargs):
         # Check CAPTCHA
         captcha_form = CaptchaForm(request.POST)
@@ -2241,6 +2258,18 @@ class ReportIpView(FormView):
         if form.is_valid():
             ip_address = form.cleaned_data.get("ip_address")
             ip_type = form.cleaned_data.get("ip_type")
+            print(ip_address + " " + ip_type)
+
+            if not self.is_valid_ip(ip_address, ip_type):
+                messages.error(request, f"Invalid {ip_type} address format.")
+                return render(
+                    request,
+                    self.template_name,
+                    {
+                        "form": form,
+                        "captcha_form": captcha_form,
+                    },
+                )
             if IpReport.objects.filter(ip_address=ip_address, ip_type=ip_type).exists():
                 messages.error(request, "This IP address has already been reported.")
                 return render(
@@ -2282,7 +2311,7 @@ class ReportIpView(FormView):
         form.save()
         messages.success(self.request, "IP report successfully submitted.")
 
-        return redirect("malicious_ips_list")
+        return redirect("reported_ips_list")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2290,11 +2319,11 @@ class ReportIpView(FormView):
         return context
 
 
-class MaliciousIpListView(ListView):
+class ReportedIpListView(ListView):
     model = IpReport
-    template_name = "malicious_ips_list.html"
-    context_object_name = "malicious_ips"
+    template_name = "reported_ips_list.html"
+    context_object_name = "reported_ips"
     paginate_by = 10
 
     def get_queryset(self):
-        return IpReport.objects.all()
+        return IpReport.objects.all().order_by("-created")
