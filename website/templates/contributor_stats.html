@@ -1,106 +1,79 @@
 {% extends "base.html" %}
 {% block style %}
+    <!-- DataTables CSS -->
     <link rel="stylesheet"
-          type="text/css"
           href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    {% if today %}
-        <div class="overflow-x-auto relative shadow-md sm:rounded-lg py-8 px-10 bg-white  my-20 mx-8">
-            <table class="w-full text-lg text-left text-gray-500 dark:text-gray-400 main_table"
-                   id="userStatsTable">
-                <thead class="text-lg text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 p-5 rounded border-b border-gray-200 dark:border-gray-700">
+    <div class="w-full p-6">
+        <!-- Period Selection Buttons -->
+        <div class="flex gap-4 mb-6 mt-10 justify-center">
+            <a href="?period=day"
+               class="px-6 py-3 rounded-md text-lg {% if period == 'day' %}bg-blue-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
+                Daily
+            </a>
+            <a href="?period=week"
+               class="px-6 py-3 rounded-md text-lg {% if period == 'week' %}bg-blue-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
+                Weekly
+            </a>
+            <a href="?period=year"
+               class="px-6 py-3 rounded-md text-lg {% if period == 'year' %}bg-blue-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
+                Yearly
+            </a>
+        </div>
+        <!-- Date Range Display -->
+        <div class="text-lg text-gray-700 mb-6 text-center">Showing contributions from {{ start_date }} to {{ end_date }}</div>
+        <!-- User Statistics Table -->
+        <div class="max-w-5xl mx-auto">
+            <table id="userStatsTable"
+                   class="table-auto divide-y divide-gray-200 mx-auto">
+                <thead class="bg-gray-100">
                     <tr>
-                        <th scope="col" class="py-3 px-6">Username</th>
-                        <th scope="col" class="py-3 px-6">Pull Requests</th>
+                        <th class="px-4 py-3 text-left text-base font-semibold text-gray-600 uppercase">Username</th>
+                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Commits</th>
+                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Issues Opened</th>
+                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Issues Closed</th>
+                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">PRs</th>
+                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Comments</th>
+                        <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Total</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {% for username, prs in user_stats %}
-                        <tr class="bg-white border-b  dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                            <th scope="row"
-                                class="py-4 px-6 font-semibold text-black whitespace-nowrap dark:text-gray-900">
-                                {{ username }}
-                            </th>
-                            <td class="py-4 px-6">
-                                <a href="https://github.com/{{ owner }}/{{ repo }}/pulls?q=is%3Apr+author%3A{{ username }}+created%3A{{ end_date }}"
-                                   target="_blank">{{ prs }}</a>
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr class="bg-white ">
-                            <td colspan="2" class="py-4 px-6 text-center">No activity found.</td>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for username, stats in user_stats.items %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 whitespace-nowrap text-lg font-medium text-gray-900">{{ username }}</td>
+                            <td class="px-4 py-3 text-center text-lg text-gray-800">{{ stats.commits }}</td>
+                            <td class="px-4 py-3 text-center text-lg text-gray-800">{{ stats.issues_opened }}</td>
+                            <td class="px-4 py-3 text-center text-lg text-gray-800">{{ stats.issues_closed }}</td>
+                            <td class="px-4 py-3 text-center text-lg text-gray-800">{{ stats.prs }}</td>
+                            <td class="px-4 py-3 text-center text-lg text-gray-800">{{ stats.comments }}</td>
+                            <td class="px-4 py-3 text-center text-lg font-bold text-gray-900">{{ stats.total }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-    {% else %}
-        <div class="overflow-x-auto relative shadow-md sm:rounded-lg py-8 px-10 bg-white  my-20 mx-8">
-            <table class="w-full text-lg text-left text-gray-500 dark:text-gray-400 main_table"
-                   id="userStatsTable">
-                <thead class="text-lg text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 p-5 rounded border-b border-gray-200 dark:border-gray-700">
-                    <tr>
-                        <th scope="col" class="py-3 px-6">Username</th>
-                        <th scope="col" class="py-3 px-6">Commits</th>
-                        <th scope="col" class="py-3 px-6">Issues Opened</th>
-                        <th scope="col" class="py-3 px-6">Issues Closed</th>
-                        <th scope="col" class="py-3 px-6">Assigned Issues</th>
-                        <th scope="col" class="py-3 px-6">Pull Requests</th>
-                        <th scope="col" class="py-3 px-6">Comments</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user, stats in user_stats.items %}
-                        <tr class="border-b dark:bg-white dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                            <th scope="row"
-                                class="py-4 px-6 font-semibold text-black whitespace-nowrap dark:text-gray-900">
-                                {{ user }}
-                            </th>
-                            <td class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                <a href="https://github.com/{{ owner }}/{{ repo }}/commits?author={{ user }}&since={{ start_date }}&until={{ end_date }}"
-                                   target="_blank">{{ stats.commits }}</a>
-                            </td>
-                            <td class="py-4 px-6">
-                                <a href="https://github.com/{{ owner }}/{{ repo }}/issues?q=is%3Aissue+is%3Aopen+author%3A{{ user }}+updated%3A>{{ start_date }}"
-                                   target="_blank">{{ stats.issues_opened }}</a>
-                            </td>
-                            <td class="py-4 px-6">
-                                <a href="https://github.com/{{ owner }}/{{ repo }}/issues?q=is%3Aissue+is%3Aclosed+author%3A{{ user }}+updated%3A>{{ start_date }}"
-                                   target="_blank">{{ stats.issues_closed }}</a>
-                            </td>
-                            <td class="py-4 px-6">
-                                <a href="https://github.com/{{ owner }}/{{ repo }}/issues?q=is%3Aissue+updated%3A%3E{{ start_date }}+assignee%3A{{ user }}"
-                                   target="_blank">{{ stats.assigned_issues }}</a>
-                            </td>
-                            <td class="py-4 px-6">
-                                <a href="https://github.com/{{ owner }}/{{ repo }}/pulls?q=is%3Apr+author%3A{{ user }}+created%3A>{{ start_date }}"
-                                   target="_blank">{{ stats.prs }}</a>
-                            </td>
-                            <td class="py-4 px-6">
-                                <a href="https://github.com/search?q=is%3Aissue+commenter%3A{{ user }}+repo%3A{{ owner }}%2F{{ repo }}+updated%3A%3E{{ start_date }}&type=issues&ref=advsearch"
-                                   target="_blank">{{ stats.comments }}</a>
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr class="dark:bg-[#f7f7f7]">
-                            <td colspan="7" class="py-4 px-6 text-center">No activity found.</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% endif %}
+    </div>
 {% endblock content %}
 {% block scripts %}
+    <!-- jQuery and DataTables JS -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
             integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
             crossorigin="anonymous"></script>
     <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
     <script>
     $(document).ready(function() {
-        $('#userStatsTable').DataTable();
+        $('#userStatsTable').DataTable({
+            "paging": true,
+            "info": false,
+            "searching": true,
+            "order": [[6, 'desc']],
+            "columnDefs": [
+                { "orderable": false, "targets": [0] }
+            ],
+            "autoWidth": false
+        });
     });
     </script>
 {% endblock scripts %}
