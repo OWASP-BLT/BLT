@@ -136,11 +136,21 @@ class UrlsTest(StaticLiveServerTestCase):
                     if not any(x in url for x in matches):
                         with transaction.atomic():
                             response = self.client.get(url)
-                            self.assertIn(response.status_code, allowed_http_codes, msg=url)
+                            self.assertIn(
+                                response.status_code,
+                                allowed_http_codes,
+                                msg="!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the url that caused the eror is: %s"
+                                % url,
+                            )
                             self.selenium.get("%s%s" % (self.live_server_url, url))
 
                             for entry in self.selenium.get_log("browser"):
-                                self.assertNotIn("SyntaxError", str(entry), msg=url)
+                                self.assertNotIn(
+                                    "SyntaxError",
+                                    str(entry),
+                                    msg="!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the url that caused the eror is: %s"
+                                    % url,
+                                )
 
         check_urls(module.urlpatterns)
 
