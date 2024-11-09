@@ -28,6 +28,5 @@
     }
   },
   "forwardPorts": [8000],
-  "postCreateCommand": "python -m pip install --upgrade pip",
-  "remoteUser": "vscode"
+  "postCreateCommand": "python -m pip install --upgrade pip"
 }
