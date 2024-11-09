@@ -778,10 +778,6 @@ class Contribution(models.Model):
     def __str__(self):
         return self.title
 
-    @staticmethod
-    def filter_by_year(year):
-        return Contribution.objects.filter(created__year=year)
-
 
 class BaconToken(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

@@ -27,20 +27,6 @@
             </div>
         </div>
         <div class="flex items-center justify-center flex-wrap gap-4 p-4">
-            <form method="get" action="{% url 'contributors' %}">
-                <label for="year">Filter by Year:</label>
-                <select name="year" id="year" onchange="this.form.submit()">
-                    <option value="">All Years</option>
-                    {% for year in contributions.dates('created', 'year') %}
-                        <option value="{{ year.year }}"
-                                {% if year.year|stringformat:"s" == selected_year %}selected{% endif %}>
-                            {{ year.year }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </form>
-        </div>
-        <div class="flex items-center justify-center flex-wrap gap-4 p-4">
             {% for contributor in contributors %}
                 <div class="group card w-[250px] h-[400px] m-5 flex flex-col items-center justify-between hover:bg-red-600 transition duration-200">
                     <img src="{{ contributor.img }}"
