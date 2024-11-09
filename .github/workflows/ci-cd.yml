@@ -6,7 +6,7 @@ on:
   push:
   workflow_dispatch:
   workflow_run:
-    workflows: ["Run djlint and Ruff"]
+    workflows: ["Pre-commit fix"]
     types:
       - completed
 
