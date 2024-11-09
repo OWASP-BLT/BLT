@@ -1952,20 +1952,20 @@ tenacity = ">=8.1.0,<8.4.0 || >8.4.0,<9.0.0"
 
 [[package]]
 name = "langchain-community"
-version = "0.2.17"
+version = "0.2.18"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langchain_community-0.2.17-py3-none-any.whl", hash = "sha256:d07c31b641e425fb8c3e7148ad6a62e1b54a9adac6e1173021a7dd3148266063"},
-    {file = "langchain_community-0.2.17.tar.gz", hash = "sha256:b0745c1fcf1bd532ed4388f90b47139d6a6c6ba48a87aa68aa32d4d6bb97259d"},
+    {file = "langchain_community-0.2.18-py3-none-any.whl", hash = "sha256:277a5fdb381a707529cb44182a723fc49c290d630a46a8f75e522c527af4398b"},
+    {file = "langchain_community-0.2.18.tar.gz", hash = "sha256:501853685eef393fcfcadec4c896dfd4d7fb6c2404835c0255d4b7089ca27a4a"},
 ]
 
 [package.dependencies]
 aiohttp = ">=3.8.3,<4.0.0"
 dataclasses-json = ">=0.5.7,<0.7"
-langchain = ">=0.2.16,<0.3.0"
-langchain-core = ">=0.2.39,<0.3.0"
+langchain = ">=0.2.17,<0.3.0"
+langchain-core = ">=0.2.43,<0.3.0"
 langsmith = ">=0.1.112,<0.2.0"
 numpy = {version = ">=1,<2", markers = "python_version < \"3.12\""}
 PyYAML = ">=5.3"
@@ -2480,13 +2480,13 @@ tests = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "openai"
-version = "1.54.1"
+version = "1.54.3"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "openai-1.54.1-py3-none-any.whl", hash = "sha256:3cb49ccb6bfdc724ad01cc397d323ef8314fc7d45e19e9de2afdd6484a533324"},
-    {file = "openai-1.54.1.tar.gz", hash = "sha256:5b832bf82002ba8c4f6e5e25c1c0f5d468c22f043711544c716eaffdb30dd6f1"},
+    {file = "openai-1.54.3-py3-none-any.whl", hash = "sha256:f18dbaf09c50d70c4185b892a2a553f80681d1d866323a2da7f7be2f688615d5"},
+    {file = "openai-1.54.3.tar.gz", hash = "sha256:7511b74eeb894ac0b0253dc71f087a15d2e4d71d22d0088767205143d880cca6"},
 ]
 
 [package.dependencies]
@@ -3674,13 +3674,13 @@ starkbank-ecdsa = ">=2.0.1"
 
 [[package]]
 name = "sentry-sdk"
-version = "2.17.0"
+version = "2.18.0"
 description = "Python client for Sentry (https://sentry.io)"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "sentry_sdk-2.17.0-py2.py3-none-any.whl", hash = "sha256:625955884b862cc58748920f9e21efdfb8e0d4f98cca4ab0d3918576d5b606ad"},
-    {file = "sentry_sdk-2.17.0.tar.gz", hash = "sha256:dd0a05352b78ffeacced73a94e86f38b32e2eae15fff5f30ca5abb568a72eacf"},
+    {file = "sentry_sdk-2.18.0-py2.py3-none-any.whl", hash = "sha256:ee70e27d1bbe4cd52a38e1bd28a5fadb9b17bc29d91b5f2b97ae29c0a7610442"},
+    {file = "sentry_sdk-2.18.0.tar.gz", hash = "sha256:0dc21febd1ab35c648391c664df96f5f79fb0d92d7d4225cd9832e53a617cafd"},
 ]
 
 [package.dependencies]
@@ -3708,9 +3708,11 @@ httpx = ["httpx (>=0.16.0)"]
 huey = ["huey (>=2)"]
 huggingface-hub = ["huggingface-hub (>=0.22)"]
 langchain = ["langchain (>=0.0.210)"]
+launchdarkly = ["launchdarkly-server-sdk (>=9.8.0)"]
 litestar = ["litestar (>=2.0.0)"]
 loguru = ["loguru (>=0.5)"]
 openai = ["openai (>=1.0.0)", "tiktoken (>=0.3.0)"]
+openfeature = ["openfeature-sdk (>=0.7.1)"]
 opentelemetry = ["opentelemetry-distro (>=0.35b0)"]
 opentelemetry-experimental = ["opentelemetry-distro"]
 pure-eval = ["asttokens", "executing", "pure-eval"]
@@ -4143,13 +4145,13 @@ files = [
 
 [[package]]
 name = "unstructured"
-version = "0.16.4"
+version = "0.16.5"
 description = "A library that prepares raw documents for downstream ML tasks."
 optional = false
 python-versions = "<3.13,>=3.9.0"
 files = [
-    {file = "unstructured-0.16.4-py3-none-any.whl", hash = "sha256:300e4a9e630c6d55484a62e90df23075e5abd04f17bf15043898bc0eff6c4070"},
-    {file = "unstructured-0.16.4.tar.gz", hash = "sha256:da05433db186f8251fc0b1b1b273f584ca2a71363d541ec1ab82ef55dc49055d"},
+    {file = "unstructured-0.16.5-py3-none-any.whl", hash = "sha256:d867e6d5c002c159997bb44df82c43531570c32fa87a010a0aae8a7a0e22ec49"},
+    {file = "unstructured-0.16.5.tar.gz", hash = "sha256:2c36de777f88529e0f7c306eb8116b755963928d50d331bbfee56e2f61fe023f"},
 ]
 
 [package.dependencies]
@@ -4552,4 +4554,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "f3e6930e44e0ae114d0b624738b3682a92b58e03b81a43f5eef02a577e95c800"
+content-hash = "2ee5578de64009c10dc432c29c25a2076269949e65b7a2a75c454c7cb1482f8a"
