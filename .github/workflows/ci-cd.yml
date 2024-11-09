@@ -5,6 +5,10 @@ on:
   pull_request:
   push:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Run djlint and Ruff"]
+    types:
+      - completed
 
 env:
   FORCE_COLOR: 1
