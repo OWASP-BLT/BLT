@@ -31,10 +31,15 @@ jobs:
           files_to_check=$(find company/templates website/templates -type f -name "*.html")
           djlint --reformat $files_to_check || true
 
-      - name: Run Ruff
+      - name: Run Ruff Fix
         run: |
           source venv/bin/activate
           ruff check . --fix || true
+
+      - name: Run Ruff Format
+        run: |
+          source venv/bin/activate
+          ruff check . --format || true
 
       - name: Commit changes
         run: |
