@@ -458,8 +458,9 @@ urlpatterns = [
     re_path(r"^api/v1/contributors/$", website.views.contributors, name="api_contributor"),
     path("project/<slug:slug>/", ProjectDetailView.as_view(), name="project_view"),
     path("projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"),
-    path("report-ip/", ReportIpView.as_view(), name="report_ip"),
-    path("reported-ips/", ReportedIpListView.as_view(), name="reported_ips_list"),
+    re_path(r"^report-ip/$", ReportIpView.as_view(), name="report_ip"),
+    re_path(r"^reported-ips/$", ReportedIpListView.as_view(), name="reported_ips_list"),
+
     re_path(
         r"^api/v1/createissues/$",
         csrf_exempt(IssueCreate.as_view()),
