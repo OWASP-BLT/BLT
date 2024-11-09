@@ -1,4 +1,5 @@
 import importlib
+import logging
 import os
 
 import chromedriver_autoinstaller
@@ -9,11 +10,6 @@ from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.db import transaction
 from django.urls import reverse
 from selenium.webdriver.chrome.service import Service
-import importlib
-import logging
-from django.conf import settings
-from django.db import transaction
-from django.urls import reverse
 
 os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 
@@ -78,6 +74,7 @@ class UrlsTest(StaticLiveServerTestCase):
 
     logging.basicConfig(level=logging.ERROR)
     logger = logging.getLogger(__name__)
+
     def test_responses(
         self,
         allowed_http_codes=[200, 302, 405, 401, 404],
@@ -95,11 +92,11 @@ class UrlsTest(StaticLiveServerTestCase):
                     if pattern.namespace:
                         new_prefix = prefix + (":" if prefix else "") + pattern.namespace
                     check_urls(pattern.url_patterns, prefix=new_prefix)
-                
+
                 params = {}
                 skip = False
                 regex = pattern.pattern.regex
-                
+
                 if regex.groups > 0:
                     if regex.groups > len(list(regex.groupindex.keys())) or set(
                         regex.groupindex.keys()
@@ -108,20 +105,20 @@ class UrlsTest(StaticLiveServerTestCase):
                     else:
                         for key in set(default_kwargs.keys()) & set(regex.groupindex.keys()):
                             params[key] = default_kwargs[key]
-                
+
                 if hasattr(pattern, "name") and pattern.name:
                     name = pattern.name
                 else:
                     skip = True
                     name = ""
-                
+
                 fullname = (prefix + ":" + name) if prefix else name
 
                 if not skip:
                     try:
                         # Attempt to reverse the URL
                         url = reverse(fullname, kwargs=params)
-                        
+
                         matches = [
                             "/socialaccounts/",
                             "/auth/user/",
@@ -154,18 +151,20 @@ class UrlsTest(StaticLiveServerTestCase):
                                     # Attempt to get the URL response
                                     response = self.client.get(url)
                                     self.assertIn(response.status_code, allowed_http_codes, msg=url)
-                                    
+
                                     # Check for JavaScript errors in Selenium browser logs
                                     self.selenium.get("%s%s" % (self.live_server_url, url))
                                     for entry in self.selenium.get_log("browser"):
                                         self.assertNotIn("SyntaxError", str(entry), msg=url)
-                                
+
                                 except Exception as e:
                                     logger.error(f"Error fetching URL {url}: {e}")
                                     print(f"Error fetching URL {url}: {e}")
 
                     except Exception as e:
-                        logger.error(f"Error reversing URL for {fullname} with params {params}: {e}")
+                        logger.error(
+                            f"Error reversing URL for {fullname} with params {params}: {e}"
+                        )
                         print(f"Error reversing URL for {fullname} with params {params}: {e}")
 
         try:
@@ -173,7 +172,6 @@ class UrlsTest(StaticLiveServerTestCase):
         except Exception as e:
             logger.error(f"Error in check_urls function: {e}")
             print(f"Error in check_urls function: {e}")
-
 
     def test_github_login(self):
         url = reverse("github_login")
