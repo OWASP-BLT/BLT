@@ -32,7 +32,10 @@
                 <select name="year" id="year" onchange="this.form.submit()">
                     <option value="">All Years</option>
                     {% for year in contributions.dates('created', 'year') %}
-                        <option value="{{ year.year }}" {% if year.year|stringformat:"s" == selected_year %}selected{% endif %}>{{ year.year }}</option>
+                        <option value="{{ year.year }}"
+                                {% if year.year|stringformat:"s" == selected_year %}selected{% endif %}>
+                            {{ year.year }}
+                        </option>
                     {% endfor %}
                 </select>
             </form>
