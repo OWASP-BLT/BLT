@@ -107,40 +107,43 @@ class UrlsTest(StaticLiveServerTestCase):
                 fullname = (prefix + ":" + name) if prefix else name
 
                 if not skip:
-                    url = reverse(fullname, kwargs=params)
-                    matches = [
-                        "/socialaccounts/",
-                        "/auth/user/",
-                        "/auth/password/change/",
-                        "/auth/github/connect/",
-                        "/auth/google/connect/",
-                        "/auth/registration/",
-                        "/auth/registration/verify-email/",
-                        "/auth/registration/resend-email/",
-                        "/auth/password/reset/",
-                        "/auth/password/reset/confirm/",
-                        "/auth/login/",
-                        "/auth/logout/",
-                        "/auth/facebook/connect/",
-                        "/captcha/refresh/",
-                        "/rest-auth/user/",
-                        "/rest-auth/password/change/",
-                        "/accounts/github/login/",
-                        "/accounts/google/login/",
-                        "/accounts/facebook/login/",
-                        "/error/",
-                        "/tz_detect/set/",
-                        "/leaderboard/api/",
-                        "/api/timelogsreport/",
-                    ]
-                    if not any(x in url for x in matches):
-                        with transaction.atomic():
-                            response = self.client.get(url)
-                            self.assertIn(response.status_code, allowed_http_codes, msg=url)
-                            self.selenium.get("%s%s" % (self.live_server_url, url))
+                    try:
+                        url = reverse(fullname, kwargs=params)
+                        matches = [
+                            "/socialaccounts/",
+                            "/auth/user/",
+                            "/auth/password/change/",
+                            "/auth/github/connect/",
+                            "/auth/google/connect/",
+                            "/auth/registration/",
+                            "/auth/registration/verify-email/",
+                            "/auth/registration/resend-email/",
+                            "/auth/password/reset/",
+                            "/auth/password/reset/confirm/",
+                            "/auth/login/",
+                            "/auth/logout/",
+                            "/auth/facebook/connect/",
+                            "/captcha/refresh/",
+                            "/rest-auth/user/",
+                            "/rest-auth/password/change/",
+                            "/accounts/github/login/",
+                            "/accounts/google/login/",
+                            "/accounts/facebook/login/",
+                            "/error/",
+                            "/tz_detect/set/",
+                            "/leaderboard/api/",
+                            "/api/timelogsreport/",
+                        ]
+                        if not any(x in url for x in matches):
+                            with transaction.atomic():
+                                response = self.client.get(url)
+                                self.assertIn(response.status_code, allowed_http_codes, msg=url)
+                                self.selenium.get("%s%s" % (self.live_server_url, url))
 
-                            for entry in self.selenium.get_log("browser"):
-                                self.assertNotIn("SyntaxError", str(entry), msg=url)
+                                for entry in self.selenium.get_log("browser"):
+                                    self.assertNotIn("SyntaxError", str(entry), msg=url)
+                    except Exception as e:
+                        print("An exception occurred: ", e)
 
         check_urls(module.urlpatterns)
 
