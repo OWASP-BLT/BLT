@@ -492,5 +492,18 @@
         "linkedin": "https://www.linkedin.com/in/dhruv-trivedi-06a767228/",
         "website": "https://github.com/drvcodenta",
         "bch_addr": ""
+    },
+    {
+        "id": 40,
+        "img": "https://avatars.githubusercontent.com/u/102853901?v=4",
+        "name": "Apoorva Pendse",
+        "repository": "",
+        "short_description": "Open source enthusiast.",
+        "long_description": "",
+        "location": "Earth",
+        "twitter": "",
+        "linkedin": "",
+        "website": "https://github.com/apoorvapendse",
+        "bch_addr": ""
     }
 ]
