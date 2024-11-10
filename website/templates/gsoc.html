@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <style>
+        .container {
+            margin-top: 20px;
+            height: calc(100vh - 90px);
+            display: flex;
+            flex-direction: column;
+        }
+        .link-text {
+            font-weight: bold;
+            transition: color 0.3s ease;
+            margin-left: 20px;
+        }
+        .link-text:hover {
+            color: red; /* Assuming 'text-danger' is red; adjust as needed */
+        }
+    </style>
+    <div class="container">
+        <h1 class="text-[3rem] m-4">GSOC Links:</h1>
+        <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2024ideas"
+           target="_blank">
+            <div class="link-text">
+                GSOC Project Ideas 2024 <i class="fa-solid fa-link"></i>
+            </div>
+        </a>
+        <a href="https://github.com/orgs/OWASP-BLT/projects?query=is%3Aopen"
+           target="_blank">
+            <div class="link-text">
+                Checkout Project Ideas for OWASP BLT <i class="fa-solid fa-link"></i>
+            </div>
+        </a>
+        <h1 class="text-[3rem] m-4">Past GSOC Events:</h1>
+        <a href="https://summerofcode.withgoogle.com/archive/2023/organizations/owasp-foundation"
+           target="_blank">
+            <div class="link-text">
+                2023 GSOC Archive <i class="fa-solid fa-link"></i>
+            </div>
+        </a>
+        <a href="https://summerofcode.withgoogle.com/archive/2022/organizations/owasp-foundation"
+           target="_blank">
+            <div class="link-text">
+                2022 GSOC Archive <i class="fa-solid fa-link"></i>
+            </div>
+        </a>
+        <a href="https://summerofcode.withgoogle.com/archive/2021/organizations/owasp-foundation"
+           target="_blank">
+            <div class="link-text">
+                2021 GSOC Archive <i class="fa-solid fa-link"></i>
+            </div>
+        </a>
+        <a href="https://summerofcode.withgoogle.com/archive/2020/organizations/owasp-foundation"
+           target="_blank">
+            <div class="link-text">
+                2020 GSOC Archive <i class="fa-solid fa-link"></i>
+            </div>
+        </a>
+        <h1 class="text-[3rem] m-4">Blogs By Previous GSOC Contributors:</h1>
+        <a href="https://medium.com/@shirshjain/my-gsoc24-experience-at-owasp-b341e581a5d0"
+           target="_blank">
+            <div class="link-text">
+                Shirish Jain's GSOC Journey with OWASP BLT <i class="fa-solid fa-link"></i>
+            </div>
+        </a>
+        <a href="https://medium.com/@justary27/my-gsoc22-voyage-beginning-4296df5af625"
+           target="_blank">
+            <div class="link-text">
+                Aryan Ranjan's GSoC Voyage <i class="fa-solid fa-link"></i>
+            </div>
+        </a>
+        <a href="https://gist.github.com/AtmegaBuzz/512a85827b5cc993e35c274dcbada669"
+           target="_blank">
+            <div class="link-text">
+                Swapnil Shinde's OWASP BLT Report <i class="fa-solid fa-link"></i>
+            </div>
+        </a>
+        <a href="https://medium.com/@shubhampalriwala/google-summer-of-code-journey-with-owasp-juice-shop-c1ca15c8e170"
+           target="_blank">
+            <div class="link-text">
+                Shubham Palriwala's GSOC Journey with OWASP Juice Shop <i class="fa-solid fa-link"></i>
+            </div>
+        </a>
+        <a href="https://medium.com/@akshaybehl231/diving-into-open-source-owasp-nettacker-gsoc24-e73114f37a11"
+           target="_blank">
+            <div class="link-text">
+                Akshay Behl's GSOC Journey with OWASP Nettacker <i class="fa-solid fa-link"></i>
+            </div>
+        </a>
+    </div>
+{% endblock content %}
