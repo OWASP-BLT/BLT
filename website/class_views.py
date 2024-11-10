@@ -73,6 +73,7 @@ from website.models import (
     CompanyAdmin,
     Contribution,
     Contributor,
+    ContributorStats,
     Domain,
     Hunt,
     HuntPrize,
