@@ -13,7 +13,6 @@ from website.models import (
     Company,
     CompanyAdmin,
     Contribution,
-    ContributorStats,
     Domain,
     Hunt,
     HuntPrize,
@@ -408,16 +407,14 @@ class TimeLogAdmin(admin.ModelAdmin):
     )
 
 
-class ContributionAdmin(admin.ModelAdmin):  # Added class
+class ContributionAdmin(admin.ModelAdmin):
     list_display = ("user", "title", "description", "status", "created", "txid")
     list_filter = ["status", "user"]
     search_fields = ["title", "description", "user__username"]
     date_hierarchy = "created"
 
 
-# Register all models with their respective admin classes
 admin.site.register(Project, ProjectAdmin)
-admin.site.register(ContributorStats)
 admin.site.register(Bid, BidAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(User, UserAdmin)
@@ -438,9 +435,7 @@ admin.site.register(Blocked, BlockedAdmin)
 admin.site.register(Suggestion, SuggestionAdmin)
 admin.site.register(SuggestionVotes, SuggestionVotesAdmin)
 admin.site.register(TimeLog, TimeLogAdmin)
-admin.site.register(Contribution, ContributionAdmin)  # Added registration
-
-# Register missing models
+admin.site.register(Contribution, ContributionAdmin)
 admin.site.register(InviteFriend)
 admin.site.register(IP, IPAdmin)
 admin.site.register(Transaction)

@@ -1,11 +1,10 @@
-from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from website.models import ContributorStats  # Adjust this to your actual model path
+from website.models import Contribution, Project
 
 
 class Command(BaseCommand):
@@ -21,12 +20,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Clear existing records
-        ContributorStats.objects.all().delete()
-
-        # Prepare the time range
-        end_date = datetime.now().date()
-        start_date = end_date - timedelta(days=7)
-        since = start_date.isoformat()
+        Contribution.objects.all().delete()
 
         # GitHub repository details
         repo = options["repo"]
@@ -34,107 +28,122 @@ class Command(BaseCommand):
 
         # Authentication headers
         headers = {"Authorization": f"token {settings.GITHUB_TOKEN}"}
-        # Initialize data structure
-        user_stats = defaultdict(
-            lambda: {
-                "commits": 0,
-                "issues_opened": 0,
-                "issues_closed": 0,
-                "prs": 0,
-                "comments": 0,
-                "assigned_issues": 0,
-                "github_date": None,  # Add this field
-            }
-        )
 
         # Fetch and process data
-        self.fetch_and_update_data("pulls", user_stats, headers, owner, repo, since, start_date)
-        self.fetch_and_update_data(
-            "issuesopen", user_stats, headers, owner, repo, since, start_date
-        )
-        self.fetch_and_update_data(
-            "issuesclosed", user_stats, headers, owner, repo, since, start_date
-        )
-        self.fetch_and_update_data("commits", user_stats, headers, owner, repo, since, start_date)
-        self.fetch_and_update_data("comments", user_stats, headers, owner, repo, since, start_date)
-
-        # Save the updated data to the database
-        for username, stats in user_stats.items():
-            ContributorStats.objects.create(
-                username=username,
-                commits=stats["commits"],
-                issues_opened=stats["issues_opened"],
-                issues_closed=stats["issues_closed"],
-                prs=stats["prs"],
-                comments=stats["comments"],
-                assigned_issues=stats["assigned_issues"],
-                github_date=stats.get("github_date")
-                or datetime.now().date(),  # Set the GitHub date
-            )
+        self.fetch_and_update_data("pulls", headers, owner, repo)
+        self.fetch_and_update_data("issuesopen", headers, owner, repo)
+        self.fetch_and_update_data("issuesclosed", headers, owner, repo)
+        self.fetch_and_update_data("commits", headers, owner, repo)
+        self.fetch_and_update_data("comments", headers, owner, repo)
 
         self.stdout.write(self.style.SUCCESS("Successfully updated contributor stats"))
 
-    def fetch_and_update_data(self, data_type, user_stats, headers, owner, repo, since, start_date):
+    def fetch_and_update_data(self, data_type, headers, owner, repo):
         # Define URL based on data_type
         if data_type == "pulls":
-            url = f"https://api.github.com/repos/{owner}/{repo}/pulls?state=all&since={since}&per_page=500"
+            url = f"https://api.github.com/repos/{owner}/{repo}/pulls"
         elif data_type == "issuesopen":
-            url = f"https://api.github.com/repos/{owner}/{repo}/issues?state=open&since={since}&per_page=500"
+            url = f"https://api.github.com/repos/{owner}/{repo}/issues?state=open"
         elif data_type == "issuesclosed":
-            url = f"https://api.github.com/repos/{owner}/{repo}/issues?state=closed&since={since}&per_page=500"
+            url = f"https://api.github.com/repos/{owner}/{repo}/issues?state=closed"
         elif data_type == "commits":
-            url = f"https://api.github.com/repos/{owner}/{repo}/commits?since={since}&per_page=500"
+            url = f"https://api.github.com/repos/{owner}/{repo}/commits"
         elif data_type == "comments":
-            url = f"https://api.github.com/repos/{owner}/{repo}/issues/comments?since={since}&per_page=200"
+            url = f"https://api.github.com/repos/{owner}/{repo}/issues/comments"
 
         response = requests.get(url, headers=headers)
         items = response.json()
 
-        # Check for errors in response
-        if isinstance(items, dict) and items.get("message"):
+        if not isinstance(items, list):
             raise ValueError(f"Error fetching data from GitHub: {items['message']}")
 
-        # Process each item based on its type
+        # Get project object
+        project = Project.objects.get(github_url__contains=f"{owner}/{repo}")
+
         for item in items:
             if data_type == "pulls":
                 user = item["user"]["login"]
-                created_at = datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
-                if created_at >= start_date:
-                    user_stats[user]["prs"] += 1
-                    user_stats[user]["github_date"] = created_at
+                Contribution.objects.create(
+                    github_username=user,
+                    title=item["title"],
+                    description=item["body"] or "",
+                    contribution_type="pull_request",
+                    github_id=str(item["id"]),
+                    github_url=item["html_url"],
+                    created=datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
+                    status=item["state"],
+                    repository=project,
+                )
             elif data_type == "issuesopen":
-                user = item["user"]["login"]
-                created_at = datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
                 if "pull_request" in item:
                     continue
+                user = item["user"]["login"]
                 if item["state"] == "open":
-                    user_stats[user]["issues_opened"] += 1
-                    user_stats[user]["github_date"] = created_at
+                    Contribution.objects.create(
+                        github_username=user,
+                        title=item["title"],
+                        description=item["body"] or "",
+                        contribution_type="issue_opened",
+                        github_id=str(item["id"]),
+                        github_url=item["html_url"],
+                        created=datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
+                        status="open",
+                        repository=project,
+                    )
                 if item.get("assignee"):
                     user = item["assignee"]["login"]
-                    user_stats[user]["assigned_issues"] += 1
-                    user_stats[user]["github_date"] = created_at
+                    Contribution.objects.create(
+                        github_username=user,
+                        title=f"Assigned to {item['title']}",
+                        description=f"Assigned to issue: {item['html_url']}",
+                        contribution_type="issue_assigned",
+                        github_id=f"{item['id']}_assigned",
+                        github_url=item["html_url"],
+                        created=datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
+                        status="open",
+                        repository=project,
+                    )
             elif data_type == "issuesclosed":
-                user = item["user"]["login"]
-                created_at = datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
                 if "pull_request" in item:
                     continue
+                user = item["user"]["login"]
                 if item["state"] == "closed":
-                    user_stats[user]["issues_closed"] += 1
-                    user_stats[user]["github_date"] = created_at
-                if item.get("assignee"):
-                    user = item["assignee"]["login"]
-                    user_stats[user]["assigned_issues"] += 1
-                    user_stats[user]["github_date"] = created_at
+                    Contribution.objects.create(
+                        github_username=user,
+                        title=item["title"],
+                        description=item["body"] or "",
+                        contribution_type="issue_closed",
+                        github_id=str(item["id"]),
+                        github_url=item["html_url"],
+                        created=datetime.strptime(
+                            item["closed_at"] or item["created_at"], "%Y-%m-%dT%H:%M:%SZ"
+                        ),
+                        status="closed",
+                        repository=project,
+                    )
             elif data_type == "commits":
                 user = item["author"]["login"]
-                created_at = datetime.strptime(
-                    item["commit"]["author"]["date"], "%Y-%m-%dT%H:%M:%SZ"
-                ).date()
-                user_stats[user]["commits"] += 1
-                user_stats[user]["github_date"] = created_at
+                Contribution.objects.create(
+                    title=item["commit"]["message"],
+                    description=item["commit"]["message"],
+                    github_username=user,
+                    contribution_type="commits",
+                    github_id=user,
+                    github_url=item["html_url"],
+                    created=datetime.strptime(
+                        item["commit"]["author"]["date"], "%Y-%m-%dT%H:%M:%SZ"
+                    ),
+                    repository=project,
+                )
             elif data_type == "comments":
                 user = item["user"]["login"]
-                created_at = datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
-                user_stats[user]["comments"] += 1
-                user_stats[user]["github_date"] = created_at
+                Contribution.objects.create(
+                    title=item["body"],
+                    description=item["body"],
+                    github_username=user,
+                    contribution_type="comments",
+                    github_id=user,
+                    github_url=item["html_url"],
+                    created=datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
+                    repository=project,
+                )
