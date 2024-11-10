@@ -635,6 +635,7 @@ class ContributorStats(models.Model):
     assigned_issues = models.IntegerField(default=0)
     last_updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
+    github_date = models.DateField()  # Add this field
 
     def __str__(self):
         return self.username

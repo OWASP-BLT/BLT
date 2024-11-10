@@ -145,3 +145,29 @@ class HideImage(TestCase):
 
             if "hidden" not in filename:
                 self.assertFalse(True, "files rename failed")
+
+
+from django.contrib.messages import get_messages
+from django.test import TestCase
+from django.urls import reverse
+
+from .models import Project
+
+
+class ProjectListViewTests(TestCase):
+    def test_add_project_with_branch_url(self):
+        url = reverse("project_list")
+        github_url = (
+            "https://github.com/OWASP/www-project-top-10-infrastructure-security-risks/tree/main"
+        )
+        response = self.client.post(url, {"github_url": github_url})
+
+        # Check if the response is a redirect to the project list
+        self.assertRedirects(response, url)
+
+        # Check if the appropriate success message is displayed
+        messages = list(get_messages(response.wsgi_request))
+        self.assertTrue(any("Project added successfully." in str(message) for message in messages))
+
+        # Ensure the project was created
+        self.assertTrue(Project.objects.filter(github_url=github_url).exists())

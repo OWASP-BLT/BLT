@@ -27,7 +27,9 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.db.models import Count, Q, Sum
+
+# import Min
+from django.db.models import Count, Min, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.db.transaction import atomic
 from django.http import (
@@ -102,7 +104,10 @@ class ProjectDetailView(DetailView):
 
             project = self.get_object()  # Use get_object() to retrieve the current object
             call_command("update_projects", "--project_id", project.pk)
-            messages.success(request, "Requested refresh to projects")
+            # extract only the org and repo
+            owner_repo = project.github_url.rstrip("/").split("/")[-2:]
+            call_command("fetch_contributor_stats", "--repo", owner_repo[0] + "/" + owner_repo[1])
+            messages.success(request, "Requested refresh to the " + project.name + " project")
             return redirect("project_view", slug=project.slug)
 
     def get(self, request, *args, **kwargs):
@@ -148,6 +153,17 @@ class ProjectBadgeView(APIView):
         return response
 
 
+import re
+
+import requests
+from django.contrib import messages
+from django.shortcuts import redirect
+from django.views.generic import ListView
+
+from .forms import GitHubURLForm
+from .models import Project
+
+
 class ProjectListView(ListView):
     model = Project
     context_object_name = "projects"
@@ -171,30 +187,36 @@ class ProjectListView(ListView):
         form = GitHubURLForm(request.POST)
         if form.is_valid():
             github_url = form.cleaned_data["github_url"]
-            api_url = github_url.replace("github.com", "api.github.com/repos")
-            response = requests.get(api_url)
-            if response.status_code == 200:
-                data = response.json()
-                # if the description is empty, use the name as the description
-                if not data["description"]:
-                    data["description"] = data["name"]
-                project, created = Project.objects.get_or_create(
-                    github_url=github_url,
-                    defaults={
-                        "name": data["name"],
-                        "slug": data["name"].lower(),
-                        "description": data["description"],
-                        "wiki_url": data["html_url"],
-                        "homepage_url": data.get("homepage", ""),
-                        "logo_url": data["owner"]["avatar_url"],
-                    },
-                )
-                if created:
-                    messages.success(request, "Project added successfully.")
+            # Extract the repository part of the URL
+            match = re.match(r"https://github.com/([^/]+/[^/]+)", github_url)
+            if match:
+                repo_path = match.group(1)
+                api_url = f"https://api.github.com/repos/{repo_path}"
+                response = requests.get(api_url)
+                if response.status_code == 200:
+                    data = response.json()
+                    # if the description is empty, use the name as the description
+                    if not data["description"]:
+                        data["description"] = data["name"]
+                    project, created = Project.objects.get_or_create(
+                        github_url=github_url,
+                        defaults={
+                            "name": data["name"],
+                            "slug": data["name"].lower(),
+                            "description": data["description"],
+                            "wiki_url": data["html_url"],
+                            "homepage_url": data.get("homepage", ""),
+                            "logo_url": data["owner"]["avatar_url"],
+                        },
+                    )
+                    if created:
+                        messages.success(request, "Project added successfully.")
+                    else:
+                        messages.info(request, "Project already exists.")
                 else:
-                    messages.info(request, "Project already exists.")
+                    messages.error(request, "Failed to fetch project from GitHub.")
             else:
-                messages.error(request, "Failed to fetch project from GitHub.")
+                messages.error(request, "Invalid GitHub URL.")
             return redirect("project_list")
         context = self.get_context_data()
         context["form"] = form
@@ -528,40 +550,57 @@ class JoinCompany(TemplateView):
 
 class ContributorStatsView(TemplateView):
     template_name = "contributor_stats.html"
-    today = False
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Fetch all contributor stats records
-        stats = ContributorStats.objects.all()
-        if self.today:
-            # For "today" stats
-            user_stats = sorted(
-                ([stat.username, stat.prs] for stat in stats if stat.prs > 0),
-                key=lambda x: x[1],  # Sort by PRs value
-                reverse=True,  # Descending order
-            )
+        self.period = self.request.GET.get("period", "day")
+
+        end_date = datetime.now().date()
+        if self.period == "day":
+            start_date = end_date - timedelta(days=1)
+        elif self.period == "week":
+            start_date = end_date - timedelta(days=7)
+        elif self.period == "year":
+            start_date = end_date - timedelta(days=365)
         else:
-            # Convert the stats to a dictionary format expected by the template
-            user_stats = {
-                stat.username: {
-                    "commits": stat.commits,
-                    "issues_opened": stat.issues_opened,
-                    "issues_closed": stat.issues_closed,
-                    "assigned_issues": stat.assigned_issues,
-                    "prs": stat.prs,
-                    "comments": stat.comments,
-                }
-                for stat in stats
+            start_date = end_date - timedelta(days=1)
+
+        stats = ContributorStats.objects.filter(github_date__range=[start_date, end_date])
+
+        earliest_date = stats.aggregate(Min("github_date"))["github_date__min"]
+        display_end_date = earliest_date if earliest_date and earliest_date < end_date else end_date
+
+        user_stats = {}
+        for stat in stats:
+            total = (
+                stat.commits
+                + stat.issues_opened
+                + stat.issues_closed
+                + stat.prs
+                + stat.comments
+                + stat.assigned_issues
+            )
+            user_stats[stat.username] = {
+                "commits": stat.commits,
+                "issues_opened": stat.issues_opened,
+                "issues_closed": stat.issues_closed,
+                "assigned_issues": stat.assigned_issues,
+                "prs": stat.prs,
+                "comments": stat.comments,
+                "total": total,
             }
 
-        context["user_stats"] = user_stats
-        context["today"] = self.today
-        context["owner"] = "OWASP-BLT"
-        context["repo"] = "BLT"
-        context["start_date"] = (datetime.now().date() - timedelta(days=7)).isoformat()
-        context["end_date"] = datetime.now().date().isoformat()
+        # Sort by total descending
+        user_stats = dict(sorted(user_stats.items(), key=lambda x: x[1]["total"], reverse=True))
 
+        context.update(
+            {
+                "user_stats": user_stats,
+                "period": self.period,
+                "start_date": start_date.strftime("%Y-%m-%d"),
+                "end_date": display_end_date.strftime("%Y-%m-%d"),
+            }
+        )
         return context
 
 
