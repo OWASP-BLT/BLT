@@ -841,7 +841,14 @@ class IssueBaseCreate(object):
 
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
-    fields = ["url", "description", "domain", "label", "markdown_description", "cve_id"]
+    fields = [
+        "url",
+        "description",
+        "domain",
+        "label",
+        "markdown_description",
+        "cve_id",
+    ]
     template_name = "report.html"
 
     def get_initial(self):
@@ -1232,7 +1239,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             .annotate(count=Count("domain__name"))
             .order_by("-count")[:30]
         )
-
         return context
 
 
