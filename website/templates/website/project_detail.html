@@ -128,7 +128,7 @@
                         <p>Closed Issues</p>
                     </div>
                 </a>
-                <a href="{{ project.github_url }}/pulls"
+                <a href="{{ project.github_url }}/issues?q=is%3Aopen%20is%3Apr"
                    target="_blank"
                    class="stat-link">
                     <div class="stat-item">
@@ -180,7 +180,7 @@
         <div class="repo-view-count-badge">
             <h3>Repo View Count Badge</h3>
             <p>This badge displays the number of views your repository has received:</p>
-            <pre><code>![Repo Views](https://blt.owasp.org/projects/{{project.slug}}/badge)</code></pre>
+            <pre><code><img alt="Views" src="https://blt.owasp.org/projects/{{project.slug}}/badge"></code></pre>
         </div>
         <!-- Top Contributors -->
         <div class="contributors-section">
