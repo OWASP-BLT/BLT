@@ -793,7 +793,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         projects = Project.objects.all()
 
         if freshness:
-            projects = projects.filter(freshness__icontains(freshness)
+            projects = projects.filter(freshness__icontains=freshness)
         if stars:
             projects = projects.filter(stars__gte(stars)
         if forks:
