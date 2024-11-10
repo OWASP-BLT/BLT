@@ -797,7 +797,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if stars:
             projects = projects.filter(stars__gte=stars)
         if forks:
-            projects = projects.filter(forks__gte(forks)
+            projects = projects.filter(forks__gte=forks)
         if tags:
             projects = projects.filter(tags__name__in=tags.split(",")).distinct()
 
