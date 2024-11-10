@@ -29,7 +29,7 @@ from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 
 # import Min
-from django.db.models import Count, Min, Q, Sum
+from django.db.models import Count, Max, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.db.transaction import atomic
 from django.http import (
@@ -567,8 +567,8 @@ class ContributorStatsView(TemplateView):
 
         stats = ContributorStats.objects.filter(github_date__range=[start_date, end_date])
 
-        earliest_date = stats.aggregate(Min("github_date"))["github_date__min"]
-        display_end_date = earliest_date if earliest_date and earliest_date < end_date else end_date
+        latest_date = stats.aggregate(Max("github_date"))["github_date__max"]
+        display_end_date = latest_date if latest_date and latest_date < end_date else end_date
 
         user_stats = {}
         for stat in stats:
