@@ -2046,7 +2046,7 @@ def deletions(request):
     return render(
         request,
         "monitor.html",
-        {"form": form, "deletions": Monitor.objects.filter(user=request.user)},
+        {"form": form, "monitors": Monitor.objects.filter(user=request.user)},
     )
 
 

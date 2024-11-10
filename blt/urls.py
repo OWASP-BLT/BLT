@@ -552,11 +552,6 @@ urlpatterns = [
         ContributorStatsView.as_view(),
         name="contributor-stats",
     ),
-    re_path(
-        r"^contributor-stats/today$",
-        ContributorStatsView.as_view(today=True),
-        name="today-contributor-stats",
-    ),
     path("api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"),
     path("blt-tomato/", blt_tomato, name="blt-tomato"),
     path(
@@ -571,7 +566,7 @@ urlpatterns = [
     path("api/timelogsreport/", website.views.TimeLogListAPIView, name="timelogsreport"),
     path("time-logs/", website.views.TimeLogListView, name="time_logs"),
     path("sizzle-daily-log/", website.views.sizzle_daily_log, name="sizzle_daily_log"),
-    path("blogs/", include("blog.urls")),
+    path("blog/", include("blog.urls")),
     path(
         "user-sizzle-report/<str:username>/",
         website.views.user_sizzle_report,

@@ -12,6 +12,7 @@ from website.models import (
     ChatBotLog,
     Company,
     CompanyAdmin,
+    Contribution,
     ContributorStats,
     Domain,
     Hunt,
@@ -407,6 +408,13 @@ class TimeLogAdmin(admin.ModelAdmin):
     )
 
 
+class ContributionAdmin(admin.ModelAdmin):  # Added class
+    list_display = ("user", "title", "description", "status", "created", "txid")
+    list_filter = ["status", "user"]
+    search_fields = ["title", "description", "user__username"]
+    date_hierarchy = "created"
+
+
 # Register all models with their respective admin classes
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(ContributorStats)
@@ -430,6 +438,7 @@ admin.site.register(Blocked, BlockedAdmin)
 admin.site.register(Suggestion, SuggestionAdmin)
 admin.site.register(SuggestionVotes, SuggestionVotesAdmin)
 admin.site.register(TimeLog, TimeLogAdmin)
+admin.site.register(Contribution, ContributionAdmin)  # Added registration
 
 # Register missing models
 admin.site.register(InviteFriend)

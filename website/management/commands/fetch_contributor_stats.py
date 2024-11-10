@@ -11,6 +11,14 @@ from website.models import ContributorStats  # Adjust this to your actual model 
 class Command(BaseCommand):
     help = "Fetches and updates contributor statistics from GitHub"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--repo",
+            type=str,
+            default="OWASP-BLT/BLT",
+            help="Specify the GitHub repository in the format 'owner/repo'",
+        )
+
     def handle(self, *args, **options):
         # Clear existing records
         ContributorStats.objects.all().delete()
@@ -21,8 +29,8 @@ class Command(BaseCommand):
         since = start_date.isoformat()
 
         # GitHub repository details
-        owner = "OWASP-BLT"
-        repo = "BLT"
+        repo = options["repo"]
+        owner, repo = repo.split("/")
 
         # Authentication headers
         headers = {"Authorization": f"token {settings.GITHUB_TOKEN}"}
@@ -35,6 +43,7 @@ class Command(BaseCommand):
                 "prs": 0,
                 "comments": 0,
                 "assigned_issues": 0,
+                "github_date": None,  # Add this field
             }
         )
 
@@ -59,6 +68,8 @@ class Command(BaseCommand):
                 prs=stats["prs"],
                 comments=stats["comments"],
                 assigned_issues=stats["assigned_issues"],
+                github_date=stats.get("github_date")
+                or datetime.now().date(),  # Set the GitHub date
             )
 
         self.stdout.write(self.style.SUCCESS("Successfully updated contributor stats"))
@@ -90,27 +101,40 @@ class Command(BaseCommand):
                 created_at = datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
                 if created_at >= start_date:
                     user_stats[user]["prs"] += 1
+                    user_stats[user]["github_date"] = created_at
             elif data_type == "issuesopen":
                 user = item["user"]["login"]
+                created_at = datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
                 if "pull_request" in item:
                     continue
                 if item["state"] == "open":
                     user_stats[user]["issues_opened"] += 1
+                    user_stats[user]["github_date"] = created_at
                 if item.get("assignee"):
                     user = item["assignee"]["login"]
                     user_stats[user]["assigned_issues"] += 1
+                    user_stats[user]["github_date"] = created_at
             elif data_type == "issuesclosed":
                 user = item["user"]["login"]
+                created_at = datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
                 if "pull_request" in item:
                     continue
                 if item["state"] == "closed":
                     user_stats[user]["issues_closed"] += 1
+                    user_stats[user]["github_date"] = created_at
                 if item.get("assignee"):
                     user = item["assignee"]["login"]
                     user_stats[user]["assigned_issues"] += 1
+                    user_stats[user]["github_date"] = created_at
             elif data_type == "commits":
                 user = item["author"]["login"]
+                created_at = datetime.strptime(
+                    item["commit"]["author"]["date"], "%Y-%m-%dT%H:%M:%SZ"
+                ).date()
                 user_stats[user]["commits"] += 1
+                user_stats[user]["github_date"] = created_at
             elif data_type == "comments":
                 user = item["user"]["login"]
+                created_at = datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
                 user_stats[user]["comments"] += 1
+                user_stats[user]["github_date"] = created_at

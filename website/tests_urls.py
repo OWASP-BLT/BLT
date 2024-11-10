@@ -1,5 +1,4 @@
 import importlib
-import logging
 import os
 
 import chromedriver_autoinstaller
@@ -20,7 +19,6 @@ service = Service(chromedriver_autoinstaller.install())
 options = webdriver.ChromeOptions()
 options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
 driver = webdriver.Chrome(service=service, options=options)
-logger = logging.getLogger(__name__)
 
 
 class UrlsTest(StaticLiveServerTestCase):
@@ -72,9 +70,6 @@ class UrlsTest(StaticLiveServerTestCase):
         )
         facebook_app.sites.add(site)
 
-    logging.basicConfig(level=logging.ERROR)
-    logger = logging.getLogger(__name__)
-
     def test_responses(
         self,
         allowed_http_codes=[200, 302, 405, 401, 404],
@@ -92,11 +87,10 @@ class UrlsTest(StaticLiveServerTestCase):
                     if pattern.namespace:
                         new_prefix = prefix + (":" if prefix else "") + pattern.namespace
                     check_urls(pattern.url_patterns, prefix=new_prefix)
-
                 params = {}
                 skip = False
-                regex = pattern.pattern.regex
 
+                regex = pattern.pattern.regex
                 if regex.groups > 0:
                     if regex.groups > len(list(regex.groupindex.keys())) or set(
                         regex.groupindex.keys()
@@ -105,73 +99,60 @@ class UrlsTest(StaticLiveServerTestCase):
                     else:
                         for key in set(default_kwargs.keys()) & set(regex.groupindex.keys()):
                             params[key] = default_kwargs[key]
-
                 if hasattr(pattern, "name") and pattern.name:
                     name = pattern.name
                 else:
                     skip = True
                     name = ""
-
                 fullname = (prefix + ":" + name) if prefix else name
 
                 if not skip:
-                    try:
-                        # Attempt to reverse the URL
-                        url = reverse(fullname, kwargs=params)
+                    url = reverse(fullname, kwargs=params)
+                    matches = [
+                        "/socialaccounts/",
+                        "/auth/user/",
+                        "/auth/password/change/",
+                        "/auth/github/connect/",
+                        "/auth/google/connect/",
+                        "/auth/registration/",
+                        "/auth/registration/verify-email/",
+                        "/auth/registration/resend-email/",
+                        "/auth/password/reset/",
+                        "/auth/password/reset/confirm/",
+                        "/auth/login/",
+                        "/auth/logout/",
+                        "/auth/facebook/connect/",
+                        "/captcha/refresh/",
+                        "/rest-auth/user/",
+                        "/rest-auth/password/change/",
+                        "/accounts/github/login/",
+                        "/accounts/google/login/",
+                        "/accounts/facebook/login/",
+                        "/error/",
+                        "/tz_detect/set/",
+                        "/leaderboard/api/",
+                        "/api/timelogsreport/",
+                    ]
+                    if not any(x in url for x in matches):
+                        with transaction.atomic():
+                            response = self.client.get(url)
+                            self.assertIn(
+                                response.status_code,
+                                allowed_http_codes,
+                                msg="!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the url that caused the eror is: %s"
+                                % url,
+                            )
+                            self.selenium.get("%s%s" % (self.live_server_url, url))
 
-                        matches = [
-                            "/socialaccounts/",
-                            "/auth/user/",
-                            "/auth/password/change/",
-                            "/auth/github/connect/",
-                            "/auth/google/connect/",
-                            "/auth/registration/",
-                            "/auth/registration/verify-email/",
-                            "/auth/registration/resend-email/",
-                            "/auth/password/reset/",
-                            "/auth/password/reset/confirm/",
-                            "/auth/login/",
-                            "/auth/logout/",
-                            "/auth/facebook/connect/",
-                            "/captcha/refresh/",
-                            "/rest-auth/user/",
-                            "/rest-auth/password/change/",
-                            "/accounts/github/login/",
-                            "/accounts/google/login/",
-                            "/accounts/facebook/login/",
-                            "/error/",
-                            "/tz_detect/set/",
-                            "/leaderboard/api/",
-                            "/api/timelogsreport/",
-                        ]
+                            for entry in self.selenium.get_log("browser"):
+                                self.assertNotIn(
+                                    "SyntaxError",
+                                    str(entry),
+                                    msg="!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the url that caused the eror is: %s"
+                                    % url,
+                                )
 
-                        if not any(x in url for x in matches):
-                            with transaction.atomic():
-                                try:
-                                    # Attempt to get the URL response
-                                    response = self.client.get(url)
-                                    self.assertIn(response.status_code, allowed_http_codes, msg=url)
-
-                                    # Check for JavaScript errors in Selenium browser logs
-                                    self.selenium.get("%s%s" % (self.live_server_url, url))
-                                    for entry in self.selenium.get_log("browser"):
-                                        self.assertNotIn("SyntaxError", str(entry), msg=url)
-
-                                except Exception as e:
-                                    logger.error(f"Error fetching URL {url}: {e}")
-                                    print(f"Error fetching URL {url}: {e}")
-
-                    except Exception as e:
-                        logger.error(
-                            f"Error reversing URL for {fullname} with params {params}: {e}"
-                        )
-                        print(f"Error reversing URL for {fullname} with params {params}: {e}")
-
-        try:
-            check_urls(module.urlpatterns)
-        except Exception as e:
-            logger.error(f"Error in check_urls function: {e}")
-            print(f"Error in check_urls function: {e}")
+        check_urls(module.urlpatterns)
 
     def test_github_login(self):
         url = reverse("github_login")
