@@ -414,6 +414,7 @@ urlpatterns = [
     ),
     re_path(r"^bacon/$", TemplateView.as_view(template_name="bacon.html"), name="bacon"),
     re_path(r"^bltv/$", TemplateView.as_view(template_name="bltv.html"), name="bltv"),
+    re_path(r"^gsoc/$", TemplateView.as_view(template_name="gsoc.html"), name="gsoc"),
     re_path(
         r"^privacypolicy/$",
         TemplateView.as_view(template_name="privacy.html"),
