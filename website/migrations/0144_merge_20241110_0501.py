@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0142_ipreport"),
         ("website", "0143_contributorstats_last_updated_and_more"),
