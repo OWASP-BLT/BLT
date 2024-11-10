@@ -35,6 +35,11 @@
                             <i class="fas fa-home"></i> Homepage
                         </a>
                     {% endif %}
+                    {% if project.license %}
+                        <a href="{{ project.github_url }}" target="_blank" title="License">
+                            <i class="fas fa-balance-scale"></i> {{ project.license }}
+                        </a>
+                    {% endif %}
                     {% for link in project.external_links %}<a href="{{ link.url }}" target="_blank">{{ link.name }}</a>{% endfor %}
                 </div>
                 <div class="refresh-buttons">
@@ -83,19 +88,18 @@
                         <p>Last Commit</p>
                     </div>
                 </a>
+                <!-- New Repo Views Stat -->
+                <div class="stat-item">
+                    <i class="fas fa-eye"></i>
+                    <span>{{ project.repo_views|default:"0" }}</span>
+                    <p>Repo Views</p>
+                </div>
                 <!-- Repository Stats -->
                 <a href="{{ project.github_url }}" target="_blank" class="stat-link">
                     <div class="stat-item">
                         <i class="fas fa-code"></i>
                         <span>{{ project.primary_language|default:"Not specified" }}</span>
                         <p>Language</p>
-                    </div>
-                </a>
-                <a href="{{ project.github_url }}" target="_blank" class="stat-link">
-                    <div class="stat-item">
-                        <i class="fas fa-balance-scale"></i>
-                        <span>{{ project.license|default:"Not specified" }}</span>
-                        <p>License</p>
                     </div>
                 </a>
                 <a href="{{ project.github_url }}" target="_blank" class="stat-link">
@@ -176,7 +180,7 @@
         <div class="repo-view-count-badge">
             <h3>Repo View Count Badge</h3>
             <p>This badge displays the number of views your repository has received:</p>
-            <pre><code>![Repo Views](https://blt.owasp.org/projects/{{project.slug}}/badge</code></pre>
+            <pre><code>![Repo Views](https://blt.owasp.org/projects/{{project.slug}}/badge)</code></pre>
         </div>
         <!-- Top Contributors -->
         <div class="contributors-section">
