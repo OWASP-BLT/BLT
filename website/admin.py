@@ -395,6 +395,18 @@ class TagAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
 
 
+class TimeLogAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "start_time",
+        "end_time",
+        "duration",
+        "github_issue_url",
+        "created",
+    )
+
+
 # Register all models with their respective admin classes
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(ContributorStats)
@@ -417,7 +429,7 @@ admin.site.register(ChatBotLog, ChatBotLogAdmin)
 admin.site.register(Blocked, BlockedAdmin)
 admin.site.register(Suggestion, SuggestionAdmin)
 admin.site.register(SuggestionVotes, SuggestionVotesAdmin)
-admin.site.register(TimeLog)
+admin.site.register(TimeLog, TimeLogAdmin)
 
 # Register missing models
 admin.site.register(InviteFriend)

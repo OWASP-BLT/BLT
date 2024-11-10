@@ -15,12 +15,15 @@ import dj_database_url
 import environ
 from django.utils.translation import gettext_lazy as _
 
-env = environ.Env()
 # reading .env file
 environ.Env.read_env()
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+env = environ.Env()
+env_file = os.path.join(BASE_DIR, ".env")
+environ.Env.read_env(env_file)
+
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
 
@@ -101,6 +104,7 @@ INSTALLED_APPS = (
     "captcha",
     "dj_rest_auth",
     "dj_rest_auth.registration",
+    "blog",
 )
 
 
@@ -423,10 +427,38 @@ REST_FRAMEWORK = {
     },
 }
 
-SOCIALACCOUNT_PROVIDER = {
-    "github": {"scope": ("user:email",)},
-    "google": {"scope": ("user:email",)},
+SOCIALACCOUNT_PROVIDERS = {
+    "github": {
+        "SCOPE": ["user:email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+    },
+    "google": {
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+    },
+    "facebook": {
+        "METHOD": "oauth2",
+        "SCOPE": ["email"],
+        "FIELDS": [
+            "id",
+            "email",
+            "name",
+            "first_name",
+            "last_name",
+            "verified",
+            "locale",
+            "timezone",
+            "link",
+        ],
+        "EXCHANGE_TOKEN": True,
+        "LOCALE_FUNC": lambda request: "en_US",
+        "VERIFIED_EMAIL": False,
+        "VERSION": "v7.0",
+    },
 }
+
+ACCOUNT_ADAPTER = "allauth.account.adapter.DefaultAccountAdapter"
+SOCIALACCOUNT_ADAPTER = "allauth.socialaccount.adapter.DefaultSocialAccountAdapter"
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
 

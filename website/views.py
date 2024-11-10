@@ -46,6 +46,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
+from django.utils.html import escape
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
@@ -66,6 +67,7 @@ from website.models import (
     ChatBotLog,
     Company,
     CompanyAdmin,
+    DailyStatusReport,
     Domain,
     Hunt,
     InviteFriend,
@@ -842,7 +844,7 @@ def comment_on_issue(request, issue_pk):
     issue = Issue.objects.filter(pk=issue_pk).first()
 
     if request.method == "POST" and isinstance(request.user, User):
-        comment = request.POST.get("comment", "")
+        comment = escape(request.POST.get("comment", ""))
         replying_to_input = request.POST.get("replying_to_input", "").split("#")
 
         if issue is None:
@@ -889,7 +891,7 @@ def update_comment(request, issue_pk, comment_pk):
     issue = Issue.objects.filter(pk=issue_pk).first()
     comment = Comment.objects.filter(pk=comment_pk).first()
     if request.method == "POST" and isinstance(request.user, User):
-        comment.text = request.POST.get("comment", "")
+        comment.text = escape(request.POST.get("comment", ""))
         comment.save()
 
     context = {
@@ -2231,9 +2233,11 @@ def chatbot_conversation(request):
         try:
             response = crc.invoke({"question": question})
         except Exception as e:
-            error_message = f"Error: {str(e)}"
-            ChatBotLog.objects.create(question=question, answer=error_message)
-            return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
+            return Response(
+                {"error": "An internal error has occurred."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
         request.session["buffer"] = memory.buffer
 
@@ -2242,9 +2246,13 @@ def chatbot_conversation(request):
         return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
 
     except Exception as e:
-        error_message = f"Error: {str(e)}"
-        ChatBotLog.objects.create(question=request.data.get("question", ""), answer=error_message)
-        return Response({"error": error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        ChatBotLog.objects.create(
+            question=request.data.get("question", ""), answer=f"Error: {str(e)}"
+        )
+        return Response(
+            {"error": "An internal error has occurred."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
 def weekly_report(request):
@@ -2411,47 +2419,73 @@ def view_suggestions(request):
     return render(request, "feature_suggestion.html", {"suggestions": suggestion})
 
 
+def format_timedelta(td):
+    """
+    Helper function to format timedelta objects into 'Xh Ym Zs' format.
+    """
+    total_seconds = int(td.total_seconds())
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{hours}h {minutes}m {seconds}s"
+
+
 def sizzle(request):
-    print(request.user)
-    if not request.user.is_authenticated:
-        messages.error(request, "Please login to access the Sizzle page.")
-        return redirect("index")
+    # Aggregate leaderboard data: username and total_duration
+    leaderboard_qs = (
+        TimeLog.objects.values("user__username")
+        .annotate(total_duration=Sum("duration"))
+        .order_by("-total_duration")
+    )
 
-    sizzle_data = None
-
-    last_data = TimeLog.objects.filter(user=request.user).order_by("-created").first()
-
-    if last_data:
-        all_data = TimeLog.objects.filter(
-            user=request.user, created__date=last_data.created.date()
-        ).order_by("created")
-
-        total_duration = sum((entry.duration for entry in all_data if entry.duration), timedelta())
-
-        total_duration_seconds = total_duration.total_seconds()
-        formatted_duration = (
-            f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
+    # Process leaderboard to include formatted_duration
+    leaderboard = []
+    for entry in leaderboard_qs:
+        username = entry["user__username"]
+        total_duration = entry["total_duration"] or timedelta()  # Handle None
+        formatted_duration = format_timedelta(total_duration)
+        leaderboard.append(
+            {
+                "username": username,
+                "formatted_duration": formatted_duration,
+            }
         )
 
-        github_issue_url = all_data.first().github_issue_url
+    # Initialize sizzle_data
+    sizzle_data = None
 
-        issue_title = get_github_issue_title(github_issue_url)
+    if request.user.is_authenticated:
+        last_data = TimeLog.objects.filter(user=request.user).order_by("-created").first()
 
-        start_time = all_data.first().start_time.strftime("%I:%M %p")
-        date = last_data.created.strftime("%d %B %Y")
+        if last_data:
+            all_data = TimeLog.objects.filter(
+                user=request.user, created__date=last_data.created.date()
+            ).order_by("created")
 
-        sizzle_data = {
-            "issue_title": issue_title,
-            "duration": formatted_duration,
-            "start_time": start_time,
-            "date": date,
-        }
+            total_duration = sum(
+                (entry.duration for entry in all_data if entry.duration), timedelta()
+            )
 
-    return render(request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data})
+            formatted_duration = format_timedelta(total_duration)
+
+            github_issue_url = all_data.first().github_issue_url
+            issue_title = get_github_issue_title(github_issue_url)
+
+            start_time = all_data.first().start_time.strftime("%I:%M %p")
+            date = last_data.created.strftime("%d %B %Y")
+
+            sizzle_data = {
+                "issue_title": issue_title,
+                "duration": formatted_duration,
+                "start_time": start_time,
+                "date": date,
+            }
+
+    return render(
+        request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data, "leaderboard": leaderboard}
+    )
 
 
 def TimeLogListAPIView(request):
-    print(request.user)
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -2504,3 +2538,90 @@ def TimeLogListAPIView(request):
         response_data.append(day_data)
 
     return JsonResponse(response_data, safe=False, status=status.HTTP_200_OK)
+
+
+def sizzle_docs(request):
+    return render(request, "sizzle/sizzle_docs.html")
+
+
+@login_required
+def TimeLogListView(request):
+    time_logs = TimeLog.objects.filter(user=request.user).order_by("-start_time")
+    active_time_log = time_logs.filter(end_time__isnull=True).first()
+    # print the all details of the active time log
+    token, created = Token.objects.get_or_create(user=request.user)
+    return render(
+        request,
+        "sizzle/time_logs.html",
+        {"time_logs": time_logs, "active_time_log": active_time_log, "token": token.key},
+    )
+
+
+@login_required
+def sizzle_daily_log(request):
+    try:
+        if request.method == "GET":
+            reports = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
+            return render(request, "sizzle/sizzle_daily_status.html", {"reports": reports})
+
+        if request.method == "POST":
+            previous_work = request.POST.get("previous_work")
+            next_plan = request.POST.get("next_plan")
+            blockers = request.POST.get("blockers")
+            print(previous_work, next_plan, blockers)
+
+            DailyStatusReport.objects.create(
+                user=request.user,
+                date=now().date(),
+                previous_work=previous_work,
+                next_plan=next_plan,
+                blockers=blockers,
+            )
+
+            messages.success(request, "Daily status report submitted successfully.")
+            return redirect("sizzle")
+
+    except Exception as e:
+        messages.error(request, f"An error occurred: {e}")
+        return redirect("sizzle")
+
+    return HttpResponseBadRequest("Invalid request method.")
+
+
+@login_required
+def user_sizzle_report(request, username):
+    user = get_object_or_404(User, username=username)
+    time_logs = TimeLog.objects.filter(user=user).order_by("-start_time")
+
+    grouped_logs = defaultdict(list)
+    for log in time_logs:
+        date_str = log.created.strftime("%Y-%m-%d")
+        grouped_logs[date_str].append(log)
+
+    response_data = []
+    for date, logs in grouped_logs.items():
+        first_log = logs[0]
+        total_duration = sum((log.duration for log in logs if log.duration), timedelta())
+
+        total_duration_seconds = total_duration.total_seconds()
+        formatted_duration = (
+            f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
+        )
+
+        issue_title = get_github_issue_title(first_log.github_issue_url)
+
+        start_time = first_log.start_time.strftime("%I:%M %p")
+        formatted_date = first_log.created.strftime("%d %B %Y")
+
+        day_data = {
+            "issue_title": issue_title,
+            "duration": formatted_duration,
+            "start_time": start_time,
+            "date": formatted_date,
+        }
+
+        response_data.append(day_data)
+
+    return render(
+        request, "sizzle/user_sizzle_report.html", {"response_data": response_data, "user": user}
+    )
