@@ -795,7 +795,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if freshness:
             projects = projects.filter(freshness__icontains=freshness)
         if stars:
-            projects = projects.filter(stars__gte(stars)
+            projects = projects.filter(stars__gte=stars)
         if forks:
             projects = projects.filter(forks__gte(forks)
         if tags:
