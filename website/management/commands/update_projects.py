@@ -1,5 +1,7 @@
+import time
+
 import requests
-from django.core.exceptions import MultipleObjectsReturned
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 
@@ -62,27 +64,76 @@ class Command(BaseCommand):
 
             # Fetch stars, forks, and issues count
             url = f"https://api.github.com/repos/{repo_name}"
-            response = requests.get(url, headers={"Content-Type": "application/json"})
+            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}"}
+            response = requests.get(url, headers=headers)
+
             if response.status_code == 200:
                 repo_data = response.json()
                 project.stars = repo_data.get("stargazers_count", 0)
                 project.forks = repo_data.get("forks_count", 0)
-                project.total_issues = repo_data.get(
-                    "open_issues_count", 0
-                )  # Directly use open_issues_count
+                project.watchers = repo_data.get("subscribers_count", 0)
+                project.network_count = repo_data.get("network_count", 0)
+                project.subscribers_count = repo_data.get("subscribers_count", 0)
+                project.primary_language = repo_data.get("language")
+                project.license = repo_data.get("license", {}).get("name")
+                project.created_at = parse_datetime(repo_data.get("created_at"))
+                project.updated_at = parse_datetime(repo_data.get("updated_at"))
+                project.size = repo_data.get("size", 0)
 
-                # Fetch last commit date
-                commits_url = f"https://api.github.com/repos/{repo_name}/commits"
-                commits_response = requests.get(
-                    commits_url, headers={"Content-Type": "application/json"}
-                )
-                if commits_response.status_code == 200:
-                    commits_data = commits_response.json()
-                    if commits_data:
-                        last_commit_date = (
-                            commits_data[0].get("commit", {}).get("committer", {}).get("date")
+                # Get closed issues count with proper pagination
+                closed_issues_count = 0
+                page = 1
+                while True:
+                    closed_issues_url = (
+                        f"https://api.github.com/repos/{repo_name}/issues"
+                        f"?state=closed&per_page=100&page={page}"
+                    )
+                    closed_response = requests.get(closed_issues_url, headers=headers)
+
+                    if closed_response.status_code != 200:
+                        self.stdout.write(
+                            self.style.WARNING(
+                                f"Failed to fetch page {page} of closed issues: {closed_response.status_code}"
+                            )
                         )
-                        project.last_updated = parse_datetime(last_commit_date)
+                        break
+
+                    issues = closed_response.json()
+                    if not issues:
+                        break
+
+                    # Filter out pull requests
+                    actual_issues = [issue for issue in issues if "pull_request" not in issue]
+                    closed_issues_count += len(actual_issues)
+
+                    # Check if we've reached the last page
+                    if "next" not in closed_response.links:
+                        break
+
+                    page += 1
+                    # Respect GitHub's rate limits
+                    time.sleep(1)
+
+                project.closed_issues = closed_issues_count
+                project.open_issues = (
+                    repo_data.get("open_issues_count", 0) - project.open_pull_requests
+                )
+
+                # Get open PRs count
+                pr_url = f"https://api.github.com/repos/{repo_name}/pulls?state=open&per_page=100"
+                pr_response = requests.get(pr_url, headers=headers)
+                if pr_response.status_code == 200:
+                    project.open_pull_requests = len(pr_response.json())
+
+                # Get last commit
+                commits_url = f"https://api.github.com/repos/{repo_name}/commits"
+                commits_response = requests.get(commits_url, headers=headers)
+                if commits_response.status_code == 200:
+                    commits = commits_response.json()
+                    if commits:
+                        project.last_commit_date = parse_datetime(
+                            commits[0].get("commit", {}).get("committer", {}).get("date")
+                        )
 
             # Fetch latest release
             url = f"https://api.github.com/repos/{repo_name}/releases/latest"

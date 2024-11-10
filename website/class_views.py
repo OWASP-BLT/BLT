@@ -29,7 +29,7 @@ from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 
 # import Min
-from django.db.models import Count, Max, Q, Sum
+from django.db.models import Count, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.db.transaction import atomic
 from django.http import (
@@ -65,7 +65,6 @@ from website.models import (
     CompanyAdmin,
     Contribution,
     Contributor,
-    ContributorStats,
     Domain,
     Hunt,
     HuntPrize,
@@ -99,16 +98,21 @@ class ProjectDetailView(DetailView):
     model = Project
 
     def post(self, request, *args, **kwargs):
-        if "update_project" in request.POST:
-            from django.core.management import call_command
+        from django.core.management import call_command
 
-            project = self.get_object()  # Use get_object() to retrieve the current object
+        project = self.get_object()
+
+        if "refresh_stats" in request.POST:
             call_command("update_projects", "--project_id", project.pk)
-            # extract only the org and repo
+            messages.success(request, f"Refreshing stats for {project.name}")
+
+        elif "refresh_contributors" in request.POST:
             owner_repo = project.github_url.rstrip("/").split("/")[-2:]
-            call_command("fetch_contributor_stats", "--repo", owner_repo[0] + "/" + owner_repo[1])
-            messages.success(request, "Requested refresh to the " + project.name + " project")
-            return redirect("project_view", slug=project.slug)
+            repo = f"{owner_repo[0]}/{owner_repo[1]}"
+            call_command("fetch_contributor_stats", "--repo", repo)
+            messages.success(request, f"Refreshing contributors for {project.name}")
+
+        return redirect("project_view", slug=project.slug)
 
     def get(self, request, *args, **kwargs):
         project = self.get_object()
@@ -176,12 +180,22 @@ class ProjectListView(ListView):
         return context
 
     def post(self, request, *args, **kwargs):
-        if "update_projects" in request.POST:
-            print("Updating projects")
-            from django.core.management import call_command  # Add this import
+        if "refresh_stats" in request.POST:
+            from django.core.management import call_command
 
             call_command("update_projects")
-            messages.success(request, "Requested refresh to projects")
+            messages.success(request, "Refreshing project statistics...")
+            return redirect("project_list")
+
+        if "refresh_contributors" in request.POST:
+            from django.core.management import call_command
+
+            projects = Project.objects.all()
+            for project in projects:
+                owner_repo = project.github_url.rstrip("/").split("/")[-2:]
+                repo = f"{owner_repo[0]}/{owner_repo[1]}"
+                call_command("fetch_contributor_stats", "--repo", repo)
+            messages.success(request, "Refreshing contributor data...")
             return redirect("project_list")
 
         form = GitHubURLForm(request.POST)
@@ -548,49 +562,70 @@ class JoinCompany(TemplateView):
             return JsonResponse({"status": "There was some error"})
 
 
+from datetime import datetime, timedelta
+
+from django.utils import timezone
+
+
 class ContributorStatsView(TemplateView):
     template_name = "contributor_stats.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        self.period = self.request.GET.get("period", "day")
 
-        end_date = datetime.now().date()
-        if self.period == "day":
-            start_date = end_date - timedelta(days=1)
-        elif self.period == "week":
-            start_date = end_date - timedelta(days=7)
-        elif self.period == "year":
-            start_date = end_date - timedelta(days=365)
-        else:
-            start_date = end_date - timedelta(days=1)
+        # Get date range using Django's timezone
+        end_date = timezone.now()
+        display_end_date = end_date.date()
 
-        stats = ContributorStats.objects.filter(github_date__range=[start_date, end_date])
+        # Calculate start date
+        self.period = self.request.GET.get("period", "30")
+        days = int(self.period)
+        start_date = end_date - timedelta(days=days)
+        start_date = start_date.date()
 
-        latest_date = stats.aggregate(Max("github_date"))["github_date__max"]
-        display_end_date = latest_date if latest_date and latest_date < end_date else end_date
+        # Query contributions
+        contributions = Contribution.objects.filter(
+            created__date__gte=start_date, created__date__lte=display_end_date
+        )
 
+        # Aggregate stats by GitHub username
         user_stats = {}
-        for stat in stats:
-            total = (
-                stat.commits
-                + stat.issues_opened
-                + stat.issues_closed
-                + stat.prs
-                + stat.comments
-                + stat.assigned_issues
-            )
-            user_stats[stat.username] = {
-                "commits": stat.commits,
-                "issues_opened": stat.issues_opened,
-                "issues_closed": stat.issues_closed,
-                "assigned_issues": stat.assigned_issues,
-                "prs": stat.prs,
-                "comments": stat.comments,
-                "total": total,
-            }
 
-        # Sort by total descending
+        for contribution in contributions:
+            username = contribution.github_username
+            if username not in user_stats:
+                user_stats[username] = {
+                    "commits": 0,
+                    "issues_opened": 0,
+                    "issues_closed": 0,
+                    "prs": 0,
+                    "comments": 0,
+                    "total": 0,
+                }
+
+            # Add stats
+            if contribution.contribution_type == "commit":
+                user_stats[username]["commits"] += 1
+            elif contribution.contribution_type == "issue_opened":
+                user_stats[username]["issues_opened"] += 1
+            elif contribution.contribution_type == "issue_closed":
+                user_stats[username]["issues_closed"] += 1
+            elif contribution.contribution_type == "pull_request":
+                user_stats[username]["prs"] += 1
+            elif contribution.contribution_type == "comment":
+                user_stats[username]["comments"] += 1
+
+            # Calculate weighted total
+            total = (
+                user_stats[username]["commits"] * 5
+                + user_stats[username]["prs"] * 3
+                + user_stats[username]["issues_opened"] * 2
+                + user_stats[username]["issues_closed"] * 2
+                + user_stats[username]["comments"]
+            )
+            user_stats[username]["total"] = total
+
+        # Sort by total contributions
         user_stats = dict(sorted(user_stats.items(), key=lambda x: x[1]["total"], reverse=True))
 
         context.update(
@@ -601,6 +636,7 @@ class ContributorStatsView(TemplateView):
                 "end_date": display_end_date.strftime("%Y-%m-%d"),
             }
         )
+
         return context
 
 
@@ -1694,7 +1730,6 @@ class StatsDetailView(TemplateView):
             get_cumulative_data(CompanyAdmin.objects),
             get_cumulative_data(Transaction.objects),
             get_cumulative_data(Payment.objects),
-            get_cumulative_data(ContributorStats.objects),
             get_cumulative_data(Monitor.objects),
             get_cumulative_data(Bid.objects),
             get_cumulative_data(ChatBotLog.objects),
@@ -2232,7 +2267,7 @@ class IssueView(DetailView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
+        context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name.count())
         context["all_comment"] = self.object.comments.all
         context["all_users"] = User.objects.all()
         context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()

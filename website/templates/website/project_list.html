@@ -10,23 +10,31 @@
             <h3>Projects: {{ projects.count }}</h3>
             <form method="post" class="add-project-form">
                 {% csrf_token %}
-                <div class="add-project-form">
-                    <div class="form-field">
-                        <input type="url"
-                               id="github_url"
-                               name="github_url"
-                               required
-                               class="github-url-input"
-                               placeholder="GitHub URL">
-                    </div>
-                    <button type="submit">
-                        <i class="fas fa-plus-circle"></i> Add Project
+                <div class="form-field">
+                    <input type="url"
+                           id="github_url"
+                           name="github_url"
+                           required
+                           class="github-url-input"
+                           placeholder="GitHub URL">
+                </div>
+                <button type="submit">
+                    <i class="fas fa-plus-circle"></i> Add Project
+                </button>
+            </form>
+            <div class="refresh-buttons">
+                <form method="post" class="refresh-projects-form">
+                    {% csrf_token %}
+                    <button type="submit" name="refresh_stats" value="refresh_stats">
+                        <i class="fas fa-sync-alt"></i> Refresh Project Stats
                     </button>
                 </form>
                 <form method="post" class="refresh-projects-form">
                     {% csrf_token %}
-                    <button type="submit" name="update_projects" value="update_projects">
-                        <i class="fas fa-sync-alt"></i> Refresh Projects
+                    <button type="submit"
+                            name="refresh_contributors"
+                            value="refresh_contributors">
+                        <i class="fas fa-users"></i> Refresh Contributors
                     </button>
                 </form>
             </div>
