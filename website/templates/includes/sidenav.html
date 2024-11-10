@@ -22,10 +22,6 @@
             background-color: transparent;
             text-decoration: none;
         }
-        a:hover {
-            text-decoration: none;
-            color: red;
-        }
         a:visited {
             color: black;
         }
@@ -44,20 +40,20 @@
         <div class="overflow-auto no-scrollbar">
             <ul class="font-medium text-2xl mt-6 mb-0">
                 <!-- Organizations Header Link -->
-                <li class="mb-2 {% if request.path == '/companies/' %}bg-gray-200{% endif %}">
+                <li class="mb-2 {% if '/companies/' in request.path %} bg-gray-200 {% endif %}">
                     <a href="{% url 'domain_lists' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
-                        <div class="icon text-green-500">
+                       class="flex items-center w-full no-underline p-2 {% if '/companies/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                        <div class="icon text-red-500">
                             <i class="fas fa-building fa-lg"></i>
                         </div>
                         <span>Organizations</span>
                     </a>
-                </li>
+                </li>                
                 <!-- Submenu Items -->
                 <ul class="pl-8">
-                    <li class="mb-2 {% if request.path == '' %}bg-gray-200{% endif %}">
+                    <li class="mb-2 {% if request.path == '/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'index' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                        class="flex items-center w-full p-2 no-underline {% if request.path == '/' %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                             <div class="icon text-red-500">
                                 <i class="fas fa-exclamation-triangle fa-lg"></i>
                             </div>
@@ -66,7 +62,7 @@
                     </li>
                     <li class="mb-2 {% if request.path == '/sizzle/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'sizzle' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/sizzle/' %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                             <div class="icon text-blue-500">
                                 <i class="fas fa-stopwatch fa-lg"></i>
                             </div>
@@ -75,7 +71,7 @@
                     </li>
                     <li class="mb-2 {% if request.path == '/scoreboard/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'scoreboard' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/scoreboard/' %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                             <div class="icon text-yellow-500">
                                 <i class="fas fa-trophy fa-lg"></i>
                             </div>
@@ -84,7 +80,7 @@
                     </li>
                     <li class="mb-2 {% if request.path == '/hunts/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'hunts' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/hunts/' %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                             <div class="icon text-purple-500">
                                 <i class="fas fa-bug fa-lg"></i>
                             </div>
@@ -93,20 +89,21 @@
                     </li>
                     <li class="mb-2 {% if request.path == '/trademarks/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'trademark_search' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/trademarks/' %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                             <div class="icon text-indigo-500">
                                 <i class="fas fa-registered fa-lg"></i>
                             </div>
                             <span>Trademarks</span>
                         </a>
                     </li>
+                    
                 </ul>
                 <!-- Spacer -->
                 <div class="my-4 border-t border-gray-300"></div>
                 <!-- Projects Header Link -->
                 <li class="mb-2 {% if request.path == '/projects/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'project_list' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
+                       class="flex items-center w-full no-underline p-2 {% if '/projects/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                         <div class="icon text-orange-500">
                             <i class="fas fa-box fa-lg"></i>
                         </div>
@@ -117,7 +114,7 @@
                 <ul class="pl-8">
                     <li class="mb-2 {% if request.path == '/bidding/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'BiddingData' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if '/bidding/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                             <div class="icon text-green-500">
                                 <i class="fas fa-money-bill-wave fa-lg"></i>
                             </div>
@@ -126,7 +123,7 @@
                     </li>
                     <li class="mb-2 {% if request.path == '/blt-tomato/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'blt-tomato' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if '/blt-tomato/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                             <div class="icon text-red-500">
                                 <i class="fas fa-seedling fa-lg"></i>
                             </div>
@@ -135,7 +132,7 @@
                     </li>
                     <li class="mb-2 {% if request.path == '/bacon/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'bacon' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if '/bacon/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                             <div class="icon text-pink-500">
                                 <i class="fas fa-coins fa-lg"></i>
                             </div>
@@ -144,7 +141,7 @@
                     </li>
                     <li class="mb-2 {% if request.path == '/contributor-stats/today/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'contributor-stats' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if '/contributor-stats/today/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                             <div class="icon text-blue-500">
                                 <i class="fas fa-calendar-day fa-lg"></i>
                             </div>
@@ -157,7 +154,7 @@
                 <!-- Users Header Link -->
                 <li class="mb-2 {% if request.path == '/users/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'users' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
+                       class="flex items-center w-full no-underline p-2 {% if '/users/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                         <div class="icon text-purple-500">
                             <i class="fas fa-user-friends fa-lg"></i>
                         </div>
@@ -168,7 +165,7 @@
                 <ul class="pl-8">
                     <li class="mb-2 {% if request.path == '/leaderboard/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'leaderboard_global' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if '/leaderboard/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                             <div class="icon text-yellow-500">
                                 <i class="fas fa-medal fa-lg"></i>
                             </div>
@@ -177,7 +174,7 @@
                     </li>
                     <li class="mb-2 {% if request.path == '/contributors/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'contributors' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if '/contributors/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                             <div class="icon text-blue-500">
                                 <i class="fas fa-laptop-code fa-lg"></i>
                             </div>
@@ -186,7 +183,7 @@
                     </li>
                     <li class="mb-2 {% if request.path == '/deletions/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'deletions' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if '/deletions/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                             <div class="icon text-red-500">
                                 <i class="fas fa-trash-alt fa-lg"></i>
                             </div>
@@ -199,7 +196,7 @@
                 <!-- iPhone App -->
                 <li class="mb-2">
                     <a href="https://apps.apple.com/us/app/owasp-blt/id6448071954"
-                       class="flex items-center w-full text-black no-underline p-2"
+                       class="flex items-center w-full no-underline p-2 hover:text-red-500 text-black"
                        rel="noopener noreferrer">
                         <div class="icon text-gray-800">
                             <i class="fab fa-apple fa-lg"></i>
@@ -212,7 +209,7 @@
                 <!-- About Us Header Link -->
                 <li class="mb-2 {% if request.path == '/about/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'about' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
+                       class="flex items-center w-full no-underline p-2 {% if '/about/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                         <div class="icon text-blue-500">
                             <i class="fas fa-info-circle fa-lg"></i>
                         </div>
@@ -223,7 +220,7 @@
                 <ul class="pl-8">
                     <li class="mb-2 {% if request.path == '/sponsor/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'sponsor' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if '/sponsor/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                             <div class="icon text-green-500">
                                 <i class="fas fa-handshake fa-lg"></i>
                             </div>
@@ -232,7 +229,7 @@
                     </li>
                     <li class="mb-2 {% if request.path == '/sponsor/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'sponsor' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if '/sponsor/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                             <div class="icon text-red-500">
                                 <i class="fas fa-donate fa-lg"></i>
                             </div>
@@ -241,7 +238,7 @@
                     </li>
                     <li class="mb-2 {% if request.path == '/view-suggestion/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'view_suggestions' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full text-black no-underline p-2 {% if '/view-suggestion/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                             <div class="icon text-purple-500">
                                 <i class="fas fa-comments fa-lg"></i>
                             </div>
@@ -254,7 +251,7 @@
                 <!-- Contribute Header Link -->
                 <li class="mb-2 {% if request.path == '/contribute/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'contribution_guidelines' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
+                       class="flex items-center w-full no-underline p-2 {% if '/contribute/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                         <div class="icon text-orange-500">
                             <i class="fas fa-hands-helping fa-lg"></i>
                         </div>
@@ -265,7 +262,7 @@
                 <ul class="pl-8">
                     <li class="mb-2">
                         <a href="https://github.com/OWASP/BLT/blob/main/Setup.md"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if '/Setup.md' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                             <div class="icon text-blue-500">
                                 <i class="fas fa-book fa-lg"></i>
                             </div>
@@ -274,7 +271,7 @@
                     </li>
                     <li class="mb-2">
                         <a href="https://blt.owasp.org/swagger/"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if '/swagger/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                             <div class="icon text-green-500">
                                 <i class="fas fa-cogs fa-lg"></i>
                             </div>
@@ -283,7 +280,7 @@
                     </li>
                     <li class="mb-2 {% if request.path == '/bltv/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'bltv' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if '/bltv/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                             <div class="icon text-red-500">
                                 <i class="fas fa-tv fa-lg"></i>
                             </div>
@@ -296,7 +293,7 @@
                 <!-- Follow Us Header Link -->
                 <li class="mb-2">
                     <a href="https://twitter.com/OWASP_BLT"
-                       class="flex items-center w-full text-black no-underline p-2"
+                       class="flex items-center w-full no-underline p-2 {% if '/OWASP_BLT' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}"
                        target="_blank">
                         <div class="icon text-gray-700">
                             <i class="fab fa-twitter fa-lg"></i>
@@ -308,7 +305,7 @@
                 <ul class="pl-8">
                     <li class="mb-2">
                         <a href="https://www.facebook.com/groups/owaspfoundation/"
-                           class="flex items-center w-full text-black no-underline p-2"
+                           class="flex items-center w-full no-underline p-2 {% if '/owaspfoundation' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}"
                            target="_blank">
                             <div class="icon text-blue-600">
                                 <i class="fab fa-facebook fa-lg"></i>
@@ -318,7 +315,7 @@
                     </li>
                     <li class="mb-2">
                         <a href="https://github.com/OWASP/BLT"
-                           class="flex items-center w-full text-black no-underline p-2"
+                           class="flex items-center w-full no-underline p-2 {% if '/BLT' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}"
                            target="_blank">
                             <div class="icon text-gray-800">
                                 <i class="fab fa-github fa-lg"></i>
@@ -328,7 +325,7 @@
                     </li>
                     <li class="mb-2 {% if request.path == '/blog/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'blog' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if '/blog/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                             <div class="icon text-red-500">
                                 <i class="fas fa-blog fa-lg"></i>
                             </div>
@@ -341,7 +338,7 @@
                 <!-- Footer Links -->
                 <li class="mb-2 {% if request.path == '/sitemap/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'sitemap' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
+                       class="flex items-center w-full no-underline p-2 {% if '/sitemap' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                         <div class="icon text-indigo-500">
                             <i class="fas fa-sitemap fa-lg"></i>
                         </div>
@@ -350,7 +347,7 @@
                 </li>
                 <li class="mb-2 {% if request.path == '/status/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'check_status' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
+                       class="flex items-center w-full no-underline p-2 {% if '/status' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                         <div class="icon text-green-500">
                             <i class="fas fa-check-circle fa-lg"></i>
                         </div>
@@ -359,7 +356,7 @@
                 </li>
                 <li class="mb-2 {% if '/contributor-stats' in request.path %}bg-gray-200{% endif %}">
                     <a href="{% url 'contributor-stats' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
+                       class="flex items-center w-full no-underline p-2 {% if '/contributor-stats' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                         <div class="icon text-indigo-500">
                             <i class="fas fa-chart-line fa-lg"></i>
                         </div>
@@ -369,7 +366,7 @@
                 <div class="my-4 border-t border-gray-300"></div>
                 <li class="mb-2 {% if request.path == '/terms/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'terms' %}"
-                       class="flex items-center w-full text-black no-underline p-2">
+                       class="flex items-center w-full no-underline p-2 {% if '/terms' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                         <div class="icon text-gray-700">
                             <i class="fas fa-file-contract fa-lg"></i>
                         </div>
