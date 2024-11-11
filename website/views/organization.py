@@ -48,14 +48,30 @@ from website.utils import format_timedelta, get_github_issue_title
 
 def add_domain_to_company(request):
     if request.method == "POST":
-        domain = request.POST.get("domain")
-        domain = Domain.objects.get(id=domain)
+        domain_id = request.POST.get("domain")
         company_name = request.POST.get("company")
+
+        if not domain_id or not company_name:
+            messages.error(request, "Domain ID and Company name are required.")
+            return redirect("index")
+
+        try:
+            domain = Domain.objects.get(id=domain_id)
+        except Domain.DoesNotExist:
+            messages.error(request, "Invalid domain ID.")
+            return redirect("index")
+
         company = Company.objects.filter(name=company_name).first()
 
         if not company:
-            response = requests.get(domain.url)
-            soup = BeautifulSoup(response.text, "html.parser")
+            try:
+                response = requests.get(domain.url, timeout=10)
+                response.raise_for_status()
+                soup = BeautifulSoup(response.text, "html.parser")
+            except requests.RequestException:
+                messages.error(request, "Network error while scraping the domain URL.")
+                return redirect("domain", slug=domain.url)
+
             if company_name in soup.get_text():
                 company = Company.objects.create(name=company_name)
                 domain.company = company
@@ -628,7 +644,7 @@ class DomainDetailView(ListView):
         )
 
         closed_issues = (
-            Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
+            Issue.objects.filter(domain__name__contains(self.kwargs["slug"])
             .filter(status="closed", hunt=None)
             .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
         )
@@ -660,7 +676,7 @@ class DomainDetailView(ListView):
         context["closed_net"] = closed_issues
         context["closed"] = closeissue_paginated
         context["leaderboard"] = (
-            User.objects.filter(issue__url__contains=self.kwargs["slug"])
+            User.objects.filter(issue__url__contains(self.kwargs["slug"])
             .annotate(total=Count("issue"))
             .order_by("-total")
         )
