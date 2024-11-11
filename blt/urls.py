@@ -106,6 +106,8 @@ from website.views.organization import (
     ListHunts,
     OngoingHunts,
     PreviousHunts,
+    ReportedIpListView,
+    ReportIpView,
     ScoreboardView,
     TimeLogListAPIView,
     TimeLogListView,
@@ -142,7 +144,6 @@ from website.views.project import (
     distribute_bacon,
     select_contribution,
 )
-from website.views.report_ip import ReportedIpListView, ReportIpView
 from website.views.user import (
     CustomObtainAuthToken,
     EachmonthLeaderboardView,
