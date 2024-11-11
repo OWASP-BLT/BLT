@@ -54,7 +54,10 @@ def add_domain_to_company(request):
         company = Company.objects.filter(name=company_name).first()
 
         if not company:
-            response = requests.get(domain.url)
+            url = domain.url
+            if not url.startswith(("http://", "https://")):
+                url = "http://" + url
+            response = requests.get(url)
             soup = BeautifulSoup(response.text, "html.parser")
             if company_name in soup.get_text():
                 company = Company.objects.create(name=company_name)
@@ -71,7 +74,7 @@ def add_domain_to_company(request):
             messages.success(request, "Organization added successfully")
             return redirect("domain", slug=domain.url)
     else:
-        return redirect("index")
+        return redirect("home")
 
 
 @login_required(login_url="/accounts/login")

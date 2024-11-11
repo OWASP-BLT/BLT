@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import requests
@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.timezone import now
 from django.views.generic import DetailView, ListView
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.views import APIView
@@ -87,9 +88,6 @@ class ProjectDetailView(DetailView):
 
         elif "refresh_contributors" in request.POST:
             call_command("fetch_contributors", "--project_id", project.pk)
-            messages.success(request, f"Refreshing contributors for {project.name}")
-        return redirect("project_view", slug=project.slug)
-
         return redirect("project_view", slug=project.slug)
 
     def get(self, request, *args, **kwargs):
@@ -100,7 +98,7 @@ class ProjectDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        end_date = timezone.now()
+        end_date = now()
         display_end_date = end_date.date()
         selected_year = self.request.GET.get("year", None)
         if selected_year:
@@ -151,7 +149,7 @@ class ProjectDetailView(DetailView):
 
         user_stats = dict(sorted(user_stats.items(), key=lambda x: x[1]["total"], reverse=True))
 
-        current_year = timezone.now().year
+        current_year = now().year
         year_list = list(range(current_year, current_year - 10, -1))
 
         context.update(
@@ -168,7 +166,7 @@ class ProjectDetailView(DetailView):
 
 
 class ProjectBadgeView(APIView):
-    def get(self, request, slug, format=None):
+    def get(self, request, slug):
         # Retrieve the project or return 404
         project = get_object_or_404(Project, slug=slug)
 
