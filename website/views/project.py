@@ -27,7 +27,6 @@ def blt_tomato(request):
             data = json.load(json_file)
     except Exception:
         data = []
-
     for project in data:
         funding_details = project.get("funding_details", "").split(", ")
         funding_links = [url.strip() for url in funding_details if url.startswith("https://")]
@@ -100,7 +99,7 @@ class ProjectDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        end_date = timezone.now()
+        end_date = datetime.now(timezone.utc)
         display_end_date = end_date.date()
         selected_year = self.request.GET.get("year", None)
         if selected_year:
@@ -151,7 +150,7 @@ class ProjectDetailView(DetailView):
 
         user_stats = dict(sorted(user_stats.items(), key=lambda x: x[1]["total"], reverse=True))
 
-        current_year = timezone.now().year
+        current_year = datetime.now(timezone.utc).year
         year_list = list(range(current_year, current_year - 10, -1))
 
         context.update(
