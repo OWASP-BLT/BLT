@@ -1,6 +1,14 @@
+import base64
+import io
+import json
+import os
+import uuid
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
+import requests
+import six
+import tweepy
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
 from django.conf import settings
