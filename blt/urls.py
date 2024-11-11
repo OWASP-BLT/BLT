@@ -138,12 +138,11 @@ from website.views.project import (
     ProjectBadgeView,
     ProjectDetailView,
     ProjectListView,
-    ReportedIpListView,
-    ReportIpView,
     blt_tomato,
     distribute_bacon,
     select_contribution,
 )
+from website.views.report_ip import ReportedIpListView, ReportIpView
 from website.views.user import (
     CustomObtainAuthToken,
     EachmonthLeaderboardView,
