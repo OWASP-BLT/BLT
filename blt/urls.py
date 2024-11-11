@@ -123,6 +123,7 @@ from website.views.organization import (
     company_dashboard_hunt_detail,
     company_dashboard_hunt_edit,
     company_hunt_results,
+    delete_time_entry,
     get_scoreboard,
     hunt_results,
     sizzle,
@@ -629,6 +630,7 @@ urlpatterns = [
         user_sizzle_report,
         name="user_sizzle_report",
     ),
+    path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
 ]
 
 if settings.DEBUG:

@@ -23,6 +23,7 @@ from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
+from django.views.decorators.http import require_POST
 from django.views.generic import FormView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
 from rest_framework import status
@@ -1431,6 +1432,18 @@ def get_scoreboard(request):
     return HttpResponse(
         json.dumps(domain.object_list, default=str), content_type="application/json"
     )
+
+
+@require_POST
+@login_required
+def delete_time_entry(request):
+    entry_id = request.POST.get("id")
+    try:
+        time_entry = TimeLog.objects.get(id=entry_id, user=request.user)
+        time_entry.delete()
+        return JsonResponse({"success": True})
+    except TimeLog.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Time entry not found"})
 
 
 class ReportIpView(FormView):
