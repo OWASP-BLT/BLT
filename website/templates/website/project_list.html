@@ -22,22 +22,6 @@
                     <i class="fas fa-plus-circle"></i> Add Project
                 </button>
             </form>
-            <div class="refresh-buttons">
-                <form method="post" class="refresh-projects-form">
-                    {% csrf_token %}
-                    <button type="submit" name="refresh_stats" value="refresh_stats">
-                        <i class="fas fa-sync-alt"></i> Refresh Project Stats
-                    </button>
-                </form>
-                <form method="post" class="refresh-projects-form">
-                    {% csrf_token %}
-                    <button type="submit"
-                            name="refresh_contributors"
-                            value="refresh_contributors">
-                        <i class="fas fa-users"></i> Refresh Contributors
-                    </button>
-                </form>
-            </div>
             <form method="get" class="refresh-projects-form">
                 <select id="sort_by"
                         name="sort_by"

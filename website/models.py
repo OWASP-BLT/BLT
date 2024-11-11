@@ -752,7 +752,8 @@ class Project(models.Model):
     subscribers_count = models.IntegerField(default=0)
     open_issues = models.IntegerField(default=0)
     closed_issues = models.IntegerField(default=0)
-    size = models.IntegerField(default=0)  # Repository size in KB
+    size = models.IntegerField(default=0)
+    commit_count = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name

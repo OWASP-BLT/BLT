@@ -20,6 +20,7 @@ import stripe
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in, user_signed_up
 from bs4 import BeautifulSoup
+from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -27,6 +28,7 @@ from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core import serializers
 from django.core.cache import cache
+from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
@@ -50,6 +52,7 @@ from django.utils.html import escape
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
+from django.views.generic import TemplateView
 from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
 from requests.auth import HTTPBasicAuth
@@ -101,8 +104,17 @@ def profile_edit(request):
     if request.method == "POST":
         form = UserProfileForm(request.POST, request.FILES, instance=user_profile)
         if form.is_valid():
+            # Check if email is unique
+            new_email = form.cleaned_data["email"]
+            if User.objects.exclude(pk=request.user.pk).filter(email=new_email).exists():
+                form.add_error("email", "This email is already in use")
+                return render(request, "profile_edit.html", {"form": form})
+
             form.save()
+            messages.success(request, "Profile updated successfully!")
             return redirect("profile", slug=request.user.username)
+        else:
+            messages.error(request, "Please correct the errors below.")
     else:
         form = UserProfileForm(instance=user_profile)
 
@@ -2625,3 +2637,106 @@ def user_sizzle_report(request, username):
     return render(
         request, "sizzle/user_sizzle_report.html", {"response_data": response_data, "user": user}
     )
+
+
+import json
+from datetime import timedelta
+
+from django.apps import apps
+from django.core.exceptions import FieldError
+from django.db.models import Count
+from django.db.models.functions import TruncDate
+from django.utils import timezone
+
+
+class StatsDetailView(TemplateView):
+    template_name = "stats.html"
+
+    def get_historical_counts(self, model):
+        # Map models to their date fields
+        date_field_map = {
+            "Issue": "created",
+            "UserProfile": "created",  # From user creation
+            "Comment": "created_date",
+            "Hunt": "created",
+            "Domain": "created",
+            "Company": "created",
+            "Project": "created",
+            "Contribution": "created",
+            "TimeLog": "created",
+            "ActivityLog": "created",
+            "DailyStatusReport": "created",
+            "Suggestion": "created",
+            "SuggestionVotes": "created",
+            "Bid": "created",
+            "Monitor": "created",
+            "Payment": "created",
+            "Transaction": "created",
+            "InviteFriend": "created",
+            "Points": "created",
+            "Winner": "created",
+            "Wallet": "created",
+            "BaconToken": "date_awarded",
+            "IP": "created",
+            "ChatBotLog": "created",
+            # Add other models as needed
+        }
+
+        date_field = date_field_map.get(model.__name__, "created")
+        dates = []
+        counts = []
+
+        try:
+            # Annotate and count by truncated date
+            date_counts = (
+                model.objects.annotate(date=TruncDate(date_field))
+                .values("date")
+                .annotate(count=Count("id"))
+                .order_by("date")
+            )
+            for entry in date_counts:
+                dates.append(entry["date"].strftime("%Y-%m-%d"))
+                counts.append(entry["count"])
+        except FieldError:
+            # If the date field doesn't exist, return empty lists
+            return [], []
+
+        return dates, counts
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        stats_data = []
+
+        known_icons = {
+            "Issue": "fas fa-exclamation-circle",
+            "UserProfile": "fas fa-user",
+            "Comment": "fas fa-comments",
+            # Add other icons here
+        }
+
+        for model in apps.get_models():
+            if model._meta.abstract or model._meta.proxy:
+                continue
+
+            model_name = model.__name__
+            try:
+                dates, counts = self.get_historical_counts(model)
+                trend = counts[-1] - counts[-2] if len(counts) >= 2 else 0
+                total_count = model.objects.count()
+
+                stats_data.append(
+                    {
+                        "label": model_name,
+                        "count": total_count,
+                        "icon": known_icons.get(model_name, "fas fa-database"),
+                        "history": json.dumps(counts),  # Serialize counts to JSON
+                        "dates": json.dumps(dates),  # Serialize dates to JSON
+                        "trend": trend,
+                    }
+                )
+            except Exception as e:
+                # Optionally log the exception
+                continue
+
+        context["stats"] = sorted(stats_data, key=lambda x: x["count"], reverse=True)
+        return context

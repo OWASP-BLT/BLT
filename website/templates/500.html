@@ -2,22 +2,22 @@
 {% load static %}
 {% load custom_tags %}
 {% block content %}
-    <div class="font-serif">
-        <center>
-            <h1>SERVER ERROR</h1>
-            {% if exception %}Error message: {{ exception }}{% endif %}
-            <br>
-            Refresh the page or report it <a><span class="errors">here</span></a>.
-        </center>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">{% include "includes/sidenav.html" %}</div>
+            <div class="col-md-9">
+                <div class="error-template">
+                    <h1>Oops!</h1>
+                    <h2>500 Internal Server Error</h2>
+                    <div class="error-details">Sorry, an error has occurred, please try again.</div>
+                    <div class="error-actions">
+                        <a href="{% url 'index' %}" class="btn btn-primary btn-lg">
+                            <span class="glyphicon glyphicon-home"></span>
+                            Take Me Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <script type="text/javascript">
-        $(document).ready(function () {
-            $(document).on('click', '.errors', function () {
-                var url = window.location.href;
-                var redirect_url = 'https://{% env "FQDN" %}/report/?url=' + url;
-                var redirectWindow = window.open(redirect_url, '_blank');
-                redirectWindow.location;
-            });
-        });
-    </script>
 {% endblock content %}
