@@ -89,8 +89,8 @@ class Command(BaseCommand):
                 contributions_to_create.append(
                     Contribution(
                         github_username=user,
-                        title=item["title"],
-                        description=item.get("body") or "",
+                        title=item["title"][:255],  # Truncate to 255 characters
+                        description=(item.get("body") or "")[:255],  # Truncate to 255 characters
                         contribution_type="pull_request",
                         github_id=str(item["id"]),
                         github_url=item["html_url"],
@@ -141,8 +141,8 @@ class Command(BaseCommand):
                 user = item["author"]["login"]
                 contributions_to_create.append(
                     Contribution(
-                        title=item["commit"]["message"],
-                        description=item["commit"]["message"],
+                        title=item["commit"]["message"][:255],  # Truncate to 255 characters
+                        description=item["commit"]["message"][:255],  # Truncate to 255 characters
                         github_username=user,
                         contribution_type="commit",
                         github_id=item["sha"],
@@ -157,8 +157,8 @@ class Command(BaseCommand):
                 user = item["user"]["login"]
                 contributions_to_create.append(
                     Contribution(
-                        title=item["body"][:255],  # Truncate if necessary
-                        description=item["body"],
+                        title=item["body"][:255],  # Truncate to 255 characters
+                        description=item["body"][:255],  # Truncate to 255 characters
                         github_username=user,
                         contribution_type="comment",
                         github_id=str(item["id"]),
