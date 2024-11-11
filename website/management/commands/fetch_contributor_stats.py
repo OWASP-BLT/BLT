@@ -169,4 +169,6 @@ class Command(BaseCommand):
                 )
 
         # Bulk create contributions
+        # The bulk_create method is used to create multiple Contribution objects at once.
         Contribution.objects.bulk_create(contributions_to_create, ignore_conflicts=True)
+        # The ignore_conflicts parameter is set to True to avoid conflicts during the creation process.
