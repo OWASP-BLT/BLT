@@ -1,144 +1,138 @@
 {% extends "base.html" %}
 {% load static %}
+{% load humanize %}
 {% block style %}
     <style>
-        .stat-card {
-            flex: 0 1 15%;
-            margin: 5px; /* Reduced margin to decrease gap */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            background-color: #fff;
-            transition: background-color 0.3s ease, transform 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            max-width: 200px; 
-            width: 200px; 
-            height: auto; /* Set a consistent height if needed */
-        }
+    /* Dashboard Styles */
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        border-radius: 12px;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+        transition: box-shadow 0.2s ease-in-out;
+    }
+    .stat-card:hover {
+        box-shadow: 0 15px 25px rgba(0, 0, 0, 0.2);
+    }
+    .stat-icon {
+        font-size: 4rem;
+        opacity: 0.15;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+    .stat-content {
+        position: relative;
+        z-index: 1;
+    }
+    .stat-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    .stat-count {
+        font-size: 2.5rem;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+    }
+    .stat-count span {
+        margin-left: 10px;
+        font-size: 1.25rem;
+        display: flex;
+        align-items: center;
+    }
+    .stat-count span i {
+        margin-right: 5px;
+    }
+    .chart-container {
+        position: relative;
+        height: 60px;
+        margin-top: 20px;
+    }
 
-        .stat-card:hover {
-            background-color: #f1f1f1;
-            z-index: 10; /* Ensure it appears above other elements */
-            position: relative; /* Ensure the card is positioned correctly */
-        }
-        
-        .stat-card:hover .sparkline {
-            transform: none; /* Prevent the sparkline from scaling */
-        }
-
-        .stat-label {
-            font-size: 16px;
-            font-weight: bold;
-        }
-
-        .panel-heading {
-            padding: 15px;
-            text-align: center;
-        }
-
-        .panel-heading h3 {
-            font-size: 18px;
-            margin: 5px 0;
-        }
-
-        .sparkline {
-            height: 40px;
-            width: calc(100% - 20px); /* Adjusting for padding */
-            padding-top: 10px;
-            background-color: transparent;
-        }
-
-        .stats-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: flex-start; /* Align items to the left */
-            align-items: flex-start; /* Align items to the start to prevent stretching */
-            gap: 5px; /* Reduced gap between the cards */
-        }
-
-        .bottom-right {
-            position: absolute;
-            bottom: 10px;
-            right: 15px;
-        }
-
-        .stat-title {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-
-        .stat-title i {
-            margin-right: 10px;
-            font-size: 24px; /* Adjust icon size if necessary */
-        }
-
-        .stat-count {
-            font-size: 24px;
-            font-weight: bold;
-            text-align: left;
-        }
-        .page-header {
-            margin-top: 0;
-            padding-bottom: 5px;
-        }
     </style>
 {% endblock style %}
 {% block content %}
-    {% include "includes/sidenav.html" %}
-    <script type="text/javascript"
-            src="{% static 'js/jquery.sparkline.min.js' %}"></script>
-    <h1 class="page-header">Stats</h1>
-    <div class="stats-container">
-        {% for stat in stats %}
-            <div class="stat-card panel panel-primary">
-                <div class="panel-heading">
-                    <div class="row">
-                        <div class="col-xs-12">
-                            <div class="stat-title">
-                                <i class="{{ stat.icon }}"></i>
-                                <span class="stat-label">{{ stat.label }}</span>
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-12 text-center">System Statistics Dashboard</h1>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            {% for stat in stats %}
+                <div class="stat-card">
+                    <i class="{{ stat.icon }} stat-icon"></i>
+                    <div class="stat-content">
+                        <div class="stat-title">{{ stat.label }}</div>
+                        <div class="stat-count">
+                            {{ stat.count|intcomma }}
+                            {% if stat.trend > 0 %}
+                                <span class="text-green-300">
+                                    <i class="fas fa-arrow-up"></i> {{ stat.trend }}
+                                </span>
+                            {% elif stat.trend < 0 %}
+                                <span class="text-red-300">
+                                    <i class="fas fa-arrow-down"></i> {{ stat.trend }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        {% if stat.history and stat.dates %}
+                            <div class="chart-container">
+                                <canvas id="chart-{{ forloop.counter }}"
+                                        class="sparkline"
+                                        data-values='{{ stat.history|safe }}'
+                                        data-dates='{{ stat.dates|safe }}'>
+                                </canvas>
                             </div>
-                            <div class="stat-count">{{ stat.count }}</div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-xs-12">
-                            <span class="sparkline" id="sparkline-{{ forloop.counter }}"></span>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
-            </div>
-        {% endfor %}
+            {% endfor %}
+        </div>
     </div>
-    <div class="bottom-right">
-        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/stats.html">
-            <i class="fab fa-github"></i>
-        </a>
-        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=1309%3A656&t=pqxWpF3hcYxjEDrs-1">
-            <i class="fab fa-figma"></i>
-        </a>
-    </div>
-    <script type="text/javascript">
-        var data = {{ sparklines_data|safe }};
-        $(function() {
-        {% for stat in stats %}
-            $('#sparkline-{{ forloop.counter }}').sparkline(data[{{ forloop.counter0 }}], {
+    {% block extra_js %}
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.sparkline').forEach(function(canvas) {
+            const values = JSON.parse(canvas.dataset.values);
+            const dates = JSON.parse(canvas.dataset.dates);
+            const ctx = canvas.getContext('2d');
+
+            new Chart(ctx, {
                 type: 'line',
-                width: '100%', /* Adjust as needed */
-                height: '40px',
-                lineColor: '#1ab394',
-                fillColor: false,
-                spotColor: '#1ab394',
-                minSpotColor: '#1ab394',
-                maxSpotColor: '#1ab394',
-                highlightSpotColor: '#1ab394',
-                highlightLineColor: '#f5f5f5',
-                spotRadius: 2
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        data: values,
+                        borderColor: 'rgba(255, 255, 255, 0.7)',
+                        borderWidth: 2,
+                        fill: false,
+                        pointRadius: 0,
+                        tension: 0.4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false },
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false },
+                    },
+                    elements: {
+                        line: {
+                            borderCapStyle: 'round',
+                            borderJoinStyle: 'round',
+                        }
+                    }
+                }
             });
-        {% endfor %}
         });
-    </script>
+    });
+        </script>
+    {% endblock extra_js %}
 {% endblock content %}

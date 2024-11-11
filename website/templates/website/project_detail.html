@@ -5,221 +5,323 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container">
-        <!-- Project Header -->
-        <div class="project-header">
-            {% if project.logo %}
-                <img src="{{ project.logo }}"
-                     alt="{{ project.name }} logo"
-                     class="project-logo"
-                     width="100"
-                     height="100">
-                <!-- Added width and height attributes -->
-            {% endif %}
-            <div class="project-info">
-                <h2>{{ project.name }}</h2>
-                <p>{{ project.description }}</p>
-                <div class="project-tags">
-                    {% for tag in project.tags.all %}<span class="tag">{{ tag.name }}</span>{% endfor %}
-                </div>
-                <div class="project-links">
-                    <a href="{{ project.github_url }}" target="_blank" title="GitHub">
-                        <i class="fab fa-github"></i> GitHub
-                    </a>
-                    {% if project.wiki_url %}
-                        <a href="{{ project.wiki_url }}" target="_blank" title="Wiki">
-                            <i class="fas fa-book"></i> Wiki
-                        </a>
+        <div class="content-wrapper">
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Project Header -->
+                <div class="project-header">
+                    {% if project.logo %}
+                        <img src="{{ project.logo }}"
+                             alt="{{ project.name }} logo"
+                             class="project-logo"
+                             width="100"
+                             height="100">
                     {% endif %}
-                    {% if project.homepage_url %}
-                        <a href="{{ project.homepage_url }}" target="_blank" title="Homepage">
-                            <i class="fas fa-home"></i> Homepage
-                        </a>
-                    {% endif %}
-                    {% for link in project.external_links %}<a href="{{ link.url }}" target="_blank">{{ link.name }}</a>{% endfor %}
+                    <div class="project-info">
+                        <h2>{{ project.name }}</h2>
+                        <p>{{ project.description }}</p>
+                        <div class="project-tags">
+                            {% for tag in project.tags.all %}<span class="tag">{{ tag.name }}</span>{% endfor %}
+                        </div>
+                        <div class="project-links">
+                            <a href="{{ project.github_url }}" target="_blank" title="GitHub">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                            {% if project.wiki_url %}
+                                <a href="{{ project.wiki_url }}" target="_blank" title="Wiki">
+                                    <i class="fas fa-book"></i> Wiki
+                                </a>
+                            {% endif %}
+                            {% if project.homepage_url %}
+                                <a href="{{ project.homepage_url }}" target="_blank" title="Homepage">
+                                    <i class="fas fa-home"></i> Homepage
+                                </a>
+                            {% endif %}
+                            {% if project.license %}
+                                <a href="{{ project.github_url }}" target="_blank" title="License">
+                                    <i class="fas fa-balance-scale"></i> {{ project.license }}
+                                </a>
+                            {% endif %}
+                            {% for link in project.external_links %}<a href="{{ link.url }}" target="_blank">{{ link.name }}</a>{% endfor %}
+                        </div>
+                    </div>
                 </div>
-                <div class="refresh-buttons">
-                    <form method="post" action="">
-                        {% csrf_token %}
-                        <button type="submit" name="refresh_stats" class="btn btn-primary">
-                            <i class="fas fa-sync-alt"></i> Refresh Project Stats
-                        </button>
-                    </form>
-                    <form method="post" action="">
-                        {% csrf_token %}
-                        <button type="submit" name="refresh_contributors" class="btn btn-primary">
-                            <i class="fas fa-users"></i> Refresh Contributors
-                        </button>
-                    </form>
+                <!-- Project Statistics -->
+                <div class="project-stats">
+                    <h3>
+                        Project Statistics
+                        <form method="post" action="" class="inline-form">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    name="refresh_stats"
+                                    class="icon-button"
+                                    title="Refresh Project Stats">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </form>
+                        <span title="{{ project.updated_at|date:"M d, Y" }}">Updated {{ project.updated_at|timesince }} ago</span>
+                    </h3>
+                    <div class="stats-grid">
+                        <!-- Activity Stats -->
+                        <a href="{{ project.github_url }}" target="_blank" class="stat-link">
+                            <div class="stat-item">
+                                <i class="fas fa-clock"></i>
+                                <span>{{ project.created_at|date:"M d, Y" }} ({{ project.created_at|timesince }} ago)</span>
+                                <p>Created</p>
+                            </div>
+                        </a>
+                        <a href="{{ project.github_url }}/commits"
+                           target="_blank"
+                           class="stat-link">
+                            <div class="stat-item">
+                                <i class="fas fa-code-commit"></i>
+                                <span>
+                                    {% if project.last_commit_date %}
+                                        {{ project.last_commit_date|date:"M d, Y" }} ({{ project.last_commit_date|timesince }} ago)
+                                    {% else %}
+                                        No commits
+                                    {% endif %}
+                                </span>
+                                <p>Last Commit</p>
+                            </div>
+                        </a>
+                        <a href="{{ project.github_url }}/graphs/commit-activity"
+                           target="_blank"
+                           class="stat-link">
+                            <div class="stat-item">
+                                <i class="fas fa-chart-line"></i>
+                                <span>{{ project.commit_count|default:"0" }}</span>
+                                <p>Commits</p>
+                            </div>
+                        </a>
+                        <div class="stat-item">
+                            <i class="fas fa-eye"></i>
+                            <span>{{ project.repo_visit_count|default:"0" }}</span>
+                            <p>Repo Views</p>
+                        </div>
+                        <a href="https://github.com/OWASP-BLT/BLT/graphs/contributors"
+                           target="_blank"
+                           class="stat-link">
+                            <div class="stat-item">
+                                <i class="fas fa-users"></i>
+                                <span>{{ project.contributor_count|default:"0" }}</span>
+                                <p>Contributors</p>
+                            </div>
+                        </a>
+                        <a href="{{ project.github_url }}" target="_blank" class="stat-link">
+                            <div class="stat-item">
+                                <i class="fas fa-code"></i>
+                                <span>{{ project.primary_language|default:"Not specified" }}</span>
+                                <p>Language</p>
+                            </div>
+                        </a>
+                        <a href="{{ project.github_url }}" target="_blank" class="stat-link">
+                            <div class="stat-item">
+                                <i class="fas fa-database"></i>
+                                <span>{{ project.size|filesizeformat }}</span>
+                                <p>Size</p>
+                            </div>
+                        </a>
+                        <!-- Issue Stats -->
+                        <a href="{{ project.github_url }}/issues?q=is:open"
+                           target="_blank"
+                           class="stat-link">
+                            <div class="stat-item">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span>{{ project.open_issues|default:"0" }}</span>
+                                <p>Open Issues</p>
+                            </div>
+                        </a>
+                        <a href="{{ project.github_url }}/issues?q=is:closed"
+                           target="_blank"
+                           class="stat-link">
+                            <div class="stat-item">
+                                <i class="fas fa-check-circle"></i>
+                                <span>{{ project.closed_issues|default:"0" }}</span>
+                                <p>Closed Issues</p>
+                            </div>
+                        </a>
+                        <a href="{{ project.latest_release_url }}"
+                           target="_blank"
+                           class="stat-link">
+                            <div class="stat-item">
+                                <i class="fas fa-tag"></i>
+                                <span>{{ project.release_name|default:"No releases" }}</span>
+                                <p>Latest Release</p>
+                            </div>
+                        </a>
+                        <a href="{{ project.github_url }}/issues?q=is%3Aopen%20is%3Apr"
+                           target="_blank"
+                           class="stat-link">
+                            <div class="stat-item">
+                                <i class="fas fa-code-branch"></i>
+                                <span>{{ project.open_pull_requests|default:"0" }}</span>
+                                <p>Open PRs</p>
+                            </div>
+                        </a>
+                        <!-- Community Stats -->
+                        <a href="{{ project.github_url }}/stargazers"
+                           target="_blank"
+                           class="stat-link">
+                            <div class="stat-item">
+                                <i class="fas fa-star"></i>
+                                <span>{{ project.stars|default:"0" }}</span>
+                                <p>Stars</p>
+                            </div>
+                        </a>
+                        <a href="{{ project.github_url }}/network/members"
+                           target="_blank"
+                           class="stat-link">
+                            <div class="stat-item">
+                                <i class="fas fa-code-branch"></i>
+                                <span>{{ project.forks|default:"0" }}</span>
+                                <p>Forks</p>
+                            </div>
+                        </a>
+                        <a href="{{ project.github_url }}/watchers"
+                           target="_blank"
+                           class="stat-link">
+                            <div class="stat-item">
+                                <i class="fas fa-users"></i>
+                                <span>{{ project.subscribers_count|default:"0" }}</span>
+                                <p>Subscribers</p>
+                            </div>
+                        </a>
+                        <a href="{{ project.github_url }}/network"
+                           target="_blank"
+                           class="stat-link">
+                            <div class="stat-item">
+                                <i class="fas fa-project-diagram"></i>
+                                <span>{{ project.network_count|default:"0" }}</span>
+                                <p>Network Size</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <!-- Repo View Count Badge -->
+                <div class="repo-view-count-badge">
+                    <h3>Repo View Count Badge</h3>
+                    <p>This badge displays the number of views your repository has received:</p>
+                    <pre><code>&lt;img alt="Views" src="https://blt.owasp.org/projects/{{project.slug}}/badge"&gt;</code></pre>
+                </div>
+                <!-- Top Contributors -->
+                <div class="contributors-section">
+                    <h3>
+                        Top Contributors
+                        <form method="post" action="" class="inline-form">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    name="refresh_contributors"
+                                    class="icon-button"
+                                    title="Refresh Contributors">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </form>
+                    </h3>
+                    <div class="contributors">
+                        {% for contributor in project.get_top_contributors %}
+                            <div class="contributor">
+                                <a href="https://github.com/search?q=repo:{{ project.github_url|slice:'19:' }}+author:{{ contributor.name }}&type=issues"
+                                   target="_blank">
+                                    <div class="contributor-avatar-wrapper">
+                                        <img src="{{ contributor.avatar_url }}"
+                                             alt="{{ contributor.name }}"
+                                             class="contributor-avatar"
+                                             width="50"
+                                             height="50">
+                                        <span class="contribution-count">{{ contributor.contributions }}</span>
+                                    </div>
+                                </a>
+                                <p>{{ contributor.name }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="related-projects">
+                    <h3>Related Projects</h3>
+                    <ul>
+                        {% for related_project in project.related_projects %}
+                            <li>
+                                <a href="{% url 'project_view' related_project.slug %}">{{ related_project.name }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
                 </div>
             </div>
-        </div>
-        <!-- Project Statistics -->
-        <div class="project-stats">
-            <h3>Project Statistics</h3>
-            <div class="stats-grid">
-                <!-- Activity Stats -->
-                <a href="{{ project.github_url }}" target="_blank" class="stat-link">
-                    <div class="stat-item">
-                        <i class="fas fa-clock"></i>
-                        <span>{{ project.created_at|date:"M d, Y" }}</span>
-                        <p>Created</p>
-                    </div>
-                </a>
-                <a href="{{ project.github_url }}/commits"
-                   target="_blank"
-                   class="stat-link">
-                    <div class="stat-item">
-                        <i class="fas fa-sync"></i>
-                        <span>{{ project.updated_at|date:"M d, Y" }}</span>
-                        <p>Last Updated</p>
-                    </div>
-                </a>
-                <a href="{{ project.github_url }}/commits"
-                   target="_blank"
-                   class="stat-link">
-                    <div class="stat-item">
-                        <i class="fas fa-code-commit"></i>
-                        <span>{{ project.last_commit_date|date:"M d, Y"|default:"No commits" }}</span>
-                        <p>Last Commit</p>
-                    </div>
-                </a>
-                <!-- Repository Stats -->
-                <a href="{{ project.github_url }}" target="_blank" class="stat-link">
-                    <div class="stat-item">
-                        <i class="fas fa-code"></i>
-                        <span>{{ project.primary_language|default:"Not specified" }}</span>
-                        <p>Language</p>
-                    </div>
-                </a>
-                <a href="{{ project.github_url }}" target="_blank" class="stat-link">
-                    <div class="stat-item">
-                        <i class="fas fa-balance-scale"></i>
-                        <span>{{ project.license|default:"Not specified" }}</span>
-                        <p>License</p>
-                    </div>
-                </a>
-                <a href="{{ project.github_url }}" target="_blank" class="stat-link">
-                    <div class="stat-item">
-                        <i class="fas fa-database"></i>
-                        <span>{{ project.size|filesizeformat }}</span>
-                        <p>Size</p>
-                    </div>
-                </a>
-                <!-- Issue Stats -->
-                <a href="{{ project.github_url }}/issues?q=is:open"
-                   target="_blank"
-                   class="stat-link">
-                    <div class="stat-item">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <span>{{ project.open_issues|default:"0" }}</span>
-                        <p>Open Issues</p>
-                    </div>
-                </a>
-                <a href="{{ project.github_url }}/issues?q=is:closed"
-                   target="_blank"
-                   class="stat-link">
-                    <div class="stat-item">
-                        <i class="fas fa-check-circle"></i>
-                        <span>{{ project.closed_issues|default:"0" }}</span>
-                        <p>Closed Issues</p>
-                    </div>
-                </a>
-                <a href="{{ project.github_url }}/pulls"
-                   target="_blank"
-                   class="stat-link">
-                    <div class="stat-item">
-                        <i class="fas fa-code-branch"></i>
-                        <span>{{ project.open_pull_requests|default:"0" }}</span>
-                        <p>Open PRs</p>
-                    </div>
-                </a>
-                <!-- Community Stats -->
-                <a href="{{ project.github_url }}/stargazers"
-                   target="_blank"
-                   class="stat-link">
-                    <div class="stat-item">
-                        <i class="fas fa-star"></i>
-                        <span>{{ project.stars|default:"0" }}</span>
-                        <p>Stars</p>
-                    </div>
-                </a>
-                <a href="{{ project.github_url }}/network/members"
-                   target="_blank"
-                   class="stat-link">
-                    <div class="stat-item">
-                        <i class="fas fa-code-branch"></i>
-                        <span>{{ project.forks|default:"0" }}</span>
-                        <p>Forks</p>
-                    </div>
-                </a>
-                <a href="{{ project.github_url }}/watchers"
-                   target="_blank"
-                   class="stat-link">
-                    <div class="stat-item">
-                        <i class="fas fa-users"></i>
-                        <span>{{ project.subscribers_count|default:"0" }}</span>
-                        <p>Subscribers</p>
-                    </div>
-                </a>
-                <a href="{{ project.github_url }}/network"
-                   target="_blank"
-                   class="stat-link">
-                    <div class="stat-item">
-                        <i class="fas fa-project-diagram"></i>
-                        <span>{{ project.network_count|default:"0" }}</span>
-                        <p>Network Size</p>
-                    </div>
-                </a>
-            </div>
-        </div>
-        <!-- Repo View Count Badge -->
-        <div class="repo-view-count-badge">
-            <h3>Repo View Count Badge</h3>
-            <p>This badge displays the number of views your repository has received:</p>
-            <pre><code>![Repo Views](https://blt.owasp.org/projects/{{project.slug}}/badge</code></pre>
-        </div>
-        <!-- Top Contributors -->
-        <div class="contributors-section">
-            <h3>Top Contributors</h3>
-            <div class="contributors">
-                {% for contributor in project.get_top_contributors %}
-                    <div class="contributor">
-                        <a href="https://github.com/search?q=repo:{{ project.github_url|slice:'19:' }}+author:{{ contributor.name }}&type=issues"
-                           target="_blank">
-                            <img src="{{ contributor.avatar_url }}"
-                                 alt="{{ contributor.name }}"
-                                 class="contributor-avatar"
-                                 width="50"
-                                 height="50">
+            <!-- Right Column for Contributor Stats -->
+            <div class="right-column">
+                <!-- Contribution Stats -->
+                <div class="contributor-stats">
+                    <h3>
+                        Contributor Statistics
+                        <form method="post" action="" class="inline-form">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    name="refresh_contributor_stats"
+                                    class="icon-button"
+                                    title="Refresh Contributor Stats">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </form>
+                    </h3>
+                    <!-- Period Selection Buttons -->
+                    <div class="flex gap-4 mb-6 mt-10 justify-center">
+                        <a href="?period=1"
+                           class="px-6 py-3 rounded-md text-lg {% if period == '1' %}bg-blue-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
+                            24h
                         </a>
-                        <!-- Added width and height attributes -->
-                        <p>{{ contributor.name }}</p>
+                        <a href="?period=7"
+                           class="px-6 py-3 rounded-md text-lg {% if period == '7' %}bg-blue-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
+                            7d
+                        </a>
+                        <a href="?period=365"
+                           class="px-6 py-3 rounded-md text-lg {% if period == '365' %}bg-blue-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
+                            365d
+                        </a>
                     </div>
-                {% endfor %}
+                    <!-- Year List -->
+                    <div class="year-list flex justify-center mb-4">
+                        {% for year in year_list %}
+                            <a href="?year={{ year }}"
+                               class="px-4 py-2 rounded-md text-lg {% if selected_year == year %}bg-blue-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
+                                {{ year|slice:"-2" }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                    <!-- Date Range Display -->
+                    <div class="text-lg text-gray-700 mb-6 text-center">Showing contributions from {{ start_date }} to {{ end_date }}</div>
+                    <!-- User Statistics Table -->
+                    <div class="max-w-5xl mx-auto">
+                        <table id="userStatsTable"
+                               class="table-auto divide-y divide-gray-200 mx-auto">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-base font-semibold text-gray-600 uppercase">Username</th>
+                                    <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Commits</th>
+                                    <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Issues Opened</th>
+                                    <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Issues Closed</th>
+                                    <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">PRs</th>
+                                    <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Comments</th>
+                                    <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for username, stats in user_stats.items %}
+                                    <tr>
+                                        <td class="px-4 py-3">{{ username }}</td>
+                                        <td class="px-4 py-3 text-center">{{ stats.commits }}</td>
+                                        <td class="px-4 py-3 text-center">{{ stats.issues_opened }}</td>
+                                        <td class="px-4 py-3 text-center">{{ stats.issues_closed }}</td>
+                                        <td class="px-4 py-3 text-center">{{ stats.prs }}</td>
+                                        <td class="px-4 py-3 text-center">{{ stats.comments }}</td>
+                                        <td class="px-4 py-3 text-center">{{ stats.total }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-        </div>
-        <!-- Latest Releases -->
-        <div class="latest-releases">
-            <h3>Latest Releases</h3>
-            <ul>
-                {% for release in project.releases %}
-                    <li>
-                        <a href="{{ release.url }}" target="_blank">{{ release.name }}</a>
-                        <span class="release-date">{{ release.published_at }}</span>
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
-        <!-- Related Projects -->
-        <div class="related-projects">
-            <h3>Related Projects</h3>
-            <ul>
-                {% for related_project in project.related_projects %}
-                    <li>
-                        <a href="{% url 'project_view' related_project.slug %}">{{ related_project.name }}</a>
-                    </li>
-                {% endfor %}
-            </ul>
         </div>
     </div>
     <!-- CSS Styles -->
@@ -231,6 +333,16 @@
             margin-right: auto;
             padding: 0 15px;
             font-family: Arial, sans-serif;
+        }
+        .content-wrapper {
+            display: flex;
+        }
+        .main-content {
+            flex: 3;
+        }
+        .right-column {
+            flex: 1;
+            margin-left: 20px;
         }
         .project-header {
             display: flex;
@@ -256,7 +368,7 @@
         }
         .tag {
             display: inline-block;
-            background-color: #007bff;
+            background-color: #ef4444;
             color: #fff;
             padding: 5px 10px;
             margin: 0 5px 5px 0;
@@ -268,7 +380,7 @@
         }
         .project-links a {
             margin-right: 15px;
-            color: #007bff;
+            color: #ef4444;
             text-decoration: none;
             font-size: 16px;
         }
@@ -287,34 +399,30 @@
         .stat-item {
             background: #f8f9fa;
             border-radius: 8px;
-            padding: 15px;
+            padding: 10px; /* Reduced padding */
             text-align: center;
             transition: transform 0.2s;
         }
-
         .stat-item:hover {
             transform: translateY(-2px);
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-
         .stat-item i {
-            font-size: 24px;
-            color: #007bff;
-            margin-bottom: 10px;
+            font-size: 20px; /* Reduced font size */
+            color: #ef4444;
+            margin-bottom: 8px;
         }
-
         .stat-item span {
             display: block;
-            font-size: 18px;
+            font-size: 16px; /* Reduced font size */
             font-weight: bold;
             margin: 5px 0;
             color: #343a40;
         }
-
         .stat-item p {
             margin: 0;
             color: #6c757d;
-            font-size: 14px;
+            font-size: 12px; /* Reduced font size */
         }
         .contributors-section {
             margin-top: 50px;
@@ -328,6 +436,11 @@
         .contributor {
             width: 100px;
             text-align: center;
+            position: relative;
+        }
+        .contributor-avatar-wrapper {
+            position: relative;
+            display: inline-block;
         }
         .contributor-avatar {
             width: 80px;
@@ -336,12 +449,16 @@
             object-fit: cover;
             margin-bottom: 10px;
         }
-        .commit-activity {
-            margin-top: 50px;
-        }
-        .commit-activity img {
-            width: 100%;
-            border-radius: 8px;
+        .contribution-count {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.8em;
+            font-weight: bold;
         }
         .latest-releases {
             margin-top: 50px;
@@ -355,7 +472,7 @@
         }
         .latest-releases a {
             font-size: 16px;
-            color: #007bff;
+            color: #ef4444;
             text-decoration: none;
         }
         .release-date {
@@ -375,7 +492,7 @@
         }
         .related-projects a {
             font-size: 16px;
-            color: #007bff;
+            color: #ef4444;
             text-decoration: none;
         }
         .repo-view-count-badge {
@@ -396,11 +513,39 @@
             gap: 10px;
             margin-top: 15px;
         }
-
         .refresh-buttons button {
             display: flex;
             align-items: center;
             gap: 5px;
+        }
+        .contributor-stats table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .contributor-stats th, .contributor-stats td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .contributor-stats th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .inline-form {
+            display: inline;
+            margin-left: 10px;
+        }
+
+        .icon-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #ef4444;
+            font-size: 1.2em;
+        }
+
+        .icon-button:hover {
+            color: #ef4444;
         }
     </style>
 {% endblock content %}

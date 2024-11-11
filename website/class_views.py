@@ -15,14 +15,15 @@ from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
-from bs4 import BeautifulSoup
 from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
+from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.core.exceptions import FieldError
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -31,7 +32,7 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 
 # import Min
 from django.db.models import Count, Q, Sum
-from django.db.models.functions import ExtractMonth
+from django.db.models.functions import ExtractMonth, TruncDate
 from django.db.transaction import atomic
 from django.http import (
     Http404,
@@ -43,6 +44,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
@@ -66,34 +68,21 @@ from website.forms import (
 )
 from website.models import (
     IP,
-    BaconToken,
-    Bid,
-    ChatBotLog,
     Company,
     CompanyAdmin,
     Contribution,
-    Contributor,
-    ContributorStats,
     Domain,
     Hunt,
-    HuntPrize,
-    InviteFriend,
     IpReport,
     Issue,
     IssueScreenshot,
-    Monitor,
-    Payment,
     Points,
     Project,
     Subscription,
-    Suggestion,
-    SuggestionVotes,
     Tag,
-    Transaction,
     User,
     UserProfile,
     Wallet,
-    Winner,
 )
 from website.utils import (
     get_client_ip,
@@ -106,6 +95,8 @@ from website.utils import (
 
 class ProjectDetailView(DetailView):
     model = Project
+    period = None
+    selected_year = None
 
     def post(self, request, *args, **kwargs):
         from django.core.management import call_command
@@ -116,11 +107,16 @@ class ProjectDetailView(DetailView):
             call_command("update_projects", "--project_id", project.pk)
             messages.success(request, f"Refreshing stats for {project.name}")
 
-        elif "refresh_contributors" in request.POST:
+        elif "refresh_contributor_stats" in request.POST:
             owner_repo = project.github_url.rstrip("/").split("/")[-2:]
             repo = f"{owner_repo[0]}/{owner_repo[1]}"
             call_command("fetch_contributor_stats", "--repo", repo)
+            messages.success(request, f"Refreshing contributor stats for {project.name}")
+
+        elif "refresh_contributors" in request.POST:
+            call_command("fetch_contributors", "--project_id", project.pk)
             messages.success(request, f"Refreshing contributors for {project.name}")
+        return redirect("project_view", slug=project.slug)
 
         return redirect("project_view", slug=project.slug)
 
@@ -129,6 +125,74 @@ class ProjectDetailView(DetailView):
         project.project_visit_count += 1
         project.save()
         return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        end_date = timezone.now()
+        display_end_date = end_date.date()
+        selected_year = self.request.GET.get("year", None)
+        if selected_year:
+            start_date = datetime(int(selected_year), 1, 1)
+            display_end_date = datetime(int(selected_year), 12, 31)
+        else:
+            self.period = self.request.GET.get("period", "30")
+            days = int(self.period)
+            start_date = end_date - timedelta(days=days)
+            start_date = start_date.date()
+
+        contributions = Contribution.objects.filter(
+            created__date__gte=start_date,
+            created__date__lte=display_end_date,
+            repository=self.get_object(),
+        )
+
+        user_stats = {}
+        for contribution in contributions:
+            username = contribution.github_username
+            if username not in user_stats:
+                user_stats[username] = {
+                    "commits": 0,
+                    "issues_opened": 0,
+                    "issues_closed": 0,
+                    "prs": 0,
+                    "comments": 0,
+                    "total": 0,
+                }
+            if contribution.contribution_type == "commit":
+                user_stats[username]["commits"] += 1
+            elif contribution.contribution_type == "issue_opened":
+                user_stats[username]["issues_opened"] += 1
+            elif contribution.contribution_type == "issue_closed":
+                user_stats[username]["issues_closed"] += 1
+            elif contribution.contribution_type == "pull_request":
+                user_stats[username]["prs"] += 1
+            elif contribution.contribution_type == "comment":
+                user_stats[username]["comments"] += 1
+            total = (
+                user_stats[username]["commits"] * 5
+                + user_stats[username]["prs"] * 3
+                + user_stats[username]["issues_opened"] * 2
+                + user_stats[username]["issues_closed"] * 2
+                + user_stats[username]["comments"]
+            )
+            user_stats[username]["total"] = total
+
+        user_stats = dict(sorted(user_stats.items(), key=lambda x: x[1]["total"], reverse=True))
+
+        current_year = timezone.now().year
+        year_list = list(range(current_year, current_year - 10, -1))
+
+        context.update(
+            {
+                "user_stats": user_stats,
+                "period": self.period,
+                "start_date": start_date.strftime("%Y-%m-%d"),
+                "end_date": display_end_date.strftime("%Y-%m-%d"),
+                "year_list": year_list,
+                "selected_year": selected_year,
+            }
+        )
+        return context
 
 
 class ProjectBadgeView(APIView):
@@ -1508,12 +1572,13 @@ class DomainDetailView(ListView):
 
         parsed_url = urlparse("http://" + self.kwargs["slug"])
 
-        open_issue = (
+        open_issues = (
             Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
             .filter(status="open", hunt=None)
             .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
         )
-        close_issue = (
+
+        closed_issues = (
             Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
             .filter(status="closed", hunt=None)
             .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
@@ -1523,7 +1588,7 @@ class DomainDetailView(ListView):
 
         context["name"] = parsed_url.netloc.split(".")[-2:][0].title()
 
-        paginator = Paginator(open_issue, 3)
+        paginator = Paginator(open_issues, 3)
         page = self.request.GET.get("open")
         try:
             openissue_paginated = paginator.page(page)
@@ -1532,7 +1597,7 @@ class DomainDetailView(ListView):
         except EmptyPage:
             openissue_paginated = paginator.page(paginator.num_pages)
 
-        paginator = Paginator(close_issue, 3)
+        paginator = Paginator(closed_issues, 3)
         page = self.request.GET.get("close")
         try:
             closeissue_paginated = paginator.page(page)
@@ -1541,9 +1606,9 @@ class DomainDetailView(ListView):
         except EmptyPage:
             closeissue_paginated = paginator.page(paginator.num_pages)
 
-        context["opened_net"] = open_issue
+        context["opened_net"] = open_issues
         context["opened"] = openissue_paginated
-        context["closed_net"] = close_issue
+        context["closed_net"] = closed_issues
         context["closed"] = closeissue_paginated
         context["leaderboard"] = (
             User.objects.filter(issue__url__contains=self.kwargs["slug"])
@@ -1589,168 +1654,116 @@ class DomainDetailView(ListView):
 class StatsDetailView(TemplateView):
     template_name = "stats.html"
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(StatsDetailView, self).get_context_data(*args, **kwargs)
+    def get_historical_counts(self, model):
+        # Map models to their date fields
+        date_field_map = {
+            "Issue": "created",
+            "UserProfile": "created",  # From user creation
+            "Comment": "created_date",
+            "Hunt": "created",
+            "Domain": "created",
+            "Company": "created",
+            "Project": "created",
+            "Contribution": "created",
+            "TimeLog": "created",
+            "ActivityLog": "created",
+            "DailyStatusReport": "created",
+            "Suggestion": "created",
+            "SuggestionVotes": "created",
+            "Bid": "created",
+            "Monitor": "created",
+            "Payment": "created",
+            "Transaction": "created",
+            "InviteFriend": "created",
+            "Points": "created",
+            "Winner": "created",
+            "Wallet": "created",
+            "BaconToken": "date_awarded",
+            "IP": "created",
+            "ChatBotLog": "created",
+            # Add other models as needed
+        }
 
-        response = requests.get(settings.EXTENSION_URL)
-        soup = BeautifulSoup(response.text, "html.parser")
+        date_field = date_field_map.get(model.__name__, "created")
+        dates = []
+        counts = []
 
-        stats = ""
-        for item in soup.findAll("span", {"class": "e-f-ih"}):
-            stats = item.attrs["title"]
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["extension_users"] = stats.replace(" users", "") or "0"
-
-        # Prepare stats data for display
-        context["stats"] = [
-            {"label": "Bugs", "count": Issue.objects.all().count(), "icon": "fas fa-bug"},
-            {"label": "Users", "count": User.objects.all().count(), "icon": "fas fa-users"},
-            {"label": "Hunts", "count": Hunt.objects.all().count(), "icon": "fas fa-crosshairs"},
-            {"label": "Domains", "count": Domain.objects.all().count(), "icon": "fas fa-globe"},
-            {
-                "label": "Extension Users",
-                "count": int(context["extension_users"].replace(",", "")),
-                "icon": "fas fa-puzzle-piece",
-            },
-            {
-                "label": "Subscriptions",
-                "count": Subscription.objects.all().count(),
-                "icon": "fas fa-envelope",
-            },
-            {
-                "label": "Companies",
-                "count": Company.objects.all().count(),
-                "icon": "fas fa-building",
-            },
-            {
-                "label": "Hunt Prizes",
-                "count": HuntPrize.objects.all().count(),
-                "icon": "fas fa-gift",
-            },
-            {
-                "label": "Screenshots",
-                "count": IssueScreenshot.objects.all().count(),
-                "icon": "fas fa-camera",
-            },
-            {"label": "Winners", "count": Winner.objects.all().count(), "icon": "fas fa-trophy"},
-            {"label": "Points", "count": Points.objects.all().count(), "icon": "fas fa-star"},
-            {
-                "label": "Invitations",
-                "count": InviteFriend.objects.all().count(),
-                "icon": "fas fa-envelope-open",
-            },
-            {
-                "label": "User Profiles",
-                "count": UserProfile.objects.all().count(),
-                "icon": "fas fa-id-badge",
-            },
-            {"label": "IPs", "count": IP.objects.all().count(), "icon": "fas fa-network-wired"},
-            {
-                "label": "Company Admins",
-                "count": CompanyAdmin.objects.all().count(),
-                "icon": "fas fa-user-tie",
-            },
-            {
-                "label": "Transactions",
-                "count": Transaction.objects.all().count(),
-                "icon": "fas fa-exchange-alt",
-            },
-            {
-                "label": "Payments",
-                "count": Payment.objects.all().count(),
-                "icon": "fas fa-credit-card",
-            },
-            {
-                "label": "Contributor Stats",
-                "count": ContributorStats.objects.all().count(),
-                "icon": "fas fa-chart-bar",
-            },
-            {"label": "Monitors", "count": Monitor.objects.all().count(), "icon": "fas fa-desktop"},
-            {"label": "Bids", "count": Bid.objects.all().count(), "icon": "fas fa-gavel"},
-            {
-                "label": "Chatbot Logs",
-                "count": ChatBotLog.objects.all().count(),
-                "icon": "fas fa-robot",
-            },
-            {
-                "label": "Suggestions",
-                "count": Suggestion.objects.all().count(),
-                "icon": "fas fa-lightbulb",
-            },
-            {
-                "label": "Suggestion Votes",
-                "count": SuggestionVotes.objects.all().count(),
-                "icon": "fas fa-thumbs-up",
-            },
-            {
-                "label": "Contributors",
-                "count": Contributor.objects.all().count(),
-                "icon": "fas fa-user-friends",
-            },
-            {
-                "label": "Projects",
-                "count": Project.objects.all().count(),
-                "icon": "fas fa-project-diagram",
-            },
-            {
-                "label": "Contributions",
-                "count": Contribution.objects.all().count(),
-                "icon": "fas fa-hand-holding-heart",
-            },
-            {
-                "label": "Bacon Tokens",
-                "count": BaconToken.objects.all().count(),
-                "icon": "fas fa-coins",
-            },
-        ]
-        context["stats"] = sorted(context["stats"], key=lambda x: int(x["count"]), reverse=True)
-
-        def get_cumulative_data(queryset, date_field="created"):
-            data = list(
-                queryset.annotate(month=ExtractMonth(date_field))
-                .values("month")
+        try:
+            # Annotate and count by truncated date
+            date_counts = (
+                model.objects.annotate(date=TruncDate(date_field))
+                .values("date")
                 .annotate(count=Count("id"))
-                .order_by("month")
-                .values_list("count", flat=True)
+                .order_by("date")
             )
+            for entry in date_counts:
+                dates.append(entry["date"].strftime("%Y-%m-%d"))
+                counts.append(entry["count"])
+        except FieldError:
+            # If the date field doesn't exist, return empty lists
+            return [], []
 
-            cumulative_data = []
-            cumulative_sum = 0
-            for count in data:
-                cumulative_sum += count
-                cumulative_data.append(cumulative_sum)
+        return dates, counts
 
-            return cumulative_data
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        stats_data = []
 
-        context["sparklines_data"] = [
-            get_cumulative_data(Issue.objects),
-            get_cumulative_data(User.objects, date_field="date_joined"),
-            get_cumulative_data(Hunt.objects),
-            get_cumulative_data(Domain.objects),
-            get_cumulative_data(Subscription.objects),
-            get_cumulative_data(Company.objects),
-            get_cumulative_data(HuntPrize.objects),
-            get_cumulative_data(IssueScreenshot.objects),
-            get_cumulative_data(Winner.objects),
-            get_cumulative_data(Points.objects),
-            get_cumulative_data(InviteFriend.objects),
-            get_cumulative_data(UserProfile.objects),
-            get_cumulative_data(IP.objects),
-            get_cumulative_data(CompanyAdmin.objects),
-            get_cumulative_data(Transaction.objects),
-            get_cumulative_data(Payment.objects),
-            get_cumulative_data(Monitor.objects),
-            get_cumulative_data(Bid.objects),
-            get_cumulative_data(ChatBotLog.objects),
-            get_cumulative_data(Suggestion.objects),
-            get_cumulative_data(SuggestionVotes.objects),
-            get_cumulative_data(Contributor.objects),
-            get_cumulative_data(Project.objects),
-            get_cumulative_data(Contribution.objects),
-            get_cumulative_data(BaconToken.objects),
-        ]
+        known_icons = {
+            "Issue": "fas fa-bug",
+            "User": "fas fa-users",
+            "Hunt": "fas fa-crosshairs",
+            "Domain": "fas fa-globe",
+            "ExtensionUser": "fas fa-puzzle-piece",
+            "Subscription": "fas fa-envelope",
+            "Company": "fas fa-building",
+            "HuntPrize": "fas fa-gift",
+            "IssueScreenshot": "fas fa-camera",
+            "Winner": "fas fa-trophy",
+            "Points": "fas fa-star",
+            "InviteFriend": "fas fa-envelope-open",
+            "UserProfile": "fas fa-id-badge",
+            "IP": "fas fa-network-wired",
+            "CompanyAdmin": "fas fa-user-tie",
+            "Transaction": "fas fa-exchange-alt",
+            "Payment": "fas fa-credit-card",
+            "ContributorStats": "fas fa-chart-bar",
+            "Monitor": "fas fa-desktop",
+            "Bid": "fas fa-gavel",
+            "ChatBotLog": "fas fa-robot",
+            "Suggestion": "fas fa-lightbulb",
+            "SuggestionVotes": "fas fa-thumbs-up",
+            "Contributor": "fas fa-user-friends",
+            "Project": "fas fa-project-diagram",
+            "Contribution": "fas fa-hand-holding-heart",
+            "BaconToken": "fas fa-coins",
+        }
 
+        for model in apps.get_models():
+            if model._meta.abstract or model._meta.proxy:
+                continue
+
+            model_name = model.__name__
+            try:
+                dates, counts = self.get_historical_counts(model)
+                trend = counts[-1] - counts[-2] if len(counts) >= 2 else 0
+                total_count = model.objects.count()
+
+                stats_data.append(
+                    {
+                        "label": model_name,
+                        "count": total_count,
+                        "icon": known_icons.get(model_name, "fas fa-database"),
+                        "history": json.dumps(counts),  # Serialize counts to JSON
+                        "dates": json.dumps(dates),  # Serialize dates to JSON
+                        "trend": trend,
+                    }
+                )
+            except Exception as e:
+                # Optionally log the exception
+                continue
+
+        context["stats"] = sorted(stats_data, key=lambda x: x["count"], reverse=True)
         return context
 
 

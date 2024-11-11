@@ -752,7 +752,8 @@ class Project(models.Model):
     subscribers_count = models.IntegerField(default=0)
     open_issues = models.IntegerField(default=0)
     closed_issues = models.IntegerField(default=0)
-    size = models.IntegerField(default=0)  # Repository size in KB
+    size = models.IntegerField(default=0)
+    commit_count = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name
@@ -761,15 +762,15 @@ class Project(models.Model):
         return self.contributors.order_by("-contributions")[:limit]
 
 
-class ContributorStats(models.Model):
-    username = models.CharField(max_length=255, unique=True)
-    commits = models.IntegerField(default=0)
-    issues_opened = models.IntegerField(default=0)
-    issues_closed = models.IntegerField(default=0)
-    prs = models.IntegerField(default=0)
-    comments = models.IntegerField(default=0)
-    assigned_issues = models.IntegerField(default=0)
-    created = models.DateTimeField(auto_now_add=True)
+# class ContributorStats(models.Model):
+#     username = models.CharField(max_length=255, unique=True)
+#     commits = models.IntegerField(default=0)
+#     issues_opened = models.IntegerField(default=0)
+#     issues_closed = models.IntegerField(default=0)
+#     prs = models.IntegerField(default=0)
+#     comments = models.IntegerField(default=0)
+#     assigned_issues = models.IntegerField(default=0)
+#     created = models.DateTimeField(auto_now_add=True)
 
 
 class Contribution(models.Model):
