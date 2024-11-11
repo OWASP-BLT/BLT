@@ -74,7 +74,7 @@ def add_domain_to_company(request):
             messages.success(request, "Organization added successfully")
             return redirect("domain", slug=domain.url)
     else:
-        return redirect("index")
+        return redirect("home")
 
 
 @login_required(login_url="/accounts/login")
