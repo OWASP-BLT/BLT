@@ -86,6 +86,8 @@ from website.utils import (
 
 class ProjectDetailView(DetailView):
     model = Project
+    period = None
+    selected_year = None
 
     def post(self, request, *args, **kwargs):
         from django.core.management import call_command
@@ -117,27 +119,25 @@ class ProjectDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        # Get date range using Django's timezone
         end_date = timezone.now()
         display_end_date = end_date.date()
+        selected_year = self.request.GET.get("year", None)
+        if selected_year:
+            start_date = datetime(int(selected_year), 1, 1)
+            display_end_date = datetime(int(selected_year), 12, 31)
+        else:
+            self.period = self.request.GET.get("period", "30")
+            days = int(self.period)
+            start_date = end_date - timedelta(days=days)
+            start_date = start_date.date()
 
-        # Calculate start date
-        self.period = self.request.GET.get("period", "30")
-        days = int(self.period)
-        start_date = end_date - timedelta(days=days)
-        start_date = start_date.date()
-
-        # Query contributions
         contributions = Contribution.objects.filter(
             created__date__gte=start_date,
             created__date__lte=display_end_date,
             repository=self.get_object(),
         )
 
-        # Aggregate stats by GitHub username
         user_stats = {}
-
         for contribution in contributions:
             username = contribution.github_username
             if username not in user_stats:
@@ -149,8 +149,6 @@ class ProjectDetailView(DetailView):
                     "comments": 0,
                     "total": 0,
                 }
-
-            # Add stats
             if contribution.contribution_type == "commit":
                 user_stats[username]["commits"] += 1
             elif contribution.contribution_type == "issue_opened":
@@ -161,8 +159,6 @@ class ProjectDetailView(DetailView):
                 user_stats[username]["prs"] += 1
             elif contribution.contribution_type == "comment":
                 user_stats[username]["comments"] += 1
-
-            # Calculate weighted total
             total = (
                 user_stats[username]["commits"] * 5
                 + user_stats[username]["prs"] * 3
@@ -172,8 +168,10 @@ class ProjectDetailView(DetailView):
             )
             user_stats[username]["total"] = total
 
-        # Sort by total contributions
         user_stats = dict(sorted(user_stats.items(), key=lambda x: x[1]["total"], reverse=True))
+
+        current_year = timezone.now().year
+        year_list = list(range(current_year, current_year - 10, -1))
 
         context.update(
             {
@@ -181,9 +179,10 @@ class ProjectDetailView(DetailView):
                 "period": self.period,
                 "start_date": start_date.strftime("%Y-%m-%d"),
                 "end_date": display_end_date.strftime("%Y-%m-%d"),
+                "year_list": year_list,
+                "selected_year": selected_year,
             }
         )
-
         return context
 
 

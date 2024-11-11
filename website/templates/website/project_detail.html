@@ -279,32 +279,47 @@
                             365d
                         </a>
                     </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Username</th>
-                                <th>Commits</th>
-                                <th>Issues Opened</th>
-                                <th>Issues Closed</th>
-                                <th>PRs</th>
-                                <th>Comments</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for username, stats in user_stats.items %}
+                    <!-- Year List -->
+                    <div class="year-list flex justify-center mb-4">
+                        {% for year in year_list %}
+                            <a href="?year={{ year }}"
+                               class="px-4 py-2 rounded-md text-lg {% if selected_year == year %}bg-blue-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
+                                {{ year|slice:"-2" }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                    <!-- Date Range Display -->
+                    <div class="text-lg text-gray-700 mb-6 text-center">Showing contributions from {{ start_date }} to {{ end_date }}</div>
+                    <!-- User Statistics Table -->
+                    <div class="max-w-5xl mx-auto">
+                        <table id="userStatsTable"
+                               class="table-auto divide-y divide-gray-200 mx-auto">
+                            <thead class="bg-gray-100">
                                 <tr>
-                                    <td>{{ username }}</td>
-                                    <td>{{ stats.commits }}</td>
-                                    <td>{{ stats.issues_opened }}</td>
-                                    <td>{{ stats.issues_closed }}</td>
-                                    <td>{{ stats.prs }}</td>
-                                    <td>{{ stats.comments }}</td>
-                                    <td>{{ stats.total }}</td>
+                                    <th class="px-4 py-3 text-left text-base font-semibold text-gray-600 uppercase">Username</th>
+                                    <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Commits</th>
+                                    <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Issues Opened</th>
+                                    <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Issues Closed</th>
+                                    <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">PRs</th>
+                                    <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Comments</th>
+                                    <th class="px-4 py-3 text-center text-base font-semibold text-gray-600 uppercase">Total</th>
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {% for username, stats in user_stats.items %}
+                                    <tr>
+                                        <td class="px-4 py-3">{{ username }}</td>
+                                        <td class="px-4 py-3 text-center">{{ stats.commits }}</td>
+                                        <td class="px-4 py-3 text-center">{{ stats.issues_opened }}</td>
+                                        <td class="px-4 py-3 text-center">{{ stats.issues_closed }}</td>
+                                        <td class="px-4 py-3 text-center">{{ stats.prs }}</td>
+                                        <td class="px-4 py-3 text-center">{{ stats.comments }}</td>
+                                        <td class="px-4 py-3 text-center">{{ stats.total }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
