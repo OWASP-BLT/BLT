@@ -374,6 +374,7 @@ class BlockedAdmin(admin.ModelAdmin):
         "user_agent_string",
         "count",
         "created",
+        "modified",
     )
 
 
