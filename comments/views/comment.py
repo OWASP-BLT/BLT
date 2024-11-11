@@ -11,7 +11,7 @@ from django.utils.html import escape
 
 from website.models import Issue
 
-from .models import Comment
+from ..models import Comment
 
 
 @login_required(login_url="/accounts/login/")

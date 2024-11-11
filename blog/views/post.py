@@ -3,7 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.utils.text import slugify
 from django.views import generic
 
-from .models import Post
+from ..models import Post
 
 
 class PostListView(generic.ListView):
@@ -62,7 +62,7 @@ class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView
 class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteView):
     model = Post
     template_name = "blog/post_delete.html"
-    success_url = "/blog"
+    success_url = "/blogs"
 
     def test_func(self):
         post = self.get_object()
