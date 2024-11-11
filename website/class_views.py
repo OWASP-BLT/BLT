@@ -2414,3 +2414,4 @@ class ReportedIpListView(ListView):
 
     def get_queryset(self):
         return IpReport.objects.all().order_by("-created")
+
