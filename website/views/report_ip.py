@@ -1,13 +1,10 @@
-
 import ipaddress
-from urllib.parse import urlparse
 
 from django.contrib import messages
 from django.shortcuts import redirect, render
 from django.utils.timezone import now
 from django.views.generic import FormView, ListView
 
-from blt import settings
 from website.forms import CaptchaForm, IpReportForm
 from website.models import IpReport
 from website.utils import get_client_ip
