@@ -64,6 +64,11 @@ def add_domain_to_company(request):
         company = Company.objects.filter(name=company_name).first()
 
         if not company:
+            allowed_domains = ["example.com", "trusted.com"]  # Add your allowed domains here
+            parsed_url = urlparse(domain.url)
+            if parsed_url.netloc not in allowed_domains:
+                messages.error(request, "The domain is not allowed.")
+                return redirect("index")
             try:
                 response = requests.get(domain.url, timeout=10)
                 response.raise_for_status()
