@@ -69,6 +69,12 @@ def add_domain_to_company(request):
             if parsed_url.netloc not in allowed_domains:
                 messages.error(request, "The domain is not allowed.")
                 return redirect("index")
+            # Validate the URL format using a regular expression
+            import re
+            url_pattern = re.compile(r'^https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+')
+            if not url_pattern.match(domain.url):
+                messages.error(request, "Invalid URL format.")
+                return redirect("index")
             try:
                 response = requests.get(domain.url, timeout=10)
                 response.raise_for_status()
