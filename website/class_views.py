@@ -130,7 +130,9 @@ class ProjectDetailView(DetailView):
 
         # Query contributions
         contributions = Contribution.objects.filter(
-            created__date__gte=start_date, created__date__lte=display_end_date
+            created__date__gte=start_date,
+            created__date__lte=display_end_date,
+            repository=self.get_object(),
         )
 
         # Aggregate stats by GitHub username

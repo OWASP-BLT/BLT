@@ -59,6 +59,7 @@
                                 <i class="fas fa-sync-alt"></i>
                             </button>
                         </form>
+                        Last Updated {{ project.updated_at|date:"M d, Y" }} ({{ project.updated_at|timesince }} ago)
                     </h3>
                     <div class="stats-grid">
                         <!-- Activity Stats -->
@@ -67,15 +68,6 @@
                                 <i class="fas fa-clock"></i>
                                 <span>{{ project.created_at|date:"M d, Y" }} ({{ project.created_at|timesince }} ago)</span>
                                 <p>Created</p>
-                            </div>
-                        </a>
-                        <a href="{{ project.github_url }}/commits"
-                           target="_blank"
-                           class="stat-link">
-                            <div class="stat-item">
-                                <i class="fas fa-sync"></i>
-                                <span>{{ project.updated_at|date:"M d, Y" }} ({{ project.updated_at|timesince }} ago)</span>
-                                <p>Last Updated</p>
                             </div>
                         </a>
                         <a href="{{ project.github_url }}/commits"
