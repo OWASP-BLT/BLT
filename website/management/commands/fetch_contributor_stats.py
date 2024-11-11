@@ -18,7 +18,7 @@ class Command(BaseCommand):
             help="Specify the GitHub repository in the format 'owner/repo'",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, **options):
         # Clear existing records
         Contribution.objects.all().delete()
 
@@ -49,7 +49,7 @@ class Command(BaseCommand):
         elif data_type == "commits":
             url = f"https://api.github.com/repos/{owner}/{repo}/commits"
         elif data_type == "comments":
-            url = f"https://api.github.com/repos/{owner}/{repo}/issues/comments"
+            url = f"https://api.github.com/repos/{owner}/{repo}/issues/comments?per_page=100"
 
         response = requests.get(url, headers=headers)
         items = response.json()
@@ -90,19 +90,6 @@ class Command(BaseCommand):
                         status="open",
                         repository=project,
                     )
-                if item.get("assignee"):
-                    user = item["assignee"]["login"]
-                    Contribution.objects.create(
-                        github_username=user,
-                        title=f"Assigned to {item['title']}",
-                        description=f"Assigned to issue: {item['html_url']}",
-                        contribution_type="issue_assigned",
-                        github_id=f"{item['id']}_assigned",
-                        github_url=item["html_url"],
-                        created=datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
-                        status="open",
-                        repository=project,
-                    )
             elif data_type == "issuesclosed":
                 if "pull_request" in item:
                     continue
@@ -127,7 +114,7 @@ class Command(BaseCommand):
                     title=item["commit"]["message"],
                     description=item["commit"]["message"],
                     github_username=user,
-                    contribution_type="commits",
+                    contribution_type="commit",
                     github_id=user,
                     github_url=item["html_url"],
                     created=datetime.strptime(
@@ -141,7 +128,7 @@ class Command(BaseCommand):
                     title=item["body"],
                     description=item["body"],
                     github_username=user,
-                    contribution_type="comments",
+                    contribution_type="comment",
                     github_id=user,
                     github_url=item["html_url"],
                     created=datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),

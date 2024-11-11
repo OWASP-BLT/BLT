@@ -96,11 +96,16 @@ class ProjectDetailView(DetailView):
             call_command("update_projects", "--project_id", project.pk)
             messages.success(request, f"Refreshing stats for {project.name}")
 
-        elif "refresh_contributors" in request.POST:
+        elif "refresh_contributor_stats" in request.POST:
             owner_repo = project.github_url.rstrip("/").split("/")[-2:]
             repo = f"{owner_repo[0]}/{owner_repo[1]}"
             call_command("fetch_contributor_stats", "--repo", repo)
+            messages.success(request, f"Refreshing contributor stats for {project.name}")
+
+        elif "refresh_contributors" in request.POST:
+            call_command("fetch_contributors", "--project_id", project.pk)
             messages.success(request, f"Refreshing contributors for {project.name}")
+        return redirect("project_view", slug=project.slug)
 
         return redirect("project_view", slug=project.slug)
 
@@ -109,6 +114,75 @@ class ProjectDetailView(DetailView):
         project.project_visit_count += 1
         project.save()
         return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get date range using Django's timezone
+        end_date = timezone.now()
+        display_end_date = end_date.date()
+
+        # Calculate start date
+        self.period = self.request.GET.get("period", "30")
+        days = int(self.period)
+        start_date = end_date - timedelta(days=days)
+        start_date = start_date.date()
+
+        # Query contributions
+        contributions = Contribution.objects.filter(
+            created__date__gte=start_date, created__date__lte=display_end_date
+        )
+
+        # Aggregate stats by GitHub username
+        user_stats = {}
+
+        for contribution in contributions:
+            username = contribution.github_username
+            if username not in user_stats:
+                user_stats[username] = {
+                    "commits": 0,
+                    "issues_opened": 0,
+                    "issues_closed": 0,
+                    "prs": 0,
+                    "comments": 0,
+                    "total": 0,
+                }
+
+            # Add stats
+            if contribution.contribution_type == "commit":
+                user_stats[username]["commits"] += 1
+            elif contribution.contribution_type == "issue_opened":
+                user_stats[username]["issues_opened"] += 1
+            elif contribution.contribution_type == "issue_closed":
+                user_stats[username]["issues_closed"] += 1
+            elif contribution.contribution_type == "pull_request":
+                user_stats[username]["prs"] += 1
+            elif contribution.contribution_type == "comment":
+                user_stats[username]["comments"] += 1
+
+            # Calculate weighted total
+            total = (
+                user_stats[username]["commits"] * 5
+                + user_stats[username]["prs"] * 3
+                + user_stats[username]["issues_opened"] * 2
+                + user_stats[username]["issues_closed"] * 2
+                + user_stats[username]["comments"]
+            )
+            user_stats[username]["total"] = total
+
+        # Sort by total contributions
+        user_stats = dict(sorted(user_stats.items(), key=lambda x: x[1]["total"], reverse=True))
+
+        context.update(
+            {
+                "user_stats": user_stats,
+                "period": self.period,
+                "start_date": start_date.strftime("%Y-%m-%d"),
+                "end_date": display_end_date.strftime("%Y-%m-%d"),
+            }
+        )
+
+        return context
 
 
 class ProjectBadgeView(APIView):

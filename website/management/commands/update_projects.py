@@ -91,56 +91,27 @@ class Command(BaseCommand):
                         )
                     )
 
-                # Optionally, fetch contributors (uncomment if needed)
-                # Note: Fetching all contributors can be time-consuming for large projects
-                """
-                # Fetch contributors
                 page = 1
+                commit_count = 0
                 while True:
-                    url = f"https://api.github.com/repos/{repo_name}/contributors?per_page=100&page={page}"
+                    url = f"https://api.github.com/repos/{repo_name}/contributors?anon=true&per_page=100&page={page}"
                     response = requests.get(url, headers=headers)
-
-                    if response.status_code != 200:
+                    if response.status_code == 200:
+                        contributors_data = response.json()
+                        if not contributors_data:
+                            break
+                        commit_count += sum(
+                            contributor.get("contributions", 0) for contributor in contributors_data
+                        )
+                        page += 1
+                    else:
                         self.stdout.write(
                             self.style.WARNING(
-                                f"Failed to fetch contributors for {repo_name} page {page}: {response.status_code}"
+                                f"Failed to fetch contributors for {repo_name}: {response.status_code}"
                             )
                         )
                         break
-
-                    contributors_data = response.json()
-                    if not contributors_data:
-                        break
-
-                    for c in contributors_data:
-                        try:
-                            contributor, created = Contributor.objects.get_or_create(
-                                github_id=c["id"],
-                                defaults={
-                                    "name": c["login"],
-                                    "github_url": c["html_url"],
-                                    "avatar_url": c["avatar_url"],
-                                    "contributor_type": c["type"],
-                                    "contributions": c["contributions"],
-                                },
-                            )
-                            contributors.append(contributor)
-                        except MultipleObjectsReturned:
-                            contributor = Contributor.objects.filter(github_id=c["id"]).first()
-                            contributors.append(contributor)
-
-                    if "next" not in response.links:
-                        break
-
-                    page += 1
-                    # Respect GitHub's rate limits
-                    time.sleep(1)
-
-                project.contributors.set(contributors)
-                project.contributor_count = len(contributors)
-                """
-
-                # Save the updated project
+                project.commit_count = commit_count
                 project.save()
 
             else:
