@@ -7,7 +7,10 @@
         <ul>
             <h2>General</h2>
             <li>
-                <a href="{% url 'index' %}">Index</a>
+                <a href="{% url 'home' %}">Home</a>
+            </li>
+            <li>
+                <a href="{% url 'issues' %}">Issues</a>
             </li>
             <li>
                 <a href="{% url 'delete' %}">Account Delete</a>
@@ -353,10 +356,6 @@
                 <a href="{% url 'user_profile' 1 %}">User Dashboard Profile</a>
             </li>
             <hr>
-            <li>
-                <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
-            </li>
-            <hr>
             <h2>Essential Components</h2>
             <li>
                 <a href="{% url 'password_reset_confirm' 1 1 %}">Password Reset Confirm</a>
@@ -402,9 +401,6 @@
             </li>
             <li>
                 <a href="{% url 'update_bch_address' %}">Update BCH Address</a>
-            </li>
-            <li>
-                <a href="{% url 'post_error' %}">Error</a>
             </li>
         </ul>
     </div>

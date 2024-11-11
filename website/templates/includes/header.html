@@ -116,7 +116,7 @@
                     </svg>
                 </button>
                 <!-- Logo -->
-                <a href="{% url 'index' %}"
+                <a href="{% url 'home' %}"
                    class="flex flex-col ms-2 md:me-24 items-start">
                     <img src="{% logo 'TRANSPARENT' %}"
                          class="max-w-[100px] lg:max-w-[200px]"
@@ -134,29 +134,21 @@
                     <form class="w-full flex items-center"
                           action="{% url 'search' %}"
                           method="get">
-                        <i class="lg:!flex hidden fa fa-search absolute left-[13px] text-[#9CA3AF] z-10 my-auto"></i>
                         <input type="text"
                                name="query"
                                placeholder="Search"
-                               class="text-xl lg:text-base lg:ps-9 lg:scale-[1.4] w-[70px] lg:w-auto h-16 placeholder-[#9CA3AF] bg-[#EDEDED] outline-none p-5 font-semibold">
+                               class="text-xl lg:text-base lg:ps-9 lg:scale-[1.4] w-[70px] lg:w-auto h-16 placeholder-[#9CA3AF] bg-[#EDEDED] outline-none p-5 font-semibold rounded-l-2xl">
+                        <i class="lg:!flex hidden fa fa-search absolute left-[13px] text-[#9CA3AF] z-10 my-auto"></i>
+                        <select name="category"
+                                class="text-xl lg:text-base lg:ps-9 lg:scale-[1.4] w-[70px] lg:w-auto h-16 placeholder-[#9CA3AF] bg-[#EDEDED] outline-none p-5 font-semibold rounded-r-2xl text-[#9CA3AF]">
+                            <option value="organizations">{% trans "Organizations" %}</option>
+                            <option value="projects">{% trans "Projects" %}</option>
+                            <option value="users">{% trans "Users" %}</option>
+                            <option value="tags">{% trans "Tags" %}</option>
+                            <option value="languages">{% trans "Languages" %}</option>
+                        </select>
                     </form>
                 </div>
-                <a href="{% url 'report' %}"
-                   class="flex lg:hidden ml-5 h-[38px] border border-black rounded-3xl p-2 shadow">
-                    <img src="{% static 'images/report_issue.png' %}"
-                         class="w-[25px] h-[28px] lg:max-w-[200px]"
-                         alt="Report Issue Icon"
-                         width="100%"
-                         height="100%">
-                </a>
-                <a href="{% url 'report' %}"
-                   class="lg:!inline-block hidden bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[20px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
-                    {% trans "Report an Issue" %}
-                </a>
-                <a href="{% url 'hunts' %}"
-                   class="lg:!inline-block hidden bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[20px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline rounded-xl tracking-wide">
-                    {% trans "Bug Bounties" %}
-                </a>
             </div>
             {% if request.user.is_authenticated %}
                 <li class="h-[80px] flex justify-center items-center ">
