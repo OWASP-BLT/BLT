@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 import requests
@@ -29,60 +30,84 @@ class Command(BaseCommand):
         # Authentication headers
         headers = {"Authorization": f"token {settings.GITHUB_TOKEN}"}
 
-        # Fetch and process data
-        self.fetch_and_update_data("pulls", headers, owner, repo)
-        self.fetch_and_update_data("issuesopen", headers, owner, repo)
-        self.fetch_and_update_data("issuesclosed", headers, owner, repo)
-        self.fetch_and_update_data("commits", headers, owner, repo)
-        self.fetch_and_update_data("comments", headers, owner, repo)
+        # Fetch and process data in parallel
+        data_types = ["pulls", "issuesopen", "issuesclosed", "commits", "comments"]
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = [
+                executor.submit(self.fetch_and_update_data, data_type, headers, owner, repo)
+                for data_type in data_types
+            ]
+            for future in futures:
+                future.result()  # Wait for all tasks to complete
 
         self.stdout.write(self.style.SUCCESS("Successfully updated contributor stats"))
 
     def fetch_and_update_data(self, data_type, headers, owner, repo):
         # Define URL based on data_type
-        if data_type == "pulls":
-            url = f"https://api.github.com/repos/{owner}/{repo}/pulls"
-        elif data_type == "issuesopen":
-            url = f"https://api.github.com/repos/{owner}/{repo}/issues?state=open"
-        elif data_type == "issuesclosed":
-            url = f"https://api.github.com/repos/{owner}/{repo}/issues?state=closed"
-        elif data_type == "commits":
-            url = f"https://api.github.com/repos/{owner}/{repo}/commits"
-        elif data_type == "comments":
-            url = f"https://api.github.com/repos/{owner}/{repo}/issues/comments?per_page=100"
+        base_urls = {
+            "pulls": f"https://api.github.com/repos/{owner}/{repo}/pulls?state=all&per_page=100",
+            "issuesopen": f"https://api.github.com/repos/{owner}/{repo}/issues?state=open&per_page=100",
+            "issuesclosed": f"https://api.github.com/repos/{owner}/{repo}/issues?state=closed&per_page=100",
+            "commits": f"https://api.github.com/repos/{owner}/{repo}/commits?per_page=100",
+            "comments": f"https://api.github.com/repos/{owner}/{repo}/issues/comments?per_page=100",
+        }
+        url = base_urls[data_type]
 
-        response = requests.get(url, headers=headers)
-        items = response.json()
+        items = []
+        while url:
+            response = requests.get(url, headers=headers)
+            if response.status_code != 200:
+                self.stdout.write(
+                    self.style.ERROR(f"Error fetching {data_type}: {response.json()}")
+                )
+                break
+            data = response.json()
+            if not data:
+                break
+            items.extend(data)
 
-        if not isinstance(items, list):
-            raise ValueError(f"Error fetching data from GitHub: {items['message']}")
+            # Parse the 'Link' header to find the next URL
+            if "Link" in response.headers:
+                links = response.headers["Link"]
+                next_url = None
+                for link in links.split(","):
+                    if 'rel="next"' in link:
+                        next_url = link[link.find("<") + 1 : link.find(">")]
+                        break
+                url = next_url
+            else:
+                url = None
 
         # Get project object
         project = Project.objects.get(github_url__contains=f"{owner}/{repo}")
 
+        contributions_to_create = []
+
         for item in items:
             if data_type == "pulls":
                 user = item["user"]["login"]
-                Contribution.objects.create(
-                    github_username=user,
-                    title=item["title"],
-                    description=item["body"] or "",
-                    contribution_type="pull_request",
-                    github_id=str(item["id"]),
-                    github_url=item["html_url"],
-                    created=datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
-                    status=item["state"],
-                    repository=project,
+                contributions_to_create.append(
+                    Contribution(
+                        github_username=user,
+                        title=item["title"],
+                        description=item.get("body") or "",
+                        contribution_type="pull_request",
+                        github_id=str(item["id"]),
+                        github_url=item["html_url"],
+                        created=datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
+                        status=item["state"],
+                        repository=project,
+                    )
                 )
             elif data_type == "issuesopen":
                 if "pull_request" in item:
                     continue
                 user = item["user"]["login"]
-                if item["state"] == "open":
-                    Contribution.objects.create(
+                contributions_to_create.append(
+                    Contribution(
                         github_username=user,
                         title=item["title"],
-                        description=item["body"] or "",
+                        description=item.get("body") or "",
                         contribution_type="issue_opened",
                         github_id=str(item["id"]),
                         github_url=item["html_url"],
@@ -90,47 +115,58 @@ class Command(BaseCommand):
                         status="open",
                         repository=project,
                     )
+                )
             elif data_type == "issuesclosed":
                 if "pull_request" in item:
                     continue
                 user = item["user"]["login"]
-                if item["state"] == "closed":
-                    Contribution.objects.create(
+                contributions_to_create.append(
+                    Contribution(
                         github_username=user,
                         title=item["title"],
-                        description=item["body"] or "",
+                        description=item.get("body") or "",
                         contribution_type="issue_closed",
                         github_id=str(item["id"]),
                         github_url=item["html_url"],
                         created=datetime.strptime(
-                            item["closed_at"] or item["created_at"], "%Y-%m-%dT%H:%M:%SZ"
+                            item.get("closed_at") or item["created_at"], "%Y-%m-%dT%H:%M:%SZ"
                         ),
                         status="closed",
                         repository=project,
                     )
+                )
             elif data_type == "commits":
+                if item["author"] is None:
+                    continue  # Skip commits without an associated GitHub user
                 user = item["author"]["login"]
-                Contribution.objects.create(
-                    title=item["commit"]["message"],
-                    description=item["commit"]["message"],
-                    github_username=user,
-                    contribution_type="commit",
-                    github_id=user,
-                    github_url=item["html_url"],
-                    created=datetime.strptime(
-                        item["commit"]["author"]["date"], "%Y-%m-%dT%H:%M:%SZ"
-                    ),
-                    repository=project,
+                contributions_to_create.append(
+                    Contribution(
+                        title=item["commit"]["message"],
+                        description=item["commit"]["message"],
+                        github_username=user,
+                        contribution_type="commit",
+                        github_id=item["sha"],
+                        github_url=item["html_url"],
+                        created=datetime.strptime(
+                            item["commit"]["author"]["date"], "%Y-%m-%dT%H:%M:%SZ"
+                        ),
+                        repository=project,
+                    )
                 )
             elif data_type == "comments":
                 user = item["user"]["login"]
-                Contribution.objects.create(
-                    title=item["body"],
-                    description=item["body"],
-                    github_username=user,
-                    contribution_type="comment",
-                    github_id=user,
-                    github_url=item["html_url"],
-                    created=datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
-                    repository=project,
+                contributions_to_create.append(
+                    Contribution(
+                        title=item["body"][:255],  # Truncate if necessary
+                        description=item["body"],
+                        github_username=user,
+                        contribution_type="comment",
+                        github_id=str(item["id"]),
+                        github_url=item["html_url"],
+                        created=datetime.strptime(item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
+                        repository=project,
+                    )
                 )
+
+        # Bulk create contributions
+        Contribution.objects.bulk_create(contributions_to_create, ignore_conflicts=True)
