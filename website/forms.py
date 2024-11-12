@@ -33,21 +33,24 @@ class UserProfileForm(forms.ModelForm):
             "subscribed_users": forms.CheckboxSelectMultiple(),
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.instance and self.instance.user:
-            # Populate email from user model
-            self.fields["email"].initial = self.instance.user.email
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     print("UserProfileForm __init__")
+    #     print(self.instance)
+    #     print(self.instance.user)
+    #     if self.instance and self.instance.user:
+    #         # Populate email from user model
+    #         self.fields["email"].initial = self.instance.user.email
 
-    def save(self, commit=True):
-        profile = super().save(commit=False)
-        if commit:
-            # Save email to User model
-            if self.instance and self.instance.user:
-                self.instance.user.email = self.cleaned_data["email"]
-                self.instance.user.save()
-            profile.save()
-        return profile
+    # def save(self, commit=True):
+    #     profile = super().save(commit=False)
+    #     if commit:
+    #         # Save email to User model
+    #         if self.instance and self.instance.user:
+    #             self.instance.user.email = self.cleaned_data["email"]
+    #             self.instance.user.save()
+    #         profile.save()
+    #     return profile
 
 
 class UserDeleteForm(forms.Form):
