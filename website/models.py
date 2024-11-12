@@ -558,6 +558,12 @@ def create_profile(sender, **kwargs):
 post_save.connect(create_profile, sender=User)
 
 
+@receiver(post_save, sender=User)
+def ensure_user_profile_exists(sender, instance, **kwargs):
+    if not hasattr(instance, 'userprofile'):
+        UserProfile.objects.create(user=instance)
+
+
 class IP(models.Model):
     address = models.CharField(max_length=39, null=True, blank=True)
     user = models.CharField(max_length=150, null=True, blank=True)

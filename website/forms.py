@@ -1,6 +1,7 @@
 from captcha.fields import CaptchaField
 from django import forms
 from mdeditor.fields import MDTextFormField
+from django.core.exceptions import ObjectDoesNotExist
 
 from .models import Bid, Monitor, UserProfile
 
@@ -35,9 +36,12 @@ class UserProfileForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.instance and self.instance.user:
-            # Populate email from user model
-            self.fields["email"].initial = self.instance.user.email
+        try:
+            if self.instance and self.instance.user:
+                # Populate email from user model
+                self.fields["email"].initial = self.instance.user.email
+        except ObjectDoesNotExist:
+            self.fields["email"].initial = None
 
     def save(self, commit=True):
         profile = super().save(commit=False)
