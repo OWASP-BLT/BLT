@@ -560,7 +560,7 @@ post_save.connect(create_profile, sender=User)
 
 @receiver(post_save, sender=User)
 def ensure_user_profile_exists(sender, instance, **kwargs):
-    if not hasattr(instance, 'userprofile'):
+    if not hasattr(instance, "userprofile"):
         UserProfile.objects.create(user=instance)
 
 
