@@ -67,12 +67,14 @@ class Command(BaseCommand):
                     except (base64.binascii.Error, UnicodeDecodeError) as e:
                         self.stdout.write(
                             self.style.WARNING(f"Failed to decode README for {repo_name}: {e}")
-                            )
+                        )
                         project.readme_content = ""
                 else:
-                    self.stdout.write(self.style.WARNING(
-                        f"Failed to fetch README for {repo_name}: {response.status_code}")
-                        )    
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"Failed to fetch README for {repo_name}: {response.status_code}"
+                        )
+                    )
 
                 # Check for Documentation URL (homepage)
                 project.documentation_url = repo_data.get("homepage")
@@ -86,7 +88,9 @@ class Command(BaseCommand):
                     project.recent_commit_messages = "\n".join(commit_messages)
                 else:
                     self.stdout.write(
-                        self.style.WARNING(f"Failed to fetch recent commits for {repo_name}: {response.status_code}")
+                        self.style.WARNING(
+                            f"Failed to fetch recent commits for {repo_name}: {response.status_code}"
+                        )
                     )
 
                 # Set Issue Tracker URL
@@ -101,7 +105,9 @@ class Command(BaseCommand):
                         return data.get("total_count", 0)
                     else:
                         self.stdout.write(
-                            self.style.WARNING(f"Failed to fetch issue count for {repo_name} with query '{query}': {response.status_code}")
+                            self.style.WARNING(
+                                f"Failed to fetch issue count for {repo_name} with query '{query}': {response.status_code}"
+                            )
                         )
                         return 0
 
