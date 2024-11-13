@@ -1,3 +1,4 @@
+import base64
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -23,8 +24,9 @@ class Command(BaseCommand):
         else:
             projects = Project.objects.prefetch_related("contributors").all()
 
+        
+
         headers = {
-            "Authorization": f"token {settings.GITHUB_TOKEN}",
             "Content-Type": "application/json",
         }
 
@@ -50,6 +52,47 @@ class Command(BaseCommand):
                 project.updated_at = parse_datetime(repo_data.get("updated_at"))
                 project.size = repo_data.get("size", 0)
                 project.last_commit_date = parse_datetime(repo_data.get("pushed_at"))
+
+                # Fetch README
+                url = f"https://api.github.com/repos/{repo_name}/readme"
+                response = requests.get(url, headers=headers)
+                if response.status_code == 200:
+                    readme_data = response.json()
+                    readme_content_encoded  = readme_data.get("content", "")
+
+                    # Decode the Base64 content
+                    try:
+                        readme_content = base64.b64decode(readme_content_encoded).decode("utf-8")
+                        project.readme_content = readme_content  
+                    except (base64.binascii.Error, UnicodeDecodeError) as e:
+                        self.stdout.write(self.style.WARNING(f"Failed to decode README for {repo_name}: {e}"))
+                        project.readme_content = ""
+                else:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"Failed to fetch README for {repo_name}: {response.status_code}"
+                        )
+                    )
+
+                # Check for Documentation URL (homepage)
+                project.documentation_url = repo_data.get("homepage")
+
+                # Fetch Recent Commit Messages
+                url = f"https://api.github.com/repos/{repo_name}/commits"
+                response = requests.get(url, headers=headers)
+                if response.status_code == 200:
+                    commits_data = response.json()
+                    commit_messages = [commit["commit"]["message"] for commit in commits_data[:5]]
+                    project.recent_commit_messages = "\n".join(commit_messages)
+                else:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"Failed to fetch recent commits for {repo_name}: {response.status_code}"
+                        )
+                    )
+
+                # Set Issue Tracker URL
+                project.issue_tracker_url = f"https://github.com/{repo_name}/issues"
 
                 # Fetch counts of issues and pull requests using the Search API
                 def get_issue_count(repo_name, query, headers):
