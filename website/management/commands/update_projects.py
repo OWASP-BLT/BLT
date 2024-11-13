@@ -1,4 +1,5 @@
 import base64
+
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -57,20 +58,18 @@ class Command(BaseCommand):
                 response = requests.get(url, headers=headers)
                 if response.status_code == 200:
                     readme_data = response.json()
-                    readme_content_encoded  = readme_data.get("content", "")
+                    readme_content_encoded = readme_data.get("content", "")
 
                     # Decode the Base64 content
                     try:
                         readme_content = base64.b64decode(readme_content_encoded).decode("utf-8")
-                        project.readme_content = readme_content  
+                        project.readme_content = readme_content
                     except (base64.binascii.Error, UnicodeDecodeError) as e:
                         self.stdout.write(self.style.WARNING(f"Failed to decode README for {repo_name}: {e}"))
                         project.readme_content = ""
                 else:
                     self.stdout.write(
-                        self.style.WARNING(
-                            f"Failed to fetch README for {repo_name}: {response.status_code}"
-                        )
+                        self.style.WARNING(f"Failed to fetch README for {repo_name}: {response.status_code}")
                     )
 
                 # Check for Documentation URL (homepage)
