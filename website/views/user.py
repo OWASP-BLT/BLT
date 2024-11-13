@@ -544,7 +544,7 @@ def referral_signup(request):
     return redirect("account_signup")
 
 
-def contributors_view(request, *args, **kwargs):
+def contributor_detail_view(request, *args, **kwargs):
     contributors_file_path = os.path.join(settings.BASE_DIR, "contributors.json")
 
     with open(contributors_file_path, "r", encoding="utf-8") as file:
@@ -554,40 +554,76 @@ def contributors_view(request, *args, **kwargs):
 
     contributor_id = request.GET.get("contributor", None)
 
-    if contributor_id:
-        contributor = None
-        for i in contributors:
-            if str(i["id"]) == contributor_id:
-                contributor = i
+    if not contributor_id:
+        return HttpResponseNotFound("Contributor ID not provided")
 
-        if contributor is None:
-            return HttpResponseNotFound("Contributor not found")
+    contributor = next((i for i in contributors if str(i["id"]) == contributor_id), None)
 
-        return render(request, "contributors_detail.html", context={"contributor": contributor})
+    if contributor is None:
+        return HttpResponseNotFound("Contributor not found")
 
-    context = {"contributors": contributors}
-
-    return render(request, "contributors.html", context=context)
+    return render(request, "contributors_detail.html", context={"contributor": contributor})
 
 
 def users_view(request, *args, **kwargs):
     context = {}
 
+    # Fetch all tags and user-related tags
     context["user_related_tags"] = Tag.objects.filter(userprofile__isnull=False).distinct()
-
     context["tags"] = Tag.objects.all()
-
+    context["is_contributor"] = True
+    # Get the selected tag from the request
     tag_name = request.GET.get("tag")
-    if tag_name:
+
+    # If "Contributors" is the selected tag or if no tag is selected
+    if tag_name == "Contributors" or not tag_name:
+        # Load contributors data from contributors.json
+        contributors_file_path = os.path.join(settings.BASE_DIR, "contributors.json")
+        try:
+            with open(contributors_file_path, "r", encoding="utf-8", errors="replace") as file:
+                contributors_data = json.load(file)
+                context["users"] = contributors_data  # Use "users" key for consistency
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            context["users"] = []  # Empty list if file not found or contains invalid JSON
+            context["error"] = "Could not load contributors data."
+
+        # Set "BLT Contributors" as the default tag
+        context["tag"] = "BLT Contributors"
+
+    else:
+        # If another tag is selected, filter users by that tag
         if context["user_related_tags"].filter(name=tag_name).exists():
             context["tag"] = tag_name
-            context["users"] = UserProfile.objects.filter(tags__name=tag_name)
-        else:
-            context["users"] = UserProfile.objects.none()  # No users if the tag isn't found
-    else:
-        context["tag"] = "BLT Contributors"
-        context["users"] = UserProfile.objects.filter(tags__name="BLT Contributors")
+            context["is_contributor"] = False
+            user_profiles = UserProfile.objects.filter(tags__name=tag_name)
 
+            # Format UserProfile data to include only the required fields
+            context["users"] = [
+                {
+                    "id": user.id,
+                    "img": user.user_avatar.url
+                    if user.user_avatar
+                    else "/static/images/dummy-user.png",
+                    "name": user.user.username,
+                    "repository": "",  # Assuming repo field doesn't exist on UserProfile
+                    "short_description": user.description[:100],  # Optional limit
+                    "long_description": user.description,
+                    "location": user.user.profile.location if hasattr(user.user, "profile") else "",
+                    "twitter": f"https://x.com/{user.x_username}" if user.x_username else "",
+                    "linkedin": user.linkedin_url or "",
+                    "website": user.website_url or "",
+                    "blt_profile_name": user.user.username,  # Assuming field is not available
+                    "bch_addr": user.bch_address or "",
+                    "discounted_hourly_rate": user.discounted_hourly_rate,
+                }
+                for user in user_profiles
+            ]
+            print(context["users"])
+        else:
+            # If the tag is not found, return an empty list for users
+            context["users"] = []
+
+    # Render the users page with the context data
     return render(request, "users.html", context=context)
 
 

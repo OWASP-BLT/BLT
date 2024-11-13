@@ -153,8 +153,8 @@ from website.views.user import (
     UserProfileDetailsView,
     UserProfileDetailView,
     addbalance,
+    contributor_detail_view,
     contributors,
-    contributors_view,
     create_wallet,
     deletions,
     follow_user,
@@ -577,7 +577,7 @@ urlpatterns = [
     # re_path(r"^tellme/", include("tellme.urls")),
     re_path(r"^ratings/", include("star_ratings.urls", namespace="ratings")),
     path("robots.txt", robots_txt),
-    re_path(r"^contributors/$", contributors_view, name="contributors"),
+    re_path(r"^contributors/$", contributor_detail_view, name="contributors"),
     # users
     path("users/", users_view, name="users"),
     path("company/", include("company.urls")),
