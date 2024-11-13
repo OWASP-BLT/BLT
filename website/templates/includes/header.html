@@ -5,66 +5,6 @@
 {% providers_media_js %}
 {% load i18n %}
 {% load custom_tags %}
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-<style>
-    a {
-        color: black;
-    }
-    .chatbot {
-        display: none;
-        position: fixed;
-        bottom: 7%;
-        right: 1%;
-        max-width: 400px;
-        width: 100%;
-        background-color: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        height: 450px; /* Fixed height */
-    }
-    .chat-icon {
-        position: fixed;
-        bottom: 4%;
-        right: 4%;
-        background-color: rgb(209, 16, 16); /* Red color */
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-    .chat-header {
-        background-color: #e11d48; /* Red color */
-        color: white;
-        padding: 12px;
-        border-top-left-radius: 12px;
-        border-top-right-radius: 12px;
-    }
-    .chat-log {
-        max-height: 320px; /* Adjusted height */
-        overflow-y: auto;
-        height: 320px; /* Fixed height */
-    }
-    .loading {
-        display: none;
-        position: fixed;
-        bottom: 100px;
-        right: 10.5%;
-        justify-content: center;
-        align-items: center;
-        padding: 10px;
-        background-color: #ffffffe6; /* Semi-transparent background */
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-    .chat-Zindex {
-        z-index: 9999;
-    }
-</style>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const desktopDropdownButton = document.getElementById('dropdownButton');
@@ -95,62 +35,88 @@
         }
     });
 </script>
-<nav class="fixed top-0 z-50 w-full bg-white border-[#F7F7F7] border-b-2 px-4 ">
-    <div class="px-3 py-1 lg:px-5 lg:pl-3">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center justify-start rtl:justify-end">
-                <!-- Ham Menu -->
-                <button id="hamburger-button"
-                        data-drawer-target="logo-sidebar"
-                        data-drawer-toggle="logo-sidebar"
-                        aria-controls="logo-sidebar"
-                        type="button"
-                        class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg lg:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
-                    <svg class="w-8 h-8"
-                         aria-hidden="true"
-                         fill="currentColor"
-                         viewBox="0 0 20 20"
-                         xmlns="http://www.w3.org/2000/svg">
-                        <path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z">
-                        </path>
-                    </svg>
-                </button>
-                <!-- Logo -->
-                <a href="{% url 'home' %}"
-                   class="flex flex-col ms-2 md:me-24 items-start">
+<nav class="relative top-0 border-b h-[80px] w-auto flex flex-col justify-center items-center">
+    <div class="flex w-[97vw] justify-between items-center">
+        <div class="flex items-center gap-[30px] ml-[20px]">
+            <!-- Settings Icon -->
+            <div>
+                <a id="dropdown-toggle-mobile"
+                   class="hover:no-underline lg:hidden"
+                   href="#">
+                    <i class="fa fa-bars !text-5xl text-red-500 z-50"></i>
+                </a>
+                <!-- Dropdown for Settings Icon -->
+                <ul id="dropdown-mobile"
+                    class="z-50 fixed top-32 flex flex-col gap-2 shadow-xl rounded py-4 px-6 bg-white left-1 hidden">
+                    <li>
+                        <a href="{% url 'report' %}">
+                            <i class="fa fa-bug fa-fw"></i>
+                            {% trans "Report a Bug" %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'search' %}">
+                            <i class="fa fa-search fa-fw"></i>
+                            {% trans "Search" %}
+                        </a>
+                    </li>
+                    {% if request.user.is_authenticated %}
+                        <li class="border my-2 -mx-4"></li>
+                        <li>
+                            <a href="{% url 'account_logout' %}">
+                                <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li>
+                            <a href="{% url 'account_signup' %}" target="_new">
+                                <i class="fa fa-user-plus fa-fw"></i>
+                                {% trans "Sign Up" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'account_login' %}">
+                                <i class="fa fa-sign-in fa-fw"></i> {% trans "Login" %}
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+            <div class="flex flex-col items-start  h-full">
+                <a href="{% url 'home' %}">
                     <img src="{% logo 'TRANSPARENT' %}"
-                         class="max-w-[100px] lg:max-w-[200px]"
-                         alt="Bug Bounty Logo"
-                         width="100%"
-                         height="100%">
-                    <p class="inline-block text-base lg:text-xl mb-0 ml-1">
-                        <span class="font-bold text-[#e11d48]">B</span>ugs, <span class="font-bold text-[#e11d48]">B</span>ounties, and <span class="font-bold text-[#e11d48]">B</span>eyond...
-                    </p>
+                         class="!max-w-[130px] lg:max-w-[200px]"
+                         alt="logo"
+                         width="auto"
+                         height="auto">
+                </a>
+                <p class="text-center sm:!inline text-base lg:text-2xl pl-1">{% trans "Report Issues, Win Prizes" %}</p>
+            </div>
+        </div>
+        <!-- Search Bar -->
+        <form class="h-max m-0" action="{% url 'search' %}" method="get">
+            <div class="items-center w-full h-full nav-hidden lg:!block">
+                <i class="fa fa-search relative left-[28px] top-[-2px] text-gray-700 text-base nav-hidden lg:!inline-block"></i>
+                <input type="text"
+                       name="query"
+                       placeholder="{% trans " Search" %}"
+                       class="w-[200px] h-[38px] pl-[30px] nav-hidden lg:!inline-block bg-[#ececece1] outline-[#e4e4e4] outline-[1px]">
+                <a href="{% url 'report' %}"
+                   class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline">
+                    {% trans "Report a Bug" %}
+                </a>
+                <a href="{% url 'hunts' %}"
+                   class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline">
+                    {% trans "Bughunts" %}
                 </a>
             </div>
-            <!-- Search Bar  -->
-            <div class="column items-center gap-2 overflow-hidden flex lg:w-[auto] lg:h-[auto]">
-                <div class="relative flex items-center rounded-2xl overflow-hidden bg-[#ededed] lg:!px-[34px]">
-                    <form class="w-full flex items-center"
-                          action="{% url 'search' %}"
-                          method="get">
-                        <i class="lg:!flex hidden fa fa-search absolute left-4 text-[#9CA3AF] z-10 my-auto"></i>
-                        <!-- Search Input -->
-                        <input type="text"
-                               name="query"
-                               placeholder="Search"
-                               class="text-xl lg:text-base lg:ps-9 lg:scale-[1.4] w-[70px] lg:w-auto h-16 placeholder-[#9CA3AF] bg-[#EDEDED] outline-none p-5 font-semibold rounded-l-2xl">
-                        <select name="category"
-                                class="text-xl lg:text-base lg:scale-[1.4] w-[70px] lg:w-auto h-16 placeholder-[#9CA3AF] bg-[#ededed] outline-none p-5 font-semibold rounded-r-2xl text-[#9CA3AF]">
-                            <option value="organizations">{% trans "Organizations" %}</option>
-                            <option value="projects">{% trans "Projects" %}</option>
-                            <option value="users">{% trans "Users" %}</option>
-                            <option value="tags">{% trans "Tags" %}</option>
-                            <option value="languages">{% trans "Languages" %}</option>
-                        </select>
-                    </form>
-                </div>
-            </div>
+        </form>
+        <ul class="flex items-center">
+            <!-- Search Icon -->
+            <a href="{% url 'search' %}" class="hidden lg:hidden mr-[30px]">
+                <i class="fa fa-search !text-5xl text-red-500"></i>
+            </a>
+            <!-- User Avatar -->
             {% if request.user.is_authenticated %}
                 <li class="h-[80px] flex justify-center items-center ">
                     <button id="dropdownButton"
@@ -230,163 +196,20 @@
             </li>
         {% else %}
             <!-- Sign up and Log in Buttons -->
-            <div class="flex items-center h-[80px]">
-                <div class="hidden lg:!flex h-[80px] justify-center items-center ">
-                    <a href="{% url 'account_signup' %}"
-                       class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
-                    {% trans "Signup" %}</a>
-                    <a href="{% url 'account_login' %}"
-                       data-toggle="modal"
-                       class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
-                    {% trans "Login" %}</a>
-                </div>
-                <!-- Log in icon -->
-                <a href="{% url 'account_login' %}" class="block lg:hidden m-2">
-                    <i class="fa fa-user !text-5xl text-red-500"></i>
-                </a>
+            <div class="lg:!flex h-[80px] justify-center items-center">
+                <a href="{% url 'account_signup' %}"
+                   class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
+                {% trans "Signup" %}</a>
+                <a href="{% url 'account_login' %}"
+                   data-toggle="modal"
+                   class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
+                {% trans "Login" %}</a>
             </div>
+            <!-- Log in icon -->
+            <a href="{% url 'account_login' %}" class="block sm:hidden mr-[30px]">
+                <i class="fa fa-user !text-5xl text-red-500"></i>
+            </a>
         {% endif %}
-    </div>
+    </ul>
 </div>
 </nav>
-<div class="bg-gray-100 chat-Zindex">
-    <div id="chatbot" class="chatbot">
-        <div class="chat-header flex justify-between items-center">
-            <h3 class="text-xl font-extrabold">Chat with BLT Bot</h3>
-            <button id="closeChatbot" class="text-white text-2xl">×</button>
-        </div>
-        <div class="p-4">
-            <div class="bg-red-100 p-3 rounded-lg mb-2 text-red-700">
-                <p class="text-base">We reply immediately</p>
-            </div>
-            <div id="chat-log" class="chat-log bg-gray-50 p-3 rounded-lg"></div>
-            <div class="flex" id="chat-message-input-container">
-                <input id="chat-message-input"
-                       type="text"
-                       class="flex-grow p-2 border border-gray-300 rounded-l-lg"
-                       placeholder="Enter your message...">
-                <button id="chat-message-submit"
-                        class="bg-red-600 text-white p-2 rounded-md ml-2">Send</button>
-                <button id="chat-message-clear"
-                        class="bg-gray-300 text-black p-2 rounded-md ml-2">Clear</button>
-            </div>
-        </div>
-    </div>
-    <div id="loading" class="loading">
-        <svg class="animate-spin h-5 w-5 text-red-600"
-             xmlns="http://www.w3.org/2000/svg"
-             fill="none"
-             viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-            </path>
-        </svg>
-        <span class="ml-2 text-gray-600">Loading...</span>
-    </div>
-    <div id="chatIcon" class="chat-icon">
-        <svg class="w-10 h-10 text-white"
-             aria-hidden="true"
-             xmlns="http://www.w3.org/2000/svg"
-             width="24"
-             height="24"
-             fill="currentColor"
-             viewBox="0 0 24 24">
-            <path fill-rule="evenodd" d="M3.559 4.544c.355-.35.834-.544 1.33-.544H19.11c.496 0 .975.194 1.33.544.356.35.559.829.559 1.331v9.25c0 .502-.203.981-.559 1.331-.355.35-.834.544-1.33.544H15.5l-2.7 3.6a1 1 0 0 1-1.6 0L8.5 17H4.889c-.496 0-.975-.194-1.33-.544A1.868 1.868 0 0 1 3 15.125v-9.25c0-.502.203-.981.559-1.331ZM7.556 7.5a1 1 0 1 0 0 2h8a1 1 0 0 0 0-2h-8Zm0 3.5a1 1 0 1 0 0 2H12a1 1 0 1 0 0-2H7.556Z" clip-rule="evenodd" />
-        </svg>
-    </div>
-</div>
-<script>
-    document.getElementById('chatIcon').addEventListener('click', function() {
-        document.getElementById('chatbot').style.display = 'block';
-        this.style.display = 'none';
-    });
-
-    document.getElementById('closeChatbot').addEventListener('click', function() {
-        document.getElementById('chatbot').style.display = 'none';
-        document.getElementById('chatIcon').style.display = 'flex';
-    });
-
-    document.addEventListener('DOMContentLoaded', (event) => {
-        const chatLog = document.querySelector('#chat-log');
-        const chatInput = document.querySelector('#chat-message-input');
-        const chatSubmit = document.querySelector('#chat-message-submit');
-        const chatClear = document.querySelector('#chat-message-clear');
-        const chatClose = document.querySelector('#closeChatbot');
-        const loading = document.querySelector('#loading');
-
-        chatSubmit.onclick = function() {
-            const message = chatInput.value;
-            chatInput.value = '';
-            if (message.trim() === "") return;
-
-            // Escape HTML meta-characters in the message
-            const escapedMessage = message.replace(/</g , "&lt;").replace( />/g, "&gt;");
-
-            chatLog.innerHTML += '<div class="bg-red-100 text-red-800 p-2 rounded-lg mb-2">You: ' + escapedMessage + '</div>';
-            loading.style.display = 'flex';
-
-            fetch('/api/chatbot/conversation/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ question: message }),
-            })
-            .then(response => {
-                if (!response.ok) {
-                    if (response.status === 429) {
-                        throw new Error('Rate limit exceeded');
-                    }
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Escape HTML meta-characters in the response
-                const escapedAnswer = data.answer.replace(/</g , "&lt;").replace( />/g, "&gt;");
-                
-                chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + escapedAnswer + '</div>';
-                chatLog.scrollTop = chatLog.scrollHeight;  // Scroll to the bottom
-                loading.style.display = 'none';
-            })
-            .catch((error) => {
-                if (error.message === 'Rate limit exceeded') {
-                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: The request limit has been reached. Please try again later.</div>';
-                } else {
-                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: Sorry, I am unable to process your request at the moment. Please try again later.</div>';
-                }
-                chatLog.scrollTop = chatLog.scrollHeight;
-                loading.style.display = 'none';
-            });
-        };
-
-        function clearChat() {
-            loading.style.display = 'flex';
-            fetch('/api/chatbot/conversation/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ question: "exit" }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                chatLog.innerHTML = '';
-                loading.style.display = 'none';
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-                loading.style.display = 'none';
-            });
-        }
-
-        chatClear.onclick = clearChat;
-        chatClose.onclick = clearChat;
-
-        chatInput.addEventListener('keyup', function(event) {
-            if (event.keyCode === 13) {  // Enter key
-                chatSubmit.click();
-            }
-        });
-    });
-</script>
