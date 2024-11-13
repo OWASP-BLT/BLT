@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% block content %}
+    {% include "includes/sidenav.html" %}
     <div class="container">
         <h1>{{ user.username }}'s Sizzle Report</h1>
         <table class="table">
@@ -26,6 +27,8 @@
         <canvas id="timeLogChart"></canvas>
     </div>
     <script>
+        {% comment %} 
+        // this seems to have a syntax issue
         const ctx = document.getElementById('timeLogChart').getContext('2d');
         const labels = {{ response_data|json_script:"labels" }};
         const data = {{ response_data|json_script:"data" }};
@@ -48,6 +51,6 @@
                     }
                 }
             }
-        });
+}); {% endcomment %}
     </script>
 {% endblock content %}

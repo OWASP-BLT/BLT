@@ -15,12 +15,15 @@ import dj_database_url
 import environ
 from django.utils.translation import gettext_lazy as _
 
-env = environ.Env()
 # reading .env file
 environ.Env.read_env()
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+env = environ.Env()
+env_file = os.path.join(BASE_DIR, ".env")
+environ.Env.read_env(env_file)
+
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
 
@@ -104,8 +107,6 @@ INSTALLED_APPS = (
     "blog",
 )
 
-
-# CRON_CLASSES = ["website.views.CreateIssue"]
 
 MIDDLEWARE = (
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -329,7 +330,6 @@ STATIC_URL = "/static/"
 
 # Extra places for collectstatic to find static files.
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "static"),
     os.path.join(BASE_DIR, "website", "static"),
     os.path.join(BASE_DIR, "company", "static"),
 )
