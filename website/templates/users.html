@@ -59,6 +59,10 @@
                     {% if is_contributor %}
                         <p class="text-gray-600 text-center px-10">{{ user.short_description }}</p>
                     {% else %}
+                        <p class="transition duration-200 text-gray-600 text-center px-10 py-4 bg-gray-100 rounded-md shadow-md">
+                            <span class="font-semibold text-lg text-gray-600">Discounted Hourly Rate:</span>
+                            <span class="text-green-600 font-bold text-xl">${{ user.discounted_hourly_rate }}</span>
+                        </p>
                     {% endif %}
                     <div class="flex items-center justify-center gap-3 mt-2 w-auto h-5 text-gray-600 mt-7">
                         <a href="{{ user.twitter }}" target="_blank" rel="noopener noreferrer">

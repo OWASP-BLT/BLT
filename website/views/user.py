@@ -618,7 +618,6 @@ def users_view(request, *args, **kwargs):
                 }
                 for user in user_profiles
             ]
-            print(context["users"])
         else:
             # If the tag is not found, return an empty list for users
             context["users"] = []
