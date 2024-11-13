@@ -999,6 +999,7 @@ def TimeLogListAPIView(request):
         formatted_date = first_log.created.strftime("%d %B %Y")
 
         day_data = {
+            "id": first_log.id,
             "issue_title": issue_title,
             "duration": formatted_duration,
             "start_time": start_time,
@@ -1059,6 +1060,7 @@ def sizzle(request):
             date = last_data.created.strftime("%d %B %Y")
 
             sizzle_data = {
+                "id": last_data.id,
                 "issue_title": issue_title,
                 "duration": formatted_duration,
                 "start_time": start_time,

@@ -118,9 +118,31 @@
     font-size: 1.4rem;
     color: #333;
 }
+a.floating-report-ip-button {
+    position: fixed;
+    bottom: 50px;
+    left: 220px;
+    padding: 10px 15px;
+    background-color: #c51919; /* Red background */
+    color: #fff; /* White text */
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+}
 
+a.floating-report-ip-button:hover {
+    transform: scale(1.1); /* Hover effect */
+}
+
+a.floating-report-ip-button i {
+    margin-right: 6px;
+}
     </style>
-    <h1>Reported IPs</h1>
     <div class="report-container">
         {% for ip in reported_ips %}
             <div class="report-card" onclick="toggleExpand(this)">
@@ -170,6 +192,9 @@
             <i class="fab fa-figma"></i>
         </a>
     </div>
+    <a href="{% url 'report_ip' %}" class="floating-report-ip-button">
+        <i class="fas fa-exclamation-triangle"></i> Report an IP
+    </a>
     <script>
     function toggleExpand(card) {
         const descriptionContent = card.querySelector(".description-content");
