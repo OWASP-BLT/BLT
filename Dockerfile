@@ -18,13 +18,14 @@ RUN apt-get update && apt-get install -y \
         libmemcached-dev \
         libz-dev
 
-
 RUN pip install poetry 
 RUN poetry config virtualenvs.create false
+RUN poetry lock
 RUN poetry install
+RUN pip install opentelemetry-api opentelemetry-instrumentation
 
-RUN python manage.py migrate 
-RUN python manage.py loaddata website/fixtures/initial_data.json
-# RUN python manage.py collectstatic
-RUN python manage.py initsuperuser
 
+RUN python manage.py collectstatic --noinput
+CMD python manage.py migrate && \
+    python manage.py create_superuser && \
+    python manage.py loaddata website/fixtures/initial_data.json 
