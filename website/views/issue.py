@@ -941,7 +941,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     save=True,
                 )
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
-
+            if len(self.request.FILES.getlist("screenshots"))==0:
+                messages.error(self.request, "Screenshot is needed!")
+                obj.delete()
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": captcha_form},
+                )
             if len(self.request.FILES.getlist("screenshots")) > 5:
                 messages.error(self.request, "Max limit of 5 images!")
                 obj.delete()
