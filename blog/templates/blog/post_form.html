@@ -25,7 +25,7 @@
     }
 
     .form-container button {
-        background-color: #007bff;
+        background-color: #007BFF;
         color: black;
         border: none;
         border-radius: 5px;
@@ -40,7 +40,39 @@
     }
 
     .form-field {
-        margin-bottom: 15px;
+        margin-bottom: 20px; /* Increased margin for better spacing */
+    }
+
+    .form-field label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+        color: #333;
+    }
+
+    .form-field input, .form-field textarea {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+        font-size: 16px;
+        background-color: #F9F9F9; 
+        color: #333; 
+    }
+    .form-field input:focus, .form-field textarea:focus {
+        outline: none;
+        border-color: #007BFF; 
+        background-color: #FFFFFF; 
+    }
+    .form-field input::placeholder, .form-field textarea::placeholder {
+        color: #888; 
+    }
+    .form-field .error {
+        color: red;
+        font-size: 0.9em;
+        margin-top: 5px;
     }
     </style>
     {% include "includes/sidenav.html" %}
