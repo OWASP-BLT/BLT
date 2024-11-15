@@ -126,6 +126,7 @@
                                 </ul>
                             </div>
                             <p>{{ project.description }}</p>
+                            <p>{{ project.ai_summary }}</p>
                             <!-- Contributors Section -->
                             <div class="project-stats">
                                 <p>
@@ -149,6 +150,15 @@
                                     {% endfor %}
                                 </div>
                             </div>
+                            <p>Labels:</p>
+                                <ul>
+                                {% for label in project.ai_labels_list %}
+                                    <li class="label-item">
+                                        <span class="label-icon"><i class="fas fa-tag"></i></span>
+                                        <span class="label-text">{{ label }}</span>
+                                    </li>
+                                {% endfor %}
+                                </ul>
                             <div class="additional-metadata">
                                 <div class="external-links">
                                     <h4>
@@ -464,6 +474,25 @@
 
         .project-tags h4 i {
             margin-right: 0.5rem;
+        }
+
+        .label-item {
+            display: inline-block;
+            background-color: #f0f0f5;
+            border-radius: 12px;
+            padding: 5px 10px;
+            margin: 4px;
+            color: #555;
+            font-size: 0.9em;
+        }
+
+            .label-icon {
+            margin-right: 5px;
+            color: #777;
+        }
+
+            .label-text {
+            font-weight: 600;
         }
     </style>
 {% endblock content %}
