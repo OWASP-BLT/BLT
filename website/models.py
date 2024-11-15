@@ -758,6 +758,8 @@ class Project(models.Model):
     documentation_url = models.URLField(null=True, blank=True)
     recent_commit_messages = models.TextField(null=True, blank=True)
     issue_tracker_url = models.URLField(null=True, blank=True)
+    ai_summary = models.TextField(null=True, blank=True)
+    ai_labels = models.CharField(max_length=255, blank=True, default="")
 
     def __str__(self):
         return self.name
