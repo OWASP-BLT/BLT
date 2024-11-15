@@ -108,8 +108,6 @@ INSTALLED_APPS = (
 )
 
 
-# CRON_CLASSES = ["website.views.CreateIssue"]
-
 MIDDLEWARE = (
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",

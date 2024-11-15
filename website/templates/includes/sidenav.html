@@ -51,9 +51,9 @@
                 </li>
                 <!-- Submenu Items -->
                 <ul class="pl-8">
-                    <li class="mb-2 {% if request.path == '/' %}bg-gray-200{% endif %}">
-                        <a href="{% url 'index' %}"
-                           class="flex items-center w-full p-2 no-underline {% if request.path == '/' %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                    <li class="mb-2 {% if request.path == '/issues/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'issues' %}"
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/issues/' %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                             <div class="icon text-red-500">
                                 <i class="fas fa-exclamation-triangle fa-lg"></i>
                             </div>
@@ -85,6 +85,15 @@
                                 <i class="fas fa-bug fa-lg"></i>
                             </div>
                             <span>Bug Bounties</span>
+                        </a>
+                    </li>
+                    <li class="mb-2 {% if request.path == '/reported-ips/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'reported_ips_list' %}"
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/reported-ips/' %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="icon text-red-500">
+                                <i class="fas fa-exclamation-triangle fa-lg"></i>
+                            </div>
+                            <span>Reported IPs</span>
                         </a>
                     </li>
                     <li class="mb-2 {% if request.path == '/trademarks/' %}bg-gray-200{% endif %}">
@@ -136,15 +145,6 @@
                                 <i class="fas fa-coins fa-lg"></i>
                             </div>
                             <span>BACON (coin)</span>
-                        </a>
-                    </li>
-                    <li class="mb-2 {% if request.path == '/contributor-stats/today/' %}bg-gray-200{% endif %}">
-                        <a href="{% url 'contributor-stats' %}"
-                           class="flex items-center w-full no-underline p-2 {% if '/contributor-stats/today/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
-                            <div class="icon text-blue-500">
-                                <i class="fas fa-calendar-day fa-lg"></i>
-                            </div>
-                            <span>Stats</span>
                         </a>
                     </li>
                 </ul>
@@ -237,7 +237,7 @@
                     </li>
                     <li class="mb-2 {% if request.path == '/view-suggestion/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'view_suggestions' %}"
-                           class="flex items-center w-full text-black no-underline p-2 {% if '/view-suggestion/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                           class="flex items-center w-full text-black no-underline p-2 {% if '/suggestion/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                             <div class="icon text-purple-500">
                                 <i class="fas fa-comments fa-lg"></i>
                             </div>
@@ -288,7 +288,7 @@
                     </li>
                     <li class="mb-2 {% if request.path == '/gsoc/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'gsoc' %}"
-                           class="flex items-center w-full text-black no-underline p-2">
+                           class="flex items-center w-full no-underline p-2 {% if '/gsoc/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                             <div class="icon text-red-500">
                                 <i class="fas fa-sun-o fa-lg"></i>
                             </div>
@@ -306,41 +306,39 @@
                         <div class="icon text-gray-700">
                             <i class="fab fa-twitter fa-lg"></i>
                         </div>
-                        <span>Follow Us</span>
+                        <span>Twitter</span>
                     </a>
                 </li>
-                <!-- Submenu Items -->
-                <ul class="pl-8">
-                    <li class="mb-2">
-                        <a href="https://www.facebook.com/groups/owaspfoundation/"
-                           class="flex items-center w-full no-underline p-2 {% if '/owaspfoundation' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}"
-                           target="_blank">
-                            <div class="icon text-blue-600">
-                                <i class="fab fa-facebook fa-lg"></i>
-                            </div>
-                            <span>Facebook</span>
-                        </a>
-                    </li>
-                    <li class="mb-2">
-                        <a href="https://github.com/OWASP/BLT"
-                           class="flex items-center w-full no-underline p-2 {% if '/BLT' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}"
-                           target="_blank">
-                            <div class="icon text-gray-800">
-                                <i class="fab fa-github fa-lg"></i>
-                            </div>
-                            <span>GitHub</span>
-                        </a>
-                    </li>
-                    <li class="mb-2 {% if request.path == '/blog/' %}bg-gray-200{% endif %}">
-                        <a href="{% url 'blog' %}"
-                           class="flex items-center w-full no-underline p-2 {% if '/blog/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
-                            <div class="icon text-red-500">
-                                <i class="fas fa-blog fa-lg"></i>
-                            </div>
-                            <span>Blog</span>
-                        </a>
-                    </li>
-                </ul>
+                <li class="mb-2">
+                    <a href="https://www.facebook.com/groups/owaspfoundation/"
+                       class="flex items-center w-full no-underline p-2 {% if '/facebook.com' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}"
+                       target="_blank">
+                        <div class="icon text-blue-600">
+                            <i class="fab fa-facebook fa-lg"></i>
+                        </div>
+                        <span>Facebook</span>
+                    </a>
+                </li>
+                <li class="mb-2 {% if request.path == '/blog/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'blog' %}"
+                       class="flex items-center w-full no-underline p-2 {% if '/blog' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}"
+                       target="_blank">
+                        <div class="icon text-red-500">
+                            <i class="fas fa-blog fa-lg"></i>
+                        </div>
+                        <span>Blog</span>
+                    </a>
+                </li>
+                <li class="mb-2 ">
+                    <a href="https://owasp.org/slack/invite"
+                       target="_blank"
+                       class="flex items-center w-full no-underline p-2 {% if '/slack' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                        <div class="icon text-red-500">
+                            <i class="fab fa-slack fa-lg"></i>
+                        </div>
+                        <span>Slack</span>
+                    </a>
+                </li>
                 <!-- Spacer -->
                 <div class="my-4 border-t border-gray-300"></div>
                 <!-- Footer Links -->
@@ -371,6 +369,80 @@
                         <span>Stats</span>
                     </a>
                 </li>
+                <div class="my-4 border-t border-gray-300"></div>
+                <li class="mb-2">
+                    <a href="https://github.com/OWASP_BLT/"
+                       class="flex items-center w-full no-underline p-2 {% if '/OWASP_BLT' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}"
+                       target="_blank">
+                        <div class="icon text-gray-800">
+                            <i class="fab fa-github fa-lg"></i>
+                        </div>
+                        <span>Repositories</span>
+                    </a>
+                </li>
+                <!-- Submenu Items -->
+                <ul class="pl-8">
+                    <li class="mb-2">
+                        <a href="https://github.com/OWASP-BLT/BLT/"
+                           target="_blank"
+                           class="flex items-center w-full no-underline p-2 {% if '/BLT' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="icon text-blue-500">
+                                <i class="fas fa-code-branch fa-lg"></i>
+                            </div>
+                            <span>BLT Core</span>
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="https://github.com/OWASP-BLT/BLT-Flutter"
+                           target="_blank"
+                           class="flex items-center w-full no-underline p-2 {% if '/BLT-FLUTTER' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="icon text-blue-500">
+                                <i class="fas fa-mobile-alt fa-lg"></i>
+                            </div>
+                            <span>BLT Flutter</span>
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="https://github.com/OWASP-BLT/BLT-Extension"
+                           target="_blank"
+                           class="flex items-center w-full no-underline p-2 {% if '/BLT-Extension' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="icon text-blue-500">
+                                <i class="fas fa-puzzle-piece fa-lg"></i>
+                            </div>
+                            <span>BLT Extension</span>
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="https://github.com/OWASP-BLT/BLT-Action"
+                           target="_blank"
+                           class="flex items-center w-full no-underline p-2 {% if '/BLT-Action' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="icon text-blue-500">
+                                <i class="fas fa-play-circle fa-lg"></i>
+                            </div>
+                            <span>BLT Action</span>
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="https://github.com/OWASP-BLT/BLT-Bacon"
+                           target="_blank"
+                           class="flex items-center w-full no-underline p-2 {% if '/BLT-Bacon' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="icon text-blue-500">
+                                <i class="fas fa-coins fa-lg"></i>
+                            </div>
+                            <span>BLT BACON</span>
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="https://github.com/OWASP-BLT/BLT-Lettuce"
+                           target="_blank"
+                           class="flex items-center w-full no-underline p-2 {% if '/BLT-Lettuce' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="icon text-blue-500">
+                                <i class="fas fa-leaf fa-lg"></i>
+                            </div>
+                            <span>BLT Lettuce</span>
+                        </a>
+                    </li>
+                </ul>
                 <div class="my-4 border-t border-gray-300"></div>
                 <li class="mb-2 {% if request.path == '/terms/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'terms' %}"

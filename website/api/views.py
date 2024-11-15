@@ -20,7 +20,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from website.class_views import LeaderboardBase
 from website.models import (
     ActivityLog,
     Company,
@@ -53,6 +52,7 @@ from website.serializers import (
     UserProfileSerializer,
 )
 from website.utils import image_validator
+from website.views.user import LeaderboardBase
 
 # API's
 
