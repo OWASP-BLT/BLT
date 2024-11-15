@@ -900,3 +900,26 @@ class DailyStatusReport(models.Model):
 
     def __str__(self):
         return f"Daily Status Report by {self.user.username} on {self.date}"
+
+
+class IpReport(models.Model):
+    IP_TYPE_CHOICES = [
+        ("ipv4", "IPv4"),
+        ("ipv6", "IPv6"),
+    ]
+    ACTIVITY_TYPE_CHOICES = [
+        ("malicious", "Malicious"),
+        ("friendly", "Friendly"),
+    ]
+
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    activity_title = models.CharField(max_length=255)
+    activity_type = models.CharField(max_length=50, choices=ACTIVITY_TYPE_CHOICES)
+    ip_address = models.GenericIPAddressField()
+    ip_type = models.CharField(max_length=10, choices=IP_TYPE_CHOICES)
+    description = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.ip_address} ({self.ip_type}) - {self.activity_title}"
