@@ -1,7 +1,7 @@
-{% extends "base.html" %} 
-{% block content %} 
-{% include "includes/sidenav.html"%}
-<style>
+{% extends "base.html" %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <style>
   .activity-feed-container {
     margin: 20px auto;
     padding: 20px;
@@ -152,75 +152,65 @@
     z-index: 10; /* Bring expanded card to the top */
     margin: 0 20px; /* Push the expanded card away from the container edges */
   }
-</style>
-<div>
-  <h1>Global Activity Feed</h1>
-  <div class="activity-feed-container">
-    <ul class="activity-list">
-      {% for activity in page_obj %}
-      <li class="activity-card">
-        <div class="card-header">
-          <!-- Reporter and Time -->
-          <div class="reporter-info">
-            <strong>{{ activity.user.username }}</strong>
-            <span class="timestamp"
-              >{{ activity.timestamp|date:"M d, Y, H:i A" }}</span
-            >
-          </div>
-          <!-- Activity Type -->
-          <div class="activity-type">
-            <span
-              class="activity-dot {% if activity.action_type == 'create' %}red-dot{% elif activity.action_type == 'update' %}green-dot{% else %}white-dot{% endif %}"
-            ></span>
-            <span class="activity-text"
-              >{{ activity.get_action_type_display|capfirst }}</span
-            >
-          </div>
+    </style>
+    <div>
+        <h1>Global Activity Feed</h1>
+        <div class="activity-feed-container">
+            <ul class="activity-list">
+                {% for activity in page_obj %}
+                    <li class="activity-card">
+                        <div class="card-header">
+                            <!-- Reporter and Time -->
+                            <div class="reporter-info">
+                                <strong>{{ activity.user.username }}</strong>
+                                <span class="timestamp">{{ activity.timestamp|date:"M d, Y, H:i A" }}</span>
+                            </div>
+                            <!-- Activity Type -->
+                            <div class="activity-type">
+                                <span class="activity-dot {% if activity.action_type == 'create' %}red-dot{% elif activity.action_type == 'update' %}green-dot{% else %}white-dot{% endif %}"></span>
+                                <span class="activity-text">{{ activity.get_action_type_display|capfirst }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Display Title -->
+                            <div class="activity-title">
+                                <h3>{{ activity.title }}</h3>
+                            </div>
+                            <!-- Display Image if available -->
+                            {% if activity.image %}
+                                <div class="activity-image">
+                                    <img src="{{ activity.image.url }}"
+                                         alt="Activity Image"
+                                         width="{{ activity.image.width }}"
+                                         height="{{ activity.image.height }}" />
+                                </div>
+                            {% endif %}
+                            <!-- Description -->
+                            <div class="activity-description">
+                                <p>{{ activity.description }}</p>
+                            </div>
+                        </div>
+                    </li>
+                {% empty %}
+                    <p>No activities recorded.</p>
+                {% endfor %}
+            </ul>
+            <!-- Pagination -->
+            <div class="pagination">
+                {% if is_paginated %}
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1" class="btn btn-default">First</a>
+                        <a href="?page={{ page_obj.previous_page_number }}"
+                           class="btn btn-default">Previous</a>
+                    {% endif %}
+                    <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" class="btn btn-default">Next</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}"
+                           class="btn btn-default">Last</a>
+                    {% endif %}
+                {% endif %}
+            </div>
         </div>
-        <div class="card-body">
-          <!-- Display Title -->
-          <div class="activity-title">
-            <h3>{{ activity.title }}</h3>
-          </div>
-          <!-- Display Image if available -->
-          {% if activity.image %}
-          <div class="activity-image">
-            <img src="{{ activity.image.url }}" alt="Activity Image" />
-          </div>
-          {% endif %}
-          <!-- Description -->
-          <div class="activity-description">
-            <p>{{ activity.description }}</p>
-          </div>
-        </div>
-      </li>
-      {% empty %}
-      <p>No activities recorded.</p>
-      {% endfor %}
-    </ul>
-
-    <!-- Pagination -->
-    <div class="pagination">
-      {% if is_paginated %} {% if page_obj.has_previous %}
-      <a href="?page=1" class="btn btn-default">First</a>
-      <a
-        href="?page={{ page_obj.previous_page_number }}"
-        class="btn btn-default"
-        >Previous</a
-      >
-      {% endif %}
-      <span class="current"
-        >Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span
-      >
-      {% if page_obj.has_next %}
-      <a href="?page={{ page_obj.next_page_number }}" class="btn btn-default"
-        >Next</a
-      >
-      <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-default"
-        >Last</a
-      >
-      {% endif %} {% endif %}
     </div>
-  </div>
-</div>
 {% endblock %}

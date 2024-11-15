@@ -32,6 +32,7 @@ from rest_framework.authtoken.models import Token
 from blt import settings
 from website.forms import CaptchaForm, HuntForm, IpReportForm, UserProfileForm
 from website.models import (
+    Activity,
     Company,
     CompanyAdmin,
     DailyStatusReport,
@@ -45,7 +46,6 @@ from website.models import (
     User,
     Wallet,
     Winner,
-    Activity
 )
 from website.utils import format_timedelta, get_client_ip, get_github_issue_title
 
@@ -1561,14 +1561,18 @@ class ReportedIpListView(ListView):
 
 def activity_feed(request):
     # Fetch all activities
-    activities = Activity.objects.all().order_by('-timestamp')
+    activities = Activity.objects.all().order_by("-timestamp")
 
     # Paginate the activities
     paginator = Paginator(activities, 10)  # 10 activities per page
-    page_number = request.GET.get('page')
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
     # Pass the activities with all their fields to the template
-    return render(request, 'activity_feed.html', {
-        'page_obj': page_obj,
-    })
+    return render(
+        request,
+        "activity_feed.html",
+        {
+            "page_obj": page_obj,
+        },
+    )

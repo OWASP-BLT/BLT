@@ -94,7 +94,6 @@ from website.views.issue import (
     vote_count,
 )
 from website.views.organization import (
-    activity_feed,
     CompanySettings,
     CreateHunt,
     DomainDetailView,
@@ -113,6 +112,7 @@ from website.views.organization import (
     TimeLogListAPIView,
     TimeLogListView,
     UpcomingHunts,
+    activity_feed,
     add_domain_to_company,
     add_or_update_company,
     add_or_update_domain,

@@ -3,13 +3,14 @@ import os
 import uuid
 from decimal import Decimal
 from urllib.parse import urlparse
-from django.contrib.contenttypes.models import ContentType
+
 import requests
 from annoying.fields import AutoOneToOneField
 from captcha.fields import CaptchaField
 from colorthief import ColorThief
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
@@ -26,7 +27,6 @@ from google.cloud import storage
 from mdeditor.fields import MDTextField
 from PIL import Image
 from rest_framework.authtoken.models import Token
-from django.urls import reverse
 
 logger = logging.getLogger(__name__)
 
