@@ -59,14 +59,14 @@
         border-radius: 5px;
         margin-bottom: 10px;
     }
-    /* New Blog Button Styles */
+
     a.floating-new-blog-button {
         position: fixed;
         bottom: 50px;
         left: 220px;
         padding: 10px 15px;
-        background-color: #C51919; /* Red background */
-        color: #fff; /* White text */
+        background-color: #C51919; 
+        color: #fff;
         text-decoration: none;
         border-radius: 5px;
         font-weight: bold;
@@ -77,7 +77,7 @@
         z-index: 1000;
     }
     a.floating-new-blog-button:hover {
-        transform: scale(1.1); /* Hover effect */
+        transform: scale(1.1); 
         color:red;
     }
     a.floating-new-blog-button i {
@@ -104,7 +104,6 @@
             <p class="no-posts-message">No posts available.</p>
         {% endfor %}
     </ul>
-    <!-- Floating New Blog Button -->
     <a href="{% url 'post_create' %}" class="floating-new-blog-button">
         <i class="fas fa-plus"></i> New Blog
     </a>
