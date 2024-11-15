@@ -711,7 +711,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     # permission_classes = (IsAuthenticatedOrReadOnly,)
-    http_method_names = ("get", "post")
+    http_method_names = ("get", "post", "put", "patch")
 
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
@@ -736,6 +736,20 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+
+        # Allow maintainers to manually adjust `ai_summary` and `ai_labels`
+        data = request.data.copy()
+
+        # Update the instance with new data, including `ai_summary` and `ai_labels`
+        serializer = ProjectSerializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def list(self, request, *args, **kwargs):
         projects = Project.objects.prefetch_related("contributors").all()
