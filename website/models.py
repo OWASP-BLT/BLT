@@ -3,7 +3,7 @@ import os
 import uuid
 from decimal import Decimal
 from urllib.parse import urlparse
-
+from django.contrib.contenttypes.models import ContentType
 import requests
 from annoying.fields import AutoOneToOneField
 from captcha.fields import CaptchaField
@@ -26,6 +26,7 @@ from google.cloud import storage
 from mdeditor.fields import MDTextField
 from PIL import Image
 from rest_framework.authtoken.models import Token
+from django.urls import reverse
 
 logger = logging.getLogger(__name__)
 
@@ -923,3 +924,27 @@ class IpReport(models.Model):
 
     def __str__(self):
         return f"{self.ip_address} ({self.ip_type}) - {self.activity_title}"
+
+
+class Activity(models.Model):
+    ACTION_TYPES = [
+        ("create", "Created"),
+        ("update", "Updated"),
+        ("delete", "Deleted"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    action_type = models.CharField(max_length=10, choices=ACTION_TYPES)
+    title = models.CharField(max_length=255)
+    related_object = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    related_object_type = models.CharField(max_length=50)
+    description = models.TextField(null=True, blank=True)
+    image = models.ImageField(null=True, blank=True, upload_to="activity_images/")
+    timestamp = models.DateTimeField(auto_now_add=True)
+    url = models.URLField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.title} by {self.user.username} at {self.timestamp}"
+
+    class Meta:
+        ordering = ["-timestamp"]
