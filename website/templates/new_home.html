@@ -13,12 +13,12 @@
         }
     </style>
     <div class="mt-14 ml-8">
-     <a href="{% url 'report' %}" 
-     class="bg-red-500 text-white px-8 py-4 rounded-lg shadow-lg font-bold text-2xl hover:bg-red-600 transform hover:-translate-y-1 transition hover:text-white">
-      Report a Bug
-     </a>
+        <a href="{% url 'report' %}"
+           class="bg-red-500 text-white px-8 py-4 rounded-lg shadow-lg font-bold text-2xl hover:bg-red-600 transform hover:-translate-y-1 transition hover:text-white">
+            Report a Bug
+        </a>
     </div>
-    <div class="flex flex-col sm:flex-row mt-[25px]"> 
+    <div class="flex flex-col sm:flex-row mt-[25px]">
         <div class="flex-1">
             <div class="hero-bugs-container grid grid-cols-1 sm:grid-cols-2 gap-4 mx-4 my-2.5">
                 {% for bug in bugs %}
