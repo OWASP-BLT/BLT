@@ -22,22 +22,38 @@
     </head>
     <body>
         <style>
-            .bottom-right {
-                position: absolute;
-                bottom: 10px;
-                right: 15px;
+            .page-container {
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .content {
+                flex: 1;
+            }
+
+            .bottom-links {
+                padding: 15px;
+                text-align: right;
+                background-color: #F3F5F7;
+            }
+
+            .bottom-links a {
+                margin-left: 10px;
+                color: #666;
+                text-decoration: none;
+            }
+
+            .bottom-links a:hover {
+                color: #333;
             }
         </style>
-        <div class="bottom-right">
-            <a href="https://github.com/OWASP-BLT/BLT/blob/main/company/templates/company/register_company.html">
-                <i class="fab fa-github"></i>
-            </a>
-            <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
-                <i class="fab fa-figma"></i>
-            </a>
-        </div>
-        <div class="bg-[#F3F5F7] flex flex-col items-center">
-            <form method='post'
+
+        <div class="page-container">
+            <div class="content">
+
+             <div class="bg-[#F3F5F7] flex flex-col items-center">
+               <form method='post'
                   action="#"
                   enctype="multipart/form-data"
                   class="w-[96%] bg-white rounded-2xl p-10 my-5 shadow-md">
@@ -175,9 +191,9 @@
                         {% trans "Save" %}
                     </button>
                 </div>
-            </form>
-        </div>
-        {% if messages %}
+               </form>
+             </div>
+          {% if messages %}
             {% for message in messages %}
                 {% if message.level_tag == 'error' %}
                     <div id="alert-border-2"
@@ -237,7 +253,17 @@
                     </div>
                 {% endif %}
             {% endfor %}
-        {% endif %}
+          {% endif %}
+            </div>
+            <div class="bottom-links">
+                <a href="https://github.com/OWASP-BLT/BLT/blob/main/company/templates/company/register_company.html">
+                    <i class="fab fa-github"></i>
+                </a>
+                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
+                    <i class="fab fa-figma"></i>
+                </a>
+            </div>
+        </div>
     </body>
     <script>
     function removeErrors(){
