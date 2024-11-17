@@ -151,7 +151,8 @@ class IPRestrictMiddleware:
 
                     ip_record.agent = agent
                     ip_record.count = new_count
-                    ip_record.save(update_fields=["agent", "count"])
+                    if ip_record.pk:
+                        ip_record.save(update_fields=["agent", "count"])
 
                     # Check if a transaction is already active before starting a new one
                     if not transaction.get_autocommit():
