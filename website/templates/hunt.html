@@ -2,12 +2,14 @@
 {% load static %}
 {% load i18n %}
 {% load custom_tags %}
-{% block content %}
+{% block style %}
     <style>
     .slider {
         width: 100% !important;
     }
     </style>
+{% endblock style %}
+{% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
     <form role="form"
@@ -26,34 +28,42 @@
                     <p class="font-bold mt-2">{% trans "Enter URL, APP name or GPS location of issue" %}</p>
                     <hr class="my-4">
                 </div>
+                {% csrf_token %}
                 <div class="space-y-4">
                     <div class="flex items-center border rounded-md overflow-hidden">
                         <i class="fa fa-bug bg-red-500 text-white p-4"></i>
                         <input class="w-full p-2 outline-none"
                                type="text"
                                placeholder="Name of the bughunt"
-                               name="name">
+                               name="name"
+                               value="{{ form.url.value|default:'' }}">
                     </div>
+                    {% if form.errors %}<p class="text-red-500 text-sm mt-1">{{ form.url.errors }}</p>{% endif %}
                     <div class="flex items-center border rounded-md overflow-hidden">
                         <i class="fa fa-link bg-red-500 text-white p-4"></i>
                         <input class="w-full p-2 outline-none"
                                type="text"
                                placeholder="http://example.com"
                                name="url"
-                               value="{{ form.url.value|default:"" }}">
+                               value="{{ form.url.value|default:'' }}">
                     </div>
+                    {% if form.errors %}<p class="text-red-500 text-sm mt-1">{{ form.name.errors }}</p>{% endif %}
                     <div class="flex items-center border rounded-md overflow-hidden">
                         <i class="fa fa-file-picture-o bg-red-500 text-white p-5"></i>
                         <input class="w-full p-2 outline-none" type="file" name="logo">
                     </div>
+                    {% if form.logo.errors %}<p class="text-red-500 text-sm mt-1">{{ form.logo.errors }}</p>{% endif %}
                     <div class="flex items-start border rounded-md overflow-hidden">
                         <i class="fa fa-pencil-square-o bg-red-500 text-white p-4"></i>
                         <textarea name="description"
                                   id="description"
                                   rows="3"
                                   class="w-full p-2 outline-none"
-                                  placeholder="Describe bug issue"></textarea>
+                                  placeholder="Describe bug issue">{{ form.description.value|default:'' }}</textarea>
                     </div>
+                    {% if form.description.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.descriptioon.errors }}</p>
+                    {% endif %}
                     <div>
                         <select name="plan"
                                 id="bughunt-select-plan"
@@ -76,6 +86,7 @@
                                data-slider-max="10000"
                                data-slider-step="100"
                                data-slider-value="{{ form.prize.value|default:'100' }}">
+                        {% if form.prize.errors %}<p class="text-red-500 text-sm mt-1">{{ form.prize.errors }}</p>{% endif %}
                     </div>
                     <div class="flex justify-end">
                         <button type="submit"
