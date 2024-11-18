@@ -68,6 +68,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "issue_flaged",
             "total_score",
             "activities",
+            "recommendations",
         )
 
 

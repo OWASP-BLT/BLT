@@ -44,6 +44,7 @@ from website.models import (
     Monitor,
     Payment,
     Points,
+    Recommendation,
     Tag,
     User,
     UserProfile,
@@ -264,10 +265,30 @@ class UserProfileDetailView(DetailView):
             UserProfile.objects.filter(user=self.object).first().tags.all()
         )
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
+
+        recommendations = Recommendation.objects.filter(recommender=user)
+        context["recommendations"] = recommendations
+        context["all_users"] = User.objects.exclude(id=self.request.user.id)
+
         return context
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
+        if "recommended_user" in request.POST:
+            recommended_user_id = request.POST.get("recommended_user")
+            try:
+                recommended_user = User.objects.get(id=recommended_user_id)
+                if Recommendation.objects.filter(
+                    recommender=request.user, recommended_user=recommended_user
+                ).exists():
+                    messages.error(request, "You have already recommended this user.")
+                else:
+                    Recommendation.objects.create(
+                        recommender=request.user, recommended_user=recommended_user
+                    )
+                    messages.success(request, "Recommendation added successfully!")
+            except User.DoesNotExist:
+                messages.error(request, "User not found.")
         form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
         if request.FILES.get("user_avatar") and form.is_valid():
             form.save()
@@ -277,7 +298,7 @@ class UserProfileDetailView(DetailView):
             user_issues.update(is_hidden=hide)
             request.user.userprofile.issues_hidden = hide
             request.user.userprofile.save()
-        return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
+        return redirect(self.request.path_info)
 
 
 class UserProfileDetailsView(DetailView):
@@ -350,6 +371,11 @@ class UserProfileDetailsView(DetailView):
             str(prof.user.email) for prof in user.userprofile.follower.all()
         ]
         context["bookmarks"] = user.userprofile.issue_saved.all()
+
+        # Recommendations
+        recommendations = Recommendation.objects.filter(recommender=user)
+        context["recommendations"] = recommendations
+
         return context
 
     @method_decorator(login_required)

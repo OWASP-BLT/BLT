@@ -269,6 +269,49 @@
         color: #ff5722;
         font-weight: bold;
     }
+    
+    /* Added styles for Recommendations */
+    .recommend-user {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .red-btn {
+        background-color: #cc0000;
+        color: #fff;
+        border: none;
+        margin : 10px;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .red-btn:hover {
+        background-color: #990000;
+    }
+    .error {
+        color: #cc0000;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+
+    #user_list {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+    .user-item {
+        padding: 5px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .user-item:last-child {
+        border-bottom: none;
+    }
     </style>
 {% endblock style %}
 {% block content %}
@@ -494,6 +537,9 @@
                     <button class="mr-3" onclick="openFollowingModal();">
                         <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">👤 {% trans "Following" %} {{ following|length }}</div>
                     </button>
+                    <button class="mr-3" onclick="openRecommendationModal();">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">📑 {% trans "Recommends" %} {{ recommendations|length }}</div>
+                    </button>
                     <button class="mr-3" onclick="openBookmarkModal();">
                         <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">📑 {% trans "Bookmarks" %} {{ bookmarks|length }}</div>
                     </button>
@@ -515,6 +561,31 @@
                     <hr>
                 </div>
                 <div id="chart" class="max-sm:w-full w-3/4"></div>
+                <div>
+                    <div class="text-2xl font-bold my-4 pl-2">Spot a Talent? Recommend Now!</div>
+                    <form method="post"
+                          action="{% url 'profile' slug=user.username %}"
+                          class="recommend-user">
+                        {% csrf_token %}
+                        <label for="search_user" class="pr-2">Search for a user:</label>
+                        <input type="text"
+                               id="search_user"
+                               onkeyup="filterUsers()"
+                               placeholder="Start typing a name...">
+                        <div id="user_list">
+                            {% for user in all_users %}
+                                <div class="user-item">
+                                    <input type="radio"
+                                           name="recommended_user"
+                                           value="{{ user.id }}"
+                                           id="user_{{ user.id }}">
+                                    <label for="user_{{ user.id }}">{{ user.username }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button class="red-btn" type="submit">Recommend</button>
+                    </form>
+                </div>
             </div>
         </div>
         <div class="max-sm:w-[100vw] w-[22vw]">
@@ -671,6 +742,65 @@
             </div>
         </div>
     </div>
+    <div id="recommendations"
+         class="hidden relative z-10"
+         aria-labelledby="modal-title"
+         role="dialog"
+         aria-modal="true">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+             aria-hidden="true"></div>
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw]">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start lg:w-full">
+                            <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
+                                <div class="mt-2">
+                                    <h3>Recommended Users:</h3>
+                                    <br>
+                                    <p class="text-xl">
+                                        <table class="table-auto w-full border-spacing-52">
+                                            <tbody>
+                                                {% for recommendation in recommendations %}
+                                                    <tr class="shadow-lg m-3 w-full rounded">
+                                                        {% if recommendation.recommended_user.socialaccount_set.all.0.get_avatar_url %}
+                                                            <td>
+                                                                <img src="{{ recommendation.recommended_user.socialaccount_set.all.0.get_avatar_url }}"
+                                                                     height="50px"
+                                                                     width="50px"
+                                                                     alt="{{ recommendation.recommended_user.username }}">
+                                                            </td>
+                                                        {% else %}
+                                                            <td>
+                                                                <img src="{% gravatar_url recommendation.recommended_user.email 50 %}"
+                                                                     height="50px"
+                                                                     width="50px"
+                                                                     alt="{{ recommendation.recommended_user.username }}">
+                                                            </td>
+                                                        {% endif %}
+                                                        <td>
+                                                            {% if recommendation.recommended_user.username %}
+                                                                &nbsp; <a href="{% url 'profile' slug=recommendation.recommended_user.username %}">{{ recommendation.recommended_user.username }}</a>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="button"
+                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                                id="close-Recommendations">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="Bookmark"
          class="hidden relative z-10"
          aria-labelledby="modal-title"
@@ -735,6 +865,11 @@
     closeFollowing.addEventListener("click",()=>{
         openFollowing.style.display="none";
     });
+    var closeRecommendations = document.getElementById("close-Recommendations");
+    var openRecommendations = document.getElementById("recommendations");
+    openRecommendations.addEventListener("click",()=>{
+        openRecommendations.style.display="none";
+    });
     var closeBookmark = document.getElementById("close-Bookmark");
     var openBookmark = document.getElementById("Bookmark");
     closeBookmark.addEventListener("click",()=>{
@@ -749,10 +884,34 @@
     function openFollowingModal(){
         openFollowing.style.cssText = "display:block !important;"
     }
+    
+    
+    function openRecommendationModal(){
+        openRecommendations.style.cssText = "display:block !important;"
+    }
+
 
     
     function openBookmarkModal(){
         openBookmark.style.cssText = "display:block !important;"
+    }
+    
+    function filterUsers() {
+        var input, filter, userList, userItems, label, i, txtValue;
+        input = document.getElementById('search_user');
+        filter = input.value.toLowerCase();
+        userList = document.getElementById('user_list');
+        userItems = userList.getElementsByClassName('user-item');
+
+        for (i = 0; i < userItems.length; i++) {
+            label = userItems[i].getElementsByTagName('label')[0];
+            txtValue = label.textContent || label.innerText;
+            if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                userItems[i].style.display = "";
+            } else {
+                userItems[i].style.display = "none";
+            }
+        }
     }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>

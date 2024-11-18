@@ -890,6 +890,28 @@ class ActivityLog(models.Model):
         return f"ActivityLog by {self.user.username} at {self.recorded_at}"
 
 
+class Recommendation(models.Model):
+    recommender = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="given_recommendations"
+    )
+    recommended_user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="received_recommendations"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["recommender", "recommended_user"], name="unique_recommendation"
+            )
+        ]
+
+    def __str__(self):
+        return (
+            f"Recommendation from {self.recommender.username} to {self.recommended_user.username}"
+        )
+
+
 class DailyStatusReport(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     date = models.DateField()

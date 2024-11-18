@@ -211,6 +211,11 @@ class PointsAdmin(admin.ModelAdmin):
 admin.site.unregister(User)
 
 
+class RecommendationAdmin(admin.ModelAdmin):
+    list_display = ("recommender", "recommended_user", "created_at")
+    search_fields = ("recommender__username", "recommended_user__username")
+
+
 class UserAdmin(ImportExportModelAdmin):
     resource_class = UserResource
     list_display = (
@@ -245,6 +250,7 @@ class UserProfileAdmin(admin.ModelAdmin):
         "flagged_count",
         "subscribed_domains_count",
         "subscribed_users_count",
+        "recommendation_count",
         "x_username",
         "linkedin_url",
         "github_url",
@@ -272,6 +278,9 @@ class UserProfileAdmin(admin.ModelAdmin):
 
     def subscribed_users_count(self, obj):
         return obj.subscribed_users.count()
+
+    def recommendation_count(self, obj):
+        return obj.recommendations.count()
 
 
 class IssueScreenshotAdmin(admin.ModelAdmin):
