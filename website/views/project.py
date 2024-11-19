@@ -1,22 +1,28 @@
 import json
+import logging
 import re
 from datetime import datetime, timedelta
+from io import BytesIO
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import requests
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
+from django.db.models import Count
+from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
 from django.views.generic import DetailView, ListView
-from PIL import Image, ImageDraw, ImageFont
 from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
 from website.forms import GitHubURLForm
-from website.models import BaconToken, Contribution, Project
+from website.models import IP, BaconToken, Contribution, Project
 from website.utils import admin_required
+
+logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
 
 def blt_tomato(request):
@@ -170,30 +176,49 @@ class ProjectBadgeView(APIView):
         # Retrieve the project or return 404
         project = get_object_or_404(Project, slug=slug)
 
-        # Increment the visit count
+        # Get unique visits, grouped by date
+        visit_counts = (
+            IP.objects.filter(path=request.path)
+            .annotate(date=TruncDate("created"))
+            .values("date")
+            .annotate(visit_count=Count("address"))
+            .order_by("date")  # Order from oldest to newest
+        )
+
+        # Update project visit count
         project.repo_visit_count += 1
         project.save()
 
-        # Create an image with the updated visit count
-        img = Image.new("RGB", (200, 50), color=(73, 109, 137))
-        d = ImageDraw.Draw(img)
-        font = ImageFont.load_default()
+        # Extract dates and counts
+        dates = [entry["date"] for entry in visit_counts]
+        counts = [entry["visit_count"] for entry in visit_counts]
+        total_views = sum(counts)  # Calculate total views
 
-        # Updated line to calculate text size
-        text = f"Visits: {project.repo_visit_count}"
-        bbox = d.textbbox((0, 0), text, font=font)
-        text_width = bbox[2] - bbox[0]
-        text_height = bbox[3] - bbox[1]
+        fig = plt.figure(figsize=(4, 1))
+        plt.bar(dates, counts, width=0.5, color="red")
 
-        # Center the text in the image
-        position = ((200 - text_width) / 2, (50 - text_height) / 2)
-        d.text(position, text, font=font, fill=(255, 255, 0))
+        plt.title(
+            f"{total_views}",
+            loc="left",
+            x=-0.36,
+            y=0.3,
+            fontsize=15,
+            fontweight="bold",
+            color="red",
+        )
 
-        # Prepare the HTTP response with the image and cache control
-        response = HttpResponse(content_type="image/png")
-        img.save(response, "PNG")
+        plt.gca().set_xticks([])  # Remove x-axis ticks
+        plt.gca().set_yticks([])
+        plt.box(False)
 
-        # Set headers to prevent caching
+        # Save the plot to an in-memory file
+        buffer = BytesIO()
+        plt.savefig(buffer, format="png", bbox_inches="tight")
+        plt.close()
+        buffer.seek(0)
+
+        # Prepare the HTTP response with the bar graph image
+        response = HttpResponse(buffer, content_type="image/png")
         response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         response["Pragma"] = "no-cache"
         response["Expires"] = "0"
