@@ -138,7 +138,9 @@ class IPRestrictMiddleware:
 
         if ip:
             with transaction.atomic():
-                ip_records = IP.objects.select_for_update().filter(address=ip)
+                # create unique entry for every unique (ip,path) tuple
+                # if this tuple already exists, we just increment the count.
+                ip_records = IP.objects.select_for_update().filter(address=ip, path=request.path)
                 if ip_records.exists():
                     ip_record = ip_records.first()
 
@@ -149,9 +151,8 @@ class IPRestrictMiddleware:
 
                     ip_record.agent = agent
                     ip_record.count = new_count
-                    ip_record.path = request.path
                     if ip_record.pk:
-                        ip_record.save(update_fields=["agent", "count", "path"])
+                        ip_record.save(update_fields=["agent", "count"])
 
                     # Check if a transaction is already active before starting a new one
                     if not transaction.get_autocommit():
