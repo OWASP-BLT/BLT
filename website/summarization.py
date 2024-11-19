@@ -9,6 +9,7 @@ def markdown_to_text(markdown_content):
 
     return text_content
 
+
 def summarize_readme(readme_content):
     """Generate a summary using the Hugging Face BART model"""
     from transformers import pipeline
@@ -17,4 +18,4 @@ def summarize_readme(readme_content):
     plain_text = markdown_to_text(readme_content)
     summary = summarizer(plain_text, max_length=130, min_length=30, do_sample=False)
 
-    return summary[0]['summary_text']
+    return summary[0]["summary_text"]
