@@ -10,26 +10,18 @@
             <h3>Projects: {{ projects.count }}</h3>
             <form method="post" class="add-project-form">
                 {% csrf_token %}
-                <div class="add-project-form">
-                    <div class="form-field">
-                        <input type="url"
-                               id="github_url"
-                               name="github_url"
-                               required
-                               class="github-url-input"
-                               placeholder="GitHub URL">
-                    </div>
-                    <button type="submit">
-                        <i class="fas fa-plus-circle"></i> Add Project
-                    </button>
-                </form>
-                <form method="post" class="refresh-projects-form">
-                    {% csrf_token %}
-                    <button type="submit" name="update_projects" value="update_projects">
-                        <i class="fas fa-sync-alt"></i> Refresh Projects
-                    </button>
-                </form>
-            </div>
+                <div class="form-field">
+                    <input type="url"
+                           id="github_url"
+                           name="github_url"
+                           required
+                           class="github-url-input"
+                           placeholder="GitHub URL">
+                </div>
+                <button type="submit">
+                    <i class="fas fa-plus-circle"></i> Add Project
+                </button>
+            </form>
             <form method="get" class="refresh-projects-form">
                 <select id="sort_by"
                         name="sort_by"

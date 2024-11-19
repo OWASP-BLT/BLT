@@ -2,10 +2,12 @@ from captcha.fields import CaptchaField
 from django import forms
 from mdeditor.fields import MDTextFormField
 
-from .models import Bid, Monitor, UserProfile
+from .models import Bid, IpReport, Monitor, UserProfile
 
 
 class UserProfileForm(forms.ModelForm):
+    email = forms.EmailField(required=True)
+
     class Meta:
         model = UserProfile
         fields = [
@@ -30,6 +32,25 @@ class UserProfileForm(forms.ModelForm):
             "subscribed_domains": forms.CheckboxSelectMultiple(),
             "subscribed_users": forms.CheckboxSelectMultiple(),
         }
+
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     print("UserProfileForm __init__")
+    #     print(self.instance)
+    #     print(self.instance.user)
+    #     if self.instance and self.instance.user:
+    #         # Populate email from user model
+    #         self.fields["email"].initial = self.instance.user.email
+
+    # def save(self, commit=True):
+    #     profile = super().save(commit=False)
+    #     if commit:
+    #         # Save email to User model
+    #         if self.instance and self.instance.user:
+    #             self.instance.user.email = self.cleaned_data["email"]
+    #             self.instance.user.save()
+    #         profile.save()
+    #     return profile
 
 
 class UserDeleteForm(forms.Form):
@@ -61,6 +82,12 @@ class MonitorForm(forms.ModelForm):
     class Meta:
         model = Monitor
         fields = ["url", "keyword"]
+
+
+class IpReportForm(forms.ModelForm):
+    class Meta:
+        model = IpReport
+        fields = ["ip_address", "ip_type", "description", "activity_title", "activity_type"]
 
 
 class BidForm(forms.ModelForm):

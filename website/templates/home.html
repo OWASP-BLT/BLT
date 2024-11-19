@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}
+    Home - Bug Logging Tool
+{% endblock title %}
+{% block content %}
+    <!-- Include Sidebar -->
+    {% include "includes/sidenav.html" %}
+    <!-- Main Content -->
+    <div>
+        <!-- Hero Section -->
+        <section class="text-center py-16 ">
+            <h1 class="text-5xl font-bold mb-4">Welcome to OWASP BLT</h1>
+            <p class="text-xl mb-8">Making the World Wide Web a Safer Place</p>
+            <a href="{% url 'issues' %}"
+               class="bg-white text-red-500 font-semibold py-3 px-6 rounded-full shadow-lg">
+                <i class="fas fa-flag"></i> Report a Bug
+            </a>
+        </section>
+        <!-- Features Section -->
+        <section class="py-12">
+            <div class="max-w-7xl mx-auto">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Feature 1 -->
+                    <div class="text-center">
+                        <i class="fas fa-bug fa-3x text-red-500 mb-4"></i>
+                        <h3 class="text-xl font-semibold mb-2">Report Bugs</h3>
+                        <p>Submit issues and help improve web security and usability.</p>
+                    </div>
+                    <!-- Feature 2 -->
+                    <div class="text-center">
+                        <i class="fas fa-trophy fa-3x  text-red-500 mb-4"></i>
+                        <h3 class="text-xl font-semibold mb-2">Earn Rewards</h3>
+                        <p>Gain points and recognition for your contributions.</p>
+                    </div>
+                    <!-- Feature 3 -->
+                    <div class="text-center">
+                        <i class="fas fa-shield-alt fa-3x  text-red-500 mb-4"></i>
+                        <h3 class="text-xl font-semibold mb-2">Secure the Web</h3>
+                        <p>Help organizations and projects fix vulnerabilities or improve user experience.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- About Section -->
+        <section class="py-12">
+            <div class="max-w-4xl mx-auto text-center">
+                <h2 class="text-3xl font-bold mb-6">About OWASP BLT</h2>
+                <p class="mb-4">
+                    OWASP BLT (Bug Logging Tool) is an open-source platform dedicated to making the internet safer through community-driven bug reporting and collaboration.
+                    Users can report bugs, track issues, and collaborate with organizations to enhance security measures.
+                </p>
+                <p class="mb-4">
+                    Earn points and rewards for your contributions. Organizations can launch bug bounty programs, reward contributors, and monitor trademarks.
+                    Our innovative token reward system, <strong>Bacon</strong>, recognizes valuable contributions.
+                </p>
+                <a href="{% url 'about' %}"
+                   class="mt-4 inline-block bg-red-500 text-white font-semibold py-3 px-6 rounded-full">Learn More</a>
+            </div>
+        </section>
+        <!-- Call to Action Section -->
+        <section class="py-12">
+            <div class="max-w-7xl mx-auto text-center">
+                <h2 class="text-3xl font-bold mb-6">Get Involved</h2>
+                <p class="mb-8">Join our community and help make the internet a safer place.</p>
+                <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-6">
+                    <a href="{% url 'contribution_guidelines' %}"
+                       class="bg-green-500 text-white font-semibold py-3 px-6 rounded-full">
+                        <i class="fas fa-users"></i> Join the Community
+                    </a>
+                    <a href="{% url 'project_list' %}"
+                       class="bg-blue-500 text-white font-semibold py-3 px-6 rounded-full">
+                        <i class="fas fa-project-diagram"></i> Explore Projects
+                    </a>
+                    <a href="{% url 'sponsor' %}"
+                       class="bg-yellow-500 text-white font-semibold py-3 px-6 rounded-full">
+                        <i class="fas fa-donate"></i> Support Us
+                    </a>
+                </div>
+            </div>
+        </section>
+        <!-- Footer -->
+        <footer class="py-8 ">
+            <div class="max-w-7xl mx-auto text-center">
+                <p class="mb-4">Follow us on:</p>
+                <div class="flex justify-center space-x-6">
+                    <a href="https://twitter.com/OWASP_BLT" target="_blank"><i class="fab fa-twitter fa-2x"></i></a>
+                    <a href="https://github.com/OWASP-BLT" target="_blank"><i class="fab fa-github fa-2x"></i></a>
+                </div>
+                <p class="mt-4">© {{ current_year }} OWASP BLT. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+{% endblock content %}
