@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 
 from website.models import Project
-from website.summarization import summarize_readme
+from website.summarization import markdown_to_text_and_summary
 
 
 class Command(BaseCommand):
@@ -65,7 +65,7 @@ class Command(BaseCommand):
                     try:
                         readme_content = base64.b64decode(readme_content_encoded).decode("utf-8")
                         project.readme_content = readme_content
-                        project.ai_summary = summarize_readme(readme_content)
+                        project.ai_summary = markdown_to_text_and_summary(readme_content)
                     except (base64.binascii.Error, UnicodeDecodeError) as e:
                         self.stdout.write(
                             self.style.WARNING(f"Failed to decode README for {repo_name}: {e}")
