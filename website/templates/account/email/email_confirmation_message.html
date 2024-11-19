@@ -1,18 +1,17 @@
 {% extends "account/email/base_message.html" %}
 {% load account %}
 {% load i18n %}
-
 {% block content %}
-<p>{% user_display user as user_display %}</p>
-<p>
-    {% blocktrans with site_name=current_site.name site_domain=current_site.domain %}
+    <p>{% user_display user as user_display %}</p>
+    <p>
+        {% blocktrans with site_name=current_site.name site_domain=current_site.domain %}
     You're receiving this e-mail because user {{ user_display }} has given your e-mail address to register an account on {{ site_domain }}.
     {% endblocktrans %}
-</p>
-<p>
-    {% blocktrans with activate_url=activate_url %}
+    </p>
+    <p>
+        {% blocktrans with activate_url=activate_url %}
     To confirm this is correct, click the following link:
     <a href="{{ activate_url }}">Link</a>
     {% endblocktrans %}
-</p>
+    </p>
 {% endblock %}
