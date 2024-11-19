@@ -8,6 +8,7 @@ from django.utils.dateparse import parse_datetime
 from website.models import Project
 from website.summarization import summarize_readme
 
+
 class Command(BaseCommand):
     help = "Update projects with their contributors and latest release from GitHub"
 
