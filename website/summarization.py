@@ -1,7 +1,8 @@
-import markdown
-from bs4 import BeautifulSoup
-import openai
 import os
+
+import markdown
+import openai
+from bs4 import BeautifulSoup
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
