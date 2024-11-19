@@ -93,9 +93,6 @@ class Command(BaseCommand):
                         )
                     )
 
-                # Set Issue Tracker URL
-                project.issue_tracker_url = f"https://github.com/{repo_name}/issues"
-
                 # Fetch counts of issues and pull requests using the Search API
                 def get_issue_count(repo_name, query, headers):
                     url = f"https://api.github.com/search/issues?q=repo:{repo_name}+{query}"
