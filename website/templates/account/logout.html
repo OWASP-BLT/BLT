@@ -1,20 +1,24 @@
 {% extends "base.html" %}
 {% load i18n %}
-{% block content %}
-<div style="display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center;">
-    <div>
-        <h1>{% trans "Sign Out" %}</h1>
-        <p>{% trans "Are you sure?" %}</p>
-        <form method="post" action="{% url 'account_logout' %}">
-            {% csrf_token %}
-            {% if redirect_field_value %}
-                <input type="hidden"
-                       name="{{ redirect_field_name }}"
-                       value="{{ redirect_field_value }}" />
-            {% endif %}
-            <button class="btn btn-primary text-black" type="submit">{% trans "Yes" %}</button>
-            <a href="{% url 'account_profile' %}" class="btn btn-default">{% trans "Cancel" %}</a>
-        </form>
+{% block natural_content %}
+    <div class="auth-center">
+        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+            <h1 class="text-2xl font-bold text-center text-gray-700 mb-4">{% trans "Sign Out" %}</h1>
+            <p class="text-center text-gray-600 mb-6">{% trans "Are you sure?" %}</p>
+            <form method="post" action="{% url 'account_logout' %}">
+                {% csrf_token %}
+                {% if redirect_field_value %}
+                    <input type="hidden"
+                           name="{{ redirect_field_name }}"
+                           value="{{ redirect_field_value }}" />
+                {% endif %}
+                <div class="flex justify-center space-x-4">
+                    <button class="btn btn-danger text-black px-6 py-2 rounded-md bg-red-500 hover:bg-red-600 text-white"
+                            type="submit">{% trans "Yes" %}</button>
+                    <a href="{% url 'account_profile' %}"
+                       class="btn btn-default px-6 py-2 rounded-md bg-gray-300 hover:bg-gray-400 text-gray-700">{% trans "Cancel" %}</a>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
-{% endblock content %}
+{% endblock natural_content %}

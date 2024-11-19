@@ -85,10 +85,21 @@
                 bottom: 10px;
                 right: 15px;
             }
+            .auth-center {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: calc(100vh - 140px); /* Adjust based on your header/footer height */
+                padding: 20px;
+            }
+            .auth-container {
+                width: 100%;
+                max-width: 450px;
+            }
         </style>
         {% include "includes/header.html" %}
         {% comment %} <div class="lg:ml-[215px] mt-[90px]"></div> {% endcomment %}
-        <div class="lg:ml-[230px] mt-[70px]">
+        <div class="mt-[70px]">
             {% block content %}
             {% endblock content %}
             {% comment %} </div> {% endcomment %}
