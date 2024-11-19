@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 
 from website.models import Project
-
+from website.summarization import summarize_readme
 
 class Command(BaseCommand):
     help = "Update projects with their contributors and latest release from GitHub"
@@ -64,11 +64,13 @@ class Command(BaseCommand):
                     try:
                         readme_content = base64.b64decode(readme_content_encoded).decode("utf-8")
                         project.readme_content = readme_content
+                        project.ai_summary = summarize_readme(readme_content)
                     except (base64.binascii.Error, UnicodeDecodeError) as e:
                         self.stdout.write(
                             self.style.WARNING(f"Failed to decode README for {repo_name}: {e}")
                         )
                         project.readme_content = ""
+                        project.ai_summary = ""
                 else:
                     self.stdout.write(
                         self.style.WARNING(
