@@ -10,9 +10,11 @@ import requests
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.db.models import Count
+from django.db.models import Q
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.utils.timezone import now
 from django.views.generic import DetailView, ListView
 from rest_framework.views import APIView
@@ -305,3 +307,23 @@ class ProjectListView(ListView):
             sort_by = f"-{sort_by}"
 
         return queryset.order_by(sort_by)
+    
+    def get(self, request, *args, **kwargs):
+        # Check if it's an AJAX search request
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            query = request.GET.get('query', '').lower()
+            projects = self.get_queryset()
+            
+            if query:
+                projects = projects.filter(
+                    Q(ai_summary__icontains=query) |
+                    Q(ai_labels__icontains=query)
+                )
+            
+            html = render_to_string('includes/project_list_items.html', 
+                                  {'projects': projects},
+                                  request=request)
+            return HttpResponse(html)
+            
+        # Regular page load
+        return super().get(request, *args, **kwargs)
