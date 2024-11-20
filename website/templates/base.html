@@ -152,7 +152,16 @@
             {% for message in messages %}
             $.notify("{{ message }}", {
                 style: "custom",
-                className: "{{message.level_tag }}"
+                className: "{{message.level_tag }}",
+                autoHide: true,
+                autoHideDelay: 2000,
+                clicktoHide: true,
+                position: "left bottom",
+                gap: 0,
+                elementSize: {
+                    width: "auto",
+                    height: "auto"
+                }
             });
             setTimeout(function() {
                 $('.notifyjs-wrapper').on('mouseenter', function() {
