@@ -24,10 +24,10 @@ def generate_labels(readme_content, github_topics):
     ### Output:
     Provide the labels in JSON format like this:
     {{
-      "Technology Stack": ["Python", "JavaScript"],
-      "Project Type": ["Web Application"],
-      "OWASP Relevance": ["Secure Coding"],
-      "Other Labels": ["Machine Learning", "Data Processing"]
+      "tech-stack": ["Python", "JavaScript"],
+      "project-type": ["Web Application"],
+      "owasp-relevance": ["Secure Coding"],
+      "other": ["Machine Learning", "Data Processing"]
     }}
     """
 
