@@ -6,7 +6,8 @@ from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 
 from website.models import Project
-from website.summarization import markdown_to_text_and_summary
+from website.summarization import ai_summary
+from website.utils import markdown_to_text
 
 
 class Command(BaseCommand):
@@ -53,6 +54,7 @@ class Command(BaseCommand):
                 project.updated_at = parse_datetime(repo_data.get("updated_at"))
                 project.size = repo_data.get("size", 0)
                 project.last_commit_date = parse_datetime(repo_data.get("pushed_at"))
+                project.topics = repo_data.get("topics", [])
 
                 # Fetch README
                 url = f"https://api.github.com/repos/{repo_name}/readme"
@@ -65,7 +67,8 @@ class Command(BaseCommand):
                     try:
                         readme_content = base64.b64decode(readme_content_encoded).decode("utf-8")
                         project.readme_content = readme_content
-                        project.ai_summary = markdown_to_text_and_summary(readme_content)
+                        readme_text = markdown_to_text(readme_content)
+                        project.ai_summary = ai_summary(readme_text)
                     except (base64.binascii.Error, UnicodeDecodeError) as e:
                         self.stdout.write(
                             self.style.WARNING(f"Failed to decode README for {repo_name}: {e}")

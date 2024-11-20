@@ -3,6 +3,7 @@ import time
 from collections import deque
 from urllib.parse import urlparse, urlsplit, urlunparse
 
+import markdown
 import requests
 from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
@@ -169,3 +170,9 @@ def format_timedelta(td):
     hours, remainder = divmod(total_seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
     return f"{hours}h {minutes}m {seconds}s"
+
+def markdown_to_text(markdown_content):
+    """Convert Markdown to plain text."""
+    html_content = markdown.markdown(markdown_content)
+    text_content = BeautifulSoup(html_content, "html.parser").get_text()
+    return text_content
