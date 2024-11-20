@@ -414,19 +414,26 @@
         }
     </style>
     <script>
-        document.getElementById('search-bar').addEventListener('input', function(e) {
-        const searchQuery = e.target.value;
-        
-        fetch(`/projects/?query=${encodeURIComponent(searchQuery)}`, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.text())
-        .then(html => {
-            console.log('Received HTML:', html); // Add this for debugging
-            document.getElementById('project-list-container').innerHTML = html;
+        document.getElementById('search-form').addEventListener('submit', function(e) {
+            e.preventDefault();  // Stop form from submitting, since we already have live filtering
         });
-    });
+
+        let searchTimeout;
+        document.getElementById('search-bar').addEventListener('input', function(e) {
+            const searchQuery = e.target.value;
+            clearTimeout(searchTimeout);
+            
+            searchTimeout = setTimeout(() => {
+                fetch(`/projects/?query=${encodeURIComponent(searchQuery)}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('project-list-container').innerHTML = html;
+                });
+            }, 300);
+        });
     </script>    
 {% endblock content %}
