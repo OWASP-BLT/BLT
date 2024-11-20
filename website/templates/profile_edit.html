@@ -222,5 +222,16 @@
                 </button>
             </div>
         </form>
+        <div class="mt-8 border-t pt-6">
+            <h3 class="text-lg font-semibold text-red-600">Danger Zone</h3>
+            <div class="mt-4">
+                <form action="{% url 'delete_user' %}"
+                      method="post"
+                      onsubmit="return confirm('Are you sure you want to delete your account? This action cannot be undone.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete Account</button>
+                </form>
+            </div>
+        </div>
     </div>
 {% endblock content %}
