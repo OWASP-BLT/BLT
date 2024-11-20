@@ -32,6 +32,7 @@
                                type="text"
                                id="id_username"
                                name="username"
+                               value="{{ form.username.value|default:'' }}"
                                class="px-4 py-2 w-[100%] h-[28px]  transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.username.errors }}</span>
                     </div>
@@ -40,6 +41,7 @@
                         <input type="email"
                                id="id_email"
                                name="email"
+                               value="{{ form.email.value|default:'' }}"
                                class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.email.errors }}</span>
                     </div>
@@ -50,6 +52,7 @@
                         <input type="password"
                                id="id_password"
                                name="password1"
+                               value="{{ form.password1.value|default:'' }}"
                                class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.password1.errors }}</span>
                     </div>
@@ -60,6 +63,7 @@
                         <input type="password"
                                id="id_password2"
                                name="password2"
+                               value="{{ form.password2.value|default:'' }}"
                                class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.password2.errors }}</span>
                     </div>
