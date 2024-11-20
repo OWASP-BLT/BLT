@@ -2,6 +2,32 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <style>
+      /* Pagination styling */
+      .pagination {
+    margin-top: 20px;
+    text-align: center;
+    display: flex;
+    justify-content: center;  /* Center the pagination buttons */
+    gap: 10px; /* Space between buttons */
+}
+
+.pagination .btn {
+    background-color: #ff0000;
+    color: #fff;
+    border-radius: 5px;  /* Rounded corners */
+    text-decoration: none;
+    display: inline-block;
+}
+
+.pagination .btn:hover {
+    background-color: #cc0000;
+}
+
+.pagination .current {
+    font-size: 16px;
+    color: #333;
+    margin: 0 10px;
+}
   .activity-feed-container {
     margin: 20px auto;
     padding: 20px;
@@ -196,21 +222,22 @@
                 {% endfor %}
             </ul>
             <!-- Pagination -->
+            
             <div class="pagination">
-                {% if is_paginated %}
-                    {% if page_obj.has_previous %}
-                        <a href="?page=1" class="btn btn-default">First</a>
-                        <a href="?page={{ page_obj.previous_page_number }}"
-                           class="btn btn-default">Previous</a>
-                    {% endif %}
-                    <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-                    {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}" class="btn btn-default">Next</a>
-                        <a href="?page={{ page_obj.paginator.num_pages }}"
-                           class="btn btn-default">Last</a>
-                    {% endif %}
-                {% endif %}
-            </div>
+              {% if is_paginated %}
+                  <!-- {% if page_obj.has_previous %} -->
+                      <a href="?page=1" class="btn btn-default">First</a>
+                      <a href="?page={{ page_obj.previous_page_number }}"
+                         class="btn btn-default">Previous</a>
+                  <!-- {% endif %} -->
+                  <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                  {% if page_obj.has_next %}
+                      <a href="?page={{ page_obj.next_page_number }}" class="btn btn-default">Next</a>
+                      <a href="?page={{ page_obj.paginator.num_pages }}"
+                         class="btn btn-default">Last</a>
+                  {% endif %}
+              {% endif %}
+          </div>
         </div>
     </div>
 {% endblock %}

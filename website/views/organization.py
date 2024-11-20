@@ -1559,20 +1559,20 @@ class ReportedIpListView(ListView):
         return IpReport.objects.all().order_by("-created")
 
 
-def activity_feed(request):
-    # Fetch all activities
+def feed(request):
     activities = Activity.objects.all().order_by("-timestamp")
-
-    # Paginate the activities
-    paginator = Paginator(activities, 10)  # 10 activities per page
+    paginator = Paginator(activities, 10)  # Show 10 activities per page
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    # Pass the activities with all their fields to the template
+    # Determine if pagination is required
+    is_paginated = page_obj.has_other_pages()
+
     return render(
         request,
-        "activity_feed.html",
+        "feed.html",
         {
             "page_obj": page_obj,
+            "is_paginated": is_paginated,  # Pass this flag to the template
         },
     )
