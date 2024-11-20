@@ -26,8 +26,9 @@
                 <div class="search-bar-container">
                     <i class="fas fa-search search-icon"></i>
                     <input type="text" id="search-bar" placeholder="Search projects by name, summary, or tags...">
+                    <div id="search-loader" class="search-loader hidden"></div>
                 </div>
-            </form>                      
+            </form>                     
             <form method="get" class="refresh-projects-form">
                 <select id="sort_by"
                         name="sort_by"
@@ -412,16 +413,42 @@
         .search-bar-container:focus-within #search-bar::placeholder {
             color: transparent; 
         }
+
+        .search-loader {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            margin-left: 8px;
+            animation: spin 0.6s linear infinite;
+            display: inline-block;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
     <script>
-        document.getElementById('search-form').addEventListener('submit', function(e) {
-            e.preventDefault();  // Stop form from submitting, since we already have live filtering
+        let searchTimeout;
+        const loader = document.getElementById('search-loader');
+
+        document.getElementById('search-form').addEventListener('submit', (e) => {
+            e.preventDefault();
         });
 
-        let searchTimeout;
         document.getElementById('search-bar').addEventListener('input', function(e) {
             const searchQuery = e.target.value;
             clearTimeout(searchTimeout);
+            
+            if (searchQuery.length > 0) {
+                loader.classList.remove('hidden');
+            }
             
             searchTimeout = setTimeout(() => {
                 fetch(`/projects/?query=${encodeURIComponent(searchQuery)}`, {
@@ -432,6 +459,10 @@
                 .then(response => response.text())
                 .then(html => {
                     document.getElementById('project-list-container').innerHTML = html;
+                    loader.classList.add('hidden');
+                })
+                .catch(() => {
+                    loader.classList.add('hidden');
                 });
             }, 300);
         });
