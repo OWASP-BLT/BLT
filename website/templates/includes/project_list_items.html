@@ -73,6 +73,15 @@
                     </div>
                     <p>{{ project.description }}</p>
                     <p>{{ project.ai_summary }}</p>
+
+                    <div class="label-group">
+                        {% for category, labels in project.ai_labels.items %}
+                                {% for label in labels %}
+                                    <span class="label {{ category }}">{{ label }}</span>
+                                {% endfor %}
+                        {% endfor %}
+                    </div>  
+
                     <!-- Contributors Section -->
                     <div class="project-stats">
                         <p>
@@ -96,15 +105,6 @@
                             {% endfor %}
                         </div>
                     </div>
-                    <p>Labels:</p>
-                    <ul>
-                        {% for label in project.ai_labels_list %}
-                            <li class="label-item">
-                                <span class="label-icon"><i class="fas fa-tag"></i></span>
-                                <span class="label-text">{{ label }}</span>
-                            </li>
-                        {% endfor %}
-                    </ul>
                     <div class="additional-metadata">
                         <div class="external-links">
                             <h4>

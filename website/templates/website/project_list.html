@@ -433,6 +433,56 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .label-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .label {
+            padding: 8px 12px;
+            font-size: 12px;
+            border-radius: 16px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+        }
+
+        .label.tech-stack{
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .label.project-type {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        .label.owasp-relevance {
+            background-color: #dc3545;
+            color: #fff;
+        }
+
+        .label.other {
+            background-color: #ffc107;
+            color: #fff;
+        }
+
+        /* Hover effect */
+        .label:hover {
+            opacity: 0.8;
+        }
+
+        /* Responsive behavior */
+        @media (max-width: 768px) {
+            .project-labels {
+                padding: 15px;
+            }
+            .label-group {
+                justify-content: center;
+            }
+        }
     </style>
     <script>
         let searchTimeout;
@@ -443,11 +493,24 @@
         });
 
         document.getElementById('search-bar').addEventListener('input', function(e) {
-            const searchQuery = e.target.value;
+            const searchQuery = e.target.value.trim();
             clearTimeout(searchTimeout);
             
-            if (searchQuery.length === 0) return;
-            
+            if (searchQuery === '') {
+            // If search is empty, just show all projects without making a request
+            fetch('/projects', {  
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('project-list-container').innerHTML = html;
+            });
+            loader.classList.add('hidden');
+            return;
+            }
+
             loader.classList.remove('hidden');
             
             searchTimeout = setTimeout(() => {
