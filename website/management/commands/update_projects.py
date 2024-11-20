@@ -1,14 +1,14 @@
 import base64
+import json
 
 import requests
-import json
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 
+from website.label_generation import generate_labels
 from website.models import Project
 from website.summarization import ai_summary
-from website.label_generation import generate_labels
 from website.utils import markdown_to_text
 
 

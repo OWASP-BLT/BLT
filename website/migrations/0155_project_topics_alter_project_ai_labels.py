@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0154_project_ai_labels_project_ai_summary_and_more"),
     ]
