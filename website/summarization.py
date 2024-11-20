@@ -1,8 +1,6 @@
 import os
 
-import markdown
 import openai
-from bs4 import BeautifulSoup
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -22,4 +20,3 @@ def ai_summary(text, topics=None):
         return summary
     except Exception as e:
         return f"Error generating summary: {str(e)}"
-

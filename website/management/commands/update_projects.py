@@ -1,12 +1,14 @@
 import base64
 
 import requests
+import json
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 
 from website.models import Project
 from website.summarization import ai_summary
+from website.label_generation import generate_labels
 from website.utils import markdown_to_text
 
 
@@ -68,13 +70,15 @@ class Command(BaseCommand):
                         readme_content = base64.b64decode(readme_content_encoded).decode("utf-8")
                         project.readme_content = readme_content
                         readme_text = markdown_to_text(readme_content)
-                        project.ai_summary = ai_summary(readme_text)
+                        project.ai_summary = ai_summary(readme_text, project.topics)
+                        project.ai_labels = json.loads(generate_labels(readme_text, project.topics))
                     except (base64.binascii.Error, UnicodeDecodeError) as e:
                         self.stdout.write(
                             self.style.WARNING(f"Failed to decode README for {repo_name}: {e}")
                         )
                         project.readme_content = ""
                         project.ai_summary = ""
+                        project.ai_labels = {}
                 else:
                     self.stdout.write(
                         self.style.WARNING(

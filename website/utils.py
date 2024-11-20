@@ -171,6 +171,7 @@ def format_timedelta(td):
     minutes, seconds = divmod(remainder, 60)
     return f"{hours}h {minutes}m {seconds}s"
 
+
 def markdown_to_text(markdown_content):
     """Convert Markdown to plain text."""
     html_content = markdown.markdown(markdown_content)
