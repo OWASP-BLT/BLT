@@ -9,8 +9,7 @@ import matplotlib.pyplot as plt
 import requests
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
-from django.db.models import Count
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render

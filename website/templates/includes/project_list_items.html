@@ -76,12 +76,9 @@
 
                     <div class="label-group">
                         {% for category, labels in project.ai_labels.items %}
-                                {% for label in labels %}
-                                    <span class="label {{ category }}">{{ label }}</span>
-                                {% endfor %}
+                            {% for label in labels %}<span class="label {{ category }}">{{ label }}</span>{% endfor %}
                         {% endfor %}
                     </div>  
-
                     <!-- Contributors Section -->
                     <div class="project-stats">
                         <p>
