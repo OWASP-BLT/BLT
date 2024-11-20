@@ -446,9 +446,9 @@
             const searchQuery = e.target.value;
             clearTimeout(searchTimeout);
             
-            if (searchQuery.length > 0) {
-                loader.classList.remove('hidden');
-            }
+            if (searchQuery.length === 0) return;
+            
+            loader.classList.remove('hidden');
             
             searchTimeout = setTimeout(() => {
                 fetch(`/projects/?query=${encodeURIComponent(searchQuery)}`, {
