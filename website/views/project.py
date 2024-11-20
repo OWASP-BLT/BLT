@@ -307,23 +307,22 @@ class ProjectListView(ListView):
             sort_by = f"-{sort_by}"
 
         return queryset.order_by(sort_by)
-    
+
     def get(self, request, *args, **kwargs):
         # Check if it's an AJAX search request
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            query = request.GET.get('query', '').lower()
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            query = request.GET.get("query", "").lower()
             projects = self.get_queryset()
-            
+
             if query:
                 projects = projects.filter(
-                    Q(ai_summary__icontains=query) |
-                    Q(ai_labels__icontains=query)
+                    Q(ai_summary__icontains=query) | Q(ai_labels__icontains=query)
                 )
-            
-            html = render_to_string('includes/project_list_items.html', 
-                                  {'projects': projects},
-                                  request=request)
+
+            html = render_to_string(
+                "includes/project_list_items.html", {"projects": projects}, request=request
+            )
             return HttpResponse(html)
-            
+
         # Regular page load
         return super().get(request, *args, **kwargs)
