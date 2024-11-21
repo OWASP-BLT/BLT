@@ -78,6 +78,8 @@ openai = "^1.54.4"
 psutil = "^5.9.8"
 python-bitcoinrpc = "^1.0"
 sendgrid = "^6.11.0"
+matplotlib = "^3.9.2"
+openpyxl = "^3.1.5"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
