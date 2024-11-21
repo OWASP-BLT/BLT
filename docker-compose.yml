@@ -1,10 +1,53 @@
-version: "3"
-
+version: "3.8"
 services:
+  db:
+    image: postgres
+    container_name: postgres-db
+    restart: always
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "user" , "-d" , "blt-test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432" 
+    volumes:
+      - postgres_db:/var/lib/postgresql/data
+    networks:
+      app:
+        ipv4_address: 192.168.92.10  
+
   app:
-    command: "poetry run python manage.py runserver 0.0.0.0:8000"
     build: .
+    container_name: app
+    restart: on-failure
+    env_file:
+      - .env
+    command: poetry run python manage.py runserver 0.0.0.0:8080
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      app:
+        ipv4_address: 192.168.92.22  
     volumes:
       - .:/blt
     ports:
-      - "8000:8000"
+      - "8080:8080"
+    environment:
+      DB_HOST: 192.168.92.10
+
+volumes:
+  postgres_db:
+
+networks:
+  app:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "192.168.92.0/24"  
