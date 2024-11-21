@@ -72,7 +72,7 @@ class UrlsTest(StaticLiveServerTestCase):
 
     def test_responses(
         self,
-        allowed_http_codes=[200, 302, 405, 401, 404, 500],
+        allowed_http_codes=[200, 302, 405, 401, 404],
         credentials={},
         default_kwargs={},
     ):
@@ -129,7 +129,6 @@ class UrlsTest(StaticLiveServerTestCase):
                         "/accounts/google/login/",
                         "/accounts/facebook/login/",
                         "/error/",
-                        "/500/",
                         "/tz_detect/set/",
                         "/leaderboard/api/",
                         "/api/timelogsreport/",
