@@ -14,7 +14,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
 from django.http import (
@@ -199,6 +199,11 @@ class UserProfileDetailView(DetailView):
         except Http404:
             messages.error(self.request, "That user was not found.")
             return redirect("/")
+
+        # Increment the view count
+        self.object.userprofile.views = F("views") + 1
+        self.object.userprofile.save()
+
         return super(UserProfileDetailView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
