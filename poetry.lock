@@ -1071,13 +1071,13 @@ humanize = ">=0.5.1"
 
 [[package]]
 name = "django-import-export"
-version = "4.3.0"
+version = "4.3.1"
 description = "Django application and library for importing and exporting data with included admin integration."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "django_import_export-4.3.0-py3-none-any.whl", hash = "sha256:0bbb45732000ff5966ffad5c5d6f226e72c33065767b7720f8de8498444b95a7"},
-    {file = "django_import_export-4.3.0.tar.gz", hash = "sha256:f92ec79cac9d34aa4aac30670f17c4de15d1f3534b87a0e84b348dd704a9fd9c"},
+    {file = "django_import_export-4.3.1-py3-none-any.whl", hash = "sha256:7cd9165851872c8b0eb6ce71029f1e92411b757c2a2e69e7a7ea12e6274c173a"},
+    {file = "django_import_export-4.3.1.tar.gz", hash = "sha256:9e47bc3bf632d930870dab221c5ef0bb02c5d5efd3720c4607c08f3f946a1caa"},
 ]
 
 [package.dependencies]
@@ -5043,4 +5043,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "81ee34046bdaa5a2f50abf581c81f4f0e2f6b8835bf0e12df849223d3a66ed03"
+content-hash = "a0768654d13a81b03dd415ed591233b844f486e649a31dfc445cd2f58ab9a19c"
