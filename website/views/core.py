@@ -384,10 +384,8 @@ def add_suggestions(request):
         data = json.loads(request.body)
         title = data.get("title")
         description = data.get("description", "")
-        id = str(uuid.uuid4())
-        print(description, title, id)
         if title and description and user:
-            suggestion = Suggestion(user=user, title=title, description=description, id=id)
+            suggestion = Suggestion(user=user, title=title, description=description)
             suggestion.save()
             messages.success(request, "Suggestion added successfully.")
             return JsonResponse({"status": "success"})
