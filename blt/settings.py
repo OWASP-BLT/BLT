@@ -284,17 +284,17 @@ if "DATABASE_URL" in os.environ:
     GS_QUERYSTRING_AUTH = False
     MEDIA_URL = "https://bhfiles.storage.googleapis.com/"
 
-    # import sentry_sdk
-    # from sentry_sdk.integrations.django import DjangoIntegration
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
 
-    # sentry_sdk.init(
-    #     dsn=os.environ.get("SENTRY_DSN", "https://key.ingest.sentry.io/project"),
-    #     integrations=[DjangoIntegration()],
-    #     send_default_pii=True,
-    #     traces_sample_rate=1.0,
-    #     profiles_sample_rate=1.0,
-    #     release=os.environ.get("HEROKU_RELEASE_VERSION", default=""),
-    # )
+    sentry_sdk.init(
+        dsn=os.environ.get("SENTRY_DSN", "https://key.ingest.sentry.io/project"),
+        integrations=[DjangoIntegration()],
+        send_default_pii=True,
+        traces_sample_rate=1.0,
+        profiles_sample_rate=1.0,
+        release=os.environ.get("HEROKU_RELEASE_VERSION", default=""),
+    )
 
 else:
     if not TESTING:
