@@ -251,6 +251,7 @@ class UserProfileAdmin(admin.ModelAdmin):
         "subscribed_domains_count",
         "subscribed_users_count",
         "recommendation_count",
+        "recommendation_blurb",
         "x_username",
         "linkedin_url",
         "github_url",

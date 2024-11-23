@@ -509,12 +509,23 @@ class UserProfile(models.Model):
     title = models.IntegerField(choices=title, default=0)
     role = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+    recommendation_blurb = models.TextField(blank=True, null=True)
     winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
     issue_downvoted = models.ManyToManyField(Issue, blank=True, related_name="downvoted")
     issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
     issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
     issues_hidden = models.BooleanField(default=False)
+
+    recommended_by = models.ManyToManyField(
+        "self", related_name="has_recommended", symmetrical=False, blank=True
+    )
+
+    @property
+    def recommendation_count(self):
+        base_count = self.recommended_by.count()
+        # Add 1 to the count if there's a recommendation blurb
+        return base_count + (1 if self.recommendation_blurb else 0)
 
     subscribed_domains = models.ManyToManyField(
         Domain, related_name="user_subscribed_domains", blank=True

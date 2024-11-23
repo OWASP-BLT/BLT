@@ -28,6 +28,7 @@ from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, TemplateView, View
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -266,14 +267,56 @@ class UserProfileDetailView(DetailView):
         )
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
 
+        if self.request.user.is_authenticated:
+            context["has_recommended_via_blurb"] = user.userprofile.recommended_by.filter(
+                user=self.request.user
+            ).exists()
+
         recommendations = Recommendation.objects.filter(recommender=user)
         context["recommendations"] = recommendations
+        context["object"] = user
+        context["recommendation_blurb"] = user.userprofile.recommendation_blurb
+        context["has_recommended_via_blurb"] = (
+            user.userprofile.recommended_by.filter(user=self.request.user).exists()
+            if self.request.user.is_authenticated
+            else False
+        )
         context["all_users"] = User.objects.exclude(id=self.request.user.id)
+        context["total_recommendations"] = (
+            Recommendation.objects.filter(recommended_user=user).count()
+            + user.userprofile.recommended_by.count()
+            + (1 if user.userprofile.recommendation_blurb else 0)
+        )
 
         return context
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
+        user = self.get_object()
+        if "recommendation_blurb" in request.POST:
+            user.userprofile.recommendation_blurb = request.POST.get("recommendation_blurb")
+            user.userprofile.save()
+            messages.success(request, "Profile updated successfully!")
+        # Handle AJAX blurb-based recommendation
+        if (
+            request.headers.get("X-Requested-With") == "XMLHttpRequest"
+            and "recommend_via_blurb" in request.POST
+        ):
+            if request.user.userprofile != user.userprofile:
+                if user.userprofile.recommended_by.filter(user=request.user).exists():
+                    user.userprofile.recommended_by.remove(request.user.userprofile)
+                    action = "removed"
+                else:
+                    user.userprofile.recommended_by.add(request.user.userprofile)
+                    action = "added"
+
+                total_count = (
+                    Recommendation.objects.filter(recommended_user=user).count()
+                    + user.userprofile.recommended_by.count()
+                )
+
+                return JsonResponse({"success": True, "action": action, "count": total_count})
+            return JsonResponse({"success": False, "error": "Cannot recommend yourself"})
         if "recommended_user" in request.POST:
             recommended_user_id = request.POST.get("recommended_user")
             try:
@@ -289,6 +332,7 @@ class UserProfileDetailView(DetailView):
                     messages.success(request, "Recommendation added successfully!")
             except User.DoesNotExist:
                 messages.error(request, "User not found.")
+                # Handle profile form submission
         form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
         if request.FILES.get("user_avatar") and form.is_valid():
             form.save()
@@ -299,6 +343,79 @@ class UserProfileDetailView(DetailView):
             request.user.userprofile.issues_hidden = hide
             request.user.userprofile.save()
         return redirect(self.request.path_info)
+
+
+# Add new view for AJAX blurb recommendations
+@require_POST
+@login_required
+def recommend_via_blurb(request, username):
+    try:
+        target_user = get_user_model().objects.get(username=username)
+        if request.user == target_user:
+            return JsonResponse({"success": False, "error": "Cannot recommend yourself"})
+
+        if target_user.userprofile.recommended_by.filter(user=request.user).exists():
+            target_user.userprofile.recommended_by.remove(request.user.userprofile)
+            action = "removed"
+        else:
+            target_user.userprofile.recommended_by.add(request.user.userprofile)
+            action = "added"
+
+        total_count = (
+            Recommendation.objects.filter(recommended_user=target_user).count()
+            + target_user.userprofile.recommended_by.count()
+            + (1 if target_user.userprofile.recommendation_blurb else 0)
+        )
+
+        return JsonResponse({"success": True, "action": action, "count": total_count})
+    except get_user_model().DoesNotExist:
+        return JsonResponse({"success": False, "error": "User not found"})
+
+
+@login_required
+def recommend_user(request, user_id):
+    try:
+        recommended_user = User.objects.get(id=user_id)
+        if Recommendation.objects.filter(
+            recommender=request.user, recommended_user=recommended_user
+        ).exists():
+            messages.error(request, "You have already recommended this user.")
+        else:
+            Recommendation.objects.create(
+                recommender=request.user, recommended_user=recommended_user
+            )
+            messages.success(request, "Recommendation added successfully!")
+    except User.DoesNotExist:
+        messages.error(request, "User not found.")
+    return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+@login_required
+def ajax_recommend_user(request, username):
+    try:
+        recommended_user = User.objects.get(username=username)
+        if request.user == recommended_user:
+            return JsonResponse({"success": False, "error": "Cannot recommend yourself"})
+
+        recommendation, created = Recommendation.objects.get_or_create(
+            recommender=request.user, recommended_user=recommended_user
+        )
+
+        if not created:
+            recommendation.delete()
+            action = "removed"
+        else:
+            action = "added"
+
+        total_count = (
+            Recommendation.objects.filter(recommended_user=recommended_user).count()
+            + recommended_user.userprofile.recommended_by.count()
+            + (1 if recommended_user.userprofile.recommendation_blurb else 0)
+        )
+
+        return JsonResponse({"success": True, "action": action, "count": total_count})
+    except User.DoesNotExist:
+        return JsonResponse({"success": False, "error": "User not found"})
 
 
 class UserProfileDetailsView(DetailView):
