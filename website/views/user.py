@@ -158,7 +158,7 @@ class UserDeleteView(LoginRequiredMixin, View):
             logout(request)
             user.delete()
             messages.success(request, "Account successfully deleted")
-            return redirect(reverse("index"))
+            return redirect(reverse("home"))
         return render(request, "user_deletion.html", {"form": form})
 
 
@@ -207,6 +207,10 @@ class UserProfileDetailView(DetailView):
         return super(UserProfileDetailView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
+        # if userprofile does not exist, create it
+        if not UserProfile.objects.filter(user=self.object).exists():
+            UserProfile.objects.create(user=self.object)
+
         user = self.object
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
         context["my_score"] = list(
@@ -590,8 +594,8 @@ def users_view(request, *args, **kwargs):
         else:
             context["users"] = UserProfile.objects.none()  # No users if the tag isn't found
     else:
-        context["tag"] = "BLT Contributors"
-        context["users"] = UserProfile.objects.filter(tags__name="BLT Contributors")
+        context["tag"] = "BLT-Contributors"
+        context["users"] = UserProfile.objects.filter(tags__name="BLT-Contributors")
 
     return render(request, "users.html", context=context)
 
