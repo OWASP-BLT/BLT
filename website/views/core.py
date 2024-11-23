@@ -1,7 +1,6 @@
 import json
 import os
 import urllib
-import uuid
 from datetime import datetime, timezone
 
 import requests
