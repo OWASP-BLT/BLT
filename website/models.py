@@ -522,6 +522,11 @@ class UserProfile(models.Model):
     )
 
     @property
+    def recommendations(self):
+        """Returns a list of recommendations for this user"""
+        return self.recommended_by.all()
+
+    @property
     def recommendation_count(self):
         base_count = self.recommended_by.count()
         # Add 1 to the count if there's a recommendation blurb
