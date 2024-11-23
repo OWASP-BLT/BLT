@@ -57,9 +57,7 @@
                     {% endif %}
                     <div class="transition duration-200 group-hover:text-red-500 text-gray-900 text-4xl font-bold">
                         <a href="{% url 'profile' slug=user.user.username %}"
-                           class="profile-link transition duration-200 hover:text-red-500">
-                            {{ user.user.username }}
-                        </a>
+                           class="profile-link transition duration-200 hover:text-red-500">{{ user.user.username }}</a>
                     </div>
                     <div class="text-purple-600 text-2xl">{{ user.role }}</div>
                     <p class="transition duration-200 text-gray-600 text-center px-10 py-4 bg-gray-100 rounded-md shadow-md">

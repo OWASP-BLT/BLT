@@ -14,9 +14,24 @@ def add_contributor_tag(apps, schema_editor):
 
     # Add the tag to specific users
     usernames = [
-        "jajodiaraghav", "CodeWithBishal", "amrit", "mohit", "souravbadami", 
-        "goyal-sidd", "neethu", "donnie", "ankit2001","mrigank", "Kej-r03", 
-        "bhawna", "shubham", "Tarachris","Jisan","radac","akankshsinha","justary27"
+        "jajodiaraghav",
+        "CodeWithBishal",
+        "amrit",
+        "mohit",
+        "souravbadami",
+        "goyal-sidd",
+        "neethu",
+        "donnie",
+        "ankit2001",
+        "mrigank",
+        "Kej-r03",
+        "bhawna",
+        "shubham",
+        "Tarachris",
+        "Jisan",
+        "radac",
+        "akankshsinha",
+        "justary27",
     ]
 
     for username in usernames:
@@ -31,9 +46,11 @@ def add_contributor_tag(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ("website", "0153_delete_contributorstats"),  # Update with the correct last migration in your app
+        (
+            "website",
+            "0153_delete_contributorstats",
+        ),  # Update with the correct last migration in your app
     ]
 
     operations = [
