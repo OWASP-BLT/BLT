@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
-from django.db.models.signals import post_delete, post_save
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
 from blog.models import Post
@@ -43,8 +43,8 @@ def handle_post_save(sender, instance, created, **kwargs):
             create_activity(instance, "created")
 
 
-@receiver(post_delete)
-def handle_post_delete(sender, instance, **kwargs):
-    """Generic handler for post_delete signal."""
+@receiver(pre_delete)
+def handle_pre_delete(sender, instance, **kwargs):
+    """Generic handler for pre_delete signal."""
     if sender in [Issue, Hunt, IpReport, Post]:  # Add any model you want to track
         create_activity(instance, "deleted")
