@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("contenttypes", "0002_remove_content_type_name"),
         ("website", "0153_delete_contributorstats"),
@@ -41,9 +40,7 @@ class Migration(migrations.Migration):
                 ("description", models.TextField(blank=True, null=True)),
                 (
                     "image",
-                    models.ImageField(
-                        blank=True, null=True, upload_to="activity_images/"
-                    ),
+                    models.ImageField(blank=True, null=True, upload_to="activity_images/"),
                 ),
                 ("timestamp", models.DateTimeField(auto_now_add=True)),
                 ("url", models.URLField(blank=True, null=True)),
