@@ -10,6 +10,7 @@ from captcha.fields import CaptchaField
 from colorthief import ColorThief
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
@@ -936,12 +937,15 @@ class Activity(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     action_type = models.CharField(max_length=10, choices=ACTION_TYPES)
     title = models.CharField(max_length=255)
-    related_object = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    related_object_type = models.CharField(max_length=50)
     description = models.TextField(null=True, blank=True)
     image = models.ImageField(null=True, blank=True, upload_to="activity_images/")
     timestamp = models.DateTimeField(auto_now_add=True)
     url = models.URLField(null=True, blank=True)
+
+    # Generic foreign key fields
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    related_object = GenericForeignKey("content_type", "object_id")
 
     def __str__(self):
         return f"{self.title} by {self.user.username} at {self.timestamp}"
