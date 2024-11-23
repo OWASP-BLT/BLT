@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0153_delete_contributorstats"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
