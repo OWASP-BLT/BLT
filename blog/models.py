@@ -4,8 +4,8 @@ from django.urls import reverse
 
 
 class Post(models.Model):
-    title = models.CharField(max_length=200)
-    slug = models.SlugField(unique=True, blank=True)
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True, blank=True, max_length=255)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
