@@ -10,7 +10,7 @@ def replace_blt_contributors_tag(apps, schema_editor):
 
     # Get or create the "BLT Contributors" tag
     blt_contributors_tag, _ = Tag.objects.get_or_create(
-        name="BLT Contributors", slug="BLT Contributors"
+        name="BLT Contributors", slug="blt_contributors"
     )
 
     try:
