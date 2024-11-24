@@ -759,7 +759,6 @@ class Project(models.Model):
     readme_content = models.TextField(null=True, blank=True)
     documentation_url = models.URLField(null=True, blank=True)
     recent_commit_messages = models.TextField(null=True, blank=True)
-    issue_tracker_url = models.URLField(null=True, blank=True)
     topics = models.JSONField(null=True, blank=True)
     ai_summary = models.TextField(null=True, blank=True)
     ai_labels = models.JSONField(null=True, blank=True)

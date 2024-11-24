@@ -1,9 +1,11 @@
+import os
 import re
 import time
 from collections import deque
 from urllib.parse import urlparse, urlsplit, urlunparse
 
 import markdown
+import openai
 import requests
 from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
@@ -177,3 +179,61 @@ def markdown_to_text(markdown_content):
     html_content = markdown.markdown(markdown_content)
     text_content = BeautifulSoup(html_content, "html.parser").get_text()
     return text_content
+
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+
+def generate_labels(readme_content, github_topics):
+    prompt = f"""
+    You are an AI that assigns relevant labels to GitHub projects based on their readme content and github topics.
+
+    ### Input:
+    - **README Content:** {readme_content}
+    - **GitHub Topics:** {github_topics}
+
+    ### Task:
+    Analyze the input and assign appropriate labels. 
+    Labels should include:
+    1. **Technology Stacks** (e.g., Python, JavaScript, Java).
+    2. **Project Type** (e.g., Web Application, CLI Tool, Library).
+    3. **OWASP Relevance** (e.g., Security Testing, Secure Coding).
+    4. Any other relevant labels.
+
+    ### Output:
+    Provide the labels in JSON format like this:
+    {{
+      "tech-stack": ["Python", "JavaScript"],
+      "project-type": ["Web Application"],
+      "owasp-relevance": ["Secure Coding"],
+      "other": ["Machine Learning", "Data Processing"]
+    }}
+    """
+
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant for labeling projects."},
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.7,
+    )
+
+    return response["choices"][0]["message"]["content"]
+
+
+def ai_summary(text, topics=None):
+    """Generate an AI-driven summary using OpenAI's GPT, including GitHub topics."""
+    try:
+        topics_str = ", ".join(topics) if topics else "No topics provided."
+        prompt = f"Generate a brief summary of the following text, focusing on key aspects such as purpose, features, technologies used, and current status. Consider the following GitHub topics to enhance the context: {topics_str}\n\n{text}"
+        response = openai.Completion.create(
+            model="text-davinci-003",
+            prompt=prompt,
+            max_tokens=150,
+            temperature=0.5,
+        )
+        summary = response.choices[0].text.strip()
+        return summary
+    except Exception as e:
+        return f"Error generating summary: {str(e)}"
