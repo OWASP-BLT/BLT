@@ -32,6 +32,7 @@ from rest_framework.authtoken.models import Token
 from blt import settings
 from website.forms import CaptchaForm, HuntForm, IpReportForm, UserProfileForm
 from website.models import (
+    Activity,
     Company,
     CompanyAdmin,
     DailyStatusReport,
@@ -1556,3 +1557,22 @@ class ReportedIpListView(ListView):
 
     def get_queryset(self):
         return IpReport.objects.all().order_by("-created")
+
+
+def feed(request):
+    activities = Activity.objects.all().order_by("-timestamp")
+    paginator = Paginator(activities, 10)  # Show 10 activities per page
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    # Determine if pagination is required
+    is_paginated = page_obj.has_other_pages()
+
+    return render(
+        request,
+        "feed.html",
+        {
+            "page_obj": page_obj,
+            "is_paginated": is_paginated,  # Pass this flag to the template
+        },
+    )
