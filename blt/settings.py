@@ -14,6 +14,7 @@ import sys
 import dj_database_url
 import environ
 from django.utils.translation import gettext_lazy as _
+from google.oauth2 import service_account
 
 # reading .env file
 environ.Env.read_env()
@@ -287,9 +288,24 @@ if "DYNO" in os.environ:
     GS_BUCKET_NAME = "bhfiles"
     DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
 
+    GS_CREDENTIALS = None
+
+    # Ensure credentials file is valid
+    try:
+        GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
+            GOOGLE_APPLICATION_CREDENTIALS
+        )
+        print("Google Cloud Storage credentials loaded successfully.")
+    except Exception as e:
+        print(f"Error loading Google Cloud Storage credentials: {e}")
+
     STORAGES = {
         "default": {
             "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+            "OPTIONS": {
+                "credentials": GS_CREDENTIALS,
+                "bucket_name": GS_BUCKET_NAME,
+            },
         },
     }
 
