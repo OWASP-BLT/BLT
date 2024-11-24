@@ -318,7 +318,7 @@ if "DYNO" in os.environ:
             },
         },
         "staticfiles": {
-            "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
             "OPTIONS": {
                 "credentials": GS_CREDENTIALS,
                 "bucket_name": GS_BUCKET_NAME,
