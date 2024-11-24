@@ -286,6 +286,13 @@ if "DYNO" in os.environ:
 
     GS_BUCKET_NAME = "bhfiles"
     DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+        },
+    }
+
     GS_FILE_OVERWRITE = False
     GS_QUERYSTRING_AUTH = False
     GS_DEFAULT_ACL = None
