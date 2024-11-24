@@ -1,5 +1,9 @@
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.core.files.storage import default_storage
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.urls import reverse
 
 
@@ -17,3 +21,12 @@ class Post(models.Model):
 
     def get_absolute_url(self):
         return reverse("post_detail", kwargs={"slug": self.slug})
+
+
+@receiver(post_save, sender=Post)
+def verify_file_upload(sender, instance, **kwargs):
+    if instance.image:
+        if not default_storage.exists(instance.image.name):
+            raise ValidationError(
+                f"Image '{instance.image.name}' was not uploaded to the storage backend."
+            )

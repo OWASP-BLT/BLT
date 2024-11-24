@@ -275,6 +275,9 @@ if "DATABASE_URL" in os.environ:
     if not TESTING:
         SECURE_SSL_REDIRECT = True
 
+    import logging
+
+    logging.basicConfig(level=logging.DEBUG)
     GS_ACCESS_KEY_ID = os.environ.get("GS_ACCESS_KEY_ID", "blank")
     GS_SECRET_ACCESS_KEY = os.environ.get("GS_SECRET_ACCESS_KEY", "blank")
     GOOGLE_APPLICATION_CREDENTIALS = "/app/google-credentials.json"
@@ -283,7 +286,9 @@ if "DATABASE_URL" in os.environ:
     DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
     GS_FILE_OVERWRITE = False
     GS_QUERYSTRING_AUTH = False
+    GS_DEFAULT_ACL = None
     MEDIA_URL = "https://bhfiles.storage.googleapis.com/"
+    # add debugging info for google storage
 
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
