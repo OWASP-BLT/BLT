@@ -6,8 +6,7 @@ from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 
 from website.models import Project, Tag
-from website.utils import ai_summary
-from website.utils import markdown_to_text
+from website.utils import ai_summary, markdown_to_text
 
 
 class Command(BaseCommand):
