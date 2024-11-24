@@ -39,6 +39,7 @@ from website.models import (
     Domain,
     Hunt,
     InviteFriend,
+    IP,
     Issue,
     IssueScreenshot,
     Monitor,
@@ -200,8 +201,8 @@ class UserProfileDetailView(DetailView):
             messages.error(self.request, "That user was not found.")
             return redirect("/")
 
-        # Increment the view count
-        self.object.userprofile.views = F("views") + 1
+        # Update the view count and save the model
+        self.object.userprofile.visit_count = len(IP.objects.filter(path=request.path))
         self.object.userprofile.save()
 
         return super(UserProfileDetailView, self).get(request, *args, **kwargs)
