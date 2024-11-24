@@ -129,19 +129,18 @@
                 </a>
             </div>
             <!-- Search Bar  -->
-            <div class="column items-center gap-2 overflow-hidden flex lg:w-[auto] lg:h-[auto]">
-                <div class="relative flex items-center rounded-2xl overflow-hidden bg-[#ededed] lg:!px-[34px]">
-                    <form class="w-full flex items-center"
-                          action="{% url 'search' %}"
-                          method="get">
-                        <i class="lg:!flex hidden fa fa-search absolute left-4 text-[#9CA3AF] z-10 my-auto"></i>
-                        <!-- Search Input -->
-                        <input type="text"
-                               name="query"
-                               placeholder="Search"
-                               class="text-xl lg:text-base lg:ps-9 lg:scale-[1.4] w-[70px] lg:w-auto h-16 placeholder-[#9CA3AF] bg-[#EDEDED] outline-none p-5 font-semibold rounded-l-2xl">
+            <div class="flex items-center gap-2 overflow-hidden md:w-[auto] h-[auto] rounded-full shadow-md">
+                <div class="relative flex items-center rounded-2xl overflow-hidden bg-[#ededed] px-4 md:px-[34px]">
+                    <form class="w-full flex items-center" action="{% url 'search' %}" method="get">
+                        <div class="relative flex items-center w-full md:w-[250px]">
+                            <i class="text-3xl absolute fa fa-search text-[#9CA3AF] z-10 opacity-0 md:opacity-[100] md:left-[-20px] cursor-pointer"></i>
+                            <input type="text"
+                                   name="query"
+                                   placeholder="Search"
+                                   class="ml:0 md:ml-8 pl-4 md:pl-12 text-xl md:text-base md:ps-9 md:scale-[1.4] w-full h-auto md:h-20 placeholder-[#9CA3AF] bg-[#EDEDED] outline-none p-5 font-semibold rounded-l-2xl">
+                        </div>
                         <select name="category"
-                                class="text-xl lg:text-base lg:scale-[1.4] w-[70px] lg:w-auto h-16 placeholder-[#9CA3AF] bg-[#ededed] outline-none p-5 font-semibold rounded-r-2xl text-[#9CA3AF]">
+                                class="text-base md:scale-[1.4] w-[100px] md:w-auto h-auto md:h-20 cursor-pointer placeholder-[#9CA3AF] bg-[#ededed] px-4 outline-none p-5 font-semibold rounded-r-2xl text-[#9CA3AF]">
                             <option value="organizations">{% trans "Organizations" %}</option>
                             <option value="projects">{% trans "Projects" %}</option>
                             <option value="users">{% trans "Users" %}</option>
