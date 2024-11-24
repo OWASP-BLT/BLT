@@ -1,7 +1,6 @@
 {% extends "base.html" %}
-
 {% block content %}
-<style>
+    <style>
     body {
         font-family: Arial, sans-serif;
         background-color: #f4f4f4;
@@ -41,47 +40,79 @@
     }
 
     .form-field {
-        margin-bottom: 15px;
+        margin-bottom: 20px;
     }
-</style>
 
-{% include "includes/sidenav.html" %}
-<h1 id="form-title">{% if form.instance.pk %}Edit{% else %}New{% endif %} Post</h1>
+    .form-field label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+        color: #333;
+    }
 
-<div class="form-container">
-    <form method="post" enctype="multipart/form-data" novalidate>
-        {% csrf_token %}
-        <div class="form-field">
-            {{ form.title.label }}<br>
-            {{ form.title }}<br>
-            {% for error in form.title.errors %}
-                <div>{{ error }}</div>
-            {% endfor %}
-        </div>
-        
-        <div class="form-field">
-            {{ form.content.label }}<br>
-            {{ form.content }}<br>
-            {% for error in form.content.errors %}
-                <div>{{ error }}</div>
-            {% endfor %}
-        </div>
-        
-        <div class="form-field">
-            {{ form.image.label }}<br>
-            {{ form.image }}<br>
-            {% for error in form.image.errors %}
-                <div>{{ error }}</div>
-            {% endfor %}
-        </div>
-        
-        <button type="submit">Save</button>
-    </form>
-</div>
-
-<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
-<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
-<script>
-    var easyMDE = new EasyMDE({ element: document.getElementById('id_content') });
-</script>
+    .form-field input, .form-field textarea {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+        font-size: 16px;
+        background-color: #F9F9F9; 
+        color: #333; 
+    }
+    .form-field input:focus, .form-field textarea:focus {
+        outline: none;
+        border-color: #007BFF; 
+        background-color: #FFFFFF; 
+    }
+    .form-field input::placeholder, .form-field textarea::placeholder {
+        color: #888; 
+    }
+    .form-field .error {
+        color: red;
+        font-size: 0.9em;
+        margin-top: 5px;
+    }
+    </style>
+    {% include "includes/sidenav.html" %}
+    <h1 id="form-title">
+        {% if form.instance.pk %}
+            Edit
+        {% else %}
+            New
+        {% endif %}
+        Post
+    </h1>
+    <div class="form-container">
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            <div class="form-field">
+                {{ form.title.label }}
+                <br>
+                {{ form.title }}
+                <br>
+                {% for error in form.title.errors %}<div>{{ error }}</div>{% endfor %}
+            </div>
+            <div class="form-field">
+                {{ form.content.label }}
+                <br>
+                {{ form.content }}
+                <br>
+                {% for error in form.content.errors %}<div>{{ error }}</div>{% endfor %}
+            </div>
+            <div class="form-field">
+                {{ form.image.label }}
+                <br>
+                {{ form.image }}
+                <br>
+                {% for error in form.image.errors %}<div>{{ error }}</div>{% endfor %}
+            </div>
+            <button type="submit">Save</button>
+        </form>
+    </div>
+    <link rel="stylesheet"
+          href="https://unpkg.com/easymde/dist/easymde.min.css">
+    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+    <script>var easyMDE = new EasyMDE({ element: document.getElementById('id_content') });</script>
 {% endblock content %}

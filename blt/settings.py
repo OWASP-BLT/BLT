@@ -108,8 +108,6 @@ INSTALLED_APPS = (
 )
 
 
-# CRON_CLASSES = ["website.views.CreateIssue"]
-
 MIDDLEWARE = (
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -332,7 +330,6 @@ STATIC_URL = "/static/"
 
 # Extra places for collectstatic to find static files.
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "static"),
     os.path.join(BASE_DIR, "website", "static"),
     os.path.join(BASE_DIR, "company", "static"),
 )

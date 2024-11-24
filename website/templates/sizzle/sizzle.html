@@ -99,6 +99,12 @@
                                                 No Data
                                             {% endif %}
                                         </td>
+                                        <td class="py-3 px-4 border-b border-gray-200">
+                                            {% if user.is_authenticated %}
+                                                <button class="delete-entry bg-red-500 text-white py-1 px-3 rounded"
+                                                        data-id="{{ sizzle_data.id }}">Delete</button>
+                                            {% endif %}
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -141,57 +147,96 @@
         <script type="text/javascript"
                 src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
         <script type="text/javascript">
-    $(function() {
-        $('input[name="daterange"]').daterangepicker({
-            opens: 'left',
-            locale: {
-                format: 'YYYY-MM-DD'
-            }
-        }, function(start, end, label) {
-            $('#report-date').text(start.format('D.M.YYYY') + ' - ' + end.format('D.M.YYYY') + ' Report');
-    
-            // Fetch and update report logs
-            $.ajax({
-                url: '{% url "timelogsreport" %}',
-                data: {
-                    start_date: start.format('YYYY-MM-DDTHH:mm:ssZ'),
-                    end_date: end.format('YYYY-MM-DDTHH:mm:ssZ')
-                },
-                success: function(data) {
-                    // if success the report-table div will be fully clean and the new data will be added for each item in the data added like present item 
-                    $('#report-table').empty();
-                    data.forEach(function(item) {
-                        $('#report-table').append(`
-                            <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-                                <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold">
-                                    ${item.date}
-                                </div>
-                                <table class="min-w-full bg-white">
-                                    <thead>
-                                        <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
-                                            <th class="text-left py-3 px-4 border-b border-gray-200">Issue Title</th>
-                                            <th class="text-left py-3 px-4 border-b border-gray-200">Started</th>
-                                            <th class="text-left py-3 px-4 border-b border-gray-200">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td class="py-3 px-4 border-b border-gray-200">${item.issue_title}</td>
-                                            <td class="py-3 px-4 border-b border-gray-200">${item.start_time}</td>
-                                            <td class="py-3 px-4 border-b border-gray-200">${item.duration}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+           $(function() {
+    // Initialize daterange picker
+    $('input[name="daterange"]').daterangepicker({
+        opens: 'left',
+        locale: {
+            format: 'YYYY-MM-DD'
+        }
+    }, function(start, end, label) {
+        $('#report-date').text(start.format('D.M.YYYY') + ' - ' + end.format('D.M.YYYY') + ' Report');
+
+        // Fetch and update report logs
+        $.ajax({
+            url: '{% url "timelogsreport" %}',
+            data: {
+                start_date: start.format('YYYY-MM-DDTHH:mm:ssZ'),
+                end_date: end.format('YYYY-MM-DDTHH:mm:ssZ')
+            },
+            success: function(data) {
+                // Clear existing content and append the new data
+                $('#report-table').empty();
+                data.forEach(function(item) {
+                    $('#report-table').append(`
+                        <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+                            <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold">
+                                ${item.date}
                             </div>
-                        `);
-                    });
-                },
-                error: function(xhr, status, error) {
-                    alert('An error occurred while fetching the report logs.');
-                }
-            });
+                            <table class="min-w-full bg-white">
+                                <thead>
+                                    <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
+                                        <th class="text-left py-3 px-4 border-b border-gray-200">Issue Title</th>
+                                        <th class="text-left py-3 px-4 border-b border-gray-200">Started</th>
+                                        <th class="text-left py-3 px-4 border-b border-gray-200">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="py-3 px-4 border-b border-gray-200">${item.issue_title}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">${item.start_time}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">${item.duration}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">
+                                            <button class="delete-entry bg-red-500 text-white py-1 px-3 rounded" data-id="${item.id}">
+                                                Delete
+                                            </button>
+                                            <span>Item ID: ${item.id}</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    `);
+                });
+            },
+            error: function(xhr, status, error) {
+                alert('An error occurred while fetching the report logs.');
+            }
         });
     });
+
+    // Event delegation for dynamically added delete buttons (moved outside the AJAX success callback)
+    $(document).on('click', '.delete-entry', function() {
+        var entryId = $(this).data('id');
+        if (!entryId) {
+            console.error("Entry ID is missing or empty.");
+            return;
+        }
+        if (confirm("Are you sure you want to delete this time entry?")) {
+            fetch("{% url 'delete_time_entry' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+                body: new URLSearchParams({ id: entryId }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log("Success");
+                    // Remove the row from the table if the delete was successful
+                    this.closest("tr").remove();
+                } else {
+                    console.log("Failed");
+                    alert("Failed to delete time entry.");
+                }
+            });
+        }
+    });
+});
+
+        
         </script>
     {% endif %}
 {% endblock content %}
