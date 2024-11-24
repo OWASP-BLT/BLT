@@ -286,7 +286,7 @@ if "DYNO" in os.environ:
     # GS_SECRET_ACCESS_KEY = os.environ.get("GS_SECRET_ACCESS_KEY", "blank")
     # GOOGLE_APPLICATION_CREDENTIALS = "/app/google-credentials.json"
 
-    # GS_BUCKET_NAME = "bhfiles"
+    GS_BUCKET_NAME = "bhfiles"
     # DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
 
     # GS_CREDENTIALS = None
@@ -315,6 +315,14 @@ if "DYNO" in os.environ:
             "OPTIONS": {
                 "credentials": GS_CREDENTIALS,
                 "bucket_name": GS_BUCKET_NAME,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+            "OPTIONS": {
+                "credentials": GS_CREDENTIALS,
+                "bucket_name": GS_BUCKET_NAME,
+                "location": "static",
             },
         },
     }
