@@ -13,7 +13,7 @@ def get_default_user():
     return User.objects.get_or_create(username="anonymous")[0]
 
 
-def create_activity(instance, action_type, created=None):
+def create_activity(instance, action_type):
     """Generic function to create an activity for a given model instance."""
     model_name = instance._meta.model_name
     user_field = (
@@ -23,16 +23,19 @@ def create_activity(instance, action_type, created=None):
     )
     user = user_field or get_default_user()
 
-    activity = Activity.objects.create(
+    # Get the content type of the instance
+    content_type = ContentType.objects.get_for_model(instance)
+
+    # Create the activity
+    Activity.objects.create(
         user=user,
         action_type=action_type,
         title=f"{model_name.capitalize()} {action_type.capitalize()} {getattr(instance, 'name', getattr(instance, 'title', ''))[:50]}",
-        related_object_id=instance.id,
-        related_object_type=ContentType.objects.get_for_model(instance).model,
+        content_type=content_type,
+        object_id=instance.id,  # Use object_id for GenericForeignKey
         description=getattr(instance, "description", getattr(instance, "content", ""))[:100],
         image=getattr(instance, "screenshot", getattr(instance, "image", None)),
     )
-    activity.save()
 
 
 @receiver(post_save)
