@@ -21,18 +21,18 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install poetry 
 RUN poetry config virtualenvs.create false
-# RUN poetry install
-# RUN pip install opentelemetry-api opentelemetry-instrumentation
+RUN poetry install
+RUN pip install opentelemetry-api opentelemetry-instrumentation
 
-# # Install dos2unix
-# RUN apt-get update && apt-get install -y dos2unix
+# Install dos2unix
+RUN apt-get update && apt-get install -y dos2unix
 
 # Add entrypoint
 
-# COPY entrypoint.sh /entrypoint.sh
-# RUN dos2unix .env Dockerfile docker-compose.yml entrypoint.sh ./blt/settings.py
-# RUN chmod +x /entrypoint.sh
+COPY entrypoint.sh /entrypoint.sh
+RUN dos2unix .env Dockerfile docker-compose.yml entrypoint.sh ./blt/settings.py
+RUN chmod +x /entrypoint.sh
 
 
-# ENTRYPOINT [ "./entrypoint.sh" ]
-# CMD [ "poetry", "run", "python", "manage.py", "runserver", "0.0.0.0:8000" ]
+ENTRYPOINT [ "./entrypoint.sh" ]
+CMD [ "poetry", "run", "python", "manage.py", "runserver", "0.0.0.0:8000" ]

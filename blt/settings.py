@@ -272,7 +272,7 @@ if "DATABASE_URL" in os.environ:
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     if not TESTING:
-        SECURE_SSL_REDIRECT = False
+        SECURE_SSL_REDIRECT = True
 
     GS_ACCESS_KEY_ID = os.environ.get("GS_ACCESS_KEY_ID", "blank")
     GS_SECRET_ACCESS_KEY = os.environ.get("GS_SECRET_ACCESS_KEY", "blank")
@@ -284,17 +284,17 @@ if "DATABASE_URL" in os.environ:
     GS_QUERYSTRING_AUTH = False
     MEDIA_URL = "https://bhfiles.storage.googleapis.com/"
 
-    # import sentry_sdk
-    # from sentry_sdk.integrations.django import DjangoIntegration
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
 
-    # sentry_sdk.init(
-    #     dsn=os.environ.get("SENTRY_DSN", "https://key.ingest.sentry.io/project"),
-    #     integrations=[DjangoIntegration()],
-    #     send_default_pii=True,
-    #     traces_sample_rate=1.0,
-    #     profiles_sample_rate=1.0,
-    #     release=os.environ.get("HEROKU_RELEASE_VERSION", default=""),
-    # )
+    sentry_sdk.init(
+        dsn=os.environ.get("SENTRY_DSN", "https://key.ingest.sentry.io/project"),
+        integrations=[DjangoIntegration()],
+        send_default_pii=True,
+        traces_sample_rate=1.0,
+        profiles_sample_rate=1.0,
+        release=os.environ.get("HEROKU_RELEASE_VERSION", default=""),
+    )
 
 else:
     if not TESTING:
@@ -310,7 +310,7 @@ ACCOUNT_EMAIL_VERIFICATION = "optional"
 
 # Honor the 'X-Forwarded-Proto' header for request.is_secure()
 
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Allow all host headers
 ALLOWED_HOSTS = [

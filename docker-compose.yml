@@ -1,55 +1,55 @@
 services:
-  # db:
-  #   image: postgres
-  #   ports:
-  #     - "${POSTGRES_PORT}:5432"
-  #   volumes:
-  #     - postgres_db:/var/lib/postgresql/data
-  #   environment:
-  #     - POSTGRES_USER=${POSTGRES_USER}
-  #     - POSTGRES_DB=${POSTGRES_DB}
-  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-  #   healthcheck:
-  #     test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #   container_name: postgres-db
-  #   restart: always
+  db:
+    image: postgres
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    container_name: postgres-db
+    restart: always
 
   app:
     build: .
-    # depends_on:
-    #   db:
-    #     condition: service_healthy
+    depends_on:
+      db:
+        condition: service_healthy
     container_name: app
     restart: on-failure
     env_file:
       - .env
     volumes:
       - .:/blt
-#     ports:
-#       - "${PORT}:8000"
-#     environment:
-#       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-#       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-#     command: ./entrypoint.sh
+    ports:
+      - "${PORT}:8000"
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    command: ./entrypoint.sh
 
-#   init:
-#     profiles:
-#       - init
-#     build: .
-#     depends_on:
-#       db:
-#         condition: service_healthy
-#     env_file:
-#       - .env
-#     volumes:
-#       - .:/blt
-#     environment:
-#       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-#       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-#     command: ./entrypoint.sh
+  init:
+    profiles:
+      - init
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    volumes:
+      - .:/blt
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    command: ./entrypoint.sh
 
-# volumes:
-#   postgres_db:
+volumes:
+  postgres_db:
