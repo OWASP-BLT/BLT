@@ -263,8 +263,8 @@ EMAIL_PORT = 1025
 
 REPORT_EMAIL = os.environ.get("REPORT_EMAIL", "blank")
 REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "blank")
-DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 if "DATABASE_URL" in os.environ:
+    print("database url detected in settings")
     DEBUG = False
     EMAIL_HOST = "smtp.sendgrid.net"
     EMAIL_HOST_USER = os.environ.get("SENDGRID_USERNAME", "blank")
@@ -274,6 +274,9 @@ if "DATABASE_URL" in os.environ:
     if not TESTING:
         SECURE_SSL_REDIRECT = True
 
+    import logging
+
+    logging.basicConfig(level=logging.DEBUG)
     GS_ACCESS_KEY_ID = os.environ.get("GS_ACCESS_KEY_ID", "blank")
     GS_SECRET_ACCESS_KEY = os.environ.get("GS_SECRET_ACCESS_KEY", "blank")
     GOOGLE_APPLICATION_CREDENTIALS = "/app/google-credentials.json"
@@ -282,7 +285,9 @@ if "DATABASE_URL" in os.environ:
     DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
     GS_FILE_OVERWRITE = False
     GS_QUERYSTRING_AUTH = False
+    GS_DEFAULT_ACL = None
     MEDIA_URL = "https://bhfiles.storage.googleapis.com/"
+    # add debugging info for google storage
 
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
@@ -297,6 +302,8 @@ if "DATABASE_URL" in os.environ:
     )
 
 else:
+    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+    print("no database url detected in settings, using sqlite")
     if not TESTING:
         DEBUG = True
 
