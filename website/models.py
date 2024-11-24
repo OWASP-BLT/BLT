@@ -625,21 +625,6 @@ class Payment(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
 
-class ContributorStats(models.Model):
-    username = models.CharField(max_length=255, unique=True)
-    commits = models.IntegerField(default=0)
-    issues_opened = models.IntegerField(default=0)
-    issues_closed = models.IntegerField(default=0)
-    prs = models.IntegerField(default=0)
-    comments = models.IntegerField(default=0)
-    assigned_issues = models.IntegerField(default=0)
-    last_updated = models.DateTimeField(auto_now=True)
-    created = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.username
-
-
 class Monitor(models.Model):
     url = models.URLField()
     keyword = models.CharField(max_length=255)
@@ -756,6 +741,19 @@ class Project(models.Model):
     total_issues = models.IntegerField(default=0)
     repo_visit_count = models.IntegerField(default=0)
     project_visit_count = models.IntegerField(default=0)
+    watchers = models.IntegerField(default=0)
+    open_pull_requests = models.IntegerField(default=0)
+    primary_language = models.CharField(max_length=50, null=True, blank=True)
+    license = models.CharField(max_length=100, null=True, blank=True)
+    last_commit_date = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True)
+    network_count = models.IntegerField(default=0)
+    subscribers_count = models.IntegerField(default=0)
+    open_issues = models.IntegerField(default=0)
+    closed_issues = models.IntegerField(default=0)
+    size = models.IntegerField(default=0)
+    commit_count = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name
@@ -764,18 +762,47 @@ class Project(models.Model):
         return self.contributors.order_by("-contributions")[:limit]
 
 
+# class ContributorStats(models.Model):
+#     username = models.CharField(max_length=255, unique=True)
+#     commits = models.IntegerField(default=0)
+#     issues_opened = models.IntegerField(default=0)
+#     issues_closed = models.IntegerField(default=0)
+#     prs = models.IntegerField(default=0)
+#     comments = models.IntegerField(default=0)
+#     assigned_issues = models.IntegerField(default=0)
+#     created = models.DateTimeField(auto_now_add=True)
+
+
 class Contribution(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    CONTRIBUTION_TYPES = [
+        ("commit", "Commit"),
+        ("issue_opened", "Issue Opened"),
+        ("issue_closed", "Issue Closed"),
+        ("issue_assigned", "Issue Assigned"),
+        ("pull_request", "Pull Request"),
+        ("comment", "Comment"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     title = models.CharField(max_length=255)
     description = models.TextField()
-    created = models.DateTimeField(auto_now_add=True)
+    repository = models.ForeignKey(Project, on_delete=models.CASCADE, null=True)
+    contribution_type = models.CharField(
+        max_length=20, choices=CONTRIBUTION_TYPES, default="commit"
+    )
+    github_username = models.CharField(max_length=255, default="")
+    github_id = models.CharField(max_length=100, null=True, blank=True)
+    github_url = models.URLField(null=True, blank=True)
+    created = models.DateTimeField()
     status = models.CharField(max_length=50, choices=[("open", "Open"), ("closed", "Closed")])
-    txid = models.CharField(
-        max_length=64, blank=True, null=True
-    )  # Transaction ID on the Bitcoin blockchain
+    txid = models.CharField(max_length=64, blank=True, null=True)
 
-    def __str__(self):
-        return self.title
+    class Meta:
+        indexes = [
+            models.Index(fields=["github_id"]),
+            models.Index(fields=["user", "created"]),
+            models.Index(fields=["repository", "created"]),
+        ]
 
 
 class BaconToken(models.Model):
@@ -873,3 +900,26 @@ class DailyStatusReport(models.Model):
 
     def __str__(self):
         return f"Daily Status Report by {self.user.username} on {self.date}"
+
+
+class IpReport(models.Model):
+    IP_TYPE_CHOICES = [
+        ("ipv4", "IPv4"),
+        ("ipv6", "IPv6"),
+    ]
+    ACTIVITY_TYPE_CHOICES = [
+        ("malicious", "Malicious"),
+        ("friendly", "Friendly"),
+    ]
+
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    activity_title = models.CharField(max_length=255)
+    activity_type = models.CharField(max_length=50, choices=ACTIVITY_TYPE_CHOICES)
+    ip_address = models.GenericIPAddressField()
+    ip_type = models.CharField(max_length=10, choices=IP_TYPE_CHOICES)
+    description = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.ip_address} ({self.ip_type}) - {self.activity_title}"
