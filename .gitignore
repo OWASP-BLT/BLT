@@ -17,4 +17,5 @@ chromedriver
 requirements.txt
 *.code-workspace
 *.log
-*.exe
+*.exe.DS_Store
+.DS_Store

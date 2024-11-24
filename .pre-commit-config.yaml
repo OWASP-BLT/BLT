@@ -3,28 +3,36 @@ repos:
     rev: v4.5.0
     hooks:
       - id: check-ast
+        language_version: python3.11
       - id: check-builtin-literals
+        language_version: python3.11
       - id: check-yaml
+        language_version: python3.11
       - id: fix-encoding-pragma
         args:
           - --remove
+        language_version: python3.11
       - id: mixed-line-ending
         args:
           - --fix=lf
+        language_version: python3.11
 
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
     hooks:
       - id: isort
         exclude: ^(docs)
+        language_version: python3.11
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.13
     hooks:
       - id: ruff
-        args: 
+        args:
           - --fix
+        language_version: python3.11
       - id: ruff-format
+        language_version: python3.11
 
   - repo: https://github.com/djlint/djLint
     rev: v1.36.1
@@ -33,3 +41,4 @@ repos:
         args:
           - --reformat
           - --lint
+        language_version: python3.11
