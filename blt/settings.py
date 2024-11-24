@@ -305,7 +305,8 @@ if "DYNO" in os.environ:
     )
 
 else:
-    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+    DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+    # DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
     print("no database url detected in settings, using sqlite")
     if not TESTING:
         DEBUG = True
