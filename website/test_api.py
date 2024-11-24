@@ -1,9 +1,8 @@
-import datetime
-
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.db.transaction import atomic
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.encoding import force_str
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -112,20 +111,18 @@ class APITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         if len(response.data):
             self.assertTrue(
-                response.data[0]["starts_on"] < datetime.datetime.now()
-                and response.data[0]["end_on"] > datetime.datetime.now(),
+                response.data[0]["starts_on"] < timezone.now()
+                and response.data[0]["end_on"] > timezone.now(),
                 "Invalid Response",
             )
         response = self.client.get("".join([url, "previousHunt=1/"]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         if len(response.data):
-            self.assertLess(response.data[0]["end_on"], datetime.datetime.now(), "Invalid Response")
+            self.assertLess(response.data[0]["end_on"], timezone.now(), "Invalid Response")
         response = self.client.get("".join([url, "upcomingHunt=1/"]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         if len(response.data):
-            self.assertGreater(
-                response.data[0]["starts_on"], datetime.datetime.now(), "Invalid Response"
-            )
+            self.assertGreater(response.data[0]["starts_on"], timezone.now(), "Invalid Response")
 
     def test_get_issues(self):
         url = "/api/v1/issues/"

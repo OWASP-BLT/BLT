@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.template.defaultfilters import truncatechars
 from django.utils import timezone
@@ -12,7 +13,7 @@ from website.models import (
     ChatBotLog,
     Company,
     CompanyAdmin,
-    ContributorStats,
+    Contribution,
     Domain,
     Hunt,
     HuntPrize,
@@ -27,6 +28,7 @@ from website.models import (
     Suggestion,
     SuggestionVotes,
     Tag,
+    TimeLog,
     Transaction,
     UserProfile,
     Wallet,
@@ -210,18 +212,18 @@ class PointsAdmin(admin.ModelAdmin):
 admin.site.unregister(User)
 
 
-class UserAdmin(ImportExportModelAdmin):
-    resource_class = UserResource
-    list_display = (
-        "id",
-        "username",
-        "email",
-        "first_name",
-        "last_name",
-        "is_active",
-        "date_joined",
-        "is_staff",
-    )
+# class UserAdmin(ImportExportModelAdmin):
+#     resource_class = UserResource
+#     list_display = (
+#         "id",
+#         "username",
+#         "email",
+#         "first_name",
+#         "last_name",
+#         "is_active",
+#         "date_joined",
+#         "is_staff",
+#     )
 
 
 class UserProfileAdmin(admin.ModelAdmin):
@@ -373,6 +375,7 @@ class BlockedAdmin(admin.ModelAdmin):
         "user_agent_string",
         "count",
         "created",
+        "modified",
     )
 
 
@@ -394,9 +397,26 @@ class TagAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
 
 
-# Register all models with their respective admin classes
+class TimeLogAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "start_time",
+        "end_time",
+        "duration",
+        "github_issue_url",
+        "created",
+    )
+
+
+class ContributionAdmin(admin.ModelAdmin):
+    list_display = ("user", "title", "description", "status", "created", "txid")
+    list_filter = ["status", "user"]
+    search_fields = ["title", "description", "user__username"]
+    date_hierarchy = "created"
+
+
 admin.site.register(Project, ProjectAdmin)
-admin.site.register(ContributorStats)
 admin.site.register(Bid, BidAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(User, UserAdmin)
@@ -416,8 +436,8 @@ admin.site.register(ChatBotLog, ChatBotLogAdmin)
 admin.site.register(Blocked, BlockedAdmin)
 admin.site.register(Suggestion, SuggestionAdmin)
 admin.site.register(SuggestionVotes, SuggestionVotesAdmin)
-
-# Register missing models
+admin.site.register(TimeLog, TimeLogAdmin)
+admin.site.register(Contribution, ContributionAdmin)
 admin.site.register(InviteFriend)
 admin.site.register(IP, IPAdmin)
 admin.site.register(Transaction)

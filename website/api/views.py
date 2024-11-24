@@ -51,7 +51,8 @@ from website.serializers import (
     TimeLogSerializer,
     UserProfileSerializer,
 )
-from website.views import LeaderboardBase, image_validator
+from website.utils import image_validator
+from website.views.user import LeaderboardBase
 
 # API's
 
@@ -738,6 +739,67 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         projects = Project.objects.prefetch_related("contributors").all()
+
+        project_data = []
+        for project in projects:
+            contributors_data = []
+            for contributor in project.contributors.all():
+                contributor_info = ContributorSerializer(contributor)
+                contributors_data.append(contributor_info.data)
+            contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+            project_info = ProjectSerializer(project).data
+            project_info["contributors"] = contributors_data
+            project_data.append(project_info)
+
+        return Response(
+            {"count": len(project_data), "projects": project_data},
+            status=200,
+        )
+
+    @action(detail=False, methods=["get"])
+    def search(self, request, *args, **kwargs):
+        query = request.query_params.get("q", "")
+        projects = Project.objects.filter(
+            Q(name__icontains=query)
+            | Q(description__icontains=query)
+            | Q(tags__name__icontains=query)
+            | Q(stars__icontains=query)
+            | Q(forks__icontains=query)
+        ).distinct()
+
+        project_data = []
+        for project in projects:
+            contributors_data = []
+            for contributor in project.contributors.all():
+                contributor_info = ContributorSerializer(contributor)
+                contributors_data.append(contributor_info.data)
+            contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+            project_info = ProjectSerializer(project).data
+            project_info["contributors"] = contributors_data
+            project_data.append(project_info)
+
+        return Response(
+            {"count": len(project_data), "projects": project_data},
+            status=200,
+        )
+
+    @action(detail=False, methods=["get"])
+    def filter(self, request, *args, **kwargs):
+        freshness = request.query_params.get("freshness", None)
+        stars = request.query_params.get("stars", None)
+        forks = request.query_params.get("forks", None)
+        tags = request.query_params.get("tags", None)
+
+        projects = Project.objects.all()
+
+        if freshness:
+            projects = projects.filter(freshness__icontains=freshness)
+        if stars:
+            projects = projects.filter(stars__gte=stars)
+        if forks:
+            projects = projects.filter(forks__gte=forks)
+        if tags:
+            projects = projects.filter(tags__name__in=tags.split(",")).distinct()
 
         project_data = []
         for project in projects:

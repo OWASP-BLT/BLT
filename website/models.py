@@ -10,8 +10,10 @@ from captcha.fields import CaptchaField
 from colorthief import ColorThief
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
-from django.core.exceptions import MultipleObjectsReturned, ValidationError
+from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.validators import URLValidator
@@ -625,21 +627,6 @@ class Payment(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
 
-class ContributorStats(models.Model):
-    username = models.CharField(max_length=255, unique=True)
-    commits = models.IntegerField(default=0)
-    issues_opened = models.IntegerField(default=0)
-    issues_closed = models.IntegerField(default=0)
-    prs = models.IntegerField(default=0)
-    comments = models.IntegerField(default=0)
-    assigned_issues = models.IntegerField(default=0)
-    last_updated = models.DateTimeField(auto_now=True)
-    created = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.username
-
-
 class Monitor(models.Model):
     url = models.URLField()
     keyword = models.CharField(max_length=255)
@@ -742,69 +729,82 @@ class Project(models.Model):
     wiki_url = models.URLField(null=True, blank=True)
     homepage_url = models.URLField(null=True, blank=True)
     logo_url = models.URLField()
+    stars = models.IntegerField(default=0)
+    forks = models.IntegerField(default=0)
+    contributor_count = models.IntegerField(default=0)
+    release_name = models.CharField(max_length=255, null=True, blank=True)
+    release_datetime = models.DateTimeField(null=True, blank=True)
+    external_links = models.JSONField(default=list, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     contributors = models.ManyToManyField(Contributor, related_name="projects", blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
+    last_updated = models.DateTimeField(null=True, blank=True)
+    total_issues = models.IntegerField(default=0)
+    repo_visit_count = models.IntegerField(default=0)
+    project_visit_count = models.IntegerField(default=0)
+    watchers = models.IntegerField(default=0)
+    open_pull_requests = models.IntegerField(default=0)
+    primary_language = models.CharField(max_length=50, null=True, blank=True)
+    license = models.CharField(max_length=100, null=True, blank=True)
+    last_commit_date = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True)
+    network_count = models.IntegerField(default=0)
+    subscribers_count = models.IntegerField(default=0)
+    open_issues = models.IntegerField(default=0)
+    closed_issues = models.IntegerField(default=0)
+    size = models.IntegerField(default=0)
+    commit_count = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name
 
-    def get_contributors(self, github_url):
-        owner_repo = github_url.rstrip("/").split("/")[-2:]
-        repo_name = f"{owner_repo[0]}/{owner_repo[1]}"
-        contributors = []
-
-        page = 1
-        while True:
-            url = f"https://api.github.com/repos/{repo_name}/contributors?per_page=100&page={page}"
-            print(f"Fetching contributors from URL: {url}")
-            response = requests.get(url, headers={"Content-Type": "application/json"})
-
-            if response.status_code != 200:
-                break
-
-            contributors_data = response.json()
-            if not contributors_data:
-                break
-
-            for c in contributors_data:
-                try:
-                    contributor, created = Contributor.objects.get_or_create(
-                        github_id=c["id"],
-                        defaults={
-                            "name": c["login"],
-                            "github_url": c["html_url"],
-                            "avatar_url": c["avatar_url"],
-                            "contributor_type": c["type"],
-                            "contributions": c["contributions"],
-                        },
-                    )
-                    contributors.append(contributor)
-                except MultipleObjectsReturned:
-                    contributor = Contributor.objects.filter(github_id=c["id"]).first()
-                    contributors.append(contributor)
-
-            page += 1
-
-        return contributors if contributors else None
-
-    def get_top_contributors(self, limit=5):
+    def get_top_contributors(self, limit=30):
         return self.contributors.order_by("-contributions")[:limit]
 
 
+# class ContributorStats(models.Model):
+#     username = models.CharField(max_length=255, unique=True)
+#     commits = models.IntegerField(default=0)
+#     issues_opened = models.IntegerField(default=0)
+#     issues_closed = models.IntegerField(default=0)
+#     prs = models.IntegerField(default=0)
+#     comments = models.IntegerField(default=0)
+#     assigned_issues = models.IntegerField(default=0)
+#     created = models.DateTimeField(auto_now_add=True)
+
+
 class Contribution(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    CONTRIBUTION_TYPES = [
+        ("commit", "Commit"),
+        ("issue_opened", "Issue Opened"),
+        ("issue_closed", "Issue Closed"),
+        ("issue_assigned", "Issue Assigned"),
+        ("pull_request", "Pull Request"),
+        ("comment", "Comment"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     title = models.CharField(max_length=255)
     description = models.TextField()
-    created = models.DateTimeField(auto_now_add=True)
+    repository = models.ForeignKey(Project, on_delete=models.CASCADE, null=True)
+    contribution_type = models.CharField(
+        max_length=20, choices=CONTRIBUTION_TYPES, default="commit"
+    )
+    github_username = models.CharField(max_length=255, default="")
+    github_id = models.CharField(max_length=100, null=True, blank=True)
+    github_url = models.URLField(null=True, blank=True)
+    created = models.DateTimeField()
     status = models.CharField(max_length=50, choices=[("open", "Open"), ("closed", "Closed")])
-    txid = models.CharField(
-        max_length=64, blank=True, null=True
-    )  # Transaction ID on the Bitcoin blockchain
+    txid = models.CharField(max_length=64, blank=True, null=True)
 
-    def __str__(self):
-        return self.title
+    class Meta:
+        indexes = [
+            models.Index(fields=["github_id"]),
+            models.Index(fields=["user", "created"]),
+            models.Index(fields=["repository", "created"]),
+        ]
 
 
 class BaconToken(models.Model):
@@ -890,3 +890,65 @@ class ActivityLog(models.Model):
 
     def __str__(self):
         return f"ActivityLog by {self.user.username} at {self.recorded_at}"
+
+
+class DailyStatusReport(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    date = models.DateField()
+    previous_work = models.TextField()
+    next_plan = models.TextField()
+    blockers = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Daily Status Report by {self.user.username} on {self.date}"
+
+
+class IpReport(models.Model):
+    IP_TYPE_CHOICES = [
+        ("ipv4", "IPv4"),
+        ("ipv6", "IPv6"),
+    ]
+    ACTIVITY_TYPE_CHOICES = [
+        ("malicious", "Malicious"),
+        ("friendly", "Friendly"),
+    ]
+
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    activity_title = models.CharField(max_length=255)
+    activity_type = models.CharField(max_length=50, choices=ACTIVITY_TYPE_CHOICES)
+    ip_address = models.GenericIPAddressField()
+    ip_type = models.CharField(max_length=10, choices=IP_TYPE_CHOICES)
+    description = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.ip_address} ({self.ip_type}) - {self.activity_title}"
+
+
+class Activity(models.Model):
+    ACTION_TYPES = [
+        ("create", "Created"),
+        ("update", "Updated"),
+        ("delete", "Deleted"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    action_type = models.CharField(max_length=10, choices=ACTION_TYPES)
+    title = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    image = models.ImageField(null=True, blank=True, upload_to="activity_images/")
+    timestamp = models.DateTimeField(auto_now_add=True)
+    url = models.URLField(null=True, blank=True)
+
+    # Generic foreign key fields
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    related_object = GenericForeignKey("content_type", "object_id")
+
+    def __str__(self):
+        return f"{self.title} by {self.user.username} at {self.timestamp}"
+
+    class Meta:
+        ordering = ["-timestamp"]
