@@ -247,10 +247,13 @@ def UpdateIssue(request):
         return HttpResponse("Missing issue ID")
     issue = get_object_or_404(Issue, pk=request.POST.get("issue_pk"))
     try:
-        for token in Token.objects.all():
-            if request.POST["token"] == token.key:
-                request.user = User.objects.get(id=token.user_id)
-                tokenauth = True
+        tokenauth = False
+        if "token" in request.POST:
+            for token in Token.objects.all():
+                if request.POST["token"] == token.key:
+                    request.user = User.objects.get(id=token.user_id)
+                    tokenauth = True
+                    break
     except:
         tokenauth = False
     if (
@@ -348,9 +351,11 @@ def newhome(request, template="new_home.html"):
 
 def delete_issue(request, id):
     try:
-        token = Token.objects.get(key=request.POST["token"])
-        request.user = User.objects.get(id=token.user_id)
-        tokenauth = True
+        # TODO: Refactor this for a direct query instead of looping through all tokens
+        for token in Token.objects.all():
+            if request.POST["token"] == token.key:
+                request.user = User.objects.get(id=token.user_id)
+                tokenauth = True
     except Token.DoesNotExist:
         tokenauth = False
 
@@ -941,7 +946,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     save=True,
                 )
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
-
+            if len(self.request.FILES.getlist("screenshots")) == 0:
+                messages.error(self.request, "Screenshot is needed!")
+                obj.delete()
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": captcha_form},
+                )
             if len(self.request.FILES.getlist("screenshots")) > 5:
                 messages.error(self.request, "Max limit of 5 images!")
                 obj.delete()
