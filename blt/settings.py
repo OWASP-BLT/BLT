@@ -263,7 +263,6 @@ EMAIL_PORT = 1025
 
 REPORT_EMAIL = os.environ.get("REPORT_EMAIL", "blank")
 REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "blank")
-DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 if "DATABASE_URL" in os.environ:
     print("database url detected in settings")
     DEBUG = False
@@ -303,6 +302,7 @@ if "DATABASE_URL" in os.environ:
     )
 
 else:
+    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
     print("no database url detected in settings, using sqlite")
     if not TESTING:
         DEBUG = True
