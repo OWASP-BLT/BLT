@@ -932,6 +932,7 @@ class Activity(models.Model):
         ("create", "Created"),
         ("update", "Updated"),
         ("delete", "Deleted"),
+        ("signup", "Signed Up"),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
