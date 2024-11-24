@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0155_merge_20241124_0242"),
         ("website", "0155_syning_contributors_tag_20241124_0457"),
