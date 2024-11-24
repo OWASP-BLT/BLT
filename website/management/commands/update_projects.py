@@ -1,5 +1,4 @@
 import base64
-import json
 
 import requests
 from django.conf import settings
@@ -75,7 +74,7 @@ class Command(BaseCommand):
                         readme_content = base64.b64decode(readme_content_encoded).decode("utf-8")
                         project.readme_content = readme_content
                         readme_text = markdown_to_text(readme_content)
-                        # project.ai_summary = ai_summary(readme_text, project.topics)
+                        project.ai_summary = ai_summary(readme_text, project.topics)
                     except (base64.binascii.Error, UnicodeDecodeError) as e:
                         self.stdout.write(
                             self.style.WARNING(f"Failed to decode README for {repo_name}: {e}")
