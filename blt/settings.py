@@ -272,7 +272,7 @@ if "DATABASE_URL" in os.environ:
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     if not TESTING:
-        SECURE_SSL_REDIRECT = False
+        SECURE_SSL_REDIRECT = True
 
     GS_ACCESS_KEY_ID = os.environ.get("GS_ACCESS_KEY_ID", "blank")
     GS_SECRET_ACCESS_KEY = os.environ.get("GS_SECRET_ACCESS_KEY", "blank")
