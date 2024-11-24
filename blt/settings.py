@@ -263,7 +263,9 @@ EMAIL_PORT = 1025
 
 REPORT_EMAIL = os.environ.get("REPORT_EMAIL", "blank")
 REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "blank")
-if "DATABASE_URL" in os.environ:
+
+# these settings are only for production / Heroku
+if "DYNO" in os.environ:
     print("database url detected in settings")
     DEBUG = False
     EMAIL_HOST = "smtp.sendgrid.net"
