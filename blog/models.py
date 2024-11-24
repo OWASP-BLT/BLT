@@ -25,8 +25,11 @@ class Post(models.Model):
 
 @receiver(post_save, sender=Post)
 def verify_file_upload(sender, instance, **kwargs):
+    print("Verifying file upload...")
     if instance.image:
+        print(f"Checking if image '{instance.image.name}' exists in the storage backend...")
         if not default_storage.exists(instance.image.name):
+            print(f"Image '{instance.image.name}' was not uploaded to the storage backend.")
             raise ValidationError(
                 f"Image '{instance.image.name}' was not uploaded to the storage backend."
             )
