@@ -946,7 +946,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     save=True,
                 )
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
-            if len(self.request.FILES.getlist("screenshots"))==0:
+            if len(self.request.FILES.getlist("screenshots")) == 0:
                 messages.error(self.request, "Screenshot is needed!")
                 obj.delete()
                 return render(
