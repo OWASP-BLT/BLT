@@ -8,6 +8,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
 # from google.oauth2 import service_account
+import json
 import os
 import sys
 
@@ -281,23 +282,32 @@ if "DYNO" in os.environ:
     import logging
 
     logging.basicConfig(level=logging.DEBUG)
-    GS_ACCESS_KEY_ID = os.environ.get("GS_ACCESS_KEY_ID", "blank")
-    GS_SECRET_ACCESS_KEY = os.environ.get("GS_SECRET_ACCESS_KEY", "blank")
-    GOOGLE_APPLICATION_CREDENTIALS = "/app/google-credentials.json"
+    # GS_ACCESS_KEY_ID = os.environ.get("GS_ACCESS_KEY_ID", "blank")
+    # GS_SECRET_ACCESS_KEY = os.environ.get("GS_SECRET_ACCESS_KEY", "blank")
+    # GOOGLE_APPLICATION_CREDENTIALS = "/app/google-credentials.json"
 
-    GS_BUCKET_NAME = "bhfiles"
-    DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+    # GS_BUCKET_NAME = "bhfiles"
+    # DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
 
-    GS_CREDENTIALS = None
+    # GS_CREDENTIALS = None
 
-    # Ensure credentials file is valid
-    try:
-        GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
-            GOOGLE_APPLICATION_CREDENTIALS
-        )
-        print("Google Cloud Storage credentials loaded successfully.")
-    except Exception as e:
-        print(f"Error loading Google Cloud Storage credentials: {e}")
+    # # Ensure credentials file is valid
+    # try:
+    #     GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
+    #         GOOGLE_APPLICATION_CREDENTIALS
+    #     )
+    #     print("Google Cloud Storage credentials loaded successfully.")
+    # except Exception as e:
+    #     print(f"Error loading Google Cloud Storage credentials: {e}")
+
+    GOOGLE_CREDENTIALS = os.getenv("GOOGLE_CREDENTIALS")
+
+    if not GOOGLE_CREDENTIALS:
+        raise Exception("GOOGLE_CREDENTIALS environment variable is not set.")
+
+    GS_CREDENTIALS = service_account.Credentials.from_service_account_info(
+        json.loads(GOOGLE_CREDENTIALS)
+    )
 
     STORAGES = {
         "default": {
