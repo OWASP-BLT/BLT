@@ -184,44 +184,6 @@ def markdown_to_text(markdown_content):
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
-def generate_labels(readme_content, github_topics):
-    prompt = f"""
-    You are an AI that assigns relevant labels to GitHub projects based on their readme content and github topics.
-
-    ### Input:
-    - **README Content:** {readme_content}
-    - **GitHub Topics:** {github_topics}
-
-    ### Task:
-    Analyze the input and assign appropriate labels. 
-    Labels should include:
-    1. **Technology Stacks** (e.g., Python, JavaScript, Java).
-    2. **Project Type** (e.g., Web Application, CLI Tool, Library).
-    3. **OWASP Relevance** (e.g., Security Testing, Secure Coding).
-    4. Any other relevant labels.
-
-    ### Output:
-    Provide the labels in JSON format like this:
-    {{
-      "tech-stack": ["Python", "JavaScript"],
-      "project-type": ["Web Application"],
-      "owasp-relevance": ["Secure Coding"],
-      "other": ["Machine Learning", "Data Processing"]
-    }}
-    """
-
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant for labeling projects."},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.7,
-    )
-
-    return response["choices"][0]["message"]["content"]
-
-
 def ai_summary(text, topics=None):
     """Generate an AI-driven summary using OpenAI's GPT, including GitHub topics."""
     try:
