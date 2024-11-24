@@ -48,7 +48,7 @@ def handle_post_save(sender, instance, created, **kwargs):
         Activity.objects.create(
             user=instance,
             action_type="signup",
-            title=f"New User Signedup: {instance.username}",
+            title=f"New User Signup: {instance.username}",
             content_type=ContentType.objects.get_for_model(instance),
             object_id=instance.id,
             description=f"Welcome to the BLT's official website {instance.username}!",
