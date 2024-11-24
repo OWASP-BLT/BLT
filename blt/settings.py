@@ -265,6 +265,7 @@ REPORT_EMAIL = os.environ.get("REPORT_EMAIL", "blank")
 REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "blank")
 DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 if "DATABASE_URL" in os.environ:
+    print("database url detected in settings")
     DEBUG = False
     EMAIL_HOST = "smtp.sendgrid.net"
     EMAIL_HOST_USER = os.environ.get("SENDGRID_USERNAME", "blank")
@@ -297,6 +298,7 @@ if "DATABASE_URL" in os.environ:
     )
 
 else:
+    print("no database url detected in settings, using sqlite")
     if not TESTING:
         DEBUG = True
 
