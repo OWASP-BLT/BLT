@@ -24,11 +24,9 @@ class Post(models.Model):
 
 @receiver(post_save, sender=Post)
 def verify_file_upload(sender, instance, **kwargs):
-    from django.conf import settings
     from django.core.files.storage import default_storage
 
     print("Verifying file upload...")
-    print(f"DEFAULT_FILE_STORAGE setting: {settings.DEFAULT_FILE_STORAGE}")
     print(f"Default storage backend: {default_storage.__class__.__name__}")
     if instance.image:
         print(f"Checking if image '{instance.image.name}' exists in the storage backend...")
