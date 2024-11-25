@@ -618,8 +618,25 @@ def robots_txt(request):
     return HttpResponse("\n".join(lines), content_type="text/plain")
 
 
+import os
+
+
+def get_last_commit():
+    try:
+        with open(".git/HEAD", "r") as f:
+            ref = f.readline().strip()
+        if ref.startswith("ref:"):
+            ref_path = os.path.join(".git", ref.split(" ")[1])
+            with open(ref_path, "r") as f:
+                return f.readline().strip()
+        return ref
+    except FileNotFoundError:
+        return "Not available"
+
+
 def home(request):
-    return render(request, "home.html")
+    last_commit = get_last_commit()
+    return render(request, "home.html", {"last_commit": last_commit})
 
 
 def handler404(request, exception):
