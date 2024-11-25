@@ -957,12 +957,24 @@ def sizzle_daily_log(request):
 def TimeLogListView(request):
     time_logs = TimeLog.objects.filter(user=request.user).order_by("-start_time")
     active_time_log = time_logs.filter(end_time__isnull=True).first()
+
     # print the all details of the active time log
     token, created = Token.objects.get_or_create(user=request.user)
+    organizations_list_queryset = Company.objects.all().values("url", "name")
+    organizations_list = list(organizations_list_queryset)
+    organization_url = None
+    if active_time_log:
+        organization_url = active_time_log.organization.url
     return render(
         request,
         "sizzle/time_logs.html",
-        {"time_logs": time_logs, "active_time_log": active_time_log, "token": token.key},
+        {
+            "time_logs": time_logs,
+            "active_time_log": active_time_log,
+            "token": token.key,
+            "organizations_list": organizations_list,
+            "organization_url": organization_url,
+        },
     )
 
 
