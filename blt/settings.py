@@ -318,8 +318,7 @@ if "DYNO" in os.environ:
             },
         },
         "staticfiles": {
-            "BACKEND": "django.core.files.storage.FileSystemStorage",
-            "LOCATION": "staticfiles/",
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
 
