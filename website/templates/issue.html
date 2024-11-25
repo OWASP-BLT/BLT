@@ -107,8 +107,7 @@
             {% include "./includes/issue_right_info.html" %}
         </div>
     </div>
-    <script src="{% static '/company/js/md_editor.js' %}"></script>
-    <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
+    <script src="{% static 'company/js/md_editor.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.1.0/dist/markdown-it.min.js"></script>
     <script>
     var flagClose = document.getElementById("close-flag");
@@ -133,8 +132,6 @@
     const md = window.markdownit();
     const markdownContent = `{{ object.markdown_description|escapejs }}`;
     const renderedHtml = md.render(markdownContent);
-    // const renderedHtml = parse(markdownContent);
-    // const renderedHtml = marked.parse(markdownContent)
 
     $("#bug_report").html(renderedHtml);
     </script>
