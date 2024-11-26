@@ -589,8 +589,8 @@ def users_view(request, *args, **kwargs):
         else:
             context["users"] = UserProfile.objects.none()  # No users if the tag isn't found
     else:
-        context["tag"] = "BLT-Contributors"
-        context["users"] = UserProfile.objects.filter(tags__name="BLT-Contributors")
+        context["tag"] = "BLT Contributors"
+        context["users"] = UserProfile.objects.filter(tags__name="BLT Contributors")
 
     return render(request, "users.html", context=context)
 
