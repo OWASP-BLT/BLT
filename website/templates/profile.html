@@ -325,6 +325,7 @@
                     <a href="{% url 'profile_edit' %}" class="btn btn-primary btn-block">Edit Profile</a>
                 </div>
             {% endif %}
+            {% if user.userprofile.has_suggestion_badge %}<div class="badge mt-2">🏆 Suggestion Master</div>{% endif %}
             <div class="mt-[2rem] !ml-0">{% include "./includes/crypto_donation.html" %}</div>
             <div class="h-[2vh]"></div>
             {% if user.userprofile.role %}

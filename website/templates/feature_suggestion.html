@@ -305,7 +305,6 @@
             alert('Please fill all the required fields.');
             return;
         }
-
         fetch('/suggestion/add/', {
             method: "POST",
             headers: {
@@ -318,6 +317,9 @@
         .then(data => {
             if (data.status === 'success') {
                 form.reset();
+                if (data.badge_awarded){
+                    alert('Congratulations! You earned the Suggestion Master badge.');
+                }
             } else {
                 alert('Error: Please fill all the fields.');
             }

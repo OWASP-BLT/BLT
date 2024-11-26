@@ -386,8 +386,18 @@ def add_suggestions(request):
         if title and description and user:
             suggestion = Suggestion(user=user, title=title, description=description)
             suggestion.save()
+            user_profile, created = UserProfile.objects.get_or_create(user=user)
+            if not user_profile.has_suggestion_badge:
+                user_profile.has_suggestion_badge = True
+                user_profile.save()
+
+                messages.success(
+                    request, "Congratulations! You've earned the Suggestion Master badge."
+                )
+                return JsonResponse({"status": "success", "badge_awarded": True})
+
             messages.success(request, "Suggestion added successfully.")
-            return JsonResponse({"status": "success"})
+            return JsonResponse({"status": "success", "badge_awarded": False})
         else:
             messages.error(request, "Please fill all the fields.")
             return JsonResponse({"status": "error"}, status=400)
