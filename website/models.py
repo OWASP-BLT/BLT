@@ -369,7 +369,19 @@ class Issue(models.Model):
         ordering = ["-created"]
 
 
-if "storages.backends.gcloud.GoogleCloudStorage" in settings.DEFAULT_FILE_STORAGE:
+def is_using_gcs():
+    """
+    Determine if Google Cloud Storage is being used as the backend.
+    """
+    if hasattr(settings, "STORAGES"):
+        backend = settings.STORAGES.get("default", {}).get("BACKEND", "")
+    else:
+        backend = getattr(settings, "DEFAULT_FILE_STORAGE", "")
+
+    return backend == "storages.backends.gcloud.GoogleCloudStorage"
+
+
+if is_using_gcs():
 
     @receiver(post_delete, sender=Issue)
     def delete_image_on_issue_delete(sender, instance, **kwargs):
@@ -402,7 +414,7 @@ class IssueScreenshot(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
 
-if "storages.backends.gcloud.GoogleCloudStorage" in settings.DEFAULT_FILE_STORAGE:
+if is_using_gcs():
 
     @receiver(post_delete, sender=IssueScreenshot)
     def delete_image_on_post_delete(sender, instance, **kwargs):
