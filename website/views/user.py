@@ -24,7 +24,7 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -36,6 +36,7 @@ from rest_framework.response import Response
 from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
+    Badge,
     Domain,
     Hunt,
     InviteFriend,
@@ -46,14 +47,12 @@ from website.models import (
     Points,
     Tag,
     User,
+    UserBadge,
     UserProfile,
     Wallet,
-    UserBadge,
-    Badge
 )
 from website.utils import is_valid_https_url, rebuild_safe_url
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib import messages
+
 
 @receiver(user_signed_up)
 def handle_user_signup(request, user, **kwargs):
@@ -215,7 +214,9 @@ class UserProfileDetailView(DetailView):
         user_badges = UserBadge.objects.filter(user=user).select_related("badge")
 
         context["user_badges"] = user_badges  # Add badges to context
-        context["is_mentor"] = UserBadge.objects.filter(user=self.request.user, badge__title="Mentor").exists()
+        context["is_mentor"] = UserBadge.objects.filter(
+            user=self.request.user, badge__title="Mentor"
+        ).exists()
         context["available_badges"] = Badge.objects.all()
 
         context["my_score"] = list(
