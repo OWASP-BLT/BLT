@@ -171,6 +171,7 @@ from website.views.user import (
     user_dashboard,
     users_view,
     withdraw,
+    assign_badge,
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
@@ -633,6 +634,8 @@ urlpatterns = [
         name="user_sizzle_report",
     ),
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
+    path("assign-badge/<str:username>/", assign_badge, name="assign_badge"),
+
 ]
 
 if settings.DEBUG:

@@ -554,6 +554,32 @@
                         </ul>
                     </div>
                 </div>
+                <div class="font-bold mb-3 mt-4 flex justify-between items-center">
+                    <span>Badges</span>
+                    {% if is_mentor %}
+                        <button id="add-badge-button" class="btn btn-primary px-4 py-2 rounded-md bg-blue-500 hover:bg-blue-600 text-white">
+                            Assign a Badge
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="badges grid grid-cols-2 gap-4 mt-4">
+                    {% for user_badge in user_badges %}
+                        <div class="badge-item relative text-center bg-gray-100 p-4 rounded-lg shadow-md">
+                            {% if user_badge.badge.icon %}
+                            <img src="{{ user_badge.badge.icon.url }}" 
+                                 alt="{{ user_badge.badge.title }}" 
+                                 class="w-16 h-16 mx-auto object-contain">
+                                 {% endif %}
+                                 <h4 class="font-bold text-sm mt-2">{{ user_badge.badge.title }}</h4>
+                            <p class="text-xs text-gray-500 mt-1">Awarded: {{ user_badge.awarded_at|date:"M d, Y" }}</p>
+                            {% if user_badge.reason %}
+                                <p class="text-xs text-gray-400 italic mt-1">Reason: "{{ user_badge.reason }}"</p>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <p class="col-span-full text-center text-gray-500">No badges awarded yet.</p>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>
@@ -724,6 +750,48 @@
             </div>
         </div>
     </div>
+    <!-- Assign Badge Modal -->
+    <div id="assign-badge-modal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden">
+        <div class="bg-white w-full max-w-lg p-6 rounded-lg shadow-lg">
+            <h3 class="text-lg font-semibold mb-4">Assign a Badge</h3>
+            <form method="post" action="{% url 'assign_badge' user.username %}">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="badge" class="block text-sm font-medium text-gray-700">Select a Badge:</label>
+                    <select name="badge" id="badge" class="block w-full mt-1 p-2 border rounded-md" required>
+                        {% for badge in available_badges %}
+                        <option value="{{ badge.id }}">{{ badge.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="reason" class="block text-sm font-medium text-gray-700">Reason (optional):</label>
+                    <textarea name="reason" id="reason" rows="3" class="block w-full mt-1 p-2 border rounded-md"></textarea>
+                </div>
+                <div class="flex justify-end gap-4">
+                    <button type="button" class="btn btn-secondary px-4 py-2 rounded-md bg-gray-300 hover:bg-gray-400 text-black" 
+                            onclick="closeAssignBadgeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4 py-2 rounded-md bg-blue-500 hover:bg-blue-600 text-white">Assign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Assign Badge Modal Logic
+        const addBadgeButton = document.getElementById("add-badge-button");
+        const assignBadgeModal = document.getElementById("assign-badge-modal");
+
+        // Open the modal
+        addBadgeButton?.addEventListener("click", () => {
+            assignBadgeModal.classList.remove("hidden");
+        });
+
+        // Close the modal
+        function closeAssignBadgeModal() {
+            assignBadgeModal.classList.add("hidden");
+        }
+    </script>
     <script defer>
     var closeFollow = document.getElementById("close-follow");
     var openFollow = document.getElementById("followers");
