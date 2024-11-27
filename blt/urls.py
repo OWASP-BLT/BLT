@@ -605,7 +605,7 @@ urlpatterns = [
     path("suggestion/vote/", vote_suggestions, name="vote_suggestions"),
     path("suggestion/set-vote-status/", set_vote_status, name="set_vote_status"),
     re_path(
-        r"^trademarks/query=(?P<slug>[\w\s]+)",
+        r"^trademarks/query=(?P<slug>[\w\s\W]+)",
         trademark_detailview,
         name="trademark_detailview",
     ),
