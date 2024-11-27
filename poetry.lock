@@ -4145,13 +4145,13 @@ files = [
 
 [[package]]
 name = "selenium"
-version = "4.27.0"
+version = "4.27.1"
 description = "Official Python bindings for Selenium WebDriver"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "selenium-4.27.0-py3-none-any.whl", hash = "sha256:70ff70cc8d08f19bda0e89d6a521c0f1c3ae648088c34dcf9fa177f1374c3b5f"},
-    {file = "selenium-4.27.0.tar.gz", hash = "sha256:e8850834c482dc93d92060586139cf8ff8be6c6f0e93db640fa65358548f426b"},
+    {file = "selenium-4.27.1-py3-none-any.whl", hash = "sha256:b89b1f62b5cfe8025868556fe82360d6b649d464f75d2655cb966c8f8447ea18"},
+    {file = "selenium-4.27.1.tar.gz", hash = "sha256:5296c425a75ff1b44d0d5199042b36a6d1ef76c04fb775b97b40be739a9caae2"},
 ]
 
 [package.dependencies]
@@ -4653,13 +4653,13 @@ files = [
 
 [[package]]
 name = "unstructured"
-version = "0.16.5"
+version = "0.16.8"
 description = "A library that prepares raw documents for downstream ML tasks."
 optional = false
 python-versions = "<3.13,>=3.9.0"
 files = [
-    {file = "unstructured-0.16.5-py3-none-any.whl", hash = "sha256:d867e6d5c002c159997bb44df82c43531570c32fa87a010a0aae8a7a0e22ec49"},
-    {file = "unstructured-0.16.5.tar.gz", hash = "sha256:2c36de777f88529e0f7c306eb8116b755963928d50d331bbfee56e2f61fe023f"},
+    {file = "unstructured-0.16.8-py3-none-any.whl", hash = "sha256:8fd83b15df2c375e547a3cbc49cc0982154c61e90163e8cdcb1f346a67e07afc"},
+    {file = "unstructured-0.16.8.tar.gz", hash = "sha256:33a70fb894cc1b703ade524707ab08b5e2d53eb7ca6258e42b24f9a4531b4952"},
 ]
 
 [package.dependencies]
@@ -5043,4 +5043,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "3c86e1f6c8d56d7ff00f0338d171c167a64695de6b35e85a3b4e44e25c964f51"
+content-hash = "6e44447b291aea4de6cca180b8b1d24f8b92f75a9e57f8ce19638afa7935541f"
