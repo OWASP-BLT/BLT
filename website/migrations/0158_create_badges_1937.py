@@ -16,14 +16,13 @@ def create_badges(apps, schema_editor):
             "title": "Mentor",
             "description": "Awarded to users who serve as mentors.",
             "type": "manual",
-            "icon": "badges/mentor_badge.png",
+            # eg: "icon": "badges/mentor_badge.png",
         },
         # GitHub-related Automatic Badges
         {
             "title": "First Pull Request Merged",
             "description": "Awarded when the first pull request is merged.",
             "type": "automatic",
-            "icon": "badges/first_pull_request_merged.png",
         },
         {
             "title": "First Contribution",
