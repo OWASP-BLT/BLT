@@ -51,7 +51,7 @@ def handle_post_save(sender, instance, created, **kwargs):
             title=f"New User Signup: {instance.username}",
             content_type=ContentType.objects.get_for_model(instance),
             object_id=instance.id,
-            description=f"Welcome to the BLT's official website {instance.username}!",
+            description=f"Welcome to the community {instance.username}!",
         )
 
 
