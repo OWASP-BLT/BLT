@@ -156,6 +156,7 @@ from website.views.user import (
     UserProfileDetailsView,
     UserProfileDetailView,
     addbalance,
+    assign_badge,
     contributors,
     contributors_view,
     create_wallet,
@@ -633,6 +634,7 @@ urlpatterns = [
         name="user_sizzle_report",
     ),
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
+    path("assign-badge/<str:username>/", assign_badge, name="assign_badge"),
 ]
 
 if settings.DEBUG:
