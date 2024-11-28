@@ -12,7 +12,13 @@
             right: 15px;
         }
     </style>
-    <div class="flex flex-col sm:flex-row mt-[35px]">
+    <div class="mt-14 ml-8">
+        <a href="{% url 'report' %}"
+           class="bg-red-500 text-white px-8 py-4 rounded-lg shadow-lg font-bold text-2xl hover:bg-red-600 transform hover:-translate-y-1 transition hover:text-white">
+            Report a Bug!
+        </a>
+    </div>
+    <div class="flex flex-col sm:flex-row mt-[25px]">
         <div class="flex-1">
             <div class="hero-bugs-container grid grid-cols-1 sm:grid-cols-2 gap-4 mx-4 my-2.5">
                 {% for bug in bugs %}
@@ -30,7 +36,7 @@
             var issue_pk = issue_pk;
             $.ajax({
                 type: 'GET',
-                url: '/like_issue2/' + issue_pk + '/',
+                url: '/like_issue/' + issue_pk + '/',
                 data: {},
                 success: function (data) {
 
@@ -54,7 +60,7 @@
             var issue_pk = issue_pk;
             $.ajax({
                 type: 'GET',
-                url: '/dislike_issue2/' + issue_pk + '/',
+                url: '/dislike_issue/' + issue_pk + '/',
                 data: {},
                 success: function (data) {
                     var likesvg = $('#likeSvg' + issue_pk);
@@ -77,7 +83,7 @@
             var issue_pk = issue_pk;
             $.ajax({
                 type: 'GET',
-                url: '/flag_issue2/' + issue_pk + '/',
+                url: '/flag_issue/' + issue_pk + '/',
                 data: {},
                 success: function (data) {
                     // Toggle the color of the SVG

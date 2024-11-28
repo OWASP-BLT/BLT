@@ -8,11 +8,11 @@
         <div class="flex flex-col  lg:scale-150 overflow-hidden bg-white rounded-md shadow-lg max md:flex-row md:flex-1 lg:max-w-screen-sm">
             <div class="p-4 py-6 text-white bg-red-500 md:w-80 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
                 <div class="my-3 text-4xl font-bold tracking-wider text-center">
-                    <a href="{% url 'index' %}"
+                    <a href="{% url 'home' %}"
                        class="hover:no-underline text-white hover:text-white">{% env 'PROJECT_NAME' %}</a>
                 </div>
                 <p class="mt-6 font-normal text-center text-white text-xl md:mt-0">
-                    {% env 'PROJECT_NAME' %} {% trans "is a bug logging tool to report issues and get points, companies are held accountable" %}.
+                    {% env 'PROJECT_NAME' %} {% trans "is a bug logging tool to report issues and get points, Organizations are held accountable" %}.
                 </p>
                 <p class="flex flex-col items-center justify-center text-sm mt-10 text-center">
                     <span>{% trans "Don't have an account" %}?</span>
@@ -53,7 +53,8 @@
                                id="id_remember"
                                name="remember"
                                class="w-4 h-4 transition duration-300 rounded focus:ring-2 focus:ring-offset-0 focus:outline-none focus:ring-red-200" />
-                        <label for="remember" class="text-sm font-semibold mt-8 text-gray-500">Remember me</label>
+                        <label for="id_remember"
+                               class="text-sm font-semibold mt-8 text-gray-500 select-none">Remember me</label>
                     </div>
                     <div>
                         <button type="submit"

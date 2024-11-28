@@ -6,11 +6,11 @@
         <div class="flex flex-col  lg:scale-150 overflow-hidden bg-white rounded-md shadow-lg max md:flex-row md:flex-1 lg:max-w-screen-sm">
             <div class="p-4 py-6 text-white bg-red-500 md:w-80 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
                 <div class="my-3 text-4xl font-bold tracking-wider text-center">
-                    <a href="{% url 'index' %}"
+                    <a href="{% url 'home' %}"
                        class="hover:no-underline text-white hover:text-white">{% env 'PROJECT_NAME' %}</a>
                 </div>
                 <p class="mt-6 font-normal text-center text-white text-xl md:mt-0">
-                    {% env 'PROJECT_NAME' %} {% trans "is a bug logging tool to report issues and get points, companies are held accountable" %}.
+                    {% env 'PROJECT_NAME' %} {% trans "is a bug logging tool to report issues and get points, Organizations are held accountable" %}.
                 </p>
                 <p class="flex flex-col items-center justify-center text-sm mt-10 text-center">
                     <span>{% trans "Already have an account" %}?</span>
@@ -32,6 +32,7 @@
                                type="text"
                                id="id_username"
                                name="username"
+                               value="{{ form.username.value|default:'' }}"
                                class="px-4 py-2 w-[100%] h-[28px]  transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.username.errors }}</span>
                     </div>
@@ -40,6 +41,7 @@
                         <input type="email"
                                id="id_email"
                                name="email"
+                               value="{{ form.email.value|default:'' }}"
                                class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.email.errors }}</span>
                     </div>
@@ -50,6 +52,7 @@
                         <input type="password"
                                id="id_password"
                                name="password1"
+                               value="{{ form.password1.value|default:'' }}"
                                class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.password1.errors }}</span>
                     </div>
@@ -60,6 +63,7 @@
                         <input type="password"
                                id="id_password2"
                                name="password2"
+                               value="{{ form.password2.value|default:'' }}"
                                class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.password2.errors }}</span>
                     </div>

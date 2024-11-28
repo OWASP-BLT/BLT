@@ -1,284 +1,139 @@
 {% extends "base.html" %}
 {% load static %}
+{% load humanize %}
 {% block style %}
     <style>
-    .charts {
-        margin-bottom: 50px;
+    /* Dashboard Styles */
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        border-radius: 12px;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+        transition: box-shadow 0.2s ease-in-out;
+    }
+    .stat-card:hover {
+        box-shadow: 0 15px 25px rgba(0, 0, 0, 0.2);
+    }
+    .stat-icon {
+        font-size: 4rem;
+        opacity: 0.15;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+    .stat-content {
+        position: relative;
+        z-index: 1;
+    }
+    .stat-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    .stat-count {
+        font-size: 2.5rem;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+    }
+    .stat-count span {
+        margin-left: 10px;
+        font-size: 1.25rem;
+        display: flex;
+        align-items: center;
+    }
+    .stat-count span i {
+        margin-right: 5px;
+    }
+    .chart-container {
+        position: relative;
+        height: 60px;
+        margin-top: 20px;
     }
 
-    .bottom-right {
-            position: absolute;
-            bottom: 10px;
-            right: 15px;
-    }
     </style>
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <script type="text/javascript" src="{% static 'js/Chart.bundle.min.js' %}"></script>
-    <div class="row">
-        <div class="col-lg-12">
-            <h1 class="page-header">Stats</h1>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-4 col-md-6">
-            <div class="panel panel-primary">
-                <div class="panel-heading">
-                    <div class="row">
-                        <div class="col-xs-3">
-                            <i class="fa fa-bug fa-5x"></i>
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-12 text-center">System Statistics Dashboard</h1>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            {% for stat in stats %}
+                <div class="stat-card">
+                    <i class="{{ stat.icon }} stat-icon"></i>
+                    <div class="stat-content">
+                        <div class="stat-title">{{ stat.label }}</div>
+                        <div class="stat-count">
+                            {{ stat.count|intcomma }}
+                            {% if stat.trend > 0 %}
+                                <span class="text-green-300">
+                                    <i class="fas fa-arrow-up"></i> {{ stat.trend }}
+                                </span>
+                            {% elif stat.trend < 0 %}
+                                <span class="text-red-300">
+                                    <i class="fas fa-arrow-down"></i> {{ stat.trend }}
+                                </span>
+                            {% endif %}
                         </div>
-                        <div class="col-xs-9 text-right">
-                            <h1>{{ bug_count }} Bugs</h1>
-                        </div>
+                        {% if stat.history and stat.dates %}
+                            <div class="chart-container">
+                                <canvas id="chart-{{ forloop.counter }}"
+                                        class="sparkline"
+                                        data-values='{{ stat.history|safe }}'
+                                        data-dates='{{ stat.dates|safe }}'>
+                                </canvas>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="col-lg-4 col-md-6">
-            <div class="panel panel-green">
-                <div class="panel-heading">
-                    <div class="row">
-                        <div class="col-xs-3">
-                            <i class="fa fa-user fa-5x"></i>
-                        </div>
-                        <div class="col-xs-9 text-right">
-                            <h3>{{ user_count }} Users</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4 col-md-6">
-            <div class="panel panel-yellow">
-                <div class="panel-heading">
-                    <div class="row">
-                        <div class="col-xs-3">
-                            <i class="fa fa-bullseye fa-5x"></i>
-                        </div>
-                        <div class="col-xs-9 text-right">
-                            <h3>{{ hunt_count }} Hunts</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4 col-md-6">
-            <div class="panel panel-red">
-                <div class="panel-heading">
-                    <div class="row">
-                        <div class="col-xs-3">
-                            <i class="fa fa-support fa-5x"></i>
-                        </div>
-                        <div class="col-xs-9 text-right">
-                            <h3>{{ domain_count }} Domains</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4 col-md-6">
-            <div class="panel panel-purple">
-                <div class="panel-heading">
-                    <div class="row">
-                        <div class="col-xs-3">
-                            <i class="fa fa-chrome fa-5x"></i>
-                        </div>
-                        <div class="col-xs-9 text-right">
-                            <h3>{{ extension_users }} Extension Users</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {% endfor %}
         </div>
     </div>
-    <div class="row charts">
-        <div class="col-lg-12">
-            <h1 class="page-header">Monthly Summary</h1>
-        </div>
-        <div class="col-lg-10 col-lg-offset-1">
-            <canvas id="myChart" width="100" height="50"></canvas>
-        </div>
-    </div>
-    <div class="row charts">
-        <div class="col-lg-12">
-            <h1 class="page-header">Monthly Signups</h1>
-        </div>
-        <div class="col-lg-10 col-lg-offset-1">
-            <canvas id="myUserChart" width="100" height="50"></canvas>
-        </div>
-    </div>
-    <div class="row charts">
-        <div class="col-lg-12">
-            <h1 class="page-header">Issue Distribution</h1>
-        </div>
-        <div class="col-lg-6 col-lg-offset-3">
-            <canvas id="issueChart"></canvas>
-        </div>
-    </div>
-    <div class="bottom-right">
-        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/stats.html">
-            <i class="fab fa-github"></i>
-        </a>
-        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=1309%3A656&t=pqxWpF3hcYxjEDrs-1   ">
-            <i class="fab fa-figma"></i>
-        </a>
-    </div>
-    <script type="text/javascript">
-    var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
-    var all_data = new Array(12).fill(0);
-    var user_data = new Array(12).fill(0);
-    var pie = new Array(7).fill(0);
+    {% block extra_js %}
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.sparkline').forEach(function(canvas) {
+            const values = JSON.parse(canvas.dataset.values);
+            const dates = JSON.parse(canvas.dataset.dates);
+            const ctx = canvas.getContext('2d');
 
-
-
-        {% for i in graph %}all_data[{{i.month}}] = {{i.c}};{% endfor %}
-
-        {% for i in user_graph %}user_data[{{i.month}}] = {{i.c}};{% endfor %}
-
-        {% for i in pie_chart %}pie[{{i.label}}] = {{i.c}};{% endfor %}
-    var ctx = document.getElementById("myChart").getContext('2d');
-    var myChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: all_months,
-            datasets: [{
-                label: 'Monthly Activity',
-                data: all_data,
-                backgroundColor: [
-                    'rgba(255, 210, 57, 0.6)',
-                    'rgba(248, 181, 29, 0.6)',
-                    'rgba(251, 138, 53, 0.6)',
-                    'rgba(223, 73, 85, 0.6)',
-                    'rgba(169, 34, 84, 0.6)',
-                    'rgba(151, 37, 80, 0.6)',
-                    'rgba(255, 99, 132, 0.6)',
-                    'rgba(98, 64, 151, 0.6)',
-                    'rgba(22, 97, 139, 0.6)',
-                    'rgba(51, 177, 227, 0.6)',
-                    'rgba(98, 209, 218, 0.6)',
-                    'rgba(109, 214, 173, 0.6)'
-                ],
-                borderColor: [
-                    'rgba(255,210,57,1)',
-                    'rgba(248, 181, 29, 1)',
-                    'rgba(251, 138, 53, 1)',
-                    'rgba(223, 73, 85, 1)',
-                    'rgba(169, 34, 84, 1)',
-                    'rgba(151, 37, 80, 1)',
-                    'rgba(255,99,132,1)',
-                    'rgba(98, 64, 151, 1)',
-                    'rgba(22, 97, 139, 1)',
-                    'rgba(51, 177, 227, 1)',
-                    'rgba(98, 209, 218, 1)',
-                    'rgba(109, 214, 173, 1)'
-                ],
-                borderWidth: 1
-
-            }]
-        },
-        options: {
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        beginAtZero: true,
-                        fixedStepSize: 20
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        data: values,
+                        borderColor: 'rgba(255, 255, 255, 0.7)',
+                        borderWidth: 2,
+                        fill: false,
+                        pointRadius: 0,
+                        tension: 0.4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false },
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false },
+                    },
+                    elements: {
+                        line: {
+                            borderCapStyle: 'round',
+                            borderJoinStyle: 'round',
+                        }
                     }
-                }],
-                xAxes: [{
-                    time: {
-                        unit: 'month'
-                    }
-                }]
-            }
-        }
+                }
+            });
+        });
     });
-
-    var ctx = document.getElementById("myUserChart").getContext('2d');
-    var myChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: all_months,
-            datasets: [{
-                label: 'Monthly Activity',
-                data: user_data,
-                backgroundColor: [
-                    'rgba(255, 210, 57, 0.6)',
-                    'rgba(248, 181, 29, 0.6)',
-                    'rgba(251, 138, 53, 0.6)',
-                    'rgba(223, 73, 85, 0.6)',
-                    'rgba(169, 34, 84, 0.6)',
-                    'rgba(151, 37, 80, 0.6)',
-                    'rgba(255, 99, 132, 0.6)',
-                    'rgba(98, 64, 151, 0.6)',
-                    'rgba(22, 97, 139, 0.6)',
-                    'rgba(51, 177, 227, 0.6)',
-                    'rgba(98, 209, 218, 0.6)',
-                    'rgba(109, 214, 173, 0.6)'
-                ],
-                borderColor: [
-                    'rgba(255,210,57,1)',
-                    'rgba(248, 181, 29, 1)',
-                    'rgba(251, 138, 53, 1)',
-                    'rgba(223, 73, 85, 1)',
-                    'rgba(169, 34, 84, 1)',
-                    'rgba(151, 37, 80, 1)',
-                    'rgba(255,99,132,1)',
-                    'rgba(98, 64, 151, 1)',
-                    'rgba(22, 97, 139, 1)',
-                    'rgba(51, 177, 227, 1)',
-                    'rgba(98, 209, 218, 1)',
-                    'rgba(109, 214, 173, 1)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        beginAtZero: true,
-                        fixedStepSize: 5
-                    }
-                }],
-                xAxes: [{
-                    time: {
-                        unit: 'month'
-                    }
-                }]
-            }
-        }
-    });
-
-    var ctx = document.getElementById("issueChart").getContext('2d');
-    var myDoughnutChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['General', 'Number Error', 'Functional', 'Performance', 'Security', 'Typo', 'Design'],
-            datasets: [{
-                data: pie,
-                backgroundColor: [
-                    'rgba(225, 17, 20, 0.6)',
-                    'rgba(99, 179, 56, 0.6)',
-                    'rgba(255, 99, 132, 0.6)',
-                    'rgba(241, 217, 7, 0.6)',
-                    'rgba(75, 192, 192, 0.6)',
-                    'rgba(230, 80, 21, 0.6)',
-                    'rgba(153, 102, 255, 0.6)'
-                ],
-                borderColor: [
-                    'rgba(225,17,20,1)',
-                    'rgba(99, 179, 56, 1)',
-                    'rgba(255,99,132,1)',
-                    'rgba(241, 217, 7, 1)',
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(230, 80, 21, 1)',
-                    'rgba(153, 102, 255, 1)'
-                ],
-                borderWidth: 1
-            }]
-        }
-    });
-    </script>
+        </script>
+    {% endblock extra_js %}
 {% endblock content %}

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block content %}
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 20px;
+    }
+
+    #form-title {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+        font-size: 2em;  /* Adjusted font size for better visibility */
+    }
+
+    .form-container {
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .form-container button {
+        background-color: #007bff;
+        color: black;
+        border: none;
+        border-radius: 5px;
+        padding: 10px 15px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+    }
+
+    .form-container button:hover {
+        background-color: #0056b3;
+    }
+
+    .form-field {
+        margin-bottom: 20px;
+    }
+
+    .form-field label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+        color: #333;
+    }
+
+    .form-field input, .form-field textarea {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+        font-size: 16px;
+        background-color: #F9F9F9; 
+        color: #333; 
+    }
+    .form-field input:focus, .form-field textarea:focus {
+        outline: none;
+        border-color: #007BFF; 
+        background-color: #FFFFFF; 
+    }
+    .form-field input::placeholder, .form-field textarea::placeholder {
+        color: #888; 
+    }
+    .form-field .error {
+        color: red;
+        font-size: 0.9em;
+        margin-top: 5px;
+    }
+    </style>
+    {% include "includes/sidenav.html" %}
+    <h1 id="form-title">
+        {% if form.instance.pk %}
+            Edit
+        {% else %}
+            New
+        {% endif %}
+        Post
+    </h1>
+    <div class="form-container">
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            <div class="form-field">
+                {{ form.title.label }}
+                <br>
+                {{ form.title }}
+                <br>
+                {% for error in form.title.errors %}<div>{{ error }}</div>{% endfor %}
+            </div>
+            <div class="form-field">
+                {{ form.content.label }}
+                <br>
+                {{ form.content }}
+                <br>
+                {% for error in form.content.errors %}<div>{{ error }}</div>{% endfor %}
+            </div>
+            <div class="form-field">
+                {{ form.image.label }}
+                <br>
+                {{ form.image }}
+                <br>
+                {% for error in form.image.errors %}<div>{{ error }}</div>{% endfor %}
+            </div>
+            <button type="submit">Save</button>
+        </form>
+    </div>
+    <link rel="stylesheet"
+          href="https://unpkg.com/easymde/dist/easymde.min.css">
+    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+    <script>var easyMDE = new EasyMDE({ element: document.getElementById('id_content') });</script>
+{% endblock content %}

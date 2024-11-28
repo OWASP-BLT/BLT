@@ -27,33 +27,7 @@
         </div>
     </div>
     <div class="h-[2vh]"></div>
-    {% include "./tiny-cards.html" with left="Added On" right=object.created %}
-    <div class="h-[2vh]"></div>
-    <div class="max-sm:ml-[3.45%] ml-[10%]">
-        <div class="flex justify-start items-center">
-            <img class="w-[80px] h-[80px] p-1 object-cover border-2 border-[#7e22ce] border-solid"
-                 src="{% static 'gif/loader.gif' %}"
-                 alt="crypto address qr code"
-                 id="crypto-qr-image"
-                 width="32px"
-                 height="32px">
-            <div class="ml-3" id="crypto">
-                {% if object.user.userprofile.btc_address %}
-                    {% include "./tiny-cards.html" with insideIFCondition=True left="BTC" right=object.user.userprofile.btc_address lessWidth=True %}
-                {% endif %}
-                {% if object.user.userprofile.bch_address %}
-                    {% include "./tiny-cards.html" with insideIFCondition=True left="BCH" right=object.user.userprofile.bch_address lessWidth=True %}
-                {% endif %}
-                {% if object.user.userprofile.eth_address %}
-                    {% include "./tiny-cards.html" with insideIFCondition=True left="ETH" right=object.user.userprofile.eth_address lessWidth=True %}
-                {% endif %}
-            </div>
-            <div class="hidden" id="no-crypto">
-                {% include "./tiny-cards.html" with left="BCH" right="qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc" lessWidth=True %}
-                <i class="ml-[3%] text-[12px]">No Address, will go to BLT Donation</i>
-            </div>
-        </div>
-    </div>
+    {% include "./crypto_donation.html" with included_in_issue_page=True %}
     <div class="h-[2vh]"></div>
     <div class="max-sm:ml-[3.45%] ml-[10%]">
         <div class="flex justify-start items-center">
@@ -73,21 +47,6 @@
             </div>
         </div>
     </div>
-    <div class="h-[2vh]"></div>
-    {% include "./tiny-cards.html" with left="Bug Type" right=object.get_label_display %}
-    {% if object.cve_score %}
-        {% include "./tiny-cards.html" with insideIFCondition=True left="CVE Score" right=object.cve_score %}
-    {% endif %}
-    {% if object.cve_id %}
-        {% include "./tiny-cards.html" with insideIFCondition=True left="CVE ID" right=object.cve_id %}
-    {% endif %}
-    {% if object.hunt %}
-        <a href="{% url 'show_bughunt' object.hunt.id %}">
-            {% include "./tiny-cards.html" with insideIFCondition=True left="Submitted" right=object.hunt.name %}
-        </a>
-    {% else %}
-        {% include "./tiny-cards.html" with insideIFCondition=True left="Submitted" right="Independently" %}
-    {% endif %}
     <div class="h-[2vh]"></div>
     <div class="max-sm:ml-[3.45%] ml-[10%]">
         <div class="flex justify-start items-center">
@@ -109,10 +68,41 @@
         </div>
     </div>
     <div class="h-[2vh]"></div>
+    {% include "./tiny-cards.html" with left="Added On" right=object.created %}
+    <div class="h-[0.4vh]"></div>
+    {% include "./tiny-cards.html" with left="Bug Type" right=object.get_label_display %}
+    {% if object.cve_score %}
+        {% include "./tiny-cards.html" with insideIFCondition=True left="CVE Score" right=object.cve_score %}
+    {% endif %}
+    {% if object.cve_id %}
+        {% include "./tiny-cards.html" with insideIFCondition=True left="CVE ID" right=object.cve_id %}
+    {% endif %}
+    {% if object.hunt %}
+        <a href="{% url 'show_bughunt' object.hunt.id %}">
+            {% include "./tiny-cards.html" with insideIFCondition=True left="Submitted" right=object.hunt.name %}
+        </a>
+    {% else %}
+        {% include "./tiny-cards.html" with insideIFCondition=True left="Submitted" right="Independently" %}
+    {% endif %}
+    <div class="h-[0.4vh]"></div>
     {% if os_version %}
         {% include "./tiny-cards.html" with left="OS Version:" right=os_version %}
     {% else %}
         {% include "./tiny-cards.html" with left="OS Version:" right="Unknown" %}
+    {% endif %}
+    <div class="h-[0.4vh]"></div>
+    {% if object.domain.github %}
+        {% include "./tiny-cards.html" with left="Github URL:" right=object.domain.github link=object.domain.github %}
+        <div class="h-[0.4vh]"></div>
+        {% include "./tiny-cards.html" with left="Github Issues URL:" right=github_issues_url link=github_issues_url %}
+    {% endif %}
+    {% if email_clicks %}
+        <div class="h-[0.4vh]"></div>
+        {% include "./tiny-cards.html" with left="Email Clicks:" right=email_clicks %}
+    {% endif %}
+    {% if email_events %}
+        <div class="h-[0.4vh]"></div>
+        {% include "./tiny-cards.html" with left="Email Events:" right=email_events %}
     {% endif %}
     <div class="h-[2vh]"></div>
 </div>

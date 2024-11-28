@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Select Contribution</title>
+        <meta charset="UTF-8">
+        <meta name="description"
+              content="Select a contribution to distribute bacon.">
+        <meta name="keywords" content="contributions, bacon, distribute, select">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <h1>Select a Contribution to Distribute Bacon</h1>
+        <ul>
+            {% for contribution in contributions %}
+                <li>
+                    {{ contribution.title }} - {{ contribution.user.username }}
+                    <a href="{% url 'distribute_bacon' contribution.id %}">Distribute Bacon</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </body>
+</html>

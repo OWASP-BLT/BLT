@@ -8,19 +8,24 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
 # from google.oauth2 import service_account
+import json
 import os
 import sys
 
 import dj_database_url
 import environ
 from django.utils.translation import gettext_lazy as _
+from google.oauth2 import service_account
 
-env = environ.Env()
 # reading .env file
 environ.Env.read_env()
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+env = environ.Env()
+env_file = os.path.join(BASE_DIR, ".env")
+environ.Env.read_env(env_file)
+
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
 
@@ -101,10 +106,10 @@ INSTALLED_APPS = (
     "captcha",
     "dj_rest_auth",
     "dj_rest_auth.registration",
+    "blog",
+    "storages",
 )
 
-
-# CRON_CLASSES = ["website.views.CreateIssue"]
 
 MIDDLEWARE = (
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -118,6 +123,7 @@ MIDDLEWARE = (
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "tz_detect.middleware.TimezoneMiddleware",
+    "blt.middleware.ip_restrict.IPRestrictMiddleware",
 )
 
 TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
@@ -261,7 +267,9 @@ EMAIL_PORT = 1025
 REPORT_EMAIL = os.environ.get("REPORT_EMAIL", "blank")
 REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "blank")
 
-if "DATABASE_URL" in os.environ:
+# these settings are only for production / Heroku
+if "DYNO" in os.environ:
+    print("database url detected in settings")
     DEBUG = False
     EMAIL_HOST = "smtp.sendgrid.net"
     EMAIL_HOST_USER = os.environ.get("SENDGRID_USERNAME", "blank")
@@ -271,15 +279,54 @@ if "DATABASE_URL" in os.environ:
     if not TESTING:
         SECURE_SSL_REDIRECT = True
 
-    GS_ACCESS_KEY_ID = os.environ.get("GS_ACCESS_KEY_ID", "blank")
-    GS_SECRET_ACCESS_KEY = os.environ.get("GS_SECRET_ACCESS_KEY", "blank")
-    GOOGLE_APPLICATION_CREDENTIALS = "/app/google-credentials.json"
+    import logging
+
+    logging.basicConfig(level=logging.DEBUG)
+    # GS_ACCESS_KEY_ID = os.environ.get("GS_ACCESS_KEY_ID", "blank")
+    # GS_SECRET_ACCESS_KEY = os.environ.get("GS_SECRET_ACCESS_KEY", "blank")
+    # GOOGLE_APPLICATION_CREDENTIALS = "/app/google-credentials.json"
 
     GS_BUCKET_NAME = "bhfiles"
-    DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+    # DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+
+    # GS_CREDENTIALS = None
+
+    # # Ensure credentials file is valid
+    # try:
+    #     GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
+    #         GOOGLE_APPLICATION_CREDENTIALS
+    #     )
+    #     print("Google Cloud Storage credentials loaded successfully.")
+    # except Exception as e:
+    #     print(f"Error loading Google Cloud Storage credentials: {e}")
+
+    GOOGLE_CREDENTIALS = os.getenv("GOOGLE_CREDENTIALS")
+
+    if not GOOGLE_CREDENTIALS:
+        raise Exception("GOOGLE_CREDENTIALS environment variable is not set.")
+
+    GS_CREDENTIALS = service_account.Credentials.from_service_account_info(
+        json.loads(GOOGLE_CREDENTIALS)
+    )
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+            "OPTIONS": {
+                "credentials": GS_CREDENTIALS,
+                "bucket_name": GS_BUCKET_NAME,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+        },
+    }
+
     GS_FILE_OVERWRITE = False
     GS_QUERYSTRING_AUTH = False
+    GS_DEFAULT_ACL = None
     MEDIA_URL = "https://bhfiles.storage.googleapis.com/"
+    # add debugging info for google storage
 
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
@@ -294,6 +341,17 @@ if "DATABASE_URL" in os.environ:
     )
 
 else:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+        },
+    }
+    DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+    # DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+    print("no database url detected in settings, using sqlite")
     if not TESTING:
         DEBUG = True
 
@@ -327,7 +385,6 @@ STATIC_URL = "/static/"
 
 # Extra places for collectstatic to find static files.
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "static"),
     os.path.join(BASE_DIR, "website", "static"),
     os.path.join(BASE_DIR, "company", "static"),
 )
@@ -338,7 +395,7 @@ ABSOLUTE_URL_OVERRIDES = {
 
 # Simplified static file serving.
 # https://warehouse.python.org/project/whitenoise/
-STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+# STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
 LOGIN_REDIRECT_URL = "/"
 
@@ -360,7 +417,6 @@ LOGGING = {
         },
     },
 }
-
 USERS_AVATAR_PATH = "avatars"
 AVATAR_PATH = os.path.join(MEDIA_ROOT, USERS_AVATAR_PATH)
 
@@ -423,10 +479,38 @@ REST_FRAMEWORK = {
     },
 }
 
-SOCIALACCOUNT_PROVIDER = {
-    "github": {"scope": ("user:email",)},
-    "google": {"scope": ("user:email",)},
+SOCIALACCOUNT_PROVIDERS = {
+    "github": {
+        "SCOPE": ["user:email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+    },
+    "google": {
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+    },
+    "facebook": {
+        "METHOD": "oauth2",
+        "SCOPE": ["email"],
+        "FIELDS": [
+            "id",
+            "email",
+            "name",
+            "first_name",
+            "last_name",
+            "verified",
+            "locale",
+            "timezone",
+            "link",
+        ],
+        "EXCHANGE_TOKEN": True,
+        "LOCALE_FUNC": lambda request: "en_US",
+        "VERIFIED_EMAIL": False,
+        "VERSION": "v7.0",
+    },
 }
+
+ACCOUNT_ADAPTER = "allauth.account.adapter.DefaultAccountAdapter"
+SOCIALACCOUNT_ADAPTER = "allauth.socialaccount.adapter.DefaultSocialAccountAdapter"
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
 
@@ -520,3 +604,9 @@ ACCESS_TOKEN_SECRET = os.environ.get("ACCESS_TOKEN_SECRET")
 # USPTO
 
 USPTO_API = os.environ.get("USPTO_API")
+
+
+BITCOIN_RPC_USER = os.environ.get("BITCOIN_RPC_USER", "yourusername")
+BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "yourpassword")
+BITCOIN_RPC_HOST = os.environ.get("BITCOIN_RPC_HOST", "localhost")
+BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")

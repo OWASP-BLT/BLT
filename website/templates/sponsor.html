@@ -1,138 +1,73 @@
 {% extends "base.html" %}
 {% load custom_tags %}
 {% load i18n %}
+{% load static %}
 {% block title %}
-    Sponsors
+    Sponsorship Opportunities
 {% endblock title %}
 {% block content %}
-    <div class="min-h-screen flex flex-col mx-4">
-        <h1 class="text-4xl font-semibold my-8 mx-auto">Sponsor a Monthly Prize on BLT</h1>
-        <div class="flex flex-col items-center border border-black rounded-xl mx-auto py-6 px-10 w-[40vh] lg:w-[60vh]">
-            <span class="text-[1.72rem] font-semibold">Bitcoin Cash (BCH) Donation Address</span>
-            <div class="flex flex-row my-10">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?data=bitcoincash:qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc"
-                     alt="bch qr"
-                     class="w-1/2 h-1/2 mx-5"
-                     width="50%"
-                     height="50%" />
-                <div class="w-full">
-                    <img src="../static/images/bch gold block.png"
-                         alt="bch qr"
-                         class="w-2/3 mx-5"
-                         width="66%"
-                         height="66%" />
-                    <div class="flex flex-col font-semibold">
-                        <span id="balanceDisplay">Current Balance: {{ balance }}</span>
-                    </div>
-                </div>
+    {% include "includes/sidenav.html" %}
+    <div class="flex mt-10 justify-center items-center">
+        <!-- Monthly Prize Sponsorship Section -->
+        <div class="bg-white shadow-lg p-8">
+            <h2 class="text-4xl font-semibold text-center text-gray-800 mb-6">Sponsor the Monthly Leaderboard Prize</h2>
+            <div class="mt-8">
+                <h3 class="text-3xl font-semibold mb-4 text-gray-800">Enter BCH Address</h3>
+                <form class="flex flex-col space-y-4">
+                    <label for="bchAddress" class="text-lg font-semibold text-gray-700">BCH Address:</label>
+                    <input type="text"
+                           id="bchAddress"
+                           name="bchAddress"
+                           class="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="Enter BCH address here"
+                           required>
+                    <button type="submit"
+                            class="bg-blue-500 text-white p-4 rounded-lg text-center hover:bg-blue-600 transition-colors">
+                        Submit BCH Address
+                    </button>
+                </form>
             </div>
-            <span class="text-2xl font-semibold break-words w-96 lg:w-auto"
-                  id="walletAddress">
-                <a href="https://explorer.btc.com/bch/address/qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc"
-                   target="_blank">qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc</a></span>
+            <div class="mt-8">
+                <h3 class="text-3xl font-semibold mb-4 text-gray-800">How Sponsoring the Leaderboard Works</h3>
+                <p class="text-lg mb-4 text-gray-600">
+                    Help reward the top bug finders on BLT by sponsoring the monthly bug bounty prize. Here's how:
+                </p>
+                <ol class="list-decimal text-lg ml-6 text-gray-700">
+                    <li class="mb-2">
+                        <strong>Enter the BCH Address:</strong> Provide the BCH address where you'd like your donation to go.
+                    </li>
+                    <li class="mb-2">
+                        <strong>Send the BCH Donation:</strong> At the end of each month, send the BCH amount directly to the top bug finder's tip address.
+                    </li>
+                    <li>
+                        <strong>Receive Recognition:</strong> Your contribution will be acknowledged on our leaderboard, giving you visibility within the community.
+                    </li>
+                </ol>
+            </div>
+            <div class="mt-8">
+                <h3 class="text-3xl font-semibold mb-4 text-gray-800">Why Sponsor the Prize?</h3>
+                <ul class="list-disc text-lg ml-6 text-gray-700">
+                    <li class="mb-2">
+                        <strong>Incentivize Quality:</strong> Monetary rewards encourage high-quality submissions, improving overall outcomes.
+                    </li>
+                    <li class="mb-2">
+                        <strong>Boost Community Engagement:</strong> Your sponsorship fosters a vibrant, collaborative community.
+                    </li>
+                    <li>
+                        <strong>Gain Visibility:</strong> As a sponsor, you gain recognition and enhance your reputation within the BLT and OWASP communities.
+                    </li>
+                </ul>
+            </div>
+            <div class="mt-8 text-center">
+                <h3 class="text-3xl font-semibold mb-4 text-gray-800">Join Us in Supporting Excellence!</h3>
+                <p class="text-lg text-gray-600">
+                    Your support is vital to the success of BLT. Whether contributing to ongoing development or sponsoring the monthly prize, your involvement is greatly appreciated.
+                </p>
+                <p class="mt-4 text-lg text-gray-600">
+                    For more information or assistance, please <a href="[contact_link]" class="text-blue-600 hover:underline">contact our team</a>.
+                </p>
+            </div>
+            <p class="text-center text-lg font-semibold text-gray-800 mt-8">Thank you for your support!</p>
         </div>
-        <h2 class="text-[1.72rem] my-5 font-semibold ">How Does Sponsoring Work?</h2>
-        <p class=" text-2xl">
-            Our bug tracking platform, BLT, stands tall due to the dedication and hard work of our
-            community. One of
-            the pillars that bolsters this enthusiasm is the monthly prizes for our top bug finders. When you sponsor these
-            prizes, you don't just uplift the platform; you celebrate and empower the brilliant minds behind the bug
-            findings.
-        </p>
-        <h2 class="text-[1.72rem] my-5 font-semibold ">Donate to the Monthly Prize Pool</h2>
-        <p class=" text-2xl">
-            Elevate the efforts of the BLT community by contributing to our monthly prize pool. Your
-            donation
-            directly rewards the top performers, fostering a colture of excellence.
-        </p>
-        <h2 class="text-[1.72rem] my-5 font-semibold ">Process to Sponsor a Prize:</h2>
-        <ol class="list-decimal text-2xl">
-            <li>
-                Choose Your Donation Amount: Whether you want to give a modest token of appreciation or a substantial prize,
-                all contributions make a difference.
-            </li>
-            <li>Send the Donation: Utilize the provided BCH address above to transfer your chosen donation.</li>
-            <li>
-                Recognition & Confirmation: Upon receipt, we will both confirm and give due recognition to your contribution
-                on our leaderboard.
-            </li>
-        </ol>
-        <h2 class="text-[1.72rem] my-5 font-semibold ">Determining the Winner:</h2>
-        <ol class="list-decimal text-2xl">
-            <li>
-                Monthly Assessment: Bug finders continuously submit their findings throughout the month. Each discovery gets
-                scored based on parameters like severity, rarity, and report accuracy.
-            </li>
-            <li>
-                Leaderboard Dynamics: At month-end, all participants are ranked on our leaderboard using their cumolative
-                scores.
-            </li>
-            <li>
-                Rewarding Excellence: The top bug finder, leading the leaderboard, receives the entirety of the month's
-                prize pool on the first day of the subsequent month.
-            </li>
-        </ol>
-        <h2 class="text-[1.72rem] my-5 font-semibold ">Transparent Operations & Genuine Trust:</h2>
-        <p class=" text-2xl">
-            Every cent of your donation serves its intended purpose. We ensure foll transparency by making
-            all
-            transaction records accessible to the community.
-        </p>
-        <h2 class="text-[1.72rem] my-5 font-semibold ">Why Your Sponsorship Matters:</h2>
-        <ol class="list-decimal text-2xl">
-            <li>
-                Enhancing Quality: Monetary incentives drive bug finders to outdo their previous bests, leading to
-                higher-quality findings.
-            </li>
-            <li>
-                Community Engagement: Regolar contributions indicate a thriving BLT community that appreciates and values
-                its members.
-            </li>
-            <li>Branding Opportunity: As a sponsor, gain favorable visibility and goodwill among a dedicated community.</li>
-        </ol>
-        <h2 class="text-[1.72rem] my-5 font-semibold ">Let’s Make a Difference Together!</h2>
-        <p class=" text-2xl">
-            Your backing is instrumental in scolpting BLT's success. By choosing to contribute, you're
-            endorsing quality,
-            commitment, and collaborative growth. For any assistance or further information, please [contact our team].
-        </p>
-        <p>Thank you for championing the spirit of excellence on BLT!</p>
     </div>
-    <script>
-        async function getBCHPriceInUSD() {
-            const apiUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin-cash&vs_currencies=usd';
-            try {
-                let response = await fetch(apiUrl);
-                let data = await response.json();
-                return data["bitcoin-cash"].usd;
-            } catch (error) {
-                console.error("Error fetching BCH price:", error);
-                return null;
-            }
-        }
-
-        // async function getBCHBalance() {
-        //     const walletAddress = document.getElementById("walletAddress").innerHTML;
-        //     const apiUrl = `https://api.blockchair.com/bitcoin-cash/dashboards/address/${walletAddress}`;
-
-        //     try {
-        //         let [response, bchPrice] = await Promise.all([fetch(apiUrl), getBCHPriceInUSD()]);
-
-        //         let data = await response.json();
-
-        //         const balance = data.data[walletAddress].address.balance / 1e8; // Convert satoshis to BCH
-
-        //         if (bchPrice) {
-        //             const usdBalance = balance * bchPrice;
-        //             document.getElementById("balanceDisplay").innerText = `Balance: ${balance} BCH (~$${usdBalance.toFixed(2)} USD)`;
-        //         } else {
-        //             document.getElementById("balanceDisplay").innerText = `Balance: ${balance} BCH (Failed to fetch USD conversion)`;
-        //         }
-        //     } catch (error) {
-        //         console.error("Error fetching balance:", error);
-        //         document.getElementById("balanceDisplay").innerText = "Error fetching balance.";
-        //     }
-        // }
-        // getBCHBalance();
-    </script>
 {% endblock content %}

@@ -1,34 +1,34 @@
 {% load gravatar %}
 {% load static %}
 {% load custom_tags %}
-<div class="bug-container flex flex-col p-5 bg-white m-1 w-[100%] h-[300px] rounded-[2.5rem] border-[#e8e8e8] border-2">
-    <div class="bug-author bg-red font-medium font-['Inter'] text-[#656565] flex flex-row items-center gap-[0.8rem]">
+<div class="flex flex-col p-5 bg-white m-1 w-full h-[300px] rounded-[2.5rem] border-[#e8e8e8] border-2">
+    <div class="bg-red font-medium font-['Inter'] text-[#656565] flex flex-row items-center gap-[0.8rem]">
         {% if bug.user.userprofile.avatar %}
             <img src="{{ bug.user.userprofile.avatar }}"
                  width="30"
                  height="30"
-                 class="h-[30px] object-cover img-responsive rounded-full"
+                 class="h-[30px] object-cover rounded-full"
                  loading="lazy"
                  alt="user avatar">
         {% elif bug.user.socialaccount_set.all.0.get_avatar_url %}
             <img src="{{ bug.user.socialaccount_set.all.0.get_avatar_url }}"
                  width="30"
                  height="30"
-                 class="h-[30px] object-cover img-responsive rounded-full"
+                 class="h-[30px] object-cover rounded-full"
                  loading="lazy"
                  alt="user avatar">
         {% elif bug.user.email %}
             <img src="{% gravatar_url bug.user.email 30 %}"
                  width="30"
                  height="30"
-                 class="h-[30px] object-cover img-responsive  rounded-full"
+                 class="h-[30px] object-cover  rounded-full"
                  loading="lazy"
                  alt="user avatar">
         {% else %}
             <img src="{% static 'images/dummy-user.png' %}"
                  width="30"
                  height="30"
-                 class="h-[30px] object-cover img-responsive rounded-full"
+                 class="h-[30px] object-cover rounded-full"
                  loading="lazy"
                  alt="user avatar">
         {% endif %}
@@ -42,19 +42,19 @@
             {{ bug.get_label_display }}
         </div>
     </div>
-    <div class="bug-desc py-2 h-[100%] font-['Barlow'] font-medium text-[#774343] text-3xl leading-10 overflow-clip">
-        <a href="{% url 'issue_view2' slug=bug.id %}">{{ bug.description|truncatechars:100 }}</a>
+    <div class="py-2 h-[100%] font-['Barlow'] font-medium text-[#774343] text-3xl leading-10 overflow-hidden">
+        <a href="{% url 'issue_view' slug=bug.id %}">{{ bug.description|truncatechars:100 }}</a>
     </div>
     {% if bug.screenshot %}
-        <div class="bug-images h-[160px] flex flex-row justify-between px-3 my-2">
-            <img class="bug-img h-[100%] w-[200px] object-contain"
+        <div class="h-[160px] flex flex-row justify-between px-3 my-2">
+            <img class="h-[100%] w-[200px] object-contain"
                  src="{{ bug.screenshot.url }}"
                  alt="bug screenshot"
                  width="200px"
                  height="100%">
         </div>
     {% else %}
-        <div class="bug-images h-[160px] flex flex-row justify-between my-2">
+        <div class="h-[160px] flex flex-row justify-between my-2">
             {% for bug_key, bug_screenshots in bugs_screenshots.items %}
                 {% if bug == bug_key %}
                     {% if bug_screenshots %}
@@ -71,7 +71,7 @@
                                 </button>
                                 <div class="flex flex-row items-center w-[200px] gap-10">
                                     <img id="screenshot"
-                                         class="bug-img h-[160px] w-[200px] object-cover"
+                                         class="h-[160px] w-[200px] object-cover"
                                          src="{{ bug_screenshots.0.image.url }}"
                                          alt="bug screenshot"
                                          width="200px"
@@ -121,7 +121,9 @@
             {% endfor %}
         </div>
     {% endif %}
-    <div class="bug-actions h-[45px] flex flex-row justify-between">
+    <!-- Voting and Twitter Share Button in Flex Flow -->
+    <div class="flex flex-row justify-between items-center h-[45px]">
+        <!-- Voting buttons -->
         <div class="flex flex-row items-center">
             <button {% if not user.is_authenticated %}disabled{% endif %}
                     onclick="like_unlike_handler(event,{{ bug.id }})">
@@ -200,11 +202,12 @@
                 {% endif %}
             {% endwith %}
         </div>
+        <!-- Twitter Share Button -->
         <a target="_blank"
-           href="https://twitter.com/intent/tweet?text=Bug Found on @{{ bug.domain_title }} - {{ bug.description }} Report: https://{% env 'FQDN' %}/issue2/{{ bug.id }}"
-           class="w-fit flex items-center px-2 h-14 rounded-xl font-extrabold hover:text-red-500 hover:bg-gray-100 m-5 xl:m-0 "
+           href="https://twitter.com/intent/tweet?text=Bug Found on @{{ bug.domain_title }} - {{ bug.description }} Report: https://{% env 'FQDN' %}/issue/{{ bug.id }}"
+           class="w-fit flex items-center px-2 h-14 rounded-xl font-extrabold hover:text-red-500 hover:bg-gray-100 m-0 ml-5"
            rel="noopener noreferrer">
-            <svg class="scale-125 m-3 ms-1"
+            <svg class="scale-125"
                  width="23"
                  height="23"
                  viewBox="0 0 23 23"

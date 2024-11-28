@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block content %}
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 20px;
+    }
+
+    .blog-title {
+        font-size: 2.5em;
+        color: #333;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .post-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 15px;
+        padding: 0;
+        list-style-type: none;
+        justify-items: center;
+    }
+
+    .post-item {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #ffffff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        transition: transform 0.2s ease;
+    }
+
+    .post-item:hover {
+        transform: scale(1.05);
+    }
+
+    .post-link {
+        text-decoration: none;
+        color: #007bff;
+        font-weight: bold;
+    }
+
+    .post-link:hover {
+        text-decoration: underline;
+    }
+
+    .no-posts-message {
+        text-align: center;
+        color: #666;
+    }
+
+    .blog_image {
+        width: 200px;
+        height: 200px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+
+    a.floating-new-blog-button {
+        position: fixed;
+        bottom: 50px;
+        left: 220px;
+        padding: 10px 15px;
+        background-color: #C51919; 
+        color: #fff;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+        display: inline-flex;
+        align-items: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease;
+        z-index: 1000;
+    }
+    a.floating-new-blog-button:hover {
+        transform: scale(1.1); 
+        color:red;
+    }
+    a.floating-new-blog-button i {
+        margin-right: 6px;
+    }
+    </style>
+    {% include "includes/sidenav.html" %}
+    <h1 class="blog-title">Blog Posts</h1>
+    <ul class="post-list">
+        {% for post in posts %}
+            <a href="{% url 'post_detail' slug=post.slug %}">
+                <div class="post-item">
+                    <p class="post-link">{{ post.title }} by {{ post.author }}</p>
+                    {% if post.image %}
+                        <img height="200"
+                             width="200"
+                             src="{{ post.image.url }}"
+                             alt="{{ post.title }}"
+                             class="blog_image">
+                    {% endif %}
+                </div>
+            </a>
+        {% empty %}
+            <p class="no-posts-message">No posts available.</p>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'post_create' %}" class="floating-new-blog-button">
+        <i class="fas fa-plus"></i> New Blog
+    </a>
+{% endblock content %}
