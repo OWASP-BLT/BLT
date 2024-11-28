@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("website", "0075_company_logo_issue_rewarded_alter_company_company_id"),
+        ("website", "0075_organization_logo_issue_rewarded_alter_organization_organization_id"),
     ]
 
     operations = [

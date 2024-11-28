@@ -8,14 +8,14 @@ Users interact with the first page in several ways:
 - **Viewing Bug Reports**: Users can browse through the reported bugs displayed as individual cards. Each card provides a brief summary, including the issue title, a screenshot, the reporter’s identity, and options to like, comment, and share.
 - **Logging In/Signing Up**: Users can access the login and signup buttons at the top-right corner to authenticate or create a new account.
 - **Reporting an Issue**: Users can click on the "Report an Issue" button at the top to submit a new bug report.
-- **Exploring Other Sections**: The sidebar allows users to navigate to various sections like Companies, Scoreboard, Users, Teams, Bug Bounties, etc.
+- **Exploring Other Sections**: The sidebar allows users to navigate to various sections like Organizations, Scoreboard, Users, Teams, Bug Bounties, etc.
 - **Using the Search Bar**: The search bar at the top allows users to search for specific bugs or categories.
 
 #### 3. Key Elements
 - **Login/Signup**: Buttons located at the top-right for user authentication.
 - **Bug Cards**: Each card represents a reported bug, including the title, a screenshot, interaction buttons (like, comment, share), and a brief description.
 - **Leaderboard**: Displayed on the right side, showing the top contributors and their points.
-- **Sidebar**: Contains links to different sections of the application such as Companies, Scoreboard, Users, Teams, Bug Bounties, Projects, Apps, and more.
+- **Sidebar**: Contains links to different sections of the application such as Organizations, Scoreboard, Users, Teams, Bug Bounties, Projects, Apps, and more.
 - **Search Bar**: Positioned at the top center, allowing users to search for bugs or other relevant content.
 - **Report an Issue Button**: Located at the top, enabling users to submit new bug reports.
 

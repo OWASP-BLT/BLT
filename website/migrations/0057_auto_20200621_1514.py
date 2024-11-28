@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
             name="description_html",
         ),
         migrations.AlterField(
-            model_name="companyadmin",
+            model_name="organizationadmin",
             name="role",
             field=models.IntegerField(choices=[(0, "Admin"), (1, "Moderator")], default=0),
         ),

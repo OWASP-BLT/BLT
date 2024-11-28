@@ -8,16 +8,16 @@ disclosure ethics, BLT helps to ensure that reported issues are addressed in a t
 manner.
 
 One unique feature of BLT is that it rewards users for reporting bugs. As users report more issues, they
-earn more points, which can be verified for extra points. Additionally, companies and organizations can get
+earn more points, which can be verified for extra points. Additionally, organizations and organizations can get
 involved with BLT and launch their own bughunt programs with prize pools. This not only incentivizes users.
-to report bugs but also encourages companies to actively seek out and address vulnerabilities before they
+to report bugs but also encourages organizations to actively seek out and address vulnerabilities before they
 can be exploited.
 
  
 
 Overall, OWASP BLT is an important tool for improving internet security and promoting responsible
 disclosure practices. By allowing anyone to report issues, rewarding users for their contributions, and
-providing a platform for companies to launch bughunt programs, BLT empowers individuals and
+providing a platform for organizations to launch bughunt programs, BLT empowers individuals and
 organizations to work together towards a safer and more secure online environment.
 
 Contributors
@@ -61,8 +61,8 @@ Report Issue
 
 How it Works
 
-OWASP BLT is a bug logging tool that allows users to report issues and get points, and companies are
-held accountable. Testers can win money through company-sponsored Bug Hunts, tips, or the Grand
+OWASP BLT is a bug logging tool that allows users to report issues and get points, and organizations are
+held accountable. Testers can win money through organization-sponsored Bug Hunts, tips, or the Grand
 Prize/Jackpot. Organizations can keep their customers happy by giving them a consistent bug-free user
 experience.
 
@@ -80,7 +80,7 @@ Add ability to tag a domain to see a list of OWASP project domains.
 
 Address Reflected Cross-Site Scripting (XSS) and HTTP ERROR 500 issues. Q1 2023
 
-Design a new backend for the company. Q2 2023
+Design a new backend for the organization. Q2 2023
 
 Set up “add to project” in the Flutter repo. Q2 2023
 
@@ -92,7 +92,7 @@ Implement rate limiting for posting issues and in general for the website/API. Q
 
 Label the purpose of all Pipfile dependencies and HTML files. Q3 2023
 
-Create a bug report email notification system for company followers. Q3 2023
+Create a bug report email notification system for organization followers. Q3 2023
 App Roadmap
 Task Timeline
 Improve app navigation behavior and stack management Q1 2023
@@ -181,8 +181,8 @@ application that allows anyone to report software or hardware bugs found on any 
 N
 
 . How does OWASP BLT work? Users can submit a bug report through the BLT platform, and they can
-earn points for each bug they find. Companies can launch their own bug hunts and reward users for
-finding issues on their websites. Bug hunters can win money through company-sponsored Bug Hunts,
+earn points for each bug they find. Organizations can launch their own bug hunts and reward users for
+finding issues on their websites. Bug hunters can win money through organization-sponsored Bug Hunts,
 tips, or the Grand Prize/Jackpot.
 
 w
@@ -201,13 +201,13 @@ e Submit the information.
 a
 
 . How can | win rewards for reporting bugs on OWASP BLT? You can win rewards by participating in
-company-sponsored Bug Hunts, where you can earn prize money known as tips. The prize pool can
+organization-sponsored Bug Hunts, where you can earn prize money known as tips. The prize pool can
 include a Grand Prize/Jackpot, and in some cases, there may be “heists" where each bug is worth a
-specific amount based on what the company sets.
+specific amount based on what the organization sets.
 
 2
 
-other users can verify the issue, and the company can confirm the validity of the bug report.
+other users can verify the issue, and the organization can confirm the validity of the bug report.
 
 ~N
 

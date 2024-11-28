@@ -22,7 +22,6 @@ from rest_framework.views import APIView
 
 from website.models import (
     ActivityLog,
-    Company,
     Contributor,
     Domain,
     Hunt,
@@ -30,6 +29,7 @@ from website.models import (
     InviteFriend,
     Issue,
     IssueScreenshot,
+    Organization,
     Points,
     Project,
     Tag,
@@ -42,10 +42,10 @@ from website.serializers import (
     ActivityLogSerializer,
     BugHuntPrizeSerializer,
     BugHuntSerializer,
-    CompanySerializer,
     ContributorSerializer,
     DomainSerializer,
     IssueSerializer,
+    OrganizationSerializer,
     ProjectSerializer,
     TagSerializer,
     TimeLogSerializer,
@@ -460,19 +460,19 @@ class LeaderboardApiViewSet(APIView):
 
         elif group_by_month:
             return self.group_by_month(request, *args, **kwargs)
-        elif leaderboard_type == "companies":
-            return self.company_leaderboard(request, *args, **kwargs)
+        elif leaderboard_type == "Organizations":
+            return self.organization_leaderboard(request, *args, **kwargs)
         else:
             return self.global_leaderboard(request, *args, **kwargs)
 
-    def company_leaderboard(self, request, *args, **kwargs):
+    def organization_leaderboard(self, request, *args, **kwargs):
         paginator = PageNumberPagination()
-        companies = (
-            Company.objects.values()
+        organization = (
+            Organization.objects.values()
             .annotate(issue_count=Count("domain__issue"))
             .order_by("-issue_count")
         )
-        page = paginator.paginate_queryset(companies, request)
+        page = paginator.paginate_queryset(organization, request)
 
         return paginator.get_paginated_response(page)
 
@@ -692,9 +692,9 @@ class InviteFriendApiViewset(APIView):
         )
 
 
-class CompanyViewSet(viewsets.ModelViewSet):
-    queryset = Company.objects.all()
-    serializer_class = CompanySerializer
+class OrganizationViewSet(viewsets.ModelViewSet):
+    queryset = Organization.objects.all()
+    serializer_class = OrganizationSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ("id", "name")

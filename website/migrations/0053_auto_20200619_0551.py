@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name="CompanyAdmin",
+            name="OrganizationAdmin",
             fields=[
                 (
                     "id",
@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
             name="admin",
         ),
         migrations.AddField(
-            model_name="company",
+            model_name="organization",
             name="admin",
             field=models.ForeignKey(
                 blank=True,
@@ -51,17 +51,17 @@ class Migration(migrations.Migration):
             name="DomainAdmin",
         ),
         migrations.AddField(
-            model_name="companyadmin",
-            name="company",
+            model_name="organizationadmin",
+            name="organization",
             field=models.ForeignKey(
                 blank=True,
                 null=True,
                 on_delete=django.db.models.deletion.CASCADE,
-                to="website.Company",
+                to="website.Organization",
             ),
         ),
         migrations.AddField(
-            model_name="companyadmin",
+            model_name="organizationadmin",
             name="domain",
             field=models.ForeignKey(
                 blank=True,
@@ -71,7 +71,7 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.AddField(
-            model_name="companyadmin",
+            model_name="organizationadmin",
             name="user",
             field=models.ForeignKey(
                 blank=True,

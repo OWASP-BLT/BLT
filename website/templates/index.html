@@ -293,15 +293,15 @@ f
             <p class="text-5xl font-bold">{% trans "TOP Organization" %}</p>
         </div>
         <div class="w-full">
-            {% for company in top_companies %}
+            {% for organization in top_organizations %}
                 <div class="w-full h-[75px] border-y-[1.1px] px-6 border-gray-300 flex justify-between items-center cursor-pointer shadow-sm transform hover:-translate-y-1 hover:shadow-lg">
                     <p class="text-3xl font-bold">{{ forloop.counter }}</p>
                     <div class="w-[50%] h-[100%] flex flex-col justify-center">
-                        <p class="font-bold text-3xl text-left">{{ company.domain__name }}</p>
-                        <p class="text-2xl mt-2">{{ company.count }}</p>
+                        <p class="font-bold text-3xl text-left">{{ organization.domain__name }}</p>
+                        <p class="text-2xl mt-2">{{ organization.count }}</p>
                     </div>
                     <a class="bg-red-500 text-white font-bold text-2xl px-9 py-4 hover:no-underline hover:text-white"
-                       href="{% url 'domain' slug=company.domain__name %}">{% trans "SUBMIT A BUG" %}</a>
+                       href="{% url 'domain' slug=organization.domain__name %}">{% trans "SUBMIT A BUG" %}</a>
                 </div>
             {% endfor %}
         </div>

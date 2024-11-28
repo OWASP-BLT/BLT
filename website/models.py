@@ -62,12 +62,12 @@ class Tag(models.Model):
         return self.name
 
 
-class Company(models.Model):
+class Organization(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    managers = models.ManyToManyField(User, related_name="user_companies")
+    managers = models.ManyToManyField(User, related_name="user_organizations")
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=500, null=True, blank=True)
-    logo = models.ImageField(upload_to="company_logos", null=True, blank=True)
+    logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
     url = models.URLField()
     email = models.EmailField(null=True, blank=True)
     twitter = models.CharField(max_length=30, null=True, blank=True)
@@ -83,7 +83,7 @@ class Company(models.Model):
 
 
 class Domain(models.Model):
-    company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_domains", blank=True)
     name = models.CharField(max_length=255, unique=True)
     url = models.URLField()
@@ -286,7 +286,7 @@ class Issue(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     is_hidden = models.BooleanField(default=False)
-    rewarded = models.PositiveIntegerField(default=0)  # money rewarded by the company
+    rewarded = models.PositiveIntegerField(default=0)  # money rewarded by the organization
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
     cve_id = models.CharField(max_length=16, null=True, blank=True)
     cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
@@ -584,14 +584,14 @@ class IP(models.Model):
     referer = models.CharField(max_length=255, null=True, blank=True)
 
 
-class CompanyAdmin(models.Model):
+class OrganizationAdmin(models.Model):
     role = (
         (0, "Admin"),
         (1, "Moderator"),
     )
     role = models.IntegerField(choices=role, default=0)
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)

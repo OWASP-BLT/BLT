@@ -8,7 +8,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0124_company_tags_domain_tags_project_tags_and_more"),
+        ("website", "0124_organization_tags_domain_tags_project_tags_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

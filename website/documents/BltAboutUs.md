@@ -10,7 +10,7 @@ Users interact with the About Us component through the following steps:
 3. **Navigating Links**: Users may click on embedded links to access related pages or external resources for more detailed information.
 
 #### 3. Key Elements
-- **Navigation Sidebar**: Contains links to various sections of the BLT application, including Issues, Companies, Scoreboard, Users, Teams, Bug Bounties, and more.
+- **Navigation Sidebar**: Contains links to various sections of the BLT application, including Issues, Organizations, Scoreboard, Users, Teams, Bug Bounties, and more.
 - **About BLT Section**: Provides a detailed description of the BLT project, emphasizing its open-source nature, non-commercial goals, and community-driven approach.
 - **User Benefits**: Describes the incentives for users, including points, money from sponsored bug hunts, leaderboard recognition, and tips for finding bugs.
 - **How It Works**: Provides step-by-step instructions for testers on how to participate, including creating a user account, describing bugs, attaching screenshots, and submitting information.
@@ -67,7 +67,7 @@ Create a User Account to log into BLT.
 Describe the software or hardware bug you found.
 Attach a screenshot of the bug.
 Submit the information.
-Win money through company-sponsored Bug Bounties, tips or the Grand Prize/Jackpot.We may also have "heists" where each bug is worth a specific amount based on what the company sets.
+Win money through organization-sponsored Bug Bounties, tips or the Grand Prize/Jackpot.We may also have "heists" where each bug is worth a specific amount based on what the organization sets.
 If you participate in BLT’s sponsored Bug Bounties, you could win prize money known as tips.
 Organizations
 We want everyone to love your website.

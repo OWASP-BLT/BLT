@@ -1,0 +1,98 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+{% block content %}
+    <section>
+        {% include "includes/admin_sidenav.html" %}
+    </section>
+    <div>
+        <div class="col_3">
+            <form id="add-or-update-organization">
+                {% csrf_token %}
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">×</button>
+                        <h4 class="modal-title">Edit Organization</h4>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="id" value="{{ organization.pk }}" />
+                        <div class="form-group">
+                            <label for="name">Name:</label>
+                            <input type="text"
+                                   name="name"
+                                   required
+                                   class="form-control"
+                                   id="name"
+                                   value="{{ organization.name }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="url">Website:</label>
+                            <input type="url"
+                                   name="url"
+                                   class="form-control"
+                                   id="url"
+                                   value="{{ organization.url }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="admin">Admin:</label>
+                            <input type="email"
+                                   name="admin"
+                                   class="form-control"
+                                   id="admin"
+                                   value="{{ organization.admin.email }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="logo">Logo:</label>
+                            <input type="file" name="logo" class="form-control" id="logo">
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email address:</label>
+                            <input type="email"
+                                   name="email"
+                                   required
+                                   class="form-control"
+                                   id="email"
+                                   value="{{ organization.email }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="github">Github:</label>
+                            <input type="url"
+                                   name="github"
+                                   class="form-control"
+                                   id="github"
+                                   value="{{ organization.github }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="subscription">Subscription:</label>
+                            <input type="text"
+                                   name="subscription"
+                                   class="form-control"
+                                   id="subscription"
+                                   value="{{ organization.subscription.name }}">
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-inline col-sm-12">
+                                {% if organization.is_active %}
+                                    <input name="verify" type="checkbox" checked>
+                                    Verify
+                                </label>
+                            {% else %}
+                                <input name="verify" type="checkbox">
+                                <label class="checkbox-inline col-sm-12">Verify</label>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <input type="submit"
+                               class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
+                               value="Change" />
+                        <input type="reset"
+                               data-dismiss="modal"
+                               class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
+                               value="Reset" />
+                    </div>
+                </div>
+            </form>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+{% endblock content %}

@@ -14,7 +14,7 @@ Users interact with the BLTV component through the following steps:
 - **Video Thumbnails**: Each video is represented by a thumbnail image, which provides a visual preview of the content.
 - **Video Titles**: The title of each video is displayed below the thumbnail, providing a brief description of the content.
 - **Play Button**: A prominent play button on each thumbnail allows users to start the video.
-- **Navigation Sidebar**: The left sidebar contains navigation links to other sections of the BLT application, such as Issues, Companies, Scoreboard, Users, Teams, Bug Bounties, etc.
+- **Navigation Sidebar**: The left sidebar contains navigation links to other sections of the BLT application, such as Issues, Organizations, Scoreboard, Users, Teams, Bug Bounties, etc.
 - **Search Bar**: Positioned at the top of the page, the search bar allows users to find specific video tutorials by entering relevant keywords.
 
 #### 4. Visual Design
