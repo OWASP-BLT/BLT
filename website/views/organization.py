@@ -1612,7 +1612,7 @@ def like_activity(request, id):
         blue_sky_service = BlueSkyService()
         try:
             activity.post_to_bluesky(blue_sky_service)
-        except Exception :
+        except Exception:
             return JsonResponse({"success": False})
 
     return JsonResponse(
@@ -1652,7 +1652,7 @@ def dislike_activity(request, id):
         blue_sky_service = BlueSkyService()
         try:
             activity.post_to_bluesky(blue_sky_service)
-        except Exception :
+        except Exception:
             return JsonResponse({"success": False})
 
     return JsonResponse(
@@ -1683,7 +1683,7 @@ def approve_activity(request, id):
         try:
             activity.post_to_bluesky(blue_sky_service)
             return JsonResponse({"success": True, "is_approved": activity.is_approved})
-        except Exception :
+        except Exception:
             return JsonResponse({"success": False})
     else:
         return JsonResponse({"success": False, "error": "Not authorized"})
