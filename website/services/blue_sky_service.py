@@ -1,7 +1,7 @@
 # services/bluesky_service.py
-from atproto import Client
+from atproto import Client, models
 from django.conf import settings
-from atproto import models
+
 
 class BlueSkyService:
     def __init__(self):
@@ -11,7 +11,7 @@ class BlueSkyService:
     def post_text(self, text):
         """Post plain text to BlueSky."""
         post = self.client.send_post(text=text)
-        return post.uri # Assuming the response includes a post ID
+        return post.uri  # Assuming the response includes a post ID
 
     def post_with_image(self, text, image_path):
         """Post text with an image to BlueSky."""
@@ -28,15 +28,13 @@ class BlueSkyService:
             print(f"Upload response: Blob ID = {upload.blob}")
 
             # Create the embedded image structure
-            images = [models.AppBskyEmbedImages.Image(alt='Activity Image', image=upload.blob)]
+            images = [models.AppBskyEmbedImages.Image(alt="Activity Image", image=upload.blob)]
             embed = models.AppBskyEmbedImages.Main(images=images)
             print(f"Embed object: {embed}")
 
             # Create the post record
             post_record = models.AppBskyFeedPost.Record(
-                text=text,
-                embed=embed,
-                created_at=self.client.get_current_time_iso()
+                text=text, embed=embed, created_at=self.client.get_current_time_iso()
             )
 
             # Post to BlueSky

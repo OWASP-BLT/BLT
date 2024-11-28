@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0159_merge_20241128_0439"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
