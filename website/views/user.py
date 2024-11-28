@@ -24,7 +24,7 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -36,6 +36,7 @@ from rest_framework.response import Response
 from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
+    Badge,
     Domain,
     Hunt,
     InviteFriend,
@@ -46,6 +47,7 @@ from website.models import (
     Points,
     Tag,
     User,
+    UserBadge,
     UserProfile,
     Wallet,
 )
@@ -208,6 +210,15 @@ class UserProfileDetailView(DetailView):
 
         user = self.object
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
+        # Fetch badges
+        user_badges = UserBadge.objects.filter(user=user).select_related("badge")
+
+        context["user_badges"] = user_badges  # Add badges to context
+        context["is_mentor"] = UserBadge.objects.filter(
+            user=self.request.user, badge__title="Mentor"
+        ).exists()
+        context["available_badges"] = Badge.objects.all()
+
         context["my_score"] = list(
             Points.objects.filter(user=self.object).aggregate(total_score=Sum("score")).values()
         )[0]
@@ -589,8 +600,8 @@ def users_view(request, *args, **kwargs):
         else:
             context["users"] = UserProfile.objects.none()  # No users if the tag isn't found
     else:
-        context["tag"] = "BLT-Contributors"
-        context["users"] = UserProfile.objects.filter(tags__name="BLT-Contributors")
+        context["tag"] = "BLT Contributors"
+        context["users"] = UserProfile.objects.filter(tags__name="BLT Contributors")
 
     return render(request, "users.html", context=context)
 
@@ -837,3 +848,25 @@ def profile(request):
         return redirect("/profile/" + request.user.username)
     except Exception:
         return redirect("/")
+
+
+@login_required
+def assign_badge(request, username):
+    if not UserBadge.objects.filter(user=request.user, badge__title="Mentor").exists():
+        messages.error(request, "You don't have permission to assign badges.")
+        return redirect("profile", slug=username)
+
+    user = get_object_or_404(get_user_model(), username=username)
+    badge_id = request.POST.get("badge")
+    reason = request.POST.get("reason", "")
+    badge = get_object_or_404(Badge, id=badge_id)
+
+    # Check if the user already has this badge
+    if UserBadge.objects.filter(user=user, badge=badge).exists():
+        messages.warning(request, "This user already has this badge.")
+        return redirect("profile", slug=username)
+
+    # Assign the badge
+    UserBadge.objects.create(user=user, badge=badge, awarded_by=request.user, reason=reason)
+    messages.success(request, f"{badge.title} badge assigned to {user.username}.")
+    return redirect("profile", slug=username)
