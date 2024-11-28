@@ -965,3 +965,33 @@ class Activity(models.Model):
 
     class Meta:
         ordering = ["-timestamp"]
+
+
+class Badge(models.Model):
+    BADGE_TYPES = [
+        ("automatic", "Automatic"),
+        ("manual", "Manual"),
+    ]
+
+    title = models.CharField(max_length=100)
+    description = models.TextField()
+    icon = models.ImageField(upload_to="badges/", blank=True, null=True)
+    type = models.CharField(max_length=10, choices=BADGE_TYPES, default="automatic")
+    criteria = models.JSONField(blank=True, null=True)  # For automatic badges
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+
+class UserBadge(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
+    awarded_by = models.ForeignKey(
+        User, null=True, blank=True, related_name="awarded_badges", on_delete=models.SET_NULL
+    )
+    awarded_at = models.DateTimeField(auto_now_add=True)
+    reason = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.badge.title}"
