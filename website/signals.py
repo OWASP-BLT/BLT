@@ -44,6 +44,15 @@ def handle_post_save(sender, instance, created, **kwargs):
     if sender in [Issue, Hunt, IpReport, Post]:  # Add any model you want to track
         if created:
             create_activity(instance, "created")
+    elif sender is User and created:  # Handle user sign-up
+        Activity.objects.create(
+            user=instance,
+            action_type="signup",
+            title=f"New User Signup: {instance.username}",
+            content_type=ContentType.objects.get_for_model(instance),
+            object_id=instance.id,
+            description=f"Welcome to the community {instance.username}!",
+        )
 
 
 @receiver(pre_delete)
