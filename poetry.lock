@@ -2845,13 +2845,13 @@ tests = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "openai"
-version = "1.54.5"
+version = "1.55.2"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "openai-1.54.5-py3-none-any.whl", hash = "sha256:f55a4450f38501814b53e76311ed7845a6f7f35bab46d0fb2a3728035d7a72d8"},
-    {file = "openai-1.54.5.tar.gz", hash = "sha256:2aab4f9755a3e1e04d8a45ac1f4ce7b6948bab76646020c6386256d7e5cbb7e0"},
+    {file = "openai-1.55.2-py3-none-any.whl", hash = "sha256:3027c7fa4a33ed759f4a3d076093fcfa1c55658660c889bec33f651e2dc77922"},
+    {file = "openai-1.55.2.tar.gz", hash = "sha256:5cc0b1162b65dcdf670b4b41448f18dd470d2724ca04821ab1e86b6b4e88650b"},
 ]
 
 [package.dependencies]
@@ -5043,4 +5043,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "6e44447b291aea4de6cca180b8b1d24f8b92f75a9e57f8ce19638afa7935541f"
+content-hash = "aa078a852b1ef5a8e2f9ab36d0e3bc59a8991e280ea9fc932b36712b4f0b93ea"
