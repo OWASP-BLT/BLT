@@ -28,6 +28,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.decorators import method_decorator
+from django.utils.functional import SimpleLazyObject
 from django.views.generic import DetailView, ListView, TemplateView, View
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -213,9 +214,10 @@ class UserProfileDetailView(DetailView):
         # Fetch badges
         user_badges = UserBadge.objects.filter(user=user).select_related("badge")
 
+        actual_user = self.request.user._wrapped if isinstance(self.request.user, SimpleLazyObject) else self.request.user
         context["user_badges"] = user_badges  # Add badges to context
         context["is_mentor"] = UserBadge.objects.filter(
-            user=self.request.user, badge__title="Mentor"
+            user=actual_user, badge__title="Mentor"
         ).exists()
         context["available_badges"] = Badge.objects.all()
 
