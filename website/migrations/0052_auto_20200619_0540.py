@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
             preserve_default=False,
         ),
         migrations.CreateModel(
-            name="Organization",
+            name="Company",
             fields=[
                 (
                     "id",
@@ -60,12 +60,12 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="domain",
-            name="organization",
+            name="company",
             field=models.ForeignKey(
                 blank=True,
                 null=True,
                 on_delete=django.db.models.deletion.CASCADE,
-                to="website.Organization",
+                to="website.Company",
             ),
         ),
     ]

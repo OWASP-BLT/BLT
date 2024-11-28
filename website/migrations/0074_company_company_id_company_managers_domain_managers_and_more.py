@@ -14,8 +14,8 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name="organization",
-            name="organization_id",
+            model_name="company",
+            name="company_id",
             field=models.CharField(
                 default=uuid.UUID("76403ede-d578-422f-8bbc-8563779604bd"),
                 editable=False,
@@ -24,10 +24,10 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.AddField(
-            model_name="organization",
+            model_name="company",
             name="managers",
             field=models.ManyToManyField(
-                related_name="user_organizations", to=settings.AUTH_USER_MODEL
+                related_name="user_companies", to=settings.AUTH_USER_MODEL
             ),
         ),
         migrations.AddField(
@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
             field=models.ManyToManyField(related_name="user_domains", to=settings.AUTH_USER_MODEL),
         ),
         migrations.AlterField(
-            model_name="organization",
+            model_name="company",
             name="name",
             field=models.CharField(max_length=255),
         ),

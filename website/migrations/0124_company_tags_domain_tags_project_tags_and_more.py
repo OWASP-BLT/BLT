@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name="organization",
+            model_name="company",
             name="tags",
             field=models.ManyToManyField(blank=True, to="website.tag"),
         ),

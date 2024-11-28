@@ -47,7 +47,7 @@
                     {% endif %}
                     <span class="user-name">{{ request.user.username | slice:":7" | capfirst }}..</span>
                 </div>
-                {% if organizations %}
+                {% if companies %}
                     <svg width="20"
                          height="20"
                          viewBox="0 0 20 20"
@@ -57,7 +57,7 @@
                     </svg>
                 {% endif %}
             </div>
-            {% if organizations %}
+            {% if companies %}
                 <div id="profile_dropdown"
                      hidden
                      class="absolute right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
@@ -67,7 +67,7 @@
                      tabindex="-1">
                     <div class="py-1" role="none">
                         <p class="text-gray-700 block px-4 py-2 text-lg font-semibold">Organizations</p>
-                        {% for organization in organizations %}
+                        {% for organization in companies %}
                             <a href="{% url 'organization_analytics' organization.id %}"
                                class="text-gray-700 block pl-10 py-2 text-sm hover:bg-[#F3F4F6]"
                                role="menuitem"

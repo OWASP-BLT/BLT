@@ -96,7 +96,7 @@ def organization_view(request, *args, **kwargs):
 
         # Check if any of these domains belong to a organization
         organizations_with_user_domains = Organization.objects.filter(domain__in=user_domains)
-        if not corganizations_with_user_domains.exists():
+        if not organizations_with_user_domains.exists():
             messages.error(request, "You do not have a organization, create one.")
             return redirect("register_organization")
 
@@ -135,7 +135,7 @@ class RegisterOrganizationView(View):
             messages.error(request, "Organization name doesn't match your email domain.")
             return redirect("register_organization")
 
-        if organization.objects.filter(name=organization_name).exists():
+        if Organization.objects.filter(name=organization_name).exists():
             messages.error(request, "Organization already exists.")
             return redirect("register_organization")
 
@@ -372,7 +372,7 @@ class OrganizationDashboardAnalyticsView(View):
         context = {
             "organization": id,
             "organizations": organizations,
-            "organization_obj": Organizationny.objects.filter(id=id).first(),
+            "organization_obj": Organization.objects.filter(id=id).first(),
             "total_info": self.get_general_info(id),
             "bug_report_type_piechart_data": self.get_bug_report_type_piechart_data(id),
             "reports_on_domain_piechart_data": self.get_reports_on_domain_piechart_data(id),

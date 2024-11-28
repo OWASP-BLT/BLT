@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name="organization",
+            model_name="company",
             name="description",
             field=models.CharField(blank=True, max_length=500, null=True),
         ),

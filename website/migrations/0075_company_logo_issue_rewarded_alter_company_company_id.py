@@ -7,15 +7,15 @@ class Migration(migrations.Migration):
     dependencies = [
         (
             "website",
-            "0074_organization_organization_id_organization_managers_domain_managers_and_more",
+            "0074_company_company_id_company_managers_domain_managers_and_more",
         ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="organization",
+            model_name="company",
             name="logo",
-            field=models.ImageField(blank=True, null=True, upload_to="organization_logos"),
+            field=models.ImageField(blank=True, null=True, upload_to="company_logos"),
         ),
         migrations.AddField(
             model_name="issue",
@@ -23,8 +23,8 @@ class Migration(migrations.Migration):
             field=models.PositiveIntegerField(default=0),
         ),
         migrations.AlterField(
-            model_name="organization",
-            name="organization_id",
+            model_name="company",
+            name="company_id",
             field=models.CharField(editable=False, max_length=255, unique=True),
         ),
     ]

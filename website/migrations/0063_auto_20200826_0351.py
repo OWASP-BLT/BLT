@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0062_organization_is_active"),
+        ("website", "0062_company_is_active"),
     ]
 
     operations = [
