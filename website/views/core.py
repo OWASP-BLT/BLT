@@ -609,6 +609,10 @@ def sponsor_view(request):
     return render(request, "sponsor.html", context={"balance": balance})
 
 
+def donate_view(request):
+    return render(request, "donate.html")
+
+
 @require_GET
 def robots_txt(request):
     lines = [
