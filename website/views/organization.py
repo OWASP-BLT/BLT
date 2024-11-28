@@ -635,7 +635,7 @@ class DomainDetailView(ListView):
         )
 
         closed_issues = (
-            Issue.objects.filter(domain__name__contains(self.kwargs["slug"]))
+            Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
             .filter(status="closed", hunt=None)
             .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
         )
