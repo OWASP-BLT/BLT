@@ -18,3 +18,4 @@ requirements.txt
 *.code-workspace
 *.log
 *.exe
+.vs
