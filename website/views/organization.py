@@ -726,7 +726,6 @@ class ScoreboardView(ListView):
         annotated_domains = Domain.objects.annotate(
             open_issues_count=Count("issue", filter=Q(issue__status="open")),
             closed_issues_count=Count("issue", filter=Q(issue__status="closed")),
-            top_tester=Count("issue__user", filter=Q(issue__status="open")),
         ).order_by(sort_by)
 
         paginator = Paginator(annotated_domains, self.paginate_by)
