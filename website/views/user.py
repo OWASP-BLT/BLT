@@ -864,7 +864,7 @@ def assign_badge(request, username):
         messages.warning(request, "This user already has this badge.")
         return redirect("profile", slug=username)
 
-    # Assign the badge
+    # Assign the badge to user
     UserBadge.objects.create(user=user, badge=badge, awarded_by=request.user, reason=reason)
     messages.success(request, f"{badge.title} badge assigned to {user.username}.")
     return redirect("profile", slug=username)
