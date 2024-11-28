@@ -667,7 +667,7 @@ class DomainDetailView(ListView):
         context["closed_net"] = closed_issues
         context["closed"] = closeissue_paginated
         context["leaderboard"] = (
-            User.objects.filter(issue__url__contains(self.kwargs["slug"]))
+            User.objects.filter(issue__url__contains=self.kwargs["slug"])
             .annotate(total=Count("issue"))
             .order_by("-total")
         )
