@@ -214,9 +214,7 @@ class UserProfileDetailView(DetailView):
         user_badges = UserBadge.objects.filter(user=user).select_related("badge")
 
         context["user_badges"] = user_badges  # Add badges to context
-        context["is_mentor"] = UserBadge.objects.filter(
-            user=user, badge__title="Mentor"
-        ).exists()
+        context["is_mentor"] = UserBadge.objects.filter(user=user, badge__title="Mentor").exists()
         context["available_badges"] = Badge.objects.all()
 
         context["my_score"] = list(
@@ -866,7 +864,7 @@ def assign_badge(request, username):
         messages.warning(request, "This user already has this badge.")
         return redirect("profile", slug=username)
 
-    # Assign the badge
+    # Assign the badge to user
     UserBadge.objects.create(user=user, badge=badge, awarded_by=request.user, reason=reason)
     messages.success(request, f"{badge.title} badge assigned to {user.username}.")
     return redirect("profile", slug=username)
