@@ -214,9 +214,7 @@ class UserProfileDetailView(DetailView):
         user_badges = UserBadge.objects.filter(user=user).select_related("badge")
 
         context["user_badges"] = user_badges  # Add badges to context
-        context["is_mentor"] = UserBadge.objects.filter(
-            user=user, badge__title="Mentor"
-        ).exists()
+        context["is_mentor"] = UserBadge.objects.filter(user=user, badge__title="Mentor").exists()
         context["available_badges"] = Badge.objects.all()
 
         context["my_score"] = list(
