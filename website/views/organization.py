@@ -44,9 +44,11 @@ from website.models import (
     Subscription,
     TimeLog,
     User,
+    UserBadge,
     Wallet,
     Winner,
 )
+from website.services.blue_sky_service import BlueSkyService
 from website.utils import format_timedelta, get_client_ip, get_github_issue_title
 
 
@@ -629,13 +631,13 @@ class DomainDetailView(ListView):
         parsed_url = urlparse("http://" + self.kwargs["slug"])
 
         open_issues = (
-            Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
+            Issue.objects.filter(domain__name__contains(self.kwargs["slug"]))
             .filter(status="open", hunt=None)
             .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
         )
 
         closed_issues = (
-            Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
+            Issue.objects.filter(domain__name__contains(self.kwargs["slug"]))
             .filter(status="closed", hunt=None)
             .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
         )
@@ -667,7 +669,7 @@ class DomainDetailView(ListView):
         context["closed_net"] = closed_issues
         context["closed"] = closeissue_paginated
         context["leaderboard"] = (
-            User.objects.filter(issue__url__contains=self.kwargs["slug"])
+            User.objects.filter(issue__url__contains(self.kwargs["slug"]))
             .annotate(total=Count("issue"))
             .order_by("-total")
         )
@@ -1568,11 +1570,120 @@ def feed(request):
     # Determine if pagination is required
     is_paginated = page_obj.has_other_pages()
 
+    # Check if the user has the mentor badge
+    is_mentor = UserBadge.objects.filter(user=request.user, badge__title="Mentor").exists()
+
     return render(
         request,
         "feed.html",
         {
             "page_obj": page_obj,
             "is_paginated": is_paginated,  # Pass this flag to the template
+            "is_mentor": is_mentor,  # Add is_mentor to the context
         },
     )
+
+
+@login_required
+@require_POST
+def like_activity(request, id):
+    activity = get_object_or_404(Activity, id=id)
+    user = request.user
+
+    if activity.dislikes.filter(id=user.id).exists():
+        activity.dislikes.remove(user)
+        activity.dislike_count -= 1
+
+    if activity.likes.filter(id=user.id).exists():
+        activity.likes.remove(user)
+        activity.like_count -= 1
+    else:
+        activity.likes.add(user)
+        activity.like_count += 1
+
+    activity.save()
+
+    # Check if the activity meets the approval criteria
+    if activity.like_count >= 3 and activity.dislike_count < 3 and not activity.is_approved:
+        activity.is_approved = True
+        activity.save()
+
+        # Trigger posting on BlueSky
+        blue_sky_service = BlueSkyService()
+        try:
+            activity.post_to_bluesky(blue_sky_service)
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+
+    return JsonResponse(
+        {
+            "success": True,
+            "like_count": activity.like_count,
+            "dislike_count": activity.dislike_count,
+        }
+    )
+
+
+@login_required
+@require_POST
+def dislike_activity(request, id):
+    activity = get_object_or_404(Activity, id=id)
+    user = request.user
+
+    if activity.likes.filter(id=user.id).exists():
+        activity.likes.remove(user)
+        activity.like_count -= 1
+
+    if activity.dislikes.filter(id=user.id).exists():
+        activity.dislikes.remove(user)
+        activity.dislike_count -= 1
+    else:
+        activity.dislikes.add(user)
+        activity.dislike_count += 1
+
+    activity.save()
+
+    # Check if the activity meets the approval criteria
+    if activity.like_count >= 3 and activity.dislike_count < 3 and not activity.is_approved:
+        activity.is_approved = True
+        activity.save()
+
+        # Trigger posting on BlueSky
+        blue_sky_service = BlueSkyService()
+        try:
+            activity.post_to_bluesky(blue_sky_service)
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+
+    return JsonResponse(
+        {
+            "success": True,
+            "like_count": activity.like_count,
+            "dislike_count": activity.dislike_count,
+        }
+    )
+
+
+@login_required
+@require_POST
+def approve_activity(request, id):
+    activity = get_object_or_404(Activity, id=id)
+    user = request.user
+
+    # Check if the user has the "Mentor" badge
+    if (
+        UserBadge.objects.filter(user=user, badge__title="Mentor").exists()
+        and not activity.is_approved
+    ):
+        activity.is_approved = True
+        activity.save()
+
+        # Trigger posting on BlueSky
+        blue_sky_service = BlueSkyService()
+        try:
+            activity.post_to_bluesky(blue_sky_service)
+            return JsonResponse({"success": True, "is_approved": activity.is_approved})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+    else:
+        return JsonResponse({"success": False, "error": "Not authorized"})

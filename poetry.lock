@@ -179,6 +179,17 @@ files = [
 ]
 
 [[package]]
+name = "atproto"
+version = "0.0.55"
+description = "The AT Protocol SDK"
+optional = false
+python-versions = "<3.14,>=3.8"
+files = [
+    {file = "atproto-0.0.55-py3-none-any.whl", hash = "sha256:b32252bb9702df86f672d5fd5bbc905ce3865691cdbd0ece7278d7592053dde9"},
+    {file = "atproto-0.0.55.tar.gz", hash = "sha256:8074181cb4647e56476c05ab36e20ff599a00366d34094a76ccc77e46498d7dd"},
+]
+
+[[package]]
 name = "attrs"
 version = "24.2.0"
 description = "Classes Without Boilerplate"

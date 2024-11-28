@@ -952,19 +952,58 @@ class Activity(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     image = models.ImageField(null=True, blank=True, upload_to="activity_images/")
-    timestamp = models.DateTimeField(auto_now_add=True)
     url = models.URLField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    # Approval and Posting
+    like_count = models.PositiveIntegerField(default=0)
+    dislike_count = models.PositiveIntegerField(default=0)
+    is_approved = models.BooleanField(default=False)  # Whether activity is approved
+    is_posted_to_bluesky = models.BooleanField(default=False)  # Whether posted to BlueSky
 
     # Generic foreign key fields
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     related_object = GenericForeignKey("content_type", "object_id")
 
+    # New fields for likes and dislikes
+    likes = models.ManyToManyField(User, related_name="liked_activities", blank=True)
+    dislikes = models.ManyToManyField(User, related_name="disliked_activities", blank=True)
+
     def __str__(self):
         return f"{self.title} by {self.user.username} at {self.timestamp}"
 
     class Meta:
         ordering = ["-timestamp"]
+
+    # Approve the activity
+    def approve_activity(self):
+        # Check auto-approval criteria
+        if self.like_count >= 3 and self.dislike_count < 3:
+            self.is_approved = True
+        self.save()
+
+    # Post to BlueSky
+    def post_to_bluesky(self, bluesky_service):
+        if not self.is_approved:
+            raise ValueError("Activity must be approved before posting to BlueSky.")
+
+        try:
+            post_data = f"{self.title}\n\n{self.description}"
+            # If image exists, include it
+            if self.image:
+                print("image = " + self.image.path)
+                bluesky_service.post_with_image(text=post_data, image_path=self.image.path)
+            else:
+                bluesky_service.post_text(text=post_data)
+
+            # Mark activity as posted
+            self.is_posted_to_bluesky = True
+            self.save()
+            return True
+        except Exception as e:
+            print(f"Error posting to BlueSky: {e}")
+            raise
 
 
 class Badge(models.Model):
