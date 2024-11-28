@@ -1,12 +1,5 @@
 {% load custom_tags %}
 <style>
-    .page-header {
-        font-size: 2.5em;
-        font-weight: bold;
-        margin-bottom: 20px;
-        color: #333;
-    }
-
     .content-container {
         margin-top: 20px;
         line-height: 1.6;
@@ -44,12 +37,12 @@
         color: #007bff;
     }
 </style>
-<div class="row">
+<div class="row px-4 pt-4">
     <div class="col-lg-6">
-        <h1 class="page-header">Terms and Conditions</h1>
+        <h1 class="text-6xl font-sans pt-10">Terms and Conditions</h1>
     </div>
 </div>
-<div class="row content-container">
+<div class="row content-container px-4 pb-4">
     <div class="col-lg-9">
         <p>
             By using the {% env 'FQDN' %} website ("Service"), or any services of {% env 'PROJECT_NAME' %} ("{% env 'PROJECT_NAME' %}"), you agree to be bound by the following terms and conditions ("Terms of Service"). If you are entering into this agreement on behalf of a Organizations or other legal entity, you represent that you have the authority to bind such entity, its affiliates, and all users who access our services through your account to these terms and conditions. In such cases, the terms "you" or "your" shall refer to such entity, its affiliates, and users associated with it. If you do not have such authority or do not agree with these terms and conditions, you must not accept this agreement and may not use the services.
@@ -66,7 +59,7 @@
         <p>
             Violation of any of the terms below will result in the termination of your account. While {% env 'PROJECT_NAME' %} prohibits such conduct and content on the Service, you understand and agree that {% env 'PROJECT_NAME' %} cannot be responsible for the content posted on the Service, and you may be exposed to such materials. You agree to use the Service at your own risk.
         </p>
-        <ol>
+        <ol class="list-disc list-inside">
             <li>You must be 13 years or older to use this Service.</li>
             <li>Accounts registered by "bots" or other automated methods are not permitted.</li>
             <li>
@@ -87,7 +80,7 @@
         <p>
             Customers may access their {% env 'PROJECT_NAME' %} account data via an API (Application Program Interface). Any use of the API, including use of the API through a third-party product that accesses {% env 'PROJECT_NAME' %}, is bound by these Terms of Service plus the following specific terms:
         </p>
-        <ol>
+        <ol class="list-disc list-inside">
             <li>
                 You expressly understand and agree that {% env 'PROJECT_NAME' %} shall not be liable for any direct, indirect, incidental, special, consequential, or exemplary damages resulting from your use of the API or third-party products that access data via the API.
             </li>
@@ -103,7 +96,7 @@
             {% env 'PROJECT_NAME' %} is now entirely free to use. If you would like to support our project, you can become a sponsor by selecting one of our sponsorship plans. All payments are processed through the OWASP organization and earmarked specifically for the BLT project. Please note that any tips using cryptocurrency go directly to the users, and {% env 'PROJECT_NAME' %} does not process or transfer these funds.
         </p>
         <br>
-        <ol>
+        <ol class="list-disc list-inside">
             <li>
                 <strong>You are solely responsible for properly canceling your account. An email or phone request to cancel your account is not considered cancellation. You can cancel your account at any time by clicking on the Account link in the global navigation bar at the top of the screen.</strong>
             </li>
@@ -115,7 +108,7 @@
             </li>
         </ol>
         <br>
-        <ol>
+        <ol class="list-disc list-inside">
             <li>
                 We claim no intellectual property rights over the material you provide to the Service. Your profile and materials uploaded remain yours. However, by setting your pages to be viewed publicly, you agree to allow others to view your content. By setting your repositories to be viewed publicly, you agree to allow others to view and fork your repositories.
             </li>
@@ -127,7 +120,7 @@
             </li>
         </ol>
         <br>
-        <ol>
+        <ol class="list-disc list-inside">
             <li>Your use of the Service is at your sole risk. The Service is provided on an "as is" and "as available" basis.</li>
             <li>Support for {% env 'PROJECT_NAME' %} services is only available in English, via email.</li>
             <li>

@@ -10,6 +10,8 @@ from captcha.fields import CaptchaField
 from colorthief import ColorThief
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
@@ -367,7 +369,19 @@ class Issue(models.Model):
         ordering = ["-created"]
 
 
-if "storages.backends.gcloud.GoogleCloudStorage" in settings.DEFAULT_FILE_STORAGE:
+def is_using_gcs():
+    """
+    Determine if Google Cloud Storage is being used as the backend.
+    """
+    if hasattr(settings, "STORAGES"):
+        backend = settings.STORAGES.get("default", {}).get("BACKEND", "")
+    else:
+        backend = getattr(settings, "DEFAULT_FILE_STORAGE", "")
+
+    return backend == "storages.backends.gcloud.GoogleCloudStorage"
+
+
+if is_using_gcs():
 
     @receiver(post_delete, sender=Issue)
     def delete_image_on_issue_delete(sender, instance, **kwargs):
@@ -400,7 +414,7 @@ class IssueScreenshot(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
 
-if "storages.backends.gcloud.GoogleCloudStorage" in settings.DEFAULT_FILE_STORAGE:
+if is_using_gcs():
 
     @receiver(post_delete, sender=IssueScreenshot)
     def delete_image_on_post_delete(sender, instance, **kwargs):
@@ -923,3 +937,61 @@ class IpReport(models.Model):
 
     def __str__(self):
         return f"{self.ip_address} ({self.ip_type}) - {self.activity_title}"
+
+
+class Activity(models.Model):
+    ACTION_TYPES = [
+        ("create", "Created"),
+        ("update", "Updated"),
+        ("delete", "Deleted"),
+        ("signup", "Signed Up"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    action_type = models.CharField(max_length=10, choices=ACTION_TYPES)
+    title = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    image = models.ImageField(null=True, blank=True, upload_to="activity_images/")
+    timestamp = models.DateTimeField(auto_now_add=True)
+    url = models.URLField(null=True, blank=True)
+
+    # Generic foreign key fields
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    related_object = GenericForeignKey("content_type", "object_id")
+
+    def __str__(self):
+        return f"{self.title} by {self.user.username} at {self.timestamp}"
+
+    class Meta:
+        ordering = ["-timestamp"]
+
+
+class Badge(models.Model):
+    BADGE_TYPES = [
+        ("automatic", "Automatic"),
+        ("manual", "Manual"),
+    ]
+
+    title = models.CharField(max_length=100)
+    description = models.TextField()
+    icon = models.ImageField(upload_to="badges/", blank=True, null=True)
+    type = models.CharField(max_length=10, choices=BADGE_TYPES, default="automatic")
+    criteria = models.JSONField(blank=True, null=True)  # For automatic badges
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+
+class UserBadge(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
+    awarded_by = models.ForeignKey(
+        User, null=True, blank=True, related_name="awarded_badges", on_delete=models.SET_NULL
+    )
+    awarded_at = models.DateTimeField(auto_now_add=True)
+    reason = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.badge.title}"
