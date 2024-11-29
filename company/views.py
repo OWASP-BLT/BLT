@@ -123,15 +123,11 @@ class RegisterCompanyView(View):
             return redirect("/accounts/login/")
 
         user_domain = get_email_domain(user.email)
-        company_name = data.get("company_name", "").strip().lower()
+        company_name = data.get("company_name", "")
 
         if user_domain in restricted_domain:
             messages.error(request, "Login with company email in order to create the company.")
             return redirect("/")
-
-        if user_domain != company_name:
-            messages.error(request, "Company name doesn't match your email domain.")
-            return redirect("register_company")
 
         if Company.objects.filter(name=company_name).exists():
             messages.error(request, "Company already exists.")
@@ -516,7 +512,7 @@ class AddDomainView(View):
                     response = requests.get(safe_url, timeout=5)
                     if response.status_code != 200:
                         raise Exception
-                except requests.exceptions.RequestException:
+                except requests.exceptions.RequestException as e:
                     messages.error(request, "Domain does not exist.")
                     return redirect("add_domain", id=id)
         except ValueError:

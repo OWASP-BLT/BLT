@@ -67,7 +67,7 @@ class Company(models.Model):
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=500, null=True, blank=True)
     logo = models.ImageField(upload_to="company_logos", null=True, blank=True)
-    url = models.URLField()
+    url = models.URLField(unique=True)
     email = models.EmailField(null=True, blank=True)
     twitter = models.CharField(max_length=30, null=True, blank=True)
     facebook = models.URLField(null=True, blank=True)
@@ -861,6 +861,10 @@ def clear_blocked_cache(sender, instance=None, **kwargs):
 class TimeLog(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="timelogs"
+    )
+    # associate organization with sizzle
+    organization = models.ForeignKey(
+        Company, on_delete=models.CASCADE, related_name="organization", null=True, blank=True
     )
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
