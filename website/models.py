@@ -26,7 +26,6 @@ from django.utils import timezone
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
-from PIL import Image
 from rest_framework.authtoken.models import Token
 
 logger = logging.getLogger(__name__)
@@ -328,19 +327,6 @@ class Issue(models.Model):
             + issue_link
         )
         return msg
-
-    def get_ocr(self):
-        if self.ocr:
-            return self.ocr
-        else:
-            try:
-                import pytesseract
-
-                self.ocr = pytesseract.image_to_string(Image.open(self.screenshot))
-                self.save()
-                return self.ocr
-            except:
-                return "OCR not installed"
 
     def remove_user(self):
         self.user = None
