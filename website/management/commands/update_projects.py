@@ -87,9 +87,6 @@ class Command(BaseCommand):
                         )
                     )
 
-                # Check for Documentation URL (homepage)
-                project.documentation_url = repo_data.get("homepage")
-
                 # Fetch Recent Commit Messages
                 url = f"https://api.github.com/repos/{repo_name}/commits"
                 response = requests.get(url, headers=headers)

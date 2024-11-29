@@ -755,7 +755,6 @@ class Project(models.Model):
     size = models.IntegerField(default=0)
     commit_count = models.IntegerField(default=0)
     readme_content = models.TextField(null=True, blank=True)
-    documentation_url = models.URLField(null=True, blank=True)
     recent_commit_messages = models.TextField(null=True, blank=True)
     ai_summary = models.TextField(null=True, blank=True)
 
