@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0135_add_project_metadata"),
+        ("website", "0136_remove_companyadmin_company_remove_domain_company_and_more"),
     ]
 
     operations = [

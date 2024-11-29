@@ -5,7 +5,10 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0074_company_company_id_company_managers_domain_managers_and_more"),
+        (
+            "website",
+            "0074_company_company_id_company_managers_domain_managers_and_more",
+        ),
     ]
 
     operations = [

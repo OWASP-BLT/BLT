@@ -1,0 +1,124 @@
+{% extends "organization/organization_dashboard_base.html" %}
+{% block title %}
+    Manage Bugs
+{% endblock title %}
+{% block body %}
+    <div class="bg-[#F3F5F7] w-full h-full flex flex-col items-center">
+        <div class="flex items-center md:justify-between w-full md:h-max mt-5 flex-col md:flex-row">
+            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Bughunts</p>
+            <div class="w-full md:w-[15%] flex justify-center md:justify-end mr-10">
+                <a href="{% url 'add_bughunt' organization %}"
+                   class="flex items-center justify-center md:justify-center px-16 py-7 bg-[#DC4654] rounded-xl hover:bg-red-600 transition-all">
+                    <i class="fa-sharp fa-solid fa-plus fa-xl text-white"></i>
+                </a>
+            </div>
+        </div>
+        <div class="w-[96%] h-[70vh] overflow-y-scroll flow-root my-10">
+            <div class="relative overflow-x-auto shadow-md sm:rounded-lg h-full bg-white">
+                <table class="w-full text-sm text-left text-gray-500">
+                    <caption class="p-5 text-xl font-semibold text-left text-gray-900 bg-white">
+                        <div class="flex w-full justify-between">
+                            <h2 class="mt-1 text-xl font-extrabold text-gray-500">Bughunts</h2>
+                            <button id="dropdownDefaultButton"
+                                    data-dropdown-toggle="dropdown"
+                                    class="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800"
+                                    type="button">
+                                Filter Bughunts
+                                <svg class="w-2.5 h-2.5 ml-2.5"
+                                     aria-hidden="true"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     fill="none"
+                                     viewBox="0 0 10 6">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4" />
+                                </svg>
+                            </button>
+                            <!-- Dropdown menu -->
+                            <div id="dropdown"
+                                 class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700">
+                                <ul class="py-2 text-sm text-gray-700 dark:text-gray-200"
+                                    aria-labelledby="dropdownDefaultButton">
+                                    <li>
+                                        <a href="{% url 'organization_manage_bughunts' organization %}"
+                                           class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">All</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'organization_manage_bughunts' organization %}?filter=ongoing"
+                                           class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Ongoing</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'organization_manage_bughunts' organization %}?filter=draft"
+                                           class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Draft</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'organization_manage_bughunts' organization %}?filter=ended"
+                                           class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Ended</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="mt-1 text-sm font-normal text-gray-500">Filter, view, edit or delete. Manage your bughunts easily</p>
+                    </caption>
+                    <thead class="text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-[1rem]">Hunt</th>
+                            <th scope="col" class="px-6 py-3 text-[1rem]">Start Date</th>
+                            <th scope="col" class="px-6 py-3 text-[1rem]">End Date</th>
+                            <th scope="col" class="px-6 py-3 text-[1rem]">Status</th>
+                            <th scope="col" class="px-6 py-3 text-[1rem]">
+                                <span class="sr-only">View</span>
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-lg">
+                                <span class="sr-only">Edit</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if bughunts %}
+                            {% for hunt in bughunts %}
+                                <tr class="bg-white border-b">
+                                    <th scope="row"
+                                        class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                        {{ hunt.name }}
+                                    </th>
+                                    <td class="px-6 py-4">{{ hunt.starts_on__day }}/{{ hunt.starts_on__month }}/{{ hunt.starts_on__year }}</td>
+                                    <td class="px-6 py-4">{{ hunt.end_on__day }}/{{ hunt.end_on__month }}/{{ hunt.end_on__year }}</td>
+                                    <td class="px-6 py-4">
+                                        {% if not hunt.is_published %}
+                                            <p class="text-gray-500">Draft</p>
+                                        {% elif not hunt.result_published %}
+                                            <p class="text-green-500">Ongoing</p>
+                                        {% else %}
+                                            <p class="text-red-500">Ended</p>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <a href="{% url 'show_bughunt' hunt.id %}"
+                                           class="font-medium text-blue-600 hover:underline">View</a>
+                                    </td>
+                                    {% if hunt.result_published %}
+                                        <td class="px-6 py-4 text-right">
+                                            <a class="font-medium text-gray-600 hover:underline cursor-pointer">Edit</a>
+                                        </td>
+                                    {% else %}
+                                        <td class="px-6 py-4 text-right">
+                                            <a href="{% url 'add_bughunt' organization %}?hunt={{ hunt.id }}"
+                                               class="font-medium text-blue-600 hover:underline">Edit</a>
+                                        </td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr class="bg-white border-b">
+                                <th scope="row"
+                                    class="px-6 py-4 font-medium text-red-500 whitespace-nowrap">No Bughunts found</th>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock body %}
+{% block js %}
+    <script src="https://unpkg.com/@themesberg/flowbite@latest/dist/flowbite.bundle.js"></script>
+{% endblock js %}

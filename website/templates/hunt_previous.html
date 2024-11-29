@@ -83,7 +83,7 @@ img {
 }
     </style>
     <section>
-        {% include "includes/company_sidenav.html" %}
+        {% include "includes/organization_sidenav.html" %}
     </section>
     {% if hunts %}
         <div class="col_3">
@@ -102,8 +102,8 @@ img {
                             {% endif %}
                             <div class="card_content">
                                 <h2 class="card_title">{{ hunt.name }}</h2>
-                                <p class="card_text">{{ hunt.domain.name }}, {{ hunt.domain.company.name }} - Starts on {{ hunt.starts_on }}</p>
-                                <a href="{% url 'company_hunt_results' hunt.pk %}">
+                                <p class="card_text">{{ hunt.domain.name }}, {{ hunt.domain.organization.name }} - Starts on {{ hunt.starts_on }}</p>
+                                <a href="{% url 'organization_hunt_results' hunt.pk %}">
                                     <button class="btn card_btn">Read More</button>
                                 </a>
                             </div>

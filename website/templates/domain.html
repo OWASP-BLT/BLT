@@ -106,7 +106,7 @@
         </div>
         <div class="max-sm:w-[100vw] w-[37vw] ml-4">
             <div>
-                <div class="company-info flex flex-row justify-between">
+                <div class="organization-info flex flex-row justify-between">
                     <div class="one">
                         <a href="{{ domain.url }}"
                            class="font-bold text-[20px] capitalize"
@@ -123,14 +123,14 @@
                         {% endif %}
                     </div>
                     <div class="two flex flex-col w-[40%] items-center justify-between">
-                        <form action="{% url 'add_domain_to_company' %}" method="post">
-                            {% if domain.company %}
+                        <form action="{% url 'add_domain_to_organization' %}" method="post">
+                            {% if domain.organization %}
                                 {% csrf_token %}
                                 <input type="hidden" name="domain" value="{{ domain.id }}">
-                                <input type="text" name="company" placeholder="Company Name">
+                                <input type="text" name="organization" placeholder="Organization Name">
                                 <button type="submit"
                                         class="bg-[#E5F2FE] font-['Poppins'] font-bold rounded-2xl p-3 m-2">
-                                    ➕ Add to Company
+                                    ➕ Add to Organization
                                 </button>
                             {% endif %}
                             <button type="submit"

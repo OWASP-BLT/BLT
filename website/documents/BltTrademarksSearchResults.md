@@ -1,4 +1,4 @@
-### Detailed Description of the "Trademarks Search Results" UI Component and the url path is "https://blt.owasp.org/trademarks/query={company_name}/" for the OWASP Bug Logging Tool (BLT) Application
+### Detailed Description of the "Trademarks Search Results" UI Component and the url path is "https://blt.owasp.org/trademarks/query={organization_name}/" for the OWASP Bug Logging Tool (BLT) Application
 
 #### 1. Component Overview
 The "Trademarks Search Results" UI component displays the results of a trademark search query. It retrieves data from the United States Patent and Trademark Office to show detailed information about trademarks matching the user's search criteria. The primary functionalities include listing the search results, providing detailed trademark information, and allowing users to view individual trademark registrations.

@@ -2,14 +2,14 @@
 {% load static %}
 {% block content %}
     <section>
-        {% include "includes/company_sidenav.html" %}
+        {% include "includes/organization_sidenav.html" %}
     </section>
     <div>
         <div class="col_3">
             <h3 class="text-left blank1">Drafts</h3>
             {% if hunts %}
                 {% for hunt in hunts %}
-                    <a href='{% url "company_dashboard_hunt_detail" hunt.pk %}'>
+                    <a href='{% url "organization_dashboard_hunt_detail" hunt.pk %}'>
                         <div class="col-md-3 widget widget1">
                             <div class="r3_counter_box">
                                 <i class="fa fa-mail-forward"></i>
