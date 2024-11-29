@@ -7,38 +7,9 @@
 {% endblock title %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="lg:w-3/4 flex flex-col lg:flex-row space-y-8 lg:space-y-0 lg:space-x-8 mx-auto mt-10">
-        <!-- Support OWASP Development Section -->
-        <div class="lg:w-1/2 bg-white shadow-lg rounded-lg p-8">
-            <h2 class="text-4xl font-semibold text-center text-gray-800 mb-6">Support OWASP Development</h2>
-            <p class="text-lg text-center mb-6 text-gray-600">
-                Contribute directly to the ongoing development of the OWASP Bug Logging Tool (BLT). Choose a sponsorship plan and help us continue to grow and improve.
-            </p>
-            <div class="grid grid-cols-1 gap-6">
-                <a href="https://owasp.org/donate/?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool#sponsor"
-                   class="bg-blue-500 text-white p-6 rounded-lg text-center hover:bg-blue-600 transition-colors">
-                    <p class="text-xl font-bold">{% trans "Flea Plan" %}</p>
-                    <p class="text-2xl">$25.00 / {% trans "Month" %}</p>
-                </a>
-                <a href="https://owasp.org/donate/?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool#sponsor"
-                   class="bg-green-500 text-white p-6 rounded-lg text-center hover:bg-green-600 transition-colors">
-                    <p class="text-xl font-bold">{% trans "Ant Plan" %}</p>
-                    <p class="text-2xl">$50.00 / {% trans "Month" %}</p>
-                </a>
-                <a href="https://owasp.org/donate/?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool#sponsor"
-                   class="bg-yellow-500 text-white p-6 rounded-lg text-center hover:bg-yellow-600 transition-colors">
-                    <p class="text-xl font-bold">{% trans "Wasp Plan" %}</p>
-                    <p class="text-2xl">$100.00 / {% trans "Month" %}</p>
-                </a>
-                <a href="https://owasp.org/donate/?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool#sponsor"
-                   class="bg-red-500 text-white p-6 rounded-lg text-center hover:bg-red-600 transition-colors">
-                    <p class="text-xl font-bold">{% trans "Scorpion Plan" %}</p>
-                    <p class="text-2xl">$500.00 / {% trans "Month" %}</p>
-                </a>
-            </div>
-        </div>
+    <div class="flex mt-10 justify-center items-center">
         <!-- Monthly Prize Sponsorship Section -->
-        <div class="lg:w-1/2 bg-white shadow-lg rounded-lg p-8">
+        <div class="bg-white shadow-lg p-8">
             <h2 class="text-4xl font-semibold text-center text-gray-800 mb-6">Sponsor the Monthly Leaderboard Prize</h2>
             <div class="mt-8">
                 <h3 class="text-3xl font-semibold mb-4 text-gray-800">Enter BCH Address</h3>

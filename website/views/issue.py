@@ -337,8 +337,12 @@ def newhome(request, template="new_home.html"):
     bugs_screenshots = {issue: issue.screenshots.all()[:3] for issue in issues_with_screenshots}
 
     current_time = now()
-    leaderboard = User.objects.filter(
-        points__created__month=current_time.month, points__created__year=current_time.year
+    leaderboard = (
+        User.objects.filter(
+            points__created__month=current_time.month, points__created__year=current_time.year
+        )
+        .annotate(total_points=Sum("points__score"))
+        .order_by("-total_points")
     )
 
     context = {

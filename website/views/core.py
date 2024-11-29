@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 import urllib
 from datetime import datetime, timezone
 
@@ -609,6 +610,10 @@ def sponsor_view(request):
     return render(request, "sponsor.html", context={"balance": balance})
 
 
+def donate_view(request):
+    return render(request, "donate.html")
+
+
 @require_GET
 def robots_txt(request):
     lines = [
@@ -618,8 +623,25 @@ def robots_txt(request):
     return HttpResponse("\n".join(lines), content_type="text/plain")
 
 
+import os
+
+
+def get_last_commit_date():
+    try:
+        return (
+            subprocess.check_output(
+                ["git", "log", "-1", "--format=%cd"], cwd=os.path.dirname(os.path.dirname(__file__))
+            )
+            .decode("utf-8")
+            .strip()
+        )
+    except FileNotFoundError:
+        return "Not available"
+
+
 def home(request):
-    return render(request, "home.html")
+    last_commit = get_last_commit_date()
+    return render(request, "home.html", {"last_commit": last_commit})
 
 
 def handler404(request, exception):

@@ -48,6 +48,7 @@ from website.views.core import (
     add_suggestions,
     chatbot_conversation,
     check_status,
+    donate_view,
     facebook_callback,
     find_key,
     github_callback,
@@ -156,6 +157,7 @@ from website.views.user import (
     UserProfileDetailsView,
     UserProfileDetailView,
     addbalance,
+    assign_badge,
     contributors,
     contributors_view,
     create_wallet,
@@ -588,6 +590,7 @@ urlpatterns = [
     path("users/", users_view, name="users"),
     path("company/", include("company.urls")),
     path("sponsor/", sponsor_view, name="sponsor"),
+    path("donate/", donate_view, name="donate"),
     path("companies/", DomainListView.as_view(), name="domain_lists"),
     path("trademarks/", trademark_search, name="trademark_search"),
     path("generate_bid_image/<int:bid_amount>/", generate_bid_image, name="generate_bid_image"),
@@ -603,7 +606,7 @@ urlpatterns = [
     path("suggestion/vote/", vote_suggestions, name="vote_suggestions"),
     path("suggestion/set-vote-status/", set_vote_status, name="set_vote_status"),
     re_path(
-        r"^trademarks/query=(?P<slug>[\w\s]+)",
+        r"^trademarks/query=(?P<slug>[\w\s\W]+)",
         trademark_detailview,
         name="trademark_detailview",
     ),
@@ -633,6 +636,7 @@ urlpatterns = [
         name="user_sizzle_report",
     ),
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
+    path("assign-badge/<str:username>/", assign_badge, name="assign_badge"),
 ]
 
 if settings.DEBUG:

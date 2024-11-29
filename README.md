@@ -6,5 +6,4 @@
 
 <img alt="Views" src="https://blt.owasp.org/projects/blt/badge"></a>
 
-------
 Everything is on our <a href="https://blt.owasp.org">homepage</a>

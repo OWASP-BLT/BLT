@@ -2,406 +2,597 @@
 {% load static %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen flex flex-col mx-4">
-        <h1 class="text-4xl font-semibold my-8 mx-auto">Sitemap</h1>
-        <ul>
-            <h2>General</h2>
-            <li>
-                <a href="{% url 'home' %}">Home</a>
-            </li>
-            <li>
-                <a href="{% url 'issues' %}">Issues</a>
-            </li>
-            <li>
-                <a href="{% url 'delete' %}">Account Delete</a>
-            </li>
-            <li>
-                <a href="{% url 'invite_friend' %}">Invite Friend</a>
-            </li>
-            <li>
-                <a href="{% url 'referral_signup' %}">Referral Signup</a>
-            </li>
-            <li>
-                <a href="{% url 'show_bughunt' 1 %}">Show Bughunt</a>
-            </li>
-            <li>
-                <a href="{% url 'follow_user' random_domain %}">Follow User</a>
-            </li>
-            <li>
-                <a href="{% url 'all_activity' %}">All Activity</a>
-            </li>
-            <li>
-                <a href="{% url 'leaderboard_global' %}">Leaderboard Global</a>
-            </li>
-            <li>
-                <a href="{% url 'leaderboard_specific_month' %}">Leaderboard Specific Month</a>
-            </li>
-            <li>
-                <a href="{% url 'leaderboard_eachmonth' %}">Leaderboard Each Month</a>
-            </li>
-            <li>
-                <a href="{% url 'profile' random_domain %}">Profile</a>
-            </li>
-            <li>
-                <a href="{% url 'domain' random_domain %}">Domain</a>
-            </li>
-            <li>
-                <a href="{% url 'account_profile' %}">Account Profile</a>
-            </li>
-            <li>
-                <a href="{% url 'start_hunt' %}">Start Hunt</a>
-            </li>
-            <li>
-                <a href="{% url 'hunt' %}">Hunt</a>
-            </li>
-            <li>
-                <a href="{% url 'hunts' %}">Hunts</a>
-            </li>
-            <li>
-                <a href="{% url 'invite' %}">Invite</a>
-            </li>
-            <li>
-                <a href="{% url 'terms' %}">Terms</a>
-            </li>
-            <li>
-                <a href="{% url 'about' %}">About</a>
-            </li>
-            <li>
-                <a href="{% url 'teams' %}">Teams</a>
-            </li>
-            <li>
-                <a href="{% url 'project_list' %}">Projects</a>
-            </li>
-            <li>
-                <a href="{% url 'apps' %}">Apps</a>
-            </li>
-            <li>
-                <a href="{% url 'deletions' %}">Deletions</a>
-            </li>
-            <li>
-                <a href="{% url 'bacon' %}">Bacon</a>
-            </li>
-            <li>
-                <a href="{% url 'bltv' %}">BLTV</a>
-            </li>
-            <li>
-                <a href="{% url 'privacy' %}">Privacy</a>
-            </li>
-            <li>
-                <a href="{% url 'stats' %}">Stats</a>
-            </li>
-            <li>
-                <a href="{% url 'social' %}">Scoials</a>
-            </li>
-            <li>
-                <a href="{% url 'search' %}">Search</a>
-            </li>
-            <li>
-                <a href="{% url 'contributors' %}">Contributors</a>
-            </li>
-            <li>
-                <a href="{% url 'sponsor' %}">Sponsors</a>
-            </li>
-            <li>
-                <a href="{% url 'trademark_search' %}">Trademark Search</a>
-            </li>
-            <li>
-                <a href="{% url 'trademark_detailview' random_domain %}">Trademark Detailview</a>
-            </li>
-            <hr>
-            <h2>Issue</h2>
-            <li>
-                <a href="{% url 'issue' %}">Issue</a>
-            </li>
-            <li>
-                <a href="{% url 'report' %}">Report Issue</a>
-            </li>
-            <li>
-                <a href="{% url 'issue_view' 1 %}">Issue View // 1</a>
-            </li>
-            <li>
-                <a href="{% url 'add_comment' %}">Issue add Comment</a>
-            </li>
-            <li>
-                <a href="{% url 'edit_comment' 1 %}">Edit Comment // 1</a>
-            </li>
-            <li>
-                <a href="{% url 'reply_comment' 1 %}">Reply Comment // 1</a>
-            </li>
-            <li>
-                <a href="{% url 'like_issue' 1 %}">Like Issue // 1</a>
-            </li>
-            <li>
-                <a href="{% url 'dislike_issue' 1 %}">Dislike Issue // 1</a>
-            </li>
-            <li>
-                <a href="{% url 'flag_issue' 1 %}">Flag Issue // 1</a>
-            </li>
-            <li>
-                <a href="{% url 'edit_issue' %}">Issue Edit</a>
-            </li>
-            <li>
-                <a href="{% url 'save_issue' 1 %}">Save Issue // 1</a>
-            </li>
-            <li>
-                <a href="{% url 'unsave_issue' 1 %}">Unsave Issue // 1</a>
-            </li>
-            <li>
-                <a href="{% url 'comment_on_issue' 1 %}">Comment on Issue // 1</a>
-            </li>
-            <li>
-                <a href="{% url 'update_comment' 1 1 %}">Update Comment // 1</a>
-            </li>
-            <li>
-                <a href="{% url 'delete_issue' 1 %}">Delete Issue // 1</a>
-            </li>
-            <li>
-                <a href="{% url 'remove_user_from_issue' 1 %}">Remove User From Issue // 1</a>
-            </li>
-            <li>
-                <a href="{% url 'update_issue' %}">Update Issue</a>
-            </li>
-            <hr>
-            <li>
-                <a href="{% url 'delete_comment' %}">Delete Comment</a>
-            </li>
-            <hr>
-            <h2>Organization</h2>
-            <li>
-                <a href="{% url 'register_company' %}">Register Organization</a>
-            </li>
-            <li>
-                <a href="{% url 'domain_lists' %}">Domain View</a>
-            </li>
-            <li>
-                <a href="{% url 'subscribe_to_domains' 1 %}">Subscribe To Domains</a>
-            </li>
-            <hr>
-            <li>
-                <a href="{% url 'company_view' %}">Dashboard</a>
-            </li>
-            <li>
-                <a href="{% url 'company_dashboard_home' %}">Dashboard Home</a>
-            </li>
-            <li>
-                <a href="{% url 'admin_company_dashboard' %}">Admin Organization Dashboard</a>
-            </li>
-            <li>
-                <a href="{% url 'add_or_update_company' %}">Add or Update Organization Dashboard</a>
-            </li>
-            <li>
-                <a href="{% url 'company_dashboard_domain_detail' 1 %}">Organization Dashboard Domain Detail</a>
-            </li>
-            <li>
-                <a href="{% url 'company_dashboard_hunt_detail' 1 %}">Organization Dashboard Hunt Detail</a>
-            </li>
-            <li>
-                <a href="{% url 'company_dashboard_hunt_edit' 1 %}">Organization Dashboard Hunt Edit</a>
-            </li>
-            <li>
-                <a href="{% url 'admin_company_dashboard_detail' 1 %}">Admin Organization Dashboard Detail</a>
-            </li>
-            <li>
-                <a href="{% url 'create_hunt' %}">Organization Dashboard Hunt Create</a>
-            </li>
-            <li>
-                <a href="{% url 'draft_hunts' %}">Organization Dashboard Draft Hunt</a>
-            </li>
-            <li>
-                <a href="{% url 'upcoming_hunts' %}">Organization Dashboard Upcoming Hunt</a>
-            </li>
-            <li>
-                <a href="{% url 'previous_hunts' %}">Organization Dashboard Previous Hunt</a>
-            </li>
-            <li>
-                <a href="{% url 'company_hunt_results' 1 %}">Organization Dashboard Hunt Results</a>
-            </li>
-            <li>
-                <a href="{% url 'ongoing_hunts' %}">Organization Dashboard Ongoing Hunt</a>
-            </li>
-            <li>
-                <a href="{% url 'domain_list' %}">Organization Dashboard Domains</a>
-            </li>
-            <li>
-                <a href="{% url 'company-settings' %}">Organization Dashboard Settings</a>
-            </li>
-            <li>
-                <a href="{% url 'join' %}">join</a>
-            </li>
-            <li>
-                <a href="{% url 'update-role' %}">Organization Dashboard settings Update Role</a>
-            </li>
-            <li>
-                <a href="{% url 'add-role' %}">Organization Dashboard settings Add Role</a>
-            </li>
-            <li>
-                <a href="{% url 'company_view' %}">Dashboard</a>
-            </li>
-            <li>
-                <a href="{% url 'company_analytics' 1 %}">Dashboard Analytics</a>
-            </li>
-            <li>
-                <a href="{% url 'company_manage_bugs' 1 %}">Dashboard Manage bugs</a>
-            </li>
-            <li>
-                <a href="{% url 'company_manage_domains' 1 %}">Dashboard Manage Domains</a>
-            </li>
-            <li>
-                <a href="{% url 'company_manage_roles' 1 %}">Dashboard Manage Roles</a>
-            </li>
-            <li>
-                <a href="{% url 'company_manage_bughunts' 1 %}">Dashboard Manage Bughunts</a>
-            </li>
-            <li>
-                <a href="{% url 'end_bughunt' 1 %}">Dashboard End Bughunts</a>
-            </li>
-            <li>
-                <a href="{% url 'add_bughunt' 1 %}">Dashboard Add Bughunts</a>
-            </li>
-            <li>
-                <a href="{% url 'add_domain' 1 %}">Dashboard Add Domain</a>
-            </li>
-            <li>
-                <a href="{% url 'view_domain' 1 %}">Dashboard View Domain</a>
-            </li>
-            <hr>
-            <h2>API</h2>
-            <li>
-                <a href="{% url 'get_score' %}">Get UserScore</a>
-            </li>
-            <li>
-                <a href="{% url 'url_check' %}">Url Check</a>
-            </li>
-            <li>
-                <a href="{% url 'hunt_details' %}">Hunt Details</a>
-            </li>
-            <li>
-                <a href="{% url 'api_scoreboard' %}">API Scoreboard</a>
-            </li>
-            <li>
-                <a href="{% url 'api_invite_friend' %}">API Invite Friend</a>
-            </li>
-            <li>
-                <a href="{% url 'leaderboard' %}">leaderboard</a>
-            </li>
-            <li>
-                <a href="{% url 'api_like_issue' 1 %}">Like Issue</a>
-            </li>
-            <li>
-                <a href="{% url 'api_flag_issue' 1 %}">Flag Issue</a>
-            </li>
-            <li>
-                <a href="{% url 'search_issues' %}">Seach Issues</a>
-            </li>
-            <li>
-                <a href="{% url 'create_wallet' %}">Create Wallet</a>
-            </li>
-            <li>
-                <a href="{% url 'api_count' %}">API count</a>
-            </li>
-            <li>
-                <a href="{% url 'hunts_detail_v2' %}">Hunt Details V2</a>
-            </li>
-            <li>
-                <a href="{% url 'issuecreate' %}">Issue Create</a>
-            </li>
-            <li>
-                <a href="{% url 'delete_api_issue' 1 %}">API Delete Issue</a>
-            </li>
-            <li>
-                <a href="{% url 'remove_api_user_from_issue' 1 %}">Remove API User From Issue</a>
-            </li>
-            <li>
-                <a href="{% url 'update_api_issue' %}">Update API Issue</a>
-            </li>
-            <li>
-                <a href="{% url 'api_scoreboard' %}">API Scoreboard</a>
-            </li>
-            <li>
-                <a href="{% url 'api_terms' %}">API Mobile Terms</a>
-            </li>
-            <li>
-                <a href="{% url 'api_about' %}">API About</a>
-            </li>
-            <li>
-                <a href="{% url 'api_privacypolicy' %}">API Privacy Policy</a>
-            </li>
-            <li>
-                <a href="{% url 'api_scoreboard' %}">API Scoreboard</a>
-            </li>
-            <hr>
-            <h2>User Dashboard</h2>
-            <li>
-                <a href="{% url 'user' %}">User Dashboard</a>
-            </li>
-            <li>
-                <a href="{% url 'addbalance' %}">User Dashboard Addbalance</a>
-            </li>
-            <li>
-                <a href="{% url 'withdraw' %}">User Dashboard Withdraw</a>
-            </li>
-            <li>
-                <a href="{% url 'stripe_connected' 1 %}">User Dashboard Stripe connected</a>
-            </li>
-            <li>
-                <a href="{% url 'view_hunt' 1 %}">User Dashboard View Hunt</a>
-            </li>
-            <li>
-                <a href="{% url 'submit_bug' 1 %}">User Dashboard Submit Bug</a>
-            </li>
-            <li>
-                <a href="{% url 'hunt_results' 1 %}">User Dashboard Hunt Results</a>
-            </li>
-            <li>
-                <a href="{% url 'user_profile' 1 %}">User Dashboard Profile</a>
-            </li>
-            <hr>
-            <h2>Essential Components</h2>
-            <li>
-                <a href="{% url 'password_reset_confirm' 1 1 %}">Password Reset Confirm</a>
-            </li>
-            <li>
-                <a href="{% url 'facebook_login' %}">Facebook Login</a>
-            </li>
-            <li>
-                <a href="{% url 'github_login' %}">Github Login</a>
-            </li>
-            <li>
-                <a href="{% url 'google_login' %}">Google Login</a>
-            </li>
-            <li>
-                <a href="{% url 'github_callback' %}">Github Callback</a>
-            </li>
-            <li>
-                <a href="{% url 'google_callback' %}">Google Callback</a>
-            </li>
-            <li>
-                <a href="{% url 'facebook_callback' %}">Facebook Callback</a>
-            </li>
-            <li>
-                <a href="{% url 'facebook_connect' %}">Facebook Conect</a>
-            </li>
-            <li>
-                <a href="{% url 'github_connect' %}">Github Connect</a>
-            </li>
-            <li>
-                <a href="{% url 'social_account_list' %}">Social Account List</a>
-            </li>
-            <li>
-                <a href="{% url 'social_account_disconnect' 1 %}">Social Account Disconnect</a>
-            </li>
-            <li>
-                <a href="{% url 'schema-swagger-ui' %}">Schema Swagger UI</a>
-            </li>
-            <li>
-                <a href="{% url 'schema-redoc' %}">Schema Redoc</a>
-            </li>
-            <li>
-                <a href="{% url 'inbound_event_webhook_callback' %}">inbound event webhook callback</a>
-            </li>
-            <li>
-                <a href="{% url 'update_bch_address' %}">Update BCH Address</a>
-            </li>
-        </ul>
+    <div class="min-h-screen flex flex-col">
+        <div class="p-6 text-center justify-center my-5">
+            <h2 class="text-6xl text-black font-bold">Sitemap</h2>
+        </div>
+        <div>
+            <div class="px-6 w-full">
+                <div class="grid grid-cols-1 gap-3 px-2 py-3 lg:py-8 md:grid-cols-6">
+                    <div>
+                        <span class="font-semibold text-gray-800 text-3xl transition">General</span>
+                        <div>
+                            <ul class="mt-2">
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-home w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'home' %}">Home</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-exclamation-circle w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'issues' %}">Issues</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-user-times w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'delete' %}">Account Delete</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-user-plus w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'invite_friend' %}">Invite Friend</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-gift w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'referral_signup' %}">Referral Signup</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-bug w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'show_bughunt' 1 %}">Show Bughunt</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-user-friends w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'follow_user' random_domain %}">Follow User</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-stream w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'all_activity' %}">All Activity</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-user w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'profile' random_domain %}">Profile</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-globe w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'domain' random_domain %}">Domain</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-address-card w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'account_profile' %}">Account Profile</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-play-circle w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'start_hunt' %}">Start Hunt</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-paw w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'hunt' %}">Hunt</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-list w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'hunts' %}">Hunts</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-user-plus w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'invite' %}">Invite</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-file-alt w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'terms' %}">Terms</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-info-circle w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'about' %}">About</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-users w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'teams' %}">Teams</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-folder w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'project_list' %}">Projects</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-mobile-alt w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'apps' %}">Apps</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-trash-alt w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'deletions' %}">Deletions</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-bacon w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'bacon' %}">Bacon</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-tv w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'bltv' %}">BLTV</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-user-secret w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'privacy' %}">Privacy</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-chart-bar w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'stats' %}">Stats</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-hashtag w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'social' %}">Socials</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-search w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'search' %}">Search</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-users w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'contributors' %}">Contributors</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-hand-holding-usd w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'sponsor' %}">Sponsors</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-search-dollar w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'trademark_search' %}">Trademark Search</a>
+                                </li>
+                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                    <i class="fas fa-info w-5 h-5 mr-1 align-middle"></i>
+                                    <a href="{% url 'trademark_detailview' random_domain %}">Trademark Detailview</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">Issues</span>
+                        <ul class="mt-2">
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-bug w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'issue' %}">Issue</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-exclamation-triangle w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'report' %}">Report Issue</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-eye w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'issue_view' 1 %}">Issue View // 1</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-comment-alt w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'add_comment' %}">Add Comment</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-edit w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'edit_comment' 1 %}">Edit Comment // 1</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-reply w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'reply_comment' 1 %}">Reply Comment // 1</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-thumbs-up w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'like_issue' 1 %}">Like Issue // 1</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-thumbs-down w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'dislike_issue' 1 %}">Dislike Issue // 1</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-flag w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'flag_issue' 1 %}">Flag Issue // 1</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-edit w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'edit_issue' %}">Edit Issue</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-save w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'save_issue' 1 %}">Save Issue // 1</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-trash w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'unsave_issue' 1 %}">Unsave Issue</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-comment-dots w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'comment_on_issue' 1 %}">Comment on Issue // 1</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-sync-alt w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'update_comment' 1 1 %}">Update Comment // 1</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-trash-alt w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'delete_issue' 1 %}">Delete Issue // 1</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-user-slash w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'remove_user_from_issue' 1 %}">Remove User From Issue // 1</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-sync w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'update_issue' %}">Update Issue</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-trash w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'delete_comment' %}">Delete Comment</a>
+                            </li>
+                        </ul>
+                        <div class="flex items-center space-x-4 mt-8">
+                            <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">Hunt Management</span>
+                        </div>
+                        <ul class="mt-2   mb-4">
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-bug w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'company_manage_bughunts' 1 %}">Manage Bughunts</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-ban w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'end_bughunt' 1 %}">End Bughunt</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-plus w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'add_bughunt' 1 %}">Add Bughunt</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-4">
+                            <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">Leaderboard</span>
+                        </div>
+                        <ul class="mt-2">
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-globe w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'leaderboard_global' %}" class="text-2xl">Global</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-calendar-check w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'leaderboard_specific_month' %}" class="text-2xl">Specific Month</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-calendar-alt w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'leaderboard_eachmonth' %}" class="text-2xl">Each Month</a>
+                            </li>
+                        </ul>
+                        <div class="flex items-center space-x-4 mt-8">
+                            <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">Organization</span>
+                        </div>
+                        <ul class="mt-2">
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-clipboard-list w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'register_company' %}">Register Organization</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-server w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'domain_lists' %}">Domain View</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-rss w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'subscribe_to_domains' 1 %}">Subscribe To Domains</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-user-plus w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'join' %}">Join Organization</a>
+                            </li>
+                        </ul>
+                        <div class="flex items-center space-x-4 mt-8">
+                            <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">User Dashboard</span>
+                        </div>
+                        <ul class="mt-2">
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-tachometer-alt w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'user' %}">User Dashboard</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-plus-circle w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'addbalance' %}">User Dashboard Addbalance</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-dollar-sign w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'withdraw' %}">User Dashboard Withdraw</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-plug w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'stripe_connected' 1 %}">User Dashboard Stripe connected</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-eye w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'view_hunt' 1 %}">User Dashboard View Hunt</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-bug w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'submit_bug' 1 %}">User Dashboard Submit Bug</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-chart-line w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'hunt_results' 1 %}">User Dashboard Hunt Results</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-user-circle w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'user_profile' 1 %}">User Dashboard Profile</a>
+                            </li>
+                        </ul>
+                        <div class="flex items-center space-x-4 mt-8">
+                            <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">Domain Management</span>
+                        </div>
+                        <ul class="mt-2   mb-4">
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-plus-circle w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'add_domain' 1 %}">Add Domain</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-eye w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'view_domain' 1 %}">View Domain</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-cogs w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'company_manage_domains' 1 %}">Manage Domains</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-4">
+                            <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">API</span>
+                        </div>
+                        <ul class="mt-2  ">
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-trophy w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'get_score' %}">Get UserScore</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-link w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'url_check' %}">Url Check</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-search w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'hunt_details' %}">Hunt Details</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-list-ol w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'api_scoreboard' %}">API Scoreboard</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-user-plus w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'api_invite_friend' %}">API Invite Friend</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-trophy w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'leaderboard' %}">Leaderboard</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-thumbs-up w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'api_like_issue' 1 %}">Like Issue</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-flag w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'api_flag_issue' 1 %}">Flag Issue</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-search w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'search_issues' %}">Search Issues</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-wallet w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'create_wallet' %}">Create Wallet</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-calculator w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'api_count' %}">API Count</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-history w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'hunts_detail_v2' %}">Hunt Details V2</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-plus-circle w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'issuecreate' %}">Issue Create</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-trash-alt w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'delete_api_issue' 1 %}">API Delete Issue</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-user-minus w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'remove_api_user_from_issue' 1 %}">Remove API User From Issue</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-edit w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'update_api_issue' %}">Update API Issue</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-list-ol w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'api_scoreboard' %}">API Scoreboard</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-mobile-alt w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'api_terms' %}">API Mobile Terms</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-info-circle w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'api_about' %}">API About</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-shield-alt w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'api_privacypolicy' %}">API Privacy Policy</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-list-ol w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'api_scoreboard' %}">API Scoreboard</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-4">
+                            <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">Essential Components</span>
+                        </div>
+                        <ul class="mt-2  ">
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-lock w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'password_reset_confirm' 1 1 %}">Password Reset Confirm</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fab fa-facebook w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'facebook_login' %}">Facebook Login</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fab fa-github w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'github_login' %}">Github Login</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fab fa-google w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'google_login' %}">Google Login</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fab fa-github w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'github_callback' %}">Github Callback</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fab fa-google w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'google_callback' %}">Google Callback</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fab fa-facebook w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'facebook_callback' %}">Facebook Callback</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fab fa-facebook w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'facebook_connect' %}">Facebook Connect</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fab fa-github w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'github_connect' %}">Github Connect</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-users w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'social_account_list' %}">Social Account List</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-unlink w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'social_account_disconnect' 1 %}">Social Account Disconnect</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-desktop w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'schema-swagger-ui' %}">Schema Swagger UI</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-book-open w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'schema-redoc' %}">Schema Redoc</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-plug w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'inbound_event_webhook_callback' %}">Inbound Event Webhook Callback</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-wallet w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'update_bch_address' %}">Update BCH Address</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-4">
+                            <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">Dashboard</span>
+                        </div>
+                        <ul class="mt-2  ">
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-tachometer-alt w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'company_view' %}">Dashboard</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-home w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'company_dashboard_home' %}">Home</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-users-cog w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'admin_company_dashboard' %}">Admin Organization Dashboard</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-edit w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'add_or_update_company' %}">Add or Update Organization</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-cogs w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'company_dashboard_domain_detail' 1 %}">Organization Dashboard Domain Detail</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-search w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'company_dashboard_hunt_detail' 1 %}">Organization Dashboard Hunt Detail</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-pencil-alt w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'company_dashboard_hunt_edit' 1 %}">Organization Dashboard Hunt Edit</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-cogs w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'admin_company_dashboard_detail' 1 %}">Admin Organization Dashboard Detail</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-plus-circle w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'create_hunt' %}">Organization Dashboard Hunt Create</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-file-alt w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'draft_hunts' %}">Organization Dashboard Draft Hunt</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-clock w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'upcoming_hunts' %}">Organization Dashboard Upcoming Hunt</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-history w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'previous_hunts' %}">Organization Dashboard Previous Hunt</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-trophy w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'company_hunt_results' 1 %}">Organization Dashboard Hunt Results</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-running w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'ongoing_hunts' %}">Organization Dashboard Ongoing Hunt</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-cogs w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'company-settings' %}">Organization Dashboard Settings</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-edit w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'update-role' %}">Update Role</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-plus-circle w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'add-role' %}">Add Role</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-tachometer-alt w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'company_view' %}">Dashboard</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-bug w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'company_manage_bugs' 1 %}">Manage Bugs</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-users-cog w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'company_manage_roles' 1 %}">Manage Roles</a>
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                            </li>
+                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <i class="fas fa-list-alt w-5 h-5 mr-1 align-middle"></i>
+                                <a href="{% url 'domain_list' %}">Organization Dashboard Domains</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+    <style>
+        a {
+            text-decoration: none;
+            
+        }
+        a:hover{
+            color: #ef4444;
+        }
+        i {
+            color: #ef4444;
+        }
+    </style>
 {% endblock content %}
