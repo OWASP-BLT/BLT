@@ -141,17 +141,20 @@
                                placeholder="Search"
                                class="text-xl lg:text-base lg:ps-9 lg:scale-[1.4] w-[70px] lg:w-auto h-16 placeholder-[#9CA3AF] bg-[#EDEDED] outline-none p-5 font-semibold rounded-l-2xl">
                         <select name="category"
-                                class="text-xl lg:text-base lg:scale-[1.4] w-[70px] lg:w-auto h-16 placeholder-[#9CA3AF] bg-[#ededed] outline-none p-5 font-semibold rounded-r-2xl text-[#9CA3AF]">
-                            <option value="organizations">{% trans "Organizations" %}</option>
-                            <option value="projects">{% trans "Projects" %}</option>
-                            <option value="users">{% trans "Users" %}</option>
-                            <option value="tags">{% trans "Tags" %}</option>
-                            <option value="languages">{% trans "Languages" %}</option>
-                            <option value="issues">{% trans "Issues" %}</option>
-                            <option value="domains">{% trans "Domains" %}</option>
-                            <option value="languages">{% trans "Labels" %}</option>
+                                class="text-xl lg:text-base lg:scale-[1.4] w-[70px] lg:w-auto h-16 placeholder-[#9CA3AF] bg-[#ededed] outline-none p-5 font-semibold rounded-r-2xl text-[#595c63]">
+                            <option value="organization">{% trans "Organizations" %}</option>
+                            <option value="project">{% trans "Projects" %}</option>
+                            <option value="user">{% trans "Users" %}</option>
+                            <option value="tag">{% trans "Tags" %}</option>
+                            <option value="language">{% trans "Languages" %}</option>
+                            <option value="issue">{% trans "Issues" %}</option>
+                            <option value="domain">{% trans "Domains" %}</option>
+                            <option value="label">{% trans "Labels" %}</option>
                         </select>
                     </form>
+                    {% if type %}
+                        <script type="text/javascript">$('select').val("{{ category }}");</script>
+                    {% endif %}
                 </div>
             </div>
             {% if request.user.is_authenticated %}

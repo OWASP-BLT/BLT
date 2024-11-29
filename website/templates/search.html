@@ -69,6 +69,44 @@
                         {% include "_activity.html" %}
                     {% endfor %}
                 </div>
+            {% elif organizations %}
+                <div class="col-md-8 col-md-offset-2">
+                    <div class="list-group">
+                        {% for organization in organizations %}
+                            <div class="list-group-item flex items-center p-4 border-b border-gray-200">
+                                <div class="mr-4">
+                                    <a href="{{ organization.url }}">
+                                        <img src="{{ organization.logo.url }}"
+                                            class="h-24 w-24 rounded-full shadow-md"
+                                            onerror="this.onerror=null; this.style.display ='none';"
+                                            alt="{{ organization.name }}">
+                                    </a>
+                                </div>
+                                <div>
+                                    <a href="{{ organization.url }}" class="text-2xl font-semibold text-gray-800 hover:text-gray-600">
+                                        {{ organization.name }}
+                                    </a>
+                                    <p class="text-gray-600">{{ organization.description }}</p>
+                                    <div class="mt-2 flex items-center">
+                                        <a href="{{ organization.url }}" class="text-blue-500 hover:underline">
+                                            {{ organization.url }}
+                                        </a>
+                                        {% if organization.twitter %}
+                                            <a href="https://twitter.com/{{ organization.twitter }}" class="ml-4 text-blue-500 hover:underline">
+                                                Twitter
+                                            </a>
+                                        {% endif %}
+                                        {% if organization.facebook %}
+                                            <a href="{{ organization.facebook }}" class="ml-4 text-blue-500 hover:underline">
+                                                Facebook
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
             {% elif domains %}
                 <div class="col-md-8 col-md-offset-2">
                     <div class="list-group">
