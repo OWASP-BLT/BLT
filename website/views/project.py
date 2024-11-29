@@ -279,7 +279,7 @@ class ProjectListView(ListView):
                         while Project.objects.filter(slug=f"{slug}-{counter}").exists():
                             counter += 1
                         slug = f"{slug}-{counter}"
-                        
+
                     project, created = Project.objects.get_or_create(
                         github_url=github_url,
                         defaults={
