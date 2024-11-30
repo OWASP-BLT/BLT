@@ -39,7 +39,9 @@
                                     <div class="mr-4">
                                         <a href="{{ organization.url }}">
                                             <img src="{{ organization.logo.url }}"
-                                                 class="h-24 w-24 rounded-full shadow-md"
+                                                 class="rounded-full shadow-md"
+                                                 height="24px"
+                                                 width="24px"
                                                  onerror="this.onerror=null; this.style.display ='none';"
                                                  alt="{{ organization.name }}">
                                         </a>
@@ -110,9 +112,7 @@
                                                 <a href="{{ item.get_absolute_url }}"
                                                    class="text-decoration-none text-dark">{{ item.name }}</a>
                                             </h5>
-                                            <p class="card-text text-truncate" style="max-width: 100%;">
-                                                {{ item.description|default:"No description available" }}
-                                            </p>
+                                            <p class="card-text text-truncate">{{ item.description|default:"No description available" }}</p>
                                             {% if item.tags.all %}
                                                 <div class="mb-2">
                                                     {% for tag in item.tags.all %}<span class="badge bg-secondary me-1">{{ tag.name }}</span>{% endfor %}
@@ -144,9 +144,9 @@
                                                 <img src="{{ project.logo_url }}"
                                                      alt="{{ project.name }}"
                                                      class="rounded me-3"
-                                                     style="width: 60px;
-                                                            height: 60px;
-                                                            object-fit: cover">
+                                                     width="60"
+                                                     height="60"
+                                                     style="object-fit: cover">
                                                 <div>
                                                     <h5 class="card-title mb-0">
                                                         <a href="{{ project.github_url }}"
