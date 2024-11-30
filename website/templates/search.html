@@ -8,6 +8,12 @@
     min-height: 25vh;
   }
 
+  .project-logo {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+  }
+
   .bottom-right {
             position: absolute;
             bottom: 10px;
@@ -143,10 +149,9 @@
                                             <div class="d-flex align-items-center mb-3">
                                                 <img src="{{ project.logo_url }}"
                                                      alt="{{ project.name }}"
-                                                     class="rounded me-3"
+                                                     class="rounded me-3 project-logo"
                                                      width="60"
-                                                     height="60"
-                                                     style="object-fit: cover">
+                                                     height="60">
                                                 <div>
                                                     <h5 class="card-title mb-0">
                                                         <a href="{{ project.github_url }}"
@@ -158,7 +163,7 @@
                                                     {% endif %}
                                                 </div>
                                             </div>
-                                            <p class="card-text text-truncate" style="max-width: 100%;">{{ project.description }}</p>
+                                            <p class="card-text text-truncate">{{ project.description }}</p>
                                             {% if project.tags.exists %}
                                                 <div class="mb-2">
                                                     {% for tag in project.tags.all %}<span class="badge bg-secondary me-1">{{ tag.name }}</span>{% endfor %}
