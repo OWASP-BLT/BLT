@@ -149,7 +149,16 @@ class ContributorSerializer(serializers.ModelSerializer):
 class TimeLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = TimeLog
-        fields = ["id", "user", "start_time", "end_time", "duration", "github_issue_url", "created"]
+        fields = [
+            "id",
+            "user",
+            "organization",
+            "start_time",
+            "end_time",
+            "duration",
+            "github_issue_url",
+            "created",
+        ]
         read_only_fields = [
             "id",
             "user",
