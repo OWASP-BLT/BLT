@@ -274,12 +274,9 @@ class ProjectListView(ListView):
                     # Check if a project with the same slug already exists
                     slug = data["name"].lower()
                     if Project.objects.filter(slug=slug).exists():
-                        # Generate a unique slug
-                        counter = 1
-                        while Project.objects.filter(slug=f"{slug}-{counter}").exists():
-                            counter += 1
-                        slug = f"{slug}-{counter}"
-
+                        messages.error(request, "A project with this slug already exists.")
+                        return redirect("project_list")
+                        
                     project, created = Project.objects.get_or_create(
                         github_url=github_url,
                         defaults={
