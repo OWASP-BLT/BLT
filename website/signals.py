@@ -16,7 +16,7 @@ def get_default_user():
 # Helper function to assign the badge based on action
 def assign_first_action_badge(user, action_title):
     """Assign badges for first-time actions."""
-    if user.is_authenticated:
+    if user is not None and user.is_authenticated:
         badge, created = Badge.objects.get_or_create(title=action_title, type="automatic")
 
         if not UserBadge.objects.filter(user=user, badge=badge).exists():
