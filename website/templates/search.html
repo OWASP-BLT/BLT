@@ -23,7 +23,8 @@
         </a>
     </div>
     {% if query %}
-        <div class="row mt-20">
+    <div class="container-min-height mt-20">
+        <div class="row">
             {% if issues %}
                 <div class="col-md-8 col-md-offset-2">
                     {% for activity in issues %}
@@ -223,4 +224,5 @@
             {% endif %}
         </div>
     {% endif %}
+</div>
 {% endblock content %}
