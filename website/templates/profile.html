@@ -567,6 +567,9 @@
                     <button class="mr-3" onclick="openRecommendationModal();">
                         <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">📑 {% trans "Recommends" %} {{ recommendations|length }}</div>
                     </button>
+                    <button class="mr-3" onclick="openRecommendsModal();">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">📑 {% trans "Recommendations" %} {{ recommends|length }}</div>
+                    </button>
                     <button class="mr-3" onclick="openBookmarkModal();">
                         <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">📑 {% trans "Bookmarks" %} {{ bookmarks|length }}</div>
                     </button>
@@ -583,37 +586,41 @@
                         </button>
                     {% endfor %}
                 </div>
+                <div class="text-2xl font-bold my-4">
+                    Recommendation
+                    <hr>
+                </div>
                 <!-- Recommendation Blurb Section -->
                 <div class="recommendation-section mb-4">
-                    <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Recommendation Blurb</h4>
-                        {% if object.userprofile.recommendation_blurb %}
-                            <p class="text-gray-600 mb-3">{{ object.userprofile.recommendation_blurb }}</p>
-                        {% else %}
-                            <p class="text-gray-500 italic mb-3">No recommendation blurb yet.</p>
-                        {% endif %}
-                        {% if request.user.is_authenticated and request.user != object %}
-                            <button class="recommend-blurb-btn text-sm px-3 py-1.5 rounded-md focus:outline-none {% if has_recommended_via_blurb %}bg-red-500 text-white{% else %}bg-blue-500 text-white{% endif %}"
-                                    data-username="{{ object.username }}"
-                                    onclick="recommendViaBlurb(this)">
-                                {% if has_recommended_via_blurb %}
-                                    Remove Recommendation
-                                {% else %}
-                                    Recommend User
-                                {% endif %}
-                            </button>
-                        {% endif %}
-                    </div>
+                    {#                    <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">#}
+                    {#                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Recommendation Blurb</h4>#}
+                    {% if object.userprofile.recommendation_blurb %}
+                        <p class="text-gray-600 mb-3">{{ object.userprofile.recommendation_blurb }}</p>
+                    {% else %}
+                        <p class="text-gray-500 italic mb-3">No recommendation blurb yet.</p>
+                    {% endif %}
+                    {% if request.user.is_authenticated and request.user != object %}
+                        <button class="recommend-blurb-btn text-sm px-3 py-1.5 rounded-md focus:outline-none {% if has_recommended_via_blurb %}bg-red-500 text-white{% else %}bg-blue-500 text-white{% endif %}"
+                                data-username="{{ object.username }}"
+                                onclick="recommendViaBlurb(this)">
+                            {% if has_recommended_via_blurb %}
+                                Remove Recommendation
+                            {% else %}
+                                Recommend User
+                            {% endif %}
+                        </button>
+                    {% endif %}
+                    {#                    </div>#}
                     <!-- Total Recommendations Count -->
                     <button class="mr-3" onclick="openRecommendsModal();">
-                        <div class="mt-3 bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-                            <h4 class="text-sm font-medium text-gray-700">Total Recommendations Received</h4>
-                            <div class="flex items-center">
-                                <span class="recommendation-count text-lg font-semibold text-gray-900">
-                                    {{ object.userprofile.recommendation_count }}
-                                </span>
-                            </div>
+                        {#                        <div class="mt-3 bg-white rounded-lg p-3 shadow-sm border border-gray-200">#}
+                        <h4 class="text-sm font-medium text-gray-700">Total Recommendations Received</h4>
+                        <div class="flex items-center">
+                            <span class="recommendation-count text-lg font-semibold text-gray-900">
+                                {{ object.userprofile.recommendation_count }}
+                            </span>
                         </div>
+                        {#                        </div>#}
                     </button>
                     <!-- ------------------------------------------------------------------- -->
                     <div id="recommends"
@@ -652,7 +659,9 @@
                                                                                 {% endif %}
                                                                             </td>
                                                                             <td>
-                                                                                <b>{{ i.recommender.username }}</b> recommended you
+                                                                                {% if i.recommender.username %}
+                                                                                    &nbsp; <a href="{% url 'profile' slug=i.recommender.username %}">{{ i.recommender.username }}</a>
+                                                                                {% endif %}
                                                                             </td>
                                                                         </tr>
                                                                     {% endfor %}
@@ -675,7 +684,9 @@
                                                                                         {% endif %}
                                                                                     </td>
                                                                                     <td>
-                                                                                        <b>{{ recommendation.recommender.username }}</b> recommended you
+                                                                                        {% if recommendation.recommender.username %}
+                                                                                            &nbsp; <a href="{% url 'profile' slug=recommendation.recommender.username %}">{{ recommendation.recommender.username }}</a>
+                                                                                        {% endif %}
                                                                                     </td>
                                                                                     {#                                           <b>{{ recommendation }}</b> from {{ recommendation.recommender.username }}#}
                                                                                 </tr>
@@ -761,31 +772,33 @@
                     <hr>
                 </div>
                 <div id="chart" class="max-sm:w-full w-3/4"></div>
-                <div>
-                    <div class="text-2xl font-bold my-4 pl-2">Spot a Talent? Recommend Now!</div>
-                    <form method="post"
-                          action="{% url 'profile' slug=user.username %}"
-                          class="recommend-user">
-                        {% csrf_token %}
-                        <label for="search_user" class="pr-2">Search for a user:</label>
-                        <input type="text"
-                               id="search_user"
-                               onkeyup="filterUsers()"
-                               placeholder="Start typing a name...">
-                        <div id="user_list">
-                            {% for user in all_users %}
-                                <div class="user-item">
-                                    <input type="radio"
-                                           name="recommended_user"
-                                           value="{{ user.id }}"
-                                           id="user_{{ user.id }}">
-                                    <label for="user_{{ user.id }}">{{ user.username }}</label>
-                                </div>
-                            {% endfor %}
-                        </div>
-                        <button class="red-btn" type="submit">Recommend</button>
-                    </form>
-                </div>
+                {% if request.user == user %}
+                    <div>
+                        <div class="text-2xl font-bold my-4 pl-2">Spot a Talent? Recommend Now!</div>
+                        <form method="post"
+                              action="{% url 'profile' slug=user.username %}"
+                              class="recommend-user">
+                            {% csrf_token %}
+                            <label for="search_user" class="pr-2">Search for a user:</label>
+                            <input type="text"
+                                   id="search_user"
+                                   onkeyup="filterUsers()"
+                                   placeholder="Start typing a name...">
+                            <div id="user_list">
+                                {% for user in all_users %}
+                                    <div class="user-item">
+                                        <input type="radio"
+                                               name="recommended_user"
+                                               value="{{ user.id }}"
+                                               id="user_{{ user.id }}">
+                                        <label for="user_{{ user.id }}">{{ user.username }}</label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <button class="red-btn" type="submit">Recommend</button>
+                        </form>
+                    </div>
+                {% endif %}
             </div>
         </div>
         <div class="max-sm:w-[100vw] w-[22vw]">
