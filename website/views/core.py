@@ -214,7 +214,9 @@ def search(request, template="search.html"):
         tag_items = []
         models_to_query = [Company, Domain, Issue, UserProfile, Project]
         for model in models_to_query: 
-            tag_items.extend(model.objects.filter(tags__name__icontains=query))
+            tag_items.extend(model.objects.filter(tags__name__icontains=query).distinct())
+        for item in tag_items:
+            item.model_name = item.__class__.__name__
         context = {
             "query": query,
             "type": stype,
@@ -224,7 +226,7 @@ def search(request, template="search.html"):
         context = {
             "query": query,
             "type": stype,
-            "projects": Project.objects.filter(tags__name__icontains=query, hunt=None)[0:20],
+            "projects": Project.objects.filter(tags__name__icontains=query)[0:20],
         }
     elif stype == "domain":
         context = {
