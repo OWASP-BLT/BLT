@@ -5,12 +5,13 @@ from django.dispatch import receiver
 
 from blog.models import Post
 
-from .models import Activity, Hunt, IpReport, Issue, UserBadge, Badge, Suggestion, Bid
+from .models import Activity, Badge, Bid, Hunt, IpReport, Issue, Suggestion, UserBadge
 
 
 def get_default_user():
     """Get or create a default 'anonymous' user."""
     return User.objects.get_or_create(username="anonymous")[0]
+
 
 # Helper function to assign the badge based on action
 def assign_first_action_badge(user, action_title):
@@ -21,6 +22,7 @@ def assign_first_action_badge(user, action_title):
         if not UserBadge.objects.filter(user=user, badge=badge).exists():
             UserBadge.objects.get_or_create(user=user, badge=badge)
             print(f"Assigned '{action_title}' badge to {user.username}")
+
 
 def create_activity(instance, action_type):
     """Generic function to create an activity for a given model instance."""
@@ -53,11 +55,11 @@ def handle_post_save(sender, instance, created, **kwargs):
     if sender == IpReport and created:  # Track first IP report
         assign_first_action_badge(instance.user, "First IP Reported")
         create_activity(instance, "created")
-    
+
     elif sender == Post and created:  # Track first blog post
         assign_first_action_badge(instance.user, "First Blog Posted")
         create_activity(instance, "created")
-    
+
     elif sender == Issue and created:  # Track first bug report
         assign_first_action_badge(instance.user, "First Bug Reported")
         create_activity(instance, "created")
@@ -70,12 +72,10 @@ def handle_post_save(sender, instance, created, **kwargs):
         assign_first_action_badge(instance.user, "First Suggestion")
         create_activity(instance, "suggested")
 
-    
     elif sender == Bid and created:  # Track first bid placed
         assign_first_action_badge(instance.user, "First Bid Placed")
         create_activity(instance, "placed")
 
- 
     elif sender is User and created:  # Handle user sign-up
         Activity.objects.create(
             user=instance,
