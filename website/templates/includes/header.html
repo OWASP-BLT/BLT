@@ -153,7 +153,10 @@
                         </select>
                     </form>
                     {% if type %}
-                        <script type="text/javascript">$('select').val("{{ category }}");</script>
+                        <script type="text/javascript">$('select').val("{{ type }}");</script>
+                    {% endif %}
+                    {% if query %}
+                        <script type="text/javascript">$('input').val("{{ query }}");</script>
                     {% endif %}
                 </div>
             </div>
