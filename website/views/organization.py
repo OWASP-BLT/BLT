@@ -1598,7 +1598,6 @@ def feed(request):
     else:
         is_mentor = False
 
-
     return render(
         request,
         "feed.html",
