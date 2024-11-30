@@ -155,7 +155,6 @@ from website.views.user import (
     UserProfileDetailsView,
     UserProfileDetailView,
     addbalance,
-    ajax_recommend_user,
     contributors,
     contributors_view,
     create_wallet,
@@ -630,7 +629,6 @@ urlpatterns = [
     path("blog/", include("blog.urls")),
     path("recommend/<int:user_id>/", recommend_user, name="recommend_user"),
     path("recommend/<str:username>/blurb/", recommend_via_blurb, name="recommend_via_blurb"),
-    path("ajax/recommend/<str:username>/", ajax_recommend_user, name="ajax_recommend_user"),
     path(
         "user-sizzle-report/<str:username>/",
         user_sizzle_report,

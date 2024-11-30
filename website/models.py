@@ -518,14 +518,15 @@ class UserProfile(models.Model):
     issues_hidden = models.BooleanField(default=False)
 
     recommended_by = models.ManyToManyField(
-        "self", related_name="has_recommended", symmetrical=False, blank=True
+        "self", symmetrical=False, related_name="has_recommended", blank=True
     )
 
     @property
     def recommendation_count(self):
-        base_count = self.recommended_by.count()
-        # Add 1 to the count if there's a recommendation blurb
-        return base_count + (1 if self.recommendation_blurb else 0)
+        # Count both types of recommendations
+        standard_recommendations = Recommendation.objects.filter(recommended_user=self.user).count()
+        blurb_recommendations = self.recommended_by.count()
+        return standard_recommendations + blurb_recommendations
 
     subscribed_domains = models.ManyToManyField(
         Domain, related_name="user_subscribed_domains", blank=True

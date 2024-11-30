@@ -13,7 +13,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import send_mail
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
@@ -25,7 +24,6 @@ from django.http import (
     JsonResponse,
 )
 from django.shortcuts import redirect, render
-from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
@@ -267,10 +265,10 @@ class UserProfileDetailView(DetailView):
         )
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
 
-        if self.request.user.is_authenticated:
-            context["has_recommended_via_blurb"] = user.userprofile.recommended_by.filter(
-                user=self.request.user
-            ).exists()
+        # if self.request.user.is_authenticated:
+        #     context["has_recommended_via_blurb"] = user.userprofile.recommended_by.filter(
+        #         user=self.request.user
+        #     ).exists()
 
         recommendations = Recommendation.objects.filter(recommender=user)
         context["recommendations"] = recommendations
@@ -284,8 +282,8 @@ class UserProfileDetailView(DetailView):
         context["all_users"] = User.objects.exclude(id=self.request.user.id)
         context["total_recommendations"] = (
             Recommendation.objects.filter(recommended_user=user).count()
-            + user.userprofile.recommended_by.count()
-            + (1 if user.userprofile.recommendation_blurb else 0)
+            + Recommendation.objects.filter(recommender=user).count()
+            # + (1 if user.userprofile.recommendation_blurb else 0)
         )
 
         return context
@@ -297,26 +295,29 @@ class UserProfileDetailView(DetailView):
             user.userprofile.recommendation_blurb = request.POST.get("recommendation_blurb")
             user.userprofile.save()
             messages.success(request, "Profile updated successfully!")
-        # Handle AJAX blurb-based recommendation
+
         if (
             request.headers.get("X-Requested-With") == "XMLHttpRequest"
             and "recommend_via_blurb" in request.POST
         ):
             if request.user.userprofile != user.userprofile:
-                if user.userprofile.recommended_by.filter(user=request.user).exists():
-                    user.userprofile.recommended_by.remove(request.user.userprofile)
-                    action = "removed"
-                else:
-                    user.userprofile.recommended_by.add(request.user.userprofile)
+                recommendation, created = Recommendation.objects.get_or_create(
+                    recommender=request.user, recommended_user=user
+                )
+                if created:
                     action = "added"
+                else:
+                    recommendation.delete()
+                    action = "removed"
 
                 total_count = (
                     Recommendation.objects.filter(recommended_user=user).count()
-                    + user.userprofile.recommended_by.count()
+                    + Recommendation.objects.filter(recommender=user).count()
+                    + (1 if user.userprofile.recommendation_blurb else 0)
                 )
-
                 return JsonResponse({"success": True, "action": action, "count": total_count})
             return JsonResponse({"success": False, "error": "Cannot recommend yourself"})
+
         if "recommended_user" in request.POST:
             recommended_user_id = request.POST.get("recommended_user")
             try:
@@ -345,75 +346,58 @@ class UserProfileDetailView(DetailView):
         return redirect(self.request.path_info)
 
 
-# Add new view for AJAX blurb recommendations
-@require_POST
-@login_required
-def recommend_via_blurb(request, username):
-    try:
-        target_user = get_user_model().objects.get(username=username)
-        if request.user == target_user:
-            return JsonResponse({"success": False, "error": "Cannot recommend yourself"})
-
-        if target_user.userprofile.recommended_by.filter(user=request.user).exists():
-            target_user.userprofile.recommended_by.remove(request.user.userprofile)
-            action = "removed"
-        else:
-            target_user.userprofile.recommended_by.add(request.user.userprofile)
-            action = "added"
-
-        total_count = (
-            Recommendation.objects.filter(recommended_user=target_user).count()
-            + target_user.userprofile.recommended_by.count()
-            + (1 if target_user.userprofile.recommendation_blurb else 0)
-        )
-
-        return JsonResponse({"success": True, "action": action, "count": total_count})
-    except get_user_model().DoesNotExist:
-        return JsonResponse({"success": False, "error": "User not found"})
-
-
 @login_required
 def recommend_user(request, user_id):
     try:
         recommended_user = User.objects.get(id=user_id)
-        if Recommendation.objects.filter(
-            recommender=request.user, recommended_user=recommended_user
-        ).exists():
-            messages.error(request, "You have already recommended this user.")
+        if request.user == recommended_user:
+            messages.error(request, "Cannot recommend yourself.")
         else:
-            Recommendation.objects.create(
+            recommendation, created = Recommendation.objects.get_or_create(
                 recommender=request.user, recommended_user=recommended_user
             )
-            messages.success(request, "Recommendation added successfully!")
+            if created:
+                messages.success(request, "Recommendation added successfully!")
+            else:
+                recommendation.delete()
+                messages.success(request, "Recommendation removed successfully!")
     except User.DoesNotExist:
         messages.error(request, "User not found.")
     return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
+@require_POST
 @login_required
-def ajax_recommend_user(request, username):
+def recommend_via_blurb(request, username):
     try:
-        recommended_user = User.objects.get(username=username)
-        if request.user == recommended_user:
+        target_user = User.objects.get(username=username)
+        if request.user == target_user:
             return JsonResponse({"success": False, "error": "Cannot recommend yourself"})
 
         recommendation, created = Recommendation.objects.get_or_create(
-            recommender=request.user, recommended_user=recommended_user
+            recommender=request.user, recommended_user=target_user
         )
-
-        if not created:
+        if created:
+            action = "added"
+        else:
             recommendation.delete()
             action = "removed"
-        else:
-            action = "added"
 
         total_count = (
-            Recommendation.objects.filter(recommended_user=recommended_user).count()
-            + recommended_user.userprofile.recommended_by.count()
-            + (1 if recommended_user.userprofile.recommendation_blurb else 0)
+            Recommendation.objects.filter(recommended_user=target_user).count()
+            + Recommendation.objects.filter(recommender=target_user).count()
+            + (1 if target_user.userprofile.recommendation_blurb else 0)
         )
+        recommends_count = Recommendation.objects.filter(recommender=request.user).count()
 
-        return JsonResponse({"success": True, "action": action, "count": total_count})
+        return JsonResponse(
+            {
+                "success": True,
+                "action": action,
+                "total_count": total_count,
+                "recommends_count": recommends_count,
+            }
+        )
     except User.DoesNotExist:
         return JsonResponse({"success": False, "error": "User not found"})
 
@@ -903,32 +887,36 @@ def get_score(request):
 
 
 @login_required(login_url="/accounts/login")
-def follow_user(request, user):
-    if request.method == "GET":
-        userx = User.objects.get(username=user)
-        flag = 0
-        list_userfrof = request.user.userprofile.follows.all()
-        for prof in list_userfrof:
-            if str(prof) == (userx.email):
-                request.user.userprofile.follows.remove(userx.userprofile)
-                flag = 1
-        if flag != 1:
-            request.user.userprofile.follows.add(userx.userprofile)
-            msg_plain = render_to_string(
-                "email/follow_user.txt", {"follower": request.user, "followed": userx}
-            )
-            msg_html = render_to_string(
-                "email/follow_user.txt", {"follower": request.user, "followed": userx}
-            )
+def follow_user(request, username):
+    try:
+        user_to_follow = User.objects.get(username=username)
+        if request.user == user_to_follow:
+            return JsonResponse({"success": False, "error": "Cannot follow yourself"})
 
-            send_mail(
-                "You got a new follower!!",
-                msg_plain,
-                settings.EMAIL_TO_STRING,
-                [userx.email],
-                html_message=msg_html,
-            )
-        return HttpResponse("Success")
+        user_profile = request.user.userprofile
+        user_to_follow_profile = user_to_follow.userprofile
+
+        if user_profile in user_to_follow_profile.followers.all():
+            # Unfollow the user
+            user_to_follow_profile.followers.remove(user_profile)
+            user_profile.following.remove(user_to_follow_profile)
+            is_following = False
+        else:
+            # Follow the user
+            user_to_follow_profile.followers.add(user_profile)
+            user_profile.following.add(user_to_follow_profile)
+            is_following = True
+
+        return JsonResponse(
+            {
+                "success": True,
+                "is_following": is_following,
+                "follower_count": user_to_follow_profile.followers.count(),
+                "following_count": user_profile.following.count(),
+            }
+        )
+    except User.DoesNotExist:
+        return JsonResponse({"success": False, "error": "User not found"})
 
 
 # get issue and comment id from url
