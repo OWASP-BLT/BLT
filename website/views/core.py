@@ -202,18 +202,25 @@ def search(request, template="search.html"):
         context = {
             "query": query,
             "type": stype,
-            "organizations": Company.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))[0:20],
+            "organizations": Company.objects.filter(
+                Q(name__icontains=query) | Q(description__icontains=query)
+            )[0:20],
         }
     elif stype == "project":
         context = {
             "query": query,
             "type": stype,
-            "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(ai_summary__icontains=query) | Q(tags__name__icontains=query)).distinct()[0:20],
+            "projects": Project.objects.filter(
+                Q(name__icontains=query)
+                | Q(description__icontains=query)
+                | Q(ai_summary__icontains=query)
+                | Q(tags__name__icontains=query)
+            ).distinct()[0:20],
         }
     elif stype == "tag":
         tag_items = []
         models_to_query = [Company, Domain, Issue, UserProfile, Project]
-        for model in models_to_query: 
+        for model in models_to_query:
             tag_items.extend(model.objects.filter(tags__name__icontains=query).distinct())
         for item in tag_items:
             item.model_name = item.__class__.__name__
