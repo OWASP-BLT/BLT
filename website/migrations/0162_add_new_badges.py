@@ -17,17 +17,17 @@ def add_new_badges(apps, schema_editor):
         {
             "title": "First Bid Placed",
             "description": "Awarded for placing the first bid.",
-            "type": "manual",
+            "type": "automatic",
         },
         {
             "title": "First Bug Bounty",
             "description": "Awarded for earning the first bug bounty.",
-            "type": "manual",
+            "type": "automatic",
         },
         {
             "title": "First Suggestion",
             "description": "Awarded for making the first suggestion.",
-            "type": "manual",
+            "type": "automatic",
         },
     ]
 
