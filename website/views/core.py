@@ -208,7 +208,7 @@ def search(request, template="search.html"):
         context = {
             "query": query,
             "type": stype,
-            "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(ai_summary__icontains=query) | Q(tags__icontains=query), hunt=None)[0:20],
+            "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(ai_summary__icontains=query) | Q(tags__name__icontains=query)).distinct()[0:20],
         }
     elif stype == "tag":
         tag_items = []
