@@ -1593,7 +1593,11 @@ def feed(request):
     is_paginated = page_obj.has_other_pages()
 
     # Check if the user has the mentor badge
-    is_mentor = UserBadge.objects.filter(user=request.user, badge__title="Mentor").exists()
+    if request.user.is_authenticated:
+        is_mentor = UserBadge.objects.filter(user=request.user, badge__title="Mentor").exists()
+    else:
+        is_mentor = False
+
 
     return render(
         request,
