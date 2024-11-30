@@ -276,7 +276,7 @@ class ProjectListView(ListView):
                     if Project.objects.filter(slug=slug).exists():
                         messages.error(request, "A project with this slug already exists.")
                         return redirect("project_list")
-                        
+
                     project, created = Project.objects.get_or_create(
                         github_url=github_url,
                         defaults={
