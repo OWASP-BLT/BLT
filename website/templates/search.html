@@ -22,45 +22,6 @@
             <i class="fab fa-figma"></i>
         </a>
     </div>
-    <div class="row container-min-height">
-        <div class="col-md-8 col-md-offset-2">
-            <h1 class="text-center">
-                <span class="search-header">Search Results for</span><span class="search-header-query">"{{ query }}"</span>
-            </h1>
-            <hr>
-            <form method="get" action="." class="mb-0">
-                <div class="input-group search-page-bar flex">
-                    <!-- <div class="search"> -->
-                    <input type="text"
-                           class="form-control h-[50px] w-[94.9%] border-r-0"
-                           name="query"
-                           value="{% if type != 'label' %}{{ query }}{% endif %}"
-                           placeholder="Search for issues...">
-                    <span class="input-group-btn h-max w-max">
-                        <div class="selectdiv ">
-                            <select class="form-control h-[50px]" name="type">
-                                <option value="issue" selected="selected">Issue</option>
-                                <option value="domain">Domain</option>
-                                <option value="user">User</option>
-                                <option value="label">Label</option>
-                            </select>
-                        </div>
-                    </span>
-                    <button class="btn btn-default h-[50px] ml-[2%]" type="submit">
-                        <i class="fa fa-search" aria-hidden="true"></i>
-                    </button>
-                    <!-- <input type="text"placeholder="Cari Ruang">
-                           <div class="button-src">
-                               <button>cari</button>
-                           </div> -->
-                    <!-- </div> -->
-                </div>
-            </form>
-            {% if type %}
-                <script type="text/javascript">$('select').val("{{type}}");</script>
-            {% endif %}
-        </div>
-    </div>
     {% if query %}
         <div class="row">
             {% if issues %}
