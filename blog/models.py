@@ -1,6 +1,5 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.core.files.storage import default_storage
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -25,10 +24,12 @@ class Post(models.Model):
 
 @receiver(post_save, sender=Post)
 def verify_file_upload(sender, instance, **kwargs):
+    from django.core.files.storage import default_storage
+
     print("Verifying file upload...")
+    print(f"Default storage backend: {default_storage.__class__.__name__}")
     if instance.image:
         print(f"Checking if image '{instance.image.name}' exists in the storage backend...")
-        print(f"Default storage backend: {default_storage}")
         if not default_storage.exists(instance.image.name):
             print(f"Image '{instance.image.name}' was not uploaded to the storage backend.")
             raise ValidationError(

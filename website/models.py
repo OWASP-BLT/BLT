@@ -26,7 +26,6 @@ from django.utils import timezone
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
-from PIL import Image
 from rest_framework.authtoken.models import Token
 
 logger = logging.getLogger(__name__)
@@ -68,7 +67,7 @@ class Company(models.Model):
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=500, null=True, blank=True)
     logo = models.ImageField(upload_to="company_logos", null=True, blank=True)
-    url = models.URLField()
+    url = models.URLField(unique=True)
     email = models.EmailField(null=True, blank=True)
     twitter = models.CharField(max_length=30, null=True, blank=True)
     facebook = models.URLField(null=True, blank=True)
@@ -329,19 +328,6 @@ class Issue(models.Model):
         )
         return msg
 
-    def get_ocr(self):
-        if self.ocr:
-            return self.ocr
-        else:
-            try:
-                import pytesseract
-
-                self.ocr = pytesseract.image_to_string(Image.open(self.screenshot))
-                self.save()
-                return self.ocr
-            except:
-                return "OCR not installed"
-
     def remove_user(self):
         self.user = None
         self.save()
@@ -369,7 +355,19 @@ class Issue(models.Model):
         ordering = ["-created"]
 
 
-if "storages.backends.gcloud.GoogleCloudStorage" in settings.DEFAULT_FILE_STORAGE:
+def is_using_gcs():
+    """
+    Determine if Google Cloud Storage is being used as the backend.
+    """
+    if hasattr(settings, "STORAGES"):
+        backend = settings.STORAGES.get("default", {}).get("BACKEND", "")
+    else:
+        backend = getattr(settings, "DEFAULT_FILE_STORAGE", "")
+
+    return backend == "storages.backends.gcloud.GoogleCloudStorage"
+
+
+if is_using_gcs():
 
     @receiver(post_delete, sender=Issue)
     def delete_image_on_issue_delete(sender, instance, **kwargs):
@@ -402,7 +400,7 @@ class IssueScreenshot(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
 
-if "storages.backends.gcloud.GoogleCloudStorage" in settings.DEFAULT_FILE_STORAGE:
+if is_using_gcs():
 
     @receiver(post_delete, sender=IssueScreenshot)
     def delete_image_on_post_delete(sender, instance, **kwargs):
@@ -865,6 +863,10 @@ class TimeLog(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="timelogs"
     )
+    # associate organization with sizzle
+    organization = models.ForeignKey(
+        Company, on_delete=models.CASCADE, related_name="organization", null=True, blank=True
+    )
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
     duration = models.DurationField(null=True, blank=True)
@@ -933,6 +935,7 @@ class Activity(models.Model):
         ("create", "Created"),
         ("update", "Updated"),
         ("delete", "Deleted"),
+        ("signup", "Signed Up"),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -953,3 +956,33 @@ class Activity(models.Model):
 
     class Meta:
         ordering = ["-timestamp"]
+
+
+class Badge(models.Model):
+    BADGE_TYPES = [
+        ("automatic", "Automatic"),
+        ("manual", "Manual"),
+    ]
+
+    title = models.CharField(max_length=100)
+    description = models.TextField()
+    icon = models.ImageField(upload_to="badges/", blank=True, null=True)
+    type = models.CharField(max_length=10, choices=BADGE_TYPES, default="automatic")
+    criteria = models.JSONField(blank=True, null=True)  # For automatic badges
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+
+class UserBadge(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
+    awarded_by = models.ForeignKey(
+        User, null=True, blank=True, related_name="awarded_badges", on_delete=models.SET_NULL
+    )
+    awarded_at = models.DateTimeField(auto_now_add=True)
+    reason = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.badge.title}"
