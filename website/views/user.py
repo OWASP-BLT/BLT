@@ -36,11 +36,11 @@ from rest_framework.response import Response
 from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
+    IP,
     Badge,
     Domain,
     Hunt,
     InviteFriend,
-    IP,
     Issue,
     IssueScreenshot,
     Monitor,
