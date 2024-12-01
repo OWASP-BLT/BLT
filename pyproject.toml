@@ -79,6 +79,7 @@ python-bitcoinrpc = "^1.0"
 sendgrid = "^6.11.0"
 matplotlib = "^3.9.2"
 openpyxl = "^3.1.5"
+slack-bolt = "^1.21.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"

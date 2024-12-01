@@ -15,7 +15,7 @@ from rest_framework import permissions, routers
 
 import comments.views
 from blt import settings
-from company.views import ShowBughuntView
+from company.views import ShowBughuntView, SlackCallbackView
 from website.api.views import (
     ActivityLogViewSet,
     AuthApiViewset,
@@ -237,6 +237,7 @@ urlpatterns = [
     re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
     re_path(r"^auth/google/connect/$", GoogleConnect.as_view(), name="google_connect"),
     path("auth/github/url/", github_views.oauth2_login),
+    path("oauth/slack/callback/", SlackCallbackView.as_view(), name="slack_callback"),
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),
     path("socialaccounts/", SocialAccountListView.as_view(), name="social_account_list"),
