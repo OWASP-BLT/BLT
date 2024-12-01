@@ -37,10 +37,10 @@ from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     Badge,
-    IP,
     Domain,
     Hunt,
     InviteFriend,
+    IP,
     Issue,
     IssueScreenshot,
     Monitor,
