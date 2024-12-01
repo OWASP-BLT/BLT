@@ -47,9 +47,4 @@ class Migration(migrations.Migration):
                 blank=True, related_name="liked_activities", to=settings.AUTH_USER_MODEL
             ),
         ),
-        migrations.AlterField(
-            model_name="badge",
-            name="icon",
-            field=models.ImageField(blank=True, null=True, upload_to="badges/"),
-        ),
     ]

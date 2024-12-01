@@ -982,7 +982,6 @@ class Activity(models.Model):
             post_data = f"{self.title}\n\n{self.description}"
             # If image exists, include it
             if self.image:
-                print("image = " + self.image.path)
                 bluesky_service.post_with_image(text=post_data, image_path=self.image.path)
             else:
                 bluesky_service.post_text(text=post_data)
@@ -992,8 +991,7 @@ class Activity(models.Model):
             self.save()
             return True
         except Exception as e:
-            print(f"Error posting to BlueSky: {e}")
-            raise
+            print(e)
 
 
 class Badge(models.Model):
