@@ -152,7 +152,7 @@
                             {% if leader.userprofile.winnings %}
                                 <span class="pull-right badge">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
                             {% endif %}
-                            <span><kbd class="{{ leader.userprofile.get_title_display|lower }} titleuser {{ leader.userprofile.title }}">{{ leader.userprofile.get_title_display }}</kbd></span>
+                            <span><kbd class="{{ leader.userprofile.get_title_display|lower }} titleuser">{{ leader.userprofile.get_title_display }}</kbd></span>
                         </div>
                     {% endfor %}
                 {% endif %}
