@@ -1,7 +1,9 @@
 import json
+import logging
+import os
 import uuid
 from datetime import datetime, timedelta
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import requests
 from django.contrib import messages
@@ -11,14 +13,30 @@ from django.core.files.storage import default_storage
 from django.db import transaction
 from django.db.models import Count, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractMonth
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from django.views.generic import View
+from slack_bolt import App
 
-from website.models import Company, Domain, Hunt, HuntPrize, Issue, IssueScreenshot, Winner
+from website.models import (
+    Company,
+    Domain,
+    Hunt,
+    HuntPrize,
+    Integration,
+    IntegrationServices,
+    Issue,
+    IssueScreenshot,
+    SlackIntegration,
+    Winner,
+)
 from website.utils import is_valid_https_url, rebuild_safe_url
+
+logger = logging.getLogger("slack_bolt")
+logger.setLevel(logging.WARNING)
 
 restricted_domain = ["gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "proton.com"]
 
@@ -377,6 +395,28 @@ class CompanyDashboardAnalyticsView(View):
         return render(request, "company/company_analytics.html", context=context)
 
 
+class CompanyDashboardIntegrations(View):
+    @validate_company_user
+    def get(self, request, id, *args, **kwargs):
+        companies = (
+            Company.objects.values("name", "id")
+            .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+            .distinct()
+        )
+
+        slack_integration = (
+            SlackIntegration.objects.filter(
+                integration__company_id=id,
+                integration__service_name=IntegrationServices.SLACK.value,
+            )
+            .select_related("integration")
+            .first()
+        )
+
+        context = {"company": id, "slack_integration": slack_integration}
+        return render(request, "company/company_integrations.html", context=context)
+
+
 class CompanyDashboardManageBugsView(View):
     @validate_company_user
     def get(self, request, id, *args, **kwargs):
@@ -708,6 +748,201 @@ class AddDomainView(View):
         domain.delete()
         messages.success(request, "Domain deleted successfully")
         return redirect("company_manage_domains", id=id)
+
+
+class AddSlackIntegrationView(View):
+    @validate_company_user
+    def get(self, request, id, *args, **kwargs):
+        slack_integration = (
+            SlackIntegration.objects.filter(
+                integration__company_id=id,
+                integration__service_name=IntegrationServices.SLACK.value,
+            )
+            .select_related("integration")
+            .first()
+        )
+
+        if slack_integration:
+            bot_token = slack_integration.bot_access_token
+            app = App(token=bot_token)
+            channels_list = self.get_channel_names(app)
+
+            hours = range(24)
+            return render(
+                request,
+                "company/add_slack_integration.html",
+                context={
+                    "company": id,
+                    "slack_integration": slack_integration,
+                    "channels": channels_list,
+                    "hours": hours,
+                },
+            )
+
+        # Redirect to Slack OAuth flow if no integration exists
+        client_id = os.getenv("SLACK_CLIENT_ID")
+        scopes = "channels:read,chat:write,groups:read,channels:join"
+        host = request.get_host()
+        scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
+        redirect_uri = f"{scheme}://{host}/oauth/slack/callback"
+        allowed_redirect_uris = [
+            f"{scheme}://{host}/oauth/slack/callback",
+        ]
+
+        if redirect_uri not in allowed_redirect_uris:
+            raise ValueError("Invalid redirect URI")
+
+        state = urlencode({"company_id": id})
+
+        auth_url = (
+            f"https://slack.com/oauth/v2/authorize"
+            f"?client_id={client_id}&scope={scopes}"
+            f"&state={state}&redirect_uri={redirect_uri}"
+        )
+
+        return redirect(auth_url)
+
+    def get_channel_names(self, app):
+        """Fetches channel names from Slack."""
+        cursor = None
+        channels = []
+        try:
+            while True:
+                response = app.client.conversations_list(cursor=cursor)
+                if response["ok"]:
+                    channels.extend(channel["name"] for channel in response["channels"])
+                cursor = response.get("response_metadata", {}).get("next_cursor")
+                if not cursor:
+                    break
+        except Exception as e:
+            print("Error fetching channels", e)
+        return channels
+
+    @validate_company_user
+    def post(self, request, id, *args, **kwargs):
+        if request.POST.get("_method") == "delete":
+            return self.delete(request, id, *args, **kwargs)
+
+        slack_data = {
+            "default_channel": request.POST.get("target_channel"),
+            "daily_sizzle_timelogs_status": request.POST.get("daily_sizzle_timelogs_status"),
+            "daily_sizzle_timelogs_hour": request.POST.get("daily_sizzle_timelogs_hour"),
+        }
+        slack_integration = (
+            SlackIntegration.objects.filter(
+                integration__company_id=id,
+                integration__service_name=IntegrationServices.SLACK.value,
+            )
+            .select_related("integration")
+            .first()
+        )
+
+        if slack_integration:
+            app = App(token=slack_integration.bot_access_token)
+            if slack_data["default_channel"]:
+                slack_integration.default_channel_id = self.get_channel_id(
+                    app, slack_data["default_channel"]
+                )
+                slack_integration.default_channel_name = slack_data["default_channel"]
+            slack_integration.daily_updates = bool(slack_data["daily_sizzle_timelogs_status"])
+            slack_integration.daily_update_time = slack_data["daily_sizzle_timelogs_hour"]
+            slack_integration.save()
+
+        return redirect("company_manage_integrations", id=id)
+
+    def get_channel_id(self, app, channel_name):
+        """Fetches a Slack channel ID by name."""
+        cursor = None
+        try:
+            while True:
+                response = app.client.conversations_list(cursor=cursor)
+                for channel in response["channels"]:
+                    if channel["name"] == channel_name.strip("#"):
+                        return channel["id"]
+                cursor = response.get("response_metadata", {}).get("next_cursor")
+                if not cursor:
+                    break
+        except Exception as e:
+            print("Error fetching channel ID:", e)
+        return None
+
+    @validate_company_user
+    def delete(self, request, id, *args, **kwargs):
+        """Deletes the Slack integration."""
+        slack_integration = (
+            SlackIntegration.objects.filter(
+                integration__company_id=id,
+                integration__service_name=IntegrationServices.SLACK.value,
+            )
+            .select_related("integration")
+            .first()
+        )
+
+        if slack_integration:
+            slack_integration.delete()
+
+        return redirect("company_manage_integrations", id=id)
+
+
+class SlackCallbackView(View):
+    def get(self, request, *args, **kwargs):
+        code = request.GET.get("code")
+        state = request.GET.get("state")
+
+        state_data = parse_qs(state)
+        company_id = state_data.get("company_id", [None])[0]
+
+        if not code or not company_id:
+            return HttpResponseBadRequest("Invalid or missing parameters")
+
+        try:
+            if not company_id.isdigit():
+                return HttpResponseBadRequest("Invalid company ID")
+
+            company_id = int(company_id)  # Safely cast to int after validation
+
+            # Exchange code for token
+            access_token = self.exchange_code_for_token(code, request)
+
+            integration = Integration.objects.create(
+                company_id=company_id,
+                service_name=IntegrationServices.SLACK.value,
+            )
+            SlackIntegration.objects.create(
+                integration=integration,
+                bot_access_token=access_token,
+            )
+
+            dashboard_url = reverse("company_manage_integrations", args=[company_id])
+            return redirect(dashboard_url)
+
+        except Exception as e:
+            print(f"Error during Slack OAuth callback: {e}")
+            return HttpResponseServerError("An error occurred")
+
+    def exchange_code_for_token(self, code, request):
+        """Exchanges OAuth code for Slack access token."""
+        client_id = os.getenv("SLACK_CLIENT_ID")
+        client_secret = os.getenv("SLACK_CLIENT_SECRET")
+        host = request.get_host()
+        scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
+        redirect_uri = f"{scheme}://{host}/oauth/slack/callback"
+
+        url = "https://slack.com/api/oauth.v2.access"
+        data = {
+            "code": code,
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "redirect_uri": redirect_uri,
+        }
+
+        response = requests.post(url, data=data)
+        token_data = response.json()
+
+        if token_data.get("ok"):
+            return token_data["access_token"]
+        else:
+            raise Exception(f"Error exchanging code for token: {token_data.get('error')}")
 
 
 class DomainView(View):
