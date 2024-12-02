@@ -35,12 +35,6 @@
     </style>
 {% endblock style %}
 {% block content %}
-    <script src="{% static "js/jquery.tablesorter.js" %}"></script>
-    <script>
-    $(function (load) {
-        $('#keywords').tablesorter();
-    });
-    </script>
     <div class="bottom-right">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/scoreboard.html">
             <i class="fab fa-github"></i>
@@ -61,12 +55,24 @@
                 <thead>
                     <tr>
                         <th>Logo</th>
-                        <th>Domain Name</th>
-                        <th>Open Issues</th>
-                        <th>Closed Issues</th>
-                        <th>Email Event</th>
-                        <th>Time of Last Event</th>
-                        <th>Top Domain Tester</th>
+                        <th>
+                            <a href="?sort_by=domain_name&sort_order={% if sort_by == 'domain_name' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">Domain Name</a>
+                        </th>
+                        <th>
+                            <a href="?sort_by=open_issues_count&sort_order={% if sort_by == 'open_issues_count' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">Open Issues</a>
+                        </th>
+                        <th>
+                            <a href="?sort_by=closed_issues_count&sort_order={% if sort_by == 'closed_issues_count' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">Closed Issues</a>
+                        </th>
+                        <th>
+                            <a href="?sort_by=email_event&sort_order={% if sort_by == 'email_event' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">Email Event</a>
+                        </th>
+                        <th>
+                            <a href="?sort_by=modified&sort_order={% if sort_by == 'modified' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">Time of Last Event</a>
+                        </th>
+                        <th>
+                            <a href="?sort_by=top_tester&sort_order={% if sort_by == 'top_tester' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">Top Domain Tester</a>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>

@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 import urllib
 from datetime import datetime, timezone
 
@@ -625,21 +626,21 @@ def robots_txt(request):
 import os
 
 
-def get_last_commit():
+def get_last_commit_date():
     try:
-        with open(".git/HEAD", "r") as f:
-            ref = f.readline().strip()
-        if ref.startswith("ref:"):
-            ref_path = os.path.join(".git", ref.split(" ")[1])
-            with open(ref_path, "r") as f:
-                return f.readline().strip()
-        return ref
+        return (
+            subprocess.check_output(
+                ["git", "log", "-1", "--format=%cd"], cwd=os.path.dirname(os.path.dirname(__file__))
+            )
+            .decode("utf-8")
+            .strip()
+        )
     except FileNotFoundError:
         return "Not available"
 
 
 def home(request):
-    last_commit = get_last_commit()
+    last_commit = get_last_commit_date()
     return render(request, "home.html", {"last_commit": last_commit})
 
 

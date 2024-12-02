@@ -715,10 +715,18 @@ class ScoreboardView(ListView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
 
-        # Annotate each domain with the count of open issues
+        sort_by = self.request.GET.get("sort_by", "open_issues_count")
+        sort_order = self.request.GET.get("sort_order", "desc")
+
+        if sort_order == "asc":
+            sort_by = sort_by
+        else:
+            sort_by = f"-{sort_by}"
+
         annotated_domains = Domain.objects.annotate(
-            open_issues_count=Count("issue", filter=Q(issue__status="open"))
-        ).order_by("-open_issues_count")
+            open_issues_count=Count("issue", filter=Q(issue__status="open")),
+            closed_issues_count=Count("issue", filter=Q(issue__status="closed")),
+        ).order_by(sort_by)
 
         paginator = Paginator(annotated_domains, self.paginate_by)
         page = self.request.GET.get("page")
@@ -732,6 +740,8 @@ class ScoreboardView(ListView):
 
         context["scoreboard"] = scoreboard_paginated
         context["user"] = self.request.GET.get("user")
+        context["sort_by"] = self.request.GET.get("sort_by", "open_issues_count")
+        context["sort_order"] = self.request.GET.get("sort_order", "desc")
         return context
 
 
@@ -947,12 +957,24 @@ def sizzle_daily_log(request):
 def TimeLogListView(request):
     time_logs = TimeLog.objects.filter(user=request.user).order_by("-start_time")
     active_time_log = time_logs.filter(end_time__isnull=True).first()
+
     # print the all details of the active time log
     token, created = Token.objects.get_or_create(user=request.user)
+    organizations_list_queryset = Company.objects.all().values("url", "name")
+    organizations_list = list(organizations_list_queryset)
+    organization_url = None
+    if active_time_log:
+        organization_url = active_time_log.organization.url
     return render(
         request,
         "sizzle/time_logs.html",
-        {"time_logs": time_logs, "active_time_log": active_time_log, "token": token.key},
+        {
+            "time_logs": time_logs,
+            "active_time_log": active_time_log,
+            "token": token.key,
+            "organizations_list": organizations_list,
+            "organization_url": organization_url,
+        },
     )
 
 
