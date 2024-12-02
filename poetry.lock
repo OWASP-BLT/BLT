@@ -1084,19 +1084,19 @@ humanize = ">=0.5.1"
 
 [[package]]
 name = "django-import-export"
-version = "4.3.1"
+version = "4.3.2"
 description = "Django application and library for importing and exporting data with included admin integration."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "django_import_export-4.3.1-py3-none-any.whl", hash = "sha256:7cd9165851872c8b0eb6ce71029f1e92411b757c2a2e69e7a7ea12e6274c173a"},
-    {file = "django_import_export-4.3.1.tar.gz", hash = "sha256:9e47bc3bf632d930870dab221c5ef0bb02c5d5efd3720c4607c08f3f946a1caa"},
+    {file = "django_import_export-4.3.2-py3-none-any.whl", hash = "sha256:4a5b16ca1448f9d33f18adc4375d01a558ac8fbd3a8d3b3180fdec5ef094a3da"},
+    {file = "django_import_export-4.3.2.tar.gz", hash = "sha256:9a2475a70422c701b9fd6e556df48419a9380f74921a83e7f2e86664a0df0db7"},
 ]
 
 [package.dependencies]
 diff-match-patch = "20241021"
 Django = ">=4.2"
-tablib = "3.7.0"
+tablib = ">=3.7.0"
 
 [package.extras]
 all = ["tablib[all]"]
@@ -5113,4 +5113,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "c24b77a36728c84b22e0926b24a36fbe5e24c8aea8d07bd19ddc0c4038668abe"
+content-hash = "f6b29f34578eb6611ad3ab981c86a0c15e9ba9cbbc4d22cfa2b15976b76526b0"
