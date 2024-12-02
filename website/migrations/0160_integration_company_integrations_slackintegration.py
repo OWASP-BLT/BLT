@@ -46,9 +46,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="company",
             name="integrations",
-            field=models.ManyToManyField(
-                related_name="companies", to="website.integration"
-            ),
+            field=models.ManyToManyField(related_name="companies", to="website.integration"),
         ),
         migrations.CreateModel(
             name="SlackIntegration",
