@@ -4,7 +4,9 @@ from django.urls import path
 from company.views import (
     AddDomainView,
     AddHuntView,
+    AddSlackIntegrationView,
     CompanyDashboardAnalyticsView,
+    CompanyDashboardIntegrations,
     CompanyDashboardManageBughuntView,
     CompanyDashboardManageBugsView,
     CompanyDashboardManageDomainsView,
@@ -26,6 +28,11 @@ urlpatterns = [
         "<int:id>/dashboard/analytics/",
         CompanyDashboardAnalyticsView.as_view(),
         name="company_analytics",
+    ),
+    path(
+        "<int:id>/dashboard/integrations/",
+        CompanyDashboardIntegrations.as_view(),
+        name="company_manage_integrations",
     ),
     path(
         "<int:id>/dashboard/bugs/",
@@ -50,6 +57,11 @@ urlpatterns = [
     path("dashboard/end_bughunt/<int:pk>", EndBughuntView.as_view(), name="end_bughunt"),
     path("<int:id>/dashboard/add_bughunt/", AddHuntView.as_view(), name="add_bughunt"),
     path("<int:id>/dashboard/add_domain/", AddDomainView.as_view(), name="add_domain"),
+    path(
+        "<int:id>/dashboard/add_slack_integration/",
+        AddSlackIntegrationView.as_view(),
+        name="add_slack_integration",
+    ),
     path(
         "<int:id>/dashboard/edit_domain/<int:domain_id>/",
         AddDomainView.as_view(),
