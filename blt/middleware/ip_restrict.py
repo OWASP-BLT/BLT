@@ -149,8 +149,7 @@ class IPRestrictMiddleware:
                     if new_count > MAX_COUNT:
                         new_count = MAX_COUNT
 
-                    # Truncate agent to 500 characters if it exceeds the limit before updating the record
-                    ip_record.agent = agent[:500]
+                    ip_record.agent = agent
                     ip_record.count = new_count
                     if ip_record.pk:
                         ip_record.save(update_fields=["agent", "count"])
