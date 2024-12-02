@@ -36,6 +36,7 @@ from rest_framework.response import Response
 from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
+    IP,
     Badge,
     Domain,
     Hunt,
@@ -201,6 +202,11 @@ class UserProfileDetailView(DetailView):
         except Http404:
             messages.error(self.request, "That user was not found.")
             return redirect("/")
+
+        # Update the view count and save the model
+        self.object.userprofile.visit_count = len(IP.objects.filter(path=request.path))
+        self.object.userprofile.save()
+
         return super(UserProfileDetailView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):

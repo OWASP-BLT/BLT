@@ -135,7 +135,7 @@
 </div>
 <script>
     function copyClipboard() {
-        var textToCopy = "Bug Found on @{{ object.domain_title }} - {{ object.description }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}";
+        var textToCopy = "Bug Found on @{{ object.domain_title|escapejs }} - {{ object.description|escapejs }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}";
         
         navigator.clipboard.writeText(textToCopy);
       
