@@ -1,0 +1,29 @@
+name: Enforce Issue Mention in PR Description
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+
+jobs:
+  validate_pr_description:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR description for issue mention
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_BODY="${{ github.event.pull_request.body }}"
+          REGEX="([fF]ixes|[rR]esolves|[Cc]loses) #([0-9]+)"
+          if [[ -z "$PR_BODY" ]]; then
+            echo "Error: PR description is empty. Please include a reference to an issue using 'fixes #<issue-number>', 'resolves #<issue-number>', or 'closes #<issue-number>'."
+            exit 1
+          fi
+          if ! [[ $PR_BODY =~ $REGEX ]]; then
+            echo "Error: PR description does not mention an issue. Please include a reference using 'fixes #<issue-number>', 'resolves #<issue-number>', or 'closes #<issue-number>'."
+            exit 1
+          fi
+          echo "PR description is valid."

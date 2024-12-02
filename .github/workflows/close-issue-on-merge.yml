@@ -1,0 +1,42 @@
+name: Close Issues from PR Description
+
+on:
+  pull_request:
+    types:
+      - closed 
+
+jobs:
+  close_issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Parse PR description and close issues
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ "${{ github.event.pull_request.merged }}" == "true" && "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
+            echo "PR merged into main. Processing issues..."
+            # Extract all "fixes/resolves/closes" followed by issue numbers
+            PR_BODY="${{ github.event.pull_request.body }}"
+            REGEX="([fF]ixes|[Rr]esolves|[Cc]loses) #([0-9]+)"
+            while [[ $PR_BODY =~ $REGEX ]]; do
+              KEYWORD=${BASH_REMATCH[1]}
+              ISSUE_NUMBER=${BASH_REMATCH[2]}
+              echo "Closing issue #$ISSUE_NUMBER with keyword $KEYWORD"
+              curl -X POST \
+                -H "Authorization: token $GITHUB_TOKEN" \
+                -H "Accept: application/vnd.github.v3+json" \
+                https://api.github.com/repos/${{ github.repository }}/issues/$ISSUE_NUMBER/comments \
+                -d '{"body":"Automatically closed by PR #'"${{ github.event.pull_request.number }}"'."}'
+              curl -X PATCH \
+                -H "Authorization: token $GITHUB_TOKEN" \
+                -H "Accept: application/vnd.github.v3+json" \
+                https://api.github.com/repos/${{ github.repository }}/issues/$ISSUE_NUMBER \
+                -d '{"state":"closed"}'
+              PR_BODY=${PR_BODY#*"#$ISSUE_NUMBER"} # Move past this issue
+            done
+          else
+            echo "PR not merged into main. Skipping issue closure."
+          fi
