@@ -855,7 +855,7 @@ class AddSlackIntegrationView(View):
         cursor = None
         try:
             while True:
-                response = app.conversations_list(cursor=cursor)
+                response = app.client.conversations_list(cursor=cursor)
                 for channel in response["channels"]:
                     if channel["name"] == channel_name.strip("#"):
                         return channel["id"]
