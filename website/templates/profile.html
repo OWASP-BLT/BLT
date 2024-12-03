@@ -362,7 +362,7 @@
                                                      width="30"
                                                      class="mr-3"
                                                      alt="Organization logo"
-                                                     onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                                     onerror="this.onerror=null; this.src='{% static \'images/dummy-user.png\' %}'">
                                             </a>
                                             <div class="w-[80%]">
                                                 <a href="{{ activity.get_absolute_url }}" class="w-[80%]">
@@ -536,7 +536,7 @@
                                                      width="20"
                                                      class="mr-3"
                                                      alt="Organization logo"
-                                                     onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
+                                                     onerror="this.onerror=null; this.src='{% static \'images/dummy-user.png\' %}';">
                                             </a>
                                             <a href="{% url 'domain' slug=website.name %}">{{ website.name|truncatechars:15 }}</a>
                                         </div>
@@ -840,9 +840,9 @@
         var months = [],
         data = [];
     var all_data = new Array(12).fill(0);
-    var current_month = {{ current_month }};
+    var current_month = current_month ;
 
-    {% for i in graph %}all_data['{{i.month}}' - 1] = {{ i.c }};{% endfor %}
+     for (i in graph) all_data['{{i.month}}' - 1] =  i.c ;
 
     if (current_month - 6 < 0) {
         months = all_months.slice(current_month - 6);
