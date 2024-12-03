@@ -1,4 +1,4 @@
-name: Enforce Issue Mention in PR Description
+name: Validate PR Closing Issues
 
 on:
   pull_request:
@@ -8,22 +8,81 @@ on:
       - reopened
       - synchronize
 
+permissions:
+  pull-requests: read
+  contents: read
+  issues: read
+
 jobs:
-  validate_pr_description:
+  validate_pr_closing_issues:
     runs-on: ubuntu-latest
     steps:
-      - name: Check PR description for issue mention
+      - name: Validate PR closing issues with GraphQL
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PR_BODY="${{ github.event.pull_request.body }}"
-          REGEX="([fF]ixes|[rR]esolves|[Cc]loses) #([0-9]+)"
-          if [[ -z "$PR_BODY" ]]; then
-            echo "Error: PR description is empty. Please include a reference to an issue using 'fixes #<issue-number>', 'resolves #<issue-number>', or 'closes #<issue-number>'."
+          REPO_OWNER=${{ github.repository_owner }}
+          REPO_NAME=${{ github.event.repository.name }}
+          PR_NUMBER=${{ github.event.pull_request.number }}
+
+          echo "Validating PR #${PR_NUMBER} in repository ${REPO_OWNER}/${REPO_NAME}"
+
+          # Construct the GraphQL query
+          QUERY=$(jq -n \
+          --arg repoOwner "$REPO_OWNER" \
+          --arg repoName "$REPO_NAME" \
+          --argjson prNumber "$PR_NUMBER" \
+          '{
+            query: "query($REPO_NAME: String!, $REPO_OWNER: String!, $PR_NUMBER: Int!) {
+              repository(owner: $REPO_OWNER, name: $REPO_NAME) {
+                pullRequest(number: $PR_NUMBER) {
+                  id
+                  closingIssuesReferences(first: 50) {
+                    edges {
+                      node {
+                        id
+                        body
+                        number
+                        title
+                      }
+                    }
+                  }
+                }
+              }
+            }",
+            variables: {
+              REPO_OWNER: $repoOwner,
+              REPO_NAME: $repoName,
+              PR_NUMBER: $prNumber
+            }
+          }')
+
+          echo "GraphQL Query: $QUERY"
+
+          # Make the GraphQL API request
+          RESPONSE=$(curl -s -X POST \
+            --location 'https://api.github.com/graphql' \
+            -H "Authorization: bearer $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data "$QUERY")
+
+          echo "GraphQL Response:"
+          echo "$RESPONSE"
+
+          # Check for errors in the response
+          ERRORS=$(echo "$RESPONSE" | jq -r '.errors')
+          if [[ "$ERRORS" != "null" ]]; then
+            echo "GraphQL query failed with errors: $ERRORS"
             exit 1
           fi
-          if ! [[ $PR_BODY =~ $REGEX ]]; then
-            echo "Error: PR description does not mention an issue. Please include a reference using 'fixes #<issue-number>', 'resolves #<issue-number>', or 'closes #<issue-number>'."
+
+          # Extract closing issues
+          CLOSING_ISSUES=$(echo "$RESPONSE" | jq -r '.data.repository.pullRequest.closingIssuesReferences.edges')
+
+          if [[ "$CLOSING_ISSUES" == "[]" || -z "$CLOSING_ISSUES" ]]; then
+            echo "Error: No closing issues are referenced in the PR description."
             exit 1
           fi
-          echo "PR description is valid."
+
+          echo "Closing issues found: $CLOSING_ISSUES"
+          echo "PR description is valid with referenced closing issues."
