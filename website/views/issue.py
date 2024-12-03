@@ -337,8 +337,12 @@ def newhome(request, template="new_home.html"):
     bugs_screenshots = {issue: issue.screenshots.all()[:3] for issue in issues_with_screenshots}
 
     current_time = now()
-    leaderboard = User.objects.filter(
-        points__created__month=current_time.month, points__created__year=current_time.year
+    leaderboard = (
+        User.objects.filter(
+            points__created__month=current_time.month, points__created__year=current_time.year
+        )
+        .annotate(total_points=Sum("points__score"))
+        .order_by("-total_points")
     )
 
     context = {
@@ -946,7 +950,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     save=True,
                 )
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
-
+            if len(self.request.FILES.getlist("screenshots")) == 0:
+                messages.error(self.request, "Screenshot is needed!")
+                obj.delete()
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": captcha_form},
+                )
             if len(self.request.FILES.getlist("screenshots")) > 5:
                 messages.error(self.request, "Max limit of 5 images!")
                 obj.delete()

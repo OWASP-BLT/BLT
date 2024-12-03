@@ -30,7 +30,7 @@
         }
 
         .silver {
-            background-color: lightblue;
+            background-color: #C0C0C0;
             color: #333;
         }
 
@@ -40,8 +40,19 @@
         }
 
         .bronze {
-            background-color: #C9AE5D;
+            background-color: #be7225; 
+            color: #FFFFFF; 
+        }
+
+
+        .platinum {
+            background-color: #E5E4E2; 
             color: #333;
+        }
+
+        .unrated {
+            background-color: #000000; 
+            color: #FFFFFF; 
         }
 
         .profileimage {
@@ -142,7 +153,7 @@
                             {% if leader.userprofile.winnings %}
                                 <span class="pull-right badge">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
                             {% endif %}
-                            <span><kbd class="{{ leader.userprofile.get_title_display }} titleuser">{{ leader.userprofile.get_title_display }}</kbd></span>
+                            <span><kbd class="{{ leader.userprofile.get_title_display|lower }} titleuser">{{ leader.userprofile.get_title_display }}</kbd></span>
                         </div>
                     {% endfor %}
                 {% endif %}

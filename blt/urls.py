@@ -15,7 +15,7 @@ from rest_framework import permissions, routers
 
 import comments.views
 from blt import settings
-from company.views import ShowBughuntView
+from company.views import ShowBughuntView, SlackCallbackView
 from website.api.views import (
     ActivityLogViewSet,
     AuthApiViewset,
@@ -48,6 +48,7 @@ from website.views.core import (
     add_suggestions,
     chatbot_conversation,
     check_status,
+    donate_view,
     facebook_callback,
     find_key,
     github_callback,
@@ -124,6 +125,7 @@ from website.views.organization import (
     company_dashboard_hunt_edit,
     company_hunt_results,
     delete_time_entry,
+    feed,
     get_scoreboard,
     hunt_results,
     sizzle,
@@ -155,6 +157,7 @@ from website.views.user import (
     UserProfileDetailsView,
     UserProfileDetailView,
     addbalance,
+    assign_badge,
     contributors,
     contributors_view,
     create_wallet,
@@ -234,6 +237,7 @@ urlpatterns = [
     re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
     re_path(r"^auth/google/connect/$", GoogleConnect.as_view(), name="google_connect"),
     path("auth/github/url/", github_views.oauth2_login),
+    path("oauth/slack/callback/", SlackCallbackView.as_view(), name="slack_callback"),
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),
     path("socialaccounts/", SocialAccountListView.as_view(), name="social_account_list"),
@@ -525,6 +529,7 @@ urlpatterns = [
     path("projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"),
     re_path(r"^report-ip/$", ReportIpView.as_view(), name="report_ip"),
     re_path(r"^reported-ips/$", ReportedIpListView.as_view(), name="reported_ips_list"),
+    re_path(r"^feed/$", feed, name="feed"),
     re_path(
         r"^api/v1/createissues/$",
         csrf_exempt(IssueCreate.as_view()),
@@ -586,6 +591,7 @@ urlpatterns = [
     path("users/", users_view, name="users"),
     path("company/", include("company.urls")),
     path("sponsor/", sponsor_view, name="sponsor"),
+    path("donate/", donate_view, name="donate"),
     path("companies/", DomainListView.as_view(), name="domain_lists"),
     path("trademarks/", trademark_search, name="trademark_search"),
     path("generate_bid_image/<int:bid_amount>/", generate_bid_image, name="generate_bid_image"),
@@ -601,7 +607,7 @@ urlpatterns = [
     path("suggestion/vote/", vote_suggestions, name="vote_suggestions"),
     path("suggestion/set-vote-status/", set_vote_status, name="set_vote_status"),
     re_path(
-        r"^trademarks/query=(?P<slug>[\w\s]+)",
+        r"^trademarks/query=(?P<slug>[\w\s\W]+)",
         trademark_detailview,
         name="trademark_detailview",
     ),
@@ -631,6 +637,7 @@ urlpatterns = [
         name="user_sizzle_report",
     ),
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
+    path("assign-badge/<str:username>/", assign_badge, name="assign_badge"),
 ]
 
 if settings.DEBUG:

@@ -1,7 +1,7 @@
 import json
 import os
+import subprocess
 import urllib
-import uuid
 from datetime import datetime, timezone
 
 import requests
@@ -384,10 +384,8 @@ def add_suggestions(request):
         data = json.loads(request.body)
         title = data.get("title")
         description = data.get("description", "")
-        id = str(uuid.uuid4())
-        print(description, title, id)
         if title and description and user:
-            suggestion = Suggestion(user=user, title=title, description=description, id=id)
+            suggestion = Suggestion(user=user, title=title, description=description)
             suggestion.save()
             messages.success(request, "Suggestion added successfully.")
             return JsonResponse({"status": "success"})
@@ -612,6 +610,10 @@ def sponsor_view(request):
     return render(request, "sponsor.html", context={"balance": balance})
 
 
+def donate_view(request):
+    return render(request, "donate.html")
+
+
 @require_GET
 def robots_txt(request):
     lines = [
@@ -621,8 +623,25 @@ def robots_txt(request):
     return HttpResponse("\n".join(lines), content_type="text/plain")
 
 
+import os
+
+
+def get_last_commit_date():
+    try:
+        return (
+            subprocess.check_output(
+                ["git", "log", "-1", "--format=%cd"], cwd=os.path.dirname(os.path.dirname(__file__))
+            )
+            .decode("utf-8")
+            .strip()
+        )
+    except FileNotFoundError:
+        return "Not available"
+
+
 def home(request):
-    return render(request, "home.html")
+    last_commit = get_last_commit_date()
+    return render(request, "home.html", {"last_commit": last_commit})
 
 
 def handler404(request, exception):
