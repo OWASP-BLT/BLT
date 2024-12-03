@@ -2,6 +2,7 @@ import logging
 import os
 import uuid
 from decimal import Decimal
+from enum import Enum
 from urllib.parse import urlparse
 
 import requests
@@ -16,7 +17,7 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.core.validators import URLValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models
 from django.db.models import Count
 from django.db.models.signals import post_delete, post_save
@@ -61,6 +62,50 @@ class Tag(models.Model):
         return self.name
 
 
+class IntegrationServices(Enum):
+    SLACK = "slack"
+
+
+class Integration(models.Model):
+    service_name = models.CharField(
+        max_length=20,
+        choices=[(tag.value, tag.name) for tag in IntegrationServices],
+        null=True,
+        blank=True,
+    )
+    company = models.ForeignKey(
+        "Company", on_delete=models.CASCADE, related_name="company_integrations"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.company.name} - {self.service_name} Integration"
+
+
+class SlackIntegration(models.Model):
+    integration = models.OneToOneField(
+        Integration, on_delete=models.CASCADE, related_name="slack_integration"
+    )
+    bot_access_token = models.CharField(
+        max_length=255, null=True, blank=True
+    )  # will be different for each workspace
+    workspace_name = models.CharField(max_length=255, null=True, blank=True)
+    default_channel_name = models.CharField(
+        max_length=255, null=True, blank=True
+    )  # Default channel ID
+    default_channel_id = models.CharField(max_length=255, null=True, blank=True)
+    daily_updates = models.BooleanField(default=False)
+    daily_update_time = models.IntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0), MaxValueValidator(23)],  # Valid hours: 0–23
+        help_text="The hour of the day (0-23) to send daily updates",
+    )
+
+    def __str__(self):
+        return f"Slack Integration for {self.integration.company.name}"
+
+
 class Company(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_companies")
@@ -76,6 +121,7 @@ class Company(models.Model):
     subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=False)
     tags = models.ManyToManyField(Tag, blank=True)
+    integrations = models.ManyToManyField(Integration, related_name="companies")
 
     def __str__(self):
         return self.name
@@ -533,6 +579,7 @@ class UserProfile(models.Model):
     website_url = models.URLField(blank=True, null=True)
     discounted_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     modified = models.DateTimeField(auto_now=True)
+    visit_count = models.PositiveIntegerField(default=0)
 
     def avatar(self, size=36):
         if self.user_avatar:
