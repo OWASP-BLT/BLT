@@ -885,7 +885,6 @@ def github_webhook(request):
         # Validate GitHub signature
         signature = request.headers.get("X-Hub-Signature-256")
         if not validate_signature(request.body, signature):
-            print("nowt valid")
             return JsonResponse({"status": "error", "message": "Unauthorized request"}, status=403)
 
         payload = json.loads(request.body)
