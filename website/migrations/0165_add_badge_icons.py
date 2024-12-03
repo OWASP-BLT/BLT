@@ -1,4 +1,10 @@
+import os
+import shutil
+
 from django.db import migrations
+from django.core.files import File
+from django.conf import settings
+import os
 
 def add_badge_icons(apps, schema_editor):
     Badge = apps.get_model("website", "Badge")
@@ -67,7 +73,34 @@ def add_badge_icons(apps, schema_editor):
 
 
     for badge_data in new_badges:
-        Badge.objects.filter(title=badge_data["title"]).update(icon=badge_data["icon"])
+        badge = Badge.objects.filter(title=badge_data["title"]).first()
+
+        if badge:
+            # Construct the full file path for the static folder
+            static_icon_path = os.path.join('website', 'static', 'img', badge_data["icon"])
+
+            # Check if the image exists in static folder
+            if os.path.exists(static_icon_path):
+                print(f"Found image for {badge_data['title']} at {static_icon_path}")
+
+                # Create the target directory in MEDIA_ROOT (media/badges/)
+                media_icon_path = os.path.join(settings.MEDIA_ROOT, 'badges', os.path.basename(static_icon_path))
+
+                # Ensure the target directory exists
+                os.makedirs(os.path.dirname(media_icon_path), exist_ok=True)
+
+                # Copy the image from static to media
+                shutil.copy(static_icon_path, media_icon_path)
+
+                # Open the copied file and save it to the Badge model
+                with open(media_icon_path, 'rb') as f:
+                    badge.icon.save(os.path.basename(media_icon_path), File(f), save=True)
+                    badge.save()
+                    print(f"Updated icon for {badge_data['title']}")
+            else:
+                print(f"Image not found for {badge_data['title']} at {static_icon_path}")
+        else:
+            print(f"Badge with title {badge_data['title']} not found.")
 
 class Migration(migrations.Migration):
     dependencies = [
