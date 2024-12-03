@@ -994,7 +994,7 @@ def validate_signature(payload, signature):
     if not signature:
         return False
 
-    secret = bytes(os.environ.get("GITHUB_WEBHOOK_SECRET", ""), "utf-8")
+    secret = bytes(os.environ.get("GITHUB_ACCESS_TOKEN", ""), "utf-8")
     computed_hmac = hmac.new(secret, payload, hashlib.sha256)
     computed_signature = f"sha256={computed_hmac.hexdigest()}"
 
