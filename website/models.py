@@ -1,5 +1,4 @@
 import logging
-import os
 import uuid
 from decimal import Decimal
 from urllib.parse import urlparse
@@ -489,10 +488,11 @@ class InviteFriend(models.Model):
 
 
 def user_images_path(instance, filename):
-    from django.template.defaultfilters import slugify
+    ext = filename.split(".")[-1]
+    filename = f"{instance.user.username}.{ext}"
 
-    filename, ext = os.path.splitext(filename)
-    return "avatars/user_{0}/{1}{2}".format(instance.user.id, slugify(filename), ext)
+    # Return the complete path
+    return f"avatars/user_{instance.user.id}/{filename}"
 
 
 class UserProfile(models.Model):
@@ -535,14 +535,22 @@ class UserProfile(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
     def avatar(self, size=36):
-        if self.user_avatar:
-            return self.user_avatar.url
+        """Return the URL for the user's avatar"""
+        if self.user_avatar and hasattr(self.user_avatar, "url"):
+            try:
+                return self.user_avatar.url
+            except ValueError:
+                pass
 
-        for account in self.user.socialaccount_set.all():
-            if "avatar_url" in account.extra_data:
-                return account.extra_data["avatar_url"]
-            elif "picture" in account.extra_data:
-                return account.extra_data["picture"]
+        try:
+            for account in self.user.socialaccount_set.all():
+                if "avatar_url" in account.extra_data:
+                    return account.extra_data["avatar_url"]
+                elif "picture" in account.extra_data:
+                    return account.extra_data["picture"]
+        except AttributeError:
+            pass
+        return f"{settings.STATIC_URL}images/dummy-user.png"
 
     def __unicode__(self):
         return self.user.email

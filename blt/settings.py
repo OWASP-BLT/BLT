@@ -252,7 +252,7 @@ LANGUAGES = (
     ("hi", _("Hindi")),
 )
 
-MEDIA_ROOT = "media"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "/media/"
 # Update database configuration with $DATABASE_URL.
 db_from_env = dj_database_url.config(conn_max_age=500)
