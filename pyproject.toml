@@ -7,7 +7,7 @@ license = "AGPLv3"
 
 [tool.poetry.dependencies]
 
-python = "3.11.2"
+python = "3.11.*"
 python-dotenv = "^1.0.1"
 toml = "^0.10.2"
 Django = "^5.1.3"
@@ -79,11 +79,8 @@ python-bitcoinrpc = "^1.0"
 sendgrid = "^6.11.0"
 matplotlib = "^3.9.3"
 openpyxl = "^3.1.5"
-<<<<<<< HEAD
 atproto = "^0.0.55"
-=======
 slack-bolt = "^1.21.2"
->>>>>>> ae45ef286e94fd70e50a7da475519e1072525546
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
