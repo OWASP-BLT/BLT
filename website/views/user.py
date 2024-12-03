@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 import json
 import os
 from datetime import datetime, timezone
@@ -880,6 +882,12 @@ def assign_badge(request, username):
 @csrf_exempt
 def github_webhook(request):
     if request.method == "POST":
+        # Validate GitHub signature
+        signature = request.headers.get("X-Hub-Signature-256")
+        if not validate_signature(request.body, signature):
+            print("nowt valid")
+            return JsonResponse({"status": "error", "message": "Unauthorized request"}, status=403)
+
         payload = json.loads(request.body)
         event_type = request.headers.get("X-GitHub-Event", "")
 
@@ -981,3 +989,14 @@ def assign_github_badge(user, action_title):
             print(f"{user.username} already has the '{action_title}' badge.")
     except Badge.DoesNotExist:
         print(f"Badge '{action_title}' does not exist.")
+
+
+def validate_signature(payload, signature):
+    if not signature:
+        return False
+
+    secret = bytes(os.environ.get("GITHUB_WEBHOOK_SECRET", ""), "utf-8")
+    computed_hmac = hmac.new(secret, payload, hashlib.sha256)
+    computed_signature = f"sha256={computed_hmac.hexdigest()}"
+
+    return hmac.compare_digest(computed_signature, signature)
