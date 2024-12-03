@@ -265,25 +265,18 @@ class UserProfileDetailView(DetailView):
         )
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
 
-        # if self.request.user.is_authenticated:
-        #     context["has_recommended_via_blurb"] = user.userprofile.recommended_by.filter(
-        #         user=self.request.user
-        #     ).exists()
-
         recommendations = Recommendation.objects.filter(recommender=user)
         context["recommendations"] = recommendations
         context["object"] = user
         context["recommendation_blurb"] = user.userprofile.recommendation_blurb
-        context["has_recommended_via_blurb"] = (
-            user.userprofile.recommended_by.filter(user=self.request.user).exists()
-            if self.request.user.is_authenticated
-            else False
-        )
+        if self.request.user.is_authenticated:
+            context["has_recommended_via_blurb"] = Recommendation.objects.filter(
+                recommender=self.request.user, recommended_user=self.object
+            ).exists()
         context["all_users"] = User.objects.exclude(id=self.request.user.id)
         context["total_recommendations"] = (
             Recommendation.objects.filter(recommended_user=user).count()
             + Recommendation.objects.filter(recommender=user).count()
-            # + (1 if user.userprofile.recommendation_blurb else 0)
         )
 
         return context
@@ -386,16 +379,13 @@ def recommend_via_blurb(request, username):
         total_count = (
             Recommendation.objects.filter(recommended_user=target_user).count()
             + Recommendation.objects.filter(recommender=target_user).count()
-            + (1 if target_user.userprofile.recommendation_blurb else 0)
         )
-        recommends_count = Recommendation.objects.filter(recommender=request.user).count()
 
         return JsonResponse(
             {
                 "success": True,
                 "action": action,
                 "total_count": total_count,
-                "recommends_count": recommends_count,
             }
         )
     except User.DoesNotExist:

@@ -568,7 +568,9 @@
                         <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">📑 {% trans "Recommends" %} {{ recommendations|length }}</div>
                     </button>
                     <button class="mr-3" onclick="openRecommendsModal();">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">📑 {% trans "Recommendations" %} {{ recommends|length }}</div>
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">
+                            📑 {% trans "Recommendations" %} <span class="recommendation-count">{{ object.userprofile.recommendation_count }}</span>
+                        </div>
                     </button>
                     <button class="mr-3" onclick="openBookmarkModal();">
                         <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">📑 {% trans "Bookmarks" %} {{ bookmarks|length }}</div>
@@ -592,8 +594,6 @@
                 </div>
                 <!-- Recommendation Blurb Section -->
                 <div class="recommendation-section mb-4">
-                    {#                    <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">#}
-                    {#                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Recommendation Blurb</h4>#}
                     {% if object.userprofile.recommendation_blurb %}
                         <p class="text-gray-600 mb-3">{{ object.userprofile.recommendation_blurb }}</p>
                     {% else %}
@@ -610,19 +610,6 @@
                             {% endif %}
                         </button>
                     {% endif %}
-                    {#                    </div>#}
-                    <!-- Total Recommendations Count -->
-                    <button class="mr-3" onclick="openRecommendsModal();">
-                        {#                        <div class="mt-3 bg-white rounded-lg p-3 shadow-sm border border-gray-200">#}
-                        <h4 class="text-sm font-medium text-gray-700">Total Recommendations Received</h4>
-                        <div class="flex items-center">
-                            <span class="recommendation-count text-lg font-semibold text-gray-900">
-                                {{ object.userprofile.recommendation_count }}
-                            </span>
-                        </div>
-                        {#                        </div>#}
-                    </button>
-                    <!-- ------------------------------------------------------------------- -->
                     <div id="recommends"
                          class="hidden relative z-10"
                          aria-labelledby="modal-title"
@@ -710,7 +697,6 @@
                             </div>
                         </div>
                     </div>
-                    <!-- ----------------------------------------------------------------------- -->
                 </div>
                 <script>
                 function recommendViaBlurb(button) {
@@ -727,30 +713,25 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            // Update total recommendations count
-                            const countElement = document.querySelector('.recommendation-count');
-                            if (countElement) {
-                                countElement.textContent = data.total_count;
-                            }
-                            
                             // Update button state
                             if (data.action === 'added') {
-                                button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
-                                button.classList.add('bg-red-500', 'hover:bg-red-600');
+                                button.classList.remove('bg-blue-500');
+                                button.classList.add('bg-red-500');
                                 button.textContent = 'Remove Recommendation';
                             } else {
-                                button.classList.remove('bg-red-500', 'hover:bg-red-600');
-                                button.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                                button.classList.remove('bg-red-500');
+                                button.classList.add('bg-blue-500');
                                 button.textContent = 'Recommend User';
                             }
-                            // Update social stats recommends count
-                            const recommendsElement = document.querySelector('[data-stat="recommends"]');
-                            if (recommendsElement) {
-                                recommendsElement.textContent = data.recommends_count;
+                            // Update recommends count if element exists
+                            const countElement = document.getElementsByClassName('recommendation-count');
+                            for(let element of countElements) {
+                                element.textContent = data.total_count;
                             }
                         }
                     })
                     .catch(error => console.error('Error:', error));
+                       console.error('Error:', error);
                 }
                 function getCookie(name) {
                     let cookieValue = null;
