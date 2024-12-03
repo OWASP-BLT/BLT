@@ -1,6 +1,6 @@
 from django.db import migrations
 
-def add_badge_icons(apps):
+def add_badge_icons(apps, schema_editor):
     Badge = apps.get_model("website", "Badge")
     new_badges = [
         {"title": "Mentor", "icon": "badges/icons8-mentor-94.png"},
@@ -47,6 +47,22 @@ def add_badge_icons(apps):
         {"title": "First Social Media Post", "icon": "badges/icons8-social-50.png"},
         {"title": "First Community Survey", "icon": "badges/icons8-survey-96.png"},
         {"title": "First User Feedback", "icon": "badges/icons8-feedback-80.png"},
+        {
+            "title": "First IP Reported",
+            "icon": "badges/icons8-ip-48.png",
+        },
+        {
+            "title": "First Bid Placed",
+            "icon": "badges/icons8-bid-64.png",
+        },
+        {
+            "title": "First Bug Bounty",
+            "icon": "badges/icons8-bug-bounty-64.png",
+        },
+        {
+            "title": "First Suggestion",
+            "icon": "badges/icons8-suggestion-64.png",
+        }
     ]
 
 
