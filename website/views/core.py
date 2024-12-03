@@ -589,6 +589,7 @@ def sitemap(request):
     random_domain = Domain.objects.order_by("?").first()
     return render(request, "sitemap.html", {"random_domain": random_domain})
 
+
 def badge_list(request):
     badges = Badge.objects.all()
     return render(request, "badges.html", {"badges": badges})

@@ -1,10 +1,10 @@
 import os
 import shutil
 
-from django.db import migrations
-from django.core.files import File
 from django.conf import settings
-import os
+from django.core.files import File
+from django.db import migrations
+
 
 def add_badge_icons(apps, schema_editor):
     Badge = apps.get_model("website", "Badge")
@@ -21,8 +21,14 @@ def add_badge_icons(apps, schema_editor):
         {"title": "First CI Build Passed", "icon": "badges/ci-build-passed.png"},
         {"title": "First CI Build Failed", "icon": "badges/icons8-fail-32.png"},
         {"title": "First Security Issue Reported", "icon": "badges/icons8-security-shield-96.png"},
-        {"title": "First Security Fix Merged", "icon": "badges/icons8-security-configuration-40.png"},
-        {"title": "First Code Linter Passed", "icon": "badges/icons8-eslint-pluggable-and-configurable-linter-tool-for-identifying-and-reporting-on-patterns-in-javascript-96.png"},
+        {
+            "title": "First Security Fix Merged",
+            "icon": "badges/icons8-security-configuration-40.png",
+        },
+        {
+            "title": "First Code Linter Passed",
+            "icon": "badges/icons8-eslint-pluggable-and-configurable-linter-tool-for-identifying-and-reporting-on-patterns-in-javascript-96.png",
+        },
         {"title": "First Code Linter Failed", "icon": "badges/linter-fail.png"},
         {"title": "First Dependency Updated", "icon": "badges/icons8-dependency-60.png"},
         {"title": "First Fork Created", "icon": "badges/icons8-branch-80.png"},
@@ -68,23 +74,24 @@ def add_badge_icons(apps, schema_editor):
         {
             "title": "First Suggestion",
             "icon": "badges/icons8-suggestion-64.png",
-        }
+        },
     ]
-
 
     for badge_data in new_badges:
         badge = Badge.objects.filter(title=badge_data["title"]).first()
 
         if badge:
             # Construct the full file path for the static folder where images are added
-            static_icon_path = os.path.join('website', 'static', 'img', badge_data["icon"])
+            static_icon_path = os.path.join("website", "static", "img", badge_data["icon"])
 
             # Checking if the image exists in static folder
             if os.path.exists(static_icon_path):
                 print(f"Found image for {badge_data['title']} at {static_icon_path}")
 
                 # Create the target directory in MEDIA_ROOT (media/badges/)
-                media_icon_path = os.path.join(settings.MEDIA_ROOT, 'badges', os.path.basename(static_icon_path))
+                media_icon_path = os.path.join(
+                    settings.MEDIA_ROOT, "badges", os.path.basename(static_icon_path)
+                )
 
                 # Ensure the target directory exists
                 os.makedirs(os.path.dirname(media_icon_path), exist_ok=True)
@@ -93,7 +100,7 @@ def add_badge_icons(apps, schema_editor):
                 shutil.copy(static_icon_path, media_icon_path)
 
                 # Open the copied file and save it to the Badge model
-                with open(media_icon_path, 'rb') as f:
+                with open(media_icon_path, "rb") as f:
                     badge.icon.save(os.path.basename(media_icon_path), File(f), save=True)
                     badge.save()
                     print(f"Updated icon for {badge_data['title']}")
@@ -102,9 +109,10 @@ def add_badge_icons(apps, schema_editor):
         else:
             print(f"Badge with title {badge_data['title']} not found.")
 
+
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0164_integration_company_integrations_slackintegration"),  
+        ("website", "0164_integration_company_integrations_slackintegration"),
     ]
     operations = [
         migrations.RunPython(add_badge_icons),
