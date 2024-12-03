@@ -164,6 +164,7 @@ from website.views.user import (
     deletions,
     follow_user,
     get_score,
+    github_webhook,
     invite_friend,
     profile,
     profile_edit,
@@ -638,6 +639,7 @@ urlpatterns = [
     ),
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
     path("assign-badge/<str:username>/", assign_badge, name="assign_badge"),
+    path("github-webhook/", github_webhook, name="github-webhook"),
 ]
 
 if settings.DEBUG:
