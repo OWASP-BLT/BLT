@@ -76,10 +76,10 @@ def add_badge_icons(apps, schema_editor):
         badge = Badge.objects.filter(title=badge_data["title"]).first()
 
         if badge:
-            # Construct the full file path for the static folder
+            # Construct the full file path for the static folder where images are added
             static_icon_path = os.path.join('website', 'static', 'img', badge_data["icon"])
 
-            # Check if the image exists in static folder
+            # Checking if the image exists in static folder
             if os.path.exists(static_icon_path):
                 print(f"Found image for {badge_data['title']} at {static_icon_path}")
 
@@ -89,7 +89,7 @@ def add_badge_icons(apps, schema_editor):
                 # Ensure the target directory exists
                 os.makedirs(os.path.dirname(media_icon_path), exist_ok=True)
 
-                # Copy the image from static to media
+                # Need to copy this image in the media file so that it can be served by django
                 shutil.copy(static_icon_path, media_icon_path)
 
                 # Open the copied file and save it to the Badge model
