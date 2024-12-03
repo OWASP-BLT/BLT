@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+{% block style %}
+    <style>
+        /* You can add custom styles here */
+    </style>
+{% endblock style %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-12 text-center">Badges</h1>
+        
+        <!-- Badge Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% for badge in badges %}
+                <div class="bg-white border rounded-lg shadow-md overflow-hidden">
+                    <div class="flex flex-col items-center p-6">
+                        {% if badge.icon %}
+                            <img src="{{ badge.icon.url }}" alt="{{ badge.title }}" class="w-24 h-24 object-cover mb-4 rounded-full border">
+                        {% else %}
+                            <div class="w-24 h-24 bg-gray-300 mb-4 rounded-full flex items-center justify-center text-xl text-white">
+                                <span>{{ badge.title|slice:":1" }}</span>
+                            </div>
+                        {% endif %}
+                        <h2 class="text-xl font-semibold text-center mb-2">{{ badge.title }}</h2>
+                        <p class="text-gray-600 text-center mb-4">{{ badge.description|slice:":150" }}...</p>
+                        <div class="w-full text-center">
+                            <span class="px-4 py-1 text-sm font-semibold rounded-full {{ 'bg-green-500 text-white' if badge.type == 'automatic' else 'bg-blue-500 text-white' }}">
+                                {{ badge.get_type_display }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock content %}
