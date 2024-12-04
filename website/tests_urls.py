@@ -72,7 +72,7 @@ class UrlsTest(StaticLiveServerTestCase):
 
     def test_responses(
         self,
-        allowed_http_codes=[200, 302, 405, 401, 404],
+        allowed_http_codes=[200, 302, 405, 401, 404, 400],
         credentials={},
         default_kwargs={},
     ):

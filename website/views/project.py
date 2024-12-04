@@ -270,11 +270,18 @@ class ProjectListView(ListView):
                     # if the description is empty, use the name as the description
                     if not data["description"]:
                         data["description"] = data["name"]
+
+                    # Check if a project with the same slug already exists
+                    slug = data["name"].lower()
+                    if Project.objects.filter(slug=slug).exists():
+                        messages.error(request, "A project with this slug already exists.")
+                        return redirect("project_list")
+
                     project, created = Project.objects.get_or_create(
                         github_url=github_url,
                         defaults={
                             "name": data["name"],
-                            "slug": data["name"].lower(),
+                            "slug": slug,
                             "description": data["description"],
                             "wiki_url": data["html_url"],
                             "homepage_url": data.get("homepage", ""),
