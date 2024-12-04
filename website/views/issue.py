@@ -391,8 +391,10 @@ def remove_user_from_issue(request, id):
     if request.user.is_superuser or request.user == issue.user:
         issue.remove_user()
         # Remove user from corresponding activity object that was created
-        issue_activity = Activity.objects.filter(content_type=ContentType.objects.get_for_model(Issue), object_id=id).first()
-        # Have to define a default anonymous user since the not null constraint fails 
+        issue_activity = Activity.objects.filter(
+            content_type=ContentType.objects.get_for_model(Issue), object_id=id
+        ).first()
+        # Have to define a default anonymous user since the not null constraint fails
         anonymous_user = User.objects.get_or_create(username="anonymous")[0]
         issue_activity.user = anonymous_user
         issue_activity.save()
@@ -904,7 +906,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             tokenauth = False
             obj = form.save(commit=False)
             report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
-            
+
             # If report_anonymous is true, set user to None
             if report_anonymous:
                 obj.user = None
@@ -1031,7 +1033,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     user_prof.save()
 
                 if tokenauth:
-                    total_issues = Issue.objects.filter(user=User.objects.get(id=token.user_id)).count()
+                    total_issues = Issue.objects.filter(
+                        user=User.objects.get(id=token.user_id)
+                    ).count()
                     user_prof = UserProfile.objects.get(user=User.objects.get(id=token.user_id))
                     if total_issues <= 10:
                         user_prof.title = 1
