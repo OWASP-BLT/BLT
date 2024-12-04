@@ -5,11 +5,24 @@
 {% providers_media_js %}
 {% load i18n %}
 {% load custom_tags %}
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
-      rel="stylesheet" />
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
 <style>
     a {
         color: black;
+    }
+    @media (min-width: 700px) {
+        #selected-filter {
+            display: inline;
+        }
+    }
+    @media (max-width: 699px) {
+        #selected-filter {
+            display: none;
+        }
+        #organizations-btn {
+            padding: 0.1rem;
+        }
     }
     .chatbot {
         display: none;
@@ -65,11 +78,42 @@
         z-index: 9999;
     }
 </style>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        
+        const desktopDropdownButton = document.getElementById('dropdownButton');
+        const desktopDropdownMenu = document.getElementById('dropdownMenu');
+
+        if (desktopDropdownButton && desktopDropdownMenu) {
+            desktopDropdownButton.addEventListener('click', () => {
+                desktopDropdownMenu.classList.toggle('hidden');
+            });
+            document.addEventListener('click', (e) => {
+                if (!desktopDropdownButton.contains(e.target) && !desktopDropdownMenu.contains(e.target)) {
+                    desktopDropdownMenu.classList.add('hidden');
+                }
+            });
+        }
+
+        const mobileDropdownButton = document.getElementById('dropdown-toggle-mobile');
+        const mobileDropdownMenu = document.getElementById('dropdown-mobile');
+        if (mobileDropdownButton && mobileDropdownMenu) {
+            mobileDropdownButton.addEventListener('click', () => {
+                mobileDropdownMenu.classList.toggle('hidden');
+            });
+            document.addEventListener('click', (e) => {
+                if (!mobileDropdownButton.contains(e.target) && !mobileDropdownMenu.contains(e.target)) {
+                    mobileDropdownMenu.classList.add('hidden');
+                }
+            });
+        }
+    });
+</script>
 <nav class="fixed top-0 z-50 w-full bg-white border-[#F7F7F7] border-b-2 px-4 ">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
             <div class="flex items-center justify-start rtl:justify-end">
-                <!-- Ham Menu -->
+                <!-- Ham Menu section -->
                 <button id="hamburger-button"
                         data-drawer-target="logo-sidebar"
                         data-drawer-toggle="logo-sidebar"
@@ -116,7 +160,7 @@
                                     type="button"
                                     class="flex items-center text-xl lg:text-base h-16 bg-[#ededed] p-5 font-semibold text-[#9CA3AF] outline-none rounded-r-2xl">
                                 <i id="selected-icon" class="fa fa-building mr-2"></i>
-                                <span id="selected-filter" class="hidden sm:inline">{% trans "Organizations" %}</span>
+                                <span id="selected-filter">{% trans "Organizations" %}</span>
                                 <i class="fa fa-chevron-down ml-2"></i>
                             </button>
                             <!-- Dropdown Menu -->
@@ -312,8 +356,6 @@
                 
                 const isHidden = organizationsDropdown.classList.toggle('hidden');
                 organizationsDropdown.style.display = isHidden ? 'none' : 'block';
-
-                
                 
                 if (!isHidden) {
                     const btnRect = organizationsBtn.getBoundingClientRect();
@@ -339,46 +381,18 @@
             option.addEventListener('click', function(e) {
                 e.preventDefault();
                 const iconElement = this.querySelector('i');
+                const textContent = this.textContent.trim();
                 
-                document.getElementById('selected-icon').className = iconElement.className + ' mr-2';
-                document.getElementById('selected-filter').textContent = this.textContent.trim();
+                const selectedIcon = document.getElementById('selected-icon');
+                const selectedFilter = document.getElementById('selected-filter');
+
+                selectedIcon.className = iconElement.className + ' mr-2';
+                selectedFilter.textContent = textContent;
                 
                 organizationsDropdown.classList.add('hidden');
                 organizationsDropdown.style.display = 'none';
             });
         });
-    });
-</script>
-<script>
-    
-    document.addEventListener('DOMContentLoaded', function () {
-        
-        const desktopDropdownButton = document.getElementById('dropdownButton');
-        const desktopDropdownMenu = document.getElementById('dropdownMenu');
-
-        if (desktopDropdownButton && desktopDropdownMenu) {
-            desktopDropdownButton.addEventListener('click', () => {
-                desktopDropdownMenu.classList.toggle('hidden');
-            });
-            document.addEventListener('click', (e) => {
-                if (!desktopDropdownButton.contains(e.target) && !desktopDropdownMenu.contains(e.target)) {
-                    desktopDropdownMenu.classList.add('hidden');
-                }
-            });
-        }
-
-        const mobileDropdownButton = document.getElementById('dropdown-toggle-mobile');
-        const mobileDropdownMenu = document.getElementById('dropdown-mobile');
-        if (mobileDropdownButton && mobileDropdownMenu) {
-            mobileDropdownButton.addEventListener('click', () => {
-                mobileDropdownMenu.classList.toggle('hidden');
-            });
-            document.addEventListener('click', (e) => {
-                if (!mobileDropdownButton.contains(e.target) && !mobileDropdownMenu.contains(e.target)) {
-                    mobileDropdownMenu.classList.add('hidden');
-                }
-            });
-        }
     });
 </script>
 <script>
