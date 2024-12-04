@@ -8,6 +8,7 @@ from import_export.admin import ImportExportModelAdmin
 
 from website.models import (
     IP,
+    Activity,
     Bid,
     Blocked,
     ChatBotLog,
@@ -447,3 +448,4 @@ admin.site.register(Monitor, MonitorAdmin)
 admin.site.register(Tag, TagAdmin)
 admin.site.register(Integration)
 admin.site.register(SlackIntegration)
+admin.site.register(Activity)
