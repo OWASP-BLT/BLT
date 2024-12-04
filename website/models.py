@@ -28,6 +28,7 @@ from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
 from rest_framework.authtoken.models import Token
+from datetime import timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -580,6 +581,9 @@ class UserProfile(models.Model):
     discounted_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     modified = models.DateTimeField(auto_now=True)
     visit_count = models.PositiveIntegerField(default=0)
+    current_streak = models.IntegerField(default=0)
+    longest_streak = models.IntegerField(default=0)
+    last_check_in = models.DateField(null=True, blank=True)
 
     def avatar(self, size=36):
         if self.user_avatar:
@@ -593,6 +597,56 @@ class UserProfile(models.Model):
 
     def __unicode__(self):
         return self.user.email
+    
+    def update_streak(self, check_in_date):
+        """
+        Update streak based on consecutive daily check-ins
+        """
+        # If no last check-in, or check-in is exactly one day after last check-in
+        if (not self.last_check_in or 
+            check_in_date == self.last_check_in + timedelta(days=1)):
+            self.current_streak += 1
+            self.longest_streak = max(self.current_streak, self.longest_streak)
+        # If check-in is not consecutive, reset streak
+        elif check_in_date > self.last_check_in + timedelta(days=1):
+            self.current_streak = 1
+        
+        self.last_check_in = check_in_date
+        self.save()
+        
+        # Check and award badges based on streak milestones
+        self.award_streak_badges()
+
+    def award_streak_badges(self):
+        """
+        Award badges for streak milestones
+        """
+        streak_badges = {
+            7: "Weekly Streak",
+            30: "Monthly Streak",
+            90: "Quarterly Streak",
+            365: "Yearly Streak"
+        }
+        
+        for milestone, badge_title in streak_badges.items():
+            if self.current_streak >= milestone:
+                badge, _ = Badge.objects.get_or_create(
+                    title=badge_title,
+                    defaults={
+                        'description': f'Achieved a {milestone}-day streak!',
+                        'type': 'automatic'
+                    }
+                )
+                
+                # Avoid duplicate badge awards
+                if not UserBadge.objects.filter(
+                    user=self.user, 
+                    badge=badge
+                ).exists():
+                    UserBadge.objects.create(
+                        user=self.user, 
+                        badge=badge
+                    )
 
 
 def create_profile(sender, **kwargs):
