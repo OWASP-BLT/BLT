@@ -4,17 +4,42 @@ import shutil
 from django.conf import settings
 from django.core.files import File
 from django.db import migrations
+
 from website.models import Badge
 
 
 def add_badge_icons(apps, schema_editor):
     new_badges = [
-        {"title": "Weekly Streak", "icon": "icons8-7-48.png", "description": "Awarded when a 7-day streak is achieved."},
-        {"title": "Half-Month Streak", "icon": "icons8-15-48.png", "description": "Awarded when a 15-day streak is achieved."},
-        {"title": "Monthly Streak", "icon": "icons8-30-48.png", "description": "Awarded when a 30-day streak is achieved."},
-        {"title": "Three Month Streak", "icon": "icons8-90-48.png", "description": "Awarded when a 90-day streak is achieved."},
-        {"title": "Six Month Streak", "icon": "180.png", "description": "Awarded when a 180-day streak is achieved."},
-        {"title": "Yearly Streak", "icon": "365.png", "description": "Awarded when a 365-day streak is achieved."},
+        {
+            "title": "Weekly Streak",
+            "icon": "icons8-7-48.png",
+            "description": "Awarded when a 7-day streak is achieved.",
+        },
+        {
+            "title": "Half-Month Streak",
+            "icon": "icons8-15-48.png",
+            "description": "Awarded when a 15-day streak is achieved.",
+        },
+        {
+            "title": "Monthly Streak",
+            "icon": "icons8-30-48.png",
+            "description": "Awarded when a 30-day streak is achieved.",
+        },
+        {
+            "title": "Three Month Streak",
+            "icon": "icons8-90-48.png",
+            "description": "Awarded when a 90-day streak is achieved.",
+        },
+        {
+            "title": "Six Month Streak",
+            "icon": "180.png",
+            "description": "Awarded when a 180-day streak is achieved.",
+        },
+        {
+            "title": "Yearly Streak",
+            "icon": "365.png",
+            "description": "Awarded when a 365-day streak is achieved.",
+        },
     ]
 
     for badge_data in new_badges:
@@ -23,7 +48,7 @@ def add_badge_icons(apps, schema_editor):
             defaults={
                 "description": badge_data["description"],
                 "type": "automatic",
-            }
+            },
         )
 
         static_icon_path = os.path.join("website", "static", "img", "badges", badge_data["icon"])
