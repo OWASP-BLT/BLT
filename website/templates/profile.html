@@ -306,13 +306,51 @@
             </div>
             <div class="flex flex-col items-center lg:items-start text-center lg:text-left bg-[#f7fafc] text-[#2d3748] p-5 rounded-lg shadow-sm w-[22vw] max-sm:w-full  gap-4 cursor-pointer">
                 <!-- Points Section -->
-                <div class="flex items-center justify-center bg-[#f7fafc] text-[#1a202c] p-4 rounded-md shadow-sm w-full transition-transform transform hover:scale-105">
+                <div class="score-container flex items-center justify-center bg-[#f7fafc] text-[#1a202c] p-4 rounded-md shadow-sm w-full transition-transform transform hover:scale-105">
                     <i class="fa fa-star text-yellow-500 mr-2"></i>
                     <span class="text-[36px] font-bold text-yellow-500">
                         {{ my_score|default:0 }}
                     </span>
                     <span class="text-[14px] text-[#4a5568] ml-2">{% trans "POINTS" %}</span>
+                    <i class="fa fa-chevron-down ml-2 transition-transform duration-200" id="accordion-toggle"></i>
                 </div>
+                
+                <!-- Accordion Content -->
+                <div class="accordion-content hidden p-2 mt-4 rounded-md justify-center">
+                    <table class="min-w-full rounded-lg">
+                        <thead class="bg-[#4a5568] text-white">
+                            <tr>
+                                <th class="py-3 px-4 text-left">Score</th>
+                                <th class="py-3 px-4 text-left">Reason</th>
+                                <th class="py-3 px-4 text-left">Created</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-[#1a202c]">
+                            {% for point in user_points %}
+                                <tr class="border-b border-[#edf2f7]">
+                                    <td class="py-2 px-4 text-yellow-500 font-bold text-center">+ {{ point.score }}</td>
+                                    <td class="py-2 px-4">
+                                        {% if point.issue %}
+                                            <span>Issue created</span> 
+                                        {% elif point.domain %}
+                                            <span>Domain added</span> 
+                                        {% elif point.reason %}
+                                            <span>{{ point.reason }}</span>
+                                        {% else %}
+                                            <p class="mt-2 text-gray-500">No reason provided</p>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-2 px-4 text-md">{{ point.created|date:"Y-m-d H:i" }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="3" class="py-2 px-4 text-center text-[#4a5568]">No points available.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
             
                 <!-- Streak Section -->
                 <div class="flex flex-col items-center lg:items-start bg-[#f7fafc] text-[#2d3748] p-4 rounded-md shadow-sm w-full">
@@ -861,6 +899,16 @@
     }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script>
+        document.querySelector('.score-container').addEventListener('click', function() {
+            var accordion = document.querySelector('.accordion-content');
+            var arrow = document.querySelector('#accordion-toggle');
+            
+            accordion.classList.toggle('hidden'); // Toggles the visibility of the accordion
+            arrow.classList.toggle('fa-chevron-down'); // Changes the arrow to point down
+            arrow.classList.toggle('fa-chevron-up'); // Changes the arrow to point up
+        });
+    </script>
     <script>
         var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
         var months = [],

@@ -622,7 +622,7 @@ class UserProfile(models.Model):
                 
                 Points.objects.get_or_create(
                     user=self.user,
-                    reason="Daily check-in completed",
+                    reason="Daily check-in",
                     created__date=datetime.today().date(),
                     defaults={'score': 5}
                 )
