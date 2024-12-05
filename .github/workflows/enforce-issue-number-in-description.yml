@@ -57,7 +57,7 @@ jobs:
             }
           }')
 
-          echo "GraphQL Query: $QUERY"
+          # echo "GraphQL Query: $QUERY"
 
           # Make the GraphQL API request
           RESPONSE=$(curl -s -X POST \
@@ -66,8 +66,8 @@ jobs:
             -H "Content-Type: application/json" \
             --data "$QUERY")
 
-          echo "GraphQL Response:"
-          echo "$RESPONSE"
+          # echo "GraphQL Response:"
+          # echo "$RESPONSE"
 
           # Check for errors in the response
           ERRORS=$(echo "$RESPONSE" | jq -r '.errors')
@@ -80,7 +80,7 @@ jobs:
           CLOSING_ISSUES=$(echo "$RESPONSE" | jq -r '.data.repository.pullRequest.closingIssuesReferences.edges')
 
           if [[ "$CLOSING_ISSUES" == "[]" || -z "$CLOSING_ISSUES" ]]; then
-            echo "Error: No closing issues are referenced in the PR description."
+            echo "Error: No closing issues are referenced in the PR description. Add it in the PR under: Successfully merging this pull request may close these issues."
             exit 1
           fi
 

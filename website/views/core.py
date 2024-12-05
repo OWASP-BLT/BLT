@@ -37,6 +37,7 @@ from sendgrid import SendGridAPIClient
 from blt import settings
 from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 from website.models import (
+    Badge,
     ChatBotLog,
     Domain,
     Issue,
@@ -587,6 +588,11 @@ def view_suggestions(request):
 def sitemap(request):
     random_domain = Domain.objects.order_by("?").first()
     return render(request, "sitemap.html", {"random_domain": random_domain})
+
+
+def badge_list(request):
+    badges = Badge.objects.all()
+    return render(request, "badges.html", {"badges": badges})
 
 
 def sponsor_view(request):
