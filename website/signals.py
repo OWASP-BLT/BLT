@@ -101,11 +101,10 @@ def update_user_streak(sender, instance, created, **kwargs):
     if created:
         # Use the date of the start_time for streak tracking
         check_in_date = instance.start_time.date()
-        
         # Get the user's profile and update streak
         try:
             user_profile = instance.user.userprofile
-            user_profile.update_streak(check_in_date)
+            user_profile.update_streak_and_award_points(check_in_date)
         except UserProfile.DoesNotExist:
             # Fallback: create profile if it doesn't exist
             UserProfile.objects.create(

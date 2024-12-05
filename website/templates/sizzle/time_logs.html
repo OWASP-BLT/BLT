@@ -40,7 +40,7 @@
                     <div class="invalid-feedback">Please provide a valid GitHub Issue URL.</div>
                 </div>
                 <div class="form-group">
-                    <label for="organization_search_input">Organization</label>
+                    <label for="organization_search_input">Organization (optional)</label>
                     <input type="url"
                            class="form-control"
                            id="organization_search_input"
@@ -258,22 +258,15 @@
                     </div>`);
                     return;
                 }
+                //only check organizationURL if it is entered
                 const organizationUrlPattern = /^(https?:\/\/)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-                    // Check if organizationURL is provided and valid
-                    if (!organizationURL) {
-                        $('#message-container').html(`<div class="alert_box" role="alert">
-                            Organization URL is required.
-                        </div>`);
-                        return;
-                    }
-
-                    if (!organizationUrlPattern.test(organizationURL)) {
-                        $('#message-container').html(`<div class="alert_box" role="alert">
-                            Please provide a valid Organization URL.
-                        </div>`);
-                        return;                    
-                    }
+                if (organizationURL &&!organizationUrlPattern.test(organizationURL)) {
+                    // Display an alert message 
+                $('#message-container').html(`<div class="alert_box" role="alert">
+                    Please provide a valid Organization URL.
+                </div>`);
+                return;
+            }
                 let ajaxdata={
                     'github_issue_url': githubIssueUrl,
                     'organization_url': organizationURL
