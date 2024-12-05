@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0165_add_badge_icons"),
         ("website", "0165_merge_20241203_0320"),
