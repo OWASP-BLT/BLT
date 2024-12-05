@@ -46,6 +46,7 @@ from website.views.core import (
     StatsDetailView,
     UploadCreate,
     add_suggestions,
+    badge_list,
     chatbot_conversation,
     check_status,
     donate_view,
@@ -167,6 +168,7 @@ from website.views.user import (
     deletions,
     follow_user,
     get_score,
+    github_webhook,
     invite_friend,
     profile,
     profile_edit,
@@ -466,6 +468,11 @@ urlpatterns = [
         sitemap,
         name="sitemap",
     ),
+    re_path(
+        r"^badges/$",
+        badge_list,
+        name="badges",
+    ),
     re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html"), name="start_hunt"),
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
     re_path(r"^hunts/$", ListHunts.as_view(), name="hunts"),
@@ -644,6 +651,7 @@ urlpatterns = [
     ),
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
     path("assign-badge/<str:username>/", assign_badge, name="assign_badge"),
+    path("github-webhook/", github_webhook, name="github-webhook"),
 ]
 
 if settings.DEBUG:
