@@ -5,7 +5,18 @@ from django.dispatch import receiver
 
 from blog.models import Post
 
-from .models import Activity, Badge, Bid, Hunt, IpReport, Issue, Suggestion, UserBadge, TimeLog, UserProfile
+from .models import (
+    Activity,
+    Badge,
+    Bid,
+    Hunt,
+    IpReport,
+    Issue,
+    Suggestion,
+    TimeLog,
+    UserBadge,
+    UserProfile,
+)
 
 
 def get_default_user():
@@ -93,6 +104,7 @@ def handle_pre_delete(sender, instance, **kwargs):
     if sender in [Issue, Hunt, IpReport, Post]:  # Add any model you want to track
         create_activity(instance, "deleted")
 
+
 @receiver(post_save, sender=TimeLog)
 def update_user_streak(sender, instance, created, **kwargs):
     """
@@ -108,8 +120,5 @@ def update_user_streak(sender, instance, created, **kwargs):
         except UserProfile.DoesNotExist:
             # Fallback: create profile if it doesn't exist
             UserProfile.objects.create(
-                user=instance.user,
-                current_streak=1,
-                longest_streak=1,
-                last_check_in=check_in_date
+                user=instance.user, current_streak=1, longest_streak=1, last_check_in=check_in_date
             )

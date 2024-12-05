@@ -228,9 +228,7 @@ class UserProfileDetailView(DetailView):
 
         user_points = Points.objects.filter(user=self.object)
         context["user_points"] = user_points
-        context["my_score"] = list(
-            user_points.aggregate(total_score=Sum("score")).values()
-        )[0]
+        context["my_score"] = list(user_points.aggregate(total_score=Sum("score")).values())[0]
         context["websites"] = (
             Domain.objects.filter(issue__user=self.object)
             .annotate(total=Count("issue"))

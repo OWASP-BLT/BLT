@@ -935,7 +935,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
             obj.save()
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):
-                p = Points.objects.create(user=self.request.user, domain=domain, score=1, reason="Domain added")
+                p = Points.objects.create(
+                    user=self.request.user, domain=domain, score=1, reason="Domain added"
+                )
                 messages.success(self.request, "Domain added! + 1")
 
             if self.request.POST.get("screenshot-hash"):

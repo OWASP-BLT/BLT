@@ -308,13 +308,11 @@
                 <!-- Points Section -->
                 <div class="score-container flex items-center justify-center bg-[#f7fafc] text-[#1a202c] p-4 rounded-md shadow-sm w-full transition-transform transform hover:scale-105">
                     <i class="fa fa-star text-yellow-500 mr-2"></i>
-                    <span class="text-[36px] font-bold text-yellow-500">
-                        {{ my_score|default:0 }}
-                    </span>
+                    <span class="text-[36px] font-bold text-yellow-500">{{ my_score|default:0 }}</span>
                     <span class="text-[14px] text-[#4a5568] ml-2">{% trans "POINTS" %}</span>
-                    <i class="fa fa-chevron-down ml-2 transition-transform duration-200" id="accordion-toggle"></i>
+                    <i class="fa fa-chevron-down ml-2 transition-transform duration-200"
+                       id="accordion-toggle"></i>
                 </div>
-                
                 <!-- Accordion Content -->
                 <div class="accordion-content hidden p-2 mt-4 rounded-md justify-center">
                     <table class="min-w-full rounded-lg">
@@ -331,9 +329,9 @@
                                     <td class="py-2 px-4 text-yellow-500 font-bold text-center">+ {{ point.score }}</td>
                                     <td class="py-2 px-4">
                                         {% if point.issue %}
-                                            <span>Issue created</span> 
+                                            <span>Issue created</span>
                                         {% elif point.domain %}
-                                            <span>Domain added</span> 
+                                            <span>Domain added</span>
                                         {% elif point.reason %}
                                             <span>{{ point.reason }}</span>
                                         {% else %}
@@ -350,36 +348,31 @@
                         </tbody>
                     </table>
                 </div>
-                
-            
                 <!-- Streak Section -->
                 <div class="flex flex-col items-center lg:items-start bg-[#f7fafc] text-[#2d3748] p-4 rounded-md shadow-sm w-full">
                     <h4 class="text-[16px] font-semibold uppercase tracking-wide mb-2">
                         <i class="fa fa-fire text-red-500"></i> Streak Details
                     </h4>
                     <hr class="border-t-[1px] border-[#e2e8f0] opacity-70 w-full mb-3">
-                    
                     <!-- Current Streak -->
                     <div class="flex items-center justify-between w-full text-[14px] font-medium mb-2 transition-transform transform hover:scale-105">
                         <span><i class="fa fa-bolt mr-2 text-red-500"></i> Current Streak:</span>
                         <span class="font-bold text-red-500">{{ user.userprofile.current_streak|default:"0" }}</span>
                     </div>
                     <hr class="border-t-[1px] border-[#e2e8f0] opacity-50 w-full mb-2">
-                    
                     <!-- Longest Streak -->
                     <div class="flex items-center justify-between w-full text-[14px] font-medium mb-2 transition-transform transform hover:scale-105">
                         <span><i class="fa fa-trophy mr-2 text-red-500"></i> Longest Streak:</span>
                         <span class="font-bold text-red-500">{{ user.userprofile.longest_streak|default:"0" }}</span>
                     </div>
                     <hr class="border-t-[1px] border-[#e2e8f0] opacity-50 w-full mb-2">
-                    
                     <!-- Last Sizzle Check-in -->
                     <div class="flex items-center justify-between w-full text-[14px] font-medium transition-transform transform hover:scale-105">
                         <span><i class="fa fa-calendar-check mr-2 text-red-500"></i> Last Sizzle Check-in:</span>
                         <span class="font-bold text-red-500">{{ user.userprofile.last_check_in|default:"N/A" }}</span>
                     </div>
                 </div>
-            </div>            
+            </div>
             <!--add a link here to edit the profile /profile/edit -->
             {% if request.user == user %}
                 <div class="mt-[2rem] !ml-0">
