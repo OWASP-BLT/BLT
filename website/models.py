@@ -26,6 +26,7 @@ from django.db import transaction
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 from google.api_core.exceptions import NotFound
+from datetime import datetime
 from google.cloud import storage
 from mdeditor.fields import MDTextField
 from rest_framework.authtoken.models import Token
@@ -622,6 +623,7 @@ class UserProfile(models.Model):
                 Points.objects.get_or_create(
                     user=self.user,
                     reason="Daily check-in completed",
+                    created__date=datetime.today().date(),
                     defaults={'score': 5}
                 )
 
@@ -660,51 +662,6 @@ class UserProfile(models.Model):
             return False
         
         return True
-
-    # def update_streak_and_award_points(self, check_in_date):
-    #     """
-    #     Update streak based on consecutive daily check-ins
-    #     """
-    #     # If no last check-in, or check-in is exactly one day after last check-in
-    #     if (not self.last_check_in or 
-    #         check_in_date == self.last_check_in + timedelta(days=1)):
-    #         self.current_streak += 1
-    #         self.longest_streak = max(self.current_streak, self.longest_streak)
-
-    #         Points.objects.create(user=self.user, score=5, reason="Daily check-in completed")
-
-    #         points_awarded = 0
-    #         if self.current_streak == 7:
-    #             points_awarded += 20
-    #             reason = "7-day streak milestone achieved!"
-    #         elif self.current_streak == 15:
-    #             points_awarded += 30
-    #             reason = "15-day streak milestone achieved!"
-    #         elif self.current_streak == 30:
-    #             points_awarded += 50
-    #             reason = "30-day streak milestone achieved!"
-    #         elif self.current_streak == 90:
-    #             points_awarded += 150
-    #             reason = "90-day streak milestone achieved!"
-    #         elif self.current_streak == 180:
-    #             points_awarded += 300
-    #             reason = "180-day streak milestone achieved!"
-    #         elif self.current_streak == 365:
-    #             points_awarded += 500
-    #             reason = "365-day streak milestone achieved!"
-
-    #         if points_awarded != 0:
-    #             Points.objects.create(user = self.user, score=points_awarded, reason=reason)
-
-    #     # If check-in is not consecutive, reset streak
-    #     elif check_in_date > self.last_check_in + timedelta(days=1):
-    #         self.current_streak = 1
-
-    #     self.last_check_in = check_in_date
-    #     self.save()
-        
-    #     # Check and award badges based on streak milestones
-    #     self.award_streak_badges()
 
     def award_streak_badges(self):
         """

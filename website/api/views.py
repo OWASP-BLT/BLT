@@ -680,7 +680,7 @@ class InviteFriendApiViewset(APIView):
             mail_status
             and InviteFriend.objects.filter(sender=self.request.user, sent=True).count() == 2
         ):
-            Points.objects.create(user=self.request.user, score=1)
+            Points.objects.create(user=self.request.user, score=1, reason="Invited friend")
             InviteFriend.objects.filter(sender=self.request.user).delete()
 
         return Response(
