@@ -1,0 +1,31 @@
+Name,Description,Link,Type
+antisamy,a library for performing fast and configurable cleansing of HTML coming from untrusted sources,https://github.com/nahsra/antisamy
+find-sec-bugs,The SpotBugs plugin for security audits of Java web applications and Android applications. (Also work with Kotlin;Groovy and Scala projects),https://github.com/find-sec-bugs/find-sec-bugs/
+www-project-secure-headers,The OWASP Secure Headers Project,https://github.com/OWASP/www-project-secure-headers
+samuraiwtf,The main SamuraiWTF collaborative distro repo.,https://github.com/SamuraiWTF/samuraiwtf
+ModSecurity,ModSecurity is an open source and cross platform web application firewall (WAF) engine for Apache and IIS and Nginx. It has a robust event-based programming language which provides protection from a range of attacks against web applications and allows for HTTP traffic monitoring-logging and real-time analysis.,https://github.com/owasp-modsecurity/ModSecurity
+www-project-csrfguard,The aim of this project is to protect Java applications against CSRF attacks with the use of Synchronizer Tokens,https://github.com/OWASP/www-project-csrfguard
+coraza,OWASP Coraza WAF is a golang modsecurity compatible web application firewall library,https://github.com/corazawaf/coraza
+SecurityShepherd,Web and mobile application security training platform,https://github.com/OWASP/SecurityShepherd
+DependencyCheck,OWASP dependency-check is a software composition analysis utility that detects publicly disclosed vulnerabilities in application dependencies.,https://github.com/jeremylong/DependencyCheck
+django-DefectDojo,DevSecOps-ASPM-Vulnerability Management. All on one platform.,https://github.com/DefectDojo/django-DefectDojo
+cdxgen,Creates CycloneDX Bill of Materials (BOM) for your projects from source and container images. Supports many languages and package managers. Integrate in your CI/CD pipeline with automatic submission to Dependency Track server.,https://github.com/CycloneDX/cdxgen
+CheatSheetSeries,The OWASP Cheat Sheet Series was created to provide a concise collection of high value information on specific application security topics.,https://github.com/OWASP/CheatSheetSeries
+amass,In-depth attack surface mapping and asset discovery,https://github.com/owasp-amass/amass
+www-project-top-10-infrastructure-security-risks,OWASP Top 10 Infrastructure Security Risks,https://github.com/OWASP/www-project-top-10-infrastructure-security-risks/
+ZAP,The ZAP core project,https://github.com/zaproxy/zaproxy
+WSTG,The Web Security Testing Guide is a comprehensive Open Source guide to testing the security of web applications and web services.,https://github.com/OWASP/wstg
+OWASP MASTG,The Mobile Application Security Testing Guide (MASTG) is a comprehensive manual for mobile app security testing and reverse engineering. It describes the technical processes for verifying the controls listed in the OWASP Mobile Application Security Verification Standard (MASVS).,https://github.com/OWASP/owasp-mastg
+ZSC,OWASP ZSC - Shellcode/Obfuscate Code Generator https://www.secologist.com/,https://github.com/OWASP/ZSC
+OWASP WrongSecrets,Vulnerable app with examples showing how to not use secrets,https://github.com/OWASP/wrongsecrets
+Top10,Official OWASP Top 10 Document Repository,https://github.com/OWASP/Top10
+OWASP VWAD,The OWASP Vulnerable Web Applications Directory project (VWAD) is a comprehensive and well maintained registry of all known vulnerable web applications currently available.,https://github.com/OWASP/OWASP-VWAD
+Python Honeypot,OWASP Honeypot- Automated Deception Framework.,https://github.com/OWASP/Python-Honeypot
+O-Saft,O-Saft - OWASP SSL advanced forensic tool,https://github.com/OWASP/O-Saft
+Nettacker,Automated Penetration Testing Framework - Open-Source Vulnerability Scanner - Vulnerability Management,https://github.com/OWASP/Nettacker
+OWASP CRS,OWASP CRS (Official Repository),https://github.com/coreruleset/coreruleset
+OWASP MASVS,The OWASP MASVS (Mobile Application Security Verification Standard) is the industry standard for mobile app security.,https://github.com/OWASP/owasp-masvs
+Juice Shop,OWASP Juice Shop: Probably the most modern and sophisticated insecure web application,https://github.com/juice-shop/juice-shop
+OWASP Application Security Verification Standard (ASVS),Application Security Verification Standard,https://github.com/OWASP/ASVS
+API Security,OWASP API Security Project,https://github.com/OWASP/API-Security
+OWASP BLT,OWASP BLT is a bug logging tool to report issues and get points. companies are held accountable.,https://github.com/OWASP-BLT/BLT
