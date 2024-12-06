@@ -613,6 +613,12 @@ def users_view(request, *args, **kwargs):
     return render(request, "users.html", context=context)
 
 
+def badge_user_list(request, badge_id):
+    badge = get_object_or_404(Badge, id=badge_id)
+    users = User.objects.filter(userbadge__badge=badge).distinct()
+    return render(request, "badge_user_list.html", {"badge": badge, "users": users})
+
+
 @login_required(login_url="/accounts/login")
 def stripe_connected(request, username):
     user = User.objects.get(username=username)
