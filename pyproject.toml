@@ -80,7 +80,7 @@ sendgrid = "^6.11.0"
 matplotlib = "^3.9.3"
 openpyxl = "^3.1.5"
 atproto = "^0.0.55"
-slack-bolt = "^1.21.2"
+slack-bolt = "^1.21.3"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
