@@ -20,7 +20,10 @@
                     {% if badge.icon %}
                         <img src="{{ badge.icon.url }}"
                              alt="{{ badge.title }} Badge"
-                             class="w-24 h-24 object-contain rounded-xl border-4 border-white shadow-lg">
+                             class="w-28 h-28 object-contain rounded-xl border-4 border-white shadow-lg"
+                             height="96px"
+                             width="96px"
+                             >
                     {% else %}
                         <div class="w-24 h-24 bg-white/20 rounded-xl flex items-center justify-center text-white text-3xl font-bold">
                             {{ badge.title|slice:":1" }}
@@ -43,7 +46,9 @@
                                             {% if profile.user_avatar %}
                                                 <img src="{{ profile.user_avatar.url }}"
                                                      alt="{{ profile.user.username }}'s avatar"
-                                                     class="w-32 h-32 object-cover border-4 border-indigo-500 shadow-md rounded-lg">
+                                                     class="w-32 h-32 object-cover border-4 border-indigo-500 shadow-md rounded-lg"
+                                                     height="108px"
+                                                     width="108px">
                                             {% else %}
                                                 <div class="w-32 h-32 flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg text-white text-5xl font-semibold shadow-lg">
                                                     {{ profile.user.username|slice:":1"|upper }}
