@@ -1,9 +1,0 @@
-<h1 class="text-2xl font-bold text-gray-800 mb-4">Users with the "{{ badge.title }}" badge</h1>
-<ul class="list-disc ml-6">
-    {% for user in users %}
-        <li class="text-gray-700 text-lg">{{ user.username }}</li>
-    {% empty %}
-        <li class="text-gray-500 text-lg">No users have been awarded this badge yet.</li>
-    {% endfor %}
-</ul>
-<a href="{% url 'badge_list' %}" class="text-indigo-600 hover:text-indigo-800 transition-colors duration-300 mt-4 block">Back to badges</a>

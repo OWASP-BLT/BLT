@@ -43,7 +43,6 @@ from website.models import (
     Issue,
     Suggestion,
     SuggestionVotes,
-    UserBadge,
     UserProfile,
     Wallet,
 )
@@ -593,7 +592,7 @@ def sitemap(request):
 
 def badge_list(request):
     badges = Badge.objects.all()
-    badges = Badge.objects.annotate(user_count=Count('userbadge'))
+    badges = Badge.objects.annotate(user_count=Count("userbadge"))
     return render(request, "badges.html", {"badges": badges})
 
 
