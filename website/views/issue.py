@@ -48,7 +48,9 @@ from comments.models import Comment
 from website.forms import CaptchaForm
 from website.models import (
     IP,
+    Activity,
     Bid,
+    ContentType,
     Domain,
     Hunt,
     Issue,
@@ -388,6 +390,14 @@ def remove_user_from_issue(request, id):
     issue = Issue.objects.get(id=id)
     if request.user.is_superuser or request.user == issue.user:
         issue.remove_user()
+        # Remove user from corresponding activity object that was created
+        issue_activity = Activity.objects.filter(
+            content_type=ContentType.objects.get_for_model(Issue), object_id=id
+        ).first()
+        # Have to define a default anonymous user since the not null constraint fails
+        anonymous_user = User.objects.get_or_create(username="anonymous")[0]
+        issue_activity.user = anonymous_user
+        issue_activity.save()
         messages.success(request, "User removed from the issue")
         if tokenauth:
             return JsonResponse("User removed from the issue", safe=False)
@@ -895,9 +905,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
         def create_issue(self, form):
             tokenauth = False
             obj = form.save(commit=False)
-            if self.request.user.is_authenticated:
+            report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
+
+            # If report_anonymous is true, set user to None
+            if report_anonymous:
+                obj.user = None
+            elif self.request.user.is_authenticated:
                 obj.user = self.request.user
-            if not self.request.user.is_authenticated:
+            else:
                 for token in Token.objects.all():
                     if self.request.POST.get("token") == token.key:
                         obj.user = User.objects.get(id=token.user_id)
@@ -1004,33 +1019,36 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             obj.save()
 
-            if self.request.user.is_authenticated:
-                total_issues = Issue.objects.filter(user=self.request.user).count()
-                user_prof = UserProfile.objects.get(user=self.request.user)
-                if total_issues <= 10:
-                    user_prof.title = 1
-                elif total_issues <= 50:
-                    user_prof.title = 2
-                elif total_issues <= 200:
-                    user_prof.title = 3
-                else:
-                    user_prof.title = 4
+            if not report_anonymous:
+                if self.request.user.is_authenticated:
+                    total_issues = Issue.objects.filter(user=self.request.user).count()
+                    user_prof = UserProfile.objects.get(user=self.request.user)
+                    if total_issues <= 10:
+                        user_prof.title = 1
+                    elif total_issues <= 50:
+                        user_prof.title = 2
+                    elif total_issues <= 200:
+                        user_prof.title = 3
+                    else:
+                        user_prof.title = 4
 
-                user_prof.save()
+                    user_prof.save()
 
-            if tokenauth:
-                total_issues = Issue.objects.filter(user=User.objects.get(id=token.user_id)).count()
-                user_prof = UserProfile.objects.get(user=User.objects.get(id=token.user_id))
-                if total_issues <= 10:
-                    user_prof.title = 1
-                elif total_issues <= 50:
-                    user_prof.title = 2
-                elif total_issues <= 200:
-                    user_prof.title = 3
-                else:
-                    user_prof.title = 4
+                if tokenauth:
+                    total_issues = Issue.objects.filter(
+                        user=User.objects.get(id=token.user_id)
+                    ).count()
+                    user_prof = UserProfile.objects.get(user=User.objects.get(id=token.user_id))
+                    if total_issues <= 10:
+                        user_prof.title = 1
+                    elif total_issues <= 50:
+                        user_prof.title = 2
+                    elif total_issues <= 200:
+                        user_prof.title = 3
+                    else:
+                        user_prof.title = 4
 
-                user_prof.save()
+                    user_prof.save()
 
             redirect_url = "/report"
 
