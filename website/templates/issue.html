@@ -107,7 +107,7 @@
             {% include "./includes/issue_right_info.html" %}
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.1.0/dist/markdown-it.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
     <script>
     var flagClose = document.getElementById("close-flag");
     var likeClose = document.getElementById("close-like");
@@ -128,11 +128,14 @@
     }
     </script>
     <script>
-    const md = window.markdownit();
-    const markdownContent = `{{ object.markdown_description|escapejs }}`;
-    const renderedHtml = md.render(markdownContent);
-
-    $("#bug_report").html(renderedHtml);
+    if (window.markdownit) {
+        const md = new window.markdownit();
+        const markdownContent = `{{ object.markdown_description|escapejs }}`;
+        const renderedHtml = md.render(markdownContent);
+        $("#bug_report").html(renderedHtml);
+    } else {
+        console.error('MarkdownIt library failed to load.');
+    }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"
             integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw="

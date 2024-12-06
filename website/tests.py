@@ -11,7 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from .models import Issue, IssueScreenshot
+from .models import Activity, ContentType, Issue, IssueScreenshot, User
 
 os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = "localhost:8082"
 
@@ -171,3 +171,33 @@ class ProjectListViewTests(TestCase):
 
         # Ensure the project was created
         self.assertTrue(Project.objects.filter(github_url=github_url).exists())
+
+
+class RemoveUserFromIssueTest(TestCase):
+    def setUp(self):
+        # Create a user, an anonymous user, and an issue
+        self.user = User.objects.create_user(username="testuser", password="password")
+        self.anonymous_user = User.objects.create_user(username="anonymous", password="password")
+
+        self.issue = Issue.objects.create(user=self.user, description="Test Issue")
+
+        # Create corresponding activity
+        self.activity = Activity.objects.create(
+            user=self.user,
+            content_type=ContentType.objects.get_for_model(Issue),
+            object_id=self.issue.id,
+        )
+
+    def test_remove_user_from_issue(self):
+        # Only the issue poster can delete own issue
+        self.client.login(username="testuser", password="password")
+
+        url = reverse("remove_user_from_issue", args=[self.issue.id])
+        response = self.client.post(url, follow=True)
+
+        self.issue.refresh_from_db()
+        self.activity.refresh_from_db()
+
+        # Activity user should be set to anonymous and issue user to None
+        self.assertEqual(self.activity.user.username, "anonymous")
+        self.assertIsNone(self.issue.user)
