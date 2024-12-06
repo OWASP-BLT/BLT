@@ -16,6 +16,7 @@ permissions:
 jobs:
   validate_pr_closing_issues:
     runs-on: ubuntu-latest
+    if: github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]' && github.actor != 'dependabot'
     steps:
       - name: Validate PR closing issues with GraphQL
         env:
