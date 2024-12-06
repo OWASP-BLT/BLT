@@ -153,7 +153,7 @@ class RegisterCompanyView(View):
             return redirect("register_company")
 
         if company_url == "" or Company.objects.filter(url=company_url).exists():
-            messages.error(request, "Company URL is invalid or already exists.")
+            messages.error(request, "Company URL is invalid, or already exists.")
             return redirect("register_company")
 
         company_logo = request.FILES.get("logo")
