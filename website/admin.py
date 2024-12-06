@@ -8,6 +8,7 @@ from import_export.admin import ImportExportModelAdmin
 
 from website.models import (
     IP,
+    Activity,
     Bid,
     Blocked,
     ChatBotLog,
@@ -17,6 +18,7 @@ from website.models import (
     Domain,
     Hunt,
     HuntPrize,
+    Integration,
     InviteFriend,
     Issue,
     IssueScreenshot,
@@ -24,6 +26,7 @@ from website.models import (
     Payment,
     Points,
     Project,
+    SlackIntegration,
     Subscription,
     Suggestion,
     SuggestionVotes,
@@ -443,3 +446,6 @@ admin.site.register(IP, IPAdmin)
 admin.site.register(Transaction)
 admin.site.register(Monitor, MonitorAdmin)
 admin.site.register(Tag, TagAdmin)
+admin.site.register(Integration)
+admin.site.register(SlackIntegration)
+admin.site.register(Activity)

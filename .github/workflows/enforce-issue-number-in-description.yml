@@ -1,0 +1,88 @@
+name: Validate PR Closing Issues
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+
+permissions:
+  pull-requests: read
+  contents: read
+  issues: read
+
+jobs:
+  validate_pr_closing_issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR closing issues with GraphQL
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO_OWNER=${{ github.repository_owner }}
+          REPO_NAME=${{ github.event.repository.name }}
+          PR_NUMBER=${{ github.event.pull_request.number }}
+
+          echo "Validating PR #${PR_NUMBER} in repository ${REPO_OWNER}/${REPO_NAME}"
+
+          # Construct the GraphQL query
+          QUERY=$(jq -n \
+          --arg repoOwner "$REPO_OWNER" \
+          --arg repoName "$REPO_NAME" \
+          --argjson prNumber "$PR_NUMBER" \
+          '{
+            query: "query($REPO_NAME: String!, $REPO_OWNER: String!, $PR_NUMBER: Int!) {
+              repository(owner: $REPO_OWNER, name: $REPO_NAME) {
+                pullRequest(number: $PR_NUMBER) {
+                  id
+                  closingIssuesReferences(first: 50) {
+                    edges {
+                      node {
+                        id
+                        body
+                        number
+                        title
+                      }
+                    }
+                  }
+                }
+              }
+            }",
+            variables: {
+              REPO_OWNER: $repoOwner,
+              REPO_NAME: $repoName,
+              PR_NUMBER: $prNumber
+            }
+          }')
+
+          # echo "GraphQL Query: $QUERY"
+
+          # Make the GraphQL API request
+          RESPONSE=$(curl -s -X POST \
+            --location 'https://api.github.com/graphql' \
+            -H "Authorization: bearer $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data "$QUERY")
+
+          # echo "GraphQL Response:"
+          # echo "$RESPONSE"
+
+          # Check for errors in the response
+          ERRORS=$(echo "$RESPONSE" | jq -r '.errors')
+          if [[ "$ERRORS" != "null" ]]; then
+            echo "GraphQL query failed with errors: $ERRORS"
+            exit 1
+          fi
+
+          # Extract closing issues
+          CLOSING_ISSUES=$(echo "$RESPONSE" | jq -r '.data.repository.pullRequest.closingIssuesReferences.edges')
+
+          if [[ "$CLOSING_ISSUES" == "[]" || -z "$CLOSING_ISSUES" ]]; then
+            echo "Error: No closing issues are referenced in the PR description. Add it in the PR under: Successfully merging this pull request may close these issues."
+            exit 1
+          fi
+
+          echo "Closing issues found: $CLOSING_ISSUES"
+          echo "PR description is valid with referenced closing issues."
