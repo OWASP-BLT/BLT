@@ -21,7 +21,7 @@
                     {% endif %}
                 </div>
                 <div>
-                    <span class="font-bold">Total Points =</span> {{ users_score }}
+                    {% if object.user %}<span class="font-bold">Total Points =</span> {{ users_score }}{% endif %}
                 </div>
             </div>
         </div>
