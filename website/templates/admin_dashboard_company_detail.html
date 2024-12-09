@@ -1,5 +1,17 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
+{% block title %}Edit Organization | {% env 'PROJECT_NAME' %}{% endblock title %}
+
+{% block description %}Edit details for the organization in {% env 'PROJECT_NAME' %}{% endblock description %}
+
+{% block keywords %}edit, organization, company, admin, subscription{% endblock keywords %}
+
+{% block og_title %}Edit Organization - {% env 'PROJECT_NAME' %}{% endblock og_title %}
+
+{% block og_image %}{% static 'img/edit-organization-og-image.png' %}{% endblock og_image %}
+
+{% block og_description %}Edit your organization's details, including name, website, email, logo, and subscription on {% env 'PROJECT_NAME' %}{% endblock og_description %}
+
 {% block content %}
     <section>
         {% include "includes/admin_sidenav.html" %}

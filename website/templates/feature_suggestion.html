@@ -1,4 +1,12 @@
 {% extends "base.html" %}
+{% load static %}
+{% block title %}Suggest Features{% endblock %}
+{% block description %}Share your feature suggestions for the OWASP Bug Logging Tool. Your ideas help improve the tool and contribute to its development.{% endblock %}
+{% block keywords %}suggestions, feature request, OWASP, Bug Logging Tool, development, feedback{% endblock %}
+{% block og_title %}Suggest Features for OWASP Bug Logging Tool{% endblock %}
+{% block og_description %}Share your ideas for new features to improve the OWASP Bug Logging Tool. Help us enhance the tool with your suggestions.{% endblock %}
+{% block og_image %}{% static 'img/suggest-features.jpg' %}{% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
     <style>

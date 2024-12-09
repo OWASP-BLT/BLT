@@ -1,9 +1,18 @@
 {% extends "base.html" %}
 {% load static %}
 {% load humanize %}
-{% block style %}
-    <style>/* You can add custom styles here */</style>
-{% endblock style %}
+{% block title %}Badges{% endblock title %}
+
+{% block description %}Explore the various badges available in the platform and learn how to earn them{% endblock description %}
+
+{% block keywords %}badges, rewards, achievements, recognition, platform{% endblock keywords %}
+
+{% block og_title %}Badges - Platform{% endblock og_title %}
+
+{% block og_image %}{% static 'images/badges-og-image.png' %}{% endblock og_image %}
+
+{% block og_description %}Discover and earn various badges as you contribute and achieve milestones on the platform{% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">

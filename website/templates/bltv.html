@@ -1,4 +1,19 @@
 {% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+
+{% block title %}BLTV - Videos on BLT Projects{% endblock title %}
+
+{% block description %}Watch videos related to the BLT projects. Learn how to configure, host, and use various tools in the OWASP BLT ecosystem through video tutorials.{% endblock description %}
+
+{% block keywords %}BLTV, BLT projects, video tutorials, YouTube, Slack bot, PythonAnywhere, OWASP{% endblock keywords %}
+
+{% block og_title %}BLTV - Videos on BLT Projects{% endblock og_title %}
+
+{% block og_image %}{% static 'images/bltv-og-image.png' %}{% endblock og_image %}
+
+{% block og_description %}Explore BLT project tutorials on YouTube. Learn to configure Slack bots and host them on platforms like PythonAnywhere.{% endblock og_description %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
     <style>

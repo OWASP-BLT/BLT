@@ -2,9 +2,13 @@
 {% load custom_tags %}
 {% load i18n %}
 {% load static %}
-{% block title %}
-    Donation Options
-{% endblock title %}
+{% block title %}Donation Options{% endblock %}
+{% block description %}Support the ongoing development of the OWASP Bug Logging Tool by choosing a sponsorship plan. Help us grow and improve with your contribution.{% endblock %}
+{% block keywords %}donation, OWASP, sponsorship, Bug Logging Tool, support, development{% endblock %}
+{% block og_title %}Support OWASP with a Donation{% endblock %}
+{% block og_description %}Choose a sponsorship plan and support the OWASP Bug Logging Tool's development. Your contribution helps improve the tool.{% endblock %}
+{% block og_image %}{% static 'img/donation-options.jpg' %}{% endblock %}
+
 {% block content %}
     <!-- Support OWASP Development Section -->
     {% include "includes/sidenav.html" %}
