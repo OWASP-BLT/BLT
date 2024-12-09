@@ -7,3 +7,7 @@
 <img alt="Views" src="https://blt.owasp.org/projects/blt/badge"></a>
 
 Everything is on our <a href="https://blt.owasp.org">homepage</a>
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=OWASP-BLT/BLT&type=Date)](https://star-history.com/#OWASP-BLT/BLT&Date)
