@@ -2,6 +2,24 @@
 {% load socialaccount %}
 {% load gravatar %}
 {% load static %}
+{% block title %}Admin Management - {{ company.name }} - BLT Dashboard{% endblock title %}
+
+{% block description %}
+    Manage admins and their roles within the BLT dashboard. You can update, assign new roles, and more.
+{% endblock description %}
+
+{% block keywords %}
+    admin management, BLT, role management, company, dashboard, user roles, moderator, admin, user profile
+{% endblock keywords %}
+
+{% block og_title %}Admin Management - {{ company.name }} - BLT Dashboard{% endblock og_title %}
+
+{% block og_image %}{% static 'images/admin-management.png' %}{% endblock og_image %}
+
+{% block og_description %}
+    View and manage admins and their roles within the company using the BLT dashboard.
+{% endblock og_description %}
+
 {% block content %}
     <section>
         {% include "includes/company_sidenav.html" %}

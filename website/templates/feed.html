@@ -1,4 +1,12 @@
 {% extends "base.html" %}
+{% load static %}
+{% block title %}Global Activity Feed{% endblock %}
+{% block description %}Stay updated with the latest activities on the OWASP Bug Logging Tool. View new, updated, and approved actions, and interact with them directly.{% endblock %}
+{% block keywords %}activity feed, global activity, OWASP, Bug Logging Tool, updates, approval, user interactions{% endblock %}
+{% block og_title %}Global Activity Feed for OWASP Bug Logging Tool{% endblock %}
+{% block og_description %}Browse the global activity feed for the OWASP Bug Logging Tool, where you can see the latest activities, updates, and approved contributions.{% endblock %}
+{% block og_image %}{% static 'img/global-activity-feed.jpg' %}{% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
     <style>

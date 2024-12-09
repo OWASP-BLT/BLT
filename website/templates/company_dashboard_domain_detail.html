@@ -1,6 +1,27 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
 {% load tz_detect %}
+{% load static %}
+{% load custom_tags %}
+
+{% block title %}Edit Domain - {% env 'PROJECT_NAME' %}{% endblock title %}
+
+{% block description %}
+    Edit the details of your domain on {% env 'PROJECT_NAME' %}. Update the name, website URL, logo, email address, and more.
+{% endblock description %}
+
+{% block keywords %}
+    {% env 'PROJECT_NAME' %}, domain, edit, update, website, logo, email
+{% endblock keywords %}
+
+{% block og_title %}Edit Domain - {% env 'PROJECT_NAME' %}{% endblock og_title %}
+
+{% block og_image %}{% static 'images/domain-edit.png' %}{% endblock og_image %}
+
+{% block og_description %}
+    Edit the details of your domain on {% env 'PROJECT_NAME' %}. Update domain name, URL, logo, email, and more.
+{% endblock og_description %}
+
 {% block content %}
     <section>
         {% include "includes/company_sidenav.html" %}

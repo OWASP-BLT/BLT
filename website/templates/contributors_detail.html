@@ -1,4 +1,12 @@
 {% extends "base.html" %}
+{% load static %}
+{% block title %}Contributor Profile - {{ contributor.name }}{% endblock %}
+{% block description %}Learn more about {{ contributor.name }}, their contributions to the OWASP BLT project, and explore their profile, including repository, location, and social links.{% endblock %}
+{% block keywords %}OWASP, BLT, contributor, profile, repository, location, social links, Twitter, LinkedIn, website{% endblock %}
+{% block og_title %}Contributor Profile - {{ contributor.name }}{% endblock %}
+{% block og_description %}Explore the profile of {{ contributor.name }}, a contributor to the OWASP BLT project, with details about their contributions, repository, and social media links.{% endblock %}
+{% block og_image %}{% static 'img/owasp-blt-contribute.jpg' %}{% endblock %}
+
 {% block natural_content %}
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
