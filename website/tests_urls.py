@@ -6,7 +6,6 @@ from allauth.socialaccount.models import SocialApp
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
-from django.db import transaction
 from django.urls import reverse
 from selenium.webdriver.chrome.service import Service
 
