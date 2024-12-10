@@ -32,38 +32,10 @@
                    class="docs_style py-2 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
                     Start Tracking
                 </a>
-            </div>
-            <!-- Daily Status Report Form -->
-            <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-                <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold">Daily Status Report</div>
-                <form method="post" action="{% url 'sizzle_daily_log' %}" class="p-6">
-                    {% csrf_token %}
-                    <div class="mb-4">
-                        <label for="previous_work" class="block text-gray-700 font-semibold mb-2">What did you work on previously?</label>
-                        <textarea id="previous_work"
-                                  name="previous_work"
-                                  rows="3"
-                                  class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"></textarea>
-                    </div>
-                    <div class="mb-4">
-                        <label for="next_plan" class="block text-gray-700 font-semibold mb-2">What do you plan to do next?</label>
-                        <textarea id="next_plan"
-                                  name="next_plan"
-                                  rows="3"
-                                  class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"></textarea>
-                    </div>
-                    <div class="mb-4">
-                        <label for="blockers" class="block text-gray-700 font-semibold mb-2">Do you have any blockers?</label>
-                        <textarea id="blockers"
-                                  name="blockers"
-                                  rows="3"
-                                  class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-300"></textarea>
-                    </div>
-                    <button type="submit"
-                            class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
-                        Submit
-                    </button>
-                </form>
+                <button
+                    class="docs_style py-2 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer" id="openCheckIn">
+                    Add Check-In
+                </button>
             </div>
             <!-- Display Daily Status Reports -->
             <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">

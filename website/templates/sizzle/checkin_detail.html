@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<style>
+    .docs_style {
+        background-color: #EF4444!important;
+        color: white!important;
+    }
+    .docs_style:hover {
+        background-color: #dc2626!important;
+    }
+
+    .accent-line {
+        height: 4px;
+        width: 50px;
+        background: #EF4444;
+    }
+</style>
+
+<div class="bg-gray-100 min-h-screen p-6">
+    {% include "includes/sidenav.html" %}
+    <div class="main-content w-full max-w-2xl mx-auto">
+        <div class="flex justify-between items-center mb-8 mt-8">
+            <h1 class="text-4xl font-extrabold text-gray-800">Check-In Details</h1>
+            <a href="{% url 'checkIN' %}"
+               class="docs_style py-2 px-6 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
+               Back
+            </a>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <div class="bg-white rounded-lg shadow-inner p-8">
+                <div class="mb-6">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-1">{{ username }}</h2>
+                    <div class="accent-line mb-3"></div>
+                    <p class="text-gray-500 text-sm">{{ date }}</p>
+                </div>
+
+                <div class="mb-8">
+                    <h3 class="font-semibold text-gray-700 mb-3 text-xl">Previous Work</h3>
+                    <p class="text-gray-700 whitespace-pre-line leading-relaxed">{{ previous_work }}</p>
+                </div>
+
+                <div class="mb-8">
+                    <h3 class="font-semibold text-gray-700 mb-3 text-xl">Next Plan</h3>
+                    <p class="text-gray-700 whitespace-pre-line leading-relaxed">{{ next_plan }}</p>
+                </div>
+
+                <div class="mb-8">
+                    <h3 class="font-semibold text-gray-700 mb-3 text-xl">Blockers</h3>
+                    <p class="text-gray-700 whitespace-pre-line leading-relaxed">{{ blockers }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
