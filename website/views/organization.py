@@ -1,7 +1,7 @@
 import ipaddress
 import json
 from collections import defaultdict
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse
 
@@ -1721,6 +1721,8 @@ def truncate_text(text, length=15):
 
 
 def checkIN(request):
+    from datetime import date
+
     # Find the most recent date that has data
     last_report = DailyStatusReport.objects.order_by("-date").first()
     if last_report:
