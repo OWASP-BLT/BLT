@@ -3,11 +3,21 @@
     <div class="modal-overlay"></div>
     <div class="modal-card">
         <div class="modal-card-header">
-            <h2 id="modalTitle">{% if request.user.is_authenticated %}Daily Status Report{% else %}Login{% endif %}</h2>
-            <span class="close-button" aria-label="Close">&times;</span>
+            <h2 id="modalTitle">
+                {% if request.user.is_authenticated %}
+                    Daily Status Report
+                {% else %}
+                    Login
+                {% endif %}
+            </h2>
+            <span class="close-button" aria-label="Close">x</span>
         </div>
         <!-- Login Form -->
-        <form id="loginForm" class="modal-form" method="post" action="/accounts/login/" {% if request.user.is_authenticated %} style="display:none;" {% endif %}>
+        <form id="loginForm"
+              class="modal-form"
+              method="post"
+              action="/accounts/login/"
+              {% if request.user.is_authenticated %}style="display:none;"{% endif %}>
             {% csrf_token %}
             <div class="form-group">
                 <label for="login_username">Username</label>
@@ -20,7 +30,11 @@
             <button type="submit" class="submit-button">Login</button>
         </form>
         <!-- Check-In Form -->
-        <form id="checkInForm" class="modal-form" method="post" action="{% url 'sizzle_daily_log' %}" {% if not request.user.is_authenticated %} style="display:none;" {% endif %}>
+        <form id="checkInForm"
+              class="modal-form"
+              method="post"
+              action="{% url 'sizzle_daily_log' %}"
+              {% if not request.user.is_authenticated %}style="display:none;"{% endif %}>
             {% csrf_token %}
             <div class="form-group">
                 <label for="previous_work_card">What did you work on previously?</label>

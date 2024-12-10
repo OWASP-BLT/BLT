@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
 {% block content %}
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-<style>
+    <link rel="stylesheet"
+          type="text/css"
+          href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <style>
     .docs_style {
         background-color: #EF4444!important;
         color: white!important;
@@ -14,82 +16,80 @@
         background-color: #a1a1aa !important;
         cursor: not-allowed !important;
     }
-</style>
-
-<div class="container mx-auto p-6">
-    {% include "includes/sidenav.html" %}
-    <div class="main-content w-full">
-        <div class="flex justify-between items-center mb-8 mt-8">
-            <h1 class="text-4xl font-semibold text-gray-800">Check-In Reports</h1>
-            <div class="flex space-x-2">
-                {% if user.is_authenticated %}
-                <!-- Daily Status Report button -->
-                <a href="{% url 'sizzle_daily_log' %}"
-                   class="docs_style py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
-                    Daily Status Report
-                </a>
-                {% endif %}
-                <!-- Date Range Picker -->
-                <input type="text"
-                       name="daterange"
-                       id="daterange"
-                       class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer"
-                       readonly />
+    </style>
+    <div class="container mx-auto p-6">
+        {% include "includes/sidenav.html" %}
+        <div class="main-content w-full">
+            <div class="flex justify-between items-center mb-8 mt-8">
+                <h1 class="text-4xl font-semibold text-gray-800">Check-In Reports</h1>
+                <div class="flex space-x-2">
+                    {% if user.is_authenticated %}
+                        <!-- Daily Status Report button -->
+                        <a href="{% url 'sizzle_daily_log' %}"
+                           class="docs_style py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
+                            Daily Status Report
+                        </a>
+                    {% endif %}
+                    <!-- Date Range Picker -->
+                    <input type="text"
+                           name="daterange"
+                           id="daterange"
+                           class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer"
+                           readonly />
+                </div>
             </div>
-        </div>
-
-        <!-- if there is already data available then show the data -->
-        {% if data %}
-            <div id="report-container">
-                <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-                    <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400" id="report-title">
-                        Check-In Reports from {{ default_start_date }} to {{ default_end_date }}
-                    </div>
-                    <table class="min-w-full bg-white">
-                        <thead>
-                            <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
-                                <th class="text-left py-3 px-4 border-b border-gray-200">Username</th>
-                                <th class="text-left py-3 px-4 border-b border-gray-200">Previous Work</th>
-                                <th class="text-left py-3 px-4 border-b border-gray-200">Next Plan</th>
-                                <th class="text-left py-3 px-4 border-b border-gray-200">Blockers</th>
-                                <th class="text-left py-3 px-4 border-b border-gray-200">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in data %}
-                                <tr class="hover:bg-gray-50">
-                                    <td class="py-3 px-4 border-b border-gray-200">{{ item.username }}</td>
-                                    <td class="py-3 px-4 border-b border-gray-200">{{ item.previous_work }}</td>
-                                    <td class="py-3 px-4 border-b border-gray-200">{{ item.next_plan }}</td>
-                                    <td class="py-3 px-4 border-b border-gray-200">{{ item.blockers }}</td>
-                                    <td class="py-3 px-4 border-b border-gray-200">
-                                        <a href="{% url 'checkIN_detail' item.id %}" class="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600">View</a>
-                                    </td>
+            <!-- if there is already data available then show the data -->
+            {% if data %}
+                <div id="report-container">
+                    <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+                        <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400"
+                             id="report-title">
+                            Check-In Reports from {{ default_start_date }} to {{ default_end_date }}
+                        </div>
+                        <table class="min-w-full bg-white">
+                           <thead>
+                                <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
+                                    <th class="text-left py-3 px-4 border-b border-gray-200">Username</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200">Previous Work</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200">Next Plan</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200">Blockers</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200">Action</th>
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {% for item in data %}
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-3 px-4 border-b border-gray-200">{{ item.username }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">{{ item.previous_work }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">{{ item.next_plan }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">{{ item.blockers }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">
+                                            <a href="{% url 'checkIN_detail' item.id %}"
+                                               class="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600">View</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-        {% else %}
-        <!-- Container for Reports -->
-        <div id="report-container">
-            <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-                <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400" id="report-title">
-                    Loading data...
+            {% else %}
+                <!-- Container for Reports -->
+                <div id="report-container">
+                    <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+                        <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400"
+                             id="report-title">Loading data...</div>
+                        <div class="p-4 text-gray-600">Please wait while data is loaded.</div>
+                    </div>
                 </div>
-                <div class="p-4 text-gray-600">Please wait while data is loaded.</div>
-            </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-
-<script>
+    <script src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <script>
 $(function() {
     // Use the default_start_date and default_end_date from the backend if provided
     const defaultStart = "{{ default_start_date }}";
@@ -190,5 +190,5 @@ $(function() {
     // Trigger initial load
     $('#daterange').trigger('apply.daterangepicker');
 });
-</script>
+    </script>
 {% endblock content %}
