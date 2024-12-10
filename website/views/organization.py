@@ -965,7 +965,7 @@ def TimeLogListView(request):
     organizations_list_queryset = Company.objects.all().values("url", "name")
     organizations_list = list(organizations_list_queryset)
     organization_url = None
-    if active_time_log:
+    if active_time_log and active_time_log.organization:
         organization_url = active_time_log.organization.url
     return render(
         request,
