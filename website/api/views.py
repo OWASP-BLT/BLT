@@ -864,6 +864,9 @@ class TimeLogViewSet(viewsets.ModelViewSet):
                 except Company.DoesNotExist:
                     raise ParseError(detail="Organization not found for the given URL.")
 
+            else:
+                organization = None
+
             # Save the TimeLog with the user and organization (if found, or None)
             serializer.save(user=self.request.user, organization=organization)
 
