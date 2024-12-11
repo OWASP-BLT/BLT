@@ -142,13 +142,18 @@ class RegisterCompanyView(View):
 
         user_domain = get_email_domain(user.email)
         company_name = data.get("company_name", "")
+        company_url = data.get("company_url", "")
 
         if user_domain in restricted_domain:
             messages.error(request, "Login with company email in order to create the company.")
             return redirect("/")
 
-        if Company.objects.filter(name=company_name).exists():
-            messages.error(request, "Company already exists.")
+        if company_name == "" or Company.objects.filter(name=company_name).exists():
+            messages.error(request, "Company name is invalid or already exists.")
+            return redirect("register_company")
+
+        if company_url == "" or Company.objects.filter(url=company_url).exists():
+            messages.error(request, "Company URL is invalid or already exists.")
             return redirect("register_company")
 
         company_logo = request.FILES.get("logo")
