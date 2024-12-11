@@ -4,13 +4,28 @@
     <head>
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        {% block metaTags %}
+            <title>
+                {% block title %}
+                    BLT Dashboard
+                {% endblock title %}
+            </title>
+            <meta name="description"
+                  content="{% block description %}blt make company bug tracking easy{% endblock description %}">
+            <meta name="keywords"
+                  content="{% block keywords %}blt, bug, tracking, company, easy{% endblock keywords %}">
+            <!-- Author Meta Tag -->
+            <meta name="author" content="">
+            <!-- Open Graph Meta Tags -->
+            <meta property="og:title"
+                  content="{% block og_title %} BLT Company Dashboard{% endblock og_title %}" />
+            <meta property="og:image"
+                  content="{% block og_image %}{% static 'img/company_dashboard_base.png' %}{% endblock og_image %}" />
+            <meta property="og:description"
+                  content="{% block og_description %} Create and manage your own Bughunt contest with ease! Add enticing prizes, specify the domain and timeline, and upload essential assets like logos and banners. Start your competition today and engage participants with a well-organized, detailed setup. {% endblock og_description %}" />
+            <meta property="og:type" content="website" />
+        {% endblock metaTags %}
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description" content="blt make company bug tracking easy">
-        <meta name="keywords" content="blt, bug, tracking, company, easy">
-        <title>
-            {% block title %}
-            {% endblock title %}
-        </title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap"

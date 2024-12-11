@@ -1,7 +1,23 @@
 {% extends "company/company_dashboard_base.html" %}
+{% load static %}
 {% block title %}
-    Add Domain
+    Add Domain Information
 {% endblock title %}
+{% block description %}
+    Fill out and update your domain's information. Include domain name, URL, organization details, and social media links to ensure comprehensive records.
+{% endblock description %}
+{% block keywords %}
+    Add Domain Information, Domain Details, Domain Name, Domain URL, Organization Information, Social Media Links
+{% endblock keywords %}
+{% block og_title %}
+    Add Domain Information - Comprehensive Domain Details
+{% endblock og_title %}
+{% block og_description %}
+    Update and maintain your domain information. Include domain name, URL, organization details, and social media links for a complete profile.
+{% endblock og_description %}
+{% block og_image %}
+    {% static 'company/images/add-domain-info-og-image.png' %}
+{% endblock og_image %}
 {% block body %}
     <div class="bg-[#F3F5F7] flex flex-col items-center">
         <div class="w-full mt-5">

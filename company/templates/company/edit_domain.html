@@ -1,7 +1,23 @@
 {% extends "company/company_dashboard_base.html" %}
+{% load static %}
 {% block title %}
     Edit Domain
 {% endblock title %}
+{% block description %}
+    Update and modify existing domain details. Adjust domain name, URL, organization information, and social media links to keep your records current.
+{% endblock description %}
+{% block keywords %}
+    Edit Domains, Update Domain Details, Modify Domain, Change Domain Information, Update URL, Update Organization
+{% endblock keywords %}
+{% block og_title %}
+    Edit Domains - Update Your Domain Information
+{% endblock og_title %}
+{% block og_description %}
+    Make changes to your domains by updating names, URLs, organization details, and social media links. Keep your domain records up-to-date and accurate.
+{% endblock og_description %}
+{% block og_image %}
+    {% static 'company/images/edit-domains-og-image.png' %}
+{% endblock og_image %}
 {% block body %}
     <div class="bg-[#F3F5F7] flex flex-col items-center">
         <div class="w-full mt-5">

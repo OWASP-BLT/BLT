@@ -1,5 +1,39 @@
 {% extends "base.html" %}
+{% load static %}
+{% block title %}
+{% if form.instance.pk %}Edit Post{% else %}New Post{% endif %} | BLT
+{% endblock title %}
+
+{% block description %}
+{% if form.instance.pk %}
+Edit the existing post "{{ form.instance.title }}" on BLT. Update the title, content, and image to keep your post fresh and relevant.
+{% else %}
+Create a new post on BLT. Share your thoughts by adding a title, content, and an optional image to engage with the community.
+{% endif %}
+{% endblock description %}
+
+{% block keywords %}
+{% if form.instance.pk %}edit post, update post, {{ form.instance.title|slugify }}, BLT{% else %}new post, create post, blogging, BLT{% endif %}
+{% endblock keywords %}
+
+{% block og_title %}
+{% if form.instance.pk %}Edit Post: {{ form.instance.title }}{% else %}Create a New Post{% endif %} - BLT
+{% endblock og_title %}
+
+{% block og_image %}{% static 'images/post-editor.png' %}{% endblock og_image %}
+
+{% block og_description %}
+{% if form.instance.pk %}
+Edit your post "{{ form.instance.title }}" on BLT. Keep your content updated and engaging for your readers.
+{% else %}
+Start a new journey with your post on BLT. Share your ideas and connect with the community.
+{% endif %}
+{% endblock og_description %}
+
+
 {% block content %}
+
+
     <style>
     body {
         font-family: Arial, sans-serif;
