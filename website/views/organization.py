@@ -937,6 +937,15 @@ def sizzle_daily_log(request):
             blockers = request.POST.get("blockers")
             print(previous_work, next_plan, blockers)
 
+            if DailyStatusReport.objects.filter(user=request.user, date=current_date).exists():
+                messages.warning(request, "A daily status report for today already exists.")
+                return JsonResponse(
+                    {
+                        "success": "false",
+                        "message": "A daily status report for today already exists.",
+                    }
+                )
+
             DailyStatusReport.objects.create(
                 user=request.user,
                 date=now().date(),
@@ -1720,9 +1729,11 @@ def approve_activity(request, id):
 def truncate_text(text, length=15):
     return text if len(text) <= length else text[:length] + "..."
 
+
 @login_required
 def add_sizzle_checkIN(request):
     return render(request, "sizzle/add_sizzle_checkin.html")
+
 
 def checkIN(request):
     from datetime import date
