@@ -20,10 +20,9 @@ def search_uspto_database(term):
     }
     response = requests.post(url, data=payload, headers=headers)
     if response.status_code == 200:
-        print(response.json())
         return response.json()
     else:
-        print("response.status_code is not 200")
+        print(f"Error: Received status code {response.status_code} - {response.reason}")
         print(response.json())
     return None
 
