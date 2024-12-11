@@ -127,7 +127,8 @@
                                 <div class="flex flex-col md:flex-row md:justify-between">
                                     <div class="w-full rounded-lg flex items-center">
                                         <i class="fa-solid fa-globe text-3xl mr-5 text-gray-600"></i>
-                                        <a href="{{ hunt.url }}" class="text-black font-semibold">{{ hunt.url }}</a>
+                                        <a href="{{ hunt.url }}"
+                                           class="text-black font-semibold hover:text-red-600">{{ hunt.url }}</a>
                                     </div>
                                 </div>
                                 <div class="flex flex-col md:flex-row md:justify-between">
@@ -139,7 +140,7 @@
                             </div>
                             <div class="flex w-full mt-5 mb-10">
                                 <a href="{% url 'show_bughunt' hunt.id %}"
-                                   class="mt-3 md:mt-0 w-full md:w-full py-3 mr-4 rounded-lg flex items-center justify-center more-info-btn">
+                                   class="mt-3 md:mt-0 w-full md:w-full py-3 mr-4 rounded-lg flex items-center justify-center bg-red-600 more-info-btn">
                                     <p class="text-white font-semibold">MORE INFO</p>
                                 </a>
                             </div>
@@ -151,9 +152,12 @@
     </div>
     <style>
         .more-info-btn {
-            background-color: #ef4444; /* Red color */
+            background-color: #ef4444 !important; /* Ensure the background color is red */
+            color: white; /* Ensure text is visible */
             transition: transform 0.3s ease, background-color 0.3s ease;
-        }
+            opacity: 1; /* Ensure visibility */
+            visibility: visible; /* Ensure it's not hidden */
+            }
         .more-info-btn:hover {
             background-color: #ef4444; /* Keep red color on hover */
             transform: scale(1.05); /* Enlarge on hover */
