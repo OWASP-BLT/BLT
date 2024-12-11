@@ -16,7 +16,7 @@ def add_badge_icons(apps, schema_editor):
             "description": "Awarded when a 7-day streak is achieved.",
         },
         {
-            "title": "Half-Month Streak",
+            "title": "15 Day Streak",
             "icon": "icons8-15-48.png",
             "description": "Awarded when a 15-day streak is achieved.",
         },
@@ -26,9 +26,9 @@ def add_badge_icons(apps, schema_editor):
             "description": "Awarded when a 30-day streak is achieved.",
         },
         {
-            "title": "Three Month Streak",
+            "title": "100 Day Streak",
             "icon": "icons8-90-48.png",
-            "description": "Awarded when a 90-day streak is achieved.",
+            "description": "Awarded when a 100-day streak is achieved.",
         },
         {
             "title": "Six Month Streak",
