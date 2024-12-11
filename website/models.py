@@ -122,6 +122,7 @@ class Company(models.Model):
     is_active = models.BooleanField(default=False)
     tags = models.ManyToManyField(Tag, blank=True)
     integrations = models.ManyToManyField(Integration, related_name="companies")
+    trademark = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name
