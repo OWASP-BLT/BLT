@@ -4,31 +4,10 @@
     <div class="modal-card">
         <div class="modal-card-header">
             <h2 id="modalTitle">
-                {% if request.user.is_authenticated %}
-                    Daily Status Report
-                {% else %}
-                    Login
-                {% endif %}
+                {% if request.user.is_authenticated %}Daily Status Report{% endif %}
             </h2>
             <span class="close-button" aria-label="Close">x</span>
         </div>
-        <!-- Login Form -->
-        <form id="loginForm"
-              class="modal-form"
-              method="post"
-              action="/accounts/login/"
-              {% if request.user.is_authenticated %}style="display:none;"{% endif %}>
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="login_username">Username</label>
-                <input type="text" id="login_username" name="login" required>
-            </div>
-            <div class="form-group">
-                <label for="login_password">Password</label>
-                <input type="password" id="login_password" name="password" required>
-            </div>
-            <button type="submit" class="submit-button">Login</button>
-        </form>
         <!-- Check-In Form -->
         <form id="checkInForm"
               class="modal-form"
