@@ -952,6 +952,7 @@ def sizzle_daily_log(request):
 
     except Exception as e:
         messages.error(request, f"An error occurred: {e}")
+        print(e)
         return redirect("sizzle")
 
     return HttpResponseBadRequest("Invalid request method.")
@@ -1719,8 +1720,9 @@ def approve_activity(request, id):
 def truncate_text(text, length=15):
     return text if len(text) <= length else text[:length] + "..."
 
-def add_checkIN(request):
-    return render(request, "sizzle/add_checkin.html")
+@login_required
+def add_sizzle_checkIN(request):
+    return render(request, "sizzle/add_sizzle_checkin.html")
 
 def checkIN(request):
     from datetime import date
