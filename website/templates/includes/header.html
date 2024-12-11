@@ -355,17 +355,19 @@
                 e.stopPropagation();
                 
                 const isHidden = organizationsDropdown.classList.toggle('hidden');
-                organizationsDropdown.style.display = isHidden ? 'none' : 'block';
-                
+                               
                 if (!isHidden) {
                     const btnRect = organizationsBtn.getBoundingClientRect();
                     Object.assign(organizationsDropdown.style, {
                         position: 'fixed',
-                        top: `${btnRect.bottom + window.scrollY}px`,
+                        top: `${btnRect.bottom}px`,
                         left: `${btnRect.left}px`,
-                        minWidth: `${btnRect.width}px`
+                        minWidth: `${btnRect.width}px`,
+                        display: 'block',
                     });
-                } 
+                } else{
+                    organizationsDropdown.style.display = 'none';
+                }
             });
             // Close dropdown when clicking outside
             document.addEventListener("click", function (e) {
