@@ -12,32 +12,32 @@ def add_badge_icons(apps, schema_editor):
     new_badges = [
         {
             "title": "Weekly Streak",
-            "icon": "icons8-7-48.png",
+            "icon": "7-day-streak.png",
             "description": "Awarded when a 7-day streak is achieved.",
         },
         {
             "title": "15 Day Streak",
-            "icon": "icons8-15-48.png",
+            "icon": "15-day-streak.png",
             "description": "Awarded when a 15-day streak is achieved.",
         },
         {
             "title": "Monthly Streak",
-            "icon": "icons8-30-48.png",
+            "icon": "30-day-streak.png",
             "description": "Awarded when a 30-day streak is achieved.",
         },
         {
             "title": "100 Day Streak",
-            "icon": "icons8-90-48.png",
+            "icon": "100-day-streak.png",
             "description": "Awarded when a 100-day streak is achieved.",
         },
         {
             "title": "Six Month Streak",
-            "icon": "180.png",
+            "icon": "180-day-streak.png",
             "description": "Awarded when a 180-day streak is achieved.",
         },
         {
             "title": "Yearly Streak",
-            "icon": "365.png",
+            "icon": "365-day-streak.png",
             "description": "Awarded when a 365-day streak is achieved.",
         },
     ]
