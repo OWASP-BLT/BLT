@@ -1719,6 +1719,8 @@ def approve_activity(request, id):
 def truncate_text(text, length=15):
     return text if len(text) <= length else text[:length] + "..."
 
+def add_checkIN(request):
+    return render(request, "sizzle/add_checkin.html")
 
 def checkIN(request):
     from datetime import date
