@@ -44,9 +44,11 @@ from website.models import (
     Subscription,
     TimeLog,
     User,
+    UserBadge,
     Wallet,
     Winner,
 )
+from website.services.blue_sky_service import BlueSkyService
 from website.utils import format_timedelta, get_client_ip, get_github_issue_title
 
 
@@ -944,7 +946,9 @@ def sizzle_daily_log(request):
             )
 
             messages.success(request, "Daily status report submitted successfully.")
-            return redirect("sizzle")
+            return JsonResponse(
+                {"success": "true", "message": "Daily status report submitted successfully."}
+            )
 
     except Exception as e:
         messages.error(request, f"An error occurred: {e}")
@@ -963,7 +967,7 @@ def TimeLogListView(request):
     organizations_list_queryset = Company.objects.all().values("url", "name")
     organizations_list = list(organizations_list_queryset)
     organization_url = None
-    if active_time_log:
+    if active_time_log and active_time_log.organization:
         organization_url = active_time_log.organization.url
     return render(
         request,
@@ -1590,11 +1594,202 @@ def feed(request):
     # Determine if pagination is required
     is_paginated = page_obj.has_other_pages()
 
+    # Check if the user has the mentor badge
+    if request.user.is_authenticated:
+        is_mentor = UserBadge.objects.filter(user=request.user, badge__title="Mentor").exists()
+    else:
+        is_mentor = False
+
     return render(
         request,
         "feed.html",
         {
             "page_obj": page_obj,
             "is_paginated": is_paginated,  # Pass this flag to the template
+            "is_mentor": is_mentor,  # Add is_mentor to the context
         },
     )
+
+
+@login_required
+@require_POST
+def like_activity(request, id):
+    activity = get_object_or_404(Activity, id=id)
+    user = request.user
+
+    if activity.dislikes.filter(id=user.id).exists():
+        activity.dislikes.remove(user)
+        activity.dislike_count -= 1
+
+    if activity.likes.filter(id=user.id).exists():
+        activity.likes.remove(user)
+        activity.like_count -= 1
+    else:
+        activity.likes.add(user)
+        activity.like_count += 1
+
+    activity.save()
+
+    # Check if the activity meets the approval criteria
+    if activity.like_count >= 3 and activity.dislike_count < 3 and not activity.is_approved:
+        activity.is_approved = True
+        activity.save()
+
+        # Trigger posting on BlueSky
+        blue_sky_service = BlueSkyService()
+        try:
+            activity.post_to_bluesky(blue_sky_service)
+        except Exception:
+            return JsonResponse({"success": False})
+
+    return JsonResponse(
+        {
+            "success": True,
+            "like_count": activity.like_count,
+            "dislike_count": activity.dislike_count,
+        }
+    )
+
+
+@login_required
+@require_POST
+def dislike_activity(request, id):
+    activity = get_object_or_404(Activity, id=id)
+    user = request.user
+
+    if activity.likes.filter(id=user.id).exists():
+        activity.likes.remove(user)
+        activity.like_count -= 1
+
+    if activity.dislikes.filter(id=user.id).exists():
+        activity.dislikes.remove(user)
+        activity.dislike_count -= 1
+    else:
+        activity.dislikes.add(user)
+        activity.dislike_count += 1
+
+    activity.save()
+
+    # Check if the activity meets the approval criteria
+    if activity.like_count >= 3 and activity.dislike_count < 3 and not activity.is_approved:
+        activity.is_approved = True
+        activity.save()
+
+        # Trigger posting on BlueSky
+        blue_sky_service = BlueSkyService()
+        try:
+            activity.post_to_bluesky(blue_sky_service)
+        except Exception:
+            return JsonResponse({"success": False})
+
+    return JsonResponse(
+        {
+            "success": True,
+            "like_count": activity.like_count,
+            "dislike_count": activity.dislike_count,
+        }
+    )
+
+
+@login_required
+@require_POST
+def approve_activity(request, id):
+    activity = get_object_or_404(Activity, id=id)
+    user = request.user
+
+    # Check if the user has the "Mentor" badge
+    if (
+        UserBadge.objects.filter(user=user, badge__title="Mentor").exists()
+        and not activity.is_approved
+    ):
+        activity.is_approved = True
+        activity.save()
+
+        # Trigger posting on BlueSky
+        blue_sky_service = BlueSkyService()
+        try:
+            activity.post_to_bluesky(blue_sky_service)
+            return JsonResponse({"success": True, "is_approved": activity.is_approved})
+        except Exception:
+            return JsonResponse({"success": False})
+    else:
+        return JsonResponse({"success": False, "error": "Not authorized"})
+
+
+def truncate_text(text, length=15):
+    return text if len(text) <= length else text[:length] + "..."
+
+
+def checkIN(request):
+    from datetime import date
+
+    # Find the most recent date that has data
+    last_report = DailyStatusReport.objects.order_by("-date").first()
+    if last_report:
+        default_start_date = last_report.date
+        default_end_date = last_report.date
+    else:
+        # If no data at all, fallback to today
+        default_start_date = date.today()
+        default_end_date = date.today()
+
+    start_date_str = request.GET.get("start_date")
+    end_date_str = request.GET.get("end_date")
+
+    if start_date_str and end_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            start_date = default_start_date
+            end_date = default_end_date
+    else:
+        # No date range provided, use the default (most recent date with data)
+        start_date = default_start_date
+        end_date = default_end_date
+
+    reports = (
+        DailyStatusReport.objects.filter(date__range=(start_date, end_date))
+        .select_related("user")
+        .order_by("date", "created")
+    )
+
+    data = []
+    for r in reports:
+        data.append(
+            {
+                "id": r.id,
+                "username": r.user.username,
+                "previous_work": truncate_text(r.previous_work),
+                "next_plan": truncate_text(r.next_plan),
+                "blockers": truncate_text(r.blockers),
+                "date": r.date.strftime("%d %B %Y"),
+            }
+        )
+
+    # Return JSON if AJAX
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse(data, safe=False)
+
+    # Render template with initial data if needed
+    return render(
+        request,
+        "sizzle/checkin.html",
+        {
+            "data": data,
+            "default_start_date": default_start_date.isoformat(),
+            "default_end_date": default_end_date.isoformat(),
+        },
+    )
+
+
+def checkIN_detail(request, report_id):
+    report = get_object_or_404(DailyStatusReport, pk=report_id)
+    context = {
+        "username": report.user.username,
+        "date": report.date.strftime("%d %B %Y"),
+        "previous_work": report.previous_work,
+        "next_plan": report.next_plan,
+        "blockers": report.blockers,
+    }
+    return render(request, "sizzle/checkin_detail.html", context)

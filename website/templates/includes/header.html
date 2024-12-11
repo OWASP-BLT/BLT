@@ -6,10 +6,23 @@
 {% load i18n %}
 {% load custom_tags %}
 <link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
 <style>
     a {
         color: black;
+    }
+    @media (min-width: 700px) {
+        #selected-filter {
+            display: inline;
+        }
+    }
+    @media (max-width: 699px) {
+        #selected-filter {
+            display: none;
+        }
+        #organizations-btn {
+            padding: 0.1rem;
+        }
     }
     .chatbot {
         display: none;
@@ -67,6 +80,7 @@
 </style>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        
         const desktopDropdownButton = document.getElementById('dropdownButton');
         const desktopDropdownMenu = document.getElementById('dropdownMenu');
 
@@ -99,7 +113,7 @@
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
             <div class="flex items-center justify-start rtl:justify-end">
-                <!-- Ham Menu -->
+                <!-- Ham Menu section -->
                 <button id="hamburger-button"
                         data-drawer-target="logo-sidebar"
                         data-drawer-toggle="logo-sidebar"
@@ -128,7 +142,7 @@
                     </p>
                 </a>
             </div>
-            <!-- Search Bar  -->
+            <!-- Search Bar -->
             <div class="column items-center gap-2 overflow-hidden flex lg:w-[auto] lg:h-[auto]">
                 <div class="relative flex items-center rounded-2xl overflow-hidden bg-[#ededed] lg:!px-[34px]">
                     <form class="w-full flex items-center"
@@ -140,14 +154,47 @@
                                name="query"
                                placeholder="Search"
                                class="text-xl lg:text-base lg:ps-9 lg:scale-[1.4] w-[70px] lg:w-auto h-16 placeholder-[#9CA3AF] bg-[#EDEDED] outline-none p-5 font-semibold rounded-l-2xl">
-                        <select name="category"
-                                class="text-xl lg:text-base lg:scale-[1.4] w-[70px] lg:w-auto h-16 placeholder-[#9CA3AF] bg-[#ededed] outline-none p-5 font-semibold rounded-r-2xl text-[#9CA3AF]">
-                            <option value="organizations">{% trans "Organizations" %}</option>
-                            <option value="projects">{% trans "Projects" %}</option>
-                            <option value="users">{% trans "Users" %}</option>
-                            <option value="tags">{% trans "Tags" %}</option>
-                            <option value="languages">{% trans "Languages" %}</option>
-                        </select>
+                        <div class="relative">
+                            <!-- Dropdown Button -->
+                            <button id="organizations-btn"
+                                    type="button"
+                                    class="flex items-center text-xl lg:text-base h-16 bg-[#ededed] p-5 font-semibold text-[#9CA3AF] outline-none rounded-r-2xl">
+                                <i id="selected-icon" class="fa fa-building mr-2"></i>
+                                <span id="selected-filter">{% trans "Organizations" %}</span>
+                                <i class="fa fa-chevron-down ml-2"></i>
+                            </button>
+                            <!-- Dropdown Menu -->
+                            <div id="organizations-dropdown"
+                                 class="hidden absolute bg-white border rounded-lg shadow-md mt-2 w-48 z-50 right-0 top-full">
+                                <div class="py-1">
+                                    <a href="#"
+                                       data-value="organizations"
+                                       class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
+                                        <i class="fas fa-building mr-2"></i> {% trans "Organizations" %}
+                                    </a>
+                                    <a href="#"
+                                       data-value="projects"
+                                       class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
+                                        <i class="fas fa-box mr-2"></i> {% trans "Projects" %}
+                                    </a>
+                                    <a href="#"
+                                       data-value="users"
+                                       class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
+                                        <i class="fas fa-user-friends mr-2"></i> {% trans "Users" %}
+                                    </a>
+                                    <a href="#"
+                                       data-value="tags"
+                                       class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
+                                        <i class="fa-solid fa-tag mr-2"></i> {% trans "Tags" %}
+                                    </a>
+                                    <a href="#"
+                                       data-value="languages"
+                                       class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
+                                        <i class="fas fa-language mr-2"></i> {% trans "Languages" %}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -295,6 +342,61 @@
         </svg>
     </div>
 </div>
+<!--Script for Dropdown button-->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        
+        const organizationsBtn = document.getElementById("organizations-btn");
+        const organizationsDropdown = document.getElementById("organizations-dropdown");
+
+        if (organizationsBtn && organizationsDropdown) {
+            organizationsBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const isHidden = organizationsDropdown.classList.toggle('hidden');
+                               
+                if (!isHidden) {
+                    const btnRect = organizationsBtn.getBoundingClientRect();
+                    Object.assign(organizationsDropdown.style, {
+                        position: 'fixed',
+                        top: `${btnRect.bottom}px`,
+                        left: `${btnRect.left}px`,
+                        minWidth: `${btnRect.width}px`,
+                        display: 'block',
+                    });
+                } else{
+                    organizationsDropdown.style.display = 'none';
+                }
+            });
+            // Close dropdown when clicking outside
+            document.addEventListener("click", function (e) {
+                if (!organizationsBtn.contains(e.target) && !organizationsDropdown.contains(e.target)) {
+                    organizationsDropdown.classList.add('hidden');
+                    organizationsDropdown.style.display = 'none';
+                }
+            });
+        } else {
+            console.error('Required elements not found!');
+        }
+        document.querySelectorAll('.filter-option').forEach(option => {
+            option.addEventListener('click', function(e) {
+                e.preventDefault();
+                const iconElement = this.querySelector('i');
+                const textContent = this.textContent.trim();
+                
+                const selectedIcon = document.getElementById('selected-icon');
+                const selectedFilter = document.getElementById('selected-filter');
+
+                selectedIcon.className = iconElement.className + ' mr-2';
+                selectedFilter.textContent = textContent;
+                
+                organizationsDropdown.classList.add('hidden');
+                organizationsDropdown.style.display = 'none';
+            });
+        });
+    });
+</script>
 <script>
     document.getElementById('chatIcon').addEventListener('click', function() {
         document.getElementById('chatbot').style.display = 'block';

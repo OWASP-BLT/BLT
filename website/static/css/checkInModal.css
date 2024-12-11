@@ -1,0 +1,147 @@
+/* Card-Style Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.5); /* Fallback for overlay */
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+}
+
+.modal-card {
+    background: #ffffff;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh; /* Fixed maximum height (80% of viewport height) */
+    padding: 25px;
+    position: relative;
+    transform: translateY(-50px);
+    opacity: 0;
+    animation: slideIn 0.5s forwards;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Prevent content from spilling out */
+}
+
+.modal-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-card-header h2 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.close-button {
+    font-size: 28px;
+    cursor: pointer;
+    color: #95a5a6;
+}
+
+.modal-card-header .close-button:hover {
+    color: #e74c3c;
+}
+
+.modal-form {
+    flex: 1; /* Allow the form to take up remaining space */
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Enable vertical scrolling within the form */
+    padding-right: 10px; /* Prevents scrollbar overlap */
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.form-group textarea,
+.form-group input[type="text"],
+.form-group input[type="password"] {
+    min-height: 50px;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #bdc3c7;
+    border-radius: 6px;
+    resize: vertical;
+    font-size: 15px;
+    font-family: inherit;
+    max-height: 150px; /* Optional: Limit the maximum height */
+    overflow-y: auto; /* Enable scrolling within the textarea if content exceeds */
+}
+
+.submit-button {
+    background-color: #e74c3c;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+    align-self: flex-end; /* Align the button to the right */
+}
+
+.submit-button:hover {
+    background-color: #c0392b;
+}
+
+.hidden {
+    display: none;
+}
+
+@keyframes fadeIn {
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Prevent background scrolling when modal is open */
+body.modal-open {
+    overflow: hidden;
+}
+
+/* Optional: Customize Scrollbar for WebKit Browsers */
+.modal-form::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-form::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.modal-form::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.4);
+}
