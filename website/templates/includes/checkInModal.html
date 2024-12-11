@@ -4,13 +4,10 @@
     <div class="modal-card">
         <div class="modal-card-header">
             <h2 id="modalTitle">
-                {% if request.user.is_authenticated %}
-                    Daily Status Report
-                {% endif %}
+                {% if request.user.is_authenticated %}Daily Status Report{% endif %}
             </h2>
             <span class="close-button" aria-label="Close">x</span>
         </div>
-               
         <!-- Check-In Form -->
         <form id="checkInForm"
               class="modal-form"
