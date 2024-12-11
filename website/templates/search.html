@@ -8,6 +8,12 @@
     min-height: 25vh;
   }
 
+  .project-logo {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+  }
+
   .bottom-right {
             position: absolute;
             bottom: 10px;
@@ -22,120 +28,214 @@
             <i class="fab fa-figma"></i>
         </a>
     </div>
-    <div class="row container-min-height">
-        <div class="col-md-8 col-md-offset-2">
-            <h1 class="text-center">
-                <span class="search-header">Search Results for</span><span class="search-header-query">"{{ query }}"</span>
-            </h1>
-            <hr>
-            <form method="get" action="." class="mb-0">
-                <div class="input-group search-page-bar flex">
-                    <!-- <div class="search"> -->
-                    <input type="text"
-                           class="form-control h-[50px] w-[94.9%] border-r-0"
-                           name="query"
-                           value="{% if type != 'label' %}{{ query }}{% endif %}"
-                           placeholder="Search for issues...">
-                    <span class="input-group-btn h-max w-max">
-                        <div class="selectdiv ">
-                            <select class="form-control h-[50px]" name="type">
-                                <option value="issue" selected="selected">Issue</option>
-                                <option value="domain">Domain</option>
-                                <option value="user">User</option>
-                                <option value="label">Label</option>
-                            </select>
-                        </div>
-                    </span>
-                    <button class="btn btn-default h-[50px] ml-[2%]" type="submit">
-                        <i class="fa fa-search" aria-hidden="true"></i>
-                    </button>
-                    <!-- <input type="text"placeholder="Cari Ruang">
-                           <div class="button-src">
-                               <button>cari</button>
-                           </div> -->
-                    <!-- </div> -->
-                </div>
-            </form>
-            {% if type %}
-                <script type="text/javascript">$('select').val("{{type}}");</script>
-            {% endif %}
-        </div>
-    </div>
     {% if query %}
-        <div class="row">
-            {% if issues %}
-                <div class="col-md-8 col-md-offset-2">
-                    {% for activity in issues %}
-                        {% include "_activity.html" %}
-                    {% endfor %}
-                </div>
-            {% elif domains %}
-                <div class="col-md-8 col-md-offset-2">
-                    <div class="list-group">
-                        {% for domain in domains %}
-                            <div class="list-group-item">
-                                <a href="{{ domain.get_absolute_url }}">
-                                    <img src="{{ domain.get_logo }}"
-                                         height="100"
-                                         onerror="this.onerror=null; this.style.display ='none';"
-                                         width="100"
-                                         alt="{{ domain.name }}">
-                                    <strong>{{ domain.name }}</strong>
-                                </a>
-                            </div>
+        <div class="container-min-height mt-20">
+            <div class="row">
+                {% if issues %}
+                    <div class="col-md-8 col-md-offset-2">
+                        {% for activity in issues %}
+                            {% include "_activity.html" %}
                         {% endfor %}
                     </div>
-                </div>
-            {% elif users %}
-                <div class="col-md-8 col-md-offset-2">
-                    <div class="list-group">
-                        {% for user in users %}
-                            <div class="list-group-item flex">
-                                <div>
-                                    {% if user.user.userprofile.avatar %}
-                                        <img src="{{ user.user.userprofile.avatar }}"
-                                             width="50px"
-                                             height="50px"
-                                             class="img-responsive img-rounded"
-                                             loading="lazy"
-                                             alt="{{ user.user.username }}">
-                                    {% elif user.user.socialaccount_set.all.0.get_avatar_url %}
-                                        <img src="{{ user.user.socialaccount_set.all.0.get_avatar_url }}"
-                                             width="100"
-                                             class="img-responsive img-rounded"
-                                             loading="lazy"
+                {% elif organizations %}
+                    <div class="col-md-8 col-md-offset-2">
+                        <div class="list-group">
+                            {% for organization in organizations %}
+                                <div class="list-group-item flex items-center p-4 border-b border-gray-200">
+                                    <div class="mr-4">
+                                        <a href="{{ organization.url }}">
+                                            <img src="{{ organization.logo.url }}"
+                                                 class="rounded-full shadow-md"
+                                                 height="24px"
+                                                 width="24px"
+                                                 onerror="this.onerror=null; this.style.display ='none';"
+                                                 alt="{{ organization.name }}">
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <a href="{{ organization.url }}"
+                                           class="text-2xl font-semibold text-gray-800 hover:text-gray-600">
+                                            {{ organization.name }}
+                                        </a>
+                                        <p class="text-gray-600">{{ organization.description }}</p>
+                                        <div class="mt-2 flex items-center">
+                                            <a href="{{ organization.url }}" class="text-blue-500 hover:underline">{{ organization.url }}</a>
+                                            {% if organization.twitter %}
+                                                <a href="https://twitter.com/{{ organization.twitter }}"
+                                                   class="ml-4 text-blue-500 hover:underline">
+                                                    <i class="fab fa-twitter"></i>
+                                                </a>
+                                            {% endif %}
+                                            {% if organization.facebook %}
+                                                <a href="{{ organization.facebook }}"
+                                                   class="ml-4 text-blue-500 hover:underline">
+                                                    <i class="fab fa-facebook"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% elif domains %}
+                    <div class="col-md-8 col-md-offset-2">
+                        <div class="list-group">
+                            {% for domain in domains %}
+                                <div class="list-group-item">
+                                    <a href="{{ domain.get_absolute_url }}">
+                                        <img src="{{ domain.get_logo }}"
                                              height="100"
-                                             alt="user image">
-                                    {% else %}
-                                        <img src="{% static 'images/dummy-user.png' %}"
-                                             width="50"
-                                             class="img-responsive img-rounded"
-                                             loading="lazy"
-                                             height="50"
-                                             alt="user image">
-                                    {% endif %}
-                                    <a class="search-username"
-                                       href="{% url 'profile' slug=user.user.username %}">{{ user.user.username }}</a>
+                                             onerror="this.onerror=null; this.style.display ='none';"
+                                             width="100"
+                                             alt="{{ domain.name }}">
+                                        <strong>{{ domain.name }}</strong>
+                                    </a>
                                 </div>
-                                <div class="py-0 px-20">
-                                    <label class="text-sm">User points :</label>
-                                    {% if user.total_score is None %}
-                                        <span class="text-sm">0</span> Point
-                                    {% else %}
-                                        <span class="text-sm">{{ user.total_score|floatformat:0 }}</span> Points
-                                    {% endif %}
-                                </div>
-                                <a href="{% url 'profile' slug=user.user.username %}"
-                                   class="btn btn-danger btn-sm prizebtn absolute right-[22px] top-[14px]">View Profile</a>
-                            </div>
-                        {% endfor %}
+                            {% endfor %}
+                        </div>
                     </div>
-                </div>
-            {% else %}
-                <div class="col-md-8 col-md-offset-2">
-                    <div class="alert alert-danger text-center" role="alert">Nothing Found!</div>
-                </div>
-            {% endif %}
-        </div>
-    {% endif %}
+                {% elif tag_items %}
+                    <div class="container mt-4">
+                        <h3>Search Results for Tag: "{{ query }}"</h3>
+                        <div class="row">
+                            {% for item in tag_items %}
+                                <div class="col-12 mb-4">
+                                    <div class="card shadow-sm">
+                                        <div class="card-body">
+                                            <h5 class="card-title">
+                                                {% if item.model_name == "Company" %}
+                                                    <span class="badge bg-primary">Company</span>
+                                                {% elif item.model_name == "Domain" %}
+                                                    <span class="badge bg-info">Domain</span>
+                                                {% elif item.model_name == "Issue" %}
+                                                    <span class="badge bg-warning">Issue</span>
+                                                {% elif item.model_name == "UserProfile" %}
+                                                    <span class="badge bg-secondary">User Profile</span>
+                                                {% elif item.model_name == "Project" %}
+                                                    <span class="badge bg-success">Project</span>
+                                                {% endif %}
+                                                <a href="{{ item.get_absolute_url }}"
+                                                   class="text-decoration-none text-dark">{{ item.name }}</a>
+                                            </h5>
+                                            <p class="card-text text-truncate">{{ item.description|default:"No description available" }}</p>
+                                            {% if item.tags.all %}
+                                                <div class="mb-2">
+                                                    {% for tag in item.tags.all %}<span class="badge bg-secondary me-1">{{ tag.name }}</span>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span><i class="fa fa-tags"></i> Tags: {{ item.tags.count }}</span>
+                                                </div>
+                                                <a href="{{ item.get_absolute_url }}"
+                                                   class="btn btn-outline-primary btn-sm">View</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <p>No results found for this tag.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% elif projects %}
+                    <div class="container mt-4">
+                        <div class="row">
+                            {% for project in projects %}
+                                <div class="col-md-8 col-md-offset-2 mb-4">
+                                    <div class="card shadow-sm">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <img src="{{ project.logo_url }}"
+                                                     alt="{{ project.name }}"
+                                                     class="rounded me-3 project-logo"
+                                                     width="60"
+                                                     height="60">
+                                                <div>
+                                                    <h5 class="card-title mb-0">
+                                                        <a href="{{ project.github_url }}"
+                                                           class="text-decoration-none text-dark"
+                                                           target="_blank">{{ project.name }}</a>
+                                                    </h5>
+                                                    {% if project.primary_language %}
+                                                        <small class="text-muted">Primary Language: {{ project.primary_language }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <p class="card-text text-truncate">{{ project.description }}</p>
+                                            {% if project.tags.exists %}
+                                                <div class="mb-2">
+                                                    {% for tag in project.tags.all %}<span class="badge bg-secondary me-1">{{ tag.name }}</span>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="me-3"><i class="fa fa-star text-warning"></i> {{ project.stars }}</span>
+                                                    <span class="me-3"><i class="fa fa-eye text-primary"></i> {{ project.repo_visit_count }}</span>
+                                                    <span><i class="fa fa-code-branch text-success"></i> {{ project.forks }}</span>
+                                                </div>
+                                                <a href="{{ project.github_url }}"
+                                                   class="btn btn-outline-primary btn-sm"
+                                                   target="_blank">View on GitHub</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% elif users %}
+                    <div class="col-md-8 col-md-offset-2">
+                        <div class="list-group">
+                            {% for user in users %}
+                                <div class="list-group-item flex">
+                                    <div>
+                                        {% if user.user.userprofile.avatar %}
+                                            <img src="{{ user.user.userprofile.avatar }}"
+                                                 width="50px"
+                                                 height="50px"
+                                                 class="img-responsive img-rounded"
+                                                 loading="lazy"
+                                                 alt="{{ user.user.username }}">
+                                        {% elif user.user.socialaccount_set.all.0.get_avatar_url %}
+                                            <img src="{{ user.user.socialaccount_set.all.0.get_avatar_url }}"
+                                                 width="100"
+                                                 class="img-responsive img-rounded"
+                                                 loading="lazy"
+                                                 height="100"
+                                                 alt="user image">
+                                        {% else %}
+                                            <img src="{% static 'images/dummy-user.png' %}"
+                                                 width="50"
+                                                 class="img-responsive img-rounded"
+                                                 loading="lazy"
+                                                 height="50"
+                                                 alt="user image">
+                                        {% endif %}
+                                        <a class="search-username"
+                                           href="{% url 'profile' slug=user.user.username %}">{{ user.user.username }}</a>
+                                    </div>
+                                    <div class="py-0 px-20">
+                                        <label class="text-sm">User points :</label>
+                                        {% if user.total_score is None %}
+                                            <span class="text-sm">0</span> Point
+                                        {% else %}
+                                            <span class="text-sm">{{ user.total_score|floatformat:0 }}</span> Points
+                                        {% endif %}
+                                    </div>
+                                    <a href="{% url 'profile' slug=user.user.username %}"
+                                       class="btn btn-danger btn-sm prizebtn absolute right-[22px] top-[14px]">View Profile</a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="col-md-8 col-md-offset-2">
+                        <div class="alert alert-danger text-center" role="alert">Nothing Found!</div>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
 {% endblock content %}

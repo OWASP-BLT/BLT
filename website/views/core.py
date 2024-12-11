@@ -39,8 +39,10 @@ from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 from website.models import (
     Badge,
     ChatBotLog,
+    Company,
     Domain,
     Issue,
+    Project,
     Suggestion,
     SuggestionVotes,
     UserProfile,
@@ -160,11 +162,23 @@ def find_key(request, token):
 
 def search(request, template="search.html"):
     query = request.GET.get("query")
-    stype = request.GET.get("type")
+    stype = request.GET.get("category")
     context = None
     if query is None:
         return render(request, template)
     query = query.strip()
+    if query[:13] == "organization:":
+        stype = "organization"
+        query = query[13:]
+    if query[:8] == "project:":
+        stype = "project"
+        query = query[8:]
+    if query[:4] == "tag:":
+        stype = "tag"
+        query = query[4:]
+    if query[:9] == "language:":
+        stype = "language"
+        query = query[9:]
     if query[:6] == "issue:":
         stype = "issue"
         query = query[6:]
@@ -184,6 +198,43 @@ def search(request, template="search.html"):
             "issues": Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
                 Q(is_hidden=True) & ~Q(user_id=request.user.id)
             )[0:20],
+        }
+    elif stype == "organization":
+        context = {
+            "query": query,
+            "type": stype,
+            "organizations": Company.objects.filter(
+                Q(name__icontains=query) | Q(description__icontains=query)
+            )[0:20],
+        }
+    elif stype == "project":
+        context = {
+            "query": query,
+            "type": stype,
+            "projects": Project.objects.filter(
+                Q(name__icontains=query)
+                | Q(description__icontains=query)
+                | Q(ai_summary__icontains=query)
+                | Q(tags__name__icontains=query)
+            ).distinct()[0:20],
+        }
+    elif stype == "tag":
+        tag_items = []
+        models_to_query = [Company, Domain, Issue, UserProfile, Project]
+        for model in models_to_query:
+            tag_items.extend(model.objects.filter(tags__name__icontains=query).distinct())
+        for item in tag_items:
+            item.model_name = item.__class__.__name__
+        context = {
+            "query": query,
+            "type": stype,
+            "tag_items": tag_items[0:20],
+        }
+    elif stype == "language":
+        context = {
+            "query": query,
+            "type": stype,
+            "projects": Project.objects.filter(tags__name__icontains=query)[0:20],
         }
     elif stype == "domain":
         context = {

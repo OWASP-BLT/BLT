@@ -196,6 +196,8 @@
                             </div>
                         </div>
                     </form>
+                    {% if type %}<script type="text/javascript">$('select').val("{{ type }}");</script>{% endif %}
+                    {% if query %}<script type="text/javascript">$('input').val("{{ query }}");</script>{% endif %}
                 </div>
             </div>
             {% if request.user.is_authenticated %}
