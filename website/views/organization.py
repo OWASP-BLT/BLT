@@ -1720,6 +1720,12 @@ def truncate_text(text, length=15):
     return text if len(text) <= length else text[:length] + "..."
 
 
+@login_required
+def add_sizzle_checkIN(request):
+    # Redirect to checkin page
+    return render(request, "sizzle/add_sizzle_checkin.html")
+
+
 def checkIN(request):
     from datetime import date
 

@@ -1,6 +1,7 @@
 import logging
 import os
 import uuid
+from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 from urllib.parse import urlparse
@@ -18,7 +19,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Count
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
@@ -522,6 +523,7 @@ class Points(models.Model):
     score = models.IntegerField()
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
+    reason = models.TextField(null=True, blank=True)
 
 
 class InviteFriend(models.Model):
@@ -581,6 +583,9 @@ class UserProfile(models.Model):
     discounted_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     modified = models.DateTimeField(auto_now=True)
     visit_count = models.PositiveIntegerField(default=0)
+    current_streak = models.IntegerField(default=0)
+    longest_streak = models.IntegerField(default=0)
+    last_check_in = models.DateField(null=True, blank=True)
 
     def avatar(self, size=36):
         if self.user_avatar:
@@ -594,6 +599,92 @@ class UserProfile(models.Model):
 
     def __unicode__(self):
         return self.user.email
+
+    def update_streak_and_award_points(self, check_in_date=None):
+        """
+        Update streak based on consecutive daily check-ins and award points
+        """
+        # Use current date if no check-in date provided
+        if check_in_date is None:
+            check_in_date = timezone.now().date()
+
+        try:
+            with transaction.atomic():
+                # Streak logic
+                if not self.last_check_in or check_in_date == self.last_check_in + timedelta(
+                    days=1
+                ):
+                    self.current_streak += 1
+                    self.longest_streak = max(self.current_streak, self.longest_streak)
+                # If check-in is not consecutive, reset streak
+                elif check_in_date > self.last_check_in + timedelta(days=1):
+                    self.current_streak = 1
+
+                Points.objects.get_or_create(
+                    user=self.user,
+                    reason="Daily check-in",
+                    created__date=datetime.today().date(),
+                    defaults={"score": 5},
+                )
+
+                points_awarded = 0
+                if self.current_streak == 7:
+                    points_awarded += 20
+                    reason = "7-day streak milestone achieved!"
+                elif self.current_streak == 15:
+                    points_awarded += 30
+                    reason = "15-day streak milestone achieved!"
+                elif self.current_streak == 30:
+                    points_awarded += 50
+                    reason = "30-day streak milestone achieved!"
+                elif self.current_streak == 90:
+                    points_awarded += 150
+                    reason = "90-day streak milestone achieved!"
+                elif self.current_streak == 180:
+                    points_awarded += 300
+                    reason = "180-day streak milestone achieved!"
+                elif self.current_streak == 365:
+                    points_awarded += 500
+                    reason = "365-day streak milestone achieved!"
+
+                if points_awarded != 0:
+                    Points.objects.create(user=self.user, score=points_awarded, reason=reason)
+
+                # Update last check-in and save
+                self.last_check_in = check_in_date
+                self.save()
+
+                self.award_streak_badges()
+
+        except Exception as e:
+            # Log the error or handle it appropriately
+            logger.error(f"Error in check-in process: {e}")
+            return False
+
+        return True
+
+    def award_streak_badges(self):
+        """
+        Award badges for streak milestones
+        """
+        streak_badges = {
+            7: "Weekly Streak",
+            15: "Half-Month Streak",
+            30: "Monthly Streak",
+            90: "Three Month Streak",
+            180: "Six Month Streak",
+            365: "Yearly Streak",
+        }
+
+        for milestone, badge_title in streak_badges.items():
+            if self.current_streak >= milestone:
+                badge, _ = Badge.objects.get(
+                    title=badge_title,
+                )
+
+                # Avoid duplicate badge awards
+                if not UserBadge.objects.filter(user=self.user, badge=badge).exists():
+                    UserBadge.objects.create(user=self.user, badge=badge)
 
 
 def create_profile(sender, **kwargs):
