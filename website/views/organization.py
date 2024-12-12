@@ -1722,6 +1722,7 @@ def truncate_text(text, length=15):
 
 @login_required
 def add_sizzle_checkIN(request):
+    # Redirect to checkin page
     return render(request, "sizzle/add_sizzle_checkin.html")
 
 
