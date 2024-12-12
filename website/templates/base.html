@@ -206,7 +206,7 @@
             }
 
             const closeButton = modal.querySelector('.close-button');
-            const loginForm = document.getElementById('loginForm');
+            const openCheckInButton = document.getElementById('openCheckIn');
             const checkInForm = document.getElementById('checkInForm');
 
             // Function to check if form was submitted today
@@ -246,10 +246,10 @@
                 }
             });
 
-            // Show modal if not submitted today also the page should be the home page
-            if (!isFormSubmittedToday() && window.location.pathname === '/') {
-                showModal();
-            }
+            // Event listener to open modal when clicking the openCheckIn button           
+            if (openCheckInButton) {
+                 openCheckInButton.addEventListener('click', showModal);
+             }
 
             // Handle check-in form submission with AJAX
             if (checkInForm) {
@@ -289,13 +289,6 @@
                         submitButton.textContent = 'Submit';
                     });
                 });
-            }
-
-            // Event listener to open modal when clicking the openCheckIn button
-            const openCheckInButton = document.getElementById('openCheckIn');
-            console.log(openCheckInButton);
-            if (openCheckInButton) {
-                openCheckInButton.addEventListener('click', showModal);
             }
         });
         </script>
