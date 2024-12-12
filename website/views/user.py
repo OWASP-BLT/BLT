@@ -226,9 +226,9 @@ class UserProfileDetailView(DetailView):
         context["is_mentor"] = UserBadge.objects.filter(user=user, badge__title="Mentor").exists()
         context["available_badges"] = Badge.objects.all()
 
-        context["my_score"] = list(
-            Points.objects.filter(user=self.object).aggregate(total_score=Sum("score")).values()
-        )[0]
+        user_points = Points.objects.filter(user=self.object)
+        context["user_points"] = user_points
+        context["my_score"] = list(user_points.aggregate(total_score=Sum("score")).values())[0]
         context["websites"] = (
             Domain.objects.filter(issue__user=self.object)
             .annotate(total=Count("issue"))
