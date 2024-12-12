@@ -2,6 +2,21 @@
 {% extends "base.html" %}
 {% load custom_filters %}
 {% load static %}
+{% block title %}
+    Time Log
+{% endblock title %}
+{% block description %}
+    Manage your time logs efficiently. Start new time logs, view active logs, and review existing time logs to keep track of your progress.
+{% endblock description %}
+{% block keywords %}
+    Time Log, Start Time Log, Active Time Log, Existing Time Logs, Track Time, Time Management
+{% endblock keywords %}
+{% block og_title %}
+    Time Log - Efficient Time Management
+{% endblock og_title %}
+{% block og_description %}
+    Start new time logs, manage active logs, and review existing ones to effectively track and manage your work time.
+{% endblock og_description %}
 {% block content %}
     <script src="https://cdn.tailwindcss.com" defer></script>
     <style>
