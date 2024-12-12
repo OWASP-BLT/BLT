@@ -1,5 +1,30 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
+
+{% block title %}
+    View Bughunt
+{% endblock title %}
+
+{% block description %}
+    View detailed information about the Bughunt, including the hunt name, duration, description, and domain URL. Check the status and participate in the event.
+{% endblock description %}
+
+{% block keywords %}
+    View Bughunt, Bughunt Details, Hunt Information, Hunt Description, Domain URL, Participate in Bughunt
+{% endblock keywords %}
+
+{% block og_title %}
+    View Bughunt - Detailed Hunt Information
+{% endblock og_title %}
+
+{% block og_description %}
+    Access comprehensive details about the Bughunt, including the name, duration, description, and domain URL. Stay informed and get ready to participate.
+{% endblock og_description %}
+
+{% block og_image %}
+    {% static 'company/images/view-bughunt-og-image.png' %}
+{% endblock og_image %}
+
 {% block content %}
     <style>
   #banner {

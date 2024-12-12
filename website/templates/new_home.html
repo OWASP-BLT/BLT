@@ -1,4 +1,30 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    New Home
+{% endblock title %}
+
+{% block description %}
+    Welcome to our new home page. Navigate through our updated features, explore new sections, and stay connected with the latest updates.
+{% endblock description %}
+
+{% block keywords %}
+    New Home, Homepage, Updated Features, Latest Updates, Explore Sections, Stay Connected
+{% endblock keywords %}
+
+{% block og_title %}
+    New Home - Explore Our Latest Features
+{% endblock og_title %}
+
+{% block og_description %}
+    Discover our new home page with updated features and sections. Stay connected and informed with the latest updates from our platform.
+{% endblock og_description %}
+
+{% block og_image %}
+    {% static 'company/images/new-home-og-image.png' %}
+{% endblock og_image %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
     <style>

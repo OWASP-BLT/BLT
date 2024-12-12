@@ -1,5 +1,30 @@
 {% extends "base.html" %}
 {% load static %}
+
+{% block title %}
+    Sitemap
+{% endblock title %}
+
+{% block description %}
+    Explore the sitemap to navigate through all the pages and sections of our website. Find the information you need quickly and efficiently.
+{% endblock description %}
+
+{% block keywords %}
+    Sitemap, Website Navigation, Page Links, Website Structure, Site Map
+{% endblock keywords %}
+
+{% block og_title %}
+    Sitemap - Navigate Our Website
+{% endblock og_title %}
+
+{% block og_description %}
+    Use our sitemap to easily navigate through all the sections and pages of our website. Quickly find the information and resources you're looking for.
+{% endblock og_description %}
+
+{% block og_image %}
+    {% static 'company/images/sitemap-og-image.png' %}
+{% endblock og_image %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="min-h-screen flex flex-col">

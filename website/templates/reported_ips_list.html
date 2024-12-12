@@ -1,4 +1,30 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Reported IPs
+{% endblock title %}
+
+{% block description %}
+    View and manage reported IPs with detailed information on activity types, user reports, and descriptions. Stay updated with the latest activity reports.
+{% endblock description %}
+
+{% block keywords %}
+    Reported IPs, IP Activity Reports, Manage IPs, View Reports, Activity Types, User Reports
+{% endblock keywords %}
+
+{% block og_title %}
+    Reported IPs - Manage Activity Reports
+{% endblock og_title %}
+
+{% block og_description %}
+    Access detailed information on reported IPs, including activity types, user reports, and descriptions. Stay informed with the latest activity reports.
+{% endblock og_description %}
+
+{% block og_image %}
+    {% static 'company/images/reported-ips-og-image.png' %}
+{% endblock og_image %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
     <style>

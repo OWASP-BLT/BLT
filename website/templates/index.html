@@ -1,5 +1,30 @@
 {% extends "base.html" %}
 {% load static %}
+
+{% block title %}
+    Find Bugs, Win Points and Prizes
+{% endblock title %}
+
+{% block description %}
+    Discover, report, and fix bugs on websites, apps, or hardware to earn points and win prizes. Join a community of bug hunters and contribute to improving software quality.
+{% endblock description %}
+
+{% block keywords %}
+    Find Bugs, Win Points, Win Prizes, Report Bugs, Fix Issues, Bug Hunting, Software Quality
+{% endblock keywords %}
+
+{% block og_title %}
+    Find Bugs, Win Points and Prizes - Join Our Community
+{% endblock og_title %}
+
+{% block og_description %}
+    Join our community to discover, report, and fix bugs on websites, apps, or hardware. Earn points and win prizes while contributing to improving software quality.
+{% endblock og_description %}
+
+{% block og_image %}
+    {% static 'company/images/home-og-image.png' %}
+{% endblock og_image %}
+
 {% load gravatar %}
 {% load socialaccount %}
 {% load humanize %}

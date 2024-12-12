@@ -1,5 +1,30 @@
 {% extends "base.html" %}
 {% load static %}
+
+{% block title %}
+    Trademark Search Results
+{% endblock title %}
+
+{% block description %}
+    View the results of your trademark search, including registration numbers, serial numbers, filing dates, owner details, and status labels from the USPTO.
+{% endblock description %}
+
+{% block keywords %}
+    Trademark Search Results, USPTO, Patent and Trademark, Search Trademarks, Trademark Details, Owner Information
+{% endblock keywords %}
+
+{% block og_title %}
+    Trademark Search Results - Detailed Trademark Information
+{% endblock og_title %}
+
+{% block og_description %}
+    Access detailed trademark search results, including registration numbers, serial numbers, filing dates, owner information, and status labels from the USPTO.
+{% endblock og_description %}
+
+{% block og_image %}
+    {% static 'company/images/trademark-search-results-og-image.png' %}
+{% endblock og_image %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
     <style>

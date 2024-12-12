@@ -1,5 +1,31 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load static %}
+
+{% block title %}
+    Invite an Organization
+{% endblock title %}
+
+{% block description %}
+    Invite an organization to join and earn +5 points when they do. Provide their email address to send an invitation.
+{% endblock description %}
+
+{% block keywords %}
+    Invite Organization, Send Invitation, Earn Points, Organization Join, Email Invitation
+{% endblock keywords %}
+
+{% block og_title %}
+    Invite an Organization - Earn Points for Invites
+{% endblock og_title %}
+
+{% block og_description %}
+    Invite an organization to join and earn +5 points when they do. Provide their email address to send an invitation.
+{% endblock og_description %}
+
+{% block og_image %}
+    {% static 'company/images/invite-organization-og-image.png' %}
+{% endblock og_image %}
+
 {% block content %}
     <style>
 .bottom-right {

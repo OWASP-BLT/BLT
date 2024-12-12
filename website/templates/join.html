@@ -1,5 +1,30 @@
 {% extends "base.html" %}
 {% load static %}
+
+{% block title %}
+    Create Organization
+{% endblock title %}
+
+{% block description %}
+    Create an organization by filling out the necessary information, including organization name, website, logo, email, and subscription plan.
+{% endblock description %}
+
+{% block keywords %}
+    Create Organization, Organization Information, Website, Logo, Email, Subscription Plan, Organization Registration
+{% endblock keywords %}
+
+{% block og_title %}
+    Create Organization - Register Your Organization
+{% endblock og_title %}
+
+{% block og_description %}
+    Register your organization by providing essential information such as organization name, website, logo, email, and selecting a subscription plan.
+{% endblock og_description %}
+
+{% block og_image %}
+    {% static 'company/images/create-organization-og-image.png' %}
+{% endblock og_image %}
+
 {% load gravatar %}
 {% load i18n %}
 {% block style %}

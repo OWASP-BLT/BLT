@@ -1,4 +1,30 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Submit Pull Request
+{% endblock title %}
+
+{% block description %}
+    Submit your pull request by providing the issue link, BCH address, and PR link. Fetch issue data and place a bid to contribute effectively.
+{% endblock description %}
+
+{% block keywords %}
+    Submit Pull Request, Pull Request Submission, Issue Link, BCH Address, PR Link, Fetch Data, Place Bid
+{% endblock keywords %}
+
+{% block og_title %}
+    Submit Pull Request - Contribute Effectively
+{% endblock og_title %}
+
+{% block og_description %}
+    Easily submit your pull request by providing necessary details such as issue link, BCH address, and PR link. Fetch data and place a bid for efficient contribution.
+{% endblock og_description %}
+
+{% block og_image %}
+    {% static 'company/images/submit-pr-og-image.png' %}
+{% endblock og_image %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
     <style>

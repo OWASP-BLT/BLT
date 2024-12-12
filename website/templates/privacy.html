@@ -1,4 +1,30 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Privacy Policy
+{% endblock title %}
+
+{% block description %}
+    Learn about our privacy practices. Understand how we handle your data and the measures we take to protect your privacy. BLT is committed to transparency and trust.
+{% endblock description %}
+
+{% block keywords %}
+    Privacy Policy, Data Protection, Privacy Practices, User Data, Data Security, Transparency, Trust
+{% endblock keywords %}
+
+{% block og_title %}
+    Privacy Policy - Data Protection and Transparency
+{% endblock og_title %}
+
+{% block og_description %}
+    Read our privacy policy to understand how we handle and protect your data. BLT is dedicated to ensuring your privacy and maintaining transparency in our practices.
+{% endblock og_description %}
+
+{% block og_image %}
+    {% static 'company/images/privacy-policy-og-image.png' %}
+{% endblock og_image %}
+
 {% block content %}
     <div class="w-4/5 lg:w-1/2">
         {% include "mobile_privacy.html" %}
