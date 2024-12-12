@@ -935,7 +935,9 @@ def sizzle_daily_log(request):
             previous_work = request.POST.get("previous_work")
             next_plan = request.POST.get("next_plan")
             blockers = request.POST.get("blockers")
-            print(previous_work, next_plan, blockers)
+            goal_accomplished = request.POST.get("goal_accomplished") == "on"
+            current_mood = request.POST.get("current_mood")
+            print(previous_work, next_plan, blockers, goal_accomplished, current_mood)
 
             DailyStatusReport.objects.create(
                 user=request.user,
@@ -943,6 +945,8 @@ def sizzle_daily_log(request):
                 previous_work=previous_work,
                 next_plan=next_plan,
                 blockers=blockers,
+                goal_accomplished=goal_accomplished,
+                current_mood=current_mood,
             )
 
             messages.success(request, "Daily status report submitted successfully.")
