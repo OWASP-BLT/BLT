@@ -623,7 +623,7 @@ class IssueBaseCreate(object):
 
     def process_issue(self, user, obj, created, domain, tokenauth=False, score=3):
         print("processing process_issue for ip address: ", get_client_ip(self.request))
-        p = Points.objects.create(user=user, issue=obj, score=score)
+        p = Points.objects.create(user=user, issue=obj, score=score, reason="Issue reported")
         messages.success(self.request, "Bug added ! +" + str(score))
         try:
             auth = tweepy.Client(
@@ -950,7 +950,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
             obj.save()
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):
-                p = Points.objects.create(user=self.request.user, domain=domain, score=1)
+                p = Points.objects.create(
+                    user=self.request.user, domain=domain, score=1, reason="Domain added"
+                )
                 messages.success(self.request, "Domain added! + 1")
 
             if self.request.POST.get("screenshot-hash"):

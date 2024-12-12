@@ -1037,12 +1037,6 @@ transform: scale(1);
 {% block og_description %}
     Check out {{ user.username|title }}'s profile, including their activities, tasks, and wallet balance.
 {% endblock %}
-{% block og_image %}
-    {% if user.userprofile.avatar %}
-        {{ user.userprofile.avatar }}
-    {% else %}
-        {% static 'img/default-avatar.jpg' %}
-    {% endblock %}
     {% block content %}
         <!-- Begin page -->
         <section>
