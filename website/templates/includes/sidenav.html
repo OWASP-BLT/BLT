@@ -78,6 +78,16 @@
                             <span>Sizzle (timer)</span>
                         </a>
                     </li>
+                    <!-- here we have to add another tab for "check-in"  -->
+                    <li class="mb-2 {% if request.path == '/check-in/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'checkIN' %}"
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/check-in/' %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="icon text-blue-500">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                            <span>Check-In</span>
+                        </a>
+                    </li>
                     <li class="mb-2 {% if request.path == '/scoreboard/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'scoreboard' %}"
                            class="flex items-center w-full no-underline p-2 {% if request.path == '/scoreboard/' %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
@@ -196,6 +206,15 @@
                                 <i class="fas fa-trash-alt fa-lg"></i>
                             </div>
                             <span>Takedowns</span>
+                        </a>
+                    </li>
+                    <li class="mb-2 {% if request.path == '/badges/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'badges' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/badges/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                            <div class="icon text-red-500">
+                                <i class="fas fa-certificate fa-lg"></i>
+                            </div>
+                            <span>Badges</span>
                         </a>
                     </li>
                 </ul>
