@@ -1,21 +1,28 @@
 {% extends "base.html" %}
 {% load static %}
-
-{% block title %}{{ post.title }} | BLT{% endblock title %}
-
-{% block description %}Read "{{ post.title }}" by {{ post.author }}. Published on {{ post.created_at }}. Explore this and more on BLT.{% endblock description %}
-
-{% block keywords %}{{ post.title }}, blog post, {{ post.author }}, BLT, {{ post.created_at }}, {{ post.title|slugify }}{% endblock keywords %}
-
-{% block og_title %}{{ post.title }} - BLT{% endblock og_title %}
-
-{% block og_image %}{% if post.image %}{{ post.image.url }}{% else %}{% static 'images/default-post.png' %}{% endif %}{% endblock og_image %}
-
-{% block og_description %}Discover "{{ post.title }}" by {{ post.author }} on BLT. Published on {{ post.created_at }}, dive into the content to learn more!{% endblock og_description %}
-
+{% block title %}
+    {{ post.title }} | BLT
+{% endblock title %}
+{% block description %}
+    Read "{{ post.title }}" by {{ post.author }}. Published on {{ post.created_at }}. Explore this and more on BLT.
+{% endblock description %}
+{% block keywords %}
+    {{ post.title }}, blog post, {{ post.author }}, BLT, {{ post.created_at }}, {{ post.title|slugify }}
+{% endblock keywords %}
+{% block og_title %}
+    {{ post.title }} - BLT
+{% endblock og_title %}
+{% block og_image %}
+    {% if post.image %}
+        {{ post.image.url }}
+    {% else %}
+        {% static 'images/default-post.png' %}
+    {% endif %}
+{% endblock og_image %}
+{% block og_description %}
+    Discover "{{ post.title }}" by {{ post.author }} on BLT. Published on {{ post.created_at }}, dive into the content to learn more!
+{% endblock og_description %}
 {% block content %}
-
-
     <style>
     body {
         font-family: Arial, sans-serif;
