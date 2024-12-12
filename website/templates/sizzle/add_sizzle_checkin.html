@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    <link rel="stylesheet"
+          type="text/css"
+          href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <style>
+    .docs_style {
+        background-color: #EF4444!important;
+        color: white!important;
+    }
+    .docs_style:hover {
+        background-color: #dc2626!important;
+    }
+    .disabled-button {
+        background-color: #a1a1aa !important;
+        cursor: not-allowed !important;
+    }
+    </style>
+    <div class="container mx-auto p-6">
+        {% include "includes/sidenav.html" %}
+        <div class="main-content w-full py-8">
+            <div class="mb-6">
+                <h1 class="text-4xl font-semibold text-gray-800 text-center">Add Sizzle Check-In</h1>
+            </div>
+            <div class="flex justify-center">
+                <form id="checkInForm"
+                      method="post"
+                      action="{% url 'sizzle_daily_log' %}"
+                      class="w-full max-w-5xl bg-white shadow-sm rounded-lg p-6"
+                      {% if not request.user.is_authenticated %}style="display:none;"{% endif %}>
+                    {% csrf_token %}
+                    <div class="form-group mb-10">
+                        <label for="previous_work_card" class="block text-gray-700 font-medium mb-2">What did you work on previously?</label>
+                        <textarea id="previous_work_card"
+                                  name="previous_work"
+                                  rows="5"
+                                  class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                  required></textarea>
+                    </div>
+                    <div class="form-group mb-10">
+                        <label for="next_plan_card" class="block text-gray-700 font-medium mb-2">What do you plan to do next?</label>
+                        <textarea id="next_plan_card"
+                                  name="next_plan"
+                                  rows="5"
+                                  class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                  required></textarea>
+                    </div>
+                    <div class="form-group mb-10">
+                        <label for="blockers_card" class="block text-gray-700 font-medium mb-2">Do you have any blockers?</label>
+                        <textarea id="blockers_card"
+                                  name="blockers"
+                                  rows="5"
+                                  class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"></textarea>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit"
+                                class="submit-button bg-red-500 text-white font-bold py-2 px-6 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
+                            Submit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+{% endblock content %}
