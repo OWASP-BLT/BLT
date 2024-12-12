@@ -1773,6 +1773,8 @@ def checkIN(request):
                 "previous_work": truncate_text(r.previous_work),
                 "next_plan": truncate_text(r.next_plan),
                 "blockers": truncate_text(r.blockers),
+                "goal_accomplished": r.goal_accomplished,  # Add this line
+                "current_mood": r.current_mood,  # Add this line
                 "date": r.date.strftime("%d %B %Y"),
             }
         )

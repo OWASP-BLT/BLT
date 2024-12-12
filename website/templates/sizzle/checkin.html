@@ -53,6 +53,8 @@
                                     <th class="text-left py-3 px-4 border-b border-gray-200">Previous Work</th>
                                     <th class="text-left py-3 px-4 border-b border-gray-200">Next Plan</th>
                                     <th class="text-left py-3 px-4 border-b border-gray-200">Blockers</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200">Goal Accomplished</th>
+                                    <th class="text-left py-3 px-4 border-b border-gray-200">Current Mood</th>
                                     <th class="text-left py-3 px-4 border-b border-gray-200">Action</th>
                                 </tr>
                             </thead>
@@ -63,6 +65,14 @@
                                         <td class="py-3 px-4 border-b border-gray-200">{{ item.previous_work }}</td>
                                         <td class="py-3 px-4 border-b border-gray-200">{{ item.next_plan }}</td>
                                         <td class="py-3 px-4 border-b border-gray-200">{{ item.blockers }}</td>
+                                        <td class="py-3 px-4 border-b border-gray-200">
+                                            {% if item.goal_accomplished %}
+                                                ✅ Yes
+                                            {% else %}
+                                                ❌ No
+                                            {% endif %}
+                                        </td>
+                                        <td class="py-3 px-4 border-b border-gray-200">{{ item.current_mood }}</td>
                                         <td class="py-3 px-4 border-b border-gray-200">
                                             <a href="{% url 'checkIN_detail' item.id %}"
                                                class="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600">View</a>
