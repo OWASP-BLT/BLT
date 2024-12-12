@@ -1,4 +1,23 @@
 {% extends "base.html" %}
+{% load static %}
+{% block title %}
+    Account Login | BLT
+{% endblock title %}
+{% block description %}
+    Log in to your account to access the bug logging tool. Enter your username and password or log in with Google or GitHub.
+{% endblock description %}
+{% block keywords %}
+    Account Login, Bug Logging Tool, Username, Password, Google Login, GitHub Login
+{% endblock keywords %}
+{% block og_title %}
+    Account Login - Access Your Bug Logging Tool
+{% endblock og_title %}
+{% block og_description %}
+    Log in to your account to access the bug logging tool. Enter your username and password or log in with Google or GitHub for a seamless experience.
+{% endblock og_description %}
+{% block og_image %}
+    {% static 'company/images/account-login-og-image.png' %}
+{% endblock og_image %}
 {% load i18n %}
 {% load custom_tags %}
 {% load account socialaccount %}

@@ -6,13 +6,17 @@
 {% endblock style %}
 {% load static %}
 {% block title %}OWASP BLT - User Statistics{% endblock %}
-{% block description %}View user statistics for contributions, including commits, opened/closed issues, PRs, and comments for a selected time period.{% endblock %}
+{% block description %}
+    View user statistics for contributions, including commits, opened/closed issues, PRs, and comments for a selected time period.
+{% endblock %}
 {% block keywords %}user statistics, OWASP BLT, commits, issues, PRs, contributions{% endblock %}
 {% block og_title %}OWASP BLT - User Statistics{% endblock %}
-{% block og_description %}Explore the statistics for contributors in the OWASP BLT project, showcasing activity like commits, issues, and pull requests.{% endblock %}
-{% block og_image %}{% static 'img/og-image.png' %}{% endblock %}
-
-
+{% block og_description %}
+    Explore the statistics for contributors in the OWASP BLT project, showcasing activity like commits, issues, and pull requests.
+{% endblock %}
+{% block og_image %}
+    {% static 'img/og-image.png' %}
+{% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="w-full p-6">

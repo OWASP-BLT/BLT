@@ -1,4 +1,23 @@
 {% extends "base.html" %}
+{% load static %}
+{% block title %}
+    Sign Up | BLT
+{% endblock title %}
+{% block description %}
+    Create an account to join the community. Sign up with your email and username to start discovering and reporting bugs.
+{% endblock description %}
+{% block keywords %}
+    Sign Up, Create Account, Join Community, Email, Username, Discover Bugs, Report Bugs
+{% endblock keywords %}
+{% block og_title %}
+    Sign Up - Join Our Community
+{% endblock og_title %}
+{% block og_description %}
+    Create an account to join our community. Sign up with your email and username to start discovering and reporting bugs.
+{% endblock og_description %}
+{% block og_image %}
+    {% static 'company/images/signup-og-image.png' %}
+{% endblock og_image %}
 {% load i18n %}
 {% load custom_tags %}
 {% block natural_content %}

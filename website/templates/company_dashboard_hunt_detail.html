@@ -2,25 +2,24 @@
 {% load static %}
 {% load static %}
 {% load custom_tags %}
-
-{% block title %}Edit Hunt: {{ hunt.name }} - BLT Dashboard{% endblock title %}
-
+{% block title %}
+    Edit Hunt: {{ hunt.name }} - BLT Dashboard
+{% endblock title %}
 {% block description %}
     Edit the details of the hunt "{{ hunt.name }}" in the BLT dashboard. Update the description, start time, and end time of the hunt.
 {% endblock description %}
-
 {% block keywords %}
     BLT, hunt, edit, update, description, time, schedule, "{{ hunt.name }}", dashboard
 {% endblock keywords %}
-
-{% block og_title %}Edit Hunt: {{ hunt.name }} - BLT Dashboard{% endblock og_title %}
-
-{% block og_image %}{% static 'images/hunt-edit.png' %}{% endblock og_image %}
-
+{% block og_title %}
+    Edit Hunt: {{ hunt.name }} - BLT Dashboard
+{% endblock og_title %}
+{% block og_image %}
+    {% static 'images/hunt-edit.png' %}
+{% endblock og_image %}
 {% block og_description %}
     Update the hunt "{{ hunt.name }}" details including name, description, start and end times in the BLT dashboard.
 {% endblock og_description %}
-
 {% block content %}
     <section>
         {% include "includes/company_sidenav.html" %}

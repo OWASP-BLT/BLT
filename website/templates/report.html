@@ -1,31 +1,24 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load static %}
-
 {% block title %}
     Report an issue | OWASP BLT
 {% endblock title %}
-
 {% block description %}
     Report a bug by providing the domain URL, bug title, and type. Attach screenshots and categorize the bug to ensure comprehensive reporting.
 {% endblock description %}
-
 {% block keywords %}
     Report a Bug, Bug Reporting, Domain URL, Bug Title, Bug Type, Attach Screenshots, Categorize Bug
 {% endblock keywords %}
-
 {% block og_title %}
     Report a Bug - Comprehensive Reporting
 {% endblock og_title %}
-
 {% block og_description %}
     Report a bug efficiently by providing all necessary details such as domain URL, bug title, type, and screenshots. Categorize the bug for better tracking.
 {% endblock og_description %}
-
 {% block og_image %}
     {% static 'company/images/report-bug-og-image.png' %}
 {% endblock og_image %}
-
 {% load gravatar %}
 {% load socialaccount %}
 {% load humanize %}

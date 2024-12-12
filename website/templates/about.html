@@ -3,17 +3,24 @@
 {% load static %}
 {% load humanize %}
 {% load custom_tags %}
-{% block title %}About Page | {% env 'PROJECT_NAME' %}{% endblock title %}
-
-{% block description %}Detailed description of the About page for {% env 'PROJECT_NAME' %}{% endblock description %}
-
-{% block keywords %}about, project, team, mission{% endblock keywords %}
-
-{% block og_title %}About Us - {% env 'PROJECT_NAME' %}{% endblock og_title %}
-
-{% block og_image %}{% static 'img/about-page-og-image.png' %}{% endblock og_image %}
-
-{% block og_description %}Learn more about our team, mission, and goals at {% env 'PROJECT_NAME' %}{% endblock og_description %}
+{% block title %}
+    About Page | {% env 'PROJECT_NAME' %}
+{% endblock title %}
+{% block description %}
+    Detailed description of the About page for {% env 'PROJECT_NAME' %}
+{% endblock description %}
+{% block keywords %}
+    about, project, team, mission
+{% endblock keywords %}
+{% block og_title %}
+    About Us - {% env 'PROJECT_NAME' %}
+{% endblock og_title %}
+{% block og_image %}
+    {% static 'img/about-page-og-image.png' %}
+{% endblock og_image %}
+{% block og_description %}
+    Learn more about our team, mission, and goals at {% env 'PROJECT_NAME' %}
+{% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     {% block edit_link %}

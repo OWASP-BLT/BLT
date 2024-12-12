@@ -1,30 +1,23 @@
 {% extends "base.html" %}
 {% load static %}
-
 {% block title %}
     Edit Profile | {{ user.username }}
 {% endblock title %}
-
 {% block description %}
     Update your profile information including username, email, avatar, domain, and other details. Ensure your profile is up-to-date and accurate.
 {% endblock description %}
-
 {% block keywords %}
     Edit Profile, Update Profile Information, Username, Email, Avatar, Domain, Profile Details
 {% endblock keywords %}
-
 {% block og_title %}
     Edit Profile - Update Your Information
 {% endblock og_title %}
-
 {% block og_description %}
     Edit your profile to keep your information current. Update your username, email, avatar, domain, and other personal details.
 {% endblock og_description %}
-
 {% block og_image %}
     {% static 'company/images/edit-profile-og-image.png' %}
 {% endblock og_image %}
-
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto mt-16">

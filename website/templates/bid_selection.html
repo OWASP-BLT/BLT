@@ -1,20 +1,24 @@
 {% extends "base.html" %}
 {% load static %}
 {% load custom_tags %}
-
-{% block title %}Bids - Fetch and Manage Issues{% endblock title %}
-
-{% block description %}Use this page to fetch and manage bids associated with issues by pasting the issue URL and changing the status of the bids.{% endblock description %}
-
-{% block keywords %}bids, issues, fetch, manage, bid status, issue URL, platform{% endblock keywords %}
-
-{% block og_title %}Bids - Fetch and Manage Issues{% endblock og_title %}
-
-{% block og_image %}{% static 'images/bids-og-image.png' %}{% endblock og_image %}
-
-{% block og_description %}Manage bids by fetching them with the issue URL and updating the status. A platform to handle bid statuses efficiently{% endblock og_description %}
-
-
+{% block title %}
+    Bids - Fetch and Manage Issues
+{% endblock title %}
+{% block description %}
+    Use this page to fetch and manage bids associated with issues by pasting the issue URL and changing the status of the bids.
+{% endblock description %}
+{% block keywords %}
+    bids, issues, fetch, manage, bid status, issue URL, platform
+{% endblock keywords %}
+{% block og_title %}
+    Bids - Fetch and Manage Issues
+{% endblock og_title %}
+{% block og_image %}
+    {% static 'images/bids-og-image.png' %}
+{% endblock og_image %}
+{% block og_description %}
+    Manage bids by fetching them with the issue URL and updating the status. A platform to handle bid statuses efficiently
+{% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <style>

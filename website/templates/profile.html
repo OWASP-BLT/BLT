@@ -1,31 +1,24 @@
 {% extends "base.html" %}
 {% load gravatar %}
 {% load static %}
-
 {% block title %}
     {{ user.username }}'s Profile
 {% endblock title %}
-
 {% block description %}
     Explore the detailed profile of {{ user.username }}. View their activity, reported bugs, social tags, badges, and other profile information.
 {% endblock description %}
-
 {% block keywords %}
     {{ user.username }}'s Profile, User Activity, Reported Bugs, Social Tags, Badges, User Details, User Profile
 {% endblock keywords %}
-
 {% block og_title %}
     {{ user.username }}'s Profile - User Activity and Details
 {% endblock og_title %}
-
 {% block og_description %}
     Access {{ user.username }}'s profile to see detailed information on their activity, bugs reported, social tags, badges, and more. Engage with their profile and stay connected.
 {% endblock og_description %}
-
 {% block og_image %}
     {% static 'company/images/user-profile-og-image.png' %}
 {% endblock og_image %}
-
 {% load custom_tags %}
 {% load i18n %}
 {% block head %}
