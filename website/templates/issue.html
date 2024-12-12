@@ -17,7 +17,7 @@
           content="{% block og_title %}{{ object.description }}{% endblock og_title %}" />
     {% for screenshot in screenshots %}
         <meta property="og:image"
-              content="https://{% env 'FQDN' %}{% block og_image %}{{ screenshot.image.url }}{% endblock og_image %}" />
+              content="https://{% env 'FQDN' %}" />
     {% endfor %}
     <meta property="og:description"
           content="{{ object.markdown_description|escapejs }}" />
