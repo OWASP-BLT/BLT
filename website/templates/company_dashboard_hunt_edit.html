@@ -11,7 +11,7 @@
     Edit the details of the hunt "{{ hunt.name }}" in the {% env 'PROJECT_NAME' %} dashboard. Update the description, start time, and end time of the hunt.
 {% endblock description %}
 {% block keywords %}
-{% env 'PROJECT_NAME' %}, hunt, edit, update, description, time, schedule, "{{ hunt.name }}", dashboard
+    {% env 'PROJECT_NAME' %}, hunt, edit, update, description, time, schedule, "{{ hunt.name }}", dashboard
 {% endblock keywords %}
 {% block og_title %}
     Edit Hunt: {{ hunt.name }} - {% env 'PROJECT_NAME' %} Dashboard

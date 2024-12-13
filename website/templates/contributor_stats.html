@@ -6,12 +6,18 @@
 {% endblock style %}
 {% load static %}
 {% load custom_tags %}
-{% block title %}OWASP {% env 'PROJECT_NAME' %} - User Statistics{% endblock %}
+{% block title %}
+    OWASP {% env 'PROJECT_NAME' %} - User Statistics
+{% endblock %}
 {% block description %}
     View user statistics for contributions, including commits, opened/closed issues, PRs, and comments for a selected time period.
 {% endblock %}
-{% block keywords %}user statistics, OWASP {% env 'PROJECT_NAME' %}, commits, issues, PRs, contributions{% endblock %}
-{% block og_title %}OWASP {% env 'PROJECT_NAME' %} - User Statistics{% endblock %}
+{% block keywords %}
+    user statistics, OWASP {% env 'PROJECT_NAME' %}, commits, issues, PRs, contributions
+{% endblock %}
+{% block og_title %}
+    OWASP {% env 'PROJECT_NAME' %} - User Statistics
+{% endblock %}
 {% block og_description %}
     Explore the statistics for contributors in the OWASP {% env 'PROJECT_NAME' %} project, showcasing activity like commits, issues, and pull requests.
 {% endblock %}

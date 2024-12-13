@@ -3,7 +3,7 @@
 {% block metaTags %}
     <title>
         {% block title %}
-        {% env 'PROJECT_NAME' %} Issue - {{ object.description|escapejs }}
+            {% env 'PROJECT_NAME' %} Issue - {{ object.description|escapejs }}
         {% endblock title %}
     </title>
     <meta name="description"
