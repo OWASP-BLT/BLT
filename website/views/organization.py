@@ -936,7 +936,7 @@ def sizzle_daily_log(request):
             next_plan = request.POST.get("next_plan")
             blockers = request.POST.get("blockers")
             goal_accomplished = request.POST.get("goal_accomplished") == "on"
-            current_mood = request.POST.get("current_mood")
+            current_mood = request.POST.get("feeling")
             print(previous_work, next_plan, blockers, goal_accomplished, current_mood)
 
             DailyStatusReport.objects.create(
@@ -1726,8 +1726,11 @@ def truncate_text(text, length=15):
 
 @login_required
 def add_sizzle_checkIN(request):
-    # Redirect to checkin page
-    return render(request, "sizzle/add_sizzle_checkin.html")
+    # Fetch yesterday's report
+    yesterday = now().date() - timedelta(days=1)
+    yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
+
+    return render(request, "sizzle/add_sizzle_checkin.html", {"yesterday_report": yesterday_report})
 
 
 def checkIN(request):

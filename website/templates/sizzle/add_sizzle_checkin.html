@@ -4,6 +4,22 @@
     <link rel="stylesheet"
           type="text/css"
           href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <script type="module"
+            src="https://cdn.jsdelivr.net/npm/emoji-picker-element@latest/index.js"></script>
+    <style>
+        .emoji-picker-container {
+            position: relative;
+        }
+        emoji-picker {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            display: none;
+        }
+        .emoji-picker-container.show emoji-picker {
+            display: block;
+        }
+    </style>
     <style>
     .docs_style {
         background-color: #EF4444!important;
@@ -53,6 +69,20 @@
                                   rows="5"
                                   class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"></textarea>
                     </div>
+                    {% if yesterday_report %}
+                        <div class="mb-5 bg-gray-100 py-4 px-2 rounded-lg">
+                            <p>
+                                <strong>Yesterday's plan:</strong> {{ yesterday_report.next_plan }}
+                            </p>
+                            <p>
+                                <strong>Yesterday's blockers:</strong> {{ yesterday_report.blockers }}
+                            </p>
+                        </div>
+                    {% else %}
+                        <div class="mb-10 bg-gray-100 rounded-lg">
+                            <p>No report available for yesterday.</p>
+                        </div>
+                    {% endif %}
                     <div class="form-group mb-10 flex items-center">
                         <label for="goal_accomplished_card"
                                class="text-gray-700 font-medium mr-6 mt-4">
@@ -64,17 +94,17 @@
                                class="w-15 h-15 border border-gray-300 rounded scale-150 focus:outline-none focus:ring-2 focus:ring-blue-400">
                     </div>
                     <div class="form-group mb-10">
-                        <label for="current_mood_card" class="block text-gray-700 font-medium mb-2">How are you feeling today?</label>
-                        <select id="current_mood_card"
-                                name="current_mood"
-                                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
-                            <option value="😊">😊 Happy</option>
-                            <option value="😐">😐 Neutral</option>
-                            <option value="😟">😟 Worried</option>
-                            <option value="😠">😠 Frustrated</option>
-                            <option value="😴">😴 Tired</option>
-                            <option value="🤔">🤔 Thoughtful</option>
-                        </select>
+                        <label for="feeling_card" class="block text-gray-700 font-medium mb-2">How are you feeling today?</label>
+                        <div class="emoji-picker-container">
+                            <textarea id="feeling_card"
+                                      name="feeling"
+                                      rows="5"
+                                      class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"></textarea>
+                            <button id="emoji-trigger"
+                                    type="button"
+                                    class="mt-2 px-4 py-2 text-white rounded">😊</button>
+                            <emoji-picker id="emoji-picker"></emoji-picker>
+                        </div>
                     </div>
                     <div class="text-center">
                         <button type="submit"
@@ -89,4 +119,29 @@
     <script src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const textarea = document.getElementById('feeling_card');
+            const emojiTrigger = document.getElementById('emoji-trigger');
+            const emojiPicker = document.getElementById('emoji-picker');
+            const container = document.querySelector('.emoji-picker-container');
+
+            emojiTrigger.addEventListener('click', () => {
+                container.classList.toggle('show');
+            });
+
+            document.addEventListener('click', (event) => {
+                if (!container.contains(event.target)) {
+                    container.classList.remove('show');
+                }
+            });
+
+            emojiPicker.addEventListener('emoji-click', (event) => {
+                
+                const emoji = event.detail.emoji.unicode;
+                textarea.value += emoji;
+                textarea.focus();
+            });
+        });
+    </script>
 {% endblock content %}

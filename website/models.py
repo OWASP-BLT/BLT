@@ -1039,19 +1039,11 @@ class DailyStatusReport(models.Model):
     next_plan = models.TextField()
     blockers = models.TextField()
     goal_accomplished = models.BooleanField(default=False)
-    current_mood = models.CharField(
-        max_length=10,
-        choices=[
-            ("😊", "Happy"),
-            ("😐", "Neutral"),
-            ("😟", "Worried"),
-            ("😠", "Frustrated"),
-            ("😴", "Tired"),
-            ("🤔", "Thoughtful"),
-        ],
-        default="😊",
-    )
+    current_mood = models.CharField(max_length=50, default="Happy 😊")
     created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Daily Status Report by {self.user.username} on {self.date}"
 
 
 class IpReport(models.Model):
