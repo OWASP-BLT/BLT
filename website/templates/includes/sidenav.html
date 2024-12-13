@@ -51,6 +51,15 @@
                 </li>
                 <!-- Submenu Items -->
                 <ul class="pl-8">
+                    <li class="mb-2 {% if request.path == '/feed/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'feed' %}"
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/feed/' %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="icon text-red-500">
+                                <i class="fas fa-bell fa-lg"></i>
+                            </div>
+                            <span>Activity Feed</span>
+                        </a>
+                    </li>
                     <li class="mb-2 {% if request.path == '/issues/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'issues' %}"
                            class="flex items-center w-full no-underline p-2 {% if request.path == '/issues/' %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
@@ -67,6 +76,16 @@
                                 <i class="fas fa-stopwatch fa-lg"></i>
                             </div>
                             <span>Sizzle (timer)</span>
+                        </a>
+                    </li>
+                    <!-- here we have to add another tab for "check-in"  -->
+                    <li class="mb-2 {% if request.path == '/check-in/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'checkIN' %}"
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/check-in/' %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="icon text-blue-500">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                            <span>Check-In</span>
                         </a>
                     </li>
                     <li class="mb-2 {% if request.path == '/scoreboard/' %}bg-gray-200{% endif %}">
@@ -189,6 +208,15 @@
                             <span>Takedowns</span>
                         </a>
                     </li>
+                    <li class="mb-2 {% if request.path == '/badges/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'badges' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/badges/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                            <div class="icon text-red-500">
+                                <i class="fas fa-certificate fa-lg"></i>
+                            </div>
+                            <span>Badges</span>
+                        </a>
+                    </li>
                 </ul>
                 <!-- Spacer -->
                 <div class="my-4 border-t border-gray-300"></div>
@@ -226,9 +254,9 @@
                             <span>Sponsorships</span>
                         </a>
                     </li>
-                    <li class="mb-2 {% if request.path == '/sponsor/' %}bg-gray-200{% endif %}">
-                        <a href="{% url 'sponsor' %}"
-                           class="flex items-center w-full no-underline p-2 {% if '/sponsor/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                    <li class="mb-2 {% if request.path == '/donate/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'donate' %}"
+                           class="flex items-center w-full text-black no-underline p-2">
                             <div class="icon text-red-500">
                                 <i class="fas fa-donate fa-lg"></i>
                             </div>
@@ -321,8 +349,7 @@
                 </li>
                 <li class="mb-2 {% if request.path == '/blog/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'blog' %}"
-                       class="flex items-center w-full no-underline p-2 {% if '/blog' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}"
-                       target="_blank">
+                       class="flex items-center w-full no-underline p-2 {% if '/blog' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                         <div class="icon text-red-500">
                             <i class="fas fa-blog fa-lg"></i>
                         </div>

@@ -1,6 +1,7 @@
 import json
 import uuid
 from datetime import datetime
+from urllib.parse import urlparse
 
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
@@ -679,7 +680,7 @@ class InviteFriendApiViewset(APIView):
             mail_status
             and InviteFriend.objects.filter(sender=self.request.user, sent=True).count() == 2
         ):
-            Points.objects.create(user=self.request.user, score=1)
+            Points.objects.create(user=self.request.user, score=1, reason="Invited friend")
             InviteFriend.objects.filter(sender=self.request.user).delete()
 
         return Response(
@@ -846,8 +847,29 @@ class TimeLogViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
+        organization_url = self.request.data.get("organization_url")
+
         try:
-            serializer.save(user=self.request.user)
+            if organization_url:
+                parsed_url = urlparse(organization_url)
+                normalized_url = parsed_url.netloc + parsed_url.path
+
+                # Normalize the URL in the Company model (remove the protocol if present)
+                try:
+                    organization = Company.objects.get(
+                        Q(url__iexact=normalized_url)
+                        | Q(url__iexact=f"http://{normalized_url}")
+                        | Q(url__iexact=f"https://{normalized_url}")
+                    )
+                except Company.DoesNotExist:
+                    raise ParseError(detail="Organization not found for the given URL.")
+
+            else:
+                organization = None
+
+            # Save the TimeLog with the user and organization (if found, or None)
+            serializer.save(user=self.request.user, organization=organization)
+
         except ValidationError as e:
             raise ParseError(detail=str(e))
         except Exception as e:

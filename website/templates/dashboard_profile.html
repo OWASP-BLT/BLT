@@ -10,7 +10,7 @@
     <link link="link"
           href="https://fonts.googleapis.com/css?family=Titillium+Web"
           rel="stylesheet" />
-    <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}"
+    <link href="{% static 'vendor/bootstrap/css/bootstrap.css' %}"
           rel="stylesheet"
           type="text/css"
           id="bs-default-stylesheet" />
@@ -1028,6 +1028,15 @@ transform: scale(1);
   }
     </style>
 {% endblock style %}
+{% block title %}User Profile - {{ user.username|title }}{% endblock %}
+{% block description %}
+    View the profile of {{ user.username|title }}. Includes their activity, current tasks, and wallet balance.
+{% endblock %}
+{% block keywords %}user profile, activity, tasks, bug reports, wallet, follow, unfollow{% endblock %}
+{% block og_title %}User Profile - {{ user.username|title }}{% endblock %}
+{% block og_description %}
+    Check out {{ user.username|title }}'s profile, including their activities, tasks, and wallet balance.
+{% endblock %}
 {% block content %}
     <!-- Begin page -->
     <section>

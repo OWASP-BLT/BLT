@@ -1,4 +1,21 @@
 {% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}
+    Sign Up | {% env 'PROJECT_NAME' %}
+{% endblock title %}
+{% block description %}
+    Create an account to join the community. Sign up with your email and username to start discovering and reporting bugs.
+{% endblock description %}
+{% block keywords %}
+    Sign Up, Create Account, Join Community, Email, Username, Discover Bugs, Report Bugs
+{% endblock keywords %}
+{% block og_title %}
+    Sign Up - Join Our Community
+{% endblock og_title %}
+{% block og_description %}
+    Create an account to join our community. Sign up with your email and username to start discovering and reporting bugs.
+{% endblock og_description %}
 {% load i18n %}
 {% load custom_tags %}
 {% block natural_content %}
@@ -32,6 +49,7 @@
                                type="text"
                                id="id_username"
                                name="username"
+                               value="{{ form.username.value|default:'' }}"
                                class="px-4 py-2 w-[100%] h-[28px]  transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.username.errors }}</span>
                     </div>
@@ -40,6 +58,7 @@
                         <input type="email"
                                id="id_email"
                                name="email"
+                               value="{{ form.email.value|default:'' }}"
                                class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.email.errors }}</span>
                     </div>
@@ -50,6 +69,7 @@
                         <input type="password"
                                id="id_password"
                                name="password1"
+                               value="{{ form.password1.value|default:'' }}"
                                class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.password1.errors }}</span>
                     </div>
@@ -60,6 +80,7 @@
                         <input type="password"
                                id="id_password2"
                                name="password2"
+                               value="{{ form.password2.value|default:'' }}"
                                class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.password2.errors }}</span>
                     </div>

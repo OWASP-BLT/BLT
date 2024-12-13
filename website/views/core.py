@@ -1,7 +1,7 @@
 import json
 import os
+import subprocess
 import urllib
-import uuid
 from datetime import datetime, timezone
 
 import requests
@@ -37,6 +37,7 @@ from sendgrid import SendGridAPIClient
 from blt import settings
 from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 from website.models import (
+    Badge,
     ChatBotLog,
     Domain,
     Issue,
@@ -384,10 +385,8 @@ def add_suggestions(request):
         data = json.loads(request.body)
         title = data.get("title")
         description = data.get("description", "")
-        id = str(uuid.uuid4())
-        print(description, title, id)
         if title and description and user:
-            suggestion = Suggestion(user=user, title=title, description=description, id=id)
+            suggestion = Suggestion(user=user, title=title, description=description)
             suggestion.save()
             messages.success(request, "Suggestion added successfully.")
             return JsonResponse({"status": "success"})
@@ -591,6 +590,12 @@ def sitemap(request):
     return render(request, "sitemap.html", {"random_domain": random_domain})
 
 
+def badge_list(request):
+    badges = Badge.objects.all()
+    badges = Badge.objects.annotate(user_count=Count("userbadge"))
+    return render(request, "badges.html", {"badges": badges})
+
+
 def sponsor_view(request):
     from bitcash.network import NetworkAPI
 
@@ -612,6 +617,10 @@ def sponsor_view(request):
     return render(request, "sponsor.html", context={"balance": balance})
 
 
+def donate_view(request):
+    return render(request, "donate.html")
+
+
 @require_GET
 def robots_txt(request):
     lines = [
@@ -621,8 +630,25 @@ def robots_txt(request):
     return HttpResponse("\n".join(lines), content_type="text/plain")
 
 
+import os
+
+
+def get_last_commit_date():
+    try:
+        return (
+            subprocess.check_output(
+                ["git", "log", "-1", "--format=%cd"], cwd=os.path.dirname(os.path.dirname(__file__))
+            )
+            .decode("utf-8")
+            .strip()
+        )
+    except FileNotFoundError:
+        return "Not available"
+
+
 def home(request):
-    return render(request, "home.html")
+    last_commit = get_last_commit_date()
+    return render(request, "home.html", {"last_commit": last_commit})
 
 
 def handler404(request, exception):

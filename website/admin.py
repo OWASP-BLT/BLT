@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.template.defaultfilters import truncatechars
 from django.utils import timezone
@@ -7,6 +8,7 @@ from import_export.admin import ImportExportModelAdmin
 
 from website.models import (
     IP,
+    Activity,
     Bid,
     Blocked,
     ChatBotLog,
@@ -16,6 +18,7 @@ from website.models import (
     Domain,
     Hunt,
     HuntPrize,
+    Integration,
     InviteFriend,
     Issue,
     IssueScreenshot,
@@ -23,6 +26,7 @@ from website.models import (
     Payment,
     Points,
     Project,
+    SlackIntegration,
     Subscription,
     Suggestion,
     SuggestionVotes,
@@ -211,18 +215,18 @@ class PointsAdmin(admin.ModelAdmin):
 admin.site.unregister(User)
 
 
-class UserAdmin(ImportExportModelAdmin):
-    resource_class = UserResource
-    list_display = (
-        "id",
-        "username",
-        "email",
-        "first_name",
-        "last_name",
-        "is_active",
-        "date_joined",
-        "is_staff",
-    )
+# class UserAdmin(ImportExportModelAdmin):
+#     resource_class = UserResource
+#     list_display = (
+#         "id",
+#         "username",
+#         "email",
+#         "first_name",
+#         "last_name",
+#         "is_active",
+#         "date_joined",
+#         "is_staff",
+#     )
 
 
 class UserProfileAdmin(admin.ModelAdmin):
@@ -442,3 +446,6 @@ admin.site.register(IP, IPAdmin)
 admin.site.register(Transaction)
 admin.site.register(Monitor, MonitorAdmin)
 admin.site.register(Tag, TagAdmin)
+admin.site.register(Integration)
+admin.site.register(SlackIntegration)
+admin.site.register(Activity)

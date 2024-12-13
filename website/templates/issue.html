@@ -3,7 +3,7 @@
 {% block metaTags %}
     <title>
         {% block title %}
-            BLT Issue - {{ object.description|escapejs }}
+            {% env 'PROJECT_NAME' %} Issue - {{ object.description|escapejs }}
         {% endblock title %}
     </title>
     <meta name="description"
@@ -16,13 +16,12 @@
     <meta property="og:title"
           content="{% block og_title %}{{ object.description }}{% endblock og_title %}" />
     {% for screenshot in screenshots %}
-        <meta property="og:image"
-              content="https://{% env 'FQDN' %}{% block og_image %}{{ screenshot.image.url }}{% endblock og_image %}" />
+        <meta property="og:image" content="https://{% env 'FQDN' %}{% block og_image %}{{ screenshot.image.url }}{% endblock og_image %}" />
     {% endfor %}
     <meta property="og:description"
           content="{{ object.markdown_description|escapejs }}" />
     <meta name="keywords"
-          content="{% block keywords %}BLT, bug, tracking, company, easy{% endblock keywords %}">
+          content="{% block keywords %}{% env 'PROJECT_NAME' %}, bug, tracking, company, easy{% endblock keywords %}">
     <link rel="canonical" href="https://{% env 'FQDN' %}/issue/{{ object.id }}">
     <meta property="og:url"
           content="https://{% env 'FQDN' %}/issue/{{ object.id }}" />
@@ -35,7 +34,6 @@
 {% endblock metaTags %}
 {% load static %}
 {% load gravatar %}
-{% load custom_tags %}
 {% block content %}
     <style>
     .nav-btn.active {
@@ -107,9 +105,7 @@
             {% include "./includes/issue_right_info.html" %}
         </div>
     </div>
-    <script src="{% static '/company/js/md_editor.js' %}"></script>
-    <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
-    <script src="https://cdn.jsdelivr.net/npm/markdown-it@12.1.0/dist/markdown-it.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
     <script>
     var flagClose = document.getElementById("close-flag");
     var likeClose = document.getElementById("close-like");
@@ -130,13 +126,14 @@
     }
     </script>
     <script>
-    const md = window.markdownit();
-    const markdownContent = `{{ object.markdown_description|escapejs }}`;
-    const renderedHtml = md.render(markdownContent);
-    // const renderedHtml = parse(markdownContent);
-    // const renderedHtml = marked.parse(markdownContent)
-
-    $("#bug_report").html(renderedHtml);
+    if (window.markdownit) {
+        const md = new window.markdownit();
+        const markdownContent = `{{ object.markdown_description|escapejs }}`;
+        const renderedHtml = md.render(markdownContent);
+        $("#bug_report").html(renderedHtml);
+    } else {
+        console.error('MarkdownIt library failed to load.');
+    }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"
             integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw="

@@ -48,7 +48,9 @@ from comments.models import Comment
 from website.forms import CaptchaForm
 from website.models import (
     IP,
+    Activity,
     Bid,
+    ContentType,
     Domain,
     Hunt,
     Issue,
@@ -247,10 +249,13 @@ def UpdateIssue(request):
         return HttpResponse("Missing issue ID")
     issue = get_object_or_404(Issue, pk=request.POST.get("issue_pk"))
     try:
-        for token in Token.objects.all():
-            if request.POST["token"] == token.key:
-                request.user = User.objects.get(id=token.user_id)
-                tokenauth = True
+        tokenauth = False
+        if "token" in request.POST:
+            for token in Token.objects.all():
+                if request.POST["token"] == token.key:
+                    request.user = User.objects.get(id=token.user_id)
+                    tokenauth = True
+                    break
     except:
         tokenauth = False
     if (
@@ -334,8 +339,12 @@ def newhome(request, template="new_home.html"):
     bugs_screenshots = {issue: issue.screenshots.all()[:3] for issue in issues_with_screenshots}
 
     current_time = now()
-    leaderboard = User.objects.filter(
-        points__created__month=current_time.month, points__created__year=current_time.year
+    leaderboard = (
+        User.objects.filter(
+            points__created__month=current_time.month, points__created__year=current_time.year
+        )
+        .annotate(total_points=Sum("points__score"))
+        .order_by("-total_points")
     )
 
     context = {
@@ -348,9 +357,11 @@ def newhome(request, template="new_home.html"):
 
 def delete_issue(request, id):
     try:
-        token = Token.objects.get(key=request.POST["token"])
-        request.user = User.objects.get(id=token.user_id)
-        tokenauth = True
+        # TODO: Refactor this for a direct query instead of looping through all tokens
+        for token in Token.objects.all():
+            if request.POST["token"] == token.key:
+                request.user = User.objects.get(id=token.user_id)
+                tokenauth = True
     except Token.DoesNotExist:
         tokenauth = False
 
@@ -379,6 +390,14 @@ def remove_user_from_issue(request, id):
     issue = Issue.objects.get(id=id)
     if request.user.is_superuser or request.user == issue.user:
         issue.remove_user()
+        # Remove user from corresponding activity object that was created
+        issue_activity = Activity.objects.filter(
+            content_type=ContentType.objects.get_for_model(Issue), object_id=id
+        ).first()
+        # Have to define a default anonymous user since the not null constraint fails
+        anonymous_user = User.objects.get_or_create(username="anonymous")[0]
+        issue_activity.user = anonymous_user
+        issue_activity.save()
         messages.success(request, "User removed from the issue")
         if tokenauth:
             return JsonResponse("User removed from the issue", safe=False)
@@ -604,7 +623,7 @@ class IssueBaseCreate(object):
 
     def process_issue(self, user, obj, created, domain, tokenauth=False, score=3):
         print("processing process_issue for ip address: ", get_client_ip(self.request))
-        p = Points.objects.create(user=user, issue=obj, score=score)
+        p = Points.objects.create(user=user, issue=obj, score=score, reason="Issue reported")
         messages.success(self.request, "Bug added ! +" + str(score))
         try:
             auth = tweepy.Client(
@@ -886,9 +905,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
         def create_issue(self, form):
             tokenauth = False
             obj = form.save(commit=False)
-            if self.request.user.is_authenticated:
+            report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
+
+            # If report_anonymous is true, set user to None
+            if report_anonymous:
+                obj.user = None
+            elif self.request.user.is_authenticated:
                 obj.user = self.request.user
-            if not self.request.user.is_authenticated:
+            else:
                 for token in Token.objects.all():
                     if self.request.POST.get("token") == token.key:
                         obj.user = User.objects.get(id=token.user_id)
@@ -926,7 +950,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
             obj.save()
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):
-                p = Points.objects.create(user=self.request.user, domain=domain, score=1)
+                p = Points.objects.create(
+                    user=self.request.user, domain=domain, score=1, reason="Domain added"
+                )
                 messages.success(self.request, "Domain added! + 1")
 
             if self.request.POST.get("screenshot-hash"):
@@ -941,7 +967,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     save=True,
                 )
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
-
+            if len(self.request.FILES.getlist("screenshots")) == 0:
+                messages.error(self.request, "Screenshot is needed!")
+                obj.delete()
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": captcha_form},
+                )
             if len(self.request.FILES.getlist("screenshots")) > 5:
                 messages.error(self.request, "Max limit of 5 images!")
                 obj.delete()
@@ -986,33 +1019,36 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             obj.save()
 
-            if self.request.user.is_authenticated:
-                total_issues = Issue.objects.filter(user=self.request.user).count()
-                user_prof = UserProfile.objects.get(user=self.request.user)
-                if total_issues <= 10:
-                    user_prof.title = 1
-                elif total_issues <= 50:
-                    user_prof.title = 2
-                elif total_issues <= 200:
-                    user_prof.title = 3
-                else:
-                    user_prof.title = 4
+            if not report_anonymous:
+                if self.request.user.is_authenticated:
+                    total_issues = Issue.objects.filter(user=self.request.user).count()
+                    user_prof = UserProfile.objects.get(user=self.request.user)
+                    if total_issues <= 10:
+                        user_prof.title = 1
+                    elif total_issues <= 50:
+                        user_prof.title = 2
+                    elif total_issues <= 200:
+                        user_prof.title = 3
+                    else:
+                        user_prof.title = 4
 
-                user_prof.save()
+                    user_prof.save()
 
-            if tokenauth:
-                total_issues = Issue.objects.filter(user=User.objects.get(id=token.user_id)).count()
-                user_prof = UserProfile.objects.get(user=User.objects.get(id=token.user_id))
-                if total_issues <= 10:
-                    user_prof.title = 1
-                elif total_issues <= 50:
-                    user_prof.title = 2
-                elif total_issues <= 200:
-                    user_prof.title = 3
-                else:
-                    user_prof.title = 4
+                if tokenauth:
+                    total_issues = Issue.objects.filter(
+                        user=User.objects.get(id=token.user_id)
+                    ).count()
+                    user_prof = UserProfile.objects.get(user=User.objects.get(id=token.user_id))
+                    if total_issues <= 10:
+                        user_prof.title = 1
+                    elif total_issues <= 50:
+                        user_prof.title = 2
+                    elif total_issues <= 200:
+                        user_prof.title = 3
+                    else:
+                        user_prof.title = 4
 
-                user_prof.save()
+                    user_prof.save()
 
             redirect_url = "/report"
 

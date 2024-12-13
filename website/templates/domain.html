@@ -16,6 +16,15 @@
     }
     </style>
 {% endblock style %}
+{% block title %}{{ domain.name }} - Domain Dashboard{% endblock %}
+{% block description %}
+    View detailed stats, activities, and the latest information about {{ domain.name }}. Track issues, reports, and see top hunters for this domain.
+{% endblock %}
+{% block keywords %}domain, dashboard, stats, activities, issues, bugs, top hunters{% endblock %}
+{% block og_title %}{{ domain.name }} - Domain Dashboard{% endblock %}
+{% block og_description %}
+    Explore the latest stats, activities, and issues for {{ domain.name }}. Discover top hunters and more.
+{% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="flex lg:!ml-[0px] px-5 mt-[4vh] max-sm:!mt-[5vh] max-sm:!items-center justify-between max-sm:flex-col font-['Ubuntu'] max-sm:translate-x-5 max-sm:translate-y-5">

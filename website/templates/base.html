@@ -12,21 +12,26 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         {% block metaTags %}
+            <!-- Title Block -->
             <title>
                 {% block title %}
                     {% env 'PROJECT_NAME' %}
                 {% endblock title %}
             </title>
+            <!-- Description Meta Tag -->
             <meta name="description"
                   content="{% block description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and companies can get involved and help out.{% endblock description %}">
+            <!-- Keywords Meta Tag -->
             <meta name="keywords"
                   content="{% block keywords %}{% env 'PROJECT_NAME' %}, bug, tracking, company, easy{% endblock keywords %}">
+            <!-- Author Meta Tag -->
             <meta name="author" content="">
+            <!-- Preconnect to Google Fonts (if needed) -->
             <link rel="preconnect" href="https://fonts.gstatic.com">
+            <!-- Open Graph Meta Tags -->
             <meta property="og:title"
                   content="{% block og_title %}{% env 'PROJECT_NAME' %}{% endblock og_title %}" />
-            <meta property="og:image"
-                  content="{% block og_image %}{% static 'img/screenshot.png' %}{% endblock og_image %}" />
+            <meta property="og:image" content="" />
             <meta property="og:description"
                   content="{% block og_description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and companies can get involved and help out.{% endblock og_description %}" />
             <meta property="og:type" content="website" />
@@ -65,14 +70,17 @@
               integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
               crossorigin="anonymous"
               referrerpolicy="no-referrer" />
+        <link href="{% static 'css/checkInModal.css' %}" rel="stylesheet">
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"
                 integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
                 crossorigin="anonymous"></script>
         <script src="{% static 'js/notify.js' %}"></script>
         <script src="{% static 'js/text-slider.js' %}"></script>
         <script src="https://cdn.tailwindcss.com"></script>
-        <script src="https://js.sentry-cdn.com/09eb35561c813a8dd2d6d61372a6db96.min.js"
-                crossorigin="anonymous"></script>
+        {% if not DEBUG %}
+            <script src="https://js.sentry-cdn.com/09eb35561c813a8dd2d6d61372a6db96.min.js"
+                    crossorigin="anonymous"></script>
+        {% endif %}
         {% block head %}
         {% endblock head %}
         {% block style %}
@@ -117,6 +125,7 @@
                     </a>
                 </div>
             {% endblock edit_link %}
+            {% include "includes/checkInModal.html" %}
         </body>
         <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
         <script src="{% static 'js/ui.js' %}"></script>
@@ -163,8 +172,22 @@
             {% for message in messages %}
             $.notify("{{ message }}", {
                 style: "custom",
-                className: "{{message.level_tag }}"
-            }); 
+                className: "{{message.level_tag }}",
+                autoHide: true,
+                autoHideDelay: 2000,
+                clicktoHide: true,
+                position: "left bottom",
+                gap: 5,
+                elementSize: {
+                    width: "auto",
+                    height: "auto"
+                }
+            });
+            setTimeout(function() {
+                $('.notifyjs-wrapper').on('mouseenter', function() {
+                    $(this).fadeOut();
+                    });
+                }, 100);
             {% endfor %} 
         {% endif %}
     });
@@ -178,5 +201,100 @@
         mf.src = "//cdn.mouseflow.com/projects/efbbebea-436f-4b6f-9290-14ab36c8f636.js";
         document.getElementsByTagName("head")[0].appendChild(mf);
     })();
+        </script>
+        <script type="text/javascript">
+            document.addEventListener('DOMContentLoaded', function() {
+            // Check if the modal exists in the DOM
+            const modal = document.getElementById('cardModalDailyStatus');
+            if (!modal) {
+                return; // Exit if modal is not present
+            }
+
+            const closeButton = modal.querySelector('.close-button');
+            const openCheckInButton = document.getElementById('openCheckIn');
+            const checkInForm = document.getElementById('checkInForm');
+
+            // Function to check if form was submitted today
+            function isFormSubmittedToday() {
+                const submittedDate = localStorage.getItem('formSubmittedDateCard');
+                const today = new Date().toISOString().split('T')[0];
+                return submittedDate === today;
+            }
+
+            // Function to show modal
+            function showModal() {
+                modal.classList.remove('hidden');
+                document.body.classList.add('modal-open'); // Prevent background scrolling
+                // Focus on the first input field
+                const firstInput = modal.querySelector('input, textarea');
+                if (firstInput) {
+                    firstInput.focus();
+                }
+            }
+
+            // Function to hide modal
+            function hideModal() {
+                modal.classList.add('hidden');
+                document.body.classList.remove('modal-open'); // Restore background scrolling
+            }
+
+            // Event listener to close modal when clicking the close button
+            closeButton.addEventListener('click', hideModal);
+
+            // Close modal when clicking outside the modal content
+            modal.querySelector('.modal-overlay').addEventListener('click', hideModal);
+
+            // Close modal on 'Esc' key press
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+                    hideModal();
+                }
+            });
+
+            // Event listener to open modal when clicking the openCheckIn button           
+            if (openCheckInButton) {
+                 openCheckInButton.addEventListener('click', showModal);
+             }
+
+            // Handle check-in form submission with AJAX
+            if (checkInForm) {
+                checkInForm.addEventListener('submit', function(e) {
+                    e.preventDefault(); // Prevent the default form submission
+
+                    const formData = new FormData(checkInForm); // Gather form data
+                    const submitButton = checkInForm.querySelector('.submit-button');
+
+                    // Disable the submit button and show a loading state
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Submitting...';
+
+                    fetch(checkInForm.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        },
+                        body: formData
+                    })
+                    .then(response => response.json()) // Expect a JSON response from the server
+                    .then(data => {
+                        if (data.success) {
+                            hideModal(); // Hide the modal on successful submission
+                            localStorage.setItem('formSubmittedDateCard', new Date().toISOString().split('T')[0]); // Store submission date
+                            alert('Your report has been submitted successfully!');
+                        } else {
+                            throw new Error(data.error || 'Submission failed');
+                        }
+                    })
+                    .catch(error => {
+                        alert(`There was an error submitting your report: ${error.message}. Please try again.`);
+                    })
+                    .finally(() => {
+                        // Re-enable the submit button and reset its text
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Submit';
+                    });
+                });
+            }
+        });
         </script>
     </html>

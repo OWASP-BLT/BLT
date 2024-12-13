@@ -1,6 +1,21 @@
 {% extends "base.html" %}
 {% load gravatar %}
 {% load static %}
+{% block title %}
+    {{ user.username }}'s Profile
+{% endblock title %}
+{% block description %}
+    Explore the detailed profile of {{ user.username }}. View their activity, reported bugs, social tags, badges, and other profile information.
+{% endblock description %}
+{% block keywords %}
+    {{ user.username }}'s Profile, User Activity, Reported Bugs, Social Tags, Badges, User Details, User Profile
+{% endblock keywords %}
+{% block og_title %}
+    {{ user.username }}'s Profile - User Activity and Details
+{% endblock og_title %}
+{% block og_description %}
+    Access {{ user.username }}'s profile to see detailed information on their activity, bugs reported, social tags, badges, and more. Engage with their profile and stay connected.
+{% endblock og_description %}
 {% load custom_tags %}
 {% load i18n %}
 {% block head %}
@@ -304,20 +319,74 @@
                     </form>
                 {% endif %}
             </div>
-            <div class="flex items-center justify-between w-[17vw] max-sm:w-[70vw]">
-                <span class="text-[25px] font-['Poppins']">{{ my_score|default:0 }} <span class="text-[19px] text-[#909090]">{% trans "POINTS" %}</span></span>
-                {% if request.user != user and request.user.is_authenticated %}
-                    <span class="text-[25px]">●</span>
-                    {% if request.user.email in followers_list %}
-                        <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl follow_unfollow"
-                                onclick="followUser()"
-                                name="{{ user }}">{% trans "Unfollow" %}</button>
-                    {% else %}
-                        <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl follow_unfollow"
-                                onclick="followUser()"
-                                name="{{ user }}">{% trans "Follow" %}</button>
-                    {% endif %}
-                {% endif %}
+            <div class="flex flex-col items-center lg:items-start text-center lg:text-left bg-[#f7fafc] text-[#2d3748] p-5 rounded-lg shadow-sm w-[22vw] max-sm:w-full  gap-4 cursor-pointer">
+                <!-- Points Section -->
+                <div class="score-container flex items-center justify-center bg-[#f7fafc] text-[#1a202c] p-4 rounded-md shadow-sm w-full transition-transform transform hover:scale-105">
+                    <i class="fa fa-star text-yellow-500 mr-2"></i>
+                    <span class="text-[36px] font-bold text-yellow-500">{{ my_score|default:0 }}</span>
+                    <span class="text-[14px] text-[#4a5568] ml-2">{% trans "POINTS" %}</span>
+                    <i class="fa fa-chevron-down ml-2 transition-transform duration-200"
+                       id="accordion-toggle"></i>
+                </div>
+                <!-- Accordion Content -->
+                <div class="accordion-content hidden p-2 mt-4 rounded-md justify-center">
+                    <table class="min-w-full rounded-lg">
+                        <thead class="bg-[#4a5568] text-white">
+                            <tr>
+                                <th class="py-3 px-4 text-left">Score</th>
+                                <th class="py-3 px-4 text-left">Reason</th>
+                                <th class="py-3 px-4 text-left">Created</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-[#1a202c]">
+                            {% for point in user_points %}
+                                <tr class="border-b border-[#edf2f7]">
+                                    <td class="py-2 px-4 text-yellow-500 font-bold text-center">+ {{ point.score }}</td>
+                                    <td class="py-2 px-4">
+                                        {% if point.issue %}
+                                            <span>Issue created</span>
+                                        {% elif point.domain %}
+                                            <span>Domain added</span>
+                                        {% elif point.reason %}
+                                            <span>{{ point.reason }}</span>
+                                        {% else %}
+                                            <p class="mt-2 text-gray-500">No reason provided</p>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-2 px-4 text-md">{{ point.created|date:"Y-m-d H:i" }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="3" class="py-2 px-4 text-center text-[#4a5568]">No points available.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Streak Section -->
+                <div class="flex flex-col items-center lg:items-start bg-[#f7fafc] text-[#2d3748] p-4 rounded-md shadow-sm w-full">
+                    <h4 class="text-[16px] font-semibold uppercase tracking-wide mb-2">
+                        <i class="fa fa-fire text-red-500"></i> Streak Details
+                    </h4>
+                    <hr class="border-t-[1px] border-[#e2e8f0] opacity-70 w-full mb-3">
+                    <!-- Current Streak -->
+                    <div class="flex items-center justify-between w-full text-[14px] font-medium mb-2 transition-transform transform hover:scale-105">
+                        <span><i class="fa fa-bolt mr-2 text-red-500"></i> Current Streak:</span>
+                        <span class="font-bold text-red-500">{{ user.userprofile.current_streak|default:"0" }}</span>
+                    </div>
+                    <hr class="border-t-[1px] border-[#e2e8f0] opacity-50 w-full mb-2">
+                    <!-- Longest Streak -->
+                    <div class="flex items-center justify-between w-full text-[14px] font-medium mb-2 transition-transform transform hover:scale-105">
+                        <span><i class="fa fa-trophy mr-2 text-red-500"></i> Longest Streak:</span>
+                        <span class="font-bold text-red-500">{{ user.userprofile.longest_streak|default:"0" }}</span>
+                    </div>
+                    <hr class="border-t-[1px] border-[#e2e8f0] opacity-50 w-full mb-2">
+                    <!-- Last Sizzle Check-in -->
+                    <div class="flex items-center justify-between w-full text-[14px] font-medium transition-transform transform hover:scale-105">
+                        <span><i class="fa fa-calendar-check mr-2 text-red-500"></i> Last Sizzle Check-in:</span>
+                        <span class="font-bold text-red-500">{{ user.userprofile.last_check_in|default:"N/A" }}</span>
+                    </div>
+                </div>
             </div>
             <!--add a link here to edit the profile /profile/edit -->
             {% if request.user == user %}
@@ -497,6 +566,9 @@
                     <button class="mr-3" onclick="openBookmarkModal();">
                         <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">📑 {% trans "Bookmarks" %} {{ bookmarks|length }}</div>
                     </button>
+                    <button class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">👁️ {% trans "Profile Views" %} {{ user.userprofile.visit_count }}</div>
+                    </button>
                 </div>
                 <div class="text-2xl font-bold my-4">
                     User Tags
@@ -553,6 +625,35 @@
                             {% endif %}
                         </ul>
                     </div>
+                </div>
+                <div class="font-bold mb-3 mt-4 flex justify-between items-center">
+                    <span>Badges <a href="/badges" title="View Badges" class="text-info"><i class="fas fa-info-circle"></i></a></span>
+                    {% if is_mentor %}
+                        <button id="add-badge-button"
+                                class="btn btn-primary px-4 py-2 rounded-md bg-blue-500 hover:bg-blue-600 text-white">
+                            Assign a Badge
+                        </button>
+                    {% endif %}
+                </div>
+                <div class="badges grid grid-cols-2 gap-4 mt-4">
+                    {% for user_badge in user_badges %}
+                        <div class="badge-item relative text-center bg-gray-100 p-4 rounded-lg shadow-md">
+                            {% if user_badge.badge.icon %}
+                                <img src="{{ user_badge.badge.icon.url }}"
+                                     alt="{{ user_badge.badge.title }}"
+                                     class="w-16 h-16 mx-auto object-contain"
+                                     width="64"
+                                     height="64">
+                            {% endif %}
+                            <h4 class="font-bold text-sm mt-2">{{ user_badge.badge.title }}</h4>
+                            <p class="text-xs text-gray-500 mt-1">Awarded: {{ user_badge.awarded_at|date:"M d, Y" }}</p>
+                            {% if user_badge.reason %}
+                                <p class="text-xs text-gray-400 italic mt-1">Reason: "{{ user_badge.reason }}"</p>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <p class="col-span-full text-center text-gray-500">No badges awarded yet.</p>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -724,6 +825,56 @@
             </div>
         </div>
     </div>
+    <!-- Assign Badge Modal -->
+    <div id="assign-badge-modal"
+         class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden">
+        <div class="bg-white w-full max-w-lg p-6 rounded-lg shadow-lg">
+            <h3 class="text-lg font-semibold mb-4">Assign a Badge</h3>
+            <form method="post" action="{% url 'assign_badge' user.username %}">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="badge" class="block text-sm font-medium text-gray-700">Select a Badge:</label>
+                    <select name="badge"
+                            id="badge"
+                            class="block w-full mt-1 p-2 border rounded-md"
+                            required>
+                        {% for badge in available_badges %}<option value="{{ badge.id }}">{{ badge.title }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="reason" class="block text-sm font-medium text-gray-700">Reason (optional):</label>
+                    <textarea name="reason"
+                              id="reason"
+                              rows="3"
+                              class="block w-full mt-1 p-2 border rounded-md"></textarea>
+                </div>
+                <div class="flex justify-end gap-4">
+                    <button type="button"
+                            class="btn btn-secondary px-4 py-2 rounded-md bg-gray-300 hover:bg-gray-400 text-black"
+                            onclick="closeAssignBadgeModal()">Cancel</button>
+                    <button type="submit"
+                            class="btn btn-primary px-4 py-2 rounded-md bg-blue-500 hover:bg-blue-600 text-white">
+                        Assign
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        // Assign Badge Modal Logic
+        const addBadgeButton = document.getElementById("add-badge-button");
+        const assignBadgeModal = document.getElementById("assign-badge-modal");
+
+        // Open the modal
+        addBadgeButton?.addEventListener("click", () => {
+            assignBadgeModal.classList.remove("hidden");
+        });
+
+        // Close the modal
+        function closeAssignBadgeModal() {
+            assignBadgeModal.classList.add("hidden");
+        }
+    </script>
     <script defer>
     var closeFollow = document.getElementById("close-follow");
     var openFollow = document.getElementById("followers");
@@ -756,6 +907,16 @@
     }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script>
+        document.querySelector('.score-container').addEventListener('click', function() {
+            var accordion = document.querySelector('.accordion-content');
+            var arrow = document.querySelector('#accordion-toggle');
+            
+            accordion.classList.toggle('hidden'); // Toggles the visibility of the accordion
+            arrow.classList.toggle('fa-chevron-down'); // Changes the arrow to point down
+            arrow.classList.toggle('fa-chevron-up'); // Changes the arrow to point up
+        });
+    </script>
     <script>
         var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
         var months = [],

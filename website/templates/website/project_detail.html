@@ -54,7 +54,7 @@
                             {% csrf_token %}
                             <button type="submit"
                                     name="refresh_stats"
-                                    class="icon-button"
+                                    class="icon-button mt-4"
                                     title="Refresh Project Stats">
                                 <i class="fas fa-sync-alt"></i>
                             </button>
@@ -200,13 +200,13 @@
                 </div>
                 <!-- Repo View Count Badge -->
                 <div class="repo-view-count-badge">
-                    <h3>Repo View Count Badge</h3>
+                    <h3 class="text-4xl py-4">Repo View Count Badge</h3>
                     <p>This badge displays the number of views your repository has received:</p>
                     <pre><code>&lt;img alt="Views" src="https://blt.owasp.org/projects/{{project.slug}}/badge"&gt;</code></pre>
                 </div>
                 <!-- Top Contributors -->
                 <div class="contributors-section">
-                    <h3>
+                    <h3 class="text-4xl py-4">
                         Top Contributors
                         <form method="post" action="" class="inline-form">
                             {% csrf_token %}
@@ -399,7 +399,10 @@
         .stat-item {
             background: #f8f9fa;
             border-radius: 8px;
+            align-items: center;
             padding: 10px; /* Reduced padding */
+            display: flex;
+            flex-direction: column;
             text-align: center;
             transition: transform 0.2s;
         }

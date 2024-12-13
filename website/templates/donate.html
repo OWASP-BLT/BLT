@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load custom_tags %}
+{% load i18n %}
+{% load static %}
+{% block title %}Donation Options{% endblock %}
+{% block description %}
+    Support the ongoing development of the OWASP Bug Logging Tool by choosing a sponsorship plan. Help us grow and improve with your contribution.
+{% endblock %}
+{% block keywords %}donation, OWASP, sponsorship, Bug Logging Tool, support, development{% endblock %}
+{% block og_title %}Support OWASP with a Donation{% endblock %}
+{% block og_description %}
+    Choose a sponsorship plan and support the OWASP Bug Logging Tool's development. Your contribution helps improve the tool.
+{% endblock %}
+{% block content %}
+    <!-- Support OWASP Development Section -->
+    {% include "includes/sidenav.html" %}
+    <div class="flex justify-center items-centre">
+        <div class="bg-white shadow-lg rounded-lg pt-10 mt-20 lg:w-1/2 md:w-3/4 max-md:w-full">
+            <h2 class="text-4xl font-semibold text-center text-gray-800 mb-6">Support OWASP with a Donation</h2>
+            <p class="text-lg text-center mb-6 text-gray-600">
+                Contribute directly to the ongoing development of the OWASP Bug Logging Tool (BLT). Choose a sponsorship plan and help us continue to grow and improve.
+            </p>
+            <div class="grid grid-cols-1 gap-6">
+                <a href="https://owasp.org/donate/?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool#sponsor"
+                   class="text-white p-6 rounded-lg text-center hover:bg-gray-200 transition-colors">
+                    <p class="text-xl font-bold">{% trans "Flea Plan" %}</p>
+                    <p class="text-2xl">$25.00 / {% trans "Month" %}</p>
+                </a>
+                <a href="https://owasp.org/donate/?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool#sponsor"
+                   class="text-white p-6 rounded-lg text-center hover:bg-gray-200 transition-colors">
+                    <p class="text-xl font-bold">{% trans "Ant Plan" %}</p>
+                    <p class="text-2xl">$50.00 / {% trans "Month" %}</p>
+                </a>
+                <a href="https://owasp.org/donate/?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool#sponsor"
+                   class="text-white p-6 rounded-lg text-center hover:bg-gray-200 transition-colors">
+                    <p class="text-xl font-bold">{% trans "Wasp Plan" %}</p>
+                    <p class="text-2xl">$100.00 / {% trans "Month" %}</p>
+                </a>
+                <a href="https://owasp.org/donate/?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool#sponsor"
+                   class="text-white p-6 rounded-lg text-center hover:bg-gray-200 transition-colors">
+                    <p class="text-xl font-bold">{% trans "Scorpion Plan" %}</p>
+                    <p class="text-2xl">$500.00 / {% trans "Month" %}</p>
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
