@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}
+    {% load custom_tags %}
     OWASP {% env 'PROJECT_NAME' %} - Community Members
 {% endblock %}
 {% block description %}
