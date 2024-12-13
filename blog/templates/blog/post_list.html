@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}
-    Blog Posts | BLT
+    Blog Posts | {% env 'PROJECT_NAME' %}
 {% endblock title %}
 {% block description %}
-    Explore a collection of blog posts by various authors on BLT. Stay informed, inspired, and engaged with the latest updates!
+    Explore a collection of blog posts by various authors on {% env 'PROJECT_NAME' %}. Stay informed, inspired, and engaged with the latest updates!
 {% endblock description %}
 {% block keywords %}
-    blog posts, BLT, authors, latest updates, blogging, community, articles
+    blog posts, {% env 'PROJECT_NAME' %}, authors, latest updates, blogging, community, articles
 {% endblock keywords %}
 {% block og_title %}
-    Explore Blog Posts on BLT
+    Explore Blog Posts on {% env 'PROJECT_NAME' %}
 {% endblock og_title %}
 {% block og_description %}
-    Dive into a variety of blog posts on BLT. From insightful articles to engaging stories, there's something for everyone!
+    Dive into a variety of blog posts on {% env 'PROJECT_NAME' %}. From insightful articles to engaging stories, there's something for everyone!
 {% endblock og_description %}
 {% block content %}
     <style>

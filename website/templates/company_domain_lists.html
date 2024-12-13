@@ -1,19 +1,19 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
 {% block title %}
-    Manage Domains - BLT Dashboard
+    Manage Domains - {% env 'PROJECT_NAME' %} Dashboard
 {% endblock title %}
 {% block description %}
-    Manage and create new domains in the BLT dashboard. Add domain details such as name, URL, logo, email, and GitHub link.
+    Manage and create new domains in the {% env 'PROJECT_NAME' %} dashboard. Add domain details such as name, URL, logo, email, and GitHub link.
 {% endblock description %}
 {% block keywords %}
-    BLT, domains, manage, create, add, dashboard, name, url, logo, email, github
+{% env 'PROJECT_NAME' %}, domains, manage, create, add, dashboard, name, url, logo, email, github
 {% endblock keywords %}
 {% block og_title %}
-    Manage Domains - BLT Dashboard
+    Manage Domains - {% env 'PROJECT_NAME' %} Dashboard
 {% endblock og_title %}
 {% block og_description %}
-    Manage and create new domains with details like name, URL, logo, email, and GitHub in the BLT dashboard.
+    Manage and create new domains with details like name, URL, logo, email, and GitHub in the {% env 'PROJECT_NAME' %} dashboard.
 {% endblock og_description %}
 {% block content %}
     <section>

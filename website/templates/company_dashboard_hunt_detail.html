@@ -3,19 +3,19 @@
 {% load static %}
 {% load custom_tags %}
 {% block title %}
-    Edit Hunt: {{ hunt.name }} - BLT Dashboard
+    Edit Hunt: {{ hunt.name }} - {% env 'PROJECT_NAME' %} Dashboard
 {% endblock title %}
 {% block description %}
-    Edit the details of the hunt "{{ hunt.name }}" in the BLT dashboard. Update the description, start time, and end time of the hunt.
+    Edit the details of the hunt "{{ hunt.name }}" in the {% env 'PROJECT_NAME' %} dashboard. Update the description, start time, and end time of the hunt.
 {% endblock description %}
 {% block keywords %}
-    BLT, hunt, edit, update, description, time, schedule, "{{ hunt.name }}", dashboard
+{% env 'PROJECT_NAME' %}, hunt, edit, update, description, time, schedule, "{{ hunt.name }}", dashboard
 {% endblock keywords %}
 {% block og_title %}
-    Edit Hunt: {{ hunt.name }} - BLT Dashboard
+    Edit Hunt: {{ hunt.name }} - {% env 'PROJECT_NAME' %} Dashboard
 {% endblock og_title %}
 {% block og_description %}
-    Update the hunt "{{ hunt.name }}" details including name, description, start and end times in the BLT dashboard.
+    Update the hunt "{{ hunt.name }}" details including name, description, start and end times in the {% env 'PROJECT_NAME' %} dashboard.
 {% endblock og_description %}
 {% block content %}
     <section>

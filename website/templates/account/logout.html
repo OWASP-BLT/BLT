@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% load static %}
+{% load custom_tags %}
 {% block title %}
     Logout
 {% endblock title %}
 {% block description %}
-    Successfully logout from BLT. Ensure your account's security by logging out after each session.
+    Successfully logout from {% env 'PROJECT_NAME' %}. Ensure your account's security by logging out after each session.
 {% endblock description %}
 {% block keywords %}
     Logout, Secure Logout, Account Security, Log Out, End Session
@@ -13,7 +14,7 @@
     Logout - Secure Your Account
 {% endblock og_title %}
 {% block og_description %}
-    Successfully logout from BLT to secure your account. Ensure your account's security by logging out after each session.
+    Successfully logout from {% env 'PROJECT_NAME' %} to secure your account. Ensure your account's security by logging out after each session.
 {% endblock og_description %}
 {% load i18n %}
 {% block content %}

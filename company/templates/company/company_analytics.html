@@ -1,7 +1,8 @@
 {% extends "company/company_dashboard_base.html" %}
 {% load static %}
+{% load custom_tags %}
 {% block title %}
-    Organization Analytics | OWASP BLT
+    Organization Analytics | {% env 'PROJECT_NAME' %} 
 {% endblock title %}
 {% block body %}
     {% block edit_link %}

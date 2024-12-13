@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}OWASP BLT - Community Members{% endblock %}
+{% block title %}OWASP {% env 'PROJECT_NAME' %} - Community Members{% endblock %}
 {% block description %}
-    Meet the contributors to the OWASP BLT project. Discover their profiles, including their contributions, social media links, and more.
+    Meet the contributors to the OWASP {% env 'PROJECT_NAME' %} project. Discover their profiles, including their contributions, social media links, and more.
 {% endblock %}
 {% block keywords %}
-    OWASP, BLT, community members, contributors, open source, social links, GitHub, LinkedIn, Twitter
+    OWASP, {% env 'PROJECT_NAME' %}, community members, contributors, open source, social links, GitHub, LinkedIn, Twitter
 {% endblock %}
-{% block og_title %}OWASP BLT - Community Members{% endblock %}
+{% block og_title %}OWASP {% env 'PROJECT_NAME' %} - Community Members{% endblock %}
 {% block og_description %}
-    Explore the profiles of contributors to the OWASP BLT project. Learn more about their contributions, locations, and social media links.
+    Explore the profiles of contributors to the OWASP {% env 'PROJECT_NAME' %} project. Learn more about their contributions, locations, and social media links.
 {% endblock %}
 {% block style %}
     <style type="text/tailwindcss">

@@ -3,25 +3,25 @@
 {% load static %}
 {% load custom_tags %}
 {% block title %}
-    BLT Tomato - OWASP BLT Project
+{% env 'PROJECT_NAME' %} Tomato - OWASP {% env 'PROJECT_NAME' %} Project
 {% endblock title %}
 {% block description %}
-    Explore the OWASP BLT Tomato project and discover other OWASP projects seeking funding. You can also donate to support these projects.
+    Explore the OWASP {% env 'PROJECT_NAME' %} Tomato project and discover other OWASP projects seeking funding. You can also donate to support these projects.
 {% endblock description %}
 {% block keywords %}
-    OWASP, BLT Tomato, funding, OWASP projects, donation, open-source, funding.yml
+    OWASP, {% env 'PROJECT_NAME' %} Tomato, funding, OWASP projects, donation, open-source, funding.yml
 {% endblock keywords %}
 {% block og_title %}
-    BLT Tomato - OWASP BLT Project
+{% env 'PROJECT_NAME' %} Tomato - OWASP {% env 'PROJECT_NAME' %} Project
 {% endblock og_title %}
 {% block og_description %}
-    Support the OWASP BLT Tomato project and other OWASP projects by donating through funding.yml. Help fund open-source initiatives.
+    Support the OWASP {% env 'PROJECT_NAME' %} Tomato project and other OWASP projects by donating through funding.yml. Help fund open-source initiatives.
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="min-h-screen flex flex-col mx-4 mt-5">
         <h2 class="text-4xl font-semibold my-8 p-5 text-white rounded-md bg-[#d9534f]">
-            BLT Tomato - This is an OWASP BLT project created to help other OWASP projects.
+            {% env 'PROJECT_NAME' %} Tomato - This is an OWASP {% env 'PROJECT_NAME' %} project created to help other OWASP projects.
         </h2>
         {% if projects %}
             <p class="text-xl font-semibold mt-5">The following OWASP projects are seeking funding and have a funding.yml file:</p>

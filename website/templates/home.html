@@ -1,15 +1,16 @@
 {% extends "base.html" %}
 {% load static %}
+{% load custom_tags %}
 {% block title %}Home - Bug Logging Tool{% endblock %}
 {% block description %}
-    Welcome to OWASP BLT, a platform to report bugs, earn rewards, and help secure the web through community-driven collaboration.
+    Welcome to OWASP {% env 'PROJECT_NAME' %}, a platform to report bugs, earn rewards, and help secure the web through community-driven collaboration.
 {% endblock %}
 {% block keywords %}
     Bug Logging Tool, OWASP, security, bug reporting, rewards, open source, community, web security, contributions
 {% endblock %}
 {% block og_title %}Home - Bug Logging Tool{% endblock %}
 {% block og_description %}
-    Welcome to OWASP BLT, a platform to report bugs, earn rewards, and help secure the web through community-driven collaboration.
+    Welcome to OWASP {% env 'PROJECT_NAME' %}, a platform to report bugs, earn rewards, and help secure the web through community-driven collaboration.
 {% endblock %}
 {% block content %}
     <!-- Include Sidebar -->

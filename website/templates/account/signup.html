@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}
-    Sign Up | BLT
+    Sign Up | {% env 'PROJECT_NAME' %}
 {% endblock title %}
 {% block description %}
     Create an account to join the community. Sign up with your email and username to start discovering and reporting bugs.

@@ -1,19 +1,20 @@
 {% extends "base.html" %}
 {% load static %}
+{% load custom_tags %}
 {% block title %}
-    {{ post.title }} | BLT
+    {{ post.title }} | {% env 'PROJECT_NAME' %}
 {% endblock title %}
 {% block description %}
-    Read "{{ post.title }}" by {{ post.author }}. Published on {{ post.created_at }}. Explore this and more on BLT.
+    Read "{{ post.title }}" by {{ post.author }}. Published on {{ post.created_at }}. Explore this and more on {% env 'PROJECT_NAME' %}.
 {% endblock description %}
 {% block keywords %}
-    {{ post.title }}, blog post, {{ post.author }}, BLT, {{ post.created_at }}, {{ post.title|slugify }}
+    {{ post.title }}, blog post, {{ post.author }}, {% env 'PROJECT_NAME' %}, {{ post.created_at }}, {{ post.title|slugify }}
 {% endblock keywords %}
 {% block og_title %}
-    {{ post.title }} - BLT
+    {{ post.title }} - {% env 'PROJECT_NAME' %}
 {% endblock og_title %}
 {% block og_description %}
-    Discover "{{ post.title }}" by {{ post.author }} on BLT. Published on {{ post.created_at }}, dive into the content to learn more!
+    Discover "{{ post.title }}" by {{ post.author }} on {% env 'PROJECT_NAME' %}. Published on {{ post.created_at }}, dive into the content to learn more!
 {% endblock og_description %}
 {% block content %}
     <style>

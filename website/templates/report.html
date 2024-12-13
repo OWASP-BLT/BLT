@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load static %}
+{% load custom_tags %}
 {% block title %}
-    Report an issue | OWASP BLT
+    Report an issue | OWASP {% env 'PROJECT_NAME' %}
 {% endblock title %}
 {% block description %}
     Report a bug by providing the domain URL, bug title, and type. Attach screenshots and categorize the bug to ensure comprehensive reporting.
@@ -20,7 +21,6 @@
 {% load socialaccount %}
 {% load humanize %}
 {% providers_media_js %}
-{% load custom_tags %}
 {% block style %}
     <style>
     .captcha-form img{
