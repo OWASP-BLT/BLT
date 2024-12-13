@@ -16,7 +16,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
 from django.http import (
@@ -226,9 +226,9 @@ class UserProfileDetailView(DetailView):
         context["is_mentor"] = UserBadge.objects.filter(user=user, badge__title="Mentor").exists()
         context["available_badges"] = Badge.objects.all()
 
-        context["my_score"] = list(
-            Points.objects.filter(user=self.object).aggregate(total_score=Sum("score")).values()
-        )[0]
+        user_points = Points.objects.filter(user=self.object)
+        context["user_points"] = user_points
+        context["my_score"] = list(user_points.aggregate(total_score=Sum("score")).values())[0]
         context["websites"] = (
             Domain.objects.filter(issue__user=self.object)
             .annotate(total=Count("issue"))
@@ -877,6 +877,26 @@ def assign_badge(request, username):
     UserBadge.objects.create(user=user, badge=badge, awarded_by=request.user, reason=reason)
     messages.success(request, f"{badge.title} badge assigned to {user.username}.")
     return redirect("profile", slug=username)
+
+
+def badge_user_list(request, badge_id):
+    badge = get_object_or_404(Badge, id=badge_id)
+
+    profiles = (
+        UserProfile.objects.filter(user__userbadge__badge=badge)
+        .select_related("user")
+        .distinct()
+        .annotate(awarded_at=F("user__userbadge__awarded_at"))
+    )
+
+    return render(
+        request,
+        "badge_user_list.html",
+        {
+            "badge": badge,
+            "profiles": profiles,
+        },
+    )
 
 
 @csrf_exempt
