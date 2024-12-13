@@ -1,5 +1,20 @@
 {% extends "base.html" %}
 {% load static %}
+{% block title %}
+    {{ user.username }}'s Sizzle Report
+{% endblock title %}
+{% block description %}
+    View the Sizzle report for {{ user.username }}. Track daily activities, issue titles, durations, and start times for an overview of their work progress.
+{% endblock description %}
+{% block keywords %}
+    Sizzle Report, {{ user.username }}'s Report, Time Tracking, Work Progress, Issue Titles, Daily Activities
+{% endblock keywords %}
+{% block og_title %}
+    {{ user.username }}'s Sizzle Report - Track Work Progress
+{% endblock og_title %}
+{% block og_description %}
+    Access the Sizzle report for {{ user.username }} to track daily activities, issue titles, durations, and start times. Get an overview of their work progress and time management.
+{% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container">

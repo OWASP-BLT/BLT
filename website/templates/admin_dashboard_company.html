@@ -1,5 +1,20 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
+{% block title %}
+    Manage Organizations | {% env 'PROJECT_NAME' %}
+{% endblock title %}
+{% block description %}
+    Manage and create organizations in {% env 'PROJECT_NAME' %}
+{% endblock description %}
+{% block keywords %}
+    manage, organizations, create, admin
+{% endblock keywords %}
+{% block og_title %}
+    Manage Organizations - {% env 'PROJECT_NAME' %}
+{% endblock og_title %}
+{% block og_description %}
+    Manage and create new organizations in {% env 'PROJECT_NAME' %}. View active and inactive organizations, and perform administrative tasks.
+{% endblock og_description %}
 {% block content %}
     <section>
         {% include "includes/admin_sidenav.html" %}

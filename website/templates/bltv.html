@@ -1,4 +1,21 @@
 {% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}
+    {% env 'PROJECT_NAME' %}V - Videos on {% env 'PROJECT_NAME' %} Projects
+{% endblock title %}
+{% block description %}
+    Watch videos related to the {% env 'PROJECT_NAME' %} projects. Learn how to configure, host, and use various tools in the OWASP {% env 'PROJECT_NAME' %} ecosystem through video tutorials.
+{% endblock description %}
+{% block keywords %}
+    {% env 'PROJECT_NAME' %}V, {% env 'PROJECT_NAME' %} projects, video tutorials, YouTube, Slack bot, PythonAnywhere, OWASP
+{% endblock keywords %}
+{% block og_title %}
+    {% env 'PROJECT_NAME' %}V - Videos on {% env 'PROJECT_NAME' %} Projects
+{% endblock og_title %}
+{% block og_description %}
+    Explore {% env 'PROJECT_NAME' %} project tutorials on YouTube. Learn to configure Slack bots and host them on platforms like PythonAnywhere.
+{% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <style>
