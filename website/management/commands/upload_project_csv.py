@@ -121,7 +121,7 @@ class Command(BaseCommand):
 
             project_types = [pt.strip() for pt in project_type_csv.split(",") if pt.strip()]
             external_links_list = [
-                l.strip() for l in re.split(r"[\n,]+", external_links_csv) if l.strip()
+                link.strip() for link in re.split(r"[\n,]+", external_links_csv) if link.strip()
             ]
 
             try:
@@ -355,13 +355,14 @@ class Command(BaseCommand):
                             "open_pull_requests", 0
                         )
                         additional_repo.commit_count = add_repo_data.get("commit_count", 0)
-                        additional_repo.contributor_count = add_repo_data.get("contributor_count", 0)
+                        additional_repo.contributor_count = add_repo_data.get(
+                            "contributor_count", 0
+                        )
                         additional_repo.release_name = add_repo_data.get("release_name")
                         release_datetime = add_repo_data.get("release_datetime")
                         additional_repo.release_datetime = (
                             parse_datetime(release_datetime) if release_datetime else None
                         )
-
 
                         additional_repo.save()
 
