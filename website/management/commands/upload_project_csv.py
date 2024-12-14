@@ -1,14 +1,15 @@
 import csv
-import time
 import re
+import time
+
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.utils.dateparse import parse_datetime
 from django.db import transaction
 from django.template.defaultfilters import slugify
+from django.utils.dateparse import parse_datetime
 
-from website.models import Project, AdditionalRepo, Contributor, Tag
+from website.models import AdditionalRepo, Contributor, Project, Tag
 
 
 class RateLimitException(Exception):
@@ -45,7 +46,9 @@ class Command(BaseCommand):
 
         # Check if GITHUB_TOKEN is set
         if not getattr(settings, "GITHUB_TOKEN", None):
-            self.stderr.write(self.style.ERROR("GITHUB_TOKEN is not configured in settings. Aborting."))
+            self.stderr.write(
+                self.style.ERROR("GITHUB_TOKEN is not configured in settings. Aborting.")
+            )
             return
 
         headers = {
@@ -57,7 +60,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.NOTICE(f"Starting import from {csv_file}..."))
 
         try:
-            with open(csv_file, newline='', encoding='utf-8') as f:
+            with open(csv_file, newline="", encoding="utf-8") as f:
                 lines = f.read().splitlines()
         except FileNotFoundError as e:
             self.stderr.write(self.style.ERROR(f"CSV file not found: {e}"))
@@ -80,7 +83,7 @@ class Command(BaseCommand):
             return
 
         lines = lines[header_index:]
-        
+
         try:
             reader = csv.DictReader(lines)
         except csv.Error as e:
@@ -100,50 +103,64 @@ class Command(BaseCommand):
             project_type_csv = row.get("Type", "").strip()
             license = row.get("License(s)", "").strip()
 
-            self.stdout.write(self.style.NOTICE(f"Processing row {row_index}: Repo name: {repo_url}"))
+            self.stdout.write(
+                self.style.NOTICE(f"Processing row {row_index}: Repo name: {repo_url}")
+            )
 
             if repo_url and not repo_url.startswith("https://github.com/"):
                 repo_url = f"https://github.com/OWASP/{repo_url}"
 
             # Validate main repo URL
             if not repo_url or not repo_url.startswith("https://github.com/"):
-                self.stderr.write(self.style.WARNING(
-                    f"Skipping row {row_index} due to invalid Repo URL: {repo_url}"
-                ))
+                self.stderr.write(
+                    self.style.WARNING(
+                        f"Skipping row {row_index} due to invalid Repo URL: {repo_url}"
+                    )
+                )
                 continue
 
             project_types = [pt.strip() for pt in project_type_csv.split(",") if pt.strip()]
-            external_links_list = [l.strip() for l in re.split(r"[\n,]+", external_links_csv) if l.strip()]
+            external_links_list = [
+                l.strip() for l in re.split(r"[\n,]+", external_links_csv) if l.strip()
+            ]
 
             try:
                 main_repo_data = self.fetch_github_repo_data(
                     repo_url, headers, delay_on_rate_limit, max_rate_limit_retries
                 )
             except RateLimitException:
-                self.stderr.write(self.style.ERROR(
-                    f"Rate limit exceeded even after retries for {repo_url}, aborting..."
-                ))
+                self.stderr.write(
+                    self.style.ERROR(
+                        f"Rate limit exceeded even after retries for {repo_url}, aborting..."
+                    )
+                )
                 return
             except requests.exceptions.RequestException as e:
-                self.stderr.write(self.style.WARNING(
-                    f"Network error while fetching data for {repo_url}: {e}. Skipping."
-                ))
+                self.stderr.write(
+                    self.style.WARNING(
+                        f"Network error while fetching data for {repo_url}: {e}. Skipping."
+                    )
+                )
                 continue
             except ValueError as e:
                 # Handles possible JSON decode errors or other value errors
-                self.stderr.write(self.style.WARNING(
-                    f"Value error fetching data for {repo_url}: {e}. Skipping."
-                ))
+                self.stderr.write(
+                    self.style.WARNING(f"Value error fetching data for {repo_url}: {e}. Skipping.")
+                )
                 continue
 
             if not main_repo_data:
-                self.stderr.write(self.style.WARNING(
-                    f"Could not retrieve main repo data for {repo_url}. Skipping."
-                ))
+                self.stderr.write(
+                    self.style.WARNING(
+                        f"Could not retrieve main repo data for {repo_url}. Skipping."
+                    )
+                )
                 continue
 
             with transaction.atomic():
-                slug = main_repo_data["name"].lower() if main_repo_data.get("name") else "unnamed-repo"
+                slug = (
+                    main_repo_data["name"].lower() if main_repo_data.get("name") else "unnamed-repo"
+                )
                 slug = slug.replace(".", "-")
                 if len(slug) > 50:
                     slug = slugify(slug[:50])
@@ -156,7 +173,8 @@ class Command(BaseCommand):
                     defaults={
                         "name": main_repo_data.get("name", "Unnamed Project"),
                         "github_url": repo_url,
-                        "description": main_repo_data.get("description") or main_repo_data.get("name", ""),
+                        "description": main_repo_data.get("description")
+                        or main_repo_data.get("name", ""),
                         "logo_url": main_repo_data.get("owner_avatar_url", ""),
                     },
                 )
@@ -199,22 +217,21 @@ class Command(BaseCommand):
                 project.contributor_count = main_repo_data.get("contributor_count", 0)
                 project.release_name = main_repo_data.get("release_name")
                 release_datetime = main_repo_data.get("release_datetime")
-                project.release_datetime = parse_datetime(release_datetime) if release_datetime else None
+                project.release_datetime = (
+                    parse_datetime(release_datetime) if release_datetime else None
+                )
 
                 project.save()
 
                 if project_types:
                     for tname in project_types:
                         tag_slug = slugify(tname)
-                        tag, _ = Tag.objects.get_or_create(
-                            slug=tag_slug,
-                            defaults={"name": tname}
-                        )
+                        tag, _ = Tag.objects.get_or_create(slug=tag_slug, defaults={"name": tname})
                         project.tags.add(tag)
 
-                self.stdout.write(self.style.SUCCESS(
-                    f"Updated main project: {project.name} ({repo_url})"
-                ))
+                self.stdout.write(
+                    self.style.SUCCESS(f"Updated main project: {project.name} ({repo_url})")
+                )
 
                 # Fetch and update contributors for the main project
                 main_contributors = None
@@ -223,30 +240,38 @@ class Command(BaseCommand):
                         repo_url, headers, delay_on_rate_limit, max_rate_limit_retries
                     )
                 except requests.exceptions.RequestException as e:
-                    self.stderr.write(self.style.WARNING(
-                        f"Network error fetching contributors for {repo_url}: {e}"
-                    ))
+                    self.stderr.write(
+                        self.style.WARNING(
+                            f"Network error fetching contributors for {repo_url}: {e}"
+                        )
+                    )
                 except RateLimitException:
-                    self.stderr.write(self.style.WARNING(
-                        f"Rate limit hit while fetching contributors for {repo_url}"
-                    ))
+                    self.stderr.write(
+                        self.style.WARNING(
+                            f"Rate limit hit while fetching contributors for {repo_url}"
+                        )
+                    )
                 except ValueError as e:
-                    self.stderr.write(self.style.WARNING(
-                        f"Value error fetching contributors for {repo_url}: {e}"
-                    ))
+                    self.stderr.write(
+                        self.style.WARNING(f"Value error fetching contributors for {repo_url}: {e}")
+                    )
 
                 if main_contributors is not None:
                     self.update_contributors_for_entity(project, main_contributors)
 
                 # Handle Additional Repos from "Code URL"
                 if code_urls:
-                    additional_urls = [cu.strip() for cu in re.split(r"[,\n]+", code_urls) if cu.strip()]
+                    additional_urls = [
+                        cu.strip() for cu in re.split(r"[,\n]+", code_urls) if cu.strip()
+                    ]
 
                     for add_url in additional_urls:
                         if not add_url.startswith("https://github.com/"):
-                            self.stderr.write(self.style.WARNING(
-                                f"Invalid Additional Repo URL: {add_url}, skipping."
-                            ))
+                            self.stderr.write(
+                                self.style.WARNING(
+                                    f"Invalid Additional Repo URL: {add_url}, skipping."
+                                )
+                            )
                             continue
 
                         try:
@@ -254,28 +279,40 @@ class Command(BaseCommand):
                                 add_url, headers, delay_on_rate_limit, max_rate_limit_retries
                             )
                         except RateLimitException:
-                            self.stderr.write(self.style.ERROR(
-                                f"Rate limit exceeded when fetching additional repo {add_url}. Skipping this repo."
-                            ))
+                            self.stderr.write(
+                                self.style.ERROR(
+                                    f"Rate limit exceeded when fetching additional repo {add_url}. Skipping this repo."
+                                )
+                            )
                             continue
                         except requests.exceptions.RequestException as e:
-                            self.stderr.write(self.style.WARNING(
-                                f"Network error while fetching data for {add_url}: {e}. Skipping."
-                            ))
+                            self.stderr.write(
+                                self.style.WARNING(
+                                    f"Network error while fetching data for {add_url}: {e}. Skipping."
+                                )
+                            )
                             continue
                         except ValueError as e:
-                            self.stderr.write(self.style.WARNING(
-                                f"Value error fetching data for {add_url}: {e}. Skipping."
-                            ))
+                            self.stderr.write(
+                                self.style.WARNING(
+                                    f"Value error fetching data for {add_url}: {e}. Skipping."
+                                )
+                            )
                             continue
 
                         if not add_repo_data:
-                            self.stderr.write(self.style.WARNING(
-                                f"Additional repo not found or inaccessible: {add_url}"
-                            ))
+                            self.stderr.write(
+                                self.style.WARNING(
+                                    f"Additional repo not found or inaccessible: {add_url}"
+                                )
+                            )
                             continue
 
-                        add_slug = add_repo_data["name"].lower() if add_repo_data.get("name") else "unnamed-add-repo"
+                        add_slug = (
+                            add_repo_data["name"].lower()
+                            if add_repo_data.get("name")
+                            else "unnamed-add-repo"
+                        )
                         add_slug = add_slug.replace(".", "-")
                         if len(add_slug) > 50:
                             add_slug = slugify(add_slug[:50])
@@ -289,7 +326,8 @@ class Command(BaseCommand):
                             defaults={
                                 "name": add_repo_data.get("name", "Unnamed Repo"),
                                 "github_url": add_url,
-                                "description": add_repo_data.get("description") or add_repo_data.get("name", ""),
+                                "description": add_repo_data.get("description")
+                                or add_repo_data.get("name", ""),
                                 "logo_url": add_repo_data.get("owner_avatar_url", ""),
                             },
                         )
@@ -299,22 +337,31 @@ class Command(BaseCommand):
                         additional_repo.forks = add_repo_data.get("forks_count", 0)
                         additional_repo.watchers = add_repo_data.get("subscribers_count", 0)
                         additional_repo.network_count = add_repo_data.get("network_count", 0)
-                        additional_repo.subscribers_count = add_repo_data.get("subscribers_count", 0)
+                        additional_repo.subscribers_count = add_repo_data.get(
+                            "subscribers_count", 0
+                        )
                         additional_repo.primary_language = add_repo_data.get("language")
                         additional_repo.license = add_repo_data.get("license")
                         additional_repo.created_at = parse_datetime(add_repo_data.get("created_at"))
                         additional_repo.updated_at = parse_datetime(add_repo_data.get("updated_at"))
                         additional_repo.size = add_repo_data.get("size", 0)
-                        additional_repo.last_commit_date = parse_datetime(add_repo_data.get("pushed_at"))
+                        additional_repo.last_commit_date = parse_datetime(
+                            add_repo_data.get("pushed_at")
+                        )
                         additional_repo.open_issues = add_repo_data.get("open_issues", 0)
                         additional_repo.closed_issues = add_repo_data.get("closed_issues", 0)
                         additional_repo.total_issues = add_repo_data.get("total_issues", 0)
-                        additional_repo.open_pull_requests = add_repo_data.get("open_pull_requests", 0)
+                        additional_repo.open_pull_requests = add_repo_data.get(
+                            "open_pull_requests", 0
+                        )
                         additional_repo.commit_count = add_repo_data.get("commit_count", 0)
                         additional_repo.contributor_count = add_repo_data.get("contributor_count", 0)
                         additional_repo.release_name = add_repo_data.get("release_name")
                         release_datetime = add_repo_data.get("release_datetime")
-                        additional_repo.release_datetime = parse_datetime(release_datetime) if release_datetime else None
+                        additional_repo.release_datetime = (
+                            parse_datetime(release_datetime) if release_datetime else None
+                        )
+
 
                         additional_repo.save()
 
@@ -324,29 +371,38 @@ class Command(BaseCommand):
                                 add_url, headers, delay_on_rate_limit, max_rate_limit_retries
                             )
                         except requests.exceptions.RequestException as e:
-                            self.stderr.write(self.style.WARNING(
-                                f"Network error fetching contributors for {add_url}: {e}"
-                            ))
+                            self.stderr.write(
+                                self.style.WARNING(
+                                    f"Network error fetching contributors for {add_url}: {e}"
+                                )
+                            )
                         except RateLimitException:
-                            self.stderr.write(self.style.WARNING(
-                                f"Rate limit hit while fetching contributors for {add_url}"
-                            ))
+                            self.stderr.write(
+                                self.style.WARNING(
+                                    f"Rate limit hit while fetching contributors for {add_url}"
+                                )
+                            )
                         except ValueError as e:
-                            self.stderr.write(self.style.WARNING(
-                                f"Value error fetching contributors for {add_url}: {e}"
-                            ))
+                            self.stderr.write(
+                                self.style.WARNING(
+                                    f"Value error fetching contributors for {add_url}: {e}"
+                                )
+                            )
 
                         if add_contributors is not None:
                             self.update_contributors_for_entity(additional_repo, add_contributors)
 
-                        self.stdout.write(self.style.SUCCESS(
-                            f"   -> Added/Updated AdditionalRepo: {additional_repo.name} ({add_url})"
-                        ))
+                        self.stdout.write(
+                            self.style.SUCCESS(
+                                f"   -> Added/Updated AdditionalRepo: {additional_repo.name} ({add_url})"
+                            )
+                        )
 
             project_count += 1
 
-        self.stdout.write(self.style.SUCCESS(f"Import completed. Processed {project_count} projects."))
-
+        self.stdout.write(
+            self.style.SUCCESS(f"Import completed. Processed {project_count} projects.")
+        )
 
     def fetch_github_repo_data(self, repo_url, headers, delay, max_retries):
         """
@@ -400,7 +456,9 @@ class Command(BaseCommand):
             "created_at": repo_data.get("created_at", ""),
             "updated_at": repo_data.get("updated_at", ""),
             "pushed_at": repo_data.get("pushed_at", ""),
-            "license": repo_data.get("license", {}).get("name") if repo_data.get("license") else None,
+            "license": repo_data.get("license", {}).get("name")
+            if repo_data.get("license")
+            else None,
             "html_url": repo_data.get("html_url"),
         }
 
@@ -423,7 +481,9 @@ class Command(BaseCommand):
             data["release_name"] = release_info.get("name") or release_info.get("tag_name")
             data["release_datetime"] = release_info.get("published_at")
 
-        commit_count, contributor_data_list = self.compute_commit_count_and_contributors(full_name, headers, delay, max_retries)
+        commit_count, contributor_data_list = self.compute_commit_count_and_contributors(
+            full_name, headers, delay, max_retries
+        )
         data["contributor_count"] = len(contributor_data_list)
         data["commit_count"] = commit_count
 
@@ -487,9 +547,11 @@ class Command(BaseCommand):
             if c_resp.status_code == 404:
                 return None
             if c_resp.status_code != 200:
-                self.stderr.write(self.style.WARNING(
-                    f"Failed to fetch contributors for {full_name}: {c_resp.status_code}"
-                ))
+                self.stderr.write(
+                    self.style.WARNING(
+                        f"Failed to fetch contributors for {full_name}: {c_resp.status_code}"
+                    )
+                )
                 break
 
             contributors_data = c_resp.json()
@@ -520,7 +582,7 @@ class Command(BaseCommand):
                     "avatar_url": avatar_url,
                     "contributor_type": contributor_type,
                     "contributions": contributions,
-                }
+                },
             )
             contributor_obj.name = name
             contributor_obj.github_url = github_url
@@ -533,6 +595,8 @@ class Command(BaseCommand):
 
         entity.contributors.set(contributor_ids)
         entity.save()
-        self.stdout.write(self.style.SUCCESS(
-            f"   -> Updated contributors for {entity.__class__.__name__} '{entity}' with {len(contributor_ids)} contributors."
-        ))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"   -> Updated contributors for {entity.__class__.__name__} '{entity}' with {len(contributor_ids)} contributors."
+            )
+        )

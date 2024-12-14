@@ -1,21 +1,20 @@
 {% load humanize %}
-
 <div class="repo-card">
     <div class="card-glass-effect"></div>
-    
+
     <div class="repo-header">
         <div class="logo-wrapper">
             {% if repo.logo_url %}
-                <img src="{{ repo.logo_url }}" 
-                     alt="{{ repo.name }} logo" 
+                <img src="{{ repo.logo_url }}"
+                     alt="{{ repo.name }} logo"
                      class="repo-logo"
                      height="auto"
                      width="auto">
             {% else %}
                 <!-- Fallback to GitHub owner's avatar from the repo URL -->
                 {% with owner=repo.github_url|cut:"https://github.com/"|cut:"/"|first %}
-                    <img src="https://github.com/{{ owner }}.png" 
-                         alt="{{ repo.name }} logo" 
+                    <img src="https://github.com/{{ owner }}.png"
+                         alt="{{ repo.name }} logo"
                          class="repo-logo"
                          height="auto"
                          width="auto">
@@ -38,10 +37,8 @@
             </div>
         </div>
     </div>
-
     <div class="repo-body">
         <p class="repo-description">{{ repo.description }}</p>
-        
         <div class="repo-stats">
             <div class="stat">
                 <i class="fas fa-star"></i>
@@ -64,7 +61,6 @@
                 <label>Contributors</label>
             </div>
         </div>
-
         <div class="repo-metrics">
             <div class="metric">
                 <i class="fas fa-code-commit"></i>
@@ -84,14 +80,15 @@
             </div>
         </div>
     </div>
-
     <div class="repo-footer">
         <div class="action-buttons">
             <a href="{{ repo.github_url }}" class="btn btn-github" target="_blank">
                 <i class="fab fa-github"></i> View Repository
             </a>
             {% if repo.homepage_url %}
-                <a href="{{ repo.homepage_url }}" class="btn btn-homepage" target="_blank">
+                <a href="{{ repo.homepage_url }}"
+                   class="btn btn-homepage"
+                   target="_blank">
                     <i class="fas fa-globe"></i> Homepage
                 </a>
             {% endif %}
@@ -101,7 +98,6 @@
         </div>
     </div>
 </div>
-
 <style>
 .repo-card {
     background: linear-gradient(145deg, #ffffff, #fafafa);
@@ -352,4 +348,4 @@
         flex-direction: column;
     }
 }
-</style> 
+</style>

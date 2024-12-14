@@ -1,13 +1,11 @@
 {% load humanize %}
-
 <div class="project-card">
     <div class="card-glass-effect"></div>
-    
     <div class="project-header">
         <div class="logo-wrapper">
             {% if project.logo_url %}
-                <img src="{{ project.logo_url }}" 
-                     alt="{{ project.name }} logo" 
+                <img src="{{ project.logo_url }}"
+                     alt="{{ project.name }} logo"
                      class="project-logo"
                      height="auto"
                      width="auto">
@@ -17,13 +15,9 @@
             <h3>{{ project.name }}</h3>
             <div class="project-badges">
                 {% if project.activity_status %}
-                    <span class="badge badge-{{ project.activity_status|lower }}">
-                        {{ project.activity_status }}
-                    </span>
+                    <span class="badge badge-{{ project.activity_status|lower }}">{{ project.activity_status }}</span>
                 {% endif %}
-                {% if project.project_lavel %}
-                    <span class="badge badge-level">{{ project.project_lavel }}</span>
-                {% endif %}
+                {% if project.project_lavel %}<span class="badge badge-level">{{ project.project_lavel }}</span>{% endif %}
                 {% if project.primary_language %}
                     <span class="badge badge-language">
                         <i class="fas fa-code"></i> {{ project.primary_language }}
@@ -32,12 +26,9 @@
             </div>
         </div>
     </div>
-
     <div class="project-body">
         <p class="project-description">{{ project.description }}</p>
-        
         {% include "includes/project_stats.html" with project=project %}
-
         {% if project.tags.all %}
             <div class="project-tags">
                 {% for tag in project.tags.all %}
@@ -52,14 +43,15 @@
 
     <div class="project-footer">
         <div class="action-buttons">
-            <a href="{{ project.github_url }}" class="btn btn-github" target="_blank">
+            <a href="{{ project.github_url }}"
+               class="btn btn-github"
+               target="_blank">
                 <i class="fab fa-github"></i> View on GitHub
             </a>
             <a href="{% url 'project_view' project.slug %}" class="btn btn-details">
                 <i class="fas fa-info-circle"></i> Details
             </a>
         </div>
-        
         {% if project.last_commit_date %}
             <div class="last-update">
                 <i class="fas fa-history"></i>
@@ -68,7 +60,6 @@
         {% endif %}
     </div>
 </div>
-
 <style>
 .project-card {
     background: linear-gradient(145deg, #ffffff, #f5f7fa);
@@ -327,4 +318,4 @@
         grid-template-columns: repeat(2, 1fr);
     }
 }
-</style> 
+</style>

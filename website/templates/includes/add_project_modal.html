@@ -11,11 +11,7 @@
                     <div class="form-group">
                         <label for="github_url">GitHub Repository URL</label>
                         {{ form.github_url }}
-                        {% if form.github_url.errors %}
-                            <div class="invalid-feedback">
-                                {{ form.github_url.errors }}
-                            </div>
-                        {% endif %}
+                        {% if form.github_url.errors %}<div class="invalid-feedback">{{ form.github_url.errors }}</div>{% endif %}
                     </div>
                     <div class="modal-footer">
                         <button type="submit" class="btn btn-primary">
@@ -26,4 +22,4 @@
             </div>
         </div>
     </div>
-</div> 
+</div>

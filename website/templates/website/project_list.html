@@ -1,13 +1,11 @@
 {% extends "base.html" %}
 {% load static %}
 {% load humanize %}
-
 {% block title %}
     Project List
 {% endblock title %}
-
 {% block content %}
-<style>
+    <style>
     /* Project Card Specific Styles */
     .project-title h3 {
         font-size: 1.4rem;
@@ -697,9 +695,8 @@
         transform: translateX(100%);
     }
 }
-</style>
-
-<script>
+    </style>
+    <script>
 // Add this to your JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-remove alerts after 5 seconds
@@ -732,28 +729,28 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-</script>
-
+    </script>
     {% include "includes/sidenav.html" %}
-    
     <div class="container pb-4" style="margin-top: 10rem;">
         <!-- Header Section -->
         <div class="flex flex-col lg:flex-row gap-4 top-bar">
             <h3>Projects: {{ projects.count }}</h3>
-            
             <!-- Action Buttons -->
             <div class="action-buttons">
-                <button class="btn btn-primary" data-toggle="modal" data-target="#addProjectModal">
+                <button class="btn btn-primary"
+                        data-toggle="modal"
+                        data-target="#addProjectModal">
                     <i class="fas fa-plus-circle"></i> Add Project
                 </button>
-                <button class="btn btn-secondary" data-toggle="modal" data-target="#addRepoModal">
+                <button class="btn btn-secondary"
+                        data-toggle="modal"
+                        data-target="#addRepoModal">
                     <i class="fas fa-plus-circle"></i> Add Additional Repo
                 </button>
                 <button class="btn btn-info" data-toggle="modal" data-target="#filterModal">
                     <i class="fas fa-filter"></i> Filter & Search
                 </button>
             </div>
-
             <!-- Refresh Projects Form -->
             <form method="post" class="refresh-projects-form">
                 {% csrf_token %}
@@ -762,21 +759,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
             </form>
         </div>
-
         <!-- Messages Section -->
         {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-                <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'info' %}alert-info{% endif %} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-            {% endfor %}
-        </div>
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'info' %}alert-info{% endif %} alert-dismissible fade show"
+                         role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
         {% endif %}
-
         <!-- Filter Modal -->
         <div class="modal fade" id="filterModal" tabindex="-1">
             <div class="modal-dialog">
@@ -789,46 +785,42 @@ document.addEventListener('DOMContentLoaded', function() {
                         <form method="get" id="filterForm">
                             <!-- Search -->
                             <div class="form-group">
-                                <input type="search" 
-                                       name="search" 
+                                <input type="search"
+                                       name="search"
                                        value="{{ search_query }}"
-                                       class="form-control" 
+                                       class="form-control"
                                        placeholder="Search projects and repos...">
                             </div>
-
                             <!-- Filter Type Selection -->
                             <div class="filter-type-selection mb-3">
                                 <h6>What to filter?</h6>
                                 <select name="filter_type" class="form-select" id="filterTypeSelect">
                                     <option value="all" {% if filter_type == 'all' %}selected{% endif %}>Both Projects & Additional Repos</option>
-                                    <option value="projects" {% if filter_type == 'projects' %}selected{% endif %}>Projects Only</option>
+                                    <option value="projects"
+                                            {% if filter_type == 'projects' %}selected{% endif %}>
+                                        Projects Only
+                                    </option>
                                     <option value="repos" {% if filter_type == 'repos' %}selected{% endif %}>Additional Repos Only</option>
                                 </select>
                             </div>
-
                             <!-- Project Filters -->
                             <div class="filter-section project-filters">
                                 <h6>Project Filters</h6>
                                 <select name="activity_status" class="form-select">
                                     <option value="">Activity Status</option>
                                     {% for status in activity_statuses %}
-                                        <option value="{{ status }}" 
+                                        <option value="{{ status }}"
                                                 {% if selected_status == status %}selected{% endif %}>
                                             {{ status }}
                                         </option>
                                     {% endfor %}
                                 </select>
-
                                 <select name="project_type" class="form-select mt-2">
                                     <option value="">Project Type</option>
                                     {% for type in project_types %}
-                                        <option value="{{ type }}"
-                                                {% if selected_type == type %}selected{% endif %}>
-                                            {{ type }}
-                                        </option>
+                                        <option value="{{ type }}" {% if selected_type == type %}selected{% endif %}>{{ type }}</option>
                                     {% endfor %}
                                 </select>
-
                                 <select name="project_lavel" class="form-select mt-2">
                                     <option value="">Project Level</option>
                                     {% for level in project_levels %}
@@ -839,7 +831,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     {% endfor %}
                                 </select>
                             </div>
-
                             <!-- Additional Repo Filters -->
                             <div class="filter-section repo-filters mt-3">
                                 <h6>Repository Filters</h6>
@@ -853,7 +844,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                     {% endfor %}
                                 </select>
                             </div>
-
                             <!-- Sort Options -->
                             <div class="filter-section mt-3">
                                 <h6>Sort Options</h6>
@@ -861,16 +851,18 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <option value="-created" {% if sort_by == '-created' %}selected{% endif %}>Recently Added</option>
                                     <option value="stars" {% if sort_by == 'stars' %}selected{% endif %}>Stars</option>
                                     <option value="forks" {% if sort_by == 'forks' %}selected{% endif %}>Forks</option>
-                                    <option value="total_issues" {% if sort_by == 'total_issues' %}selected{% endif %}>Issues</option>
-                                    <option value="contributor_count" {% if sort_by == 'contributor_count' %}selected{% endif %}>Contributors</option>
+                                    <option value="total_issues"
+                                            {% if sort_by == 'total_issues' %}selected{% endif %}>Issues</option>
+                                    <option value="contributor_count"
+                                            {% if sort_by == 'contributor_count' %}selected{% endif %}>
+                                        Contributors
+                                    </option>
                                 </select>
-
                                 <select name="order" class="form-select mt-2">
                                     <option value="desc" {% if order == 'desc' %}selected{% endif %}>Descending</option>
                                     <option value="asc" {% if order == 'asc' %}selected{% endif %}>Ascending</option>
                                 </select>
                             </div>
-
                             <div class="modal-footer">
                                 <button type="reset" class="btn btn-secondary">Reset Filters</button>
                                 <button type="submit" class="btn btn-primary">Apply Filters</button>
@@ -880,7 +872,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         </div>
-
         <!-- Project/Repo Grid -->
         <div class="project-grid">
             {% if filter_type == 'repos' %}
@@ -898,55 +889,52 @@ document.addEventListener('DOMContentLoaded', function() {
                 {% endfor %}
             {% endif %}
         </div>
-
         <!-- Pagination -->
         {% if is_paginated %}
-        <nav aria-label="Project pagination" class="pagination-container">
-            <div class="pagination-info">
-                Page {{ page_obj.number }} of {{ paginator.num_pages }}
-                ({{ paginator.count }} total items)
-            </div>
-            
-            <ul class="pagination">
-                {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page=1">&laquo; First</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ page_obj.previous_page_number }}">Previous</a>
-                    </li>
-                {% endif %}
-                
-                {% for num in paginator.page_range %}
-                    {% if num == page_obj.number %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <nav aria-label="Project pagination" class="pagination-container">
+                <div class="pagination-info">
+                    Page {{ page_obj.number }} of {{ paginator.num_pages }}
+                    ({{ paginator.count }} total items)
+                </div>
+                <ul class="pagination">
+                    {% if page_obj.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ num }}">{{ num }}</a>
+                            <a class="page-link"
+                               href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page=1">&laquo; First</a>
+                         </li>
+                            <a class="page-link"
+                               href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ page_obj.previous_page_number }}">Previous</a>
+                         </li>
+                     {% endif %}
+                    {% for num in paginator.page_range %}
+                        {% if num == page_obj.number %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                   href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ page_obj.next_page_number }}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ paginator.num_pages }}">Last &raquo;</a>
                         </li>
                     {% endif %}
-                {% endfor %}
-                
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ page_obj.next_page_number }}">Next</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ paginator.num_pages }}">Last &raquo;</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
+                </ul>
+            </nav>
         {% endif %}
     </div>
-
     {% include "includes/add_project_modal.html" %}
     {% include "includes/add_repo_modal.html" %}
-
     {% block extra_js %}
         <script src="{% static 'js/project_list.js' %}"></script>
     {% endblock %}
-
 {% endblock %}
