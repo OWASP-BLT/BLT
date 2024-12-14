@@ -419,6 +419,7 @@
     max-width: 1200px !important;
     margin: 0 auto;
     padding: 0 4rem; /* Increased padding */
+    margin-top: 5rem;
 }
 
 .project-grid {
@@ -903,39 +904,39 @@ document.addEventListener('DOMContentLoaded', function() {
                                href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page=1">« First</a>
                         </li>
                         <li class="page-item">
-                        <a class="page-link"
-                           href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ page_obj.previous_page_number }}">Previous</a>
-                        </li>
-                {% endif %}
-                {% for num in paginator.page_range %}
-                    {% if num == page_obj.number %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <li class="page-item">
                             <a class="page-link"
-                               href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ num }}">{{ num }}</a>
+                               href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ page_obj.previous_page_number }}">Previous</a>
                         </li>
                     {% endif %}
-                {% endfor %}
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link"
-                           href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ page_obj.next_page_number }}">Next</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link"
-                           href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ paginator.num_pages }}">Last »</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
-    {% endif %}
-</div>
-{% include "includes/add_project_modal.html" %}
-{% include "includes/add_repo_modal.html" %}
-{% block extra_js %}
-    <script src="{% static 'js/project_list.js' %}"></script>
-{% endblock %}
+                    {% for num in paginator.page_range %}
+                        {% if num == page_obj.number %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                   href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ page_obj.next_page_number }}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ paginator.num_pages }}">Last »</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
+    {% include "includes/add_project_modal.html" %}
+    {% include "includes/add_repo_modal.html" %}
+    {% block extra_js %}
+        <script src="{% static 'js/project_list.js' %}"></script>
+    {% endblock %}
 {% endblock %}
