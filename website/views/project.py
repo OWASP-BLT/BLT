@@ -11,15 +11,14 @@ from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.html import escape
 from django.utils.text import slugify
 from django.utils.timezone import now
 from django.views.generic import DetailView, ListView
 from rest_framework.views import APIView
-from django.utils.html import escape
-from django.http import Http404
 
 from website.bitcoin_utils import create_bacon_token
 from website.forms import AdditionalRepoForm, GitHubURLForm
@@ -487,13 +486,13 @@ class ProjectListView(ListView):
     def get(self, request, *args, **kwargs):
         try:
             # Validate page parameter
-            page = request.GET.get('page', '1')
+            page = request.GET.get("page", "1")
             if not page.isdigit():
                 # If page is not a valid number, redirect to page 1
                 params = request.GET.copy()
-                params['page'] = '1'
-                base_url = reverse('project_list')
-                return redirect(f'{base_url}?{params.urlencode()}')
+                params["page"] = "1"
+                base_url = reverse("project_list")
+                return redirect(f"{base_url}?{params.urlencode()}")
 
             # Sanitize other parameters
             for key, value in request.GET.items():
@@ -506,29 +505,29 @@ class ProjectListView(ListView):
             return super().get(request, *args, **kwargs)
         except ValueError as e:
             params = request.GET.copy()
-            if 'page' in params:
-                del params['page']
-            base_url = reverse('project_list')
-            return redirect(f'{base_url}?{params.urlencode()}')
+            if "page" in params:
+                del params["page"]
+            base_url = reverse("project_list")
+            return redirect(f"{base_url}?{params.urlencode()}")
         except Exception as e:
             # If the page number is invalid
-            if 'Invalid page' in str(e):
+            if "Invalid page" in str(e):
                 # Get the current querystring without page parameter
                 params = request.GET.copy()
-                if 'page' in params:
-                    del params['page']
-                
+                if "page" in params:
+                    del params["page"]
+
                 # Get the queryset and paginator
                 queryset = self.get_queryset()
                 paginator = self.get_paginator(queryset, self.paginate_by)
-                
+
                 # Redirect to the last page
-                params['page'] = paginator.num_pages
-                
+                params["page"] = paginator.num_pages
+
                 # Build the URL with updated parameters
-                base_url = reverse('project_list')
+                base_url = reverse("project_list")
                 if params:
-                    return redirect(f'{base_url}?{params.urlencode()}')
-                return redirect('project_list')
+                    return redirect(f"{base_url}?{params.urlencode()}")
+                return redirect("project_list")
 
             raise Http404("Page not found")
