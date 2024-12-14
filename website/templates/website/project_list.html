@@ -1,474 +1,952 @@
 {% extends "base.html" %}
+{% load static %}
 {% load humanize %}
+
 {% block title %}
     Project List
 {% endblock title %}
+
 {% block content %}
+<style>
+    /* Project Card Specific Styles */
+    .project-title h3 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #ef4444; /* Using theme color directly instead of gradient */
+        margin: 0 0 0.6rem 0;
+        /* Removed the gradient and webkit properties */
+    }
+
+    .project-title {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .project-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    /* Update badge styles for better consistency */
+    .badge {
+        padding: 0.35rem 1rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+    }
+
+    .badge:hover {
+        transform: translateY(-1px);
+        box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .badge i {
+        font-size: 0.9rem;
+    }
+    /* Modern Variables */
+    :root {
+        --primary-color: #3182ce;
+        --secondary-color: #4a5568;
+        --success-color: #48bb78;
+        --danger-color: #f56565;
+        --warning-color: #ed8936;
+        --info-color: #4299e1;
+        --background-color: #f7fafc;
+        --card-background: #ffffff;
+        --border-color: #e2e8f0;
+        --text-primary: #2d3748;
+        --text-secondary: #718096;
+    }
+
+    /* Repo Card Styles */
+    .repo-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        transition: transform 0.2s;
+    }
+
+    .repo-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .repo-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .repo-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+        margin-right: 1rem;
+    }
+
+    .repo-title {
+        flex: 1;
+    }
+
+    .repo-title h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        color: #2d3748;
+    }
+
+    .badge-language {
+        background: #e2e8f0;
+        color: #4a5568;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        margin-left: 0.5rem;
+    }
+
+    .repo-description {
+        color: #4a5568;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .repo-stats {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .repo-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .repo-parent {
+        font-size: 0.9rem;
+        color: #718096;
+    }
+
+    .repo-parent a {
+        color: #4a5568;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .repo-parent a:hover {
+        text-decoration: underline;
+    }
+
+    /* Modal Animations */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 1050;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+    }
+
+    .modal.show {
+        opacity: 1;
+    }
+
+    .modal-dialog {
+        position: relative;
+        width: auto;
+        margin: 1.75rem auto;
+        max-width: 500px;
+        transform: translateY(-50px);
+        transition: transform 0.3s ease-out;
+    }
+
+    .modal.show .modal-dialog {
+        transform: translateY(0);
+    }
+
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 1040;
+    }
+
+    /* Filter Modal Specific Styles */
+    .filter-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-section h6 {
+        margin-bottom: 0.75rem;
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    .form-select {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.375rem;
+        margin-bottom: 0.5rem;
+        background-color: white;
+    }
+
+    .form-select:focus {
+        border-color: var(--primary-color);
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.2);
+    }
+
+    /* Alert Styling */
+    .alert {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 6px;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .alert-danger {
+        background-color: var(--danger-color);
+        color: white;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateY(-100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .modal-dialog {
+            margin: 1rem;
+        }
+
+        .repo-stats {
+            flex-wrap: wrap;
+        }
+
+        .repo-footer {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .repo-parent {
+            text-align: center;
+        }
+    }
+    .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1050;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-dialog {
+    position: relative;
+    width: 90%;
+    max-width: 500px;
+    margin: 2rem auto;
+    transform: translateY(-20px) scale(0.95);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal.show .modal-dialog {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+.modal-content {
+    background: linear-gradient(145deg, #ffffff, #f8fafc);
+    border-radius: 20px;
+    box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(239, 68, 68, 0.1);
+    overflow: hidden;
+}
+
+.modal-header {
+    background: linear-gradient(145deg, #ef4444, #dc2626);
+    padding: 1.25rem 1.5rem;
+    color: white;
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.modal-header::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    pointer-events: none;
+}
+
+.modal-header h5 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.filter-section {
+    background: #f8fafc;
+    padding: 1.25rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    border: 1px solid #e2e8f0;
+}
+
+.filter-section h6 {
+    color: #1e293b;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-section h6::before {
+    content: '';
+    width: 4px;
+    height: 1em;
+    background: #ef4444;
+    border-radius: 2px;
+}
+
+.form-select {
+    background: white;
+    border: 2px solid #f1f5f9;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    width: 100%;
+    margin-bottom: 0.75rem;
+}
+
+.form-select:focus {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    outline: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .container {
+        max-width: 960px !important;
+    }
+}
+
+@media (max-width: 1024px) {
+    .project-grid {
+        grid-template-columns: 1fr;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .project-card, .repo-card {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .container {
+        padding: 0 1rem;
+    }
+    
+    .modal-dialog {
+        width: 95%;
+        margin: 1rem auto;
+    }
+    
+    .modal-body {
+        padding: 1.25rem;
+    }
+}
+
+/* Container and Grid Layout */
+.container {
+    max-width: 1200px !important;
+    margin: 0 auto;
+    padding: 0 4rem; /* Increased padding */
+}
+
+.project-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem;
+    margin: 2rem auto;
+    padding: 0 2rem;
+    max-width: 1100px; /* Limit grid width */
+}
+
+/* Card width control */
+.project-card, .repo-card {
+    max-width: 450px; /* Reduced max-width */
+    margin: 0 auto;
+    width: 100%;
+    background: linear-gradient(145deg, #ffffff, #fafafa);
+    border-radius: 20px;
+    box-shadow: 
+        8px 8px 30px rgba(239, 68, 68, 0.1),
+        -8px -8px 30px rgba(255, 255, 255, 0.8);
+    padding: 1.8rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid rgba(239, 68, 68, 0.1);
+}
+
+.project-card:hover, .repo-card:hover {
+    transform: translateY(-8px) scale(1.01);
+    box-shadow: 
+        12px 12px 40px rgba(239, 68, 68, 0.15),
+        -12px -12px 40px rgba(255, 255, 255, 0.9);
+}
+
+
+.badge-active { 
+    background: linear-gradient(145deg, #fecaca, #ef4444);
+    color: white;
+}
+
+.badge-inactive { 
+    background: linear-gradient(145deg, #fee2e2, #fecaca);
+    color: #ef4444;
+}
+
+.badge-level { 
+    background: linear-gradient(145deg, #fecaca, #ef4444);
+    color: white;
+}
+
+.badge-language { 
+    background: linear-gradient(145deg, #fee2e2, #fecaca);
+    color: #ef4444;
+}
+
+/* Stats Section */
+.project-stats, .repo-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: linear-gradient(145deg, #fafafa, #f5f5f5);
+    border-radius: 16px;
+    box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.8rem;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #ffffff, #fafafa);
+    box-shadow: 
+        3px 3px 8px rgba(239, 68, 68, 0.1),
+        -3px -3px 8px rgba(255, 255, 255, 0.8);
+}
+
+.stat i {
+    font-size: 1.2rem;
+    color: #ef4444;
+}
+
+/* Buttons */
+.btn {
+    padding: 0.7rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.btn-github {
+    background: linear-gradient(145deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+}
+
+.btn-github:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+}
+
+.btn-details {
+    background: linear-gradient(145deg, #f3f4f6, #ffffff);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.btn-details:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+    .container {
+        padding: 0 3rem;
+    }
+    .project-grid {
+        padding: 0 1.5rem;
+    }
+}
+
+@media (max-width: 1200px) {
+    .project-grid {
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 1024px) {
+    .container {
+        padding: 0 2rem;
+    }
+    .project-grid {
+        grid-template-columns: 1fr;
+        max-width: 600px;
+        padding: 0;
+    }
+    .project-card, .repo-card {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .container {
+        padding: 0 1rem;
+    }
+    .project-stats, .repo-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.pagination-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.pagination-info {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.pagination {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.page-item {
+    display: inline-block;
+}
+
+.page-link {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    background: white;
+    color: #ef4444;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.page-item.active .page-link {
+    background: #ef4444;
+    color: white;
+    border-color: #ef4444;
+}
+
+.page-link:hover {
+    background: #fff5f5;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
+}
+
+.messages {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1060;
+    min-width: 300px;
+    max-width: 500px;
+}
+
+.alert {
+    margin-bottom: 1rem;
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.3s ease-out;
+}
+
+.alert-success {
+    background: linear-gradient(145deg, #48bb78, #38a169);
+    color: white;
+    border: none;
+}
+
+.alert-danger {
+    background: linear-gradient(145deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+}
+
+.alert-info {
+    background: linear-gradient(145deg, #4299e1, #3182ce);
+    color: white;
+    border: none;
+}
+
+.alert .close {
+    color: white;
+    opacity: 0.8;
+    text-shadow: none;
+    transition: opacity 0.2s;
+}
+
+.alert .close:hover {
+    opacity: 1;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Auto-hide messages after 5 seconds */
+.alert {
+    animation: slideIn 0.3s ease-out, fadeOut 0.3s ease-out 4.7s forwards;
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+</style>
+
+<script>
+// Add this to your JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-remove alerts after 5 seconds
+    document.querySelectorAll('.alert').forEach(alert => {
+        setTimeout(() => {
+            alert.remove();
+        }, 5000);
+    });
+
+    // Handle form submissions
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            }
+        });
+    });
+
+    // Handle modal close on successful submission
+    if (document.querySelector('.alert-success')) {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            const modalInstance = bootstrap.Modal.getInstance(modal);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+        });
+    }
+});
+</script>
+
     {% include "includes/sidenav.html" %}
-    <div class="container pb-4">
+    
+    <div class="container pb-4" style="margin-top: 10rem;">
+        <!-- Header Section -->
         <div class="flex flex-col lg:flex-row gap-4 top-bar">
             <h3>Projects: {{ projects.count }}</h3>
-            <form method="post" class="flex add-project-form">
-                {% csrf_token %}
-                <div class="add-project-form">
-                    <div class="form-field">
-                        <input type="url"
-                               id="github_url"
-                               name="github_url"
-                               required
-                               class="github-url-input"
-                               placeholder="GitHub URL">
-                    </div>
-                    <button type="submit rounded-md">
-                        <i class="fas fa-plus-circle"></i> Add Project
-                    </button>
-                </div>
-            </form>
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-primary" data-toggle="modal" data-target="#addProjectModal">
+                    <i class="fas fa-plus-circle"></i> Add Project
+                </button>
+                <button class="btn btn-secondary" data-toggle="modal" data-target="#addRepoModal">
+                    <i class="fas fa-plus-circle"></i> Add Additional Repo
+                </button>
+                <button class="btn btn-info" data-toggle="modal" data-target="#filterModal">
+                    <i class="fas fa-filter"></i> Filter & Search
+                </button>
+            </div>
+
+            <!-- Refresh Projects Form -->
             <form method="post" class="refresh-projects-form">
                 {% csrf_token %}
-                <button type="submit" name="update_projects" value="update_projects">
+                <button type="submit" name="refresh_stats" value="refresh_stats">
                     <i class="fas fa-sync-alt"></i> Refresh Projects
                 </button>
             </form>
         </div>
-        <form method="get"
-              class="refresh-projects-form justify-evenly lg:justify-start">
-            <select id="sort_by"
-                    name="sort_by"
-                    onchange="this.form.submit()"
-                    class="sort-select rounded px-4 py-2">
-                <option value="">Sort By:</option>
-                <option value="last_updated"
-                        {% if sort_by == 'last_updated' %}selected{% endif %}>Recently Updated</option>
-                <option value="stars" {% if sort_by == 'stars' %}selected{% endif %}>Stars</option>
-                <option value="forks" {% if sort_by == 'forks' %}selected{% endif %}>Forks</option>
-                <option value="total_issues"
-                        {% if sort_by == 'total_issues' %}selected{% endif %}>Issues</option>
-                <option value="contributor_count"
-                        {% if sort_by == 'contributor_count' %}selected{% endif %}>Contributors</option>
-            </select>
-            <select id="order-select"
-                    name="order"
-                    onchange="this.form.submit()"
-                    class="sort-select rounded px-4 py-2">
-                <option value="desc" {% if order == 'desc' %}selected{% endif %}>Descending</option>
-                <option value="asc" {% if order == 'asc' %}selected{% endif %}>Ascending</option>
-            </select>
-        </form>
-    </div>
-    {% if messages %}
-        <ul class="messages">
+
+        <!-- Messages Section -->
+        {% if messages %}
+        <div class="messages">
             {% for message in messages %}
-                <li {% if message.tags %}class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'info' %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
             {% endfor %}
-        </ul>
-    {% endif %}
-    <ul class="project-list px-4">
-        {% for project in projects %}
-            <a href="{% url 'project_view' project.slug %}" class="project-link">
-                <li class="project-item rounded-md">
-                    {% if project.logo_url %}
-                        <img src="{{ project.logo_url }}"
-                             alt="{{ project.name }} logo"
-                             class="project-logo w-14 h-14 md:w-25 md:h-25 rounded-md"
-                             height="auto"
-                             width="auto">
-                    {% else %}
-                        <div class="project-logo placeholder">
-                            <span>No Logo</span>
-                        </div>
-                    {% endif %}
-                    <div class="project-details">
-                        <h3>{{ project.name }}</h3>
-                        <!-- Stats Icons Under Project Title -->
-                        <div class="stats-icons">
-                            <ul>
-                                <li>
-                                    <a href="{{ project.github_url }}" target="_blank" title="GitHub">
-                                        <i class="fab fa-github"></i>
-                                    </a>
-                                </li>
-                                {% if project.wiki_url %}
-                                    <li>
-                                        <a href="{{ project.wiki_url }}" target="_blank" title="Wiki">
-                                            <i class="fas fa-book"></i>
-                                        </a>
-                                    </li>
-                                {% endif %}
-                                {% if project.homepage_url %}
-                                    <li>
-                                        <a href="{{ project.homepage_url }}" target="_blank" title="Homepage">
-                                            <i class="fas fa-home"></i>
-                                        </a>
-                                    </li>
-                                {% endif %}
-                                <li>
-                                    <a href="{{ project.github_url }}/stargazers"
-                                       target="_blank"
-                                       title="Stars">
-                                        <i class="fas fa-star"></i> {{ project.stars|intcomma }}
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ project.github_url }}/network/members"
-                                       target="_blank"
-                                       title="Forks">
-                                        <i class="fas fa-code-branch"></i> {{ project.forks|intcomma }}
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ project.github_url }}/issues"
-                                       target="_blank"
-                                       title="Total Issues">
-                                        <i class="fas fa-exclamation-circle"></i> {{ project.total_issues|intcomma }}
-                                    </a>
-                                </li>
-                                {% if project.release_name %}
-                                    <li>
-                                        <i class="fas fa-tag"></i>
-                                        <span title="{{ project.release_datetime|date:'Y-m-d H:i' }}">{{ project.release_name }}</span>
-                                    </li>
-                                {% endif %}
-                                <li>
-                                    <i class="fas fa-clock"></i>
-                                    <span title="{{ project.last_updated|date:'Y-m-d H:i' }}">{{ project.last_updated|timesince }}</span>
-                                </li>
-                            </ul>
-                        </div>
-                        <p>{{ project.description }}</p>
-                        <!-- Contributors Section -->
-                        <div class="project-stats flex items-center gap-4">
-                            <p>
-                                <i class="fas fa-users"></i> Contributors: {{ project.contributor_count }}
-                            </p>
-                            <div class="contributors">
-                                {% for contributor in project.get_top_contributors %}
-                                    <a href="https://github.com/search?q=repo:{{ project.github_url|slice:'19:' }}+author:{{ contributor.name }}&type=issues"
-                                       target="_blank">
-                                        <img src="{{ contributor.avatar_url }}"
-                                             alt="{{ contributor.name }}"
-                                             class="contributor-avatar w-10 h-10"
-                                             title="{{ contributor.name }}"
-                                             height="auto"
-                                             width="auto">
-                                    </a>
-                                {% empty %}
-                                    <div class="contributor-avatar p-10 placeholder text-center">
-                                        <span className="text-xs">No Avatar</span>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div class="additional-metadata">
-                            <div class="external-links">
-                                <h4>
-                                    <i class="fas fa-external-link-alt"></i> Links
-                                </h4>
-                                <ul>
-                                    {% for link in project.external_links %}
-                                        <li>
-                                            <a href="{{ link.url }}" target="_blank"><i class="fas fa-link"></i> {{ link.name }}</a>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </div>
-                        <!-- Tags Section -->
-                        <div class="project-tags">
-                            <h4>
-                                <i class="fas fa-tags"></i>Tags
-                            </h4>
-                            <ul>
-                                {% for tag in project.tags.all %}<li>{{ tag.name }}</li>{% endfor %}
-                            </ul>
-                        </div>
+        </div>
+        {% endif %}
+
+        <!-- Filter Modal -->
+        <div class="modal fade" id="filterModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5>Filter Projects & Repositories</h5>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
                     </div>
-                </li>
-            </a>
-        {% endfor %}
-    </ul>
-    <style>
-        .container {
-            margin-top: 30px;
-        }
+                    <div class="modal-body">
+                        <form method="get" id="filterForm">
+                            <!-- Search -->
+                            <div class="form-group">
+                                <input type="search" 
+                                       name="search" 
+                                       value="{{ search_query }}"
+                                       class="form-control" 
+                                       placeholder="Search projects and repos...">
+                            </div>
 
-        .top-bar {
-            display: flex;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
+                            <!-- Filter Type Selection -->
+                            <div class="filter-type-selection mb-3">
+                                <h6>What to filter?</h6>
+                                <select name="filter_type" class="form-select" id="filterTypeSelect">
+                                    <option value="all" {% if filter_type == 'all' %}selected{% endif %}>Both Projects & Additional Repos</option>
+                                    <option value="projects" {% if filter_type == 'projects' %}selected{% endif %}>Projects Only</option>
+                                    <option value="repos" {% if filter_type == 'repos' %}selected{% endif %}>Additional Repos Only</option>
+                                </select>
+                            </div>
 
-        .top-bar h2 {
-            margin: 0;
-        }
+                            <!-- Project Filters -->
+                            <div class="filter-section project-filters">
+                                <h6>Project Filters</h6>
+                                <select name="activity_status" class="form-select">
+                                    <option value="">Activity Status</option>
+                                    {% for status in activity_statuses %}
+                                        <option value="{{ status }}" 
+                                                {% if selected_status == status %}selected{% endif %}>
+                                            {{ status }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
 
-        .top-bar p {
-            margin: 0 0 0 20px;
-            display: flex;
-            align-items: center;
-        }
+                                <select name="project_type" class="form-select mt-2">
+                                    <option value="">Project Type</option>
+                                    {% for type in project_types %}
+                                        <option value="{{ type }}"
+                                                {% if selected_type == type %}selected{% endif %}>
+                                            {{ type }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
 
-        .top-bar a.github-link {
-            margin-left: 20px;
-            text-decoration: none;
-            color: #333;
-            display: flex;
-            align-items: center;
-        }
+                                <select name="project_lavel" class="form-select mt-2">
+                                    <option value="">Project Level</option>
+                                    {% for level in project_levels %}
+                                        <option value="{{ level }}"
+                                                {% if selected_level == level %}selected{% endif %}>
+                                            {{ level }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
 
-        .top-bar a.github-link i {
-            margin-right: 5px;
-        }
+                            <!-- Additional Repo Filters -->
+                            <div class="filter-section repo-filters mt-3">
+                                <h6>Repository Filters</h6>
+                                <select name="repo_language" class="form-select">
+                                    <option value="">Primary Language</option>
+                                    {% for lang in repo_languages %}
+                                        <option value="{{ lang }}"
+                                                {% if selected_language == lang %}selected{% endif %}>
+                                            {{ lang }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
 
-        /* Add Project Form Styling */
-        .add-project-form {
-            display: flex;
-            align-items: center;
-        }
+                            <!-- Sort Options -->
+                            <div class="filter-section mt-3">
+                                <h6>Sort Options</h6>
+                                <select name="sort_by" class="form-select">
+                                    <option value="-created" {% if sort_by == '-created' %}selected{% endif %}>Recently Added</option>
+                                    <option value="stars" {% if sort_by == 'stars' %}selected{% endif %}>Stars</option>
+                                    <option value="forks" {% if sort_by == 'forks' %}selected{% endif %}>Forks</option>
+                                    <option value="total_issues" {% if sort_by == 'total_issues' %}selected{% endif %}>Issues</option>
+                                    <option value="contributor_count" {% if sort_by == 'contributor_count' %}selected{% endif %}>Contributors</option>
+                                </select>
 
-        .add-project-form .form-field {
-            margin-right: 10px;
-            display: flex;
-            align-items: center;
-            flex: 1; 
-        }
+                                <select name="order" class="form-select mt-2">
+                                    <option value="desc" {% if order == 'desc' %}selected{% endif %}>Descending</option>
+                                    <option value="asc" {% if order == 'asc' %}selected{% endif %}>Ascending</option>
+                                </select>
+                            </div>
 
-        .add-project-form label {
-            margin-right: 5px;
-        }
+                            <div class="modal-footer">
+                                <button type="reset" class="btn btn-secondary">Reset Filters</button>
+                                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        .add-project-form input,
-        .add-project-form textarea {
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            flex: 1; 
-        }
+        <!-- Project/Repo Grid -->
+        <div class="project-grid">
+            {% if filter_type == 'repos' %}
+                {% for repo in page_obj %}
+                    {% include "includes/repo_card.html" with repo=repo %}
+                {% endfor %}
+            {% else %}
+                {% for project in page_obj %}
+                    {% include "includes/project_card.html" with project=project %}
+                    {% if filter_type == 'all' and project.additional_repos.exists %}
+                        {% for repo in project.additional_repos.all %}
+                            {% include "includes/repo_card.html" with repo=repo %}
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
 
-        .github-url-input {
-            flex: 1;
-        }
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <nav aria-label="Project pagination" class="pagination-container">
+            <div class="pagination-info">
+                Page {{ page_obj.number }} of {{ paginator.num_pages }}
+                ({{ paginator.count }} total items)
+            </div>
+            
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page=1">&laquo; First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ page_obj.previous_page_number }}">Previous</a>
+                    </li>
+                {% endif %}
+                
+                {% for num in paginator.page_range %}
+                    {% if num == page_obj.number %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ page_obj.next_page_number }}">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key,value in current_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ paginator.num_pages }}">Last &raquo;</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
 
-        .add-project-form button {
-            padding: 0.5rem 1rem;
-            background: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-        }
+    {% include "includes/add_project_modal.html" %}
+    {% include "includes/add_repo_modal.html" %}
 
-        .add-project-form button i {
-            margin-right: 5px;
-        }
+    {% block extra_js %}
+        <script src="{% static 'js/project_list.js' %}"></script>
+    {% endblock %}
 
-        .add-project-form button:hover {
-            background: #0056b3;
-        }
-
-        .refresh-projects-form {
-            display: flex;
-            align-items: center;
-        }
-
-        .refresh-projects-form button {
-            padding: 0.5rem 1rem;
-            background: #28a745;
-            color: white;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-        }
-
-        .refresh-projects-form button i {
-            margin-right: 5px;
-        }
-
-        .refresh-projects-form button:hover {
-            background: #218838;
-        }
-
-        .sort-select {
-            margin-left: 10px;
-            border: 1px solid #dc3545;
-            background: #dc3545;
-            color: white;
-        }
-
-        h3 {
-            font-size: 20px;
-        }
-
-        .messages {
-            list-style: none;
-            padding: 0;
-            margin: 1rem 0;
-        }
-
-        .messages li {
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
-            border: 1px solid #ddd;
-        }
-
-        .messages li.success {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .messages li.error {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .project-list {
-            list-style: none;
-        }
-
-        .project-link {
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .project-item {
-            display: flex;
-            align-items: flex-start;
-            border: 1px solid #ddd;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .project-logo {
-            max-width: 100px;
-            margin-right: 1rem;
-        }
-
-        .project-logo.placeholder {
-            height: 100px;
-            width: 100px;
-            background-color: #f1f1f1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .project-details {
-            flex: 1;
-        }
-
-        .stats-icons ul {
-            list-style: none;
-            padding: 0;
-            margin: 0.5rem 0;
-            display: flex;
-            align-items: center;
-        }
-
-        .stats-icons li {
-            margin-right: 15px;
-        }
-
-        .stats-icons a {
-            text-decoration: none;
-            color: #333;
-            display: flex;
-            align-items: center;
-            font-size: 14px;
-        }
-
-        .stats-icons a:hover {
-            color: #007bff;
-        }
-
-        .stats-icons i {
-            font-size: 16px;
-            margin-right: 5px;
-        }
-
-        .project-links a {
-            display: inline-block;
-            margin-right: 0.5rem;
-            text-decoration: none;
-            color: #007bff;
-        }
-
-        .project-links a i {
-            margin-right: 0.3rem;
-        }
-
-        .project-links a:hover {
-            text-decoration: underline;
-        }
-
-        .project-stats {
-            margin-top: 1rem;
-        }
-
-        .contributors {
-            display: flex;
-            margin-top: 0.5rem;
-        }
-
-        .contributor-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 0.5rem;
-        }
-
-        .contributor-avatar.placeholder {
-            height: 40px;
-            width: 40px;
-            background-color: #f1f1f1;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .additional-metadata {
-            margin-top: 1rem;
-        }
-
-        .external-links ul {
-            list-style-type: none;
-            padding: 0;
-        }
-
-        .external-links li {
-            margin-bottom: 0.5rem;
-        }
-
-        .external-links a {
-            color: #007bff;
-            text-decoration: none;
-        }
-
-        .external-links a:hover {
-            text-decoration: underline;
-        }
-
-        .project-tags {
-            margin-top: 1rem;
-        }
-
-        .project-tags ul {
-            list-style-type: none;
-            padding: 0;
-        }
-
-        .project-tags li {
-            display: inline-block;
-            background-color: #f1f1f1;
-            padding: 5px 10px;
-            margin-right: 5px;
-            border-radius: 5px;
-        }
-
-        .project-tags h4 i {
-            margin-right: 0.5rem;
-        }
-    </style>
-{% endblock content %}
+{% endblock %}

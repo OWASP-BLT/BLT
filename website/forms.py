@@ -2,7 +2,7 @@ from captcha.fields import CaptchaField
 from django import forms
 from mdeditor.fields import MDTextFormField
 
-from .models import Bid, IpReport, Monitor, UserProfile
+from .models import AdditionalRepo, Bid, IpReport, Monitor, Project, UserProfile
 
 
 class UserProfileForm(forms.ModelForm):
@@ -105,9 +105,63 @@ class BidForm(forms.ModelForm):
         ]
 
 
-class GitHubURLForm(forms.Form):
-    github_url = forms.URLField(
-        label="GitHub URL",
-        required=True,
-        widget=forms.TextInput(attrs={"placeholder": "Add any Github URL"}),
+class FilterForm(forms.Form):
+    activity_status = forms.MultipleChoiceField(
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "filter-select"}),
+        choices=[],
     )
+    project_type = forms.MultipleChoiceField(
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "filter-select"}),
+        choices=[],
+    )
+    project_level = forms.MultipleChoiceField(
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "filter-select"}),
+        choices=[],
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(FilterForm, self).__init__(*args, **kwargs)
+        self.fields["activity_status"].choices = [
+            (status, status)
+            for status in Project.objects.values_list("activity_status", flat=True).distinct()
+        ]
+        self.fields["project_type"].choices = [
+            (ptype, ptype)
+            for ptype in Project.objects.values_list("project_type", flat=True).distinct()
+        ]
+        self.fields["project_level"].choices = [
+            (level, level)
+            for level in Project.objects.values_list("project_level", flat=True).distinct()
+        ]
+
+
+class GitHubURLForm(forms.ModelForm):
+    class Meta:
+        model = Project
+        fields = ["github_url"]
+        widgets = {
+            "github_url": forms.URLInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "https://github.com/username/repository",
+                }
+            )
+        }
+
+
+class AdditionalRepoForm(forms.ModelForm):
+    project = forms.ModelChoiceField(
+        queryset=Project.objects.all(), widget=forms.Select(attrs={"class": "form-control"})
+    )
+    github_url = forms.URLField(
+        widget=forms.URLInput(
+            attrs={"class": "form-control", "placeholder": "https://github.com/username/repository"}
+        )
+    )
+
+    class Meta:
+        model = AdditionalRepo
+        fields = ["project", "github_url"]

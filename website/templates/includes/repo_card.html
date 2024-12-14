@@ -1,0 +1,355 @@
+{% load humanize %}
+
+<div class="repo-card">
+    <div class="card-glass-effect"></div>
+    
+    <div class="repo-header">
+        <div class="logo-wrapper">
+            {% if repo.logo_url %}
+                <img src="{{ repo.logo_url }}" 
+                     alt="{{ repo.name }} logo" 
+                     class="repo-logo"
+                     height="auto"
+                     width="auto">
+            {% else %}
+                <!-- Fallback to GitHub owner's avatar from the repo URL -->
+                {% with owner=repo.github_url|cut:"https://github.com/"|cut:"/"|first %}
+                    <img src="https://github.com/{{ owner }}.png" 
+                         alt="{{ repo.name }} logo" 
+                         class="repo-logo"
+                         height="auto"
+                         width="auto">
+                {% endwith %}
+            {% endif %}
+        </div>
+        <div class="repo-title">
+            <h3>{{ repo.name }}</h3>
+            <div class="repo-badges">
+                {% if repo.primary_language %}
+                    <span class="badge badge-language">
+                        <i class="fas fa-code"></i> {{ repo.primary_language }}
+                    </span>
+                {% endif %}
+                {% if repo.license %}
+                    <span class="badge badge-license">
+                        <i class="fas fa-balance-scale"></i> {{ repo.license }}
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="repo-body">
+        <p class="repo-description">{{ repo.description }}</p>
+        
+        <div class="repo-stats">
+            <div class="stat">
+                <i class="fas fa-star"></i>
+                <span>{{ repo.stars|intcomma }}</span>
+                <label>Stars</label>
+            </div>
+            <div class="stat">
+                <i class="fas fa-code-branch"></i>
+                <span>{{ repo.forks|intcomma }}</span>
+                <label>Forks</label>
+            </div>
+            <div class="stat">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ repo.total_issues|intcomma }}</span>
+                <label>Issues</label>
+            </div>
+            <div class="stat">
+                <i class="fas fa-users"></i>
+                <span>{{ repo.contributor_count|intcomma }}</span>
+                <label>Contributors</label>
+            </div>
+        </div>
+
+        <div class="repo-metrics">
+            <div class="metric">
+                <i class="fas fa-code-commit"></i>
+                <span>{{ repo.commit_count|intcomma }} commits</span>
+            </div>
+            <div class="metric">
+                <i class="fas fa-clock"></i>
+                <span>Updated {{ repo.last_commit_date|timesince }} ago</span>
+            </div>
+            <div class="metric">
+                <i class="fas fa-eye"></i>
+                <span>{{ repo.watchers|intcomma }} watchers</span>
+            </div>
+            <div class="metric">
+                <i class="fas fa-code-pull-request"></i>
+                <span>{{ repo.open_pull_requests }} open PRs</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="repo-footer">
+        <div class="action-buttons">
+            <a href="{{ repo.github_url }}" class="btn btn-github" target="_blank">
+                <i class="fab fa-github"></i> View Repository
+            </a>
+            {% if repo.homepage_url %}
+                <a href="{{ repo.homepage_url }}" class="btn btn-homepage" target="_blank">
+                    <i class="fas fa-globe"></i> Homepage
+                </a>
+            {% endif %}
+        </div>
+        <div class="repo-parent">
+            Part of <a href="{% url 'project_view' repo.project.slug %}">{{ repo.project.name }}</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.repo-card {
+    background: linear-gradient(145deg, #ffffff, #fafafa);
+    border-radius: 20px;
+    box-shadow: 
+        8px 8px 30px rgba(239, 68, 68, 0.1),
+        -8px -8px 30px rgba(255, 255, 255, 0.8);
+    padding: 1.8rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid rgba(239, 68, 68, 0.1);
+}
+
+.repo-card:hover {
+    transform: translateY(-8px) scale(1.01);
+    box-shadow: 
+        12px 12px 40px rgba(239, 68, 68, 0.15),
+        -12px -12px 40px rgba(255, 255, 255, 0.9);
+}
+
+.card-glass-effect {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: linear-gradient(
+        135deg,
+        rgba(239, 68, 68, 0.05) 0%,
+        rgba(255, 255, 255, 0.05) 40%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    pointer-events: none;
+}
+
+.logo-wrapper {
+    flex-shrink: 0;
+    width: 70px;
+    height: 70px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 
+        4px 4px 15px rgba(239, 68, 68, 0.1),
+        -4px -4px 15px rgba(255, 255, 255, 0.8);
+    padding: 3px;
+    background: linear-gradient(145deg, #ffffff, #fafafa);
+}
+
+.repo-title h3 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin: 0 0 0.6rem 0;
+    background: linear-gradient(45deg, #ef4444, #f87171);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.repo-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.badge {
+    padding: 0.35rem 1rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.05);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-language {
+    background: linear-gradient(145deg, #fecaca, #ef4444);
+    color: white;
+}
+
+.badge-license {
+    background: linear-gradient(145deg, #fee2e2, #fecaca);
+    color: #ef4444;
+}
+
+.repo-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: linear-gradient(145deg, #fafafa, #f5f5f5);
+    border-radius: 16px;
+    box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.8rem;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #ffffff, #fafafa);
+    box-shadow: 
+        3px 3px 8px rgba(239, 68, 68, 0.1),
+        -3px -3px 8px rgba(255, 255, 255, 0.8);
+}
+
+.stat i {
+    font-size: 1.2rem;
+    color: #ef4444;
+}
+
+.stat span {
+    font-weight: 700;
+    color: #2D3748;
+    font-size: 1.1rem;
+}
+
+.stat label {
+    font-size: 0.75rem;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.repo-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.metric {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.8rem;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #fafafa, #f5f5f5);
+    box-shadow: 
+        2px 2px 5px rgba(239, 68, 68, 0.05),
+        -2px -2px 5px rgba(255, 255, 255, 0.8);
+}
+
+.metric i {
+    color: #ef4444;
+    font-size: 1rem;
+}
+
+.metric span {
+    color: #4A5568;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.btn {
+    padding: 0.7rem 1.5rem;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    flex: 1;
+    justify-content: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-github {
+    background: linear-gradient(145deg, #ef4444, #dc2626);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+}
+
+.btn-github:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+}
+
+.btn-homepage {
+    background: linear-gradient(145deg, #f3f4f6, #ffffff);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-homepage:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.repo-parent {
+    text-align: center;
+    margin-top: 1.2rem;
+    font-size: 0.95rem;
+    color: #4A5568;
+    font-weight: 500;
+    padding: 0.8rem;
+    background: linear-gradient(145deg, #fafafa, #f5f5f5);
+    border-radius: 12px;
+    box-shadow: inset 2px 2px 5px rgba(239, 68, 68, 0.05);
+}
+
+.repo-parent a {
+    color: #ef4444;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    padding: 0.3rem 0.8rem;
+    border-radius: 8px;
+    background: linear-gradient(145deg, #ffffff, #fafafa);
+    box-shadow: 
+        2px 2px 5px rgba(239, 68, 68, 0.05),
+        -2px -2px 5px rgba(255, 255, 255, 0.8);
+}
+
+.repo-parent a:hover {
+    transform: translateY(-1px);
+    box-shadow: 
+        4px 4px 10px rgba(239, 68, 68, 0.1),
+        -4px -4px 10px rgba(255, 255, 255, 0.9);
+}
+
+@media (max-width: 768px) {
+    .repo-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .repo-metrics {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+}
+</style> 

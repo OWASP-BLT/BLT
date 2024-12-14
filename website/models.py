@@ -892,6 +892,10 @@ class Project(models.Model):
     closed_issues = models.IntegerField(default=0)
     size = models.IntegerField(default=0)
     commit_count = models.IntegerField(default=0)
+    activity_status = models.CharField(max_length=255, null=True, blank=True)  # new field
+    project_type = models.JSONField(default=list, blank=True)
+    project_lavel = models.CharField(max_length=255, null=True, blank=True)
+    is_github_repo = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
@@ -1162,3 +1166,46 @@ class UserBadge(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.badge.title}"
+
+
+class AdditionalRepo(models.Model):
+    project = models.ForeignKey(Project, related_name="additional_repos", on_delete=models.CASCADE)
+
+    # Fields similar to the old Project model to store repository details
+    name = models.CharField(max_length=255)
+    slug = models.SlugField()
+    description = models.TextField()
+    github_url = models.URLField()
+    wiki_url = models.URLField(null=True, blank=True)
+    homepage_url = models.URLField(null=True, blank=True)
+    logo_url = models.URLField()
+    stars = models.IntegerField(default=0)
+    forks = models.IntegerField(default=0)
+    contributor_count = models.IntegerField(default=0)
+    release_name = models.CharField(max_length=255, null=True, blank=True)
+    release_datetime = models.DateTimeField(null=True, blank=True)
+    external_links = models.JSONField(default=list, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+    contributors = models.ManyToManyField(Contributor, related_name="additional_repos", blank=True)
+    tags = models.ManyToManyField(Tag, blank=True)
+    last_updated = models.DateTimeField(null=True, blank=True)
+    total_issues = models.IntegerField(default=0)
+    repo_visit_count = models.IntegerField(default=0)
+    project_visit_count = models.IntegerField(default=0)
+    watchers = models.IntegerField(default=0)
+    open_pull_requests = models.IntegerField(default=0)
+    primary_language = models.CharField(max_length=50, null=True, blank=True)
+    license = models.CharField(max_length=100, null=True, blank=True)
+    last_commit_date = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True)
+    network_count = models.IntegerField(default=0)
+    subscribers_count = models.IntegerField(default=0)
+    open_issues = models.IntegerField(default=0)
+    closed_issues = models.IntegerField(default=0)
+    size = models.IntegerField(default=0)
+    commit_count = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.name} (Additional Repo for {self.project.name})"

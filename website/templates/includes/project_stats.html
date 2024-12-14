@@ -1,0 +1,71 @@
+{% load humanize %}
+
+<div class="project-stats">
+    <div class="stat">
+        <i class="fas fa-star"></i>
+        <span title="Stars">{{ project.stars|intcomma }}</span>
+    </div>
+    <div class="stat">
+        <i class="fas fa-code-branch"></i>
+        <span title="Forks">{{ project.forks|intcomma }}</span>
+    </div>
+    <div class="stat">
+        <i class="fas fa-exclamation-circle"></i>
+        <span title="Total Issues">{{ project.total_issues|intcomma }}</span>
+    </div>
+    <div class="stat">
+        <i class="fas fa-users"></i>
+        <span title="Contributors">{{ project.contributor_count|intcomma }}</span>
+    </div>
+    {% if project.primary_language %}
+        <div class="stat">
+            <i class="fas fa-code"></i>
+            <span title="Primary Language">{{ project.primary_language }}</span>
+        </div>
+    {% endif %}
+    {% if project.last_commit_date %}
+        <div class="stat">
+            <i class="fas fa-clock"></i>
+            <span title="Last Updated">{{ project.last_commit_date|timesince }} ago</span>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.project-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 1rem 0;
+    color: var(--text-secondary);
+}
+
+.stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.stat i {
+    color: var(--text-primary);
+}
+
+.stat span {
+    transition: color 0.2s;
+}
+
+.stat:hover span {
+    color: var(--text-primary);
+}
+
+@media (max-width: 640px) {
+    .project-stats {
+        gap: 0.75rem;
+    }
+    
+    .stat {
+        font-size: 0.75rem;
+    }
+}
+</style> 

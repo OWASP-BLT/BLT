@@ -9,17 +9,19 @@ import matplotlib.pyplot as plt
 import requests
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils.text import slugify
 from django.utils.timezone import now
 from django.views.generic import DetailView, ListView
 from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
-from website.forms import GitHubURLForm
-from website.models import IP, BaconToken, Contribution, Project
+from website.forms import AdditionalRepoForm, GitHubURLForm
+from website.models import IP, AdditionalRepo, BaconToken, Contribution, Project
 from website.utils import admin_required
 
 logging.getLogger("matplotlib").setLevel(logging.ERROR)
@@ -229,12 +231,118 @@ class ProjectBadgeView(APIView):
 class ProjectListView(ListView):
     model = Project
     context_object_name = "projects"
+    paginate_by = 5
+    template_name = "website/project_list.html"
+
+    def get_queryset(self):
+        queryset = Project.objects.all()
+        filter_type = self.request.GET.get("filter_type", "all")
+
+        if filter_type == "repos":
+            # Get all additional repos
+            repos = AdditionalRepo.objects.select_related("project").all()
+
+            # Apply search
+            search = self.request.GET.get("search", "")
+            if search:
+                repos = repos.filter(Q(name__icontains=search) | Q(description__icontains=search))
+
+            # Apply repo-specific filters
+            repo_language = self.request.GET.get("repo_language")
+            if repo_language:
+                repos = repos.filter(primary_language=repo_language)
+
+            # Sorting
+            sort_by = self.request.GET.get("sort_by", "-created")
+            order = self.request.GET.get("order", "desc")
+            if order == "asc" and sort_by.startswith("-"):
+                sort_by = sort_by[1:]
+            elif order == "desc" and not sort_by.startswith("-"):
+                sort_by = f"-{sort_by}"
+
+            return repos.order_by(sort_by)
+
+        # Project queryset
+        search = self.request.GET.get("search", "")
+        if search:
+            if filter_type == "all":
+                queryset = queryset.filter(
+                    Q(name__icontains=search)
+                    | Q(description__icontains=search)
+                    | Q(additional_repos__name__icontains=search)
+                    | Q(additional_repos__description__icontains=search)
+                ).distinct()
+            else:  # projects only
+                queryset = queryset.filter(
+                    Q(name__icontains=search) | Q(description__icontains=search)
+                )
+
+        # Project filters
+        activity_status = self.request.GET.get("activity_status")
+        if activity_status:
+            queryset = queryset.filter(activity_status=activity_status)
+
+        project_type = self.request.GET.get("project_type")
+        if project_type:
+            queryset = queryset.filter(project_type__contains=[project_type])
+
+        project_level = self.request.GET.get("project_lavel")
+        if project_level:
+            queryset = queryset.filter(project_lavel=project_level)
+
+        # Sorting
+        sort_by = self.request.GET.get("sort_by", "-created")
+        order = self.request.GET.get("order", "desc")
+        if order == "asc" and sort_by.startswith("-"):
+            sort_by = sort_by[1:]
+        elif order == "desc" and not sort_by.startswith("-"):
+            sort_by = f"-{sort_by}"
+
+        return queryset.prefetch_related("additional_repos", "contributors", "tags").order_by(
+            sort_by
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["form"] = GitHubURLForm()
-        context["sort_by"] = self.request.GET.get("sort_by", "-created")
-        context["order"] = self.request.GET.get("order", "desc")
+        filter_type = self.request.GET.get("filter_type", "all")
+
+        # Add all filter parameters to context
+        context.update(
+            {
+                "form": GitHubURLForm(),
+                "additional_repo_form": AdditionalRepoForm(),
+                "filter_type": filter_type,
+                "sort_by": self.request.GET.get("sort_by", "-created"),
+                "order": self.request.GET.get("order", "desc"),
+                "search_query": self.request.GET.get("search", ""),
+                "selected_status": self.request.GET.get("activity_status", ""),
+                "selected_type": self.request.GET.get("project_type", ""),
+                "selected_level": self.request.GET.get("project_lavel", ""),
+                "selected_language": self.request.GET.get("repo_language", ""),
+                "activity_statuses": Project.objects.exclude(activity_status__isnull=True)
+                .values_list("activity_status", flat=True)
+                .distinct(),
+                "project_types": Project.objects.exclude(project_type__isnull=True)
+                .values_list("project_type", flat=True)
+                .distinct(),
+                "project_levels": Project.objects.exclude(project_lavel__isnull=True)
+                .values_list("project_lavel", flat=True)
+                .distinct(),
+                "repo_languages": AdditionalRepo.objects.values_list(
+                    "primary_language", flat=True
+                ).distinct(),
+            }
+        )
+
+        # Add total pages count to context
+        paginator = context["paginator"]
+        context["total_pages"] = paginator.num_pages
+
+        # Add current search parameters to context
+        context["current_params"] = self.request.GET.copy()
+        if "page" in context["current_params"]:
+            del context["current_params"]["page"]
+
         return context
 
     def post(self, request, *args, **kwargs):
@@ -256,6 +364,76 @@ class ProjectListView(ListView):
             messages.success(request, "Refreshing contributor data...")
             return redirect("project_list")
 
+        # Check if it's an additional repo submission
+        if "project" in request.POST:
+            form = AdditionalRepoForm(request.POST)
+            if form.is_valid():
+                try:
+                    project = form.cleaned_data["project"]
+                    github_url = form.cleaned_data["github_url"]
+
+                    # Extract repo information from GitHub
+                    match = re.match(r"https://github.com/([^/]+/[^/]+)", github_url)
+                    if match:
+                        repo_path = match.group(1)
+                        api_url = f"https://api.github.com/repos/{repo_path}"
+
+                        # Fetch main repo data
+                        response = requests.get(api_url)
+                        if response.status_code == 200:
+                            data = response.json()
+
+                            # Generate slug
+                            base_slug = slugify(data["name"])
+                            slug = base_slug
+                            counter = 1
+                            while AdditionalRepo.objects.filter(slug=slug).exists():
+                                slug = f"{base_slug}-{counter}"
+                                counter += 1
+
+                            # Create additional repo
+                            additional_repo = AdditionalRepo.objects.create(
+                                project=project,
+                                name=data["name"],
+                                slug=slug,
+                                github_url=github_url,
+                                description=data.get("description", ""),
+                                wiki_url=data.get("html_url", ""),
+                                homepage_url=data.get("homepage", ""),
+                                logo_url=data["owner"]["avatar_url"],
+                                stars=data.get("stargazers_count", 0),
+                                forks=data.get("forks_count", 0),
+                                watchers=data.get("watchers_count", 0),
+                                total_issues=data.get("open_issues_count", 0),
+                                primary_language=data.get("language", ""),
+                                license=data.get("license", {}).get("name", ""),
+                                last_commit_date=data.get("pushed_at"),
+                                created_at=data.get("created_at"),
+                                updated_at=data.get("updated_at"),
+                            )
+
+                            messages.success(
+                                request,
+                                f"Additional repository '{data['name']}' added successfully!",
+                            )
+                        else:
+                            error_data = response.json()
+                            error_message = error_data.get("message", "Unknown error occurred")
+                            messages.error(
+                                request, f"Failed to fetch repository data: {error_message}"
+                            )
+                    else:
+                        messages.error(request, "Invalid GitHub URL format.")
+                except requests.RequestException as e:
+                    messages.error(request, f"Network error: {str(e)}")
+                except Exception as e:
+                    messages.error(request, f"Error adding repository: {str(e)}")
+                return redirect("project_list")
+            else:
+                messages.error(request, "Invalid form data. Please check your input.")
+                return redirect("project_list")
+
+        # Handle project form submission
         form = GitHubURLForm(request.POST)
         if form.is_valid():
             github_url = form.cleaned_data["github_url"]
@@ -289,26 +467,43 @@ class ProjectListView(ListView):
                         },
                     )
                     if created:
-                        messages.success(request, "Project added successfully.")
+                        messages.success(request, f"Project '{data['name']}' added successfully!")
                     else:
-                        messages.info(request, "Project already exists.")
+                        messages.info(request, f"Project '{data['name']}' already exists.")
                 else:
-                    messages.error(request, "Failed to fetch project from GitHub.")
+                    error_data = response.json()
+                    error_message = error_data.get("message", "Unknown error occurred")
+                    messages.error(request, f"Failed to fetch project data: {error_message}")
             else:
                 messages.error(request, "Invalid GitHub URL.")
             return redirect("project_list")
+
         context = self.get_context_data()
         context["form"] = form
         return self.render_to_response(context)
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        sort_by = self.request.GET.get("sort_by", "-created")
-        order = self.request.GET.get("order", "desc")
+    def get(self, request, *args, **kwargs):
+        try:
+            return super().get(request, *args, **kwargs)
+        except Exception as e:
+            # If the page number is invalid
+            if "Invalid page" in str(e):
+                # Get the current querystring without page parameter
+                params = request.GET.copy()
+                if "page" in params:
+                    del params["page"]
 
-        if order == "asc" and sort_by.startswith("-"):
-            sort_by = sort_by[1:]
-        elif order == "desc" and not sort_by.startswith("-"):
-            sort_by = f"-{sort_by}"
+                # Get the queryset and paginator
+                queryset = self.get_queryset()
+                paginator = self.get_paginator(queryset, self.paginate_by)
 
-        return queryset.order_by(sort_by)
+                # Redirect to the last page
+                params["page"] = paginator.num_pages
+
+                # Build the URL with updated parameters
+                base_url = reverse("project_list")
+                if params:
+                    return redirect(f"{base_url}?{params.urlencode()}")
+                return redirect("project_list")
+
+            raise e
