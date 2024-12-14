@@ -468,7 +468,7 @@ class ProjectListView(ListView):
                         },
                     )
                     if created:
-                        messages.success(request, f"Project '{data['name']}' added successfully!")
+                        messages.success(request, "Project added successfully.")
                     else:
                         messages.info(request, f"Project '{data['name']}' already exists.")
                 else:
