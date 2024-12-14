@@ -135,7 +135,13 @@
                                 </li>
                             </ul>
                         </div>
-                        <p>{{ project.description }}</p>
+                        <div class="project-info">
+                            <p>{{ project.description }}</p>
+                            <div class="ai-summary">
+                                <h4>Summary</h4>
+                                <p>{{ project.ai_summary }}</p>
+                            </div>
+                        </div>
                         <!-- Contributors Section -->
                         <div class="project-stats flex items-center gap-4">
                             <p>
@@ -154,7 +160,7 @@
                                     </a>
                                 {% empty %}
                                     <div class="contributor-avatar p-10 placeholder text-center">
-                                        <span className="text-xs">No Avatar</span>
+                                        <span class="text-xs">No Avatar</span>
                                     </div>
                                 {% endfor %}
                             </div>
@@ -176,10 +182,10 @@
                         <!-- Tags Section -->
                         <div class="project-tags">
                             <h4>
-                                <i class="fas fa-tags"></i>Tags
+                                <i class="fas fa-tags"></i> Tags
                             </h4>
-                            <ul>
-                                {% for tag in project.tags.all %}<li>{{ tag.name }}</li>{% endfor %}
+                            <ul class="tags-list">
+                                {% for tag in project.tags.all %}<li class="tag-item badge badge-primary">{{ tag.name }}</li>{% endfor %}
                             </ul>
                         </div>
                     </div>
@@ -449,26 +455,65 @@
         .external-links a:hover {
             text-decoration: underline;
         }
-
         .project-tags {
             margin-top: 1rem;
         }
 
-        .project-tags ul {
+        .project-tags ul, .tags-list {
             list-style-type: none;
             padding: 0;
+            margin: 0;
+        }
+
+        .project-tags li, .tag-item {
+            display: inline-block;
+            margin: 0.2em 5px 0.2em 0;
+            padding: 0.4em 0.8em;
+            background-color: #007bff;
+            color: #ffffff;
+            border-radius: 0.2em;
+            font-size: 0.875em;
         }
 
         .project-tags li {
-            display: inline-block;
-            background-color: #f1f1f1;
-            padding: 5px 10px;
-            margin-right: 5px;
-            border-radius: 5px;
+            background-color: #070707;
         }
 
-        .project-tags h4 i {
+        .project-tags h4 i, .project-tags li i {
             margin-right: 0.5rem;
         }
+
+        .tag-item:hover {
+            background-color: #0056b3;
+            cursor: pointer;
+        }
+
+        .project-info {
+            margin-top: 1rem;
+        }
+
+        .project-description, .ai-summary {
+            margin-bottom: 1rem;
+        }
+
+        .ai-summary h4 {
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: bold; 
+        }
+
+        .ai-summary p {
+            margin: 0;
+            color: #181616; 
+            font-weight: bold; 
+        }
+
+        .ai-summary{
+            margin-top: 15px;
+        }
+
+
+
+
     </style>
 {% endblock content %}

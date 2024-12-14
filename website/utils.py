@@ -1,8 +1,11 @@
+import os
 import re
 import time
 from collections import deque
 from urllib.parse import urlparse, urlsplit, urlunparse
 
+import markdown
+import openai
 import requests
 from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
@@ -169,3 +172,35 @@ def format_timedelta(td):
     hours, remainder = divmod(total_seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
     return f"{hours}h {minutes}m {seconds}s"
+
+
+def markdown_to_text(markdown_content):
+    """Convert Markdown to plain text."""
+    html_content = markdown.markdown(markdown_content)
+    text_content = BeautifulSoup(html_content, "html.parser").get_text()
+    return text_content
+
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+
+def ai_summary(text, tags=None):
+    """Generate an AI-driven summary using OpenAI's GPT, including GitHub topics."""
+    try:
+        tags_str = ", ".join(tags) if tags else "No topics provided."
+        prompt = f"Generate a brief summary of the following text, focusing on key aspects such as purpose, features, technologies used, and current status. Consider the following GitHub topics to enhance the context: {tags_str}\n\n{text}"
+
+        response = openai.ChatCompletion.chat(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=150,
+            temperature=0.5,
+        )
+
+        summary = response["choices"][0]["message"]["content"].strip()
+        return summary
+    except Exception as e:
+        return f"Error generating summary: {str(e)}"

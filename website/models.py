@@ -892,6 +892,9 @@ class Project(models.Model):
     closed_issues = models.IntegerField(default=0)
     size = models.IntegerField(default=0)
     commit_count = models.IntegerField(default=0)
+    readme_content = models.TextField(null=True, blank=True)
+    recent_commit_messages = models.TextField(null=True, blank=True)
+    ai_summary = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.name
