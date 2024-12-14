@@ -1,6 +1,17 @@
 {% extends "base.html" %}
 {% load static %}
 {% load i18n %}
+{% block title %}Hunt Dashboard - Filter and Search{% endblock %}
+{% block description %}
+    Filter and search for hunts based on type, domain, and date range. Track your progress and view details of each hunt.
+{% endblock %}
+{% block keywords %}
+    Hunt Dashboard, filter hunts, search hunts, bughunt, hunt details, date range, domain filter
+{% endblock %}
+{% block og_title %}Hunt Dashboard - Filter and Search{% endblock %}
+{% block og_description %}
+    Filter and search for hunts based on type, domain, and date range. Track your progress and view details of each hunt.
+{% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="w-full h-[100vh] flex flex-col items-center ">

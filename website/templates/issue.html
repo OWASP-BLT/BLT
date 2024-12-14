@@ -3,7 +3,7 @@
 {% block metaTags %}
     <title>
         {% block title %}
-            BLT Issue - {{ object.description|escapejs }}
+            {% env 'PROJECT_NAME' %} Issue - {{ object.description|escapejs }}
         {% endblock title %}
     </title>
     <meta name="description"
@@ -22,7 +22,7 @@
     <meta property="og:description"
           content="{{ object.markdown_description|escapejs }}" />
     <meta name="keywords"
-          content="{% block keywords %}BLT, bug, tracking, company, easy{% endblock keywords %}">
+          content="{% block keywords %}{% env 'PROJECT_NAME' %}, bug, tracking, company, easy{% endblock keywords %}">
     <link rel="canonical" href="https://{% env 'FQDN' %}/issue/{{ object.id }}">
     <meta property="og:url"
           content="https://{% env 'FQDN' %}/issue/{{ object.id }}" />
@@ -35,7 +35,6 @@
 {% endblock metaTags %}
 {% load static %}
 {% load gravatar %}
-{% load custom_tags %}
 {% block content %}
     <style>
     .nav-btn.active {

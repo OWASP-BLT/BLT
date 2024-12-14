@@ -1,4 +1,21 @@
 {% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}
+    Sign Up | {% env 'PROJECT_NAME' %}
+{% endblock title %}
+{% block description %}
+    Create an account to join the community. Sign up with your email and username to start discovering and reporting bugs.
+{% endblock description %}
+{% block keywords %}
+    Sign Up, Create Account, Join Community, Email, Username, Discover Bugs, Report Bugs
+{% endblock keywords %}
+{% block og_title %}
+    Sign Up - Join Our Community
+{% endblock og_title %}
+{% block og_description %}
+    Create an account to join our community. Sign up with your email and username to start discovering and reporting bugs.
+{% endblock og_description %}
 {% load i18n %}
 {% load custom_tags %}
 {% block natural_content %}
