@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="project",
-            name="project_lavel",
+            name="project_label",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(

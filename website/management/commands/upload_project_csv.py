@@ -180,7 +180,7 @@ class Command(BaseCommand):
                 )
 
                 project.activity_status = activity_status or project.activity_status
-                project.project_lavel = project_level or project.project_lavel
+                project.project_label = project_level or project.project_label
                 project.project_type = project_types if project_types else project.project_type
 
                 if website_url:

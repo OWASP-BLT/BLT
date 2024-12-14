@@ -822,7 +822,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <option value="{{ type }}" {% if selected_type == type %}selected{% endif %}>{{ type }}</option>
                                     {% endfor %}
                                 </select>
-                                <select name="project_lavel" class="form-select mt-2">
+                                <select name="project_label" class="form-select mt-2">
                                     <option value="">Project Level</option>
                                     {% for level in project_levels %}
                                         <option value="{{ level }}"

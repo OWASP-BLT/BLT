@@ -17,7 +17,7 @@
                 {% if project.activity_status %}
                     <span class="badge badge-{{ project.activity_status|lower }}">{{ project.activity_status }}</span>
                 {% endif %}
-                {% if project.project_lavel %}<span class="badge badge-level">{{ project.project_lavel }}</span>{% endif %}
+                {% if project.project_label %}<span class="badge badge-level">{{ project.project_label }}</span>{% endif %}
                 {% if project.primary_language %}
                     <span class="badge badge-language">
                         <i class="fas fa-code"></i> {{ project.primary_language }}

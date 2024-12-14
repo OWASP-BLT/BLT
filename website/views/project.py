@@ -287,9 +287,9 @@ class ProjectListView(ListView):
         if project_type:
             queryset = queryset.filter(project_type__contains=[project_type])
 
-        project_level = self.request.GET.get("project_lavel")
+        project_level = self.request.GET.get("project_label")
         if project_level:
-            queryset = queryset.filter(project_lavel=project_level)
+            queryset = queryset.filter(project_label=project_level)
 
         # Sorting
         sort_by = self.request.GET.get("sort_by", "-created")
@@ -318,7 +318,7 @@ class ProjectListView(ListView):
                 "search_query": self.request.GET.get("search", ""),
                 "selected_status": self.request.GET.get("activity_status", ""),
                 "selected_type": self.request.GET.get("project_type", ""),
-                "selected_level": self.request.GET.get("project_lavel", ""),
+                "selected_level": self.request.GET.get("project_label", ""),
                 "selected_language": self.request.GET.get("repo_language", ""),
                 "activity_statuses": Project.objects.exclude(activity_status__isnull=True)
                 .values_list("activity_status", flat=True)
@@ -326,8 +326,8 @@ class ProjectListView(ListView):
                 "project_types": Project.objects.exclude(project_type__isnull=True)
                 .values_list("project_type", flat=True)
                 .distinct(),
-                "project_levels": Project.objects.exclude(project_lavel__isnull=True)
-                .values_list("project_lavel", flat=True)
+                "project_levels": Project.objects.exclude(project_label__isnull=True)
+                .values_list("project_label", flat=True)
                 .distinct(),
                 "repo_languages": AdditionalRepo.objects.values_list(
                     "primary_language", flat=True

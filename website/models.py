@@ -894,7 +894,7 @@ class Project(models.Model):
     commit_count = models.IntegerField(default=0)
     activity_status = models.CharField(max_length=255, null=True, blank=True)  # new field
     project_type = models.JSONField(default=list, blank=True)
-    project_lavel = models.CharField(max_length=255, null=True, blank=True)
+    project_label = models.CharField(max_length=255, null=True, blank=True)
     is_github_repo = models.BooleanField(default=True)
 
     def __str__(self):
