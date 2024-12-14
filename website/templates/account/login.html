@@ -50,6 +50,7 @@
                         <input autofocus
                                id="id_login"
                                name="login"
+                               value="{{ form.login.value|default:'' }}"
                                class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.login.errors }}</span>
                     </div>
@@ -63,6 +64,7 @@
                             <input type="password"
                                    id="id_password"
                                    name="password"
+                                   value="{{ form.password.value|default:'' }}"
                                    class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                             <button type="button"
                                     id="togglePassword"
