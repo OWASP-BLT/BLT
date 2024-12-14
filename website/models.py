@@ -1038,6 +1038,8 @@ class DailyStatusReport(models.Model):
     previous_work = models.TextField()
     next_plan = models.TextField()
     blockers = models.TextField()
+    goal_accomplished = models.BooleanField(default=False)
+    current_mood = models.CharField(max_length=50, default="Happy 😊")
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
