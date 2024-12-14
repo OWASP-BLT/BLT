@@ -148,14 +148,17 @@
                 <label>Title</label>
                 <input type="text" id="title" name="title" placeholder="Your suggestion">
                 <label>Description</label>
-                <textarea id="description"
-                          name="description"
-                          rows="4"
-                          placeholder="Description of your suggestion"></textarea>
+                <textarea id="description" name="description" rows="4" placeholder="Description of your suggestion"></textarea>
+                <label>Company</label>
+                <select id="company" name="company">
+                    {% for company in companies %}
+                    <option value="{{ company.id }}">{{ company.name }}</option>
+                    {% endfor %}
+                </select>
                 <br>
                 <button type="submit" onclick="Savefeature()">Post Suggestion</button>
             </form>
-        </div>
+        </div>        
     </div>
     <script>
     window.onload = function() {
