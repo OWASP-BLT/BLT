@@ -70,6 +70,20 @@
                             <strong>Do you have any blockers?</strong>
                         </p>
                         <p>{{ report.blockers }}</p>
+                        <p>
+                            <strong>Did you accomplish your goals for yesterday?</strong>
+                        </p>
+                        <p>
+                            {% if report.goal_accomplished %}
+                                ✅ Yes
+                            {% else %}
+                                ❌ No
+                            {% endif %}
+                        </p>
+                        <p>
+                            <strong>How are you feeling today?</strong>
+                        </p>
+                        <p>{{ report.current_mood }}</p>
                     </div>
                 {% empty %}
                     <div class="p-6">
