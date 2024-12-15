@@ -1169,7 +1169,7 @@ class UserBadge(models.Model):
 
 
 class Repo(models.Model):
-    project = models.ForeignKey(Project, related_name="additional_repos", on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, related_name="repos", on_delete=models.CASCADE)
 
     # Fields similar to the old Project model to store repository details
     name = models.CharField(max_length=255)
@@ -1187,7 +1187,7 @@ class Repo(models.Model):
     external_links = models.JSONField(default=list, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
-    contributors = models.ManyToManyField(Contributor, related_name="additional_repos", blank=True)
+    contributors = models.ManyToManyField(Contributor, related_name="repos", blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
     last_updated = models.DateTimeField(null=True, blank=True)
     total_issues = models.IntegerField(default=0)
@@ -1208,4 +1208,4 @@ class Repo(models.Model):
     commit_count = models.IntegerField(default=0)
 
     def __str__(self):
-        return f"{self.name} (Additional Repo for {self.project.name})"
+        return f"{self.name} (Repo for {self.project.name})"
