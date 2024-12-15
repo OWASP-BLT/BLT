@@ -9,12 +9,14 @@ from import_export.admin import ImportExportModelAdmin
 from website.models import (
     IP,
     Activity,
+    AdditionalRepo,
     Bid,
     Blocked,
     ChatBotLog,
     Company,
     CompanyAdmin,
     Contribution,
+    Contributor,
     Domain,
     Hunt,
     HuntPrize,
@@ -395,6 +397,16 @@ class ProjectAdmin(admin.ModelAdmin):
     search_fields = ["name", "description", "slug"]
 
 
+class AdditionalRepoAdmin(admin.ModelAdmin):
+    list_display = ("project", "name", "created", "modified")
+    search_fields = ["project__name", "name"]
+
+
+class ContributorAdmin(admin.ModelAdmin):
+    list_display = ("name", "github_id", "created")
+    search_fields = ["name", "github_id"]
+
+
 class TagAdmin(admin.ModelAdmin):
     list_display = ("name", "slug", "created")
     prepopulated_fields = {"slug": ("name",)}
@@ -420,6 +432,8 @@ class ContributionAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Project, ProjectAdmin)
+admin.site.register(AdditionalRepo, AdditionalRepoAdmin)
+admin.site.register(Contributor, ContributorAdmin)
 admin.site.register(Bid, BidAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(User, UserAdmin)
