@@ -908,12 +908,14 @@ def user_sizzle_report(request, username):
         issue_title = get_github_issue_title(first_log.github_issue_url)
 
         start_time = first_log.start_time.strftime("%I:%M %p")
+        end_time = first_log.end_time.strftime("%I:%M %p")
         formatted_date = first_log.created.strftime("%d %B %Y")
 
         day_data = {
             "issue_title": issue_title,
             "duration": formatted_duration,
             "start_time": start_time,
+            "end_time": end_time,
             "date": formatted_date,
         }
 
