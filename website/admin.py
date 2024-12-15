@@ -9,7 +9,7 @@ from import_export.admin import ImportExportModelAdmin
 from website.models import (
     IP,
     Activity,
-    AdditionalRepo,
+    Repo,
     Bid,
     Blocked,
     ChatBotLog,
@@ -397,7 +397,7 @@ class ProjectAdmin(admin.ModelAdmin):
     search_fields = ["name", "description", "slug"]
 
 
-class AdditionalRepoAdmin(admin.ModelAdmin):
+class RepoAdmin(admin.ModelAdmin):
     list_display = ("project", "name", "created", "modified")
     search_fields = ["project__name", "name"]
 
@@ -432,7 +432,7 @@ class ContributionAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Project, ProjectAdmin)
-admin.site.register(AdditionalRepo, AdditionalRepoAdmin)
+admin.site.register(Repo, RepoAdmin)
 admin.site.register(Contributor, ContributorAdmin)
 admin.site.register(Bid, BidAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)

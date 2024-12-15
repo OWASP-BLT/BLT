@@ -9,7 +9,7 @@ from django.db import transaction
 from django.template.defaultfilters import slugify
 from django.utils.dateparse import parse_datetime
 
-from website.models import AdditionalRepo, Contributor, Project, Tag
+from website.models import Contributor, Project, Repo, Tag
 
 
 class Command(BaseCommand):
@@ -296,7 +296,7 @@ class Command(BaseCommand):
                         if not add_slug:
                             add_slug = f"additional-repo-{int(time.time())}"
 
-                        additional_repo, add_created = AdditionalRepo.objects.get_or_create(
+                        additional_repo, add_created = Repo.objects.get_or_create(
                             project=project,
                             slug=add_slug,
                             defaults={
@@ -365,7 +365,7 @@ class Command(BaseCommand):
 
                         self.stdout.write(
                             self.style.SUCCESS(
-                                f"   -> Added/Updated AdditionalRepo: {additional_repo.name} ({add_url})"
+                                f"   -> Added/Updated Repo: {additional_repo.name} ({add_url})"
                             )
                         )
 

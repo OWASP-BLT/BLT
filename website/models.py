@@ -1168,7 +1168,7 @@ class UserBadge(models.Model):
         return f"{self.user.username} - {self.badge.title}"
 
 
-class AdditionalRepo(models.Model):
+class Repo(models.Model):
     project = models.ForeignKey(Project, related_name="additional_repos", on_delete=models.CASCADE)
 
     # Fields similar to the old Project model to store repository details
