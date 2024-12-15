@@ -386,14 +386,18 @@ class Command(BaseCommand):
                     response = requests.get(url, headers=headers, timeout=10)
                     if response.status_code in (403, 429):  # Rate limit or forbidden
                         self.stderr.write(
-                            self.style.WARNING(f"Rate limit hit for {url}. Attempt {i+1}/{max_retries}")
+                            self.style.WARNING(
+                                f"Rate limit hit for {url}. Attempt {i+1}/{max_retries}"
+                            )
                         )
                         time.sleep(delay)
                         continue
                     return response
                 except requests.exceptions.RequestException as e:
                     self.stderr.write(
-                        self.style.WARNING(f"Request failed for {url}: {str(e)}. Attempt {i+1}/{max_retries}")
+                        self.style.WARNING(
+                            f"Request failed for {url}: {str(e)}. Attempt {i+1}/{max_retries}"
+                        )
                     )
                     time.sleep(delay)
                     continue
@@ -407,16 +411,14 @@ class Command(BaseCommand):
         full_name = match.group(1)
         url = f"https://api.github.com/repos/{full_name}"
         response = api_get(url)
-        
+
         if response is None or response.status_code != 200:
             return None
 
         try:
             repo_data = response.json()
         except ValueError:
-            self.stderr.write(
-                self.style.WARNING(f"Invalid JSON response from {url}")
-            )
+            self.stderr.write(self.style.WARNING(f"Invalid JSON response from {url}"))
             return None
 
         full_name = repo_data.get("full_name")
@@ -500,21 +502,25 @@ class Command(BaseCommand):
         match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo_url)
         if not match:
             return None
-            
+
         def api_get(url):
             for i in range(max_retries):
                 try:
                     response = requests.get(url, headers=headers, timeout=10)
                     if response.status_code in (403, 429):
                         self.stderr.write(
-                            self.style.WARNING(f"Rate limit hit for {url}. Attempt {i+1}/{max_retries}")
+                            self.style.WARNING(
+                                f"Rate limit hit for {url}. Attempt {i+1}/{max_retries}"
+                            )
                         )
                         time.sleep(delay)
                         continue
                     return response
                 except requests.exceptions.RequestException as e:
                     self.stderr.write(
-                        self.style.WARNING(f"Request failed for {url}: {str(e)}. Attempt {i+1}/{max_retries}")
+                        self.style.WARNING(
+                            f"Request failed for {url}: {str(e)}. Attempt {i+1}/{max_retries}"
+                        )
                     )
                     time.sleep(delay)
                     continue
@@ -522,16 +528,16 @@ class Command(BaseCommand):
 
         owner, repo_name = match.groups()
         full_name = f"{owner}/{repo_name}"
-        
+
         all_contributors = []
         page = 1
         while True:
             contrib_url = f"https://api.github.com/repos/{full_name}/contributors?anon=true&per_page=100&page={page}"
             response = api_get(contrib_url)
-            
+
             if response is None or response.status_code != 200:
                 break
-                
+
             try:
                 contributors_data = response.json()
                 if not contributors_data:
@@ -539,9 +545,7 @@ class Command(BaseCommand):
                 all_contributors.extend(contributors_data)
                 page += 1
             except ValueError:
-                self.stderr.write(
-                    self.style.WARNING(f"Invalid JSON response from {contrib_url}")
-                )
+                self.stderr.write(self.style.WARNING(f"Invalid JSON response from {contrib_url}"))
                 break
 
         return all_contributors if all_contributors else None
