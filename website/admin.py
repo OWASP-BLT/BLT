@@ -9,7 +9,6 @@ from import_export.admin import ImportExportModelAdmin
 from website.models import (
     IP,
     Activity,
-    Repo,
     Bid,
     Blocked,
     ChatBotLog,
@@ -28,6 +27,7 @@ from website.models import (
     Payment,
     Points,
     Project,
+    Repo,
     SlackIntegration,
     Subscription,
     Suggestion,
