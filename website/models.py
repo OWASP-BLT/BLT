@@ -29,6 +29,7 @@ from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
 from rest_framework.authtoken.models import Token
+from fresh.models import Team  # Import the Team model from the correct module
 
 logger = logging.getLogger(__name__)
 
@@ -582,6 +583,12 @@ class UserProfile(models.Model):
     discounted_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     modified = models.DateTimeField(auto_now=True)
     visit_count = models.PositiveIntegerField(default=0)
+    team = models.ForeignKey(
+        Team, on_delete=models.SET_NULL, related_name="user_profiles", null=True, blank=True
+    )
+
+    def check_team_membership(self):
+        return self.team is not None
     current_streak = models.IntegerField(default=0)
     longest_streak = models.IntegerField(default=0)
     last_check_in = models.DateField(null=True, blank=True)

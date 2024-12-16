@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+{% block content %}
+    <style>
+        /* Styling for the Team Overview Page */
+        .team-overview-container {
+            text-align: center;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            max-width: 900px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .team-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .member-card {
+            width: 150px;
+            height: 150px;
+            margin: 0 10px;
+            border-radius: 50%;
+            overflow: hidden;
+            transform: scale(0.8);
+            opacity: 0.6;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .member-card.active {
+            transform: scale(1.2);
+            opacity: 1;
+        }
+
+        .member-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .slider-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #ddd;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: background 0.3s;
+        }
+
+        .slider-nav:hover {
+            background: #bbb;
+        }
+
+        .slider-nav.left {
+            left: 10px;
+        }
+
+        .slider-nav.right {
+            right: 10px;
+        }
+
+        .achievements {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .achievements ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .achievements li {
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #555;
+        }
+
+        /* Modal Styling */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0, 0, 0);
+            background-color: rgba(0, 0, 0, 0.4);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        .form-group input[type="file"] {
+            padding: 3px;
+        }
+
+        .form-group button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .form-group button:hover {
+            background-color: #45a049;
+        }
+
+        .dropdown-content {
+            position: absolute;
+            background-color: #f9f9f9;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        .dropdown-item {
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+
+        .dropdown-item:hover {
+            background-color: #ddd;
+        }
+
+        .selected-users {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .selected-user {
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            padding: 5px 10px;
+            margin: 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .selected-user span {
+            margin-right: 10px;
+        }
+
+        .remove-user {
+            cursor: pointer;
+            color: red;
+        }
+    </style>
+
+    {% include "includes/sidenav.html" %}
+  
+    <div class="team-overview-container">
+        {% if user.userprofile.team %}
+            <!-- Team Name -->
+            <div class="team-name">{{ user.userprofile.team.name }}</div>
+
+            <!-- Team Members Slider -->
+            <div class="slider-container">
+                <button class="slider-nav left" onclick="prevMember()">‹</button>
+
+                {% for member in user.userprofile.team.members.all %}
+                    <div class="member-card {% if forloop.first %}active{% endif %}">
+                        <img src="{{ member.userprofile.user_avatar.url }}" alt="{{ member.username }}">
+                    </div>
+                {% endfor %}
+
+                <button class="slider-nav right" onclick="nextMember()">›</button>
+            </div>
+
+            <!-- Team Achievements -->
+            <div class="achievements">
+                <h3>Team Achievements:</h3>
+                <ul>
+                    {% for achievement in user.userprofile.team.achievements.splitlines %}
+                        <li>{{ achievement }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% else %}
+            <button onclick="openModal()">Create a Team</button>
+        {% endif %}
+    </div>
+
+    <!-- Modal for Creating a Team -->
+    <div id="teamModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Create a Team</h2>
+            <form id="createTeamForm" method="post" enctype="multipart/form-data" action="{% url 'create_team' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="teamName">Team Name</label>
+                    <input type="text" id="teamName" name="teamName" required>
+                </div>
+                <div class="form-group">
+                    <label for="teamAvatar">Avatar</label>
+                    <input type="file" id="teamAvatar" name="teamAvatar" accept="image/*" required>
+                </div>
+                <div class="form-group">
+                    <label for="teamMembers">Add Members</label>
+                    <input type="text" id="teamMembers" name="teamMembers" placeholder="Enter usernames" onkeyup="searchUsers(this.value)">
+                    <div id="userDropdown" class="dropdown-content"></div>
+                    <div id="selectedUsers" class="selected-users"></div>
+                </div>
+                <div class="form-group">
+                    <button type="submit">Create Team</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript for Slider Navigation
+        let currentIndex = 0;
+
+        function updateSlider() {
+            const members = document.querySelectorAll('.member-card');
+            members.forEach((member, index) => {
+                member.classList.remove('active');
+                if (index === currentIndex) {
+                    member.classList.add('active');
+                }
+            });
+        }
+
+        function prevMember() {
+            const members = document.querySelectorAll('.member-card');
+            currentIndex = (currentIndex - 1 + members.length) % members.length;
+            updateSlider();
+        }
+
+        function nextMember() {
+            const members = document.querySelectorAll('.member-card');
+            currentIndex = (currentIndex + 1) % members.length;
+            updateSlider();
+        }
+
+        // Initialize slider
+        updateSlider();
+
+        // Modal functions
+        function openModal() {
+            document.getElementById('teamModal').style.display = "block";
+        }
+
+        function closeModal() {
+            document.getElementById('teamModal').style.display = "none";
+        }
+
+        // Close the modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('teamModal');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // Handle form submission
+        document.getElementById('createTeamForm').onsubmit = function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            }).then(response => {
+                if (response.ok) {
+                    closeModal();
+                    window.location.reload();
+                } else {
+                    alert('Failed to create team. Please try again.');
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('Failed to create team. Please try again.');
+            });
+        }
+
+        // Search users and display in dropdown
+        function searchUsers(query) {
+            if (query.length < 2) {
+                document.getElementById('userDropdown').innerHTML = "";
+                return;
+            }
+
+            fetch(`/fresh/search-users/?query=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    let dropdownContent = "";
+                    data.forEach(user => {
+                        dropdownContent += `<div class="dropdown-item" onclick="selectUser('${user.user__username}')">${user.user__username}</div>`;
+                    });
+                    document.getElementById('userDropdown').innerHTML = dropdownContent;
+                });
+        }
+
+        // Select user from dropdown
+        function selectUser(username) {
+            const selectedUsersContainer = document.getElementById('selectedUsers');
+            const currentMembers = Array.from(selectedUsersContainer.children).map(child => child.dataset.username);
+            if (!currentMembers.includes(username)) {
+                const userDiv = document.createElement('div');
+                userDiv.className = 'selected-user';
+                userDiv.dataset.username = username;
+                userDiv.innerHTML = `<span>${username}</span><span class="remove-user" onclick="removeUser(this)">x</span>`;
+                selectedUsersContainer.appendChild(userDiv);
+            }
+            document.getElementById('userDropdown').innerHTML = "";
+            document.getElementById('teamMembers').value = '';
+        }
+
+        // Remove user from selected list
+        function removeUser(element) {
+            const userDiv = element.parentElement;
+            userDiv.remove();
+        }
+    </script>
+{% endblock content %}

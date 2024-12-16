@@ -108,6 +108,7 @@ INSTALLED_APPS = (
     "dj_rest_auth.registration",
     "blog",
     "storages",
+    "fresh"
 )
 
 

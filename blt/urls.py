@@ -656,6 +656,7 @@ urlpatterns = [
     path("time-logs/", TimeLogListView, name="time_logs"),
     path("sizzle-daily-log/", sizzle_daily_log, name="sizzle_daily_log"),
     path("blog/", include("blog.urls")),
+    path("fresh/", include("fresh.urls")),
     path(
         "user-sizzle-report/<str:username>/",
         user_sizzle_report,
