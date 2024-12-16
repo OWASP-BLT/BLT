@@ -60,7 +60,6 @@
             color: #FFFFFF; 
         }
 
-
         .platinum {
             background-color: #E5E4E2; 
             color: #333;
@@ -128,6 +127,39 @@
             background-color: #17a2b8;
             border-color: #17a2b8;
         }
+
+        .toggle-buttons {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .toggle-buttons button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            background-color: #FF0000; /* Red background */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-buttons button.active {
+            background-color: #B22222; /* Darker red background */
+        }
+
+        .toggle-buttons button:hover {
+            background-color: #B22222; /* Darker red background on hover */
+        }
+
+        .leaderboard-list {
+            display: none;
+        }
+
+        .leaderboard-list.active {
+            display: block;
+        }
     </style>
 {% endblock style %}
 {% block content %}
@@ -137,9 +169,15 @@
             <h1 class="page-header">Global Leaderboard</h1>
         </div>
     </div>
+    <div class="toggle-buttons">
+        <button id="singleUserBtn" class="active" onclick="toggleLeaderboard('single')">Single User Leaderboard</button>
+        <button id="teamBtn" onclick="toggleLeaderboard('team')">Within Team Leaderboard</button>
+        <button id="globalTeamBtn" onclick="toggleLeaderboard('globalTeam')">Global Team Leaderboard</button>
+    </div>
     <div class="row flex justify-center">
         <div class="col-md-8">
-            <div class="list-group">
+            <div id="singleUserLeaderboard" class="leaderboard-list active">
+                <h2>Single User Leaderboard</h2>
                 {% if not leaderboard %}
                     <p class="text-red-900">No data for this month</p>
                 {% else %}
@@ -174,6 +212,89 @@
                     {% endfor %}
                 {% endif %}
             </div>
+            <div id="teamLeaderboard" class="leaderboard-list">
+                <h2>Within Team Leaderboard</h2>
+                {% if not team_leaderboard %}
+                    <p class="text-red-900">No data for this month</p>
+                {% else %}
+                    {% for leader in team_leaderboard %}
+                        <div class="list-group-item">
+                            {% if leader.userprofile.avatar %}
+                                <img src="{{ leader.userprofile.avatar }}"
+                                     class="img-responsive img-thumbnail profileimage"
+                                     alt="{{ leader.username }}"
+                                     width="50px"
+                                     height="50px">
+                            {% elif leader.socialaccount_set.all.0.get_avatar_url %}
+                                <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
+                                     class="img-responsive img-thumbnail profileimage"
+                                     alt="username"
+                                     width="50px"
+                                     height="50px">
+                            {% else %}
+                                <img src="{% gravatar_url leader.email 50 %}"
+                                     class="img-responsive img-thumbnail profileimage"
+                                     alt="username"
+                                     width="50px"
+                                     height="50px">
+                            {% endif %}
+                            <a href="{% url 'profile' slug=leader.username %}">{{ leader.username }}</a>
+                            <span class="pull-right badge">{{ leader.total_score }} Points</span>
+                            {% if leader.userprofile.winnings %}
+                                <span class="pull-right badge">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
+                            {% endif %}
+                            <span><kbd class="{{ leader.userprofile.get_title_display|lower }} titleuser">{{ leader.userprofile.get_title_display }}</kbd></span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div id="globalTeamLeaderboard" class="leaderboard-list">
+                <h2>Global Team Leaderboard</h2>
+                {% if not global_team_leaderboard %}
+                    <p class="text-red-900">No data for this month</p>
+                {% else %}
+                    {% for team in global_team_leaderboard %}
+                        <div class="list-group-item">
+                            <img src="{{ team.avatar.url }}" class="img-responsive img-thumbnail profileimage" alt="{{ team.name }}" width="50px" height="50px">
+                            <a href="{% url 'team_profile' team.id %}">{{ team.name }}</a>
+                            <span class="pull-right badge">{{ team.fresh_points }} Points</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
         </div>
     </div>
+    <script>
+        function toggleLeaderboard(type) {
+            const singleUserBtn = document.getElementById('singleUserBtn');
+            const teamBtn = document.getElementById('teamBtn');
+            const globalTeamBtn = document.getElementById('globalTeamBtn');
+            const singleUserLeaderboard = document.getElementById('singleUserLeaderboard');
+            const teamLeaderboard = document.getElementById('teamLeaderboard');
+            const globalTeamLeaderboard = document.getElementById('globalTeamLeaderboard');
+
+            if (type === 'single') {
+                singleUserBtn.classList.add('active');
+                teamBtn.classList.remove('active');
+                globalTeamBtn.classList.remove('active');
+                singleUserLeaderboard.classList.add('active');
+                teamLeaderboard.classList.remove('active');
+                globalTeamLeaderboard.classList.remove('active');
+            } else if (type === 'team') {
+                singleUserBtn.classList.remove('active');
+                teamBtn.classList.add('active');
+                globalTeamBtn.classList.remove('active');
+                singleUserLeaderboard.classList.remove('active');
+                teamLeaderboard.classList.add('active');
+                globalTeamLeaderboard.classList.remove('active');
+            } else if (type === 'globalTeam') {
+                singleUserBtn.classList.remove('active');
+                teamBtn.classList.remove('active');
+                globalTeamBtn.classList.add('active');
+                singleUserLeaderboard.classList.remove('active');
+                teamLeaderboard.classList.remove('active');
+                globalTeamLeaderboard.classList.add('active');
+            }
+        }
+    </script>
 {% endblock content %}

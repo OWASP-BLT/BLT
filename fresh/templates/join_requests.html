@@ -1,0 +1,23 @@
+
+{% extends "base.html" %}
+{% block content %}
+    <div class="join-requests-container">
+        <h2>Join Requests</h2>
+        {% if join_requests %}
+            <ul>
+                {% for request in join_requests %}
+                    <li>
+                        <span>{{ request.team.name }}</span>
+                        <form method="post" action="{% url 'join_requests' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="team_id" value="{{ request.team.id }}">
+                            <button type="submit">Join</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No join requests.</p>
+        {% endif %}
+    </div>
+{% endblock content %}

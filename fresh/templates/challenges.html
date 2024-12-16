@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block content %}
+{% include "includes/sidenav.html" %}
+
+    <style>
+        .challenges-container {
+            text-align: center;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            max-width: 900px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .toggle-buttons {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .toggle-buttons button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            background-color: #FF0000; /* Red background */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-buttons button.active {
+            background-color: #B22222; /* Darker red background */
+        }
+
+        .toggle-buttons button:hover {
+            background-color: #B22222; /* Darker red background on hover */
+        }
+
+        .challenges-list {
+            display: none;
+        }
+
+        .challenges-list.active {
+            display: block;
+        }
+
+        .progress-bar-container {
+        position: relative;
+        width: 100%;
+        background-color: #ddd;
+        border-radius: 4px;
+        margin-top: 10px;
+        height: 20px;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background-color: #FF0000; /* Red progress */
+        border-radius: 4px;
+        width: 0; /* Will be dynamically filled */
+        transition: width 0.5s ease; /* Smooth animation */
+    }
+
+    .progress-bar-container span {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: bold;
+        color: #333;
+    }
+    </style>
+
+    <div class="challenges-container">
+        <h2>Challenges</h2>
+
+        <div class="toggle-buttons">
+            <button id="singleUserBtn" class="active" onclick="toggleChallenges('single')">Single User Challenges</button>
+            <button id="teamBtn" onclick="toggleChallenges('team')">Team Challenges</button>
+        </div>
+
+        <div id="singleUserChallenges" class="challenges-list active">
+            <h3>Single User Challenges</h3>
+            {% if single_user_challenges %}
+                <ul>
+                    {% for challenge in single_user_challenges %}
+                        <li>
+                            <h4>{{ challenge.title }}</h4>
+                            <p>{{ challenge.description }}</p>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="progress-bar-{{ challenge.id }}"
+                                     style="width: {{ challenge.progress }}%; background-color: #FF0000; transition: width 0.5s ease;">
+                                </div>
+                                <span>{{ challenge.progress|floatformat:0 }}%</span>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No single user challenges available.</p>
+            {% endif %}
+        </div>
+
+        <div id="teamChallenges" class="challenges-list">
+            <h3>Team Challenges</h3>
+            {% if team_challenges %}
+                <ul>
+                    {% for challenge in team_challenges %}
+                        <li>
+                            <h4>{{ challenge.title }}</h4>
+                            <p>{{ challenge.description }}</p>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="progress-bar-{{ challenge.id }}"
+                                     style="width: {{ challenge.progress }}%; background-color: #FF0000; transition: width 0.5s ease;">
+                                </div>
+                                <span>{{ challenge.progress|floatformat:0 }}%</span>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No team challenges available.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function toggleChallenges(type) {
+            const singleUserBtn = document.getElementById('singleUserBtn');
+            const teamBtn = document.getElementById('teamBtn');
+            const singleUserChallenges = document.getElementById('singleUserChallenges');
+            const teamChallenges = document.getElementById('teamChallenges');
+
+            if (type === 'single') {
+                singleUserBtn.classList.add('active');
+                teamBtn.classList.remove('active');
+                singleUserChallenges.classList.add('active');
+                teamChallenges.classList.remove('active');
+            } else {
+                singleUserBtn.classList.remove('active');
+                teamBtn.classList.add('active');
+                singleUserChallenges.classList.remove('active');
+                teamChallenges.classList.add('active');
+            }
+        }
+    </script>
+{% endblock content %}

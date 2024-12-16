@@ -30,6 +30,7 @@ from google.cloud import storage
 from mdeditor.fields import MDTextField
 from rest_framework.authtoken.models import Token
 from fresh.models import Team  # Import the Team model from the correct module
+from fresh.models import Challenge
 
 logger = logging.getLogger(__name__)
 
@@ -661,6 +662,7 @@ class UserProfile(models.Model):
                 self.save()
 
                 self.award_streak_badges()
+                self.update_daily_check_in_challenge()
 
         except Exception as e:
             # Log the error or handle it appropriately
@@ -691,6 +693,34 @@ class UserProfile(models.Model):
                 # Avoid duplicate badge awards
                 if not UserBadge.objects.filter(user=self.user, badge=badge).exists():
                     UserBadge.objects.create(user=self.user, badge=badge)
+
+    def update_daily_check_in_challenge(self):
+        """
+        Update the daily check-in challenge progress for the user and their team.
+        """
+        user = self.user
+        team = self.team if self.team else None
+
+        # Update single user challenge progress
+        single_challenge = Challenge.objects.get(title="Sign in for 5 Days", challenge_type="single")
+        single_challenge.progress = min((self.current_streak / 5) * 100, 100)
+        single_challenge.save()
+
+        # Update team challenge progress
+        if team:
+            team_challenge = Challenge.objects.get(title="All Members Sign in for 5 Days", challenge_type="team")
+            team_members_streaks = [member.userprofile.current_streak for member in team.members.all()]
+            min_streak = min(team_members_streaks) if team_members_streaks else 0
+            team_challenge.progress = min((min_streak / 5) * 100, 100)
+            team_challenge.save()
+
+            # Check if all team members have checked in today
+            all_checked_in_today = all(
+                member.userprofile.last_check_in == timezone.now().date() for member in team.members.all()
+            )
+            if all_checked_in_today:
+                team_challenge.progress = 100
+                team_challenge.save()
 
 
 def create_profile(sender, **kwargs):

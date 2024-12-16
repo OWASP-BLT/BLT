@@ -231,22 +231,13 @@
                 </li>
                 <!-- Submenu Items -->
                 <ul class="pl-8">
-                    <li class="mb-2 {% if request.path == '/leaderboard/' %}bg-gray-200{% endif %}">
-                        <a href="{% url 'leaderboard_global' %}"
+                    <li class="mb-2 {% if request.path == '/fresh/challenges' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'challenges' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/leaderboard/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                             <div class="icon text-yellow-500">
                                 <i class="fas fa-medal fa-lg"></i>
                             </div>
                             <span>Challenges</span>
-                        </a>
-                    </li>
-                    <li class="mb-2 {% if request.path == '/contributors/' %}bg-gray-200{% endif %}">
-                        <a href="{% url 'contributors' %}"
-                           class="flex items-center w-full no-underline p-2 {% if '/contributors/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
-                            <div class="icon text-blue-500">
-                                <i class="fas fa-laptop-code fa-lg"></i>
-                            </div>
-                            <span>Activity</span>
                         </a>
                     </li>
                     <li class="mb-2 {% if request.path == 'fresh/team_overview/' %}bg-gray-200{% endif %}">

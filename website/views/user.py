@@ -56,6 +56,7 @@ from website.models import (
     Wallet,
 )
 from website.utils import is_valid_https_url, rebuild_safe_url
+from fresh.models import Team
 
 
 @receiver(user_signed_up)
@@ -443,7 +444,20 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
+        
+        # Single user leaderboard
         context["leaderboard"] = self.get_leaderboard()
+
+        # Within team leaderboard
+        user_profile = self.request.user.userprofile
+        if user_profile.team:
+            context["team_leaderboard"] = User.objects.filter(userprofile__team=user_profile.team).annotate(total_score=Sum('points__score')).order_by('-total_score')[:10]
+        else:
+            context["team_leaderboard"] = []
+
+        # Global team leaderboard
+        context["global_team_leaderboard"] = Team.objects.order_by('-fresh_points')[:10]
+
         return context
 
 
@@ -1019,3 +1033,26 @@ def validate_signature(payload, signature):
     computed_signature = f"sha256={computed_hmac.hexdigest()}"
 
     return hmac.compare_digest(computed_signature, signature)
+
+
+@login_required
+def leaderboard_global(request):
+    # Single user leaderboard
+    leaderboard = User.objects.annotate(total_score=Sum('points__score')).order_by('-total_score')[:10]
+
+    # Within team leaderboard
+    user_profile = request.user.userprofile
+    if user_profile.team:
+        team_leaderboard = User.objects.filter(userprofile__team=user_profile.team).annotate(total_score=Sum('points__score')).order_by('-total_score')[:10]
+    else:
+        team_leaderboard = []
+
+    # Global team leaderboard
+    global_team_leaderboard = Team.objects.order_by('-fresh_points')[:10]
+
+    context = {
+        'leaderboard': leaderboard,
+        'team_leaderboard': team_leaderboard,
+        'global_team_leaderboard': global_team_leaderboard,
+    }
+    return render(request, 'leaderboard_global.html', context)

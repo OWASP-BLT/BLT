@@ -19,19 +19,38 @@
             margin-bottom: 20px;
         }
 
+        .team-avatar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+
+        .team-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
         .slider-container {
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
+            margin-top: 20px;
         }
 
         .member-card {
             width: 150px;
-            height: 150px;
+            height: auto;
             margin: 0 10px;
-            border-radius: 50%;
-            overflow: hidden;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
             transform: scale(0.8);
             opacity: 0.6;
             transition: all 0.3s ease-in-out;
@@ -40,12 +59,6 @@
         .member-card.active {
             transform: scale(1.2);
             opacity: 1;
-        }
-
-        .member-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
         }
 
         .slider-nav {
@@ -199,23 +212,78 @@
             cursor: pointer;
             color: red;
         }
+
+        .join-requests-button {
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        .join-requests-button .btn {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .join-requests-button .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .add-member-button {
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        .add-member-button .btn {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .add-member-button .btn:hover {
+            background-color: #218838;
+        }
     </style>
 
     {% include "includes/sidenav.html" %}
   
     <div class="team-overview-container">
         {% if user.userprofile.team %}
+            <!-- Team Avatar -->
+            <div class="team-avatar">
+                <img src="{{ user.userprofile.team.avatar.url }}" alt="{{ user.userprofile.team.name }}">
+            </div>
+
             <!-- Team Name -->
             <div class="team-name">{{ user.userprofile.team.name }}</div>
+
+            <!-- Team Leader -->
+            <div class="team-leader">
+                <strong>Team Leader:</strong> {{ user.userprofile.team.leader.username }}
+            </div>
 
             <!-- Team Members Slider -->
             <div class="slider-container">
                 <button class="slider-nav left" onclick="prevMember()">‹</button>
 
+                <!-- Always display the team leader -->
+                <div class="member-card active">
+                    <span>{{ user.userprofile.team.leader.username }}</span>
+                </div>
+
                 {% for member in user.userprofile.team.members.all %}
-                    <div class="member-card {% if forloop.first %}active{% endif %}">
-                        <img src="{{ member.userprofile.user_avatar.url }}" alt="{{ member.username }}">
-                    </div>
+                    <!-- {% if member != user.userprofile.team.leader %} -->
+                        <div class="member-card">
+                            <span>{{ member.username }}</span>
+                        </div>
+                    <!-- {% endif %} -->
                 {% endfor %}
 
                 <button class="slider-nav right" onclick="nextMember()">›</button>
@@ -223,16 +291,35 @@
 
             <!-- Team Achievements -->
             <div class="achievements">
-                <h3>Team Achievements:</h3>
-                <ul>
-                    {% for achievement in user.userprofile.team.achievements.splitlines %}
-                        <li>{{ achievement }}</li>
-                    {% endfor %}
-                </ul>
+
+            </div>
+
+            <!-- Delete Team Button (visible only to the leader) -->
+            {% if user.userprofile.team.leader == user %}
+                <div class="delete-team-button">
+                    <form method="post" action="{% url 'delete_team' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete Team</button>
+                    </form>
+                </div>
+            {% endif %}
+
+            <!-- Leave Team Button -->
+            <div class="leave-team-button">
+                <form method="post" action="{% url 'leave_team' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-warning">Leave Team</button>
+                </form>
             </div>
         {% else %}
             <button onclick="openModal()">Create a Team</button>
         {% endif %}
+    </div>
+    <div class="join-requests-button">
+        <a href="{% url 'join_requests' %}" class="btn">View Join Requests</a>
+    </div>
+    <div class="add-member-button">
+        <button class="btn" onclick="openAddMemberModal()">Add New Member</button>
     </div>
 
     <!-- Modal for Creating a Team -->
@@ -258,6 +345,25 @@
                 </div>
                 <div class="form-group">
                     <button type="submit">Create Team</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Adding a New Member -->
+    <div id="addMemberModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAddMemberModal()">&times;</span>
+            <h2>Add New Member</h2>
+            <form id="addMemberForm" method="post" action="{% url 'add_member' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="newMember">Username</label>
+                    <input type="text" id="newMember" name="newMember" placeholder="Enter username" onkeyup="searchNewMember(this.value)" required>
+                    <div id="newMemberDropdown" class="dropdown-content"></div>
+                </div>
+                <div class="form-group">
+                    <button type="submit">Send Join Request</button>
                 </div>
             </form>
         </div>
@@ -291,6 +397,9 @@
 
         // Initialize slider
         updateSlider();
+
+        // Log team members in the console
+        // console.log("Team Members:", {{ team_members|safe }});
 
         // Modal functions
         function openModal() {
@@ -344,7 +453,7 @@
                 .then(data => {
                     let dropdownContent = "";
                     data.forEach(user => {
-                        dropdownContent += `<div class="dropdown-item" onclick="selectUser('${user.user__username}')">${user.user__username}</div>`;
+                        dropdownContent += `<div class="dropdown-item" onclick="selectUser('${user.username}')">${user.username}</div>`;
                     });
                     document.getElementById('userDropdown').innerHTML = dropdownContent;
                 });
@@ -354,6 +463,7 @@
         function selectUser(username) {
             const selectedUsersContainer = document.getElementById('selectedUsers');
             const currentMembers = Array.from(selectedUsersContainer.children).map(child => child.dataset.username);
+
             if (!currentMembers.includes(username)) {
                 const userDiv = document.createElement('div');
                 userDiv.className = 'selected-user';
@@ -370,5 +480,70 @@
             const userDiv = element.parentElement;
             userDiv.remove();
         }
+
+        // Modal functions for adding a new member
+        function openAddMemberModal() {
+            document.getElementById('addMemberModal').style.display = "block";
+        }
+
+        function closeAddMemberModal() {
+            document.getElementById('addMemberModal').style.display = "none";
+        }
+
+        // Close the modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('addMemberModal');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // Handle add member form submission
+        document.getElementById('addMemberForm').onsubmit = function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            }).then(response => {
+                if (response.ok) {
+                    closeAddMemberModal();
+                    window.location.reload();
+                } else {
+                    alert('Failed to send join request. Please try again.');
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('Failed to send join request. Please try again.');
+            });
+        }
+
+        // Search users and display in dropdown for adding a new member
+        function searchNewMember(query) {
+            if (query.length < 2) {
+                document.getElementById('newMemberDropdown').innerHTML = "";
+                return;
+            }
+
+            fetch(`/fresh/search-users/?query=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    let dropdownContent = "";
+                    data.forEach(user => {
+                        dropdownContent += `<div class="dropdown-item" onclick="selectNewMember('${user.username}')">${user.username}</div>`;
+                    });
+                    document.getElementById('newMemberDropdown').innerHTML = dropdownContent;
+                });
+        }
+
+        // Select user from dropdown for adding a new member
+        function selectNewMember(username) {
+            document.getElementById('newMember').value = username;
+            document.getElementById('newMemberDropdown').innerHTML = "";
+        }
     </script>
 {% endblock content %}
+
