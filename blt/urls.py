@@ -1,4 +1,3 @@
-from company.views import ShowBughuntView, SlackCallbackView
 from dj_rest_auth.registration.views import SocialAccountDisconnectView, SocialAccountListView
 from dj_rest_auth.views import PasswordResetConfirmView
 from django.conf import settings
@@ -61,6 +60,8 @@ from website.views.company import (
     delete_manager,
     delete_prize,
     edit_prize,
+    ShowBughuntView,
+    SlackCallbackView,
 )
 from website.views.core import (
     FacebookConnect,
