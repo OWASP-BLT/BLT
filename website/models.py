@@ -107,6 +107,11 @@ class SlackIntegration(models.Model):
         return f"Slack Integration for {self.integration.company.name}"
 
 
+class CompanyType(Enum):
+    COMPANY = "company"
+    INDIVIDUAL = "individual"
+    TEAM = "team"
+
 class Company(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_companies")
@@ -123,10 +128,22 @@ class Company(models.Model):
     is_active = models.BooleanField(default=False)
     tags = models.ManyToManyField(Tag, blank=True)
     integrations = models.ManyToManyField(Integration, related_name="companies")
+    fresh_points = models.IntegerField(default=0)  # Add fresh_points field
+    type = models.CharField(
+        max_length=10,
+        choices=[(tag.value, tag.name) for tag in CompanyType],
+        default=CompanyType.COMPANY.value,
+    )
+
 
     def __str__(self):
         return self.name
 
+class JoinRequest(models.Model):
+    team = models.ForeignKey(Company, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_accepted = models.BooleanField(default=False)
 
 class Domain(models.Model):
     company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
@@ -582,6 +599,13 @@ class UserProfile(models.Model):
     discounted_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     modified = models.DateTimeField(auto_now=True)
     visit_count = models.PositiveIntegerField(default=0)
+    team = models.ForeignKey(
+        Company, on_delete=models.SET_NULL, related_name="user_profiles", null=True, blank=True
+    )
+
+    def check_team_membership(self):
+        return self.team is not None
+
     current_streak = models.IntegerField(default=0)
     longest_streak = models.IntegerField(default=0)
     last_check_in = models.DateField(null=True, blank=True)
@@ -685,13 +709,11 @@ class UserProfile(models.Model):
                 if not UserBadge.objects.filter(user=self.user, badge=badge).exists():
                     UserBadge.objects.create(user=self.user, badge=badge)
 
-
 def create_profile(sender, **kwargs):
     user = kwargs["instance"]
     if kwargs["created"]:
         profile = UserProfile(user=user)
         profile.save()
-
 
 post_save.connect(create_profile, sender=User)
 

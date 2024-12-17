@@ -183,7 +183,16 @@ from website.views.user import (
     users_view,
     withdraw,
 )
-
+from website.views.fresh import (
+    TeamOverview,
+    add_member,
+    create_team,
+    join_requests,
+    search_users,
+    leave_team,
+    delete_team,
+    kick_member,
+)
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
 
 router = routers.DefaultRouter()
@@ -664,6 +673,17 @@ urlpatterns = [
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
     path("assign-badge/<str:username>/", assign_badge, name="assign_badge"),
     path("github-webhook/", github_webhook, name="github-webhook"),
+
+
+    #gamification related urls
+    path('fresh/team_overview', TeamOverview.as_view(), name='team_overview'),
+    path('fresh/search-users/', search_users, name='search_users'),
+    path('fresh/create-team/', create_team, name='create_team'),
+    path('fresh/join-requests/', join_requests, name='join_requests'),
+    path('fresh/add-member/', add_member, name='add_member'),
+    path('fresh/delete-team/', delete_team, name='delete_team'),
+    path('fresh/leave-team/', leave_team, name='leave_team'),
+    path('fresh/kick-member/', kick_member, name='kick_member')
 ]
 
 if settings.DEBUG:
