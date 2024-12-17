@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0169_dailystatusreport_current_mood_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

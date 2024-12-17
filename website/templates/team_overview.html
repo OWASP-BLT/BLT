@@ -349,50 +349,47 @@
             background-color: #e53935;
         }
     </style>
-
     {% include "includes/sidenav.html" %}
-  
     <div class="team-overview-container">
         {% if user.is_authenticated %}
             {% if user.userprofile.team %}
                 <!-- Team Avatar -->
                 <div class="team-avatar">
-                    <img src="{{ user.userprofile.team.avatar.url }}" alt="{{ user.userprofile.team.name }}">
+                    <img src="{{ user.userprofile.team.avatar.url }}"
+                         alt="{{ user.userprofile.team.name }}"
+                         width="100"
+                         height="100">
                 </div>
-
                 <!-- Team Name -->
                 <div class="team-name">{{ user.userprofile.team.name }}</div>
-
                 <!-- Team Leader -->
                 <div class="team-leader">
                     <strong>Team Leader:</strong> {{ user.userprofile.team.admin.username }}
                 </div>
-
                 <!-- Team Members Slider -->
                 <div class="slider-container">
                     <button class="slider-nav left" onclick="prevMember()">‹</button>
-
                     <!-- Always display the team leader -->
                     <div class="member-card active" id="admin-card">
                         <span>{{ user.userprofile.team.admin.username }}</span>
                     </div>
-
                     {% for member in user.userprofile.team.managers.all %}
-                        <div class="member-card" id="member-{{ member.username }}" onclick="setActiveMember('{{ member.username }}')">
+                        <div class="member-card"
+                             id="member-{{ member.username }}"
+                             onclick="setActiveMember('{{ member.username }}')">
                             <span>{{ member.username }}</span>
                             <!-- Show "Kick" button for all members except the admin -->
                             {% if user.userprofile.team.admin == user and user.userprofile.team.admin != member %}
-                                <button class="kick-button" id="kick-{{ member.username }}" onclick="kickMember('{{ member.username }}')">Kick</button>
+                                <button class="kick-button"
+                                        id="kick-{{ member.username }}"
+                                        onclick="kickMember('{{ member.username }}')">Kick</button>
                             {% endif %}
                         </div>
                     {% endfor %}
-
                     <button class="slider-nav right" onclick="nextMember()">›</button>
                 </div>
-
                 <!-- Team Achievements -->
                 <div class="achievements"></div>
-
                 <!-- Team Action Buttons (Delete Team, Leave Team, Kick Member) -->
                 <div class="team-actions">
                     {% if user.userprofile.team.admin == user %}
@@ -403,7 +400,6 @@
                             </form>
                         </div>
                     {% endif %}
-
                     <div class="leave-team-button">
                         <form method="post" action="{% url 'leave_team' %}">
                             {% csrf_token %}
@@ -426,13 +422,15 @@
             <button class="btn" onclick="openAddMemberModal()">Add New Member</button>
         </div>
     {% endif %}
-
     <!-- Modal for Creating a Team -->
     <div id="teamModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
+            <span class="close" onclick="closeModal()">×</span>
             <h2>Create a Team</h2>
-            <form id="createTeamForm" method="post" enctype="multipart/form-data" action="{% url 'create_team' %}">
+            <form id="createTeamForm"
+                  method="post"
+                  enctype="multipart/form-data"
+                  action="{% url 'create_team' %}">
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="teamName">Team Name</label>
@@ -440,15 +438,21 @@
                 </div>
                 <div class="form-group">
                     <label for="teamAvatar">Avatar</label>
-                    <input type="file" id="teamAvatar" name="teamAvatar" accept="image/*" required>
+                    <input type="file"
+                           id="teamAvatar"
+                           name="teamAvatar"
+                           accept="image/*"
+                           required>
                 </div>
                 <div class="form-group">
                     <label for="teamMembers">Add Members</label>
-                    <input type="text" id="teamMembers" name="teamMembers" placeholder="Enter usernames" onkeyup="searchUsers(this.value)">
-                    
+                    <input type="text"
+                           id="teamMembers"
+                           name="teamMembers"
+                           placeholder="Enter usernames"
+                           onkeyup="searchUsers(this.value)">
                     <!-- Hidden input field that will store the selected members -->
                     <input type="hidden" id="selectedMembers" name="selectedMembers">
-                    
                     <div id="userDropdown" class="dropdown-content"></div>
                     <div id="selectedUsers" class="selected-users"></div>
                 </div>
@@ -458,17 +462,21 @@
             </form>
         </div>
     </div>
-
     <!-- Modal for Adding a New Member -->
     <div id="addMemberModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeAddMemberModal()">&times;</span>
+            <span class="close" onclick="closeAddMemberModal()">×</span>
             <h2>Add New Member</h2>
             <form id="addMemberForm" method="post" action="{% url 'add_member' %}">
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="newMember">Username</label>
-                    <input type="text" id="newMember" name="newMember" placeholder="Enter username" onkeyup="searchNewMember(this.value)" required>
+                    <input type="text"
+                           id="newMember"
+                           name="newMember"
+                           placeholder="Enter username"
+                           onkeyup="searchNewMember(this.value)"
+                           required>
                     <div id="newMemberDropdown" class="dropdown-content"></div>
                 </div>
                 <div class="form-group">
@@ -477,7 +485,6 @@
             </form>
         </div>
     </div>
-
     <script>
         // JavaScript for Slider Navigation
         let currentIndex = 0;

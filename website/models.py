@@ -112,6 +112,7 @@ class CompanyType(Enum):
     INDIVIDUAL = "individual"
     TEAM = "team"
 
+
 class Company(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_companies")
@@ -135,15 +136,16 @@ class Company(models.Model):
         default=CompanyType.COMPANY.value,
     )
 
-
     def __str__(self):
         return self.name
+
 
 class JoinRequest(models.Model):
     team = models.ForeignKey(Company, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     is_accepted = models.BooleanField(default=False)
+
 
 class Domain(models.Model):
     company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
@@ -709,11 +711,13 @@ class UserProfile(models.Model):
                 if not UserBadge.objects.filter(user=self.user, badge=badge).exists():
                     UserBadge.objects.create(user=self.user, badge=badge)
 
+
 def create_profile(sender, **kwargs):
     user = kwargs["instance"]
     if kwargs["created"]:
         profile = UserProfile(user=user)
         profile.save()
+
 
 post_save.connect(create_profile, sender=User)
 
