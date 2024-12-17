@@ -78,12 +78,8 @@ jobs:
       security-events: write
       actions: read
       contents: read
-    strategy:
-      fail-fast: true
-      matrix:
-        language: ['none']  # Default to none, will be updated based on changes
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
@@ -109,10 +105,10 @@ jobs:
         id: set-matrix
         run: |
           languages=""
-          if [[ "${{ steps.changes.outputs.python }}" == 'true' ]]; then
+          if [[ "${{ steps.changes.outputs.python }}" == "true" ]]; then
             languages="python"
           fi
-          if [[ "${{ steps.changes.outputs.javascript }}" == 'true' ]]; then
+          if [[ "${{ steps.changes.outputs.javascript }}" == "true" ]]; then
             if [[ -n "$languages" ]]; then
               languages="$languages,javascript"
             else
@@ -125,17 +121,16 @@ jobs:
           fi
           echo "languages=$languages" >> $GITHUB_OUTPUT
 
-
       - uses: github/codeql-action/init@v3
-        if: steps.set-matrix.outputs.languages != ''
+        if: ${{ steps.set-matrix.outputs.languages != '' }}
         with:
           languages: ${{ steps.set-matrix.outputs.languages }}
 
       - uses: github/codeql-action/autobuild@v2
-        if: steps.set-matrix.outputs.languages
+        if: ${{ steps.set-matrix.outputs.languages != '' }}
 
-      - uses: github/codeql-action/analyze@v2 
-        if: steps.set-matrix.outputs.languages
+      - uses: github/codeql-action/analyze@v2
+        if: ${{ steps.set-matrix.outputs.languages != '' }}
 
   test:
     name: Run Tests
@@ -147,8 +142,8 @@ jobs:
       contents: write
       actions: write
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
       - run: pip install poetry
