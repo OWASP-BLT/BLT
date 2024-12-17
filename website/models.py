@@ -129,6 +129,8 @@ class Company(models.Model):
     is_active = models.BooleanField(default=False)
     tags = models.ManyToManyField(Tag, blank=True)
     integrations = models.ManyToManyField(Integration, related_name="companies")
+    trademark_count = models.IntegerField(default=0)
+    trademark_check_date = models.DateTimeField(null=True, blank=True)
     fresh_points = models.IntegerField(default=0)  # Add fresh_points field
     type = models.CharField(
         max_length=10,
