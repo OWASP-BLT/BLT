@@ -63,16 +63,6 @@ from website.views.core import (
     view_suggestions,
     vote_suggestions,
 )
-from website.views.fresh import (
-    TeamOverview,
-    add_member,
-    create_team,
-    delete_team,
-    join_requests,
-    kick_member,
-    leave_team,
-    search_users,
-)
 from website.views.issue import (
     AllIssuesView,
     IssueCreate,
@@ -163,6 +153,16 @@ from website.views.project import (
     blt_tomato,
     distribute_bacon,
     select_contribution,
+)
+from website.views.teams import (
+    TeamOverview,
+    add_member,
+    create_team,
+    delete_team,
+    join_requests,
+    kick_member,
+    leave_team,
+    search_users,
 )
 from website.views.user import (
     CustomObtainAuthToken,
@@ -498,7 +498,6 @@ urlpatterns = [
     re_path(r"^invite/$", InviteCreate.as_view(template_name="invite.html"), name="invite"),
     re_path(r"^terms/$", TemplateView.as_view(template_name="terms.html"), name="terms"),
     re_path(r"^about/$", TemplateView.as_view(template_name="about.html"), name="about"),
-    re_path(r"^teams/$", TemplateView.as_view(template_name="teams.html"), name="teams"),
     re_path(
         r"^googleplayapp/$",
         TemplateView.as_view(template_name="coming_soon.html"),
@@ -675,14 +674,14 @@ urlpatterns = [
     path("assign-badge/<str:username>/", assign_badge, name="assign_badge"),
     path("github-webhook/", github_webhook, name="github-webhook"),
     # gamification related urls
-    path("fresh/team_overview", TeamOverview.as_view(), name="team_overview"),
-    path("fresh/search-users/", search_users, name="search_users"),
-    path("fresh/create-team/", create_team, name="create_team"),
-    path("fresh/join-requests/", join_requests, name="join_requests"),
-    path("fresh/add-member/", add_member, name="add_member"),
-    path("fresh/delete-team/", delete_team, name="delete_team"),
-    path("fresh/leave-team/", leave_team, name="leave_team"),
-    path("fresh/kick-member/", kick_member, name="kick_member"),
+    path("teams/overview", TeamOverview.as_view(), name="team_overview"),
+    path("teams/search-users/", search_users, name="search_users"),
+    path("teams/create-team/", create_team, name="create_team"),
+    path("teams/join-requests/", join_requests, name="join_requests"),
+    path("teams/add-member/", add_member, name="add_member"),
+    path("teams/delete-team/", delete_team, name="delete_team"),
+    path("teams/leave-team/", leave_team, name="leave_team"),
+    path("teams/kick-member/", kick_member, name="kick_member"),
 ]
 
 if settings.DEBUG:

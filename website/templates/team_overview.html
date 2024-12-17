@@ -527,7 +527,7 @@
 
         // Kick member function
         function kickMember(username) {
-            fetch('/fresh/kick-member/', {
+            fetch('/teams/kick-member/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -617,7 +617,7 @@
                 return;
             }
 
-            fetch(`/fresh/search-users/?query=${query}`)
+            fetch(`/teams/search-users/?query=${query}`)
                 .then(response => response.json())
                 .then(data => {
                     let dropdownContent = "";
@@ -705,7 +705,7 @@
                 return;
             }
 
-            fetch(`/fresh/search-users/?query=${query}`)
+            fetch(`/teams/search-users/?query=${query}`)
                 .then(response => response.json())
                 .then(data => {
                     let dropdownContent = "";
