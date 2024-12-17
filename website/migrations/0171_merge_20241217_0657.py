@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0170_company_fresh_points_company_type_userprofile_team_and_more"),
         ("website", "0170_company_trademark_check_date_company_trademark_count"),
