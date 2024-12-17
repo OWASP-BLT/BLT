@@ -25,6 +25,7 @@ from website.models import (
     Monitor,
     Payment,
     Points,
+    Post,
     Project,
     SlackIntegration,
     Subscription,
@@ -419,6 +420,11 @@ class ContributionAdmin(admin.ModelAdmin):
     date_hierarchy = "created"
 
 
+class PostAdmin(admin.ModelAdmin):
+    list_display = ("title", "author", "created_at", "image")
+    prepopulated_fields = {"slug": ("title",)}
+
+
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Bid, BidAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)
@@ -449,3 +455,4 @@ admin.site.register(Tag, TagAdmin)
 admin.site.register(Integration)
 admin.site.register(SlackIntegration)
 admin.site.register(Activity)
+admin.site.register(Post, PostAdmin)
