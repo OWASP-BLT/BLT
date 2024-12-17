@@ -55,13 +55,13 @@ from website.views.company import (
     DomainView,
     EndBughuntView,
     RegisterCompanyView,
+    ShowBughuntView,
+    SlackCallbackView,
     accept_bug,
     company_view,
     delete_manager,
     delete_prize,
     edit_prize,
-    ShowBughuntView,
-    SlackCallbackView,
 )
 from website.views.core import (
     FacebookConnect,
