@@ -292,18 +292,26 @@ def handle_sign_in_challenges(user, user_profile):
     Update progress for single challenges based on the user's streak.
     """
     try:
+        print("Handling user sign-in challenge...")
         challenge_title = "Sign in for 5 Days"  # Title of the single challenge
         challenge = Challenge.objects.get(title=challenge_title, challenge_type="single")
-
+        # Ensure the team is registered as a participant
+        if user not in challenge.participants.all():
+            challenge.participants.add(user)
         # Use the user's current streak to calculate progress
         streak_count = user_profile.current_streak
-        progress = min((streak_count / 5) * 100, 100)  # Max 100%
-
+        print(streak_count)
+        # Calculate the progress based on the streak count
+        if streak_count >= 5:
+            progress = 100
+        else:
+            progress = streak_count * 100 / 5  # Calculate progress if streak is less than 5
+        print(progress)
         # Update the challenge progress
         challenge.progress = int(progress)
         challenge.save()
 
-        # Award points if the challenge is completed
+        # Award points if the challenge is completed (when streak is 5)
         if progress == 100 and not challenge.is_completed():
             challenge.completed = True
             challenge.completed_at = timezone.now()
@@ -314,8 +322,9 @@ def handle_sign_in_challenges(user, user_profile):
                 score=challenge.points,
                 reason=f"Completed '{challenge_title}' challenge",
             )
+
     except Challenge.DoesNotExist:
-        # Challenge doesn't exist; handle accordingly (optional logging)
+        # Handle case when the challenge does not exist
         pass
 
 

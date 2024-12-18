@@ -37,6 +37,7 @@
     .challenge-title {
         font-size: 18px;
         font-weight: bold;
+        flex-grow: 1; /* Allow title to take up remaining space */
     }
 
     .dropdown-icon {
@@ -94,13 +95,13 @@
         font-weight: bold;
         color: #333;
     }
+
     .challenge-points {
         font-size: 14px;
         color: #777;
         font-weight: bold;
         margin-right: 3px; /* Adjusted spacing between points and arrow */
     }
-
     </style>
     <div class="challenges-container">
         <h2>Team Challenges</h2>
@@ -110,6 +111,7 @@
                     <div class="challenge-item" onclick="toggleDetails({{ challenge.id }})">
                         <div class="challenge-header">
                             <span class="challenge-title">{{ challenge.title }}</span>
+                            <span class="challenge-points">{{ challenge.points }} pts</span>
                             <span id="dropdown-icon-{{ challenge.id }}"
                                   class="dropdown-icon fas fa-chevron-down"></span>
                         </div>
