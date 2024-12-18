@@ -3,8 +3,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
-from blog.models import Post
-
 from .models import (
     Activity,
     Badge,
@@ -12,6 +10,7 @@ from .models import (
     Hunt,
     IpReport,
     Issue,
+    Post,
     Suggestion,
     TimeLog,
     UserBadge,
@@ -68,7 +67,7 @@ def handle_post_save(sender, instance, created, **kwargs):
         create_activity(instance, "created")
 
     elif sender == Post and created:  # Track first blog post
-        assign_first_action_badge(instance.user, "First Blog Posted")
+        assign_first_action_badge(instance.author, "First Blog Posted")
         create_activity(instance, "created")
 
     elif sender == Issue and created:  # Track first bug report
