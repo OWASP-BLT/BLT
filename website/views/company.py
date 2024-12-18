@@ -22,7 +22,6 @@ from django.views.generic import View
 from slack_bolt import App
 
 from website.models import (
-    Company,
     Domain,
     Hunt,
     HuntPrize,
@@ -30,6 +29,7 @@ from website.models import (
     IntegrationServices,
     Issue,
     IssueScreenshot,
+    Organization,
     SlackIntegration,
     Winner,
 )
@@ -46,42 +46,42 @@ def get_email_domain(email):
     return domain
 
 
-def validate_company_user(func):
+def validate_organization_user(func):
     def wrapper(self, request, id, *args, **kwargs):
-        company = Company.objects.filter(id=id).first()
+        organization = Organization.objects.filter(id=id).first()
 
-        if not company:
+        if not organization:
             return redirect("company_view")
 
-        # Check if the user is the admin of the company
-        if company.admin == request.user:
-            return func(self, request, company.id, *args, **kwargs)
+        # Check if the user is the admin of the organization
+        if organization.admin == request.user:
+            return func(self, request, organization.id, *args, **kwargs)
 
-        # Check if the user is a manager of the company
-        if company.managers.filter(id=request.user.id).exists():
-            return func(self, request, company.id, *args, **kwargs)
+        # Check if the user is a manager of the organization
+        if organization.managers.filter(id=request.user.id).exists():
+            return func(self, request, organization.id, *args, **kwargs)
 
         # Get all domains where the user is a manager
         user_domains = Domain.objects.filter(managers=request.user)
 
-        # Check if any of these domains belong to the company
-        if user_domains.filter(company=company).exists():
-            return func(self, request, company.id, *args, **kwargs)
+        # Check if any of these domains belong to the organization
+        if user_domains.filter(organization=organization).exists():
+            return func(self, request, organization.id, *args, **kwargs)
 
         return redirect("company_view")
 
     return wrapper
 
 
-def check_company_or_manager(func):
+def check_organization_or_manager(func):
     def wrapper(self, request, *args, **kwargs):
         user = request.user
 
         if not user.is_authenticated:
             return redirect("/accounts/login/")
 
-        # Check if the user is an admin or manager of any company
-        if not Company.objects.filter(Q(admin=user) | Q(managers=user)).exists():
+        # Check if the user is an admin or manager of any organization
+        if not Organization.objects.filter(Q(admin=user) | Q(managers=user)).exists():
             messages.error(request, "You are not authorized to access this resource.")
             return redirect("company_view")
 
@@ -90,7 +90,7 @@ def check_company_or_manager(func):
     return wrapper
 
 
-def company_view(request, *args, **kwargs):
+def Organization_view(request, *args, **kwargs):
     user = request.user
 
     if not user.is_active:
@@ -98,33 +98,33 @@ def company_view(request, *args, **kwargs):
         return redirect("/")
 
     if isinstance(user, AnonymousUser):
-        messages.error(request, "Login with company or domain-provided email.")
+        messages.error(request, "Login with organization or domain-provided email.")
         return redirect("/accounts/login/")
 
     domain = get_email_domain(user.email)
 
     if domain in restricted_domain:
-        messages.error(request, "Login with company or domain provided email.")
+        messages.error(request, "Login with organization or domain provided email.")
         return redirect("/")
 
-    user_companies = Company.objects.filter(Q(admin=user) | Q(managers=user))
+    user_companies = Organization.objects.filter(Q(admin=user) | Q(managers=user))
     if not user_companies.exists():
         # Check if the user is a manager of any domain
         user_domains = Domain.objects.filter(managers=user)
 
-        # Check if any of these domains belong to a company
-        companies_with_user_domains = Company.objects.filter(domain__in=user_domains)
+        # Check if any of these domains belong to a organization
+        companies_with_user_domains = Organization.objects.filter(domain__in=user_domains)
         if not companies_with_user_domains.exists():
-            messages.error(request, "You do not have a company, create one.")
+            messages.error(request, "You do not have a organization, create one.")
             return redirect("register_company")
 
-    # Get the company to redirect to
-    company = user_companies.first() or companies_with_user_domains.first()
+    # Get the organization to redirect to
+    organization = user_companies.first() or companies_with_user_domains.first()
 
-    return redirect("company_analytics", id=company.id)
+    return redirect("company_analytics", id=organization.id)
 
 
-class RegisterCompanyView(View):
+class RegisterOrganizationView(View):
     def get(self, request, *args, **kwargs):
         return render(request, "company/register_company.html")
 
@@ -137,39 +137,43 @@ class RegisterCompanyView(View):
             return redirect("/")
 
         if user is None or isinstance(user, AnonymousUser):
-            messages.error(request, "Login to create company")
+            messages.error(request, "Login to create organization")
             return redirect("/accounts/login/")
 
         user_domain = get_email_domain(user.email)
-        company_name = data.get("company_name", "")
-        company_url = data.get("company_url", "")
+        organization_name = data.get("company_name", "")
+        organization_url = data.get("company_url", "")
 
         if user_domain in restricted_domain:
-            messages.error(request, "Login with company email in order to create the company.")
+            messages.error(
+                request, "Login with organization email in order to create the organization."
+            )
             return redirect("/")
 
-        if company_name == "" or Company.objects.filter(name=company_name).exists():
-            messages.error(request, "Company name is invalid or already exists.")
+        if organization_name == "" or Organization.objects.filter(name=organization_name).exists():
+            messages.error(request, "organization name is invalid or already exists.")
             return redirect("register_company")
 
-        if company_url == "" or Company.objects.filter(url=company_url).exists():
-            messages.error(request, "Company URL is invalid or already exists.")
+        if organization_url == "" or Organization.objects.filter(url=organization_url).exists():
+            messages.error(request, "organization URL is invalid or already exists.")
             return redirect("register_company")
 
-        company_logo = request.FILES.get("logo")
-        if company_logo:
-            company_logo_file = company_logo.name.split(".")[0]
-            extension = company_logo.name.split(".")[-1]
-            company_logo.name = f"{company_logo_file[:99]}_{uuid.uuid4()}.{extension}"
-            logo_path = default_storage.save(f"company_logos/{company_logo.name}", company_logo)
+        organization_logo = request.FILES.get("logo")
+        if organization_logo:
+            organization_logo_file = organization_logo.name.split(".")[0]
+            extension = organization_logo.name.split(".")[-1]
+            organization_logo.name = f"{organization_logo_file[:99]}_{uuid.uuid4()}.{extension}"
+            logo_path = default_storage.save(
+                f"organization_logos/{organization_logo.name}", organization_logo
+            )
         else:
             logo_path = None
 
         try:
             with transaction.atomic():
-                company = Company.objects.create(
+                organization = Organization.objects.create(
                     admin=user,
-                    name=company_name,
+                    name=organization_name,
                     url=data["company_url"],
                     email=data["support_email"],
                     twitter=data.get("twitter_url", ""),
@@ -180,20 +184,20 @@ class RegisterCompanyView(View):
 
                 manager_emails = data.get("email", "").split(",")
                 managers = User.objects.filter(email__in=manager_emails)
-                company.managers.set(managers)
-                company.save()
+                organization.managers.set(managers)
+                organization.save()
 
         except ValidationError as e:
-            messages.error(request, f"Error saving company: {e}")
+            messages.error(request, f"Error saving organization: {e}")
             if logo_path:
                 default_storage.delete(logo_path)
             return render(request, "company/register_company.html")
 
-        messages.success(request, "Company registered successfully.")
-        return redirect("company_analytics", id=company.id)
+        messages.success(request, "organization registered successfully.")
+        return redirect("company_analytics", id=organization.id)
 
 
-class CompanyDashboardAnalyticsView(View):
+class OrganizationDashboardAnalyticsView(View):
     labels = {
         0: "General",
         1: "Number Error",
@@ -206,12 +210,16 @@ class CompanyDashboardAnalyticsView(View):
     }
     months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-    def get_general_info(self, company):
-        total_company_bugs = Issue.objects.filter(domain__company__id=company).count()
-        total_bug_hunts = Hunt.objects.filter(domain__company__id=company).count()
-        total_domains = Domain.objects.filter(company__id=company).count()
-        # Step 1: Retrieve all hunt IDs associated with the specified company
-        hunt_ids = Hunt.objects.filter(domain__company__id=company).values_list("id", flat=True)
+    def get_general_info(self, organization):
+        total_organization_bugs = Issue.objects.filter(
+            domain__organization__id=organization
+        ).count()
+        total_bug_hunts = Hunt.objects.filter(domain__organization__id=organization).count()
+        total_domains = Domain.objects.filter(organization__id=organization).count()
+        # Step 1: Retrieve all hunt IDs associated with the specified organization
+        hunt_ids = Hunt.objects.filter(domain__organization__id=organization).values_list(
+            "id", flat=True
+        )
 
         # Step 2: Sum the rewarded values from issues that have a hunt_id in the hunt_ids list
         total_money_distributed = Issue.objects.filter(hunt_id__in=hunt_ids).aggregate(
@@ -220,16 +228,16 @@ class CompanyDashboardAnalyticsView(View):
         total_money_distributed = 0 if total_money_distributed is None else total_money_distributed
 
         return {
-            "total_company_bugs": total_company_bugs,
+            "total_company_bugs": total_organization_bugs,
             "total_bug_hunts": total_bug_hunts,
             "total_domains": total_domains,
             "total_money_distributed": total_money_distributed,
         }
 
-    def get_bug_report_type_piechart_data(self, company):
+    def get_bug_report_type_piechart_data(self, organization):
         bug_report_type = (
             Issue.objects.values("label")
-            .filter(domain__company__id=company)
+            .filter(domain__organization__id=organization)
             .annotate(count=Count("label"))
         )
         bug_report_type_labels = []
@@ -246,10 +254,10 @@ class CompanyDashboardAnalyticsView(View):
             "bug_report_type_data": json.dumps(bug_report_type_data),
         }
 
-    def get_reports_on_domain_piechart_data(self, company):
+    def get_reports_on_domain_piechart_data(self, organization):
         report_piechart = (
             Issue.objects.values("url")
-            .filter(domain__company__id=company)
+            .filter(domain__organization__id=organization)
             .annotate(count=Count("url"))
         )
 
@@ -265,12 +273,12 @@ class CompanyDashboardAnalyticsView(View):
             "bug_report_on_domains_data": json.dumps(report_data),
         }
 
-    def get_current_year_monthly_reported_bar_data(self, company):
-        # returns chart data on no of bugs reported monthly on this company for current year
+    def get_current_year_monthly_reported_bar_data(self, organization):
+        # returns chart data on no of bugs reported monthly on this organization for current year
 
         current_year = timezone.now().year
         data_monthly = (
-            Issue.objects.filter(domain__company__id=company, created__year=current_year)
+            Issue.objects.filter(domain__organization__id=organization, created__year=current_year)
             .annotate(month=ExtractMonth("created"))
             .values("month")
             .annotate(count=Count("id"))
@@ -305,7 +313,7 @@ class CompanyDashboardAnalyticsView(View):
             "current_year": current_year,
         }
 
-    def bug_rate_increase_descrease_weekly(self, company, is_accepted_bugs=False):
+    def bug_rate_increase_descrease_weekly(self, organization, is_accepted_bugs=False):
         # returns stats by comparing the count of past 8-15 days (1 week) activity to this (0 - 7) week.
 
         current_date = timezone.now().date()
@@ -317,25 +325,25 @@ class CompanyDashboardAnalyticsView(View):
 
         if is_accepted_bugs:
             prev_week_issue_count = Issue.objects.filter(
-                domain__company__id=company,
+                domain__organization__id=organization,
                 created__date__range=[prev_week_start_date, prev_week_end_date],
                 verified=True,
             ).count()
 
             this_week_issue_count = Issue.objects.filter(
-                domain__company__id=company,
+                domain__organization__id=organization,
                 created__date__range=[this_week_start_date, this_week_end_date],
                 verified=True,
             ).count()
 
         else:
             prev_week_issue_count = Issue.objects.filter(
-                domain__company__id=company,
+                domain__organization__id=organization,
                 created__date__range=[prev_week_start_date, prev_week_end_date],
             ).count()
 
             this_week_issue_count = Issue.objects.filter(
-                domain__company__id=company,
+                domain__organization__id=organization,
                 created__date__range=[this_week_start_date, this_week_end_date],
             ).count()
 
@@ -354,10 +362,10 @@ class CompanyDashboardAnalyticsView(View):
             "this_week_issue_count": this_week_issue_count,
         }
 
-    def get_spent_on_bugtypes(self, company):
+    def get_spent_on_bugtypes(self, organization):
         spent_on_bugtypes = (
             Issue.objects.values("label")
-            .filter(domain__company__id=company)
+            .filter(domain__organization__id=organization)
             .annotate(spent=Sum("rewarded"))
         )
         labels = list(self.labels.values())
@@ -372,10 +380,10 @@ class CompanyDashboardAnalyticsView(View):
             "zipped_data": zip(labels, data),
         }
 
-    @validate_company_user
+    @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         companies = (
-            Company.objects.values("name", "id")
+            Organization.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
         )
@@ -383,7 +391,7 @@ class CompanyDashboardAnalyticsView(View):
         context = {
             "company": id,
             "companies": companies,
-            "company_obj": Company.objects.filter(id=id).first(),
+            "company_obj": Organization.objects.filter(id=id).first(),
             "total_info": self.get_general_info(id),
             "bug_report_type_piechart_data": self.get_bug_report_type_piechart_data(id),
             "reports_on_domain_piechart_data": self.get_reports_on_domain_piechart_data(id),
@@ -400,18 +408,18 @@ class CompanyDashboardAnalyticsView(View):
         return render(request, "company/company_analytics.html", context=context)
 
 
-class CompanyDashboardIntegrations(View):
-    @validate_company_user
+class OrganizationDashboardIntegrations(View):
+    @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         companies = (
-            Company.objects.values("name", "id")
+            Organization.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
         )
 
         slack_integration = (
             SlackIntegration.objects.filter(
-                integration__company_id=id,
+                integration__organization_id=id,
                 integration__service_name=IntegrationServices.SLACK.value,
             )
             .select_related("integration")
@@ -422,19 +430,19 @@ class CompanyDashboardIntegrations(View):
         return render(request, "company/company_integrations.html", context=context)
 
 
-class CompanyDashboardManageBugsView(View):
-    @validate_company_user
+class OrganizationDashboardManageBugsView(View):
+    @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         companies = (
-            Company.objects.values("name", "id")
+            Organization.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
         )
 
-        company_obj = Company.objects.filter(id=id).first()
+        organization_obj = Organization.objects.filter(id=id).first()
 
-        # get all domains of this company
-        domains = Domain.objects.filter(company_id=id)
+        # get all domains of this organization
+        domains = Domain.objects.filter(organization_id=id)
 
         # get all issues where the url is in the domains in descending order
         issues = Issue.objects.filter(domain__in=domains).order_by("-created")
@@ -442,23 +450,23 @@ class CompanyDashboardManageBugsView(View):
         context = {
             "company": id,
             "companies": companies,
-            "company_obj": company_obj,
+            "company_obj": organization_obj,
             "issues": issues,
         }
         return render(request, "company/company_manage_bugs.html", context=context)
 
 
-class CompanyDashboardManageDomainsView(View):
-    @validate_company_user
+class OrganizationDashboardManageDomainsView(View):
+    @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         domains = (
             Domain.objects.values("id", "name", "url", "logo")
-            .filter(company__id=id)
+            .filter(organization__id=id)
             .order_by("modified")
         )
 
         companies = (
-            Company.objects.values("name", "id")
+            Organization.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
         )
@@ -466,7 +474,7 @@ class CompanyDashboardManageDomainsView(View):
         context = {
             "company": id,
             "companies": companies,
-            "company_obj": Company.objects.filter(id=id).first(),
+            "company_obj": Organization.objects.filter(id=id).first(),
             "domains": domains,
         }
 
@@ -484,10 +492,10 @@ class AddDomainView(View):
 
         return super().dispatch(request, *args, **kwargs)
 
-    @validate_company_user
+    @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         companies = (
-            Company.objects.values("name", "id")
+            Organization.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
         )
@@ -497,7 +505,7 @@ class AddDomainView(View):
         domain = Domain.objects.filter(id=domain_id).first() if domain_id else None
         context = {
             "company": id,
-            "company_obj": Company.objects.filter(id=id).first(),
+            "company_obj": Organization.objects.filter(id=id).first(),
             "companies": companies,
             "users": users,
             "domain": domain,  # Pass the domain to the template if it exists
@@ -508,8 +516,8 @@ class AddDomainView(View):
         else:
             return render(request, "company/add_domain.html", context=context)
 
-    @validate_company_user
-    @check_company_or_manager
+    @validate_organization_user
+    @check_organization_or_manager
     def post(self, request, id, *args, **kwargs):
         domain_data = {
             "name": request.POST.get("domain_name", None),
@@ -539,7 +547,7 @@ class AddDomainView(View):
         domain_data["name"] = domain_data["name"].lower()
 
         managers_list = request.POST.getlist("user")
-        company_obj = Company.objects.get(id=id)
+        organization_obj = Organization.objects.get(id=id)
 
         domain_exist = Domain.objects.filter(
             Q(name=domain_data["name"]) | Q(url=domain_data["url"])
@@ -617,7 +625,7 @@ class AddDomainView(View):
 
         domain = Domain.objects.create(
             **domain_data,
-            company=company_obj,
+            organization=organization_obj,
             logo=logo_name,
             webshot=webshot_logo_name,
         )
@@ -627,8 +635,8 @@ class AddDomainView(View):
 
         return redirect("company_manage_domains", id=id)
 
-    @validate_company_user
-    @check_company_or_manager
+    @validate_organization_user
+    @check_organization_or_manager
     def put(self, request, id, *args, **kwargs):
         domain_id = kwargs.get("domain_id")
         domain = get_object_or_404(Domain, id=domain_id)
@@ -655,7 +663,7 @@ class AddDomainView(View):
         domain_data["name"] = domain_data["name"].lower()
 
         managers_list = request.POST.getlist("user")
-        company_obj = Company.objects.get(id=id)
+        organization_obj = Organization.objects.get(id=id)
 
         domain_exist = (
             Domain.objects.filter(Q(name=domain_data["name"]) | Q(url=domain_data["url"]))
@@ -734,7 +742,7 @@ class AddDomainView(View):
         domain.github = domain_data["github"]
         domain.twitter = domain_data["twitter"]
         domain.facebook = domain_data["facebook"]
-        domain.company = company_obj
+        domain.organization = organization_obj
 
         domain_managers = User.objects.filter(email__in=managers_list, is_active=True)
         domain.managers.set(domain_managers)
@@ -742,8 +750,8 @@ class AddDomainView(View):
 
         return redirect("company_manage_domains", id=id)
 
-    @validate_company_user
-    @check_company_or_manager
+    @validate_organization_user
+    @check_organization_or_manager
     def delete(self, request, id, *args, **kwargs):
         domain_id = request.POST.get("domain_id", None)
         domain = get_object_or_404(Domain, id=domain_id)
@@ -756,11 +764,11 @@ class AddDomainView(View):
 
 
 class AddSlackIntegrationView(View):
-    @validate_company_user
+    @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         slack_integration = (
             SlackIntegration.objects.filter(
-                integration__company_id=id,
+                integration__organization_id=id,
                 integration__service_name=IntegrationServices.SLACK.value,
             )
             .select_related("integration")
@@ -797,7 +805,7 @@ class AddSlackIntegrationView(View):
         if redirect_uri not in allowed_redirect_uris:
             raise ValueError("Invalid redirect URI")
 
-        state = urlencode({"company_id": id})
+        state = urlencode({"organization_id": id})
 
         auth_url = (
             f"https://slack.com/oauth/v2/authorize"
@@ -823,7 +831,7 @@ class AddSlackIntegrationView(View):
             print("Error fetching channels", e)
         return channels
 
-    @validate_company_user
+    @validate_organization_user
     def post(self, request, id, *args, **kwargs):
         if request.POST.get("_method") == "delete":
             return self.delete(request, id, *args, **kwargs)
@@ -835,7 +843,7 @@ class AddSlackIntegrationView(View):
         }
         slack_integration = (
             SlackIntegration.objects.filter(
-                integration__company_id=id,
+                integration__organization_id=id,
                 integration__service_name=IntegrationServices.SLACK.value,
             )
             .select_related("integration")
@@ -871,12 +879,12 @@ class AddSlackIntegrationView(View):
             print("Error fetching channel ID:", e)
         return None
 
-    @validate_company_user
+    @validate_organization_user
     def delete(self, request, id, *args, **kwargs):
         """Deletes the Slack integration."""
         slack_integration = (
             SlackIntegration.objects.filter(
-                integration__company_id=id,
+                integration__organization_id=id,
                 integration__service_name=IntegrationServices.SLACK.value,
             )
             .select_related("integration")
@@ -895,22 +903,22 @@ class SlackCallbackView(View):
         state = request.GET.get("state")
 
         state_data = parse_qs(state)
-        company_id = state_data.get("company_id", [None])[0]
+        organization_id = state_data.get("organization_id", [None])[0]
 
-        if not code or not company_id:
+        if not code or not organization_id:
             return HttpResponseBadRequest("Invalid or missing parameters")
 
         try:
-            if not company_id.isdigit():
-                return HttpResponseBadRequest("Invalid company ID")
+            if not organization_id.isdigit():
+                return HttpResponseBadRequest("Invalid organization ID")
 
-            company_id = int(company_id)  # Safely cast to int after validation
+            organization_id = int(organization_id)  # Safely cast to int after validation
 
             # Exchange code for token
             access_token = self.exchange_code_for_token(code, request)
 
             integration = Integration.objects.create(
-                company_id=company_id,
+                organization_id=organization_id,
                 service_name=IntegrationServices.SLACK.value,
             )
             SlackIntegration.objects.create(
@@ -918,7 +926,7 @@ class SlackCallbackView(View):
                 bot_access_token=access_token,
             )
 
-            dashboard_url = reverse("company_manage_integrations", args=[company_id])
+            dashboard_url = reverse("company_manage_integrations", args=[organization_id])
             return redirect(dashboard_url)
 
         except Exception as e:
@@ -952,7 +960,7 @@ class SlackCallbackView(View):
 
 class DomainView(View):
     def get_current_year_monthly_reported_bar_data(self, domain_id):
-        # returns chart data on no of bugs reported monthly on this company for current year
+        # returns chart data on no of bugs reported monthly on this organization for current year
 
         current_year = timezone.now().year
         data_monthly = (
@@ -976,7 +984,7 @@ class DomainView(View):
                 "id",
                 "name",
                 "url",
-                "company__name",
+                "organization__name",
                 "created",
                 "modified",
                 "twitter",
@@ -1090,28 +1098,28 @@ class DomainView(View):
         return render(request, "company/view_domain.html", context)
 
 
-class CompanyDashboardManageRolesView(View):
-    @validate_company_user
+class OrganizationDashboardManageRolesView(View):
+    @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         companies = (
-            Company.objects.values("name", "id")
+            Organization.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
         )
 
-        company_url = Company.objects.filter(id=id).first().url
-        parsed_url = urlparse(company_url).netloc
-        company_domain = parsed_url.replace("www.", "")
-        company_users = User.objects.filter(email__endswith=f"@{company_domain}").values(
+        organization_url = Organization.objects.filter(id=id).first().url
+        parsed_url = urlparse(organization_url).netloc
+        organization_domain = parsed_url.replace("www.", "")
+        organization_users = User.objects.filter(email__endswith=f"@{organization_domain}").values(
             "id", "username", "email"
         )
 
-        # Convert company_users QuerySet to list of dicts
-        company_users_list = list(company_users)
+        # Convert organization_users QuerySet to list of dicts
+        organization_users_list = list(organization_users)
 
         domains = Domain.objects.filter(
-            Q(company__id=id)
-            & (Q(company__managers__in=[request.user]) | Q(company__admin=request.user))
+            Q(organization__id=id)
+            & (Q(organization__managers__in=[request.user]) | Q(organization__admin=request.user))
             | Q(managers=request.user)
         ).distinct()
 
@@ -1119,28 +1127,28 @@ class CompanyDashboardManageRolesView(View):
         for domain in domains:
             _id = domain.id
             name = domain.name
-            company_admin = domain.company.admin
+            organization_admin = domain.organization.admin
             # Convert managers QuerySet to list of dicts
             managers = list(domain.managers.values("id", "username", "userprofile__user_avatar"))
             domains_data.append(
-                {"id": _id, "name": name, "managers": managers, "company_admin": company_admin}
+                {"id": _id, "name": name, "managers": managers, "company_admin": organization_admin}
             )
 
         context = {
             "company": id,
-            "company_obj": Company.objects.filter(id=id).first(),
+            "company_obj": Organization.objects.filter(id=id).first(),
             "companies": list(companies),  # Convert companies QuerySet to list of dicts
             "domains": domains_data,
-            "company_users": company_users_list,  # Use the converted list
+            "company_users": organization_users_list,  # Use the converted list
         }
 
         return render(request, "company/company_manage_roles.html", context)
 
     def post(self, request, id, *args, **kwargs):
         domain = Domain.objects.filter(
-            Q(company__id=id)
+            Q(organization__id=id)
             & Q(id=request.POST.get("domain_id"))
-            & (Q(company__admin=request.user) | Q(managers__in=[request.user]))
+            & (Q(organization__admin=request.user) | Q(managers__in=[request.user]))
         ).first()
 
         if domain is None:
@@ -1156,10 +1164,10 @@ class CompanyDashboardManageRolesView(View):
 
         for manager in domain_managers:
             user_email_domain = manager.email.split("@")[-1]
-            company_url = domain.company.url
-            parsed_url = urlparse(company_url).netloc
-            company_domain = parsed_url.replace("www.", "")
-            if user_email_domain == company_domain:
+            organization_url = domain.organization.url
+            parsed_url = urlparse(organization_url).netloc
+            organization_domain = parsed_url.replace("www.", "")
+            if user_email_domain == organization_domain:
                 domain.managers.add(manager.id)
             else:
                 messages.error(request, f"Manager: {manager.email} does not match domain email.")
@@ -1190,12 +1198,12 @@ class ShowBughuntView(View):
             .order_by("-count")[:16]
         )
 
-        # Get the company associated with the domain of the hunt
-        company = hunt_obj.domain.company
+        # Get the organization associated with the domain of the hunt
+        organization = hunt_obj.domain.organization
 
-        # Check if the user is either a manager of the domain or the admin of the company
+        # Check if the user is either a manager of the domain or the admin of the organization
         is_hunt_manager = hunt_obj.domain.managers.filter(id=request.user.id).exists() or (
-            company and company.admin == request.user
+            organization and organization.admin == request.user
         )
 
         # get latest reported public issues
@@ -1299,12 +1307,12 @@ class EndBughuntView(View):
     def get(self, request, pk, *args, **kwargs):
         hunt = get_object_or_404(Hunt, pk=pk)
 
-        # Get the company associated with the domain of the hunt
-        company = hunt.domain.company
+        # Get the organization associated with the domain of the hunt
+        organization = hunt.domain.organization
 
-        # Check if the user is either a manager of the domain or the admin of the company
+        # Check if the user is either a manager of the domain or the admin of the organization
         is_hunt_manager = hunt.domain.managers.filter(id=request.user.id).exists() or (
-            company and company.admin == request.user
+            organization and organization.admin == request.user
         )
 
         if not is_hunt_manager:
@@ -1312,10 +1320,10 @@ class EndBughuntView(View):
 
         hunt.result_published = True
         hunt.save()
-        company = hunt.domain.company.id
+        organization = hunt.domain.organization.id
 
         messages.success(request, f"successfully Ended Bughunt {hunt.name}")
-        return redirect("company_manage_bughunts", id=company)
+        return redirect("company_manage_bughunts", id=organization)
 
 
 class AddHuntView(View):
@@ -1325,7 +1333,7 @@ class AddHuntView(View):
 
         context = {
             "company": id,
-            "company_obj": Company.objects.filter(id=id).first(),
+            "company_obj": Organization.objects.filter(id=id).first(),
             "companies": companies,
             "domains": domains,
             "hunt": hunt,
@@ -1335,32 +1343,32 @@ class AddHuntView(View):
 
         return render(request, "company/bughunt/edit_bughunt.html", context)
 
-    @validate_company_user
+    @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         hunt_id = request.GET.get("hunt", None)
 
         companies = (
-            Company.objects.values("name", "id")
+            Organization.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
         )
 
-        domains = Domain.objects.values("id", "name").filter(company__id=id)
+        domains = Domain.objects.values("id", "name").filter(organization__id=id)
 
         if hunt_id is not None:
             return self.edit(request, id, companies, domains, hunt_id, *args, **kwargs)
 
         context = {
             "company": id,
-            "company_obj": Company.objects.filter(id=id).first(),
+            "company_obj": Organization.objects.filter(id=id).first(),
             "companies": companies,
             "domains": domains,
         }
 
         return render(request, "company/bughunt/add_bughunt.html", context)
 
-    @validate_company_user
-    @check_company_or_manager
+    @validate_organization_user
+    @check_organization_or_manager
     def post(self, request, id, *args, **kwargs):
         data = request.POST
 
@@ -1455,11 +1463,11 @@ class AddHuntView(View):
         return redirect("company_manage_bughunts", id)
 
 
-class CompanyDashboardManageBughuntView(View):
-    @validate_company_user
+class OrganizationDashboardManageBughuntView(View):
+    @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         companies = (
-            Company.objects.values("name", "id")
+            Organization.objects.values("name", "id")
             .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
             .distinct()
         )
@@ -1476,7 +1484,7 @@ class CompanyDashboardManageBughuntView(View):
             "end_on__day",
             "end_on__month",
             "end_on__year",
-        ).filter(domain__company__id=id)
+        ).filter(domain__organization__id=id)
         filtered_bughunts = {
             "all": query,
             "ongoing": query.filter(result_published=False, is_published=True),
@@ -1488,7 +1496,7 @@ class CompanyDashboardManageBughuntView(View):
 
         context = {
             "company": id,
-            "company_obj": Company.objects.filter(id=id).first(),
+            "company_obj": Organization.objects.filter(id=id).first(),
             "companies": companies,
             "bughunts": filtered_bughunts.get(filter_type, []),
         }
@@ -1497,8 +1505,8 @@ class CompanyDashboardManageBughuntView(View):
 
 
 @require_http_methods(["DELETE"])
-def delete_prize(request, prize_id, company_id):
-    if not request.user.company_set.filter(id=company_id).exists():
+def delete_prize(request, prize_id, organization_id):
+    if not request.user.organization_set.filter(id=organization_id).exists():
         return JsonResponse({"success": False, "error": "User not allowed"})
     try:
         prize = HuntPrize.objects.get(id=prize_id)
@@ -1509,8 +1517,8 @@ def delete_prize(request, prize_id, company_id):
 
 
 @require_http_methods(["PUT"])
-def edit_prize(request, prize_id, company_id):
-    if not request.user.company_set.filter(id=company_id).exists():
+def edit_prize(request, prize_id, organization_id):
+    if not request.user.organization_set.filter(id=organization_id).exists():
         return JsonResponse({"success": False, "error": "User not allowed"})
 
     try:
@@ -1566,7 +1574,7 @@ def delete_manager(request, manager_id, domain_id):
         manager = User.objects.get(id=manager_id)
 
         # Ensure the request user is allowed to perform this action
-        if not (request.user == domain.company.admin):
+        if not (request.user == domain.organization.admin):
             # return error with not permission msg
             return JsonResponse(
                 {"success": False, "message": "You do not have permission to delete this manager."},
