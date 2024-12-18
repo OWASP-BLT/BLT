@@ -181,6 +181,16 @@ from website.views.project import (
     distribute_bacon,
     select_contribution,
 )
+from website.views.teams import (
+    TeamOverview,
+    add_member,
+    create_team,
+    delete_team,
+    join_requests,
+    kick_member,
+    leave_team,
+    search_users,
+)
 from website.views.user import (
     CustomObtainAuthToken,
     EachmonthLeaderboardView,
@@ -755,6 +765,15 @@ urlpatterns = [
     path("blog/<slug:slug>/", PostDetailView.as_view(), name="post_detail"),
     path("blog/<slug:slug>/edit/", PostUpdateView.as_view(), name="post_update"),
     path("blog/<slug:slug>/delete/", PostDeleteView.as_view(), name="post_delete"),
+    # gamification related urls
+    path("teams/overview", TeamOverview.as_view(), name="team_overview"),
+    path("teams/search-users/", search_users, name="search_users"),
+    path("teams/create-team/", create_team, name="create_team"),
+    path("teams/join-requests/", join_requests, name="join_requests"),
+    path("teams/add-member/", add_member, name="add_member"),
+    path("teams/delete-team/", delete_team, name="delete_team"),
+    path("teams/leave-team/", leave_team, name="leave_team"),
+    path("teams/kick-member/", kick_member, name="kick_member"),
 ]
 
 if settings.DEBUG:
