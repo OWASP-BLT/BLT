@@ -528,7 +528,7 @@ class OngoingHunts(TemplateView):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            domain_admin = organizationAdmin.objects.get(user=request.user)
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
             if not domain_admin.is_active:
                 return HttpResponseRedirect("/")
             if domain_admin.role == 0:

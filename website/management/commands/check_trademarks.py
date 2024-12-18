@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 from django.db import models
 from django.utils.timezone import now
 
-from website.models import organization
+from website.models import Organization
 
 
 def search_uspto_database(term):
@@ -58,7 +58,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
-            uninitialized_organizations = organization.objects.filter(
+            uninitialized_organizations = Organization.objects.filter(
                 models.Q(trademark_check_date__isnull=True) | models.Q(trademark_count__isnull=True)
             )
 
@@ -98,7 +98,7 @@ class Command(BaseCommand):
         """
         one_week_ago = now() - timedelta(weeks=1)
         organization = (
-            organization.objects.filter(models.Q(trademark_check_date__lt=one_week_ago))
+            Organization.objects.filter(models.Q(trademark_check_date__lt=one_week_ago))
             .order_by("trademark_check_date")
             .first()
         )

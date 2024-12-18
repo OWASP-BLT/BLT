@@ -20,7 +20,7 @@ class Command(BaseCommand):
         ).all()
 
         for integration in slack_integrations:
-            current_org = integration.integration.integration
+            current_org = integration.integration.organization
             if (
                 integration.default_channel_id
                 and current_org

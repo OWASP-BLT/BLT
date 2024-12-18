@@ -847,7 +847,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        organization_url = self.request.data.get("company_url")
+        organization_url = self.request.data.get("organization_url")
 
         try:
             if organization_url:
