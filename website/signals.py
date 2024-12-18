@@ -261,7 +261,7 @@ def update_user_streak(sender, instance, created, **kwargs):
     Signal triggered when a TimeLog entry is created. Updates the user's streak
     and handles progress for both single and team challenges.
     """
-    if created:
+    if created and instance.user:
         check_in_date = instance.start_time.date()  # Extract the date from TimeLog
         user = instance.user
 
