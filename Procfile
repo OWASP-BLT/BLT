@@ -1,2 +1,2 @@
-release: python manage.py migrate  --noinput --fake
+release: python manage.py migrate  --noinput
 web: gunicorn blt.wsgi --log-file -
