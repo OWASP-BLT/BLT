@@ -15,7 +15,6 @@ from rest_framework import permissions, routers
 
 import comments.views
 from blt import settings
-from company.views import ShowBughuntView, SlackCallbackView
 from website.api.views import (
     ActivityLogViewSet,
     AuthApiViewset,
@@ -35,6 +34,34 @@ from website.api.views import (
     UrlCheckApiViewset,
     UserIssueViewSet,
     UserProfileViewSet,
+)
+from website.views.blog import (
+    PostCreateView,
+    PostDeleteView,
+    PostDetailView,
+    PostListView,
+    PostUpdateView,
+)
+from website.views.company import (
+    AddDomainView,
+    AddHuntView,
+    AddSlackIntegrationView,
+    CompanyDashboardAnalyticsView,
+    CompanyDashboardIntegrations,
+    CompanyDashboardManageBughuntView,
+    CompanyDashboardManageBugsView,
+    CompanyDashboardManageDomainsView,
+    CompanyDashboardManageRolesView,
+    DomainView,
+    EndBughuntView,
+    RegisterCompanyView,
+    ShowBughuntView,
+    SlackCallbackView,
+    accept_bug,
+    company_view,
+    delete_manager,
+    delete_prize,
+    edit_prize,
 )
 from website.views.core import (
     FacebookConnect,
@@ -611,7 +638,66 @@ urlpatterns = [
     re_path(r"^contributors/$", contributors_view, name="contributors"),
     # users
     path("users/", users_view, name="users"),
-    path("company/", include("company.urls")),
+    # company specific urls :
+    path("company/", RegisterCompanyView.as_view(), name="register_company"),
+    path("company/dashboard/", company_view, name="company_view"),
+    path(
+        "company/<int:id>/dashboard/analytics/",
+        CompanyDashboardAnalyticsView.as_view(),
+        name="company_analytics",
+    ),
+    path(
+        "company/<int:id>/dashboard/integrations/",
+        CompanyDashboardIntegrations.as_view(),
+        name="company_manage_integrations",
+    ),
+    path(
+        "company/<int:id>/dashboard/bugs/",
+        CompanyDashboardManageBugsView.as_view(),
+        name="company_manage_bugs",
+    ),
+    path(
+        "company/<int:id>/dashboard/domains/",
+        CompanyDashboardManageDomainsView.as_view(),
+        name="company_manage_domains",
+    ),
+    path(
+        "company/<int:id>/dashboard/roles/",
+        CompanyDashboardManageRolesView.as_view(),
+        name="company_manage_roles",
+    ),
+    path(
+        "company/<int:id>/dashboard/bughunts/",
+        CompanyDashboardManageBughuntView.as_view(),
+        name="company_manage_bughunts",
+    ),
+    path("company/dashboard/end_bughunt/<int:pk>", EndBughuntView.as_view(), name="end_bughunt"),
+    path("company/<int:id>/dashboard/add_bughunt/", AddHuntView.as_view(), name="add_bughunt"),
+    path("company/<int:id>/dashboard/add_domain/", AddDomainView.as_view(), name="add_domain"),
+    path(
+        "company/<int:id>/dashboard/add_slack_integration/",
+        AddSlackIntegrationView.as_view(),
+        name="add_slack_integration",
+    ),
+    path(
+        "company/<int:id>/dashboard/edit_domain/<int:domain_id>/",
+        AddDomainView.as_view(),
+        name="edit_domain",
+    ),
+    path("company/domain/<int:pk>/", login_required(DomainView.as_view()), name="view_domain"),
+    path("company/delete_prize/<int:prize_id>/<int:company_id>", delete_prize, name="delete_prize"),
+    path("company/edit_prize/<int:prize_id>/<int:company_id>", edit_prize, name="edit_prize"),
+    path("company/accept_bug/<int:issue_id>/<str:reward_id>/", accept_bug, name="accept_bug"),
+    path(
+        "company/accept_bug/<int:issue_id>/<str:no_reward>/",
+        accept_bug,
+        name="accept_bug_no_reward",
+    ),
+    path(
+        "company/delete_manager/<int:manager_id>/<int:domain_id>/",
+        delete_manager,
+        name="delete_manager",
+    ),
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
     path("companies/", DomainListView.as_view(), name="domain_lists"),
@@ -655,7 +741,6 @@ urlpatterns = [
     path("api/timelogsreport/", TimeLogListAPIView, name="timelogsreport"),
     path("time-logs/", TimeLogListView, name="time_logs"),
     path("sizzle-daily-log/", sizzle_daily_log, name="sizzle_daily_log"),
-    path("blog/", include("blog.urls")),
     path(
         "user-sizzle-report/<str:username>/",
         user_sizzle_report,
@@ -664,6 +749,12 @@ urlpatterns = [
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
     path("assign-badge/<str:username>/", assign_badge, name="assign_badge"),
     path("github-webhook/", github_webhook, name="github-webhook"),
+    # blog urls
+    path("blog/", PostListView.as_view(), name="blog"),
+    path("blog/new/", PostCreateView.as_view(), name="post_create"),
+    path("blog/<slug:slug>/", PostDetailView.as_view(), name="post_detail"),
+    path("blog/<slug:slug>/edit/", PostUpdateView.as_view(), name="post_update"),
+    path("blog/<slug:slug>/delete/", PostDeleteView.as_view(), name="post_delete"),
 ]
 
 if settings.DEBUG:
