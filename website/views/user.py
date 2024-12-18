@@ -41,6 +41,7 @@ from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
     Badge,
+    Challenge,
     Domain,
     Hunt,
     InviteFriend,
@@ -1019,3 +1020,42 @@ def validate_signature(payload, signature):
     computed_signature = f"sha256={computed_hmac.hexdigest()}"
 
     return hmac.compare_digest(computed_signature, signature)
+
+
+@method_decorator(login_required, name="dispatch")
+class UserChallengeListView(View):
+    """View to display all challenges and handle updates inline."""
+
+    def get(self, request):
+        challenges = Challenge.objects.filter(challenge_type="single")
+        user_challenges = challenges.filter(
+            participants=request.user
+        )  # Filter challenges the user is participating in
+        return render(
+            request,
+            "user_challenges.html",
+            {"challenges": challenges, "user_challenges": user_challenges},
+        )
+
+    def post(self, request):
+        """Handle progress updates for a challenge inline."""
+        challenge_id = request.POST.get("challenge_id")
+        progress = int(request.POST.get("progress", 0))
+        challenge = get_object_or_404(Challenge, id=challenge_id)
+
+        # Update the challenge's progress
+        challenge.progress = progress
+        challenge.save()
+
+        # Award points if the challenge is completed
+        if challenge.is_completed() and request.user not in challenge.participants.all():
+            challenge.participants.add(request.user)  # Mark user as a participant
+            Points.objects.create(
+                user=request.user,
+                score=challenge.points,
+                reason=f"Completed challenge: {challenge.title}",
+            )
+
+        return JsonResponse(
+            {"success": True, "progress": challenge.progress, "points": challenge.points}
+        )

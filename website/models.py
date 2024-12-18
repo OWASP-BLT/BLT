@@ -546,6 +546,9 @@ class Points(models.Model):
     modified = models.DateTimeField(auto_now=True)
     reason = models.TextField(null=True, blank=True)
 
+    def __str__(self):
+        return f"{self.user.username} - {self.score} points"
+
 
 class InviteFriend(models.Model):
     sender = models.ForeignKey(User, related_name="sent_invites", on_delete=models.CASCADE)
@@ -1225,3 +1228,35 @@ def verify_file_upload(sender, instance, **kwargs):
             raise ValidationError(
                 f"Image '{instance.image.name}' was not uploaded to the storage backend."
             )
+
+
+class Challenge(models.Model):
+    CHALLENGE_TYPE_CHOICES = [
+        ("single", "Single User"),
+        ("team", "Team"),
+    ]
+
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    challenge_type = models.CharField(
+        max_length=10, choices=CHALLENGE_TYPE_CHOICES, default="single"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    participants = models.ManyToManyField(
+        User, related_name="user_challenges", blank=True
+    )  # For single users
+    team_participants = models.ManyToManyField(
+        Company, related_name="team_challenges", blank=True
+    )  # For team challenges
+    points = models.IntegerField(default=0)  # Points for completing the challenge
+    progress = models.IntegerField(default=0)  # Progress in percentage
+    completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    def is_completed(self):
+        """Return True if the challenge is complete (progress == 100%)."""
+        return self.completed
+
+    def __str__(self):
+        return self.title

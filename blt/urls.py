@@ -182,6 +182,8 @@ from website.views.project import (
     select_contribution,
 )
 from website.views.teams import (
+    TeamChallenges,
+    TeamLeaderboard,
     TeamOverview,
     add_member,
     create_team,
@@ -197,6 +199,7 @@ from website.views.user import (
     GlobalLeaderboardView,
     InviteCreate,
     SpecificMonthLeaderboardView,
+    UserChallengeListView,
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
@@ -774,6 +777,9 @@ urlpatterns = [
     path("teams/delete-team/", delete_team, name="delete_team"),
     path("teams/leave-team/", leave_team, name="leave_team"),
     path("teams/kick-member/", kick_member, name="kick_member"),
+    path("teams/challenges/", TeamChallenges.as_view(), name="team_challenges"),
+    path("teams/leaderboard/", TeamLeaderboard.as_view(), name="team_leaderboard"),
+    path("challenges/", UserChallengeListView.as_view(), name="user_challenges"),
 ]
 
 if settings.DEBUG:

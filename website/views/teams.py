@@ -9,7 +9,7 @@ from django.shortcuts import redirect, render
 # Create your views here.
 from django.views.generic import TemplateView
 
-from website.models import Company, JoinRequest
+from website.models import Challenge, Company, JoinRequest
 
 
 class TeamOverview(TemplateView):
@@ -217,3 +217,48 @@ def kick_member(request):
         except json.JSONDecodeError:
             return JsonResponse({"success": False, "error": "Invalid JSON data"})
     return JsonResponse({"success": False, "error": "Invalid request method"})
+
+
+class TeamChallenges(TemplateView):
+    """View for displaying all team challenges and their progress."""
+
+    def get(self, request):
+        # Get all team challenges
+        team_challenges = Challenge.objects.filter(challenge_type="team")
+        user_profile = request.user.userprofile  # Get the user's profile
+
+        # Check if the user belongs to a team
+        if user_profile.team:
+            user_team = user_profile.team  # Get the user's team
+
+            for challenge in team_challenges:
+                # Check if the team is a participant in this challenge
+                if user_team in challenge.team_participants.all():
+                    # Progress is already stored in the Challenge model
+                    challenge.progress = challenge.progress
+                else:
+                    # Team is not a participant, set progress to 0
+                    challenge.progress = 0
+        else:
+            # If the user is not part of a team, set progress to 0 for all challenges
+            for challenge in team_challenges:
+                challenge.progress = 0
+
+        # Render the team challenges template
+        return render(request, "team_challenges.html", {"team_challenges": team_challenges})
+
+
+class TeamLeaderboard(TemplateView):
+    """View to display the team leaderboard based on total points."""
+
+    def get(self, request):
+        teams = Company.objects.all()
+        leaderboard = []
+        for team in teams:
+            team_points = team.team_points
+            leaderboard.append((team, team_points))
+
+        # Sort by points in descending order
+        leaderboard.sort(key=lambda x: x[1], reverse=True)
+
+        return render(request, "team_leaderboard.html", {"leaderboard": leaderboard})
