@@ -908,12 +908,14 @@ def user_sizzle_report(request, username):
         issue_title = get_github_issue_title(first_log.github_issue_url)
 
         start_time = first_log.start_time.strftime("%I:%M %p")
+        end_time = first_log.end_time.strftime("%I:%M %p")
         formatted_date = first_log.created.strftime("%d %B %Y")
 
         day_data = {
             "issue_title": issue_title,
             "duration": formatted_duration,
             "start_time": start_time,
+            "end_time": end_time,
             "date": formatted_date,
         }
 
@@ -935,7 +937,9 @@ def sizzle_daily_log(request):
             previous_work = request.POST.get("previous_work")
             next_plan = request.POST.get("next_plan")
             blockers = request.POST.get("blockers")
-            print(previous_work, next_plan, blockers)
+            goal_accomplished = request.POST.get("goal_accomplished") == "on"
+            current_mood = request.POST.get("feeling")
+            print(previous_work, next_plan, blockers, goal_accomplished, current_mood)
 
             DailyStatusReport.objects.create(
                 user=request.user,
@@ -943,6 +947,8 @@ def sizzle_daily_log(request):
                 previous_work=previous_work,
                 next_plan=next_plan,
                 blockers=blockers,
+                goal_accomplished=goal_accomplished,
+                current_mood=current_mood,
             )
 
             messages.success(request, "Daily status report submitted successfully.")
@@ -1722,8 +1728,11 @@ def truncate_text(text, length=15):
 
 @login_required
 def add_sizzle_checkIN(request):
-    # Redirect to checkin page
-    return render(request, "sizzle/add_sizzle_checkin.html")
+    # Fetch yesterday's report
+    yesterday = now().date() - timedelta(days=1)
+    yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
+
+    return render(request, "sizzle/add_sizzle_checkin.html", {"yesterday_report": yesterday_report})
 
 
 def checkIN(request):
@@ -1769,6 +1778,8 @@ def checkIN(request):
                 "previous_work": truncate_text(r.previous_work),
                 "next_plan": truncate_text(r.next_plan),
                 "blockers": truncate_text(r.blockers),
+                "goal_accomplished": r.goal_accomplished,  # Add this line
+                "current_mood": r.current_mood,  # Add this line
                 "date": r.date.strftime("%d %B %Y"),
             }
         )

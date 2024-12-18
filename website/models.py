@@ -24,6 +24,7 @@ from django.db.models import Count
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
+from django.urls import reverse
 from django.utils import timezone
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
@@ -107,6 +108,12 @@ class SlackIntegration(models.Model):
         return f"Slack Integration for {self.integration.company.name}"
 
 
+class OrganisationType(Enum):
+    COMPANY = "company"
+    INDIVIDUAL = "individual"
+    TEAM = "team"
+
+
 class Company(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_companies")
@@ -123,9 +130,24 @@ class Company(models.Model):
     is_active = models.BooleanField(default=False)
     tags = models.ManyToManyField(Tag, blank=True)
     integrations = models.ManyToManyField(Integration, related_name="companies")
+    trademark_count = models.IntegerField(default=0)
+    trademark_check_date = models.DateTimeField(null=True, blank=True)
+    team_points = models.IntegerField(default=0)
+    type = models.CharField(
+        max_length=10,
+        choices=[(tag.value, tag.name) for tag in OrganisationType],
+        default=OrganisationType.COMPANY.value,
+    )
 
     def __str__(self):
         return self.name
+
+
+class JoinRequest(models.Model):
+    team = models.ForeignKey(Company, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_accepted = models.BooleanField(default=False)
 
 
 class Domain(models.Model):
@@ -582,6 +604,13 @@ class UserProfile(models.Model):
     discounted_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     modified = models.DateTimeField(auto_now=True)
     visit_count = models.PositiveIntegerField(default=0)
+    team = models.ForeignKey(
+        Company, on_delete=models.SET_NULL, related_name="user_profiles", null=True, blank=True
+    )
+
+    def check_team_membership(self):
+        return self.team is not None
+
     current_streak = models.IntegerField(default=0)
     longest_streak = models.IntegerField(default=0)
     last_check_in = models.DateField(null=True, blank=True)
@@ -1038,6 +1067,8 @@ class DailyStatusReport(models.Model):
     previous_work = models.TextField()
     next_plan = models.TextField()
     blockers = models.TextField()
+    goal_accomplished = models.BooleanField(default=False)
+    current_mood = models.CharField(max_length=50, default="Happy 😊")
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -1160,3 +1191,37 @@ class UserBadge(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.badge.title}"
+
+
+class Post(models.Model):
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True, blank=True, max_length=255)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    image = models.ImageField(upload_to="blog_posts")
+
+    class Meta:
+        db_table = "blog_post"
+
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        return reverse("post_detail", kwargs={"slug": self.slug})
+
+
+@receiver(post_save, sender=Post)
+def verify_file_upload(sender, instance, **kwargs):
+    from django.core.files.storage import default_storage
+
+    print("Verifying file upload...")
+    print(f"Default storage backend: {default_storage.__class__.__name__}")
+    if instance.image:
+        print(f"Checking if image '{instance.image.name}' exists in the storage backend...")
+        if not default_storage.exists(instance.image.name):
+            print(f"Image '{instance.image.name}' was not uploaded to the storage backend.")
+            raise ValidationError(
+                f"Image '{instance.image.name}' was not uploaded to the storage backend."
+            )

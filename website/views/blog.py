@@ -3,7 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.utils.text import slugify
 from django.views import generic
 
-from .models import Post
+from website.models import Post
 
 
 class PostListView(generic.ListView):
