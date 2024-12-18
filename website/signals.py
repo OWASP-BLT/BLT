@@ -65,6 +65,8 @@ def create_activity(instance, action_type):
 def update_challenge_progress(
     user, challenge_title, model_class, reason, threshold=None, team_threshold=None
 ):
+    if not user.is_authenticated:
+        return
     try:
         # Get the user's challenge
         challenge = Challenge.objects.get(title=challenge_title)
@@ -125,6 +127,8 @@ def update_challenge_progress(
 
 
 def update_challenge_progress_for_team_sign_in(user, challenge_title):
+    if not user.is_authenticated:
+        return
     """
     Update progress for a team challenge where all members must sign in for 5 days.
     """
@@ -182,9 +186,9 @@ def update_challenge_progress_for_team_sign_in(user, challenge_title):
 def handle_post_save(sender, instance, created, **kwargs):
     """Generic handler for post_save signal."""
     if sender == IpReport and created:  # Track first IP report
-        assign_first_action_badge(instance.user, "First IP Reported")
-        create_activity(instance, "created")
-        if instance.user:
+        if instance.user and instance.user.is_authenticated:
+            assign_first_action_badge(instance.user, "First IP Reported")
+            create_activity(instance, "created")
             update_challenge_progress(
                 user=instance.user,
                 challenge_title="Report 5 IPs",
@@ -202,13 +206,14 @@ def handle_post_save(sender, instance, created, **kwargs):
                 )
 
     elif sender == Post and created:  # Track first blog post
-        assign_first_action_badge(instance.author, "First Blog Posted")
-        create_activity(instance, "created")
+        if instance.author and instance.author.is_authenticated:
+            assign_first_action_badge(instance.author, "First Blog Posted")
+            create_activity(instance, "created")
 
     elif sender == Issue and created:  # Track first bug report
-        assign_first_action_badge(instance.user, "First Bug Reported")
-        create_activity(instance, "created")
-        if instance.user:
+        if instance.user and instance.user.is_authenticated:
+            assign_first_action_badge(instance.user, "First Bug Reported")
+            create_activity(instance, "created")
             update_challenge_progress(
                 user=instance.user,
                 challenge_title="Report 5 Issues",
@@ -226,16 +231,19 @@ def handle_post_save(sender, instance, created, **kwargs):
                 )
 
     elif sender == Hunt and created:  # Track first bid placed
-        assign_first_action_badge(instance.user, "First Bug Bounty")
-        create_activity(instance, "created")
+        if instance.user and instance.user.is_authenticated:
+            assign_first_action_badge(instance.user, "First Bug Bounty")
+            create_activity(instance, "created")
 
     elif sender == Suggestion and created:  # Track first suggestion
-        assign_first_action_badge(instance.user, "First Suggestion")
-        create_activity(instance, "suggested")
+        if instance.user and instance.user.is_authenticated:
+            assign_first_action_badge(instance.user, "First Suggestion")
+            create_activity(instance, "suggested")
 
     elif sender == Bid and created:  # Track first bid placed
-        assign_first_action_badge(instance.user, "First Bid Placed")
-        create_activity(instance, "placed")
+        if instance.user and instance.user.is_authenticated:
+            assign_first_action_badge(instance.user, "First Bid Placed")
+            create_activity(instance, "placed")
 
     elif sender is User and created:  # Handle user sign-up
         Activity.objects.create(
@@ -261,7 +269,7 @@ def update_user_streak(sender, instance, created, **kwargs):
     Signal triggered when a TimeLog entry is created. Updates the user's streak
     and handles progress for both single and team challenges.
     """
-    if created and instance.user:
+    if created and instance.user and instance.user.is_authenticated:
         check_in_date = instance.start_time.date()  # Extract the date from TimeLog
         user = instance.user
 
