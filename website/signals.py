@@ -184,22 +184,22 @@ def handle_post_save(sender, instance, created, **kwargs):
     if sender == IpReport and created:  # Track first IP report
         assign_first_action_badge(instance.user, "First IP Reported")
         create_activity(instance, "created")
-
-        update_challenge_progress(
-            user=instance.user,
-            challenge_title="Report 5 IPs",
-            model_class=IpReport,
-            reason="Completed 'Report 5 IPs' challenge",
-            threshold=5,
-        )
-        if instance.user.userprofile.team:
+        if instance.user:
             update_challenge_progress(
                 user=instance.user,
-                challenge_title="Report 10 IPs",
+                challenge_title="Report 5 IPs",
                 model_class=IpReport,
-                reason="Completed 'Report 10 IPs' challenge",
-                team_threshold=10,  # For team challenge
+                reason="Completed 'Report 5 IPs' challenge",
+                threshold=5,
             )
+            if instance.user.userprofile.team:
+                update_challenge_progress(
+                    user=instance.user,
+                    challenge_title="Report 10 IPs",
+                    model_class=IpReport,
+                    reason="Completed 'Report 10 IPs' challenge",
+                    team_threshold=10,  # For team challenge
+                )
 
     elif sender == Post and created:  # Track first blog post
         assign_first_action_badge(instance.author, "First Blog Posted")
@@ -208,22 +208,22 @@ def handle_post_save(sender, instance, created, **kwargs):
     elif sender == Issue and created:  # Track first bug report
         assign_first_action_badge(instance.user, "First Bug Reported")
         create_activity(instance, "created")
-
-        update_challenge_progress(
-            user=instance.user,
-            challenge_title="Report 5 Issues",
-            model_class=Issue,
-            reason="Completed 'Report 5 Issues' challenge",
-            threshold=5,
-        )
-        if instance.user.userprofile.team:
+        if instance.user:
             update_challenge_progress(
                 user=instance.user,
-                challenge_title="Report 10 Issues",
+                challenge_title="Report 5 Issues",
                 model_class=Issue,
-                reason="Completed 'Report 10 Issues' challenge",
-                team_threshold=10,  # For team challenge
+                reason="Completed 'Report 5 Issues' challenge",
+                threshold=5,
             )
+            if instance.user.userprofile.team:
+                update_challenge_progress(
+                    user=instance.user,
+                    challenge_title="Report 10 Issues",
+                    model_class=Issue,
+                    reason="Completed 'Report 10 Issues' challenge",
+                    team_threshold=10,  # For team challenge
+                )
 
     elif sender == Hunt and created:  # Track first bid placed
         assign_first_action_badge(instance.user, "First Bug Bounty")
