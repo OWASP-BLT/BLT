@@ -1,5 +1,8 @@
 import ipaddress
 import json
+import os
+import tempfile
+import zipfile
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -13,6 +16,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.files.storage import FileSystemStorage
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, Q, Sum
@@ -26,8 +30,11 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django.views.generic import FormView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
+from git import Repo  # Requires GitPython library
 from rest_framework import status
 from rest_framework.authtoken.models import Token
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from blt import settings
 from website.forms import CaptchaForm, HuntForm, IpReportForm, UserProfileForm
@@ -49,6 +56,7 @@ from website.models import (
     Winner,
 )
 from website.services.blue_sky_service import BlueSkyService
+from website.similarity_utils import process_similarity_analysis
 from website.utils import format_timedelta, get_client_ip, get_github_issue_title
 
 
@@ -1816,3 +1824,92 @@ def checkIN_detail(request, report_id):
         "blockers": report.blockers,
     }
     return render(request, "sizzle/checkin_detail.html", context)
+
+
+class CodeSimilarityAnalyze(APIView):
+    def post(self, request, *args, **kwargs):
+        # Extract and validate data from request
+        type1 = request.data.get("type1")  # 'github' or 'zip'
+        type2 = request.data.get("type2")  # 'github' or 'zip'
+
+        # Handle repo1
+        if type1 == "github":
+            repo1 = request.data.get("repo1")  # GitHub URL
+        elif type1 == "zip":
+            repo1 = request.FILES.get("repo1")  # ZIP file
+
+        # Handle repo2
+        if type2 == "github":
+            repo2 = request.data.get("repo2")  # GitHub URL
+        elif type2 == "zip":
+            repo2 = request.FILES.get("repo2")  # ZIP file
+
+        # Validate input
+        if not repo1 or not repo2 or not type1 or not type2:
+            return Response(
+                {"error": "Both repositories and their types are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if type1 not in ["github", "zip"] or type2 not in ["github", "zip"]:
+            return Response(
+                {"error": "Invalid type. Must be 'github' or 'zip'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            # Step 1: Download or extract repository files
+            temp_dir = tempfile.mkdtemp()
+            repo1_path = self.download_or_extract(repo1, type1, temp_dir, "repo1")
+            repo2_path = self.download_or_extract(repo2, type2, temp_dir, "repo2")
+
+            # Step 2: Perform similarity analysis
+            similarity_score, matching_details = process_similarity_analysis(
+                repo1_path, repo2_path
+            )
+
+        except ValueError as e:
+            return Response(
+                {"error": f"ValueError: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Step 3: Return the full report and similarity details as JSON
+        return Response(
+            {
+                "status": "success",
+                "similarity_score": similarity_score,
+                "matching_details": matching_details,  # Detailed function/model similarity
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def download_or_extract(self, source, source_type, temp_dir, repo_name):
+        """
+        Download or extract the repository based on the type (GitHub or ZIP).
+        :param source: GitHub URL or ZIP file path
+        :param source_type: "github" or "zip"
+        :param temp_dir: Temporary directory for processing
+        :param repo_name: Prefix for naming (repo1 or repo2)
+        :return: Path to the extracted repository
+        """
+
+        dest_path = os.path.join(temp_dir, repo_name)
+        print(dest_path)
+        if source_type == "github":
+            # Clone the GitHub repository
+            Repo.clone_from(source, dest_path)
+
+        elif source_type == "zip":
+            repo_name_dir = os.path.join(temp_dir, repo_name)
+            os.makedirs(repo_name_dir, exist_ok=True)
+            fs = FileSystemStorage(location=repo_name_dir)
+            zip_file_path = fs.save(repo_name, source)
+
+            with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
+                zip_ref.extractall(dest_path)
+
+            os.remove(zip_file_path)
+
+        return dest_path
