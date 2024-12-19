@@ -176,7 +176,6 @@ def format_timedelta(td):
     return f"{hours}h {minutes}m {seconds}s"
 
 
-
 def markdown_to_text(markdown_content):
     """Convert Markdown to plain text."""
     html_content = markdown.markdown(markdown_content)
@@ -208,7 +207,6 @@ def ai_summary(text, tags=None):
         return summary
     except Exception as e:
         return f"Error generating summary: {str(e)}"
-
 
 
 def fetch_github_data(owner, repo, endpoint, number):
@@ -263,4 +261,3 @@ def save_analysis_report(pr_link, issue_link, analysis):
         revision_score=revision_score,
         recommendations=recommendations,
     )
-
