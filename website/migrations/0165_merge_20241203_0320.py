@@ -5,8 +5,8 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0161_alter_badge_icon_alter_ip_agent"),
         ("website", "0164_integration_company_integrations_slackintegration"),
+        ("website", "0164_merge_20241201_1725"),
     ]
 
     operations = []
