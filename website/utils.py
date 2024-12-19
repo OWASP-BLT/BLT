@@ -5,7 +5,9 @@ from collections import deque
 from urllib.parse import urlparse, urlsplit, urlunparse
 
 import markdown
-import openai
+from openai import OpenAI
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 import requests
 from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
@@ -183,7 +185,6 @@ def markdown_to_text(markdown_content):
     return text_content
 
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
 GITHUB_API_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
 
@@ -193,7 +194,7 @@ def ai_summary(text, tags=None):
         tags_str = ", ".join(tags) if tags else "No topics provided."
         prompt = f"Generate a brief summary of the following text, focusing on key aspects such as purpose, features, technologies used, and current status. Consider the following GitHub topics to enhance the context: {tags_str}\n\n{text}"
 
-        response = openai.ChatCompletion.chat(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
@@ -203,7 +204,7 @@ def ai_summary(text, tags=None):
             temperature=0.5,
         )
 
-        summary = response["choices"][0]["message"]["content"].strip()
+        summary = response.choices[0].message.content.strip()
         return summary
     except Exception as e:
         return f"Error generating summary: {str(e)}"
@@ -228,22 +229,36 @@ def analyze_pr_content(pr_data, roadmap_data):
     """
     Use OpenAI API to analyze PR content against roadmap priorities.
     """
-    prompt = f"""
-    Compare the following pull request details with the roadmap priorities and provide:
-    1. A priority alignment score (1-10) with reasoning.
-    2. Key recommendations for improvement.
-    3. Assess the quality of the pull request based on its description, structure, and potential impact.
+    try:
+        prompt = f"""
+        Compare the following pull request details with the roadmap priorities and provide:
+        1. A priority alignment score (1-10) with reasoning.
+        2. Key recommendations for improvement.
+        3. Assess the quality of the pull request based on its description, structure, and potential impact.
 
-    ### PR Data:
-    {pr_data}
+        ### PR Data:
+        {pr_data}
 
-    ### Roadmap Data:
-    {roadmap_data}
-    """
-    response = openai.ChatCompletion.create(
-        model="gpt-4", messages=[{"role": "user", "content": prompt}], temperature=0.7
-    )
-    return response["choices"][0]["message"]["content"]
+        ### Roadmap Data:
+        {roadmap_data}
+        """
+
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an experienced code reviewer and project manager.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+            max_tokens=1000,  # Added to ensure sufficient response length
+        )
+
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Error analyzing PR content: {str(e)}"
 
 
 def save_analysis_report(pr_link, issue_link, analysis):
