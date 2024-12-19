@@ -1865,7 +1865,7 @@ class CodeSimilarityAnalyze(APIView):
 
             # Step 2: Perform similarity analysis
             similarity_score, matching_details = process_similarity_analysis(
-                repo1_path, repo2_path, True
+                repo1_path, repo2_path
             )
 
         except ValueError as e:

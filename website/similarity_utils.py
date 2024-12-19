@@ -3,14 +3,16 @@ import difflib
 import os
 import re
 
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from transformers import AutoTokenizer, AutoModel
+from sklearn.metrics.pairwise import cosine_similarity
+import torch
 
 # Initialize CodeBERT model and tokenizer
 tokenizer = AutoTokenizer.from_pretrained("microsoft/codebert-base")
-model = AutoModelForSequenceClassification.from_pretrained("microsoft/codebert-base")
+model = AutoModel.from_pretrained("microsoft/codebert-base") 
 
 
-def process_similarity_analysis(repo1_path, repo2_path, use_codebert=False):
+def process_similarity_analysis(repo1_path, repo2_path):
     """
     Process the similarity analysis between two repositories.
     :param repo1_path: Path to the first repository
@@ -24,51 +26,43 @@ def process_similarity_analysis(repo1_path, repo2_path, use_codebert=False):
         "models": [],
     }
 
-    # Step 1: Compare function and model names using difflib or Levenshtein
-    functions1 = extract_function_names(repo1_path)
-    functions2 = extract_function_names(repo2_path)
+    # Step 1: Extract function signatures and content
+    functions1 = extract_function_signatures_and_content(repo1_path)
+    functions2 = extract_function_signatures_and_content(repo2_path)
+    print(functions1)   
+    print(functions2)   
+    # Compare functions
+    for func1 in functions1:
+        for func2 in functions2:
+            # Name similarity
+            name_similarity_difflib = difflib.SequenceMatcher(None, func1["signature"]["name"], func2["signature"]["name"]).ratio() * 100
+            name_similarity_codebert = analyze_code_similarity_with_codebert(func1["signature"]["name"], func2["signature"]["name"])
+            name_similarity = (name_similarity_difflib + name_similarity_codebert) / 2
+            print(f"Name similarity: {name_similarity}")
 
-    # Compare function names
-    for f1 in functions1:
-        for f2 in functions2:
-            if use_codebert:
-                similarity = analyze_code_similarity_with_codebert(f1, f2)
-            else:
-                similarity = difflib.SequenceMatcher(None, f1, f2).ratio() * 100
+            # Signature similarity
+            signature1 = f"{func1['signature']['name']}({', '.join(func1['signature']['args'])})"
+            signature2 = f"{func2['signature']['name']}({', '.join(func2['signature']['args'])})"
+            signature_similarity_difflib = difflib.SequenceMatcher(None, signature1, signature2).ratio() * 100
+            signature_similarity_codebert = analyze_code_similarity_with_codebert(signature1, signature2)
+            signature_similarity = (signature_similarity_difflib + signature_similarity_codebert) / 2
+            print(f"Signature similarity: {signature_similarity}")
 
-            if similarity > 80:  # You can set the threshold here
-                matching_details["functions"].append(
-                    {
-                        "name1": f1,
-                        "name2": f2,
-                        "similarity": round(similarity, 2),
-                    }
-                )
+            # Content similarity
+            content_similarity = analyze_code_similarity_with_codebert(func1["full_text"], func2["full_text"])
+            print(f"Content similarity: {content_similarity}")   
+            
+            # Aggregate similarity
+            overall_similarity = (name_similarity + signature_similarity + content_similarity) / 3
+            print(f"Overall similarity: {overall_similarity}")   
+            # if overall_similarity > 80:  # You can set the threshold here
+            matching_details["functions"].append({
+                "name1": func1["signature"]["name"],
+                "name2": func2["signature"]["name"],
+                "similarity": round(overall_similarity, 2),
+            })
 
-    # Step 2: Compare method signatures
-    method_signatures1 = extract_method_signatures(repo1_path)
-    method_signatures2 = extract_method_signatures(repo2_path)
-
-    # Compare method signatures
-    for m1 in method_signatures1:
-        for m2 in method_signatures2:
-            if use_codebert:
-                signature1 = f"{m1['name']}({', '.join(m1['args'])})"
-                signature2 = f"{m2['name']}({', '.join(m2['args'])})"
-                similarity = analyze_code_similarity_with_codebert(signature1, signature2)
-            else:
-                similarity = difflib.SequenceMatcher(None, str(m1), str(m2)).ratio() * 100
-
-            if similarity > 80:  # You can set the threshold here
-                matching_details["functions"].append(
-                    {
-                        "method1": str(m1),
-                        "method2": str(m2),
-                        "similarity": round(similarity, 2),
-                    }
-                )
-
-    # Step 3: Compare Django models
+    # Step 2: Compare Django models
     models1 = extract_django_models(repo1_path)
     models2 = extract_django_models(repo2_path)
 
@@ -77,14 +71,9 @@ def process_similarity_analysis(repo1_path, repo2_path, use_codebert=False):
     # Compare models and fields
     for model1 in models1:
         for model2 in models2:
-            if use_codebert:
-                model_similarity = analyze_code_similarity_with_codebert(
-                    model1["name"], model2["name"]
-                )
-            else:
-                model_similarity = (
-                    difflib.SequenceMatcher(None, model1["name"], model2["name"]).ratio() * 100
-                )
+            model_similarity = (
+                difflib.SequenceMatcher(None, model1["name"], model2["name"]).ratio() * 100
+            )
 
             if model_similarity > 80:  # You can set the threshold here
                 model_fields_similarity = compare_model_fields(model1, model2)
@@ -99,64 +88,67 @@ def process_similarity_analysis(repo1_path, repo2_path, use_codebert=False):
 
     return similarity_score, matching_details
 
-
 def analyze_code_similarity_with_codebert(code1, code2):
     """
-    Analyze the semantic similarity between two code snippets using CodeBERT.
+    Analyze the semantic similarity between two code snippets using CodeBERT embeddings.
     :param code1: First code snippet
     :param code2: Second code snippet
     :return: Similarity score (0-100)
     """
-    inputs = tokenizer(
-        f"{code1} [SEP] {code2}", return_tensors="pt", truncation=True, max_length=512
-    )
-    outputs = model(**inputs)
-    logits = outputs.logits
-    similarity_score = logits.softmax(dim=1)[0][1].item() * 100
+    print(f"Analyzing similarity between:\nCode1: {code1}\nCode2: {code2}")
+    
+    # Tokenize and encode inputs
+    inputs_code1 = tokenizer(code1, return_tensors="pt", truncation=True, max_length=512, padding="max_length")
+    inputs_code2 = tokenizer(code2, return_tensors="pt", truncation=True, max_length=512, padding="max_length")
+    
+    # Generate embeddings
+    with torch.no_grad():
+        outputs_code1 = model(**inputs_code1)
+        outputs_code2 = model(**inputs_code2)
+        
+        # Use mean pooling over the last hidden state to get sentence-level embeddings
+        embedding_code1 = outputs_code1.last_hidden_state.mean(dim=1)
+        embedding_code2 = outputs_code2.last_hidden_state.mean(dim=1)
+
+    # Compute cosine similarity
+    similarity = cosine_similarity(embedding_code1.numpy(), embedding_code2.numpy())
+    similarity_score = similarity[0][0] * 100  # Scale similarity to 0-100
+
+    print(f"Similarity score: {similarity_score}")
     return round(similarity_score, 2)
 
-
-def extract_function_names(repo_path):
+def extract_function_signatures_and_content(repo_path):
     """
-    Extract function names from Python files in the given repo.
+    Extract function signatures (name, parameters) and full text from Python files.
     :param repo_path: Path to the repository
-    :return: List of function names
+    :return: List of function metadata (signature + full text)
     """
-    function_names = []
+    functions = []
     for root, dirs, files in os.walk(repo_path):
         for file in files:
             if file.endswith(".py"):
                 file_path = os.path.join(root, file)
                 with open(file_path, "r") as f:
-                    tree = ast.parse(f.read(), filename=file)
-                    for node in ast.walk(tree):
-                        if isinstance(node, ast.FunctionDef):
-                            function_names.append(node.name)
-    return function_names
-
-
-def extract_method_signatures(repo_path):
-    """
-    Extract method signatures (name, parameters) from Python files.
-    :param repo_path: Path to the repository
-    :return: List of method signatures
-    """
-    method_signatures = []
-    for root, dirs, files in os.walk(repo_path):
-        for file in files:
-            if file.endswith(".py"):
-                file_path = os.path.join(root, file)
-                with open(file_path, "r") as f:
-                    tree = ast.parse(f.read(), filename=file)
-                    for node in ast.walk(tree):
-                        if isinstance(node, ast.FunctionDef):
-                            signature = {
-                                "name": node.name,
-                                "args": [arg.arg for arg in node.args.args],
-                                "defaults": [ast.dump(default) for default in node.args.defaults],
-                            }
-                            method_signatures.append(signature)
-    return method_signatures
+                    try:
+                        file_content = f.read()
+                        tree = ast.parse(file_content, filename=file)
+                        for node in ast.walk(tree):
+                            if isinstance(node, ast.FunctionDef):
+                                signature = {
+                                    "name": node.name,
+                                    "args": [arg.arg for arg in node.args.args],
+                                    "defaults": [ast.dump(default) for default in node.args.defaults],
+                                }
+                                # Extract function body as full text
+                                function_text = ast.get_source_segment(file_content, node)
+                                function_data = {
+                                    "signature": signature,
+                                    "full_text": function_text,  # Full text of the function
+                                }
+                                functions.append(function_data)
+                    except Exception as e:
+                        print(f"Error parsing {file_path}: {e}")
+    return functions
 
 
 def extract_django_models(repo_path):
@@ -185,6 +177,8 @@ def extract_django_models(repo_path):
 
                         # Look for class definition that inherits from models.Model
                         if line.startswith("class ") and "models.Model" in line:
+                            if model_name:  # Save the previous model if exists
+                                models.append({"name": model_name, "fields": fields})
                             model_name = line.split("(")[0].replace("class ", "").strip()
                             inside_model = True
                             fields = []  # Reset fields when a new model starts
