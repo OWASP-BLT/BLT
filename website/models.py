@@ -1210,7 +1210,8 @@ class Post(models.Model):
 
     def get_absolute_url(self):
         return reverse("post_detail", kwargs={"slug": self.slug})
-    
+
+
 class PRAnalysisReport(models.Model):
     pr_link = models.URLField()
     issue_link = models.URLField()
@@ -1220,7 +1221,7 @@ class PRAnalysisReport(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return (self.pr_link)
+        return self.pr_link
 
 
 @receiver(post_save, sender=Post)

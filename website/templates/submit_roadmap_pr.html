@@ -10,7 +10,7 @@
                 </button>
             </a>
         {% endif %}
-        <form method="POST"
+        <form method="post"
               action="{% url 'submit-roadmap-pr' %}"
               class="bg-white shadow-md rounded px-8 pt-8 pb-8 mb-6">
             {% csrf_token %}
