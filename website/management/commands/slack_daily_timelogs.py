@@ -16,7 +16,7 @@ class Command(BaseCommand):
 
         # Fetch all Slack integrations with related integration data
         slack_integrations = SlackIntegration.objects.select_related(
-            "integration__integration"
+            "integration__organization"
         ).all()
 
         for integration in slack_integrations:
