@@ -14,11 +14,13 @@ class Command(BaseCommand):
         # Get the current hour in UTC
         current_hour_utc = datetime.utcnow().hour
 
-        # Fetch all Slack integrations with related company data
-        slack_integrations = SlackIntegration.objects.select_related("integration__company").all()
+        # Fetch all Slack integrations with related integration data
+        slack_integrations = SlackIntegration.objects.select_related(
+            "integration__organization"
+        ).all()
 
         for integration in slack_integrations:
-            current_org = integration.integration.company
+            current_org = integration.integration.organization
             if (
                 integration.default_channel_id
                 and current_org
