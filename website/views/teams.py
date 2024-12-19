@@ -9,7 +9,7 @@ from django.shortcuts import redirect, render
 # Create your views here.
 from django.views.generic import TemplateView
 
-from website.models import Challenge, Company, JoinRequest
+from website.models import Challenge, JoinRequest, Organization
 
 
 class TeamOverview(TemplateView):
@@ -56,12 +56,12 @@ def create_team(request):
             # Generate a unique URL for the team
             team_url = team_name.lower().replace(" ", "-")  # Simple slugify logic
             counter = 1
-            while Company.objects.filter(url=team_url).exists():
+            while Organization.objects.filter(url=team_url).exists():
                 team_url = f"{team_url}-{counter}"
                 counter += 1
 
             # Create the team
-            team = Company.objects.create(
+            team = Organization.objects.create(
                 name=team_name, type="team", admin=request.user, url=team_url
             )
             if team_avatar:
@@ -99,7 +99,7 @@ def join_requests(request):
     join_requests = JoinRequest.objects.filter(user=request.user)
     if request.method == "POST":
         team_id = request.POST.get("team_id")
-        team = Company.objects.get(id=team_id, type="team")
+        team = Organization.objects.get(id=team_id, type="team")
         user_profile = request.user.userprofile
         user_profile.team = team
         user_profile.save()
@@ -252,7 +252,7 @@ class TeamLeaderboard(TemplateView):
     """View to display the team leaderboard based on total points."""
 
     def get(self, request):
-        teams = Company.objects.all()
+        teams = Organization.objects.all()
         leaderboard = []
         for team in teams:
             team_points = team.team_points
