@@ -74,7 +74,7 @@ def handle_post_save(sender, instance, created, **kwargs):
                 reason="Completed 'Report 5 IPs' challenge",
                 threshold=5,
             )
-            if instance.user.userprofile.team:
+            if instance.user.is_authenticated and instance.user.userprofile.team:
                 update_challenge_progress(
                     user=instance.user,
                     challenge_title="Report 10 IPs",
@@ -92,7 +92,7 @@ def handle_post_save(sender, instance, created, **kwargs):
                 reason="Completed 'Report 5 Issues challenge",
                 threshold=5,
             )
-            if instance.user.userprofile.team:
+            if instance.user.is_authenticated and instance.user.userprofile.team:
                 update_challenge_progress(
                     user=instance.user,
                     challenge_title="Report 10 Issues",

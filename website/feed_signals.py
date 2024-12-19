@@ -109,7 +109,7 @@ def update_user_streak(sender, instance, created, **kwargs):
     """
     Automatically update user's streak when a TimeLog is created
     """
-    if created:
+    if created and instance.user and instance.user.is_authenticated:
         check_in_date = instance.start_time.date()
         try:
             user_profile = instance.user.userprofile
