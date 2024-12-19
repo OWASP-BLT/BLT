@@ -1,10 +1,8 @@
-import re
 import os
+import re
 import time
 from collections import deque
 from urllib.parse import urlparse, urlsplit, urlunparse
-from .utils import fetch_github_data, analyze_pr_content, save_analysis_report
-from .models import PRAnalysisReport
 
 import requests
 from bs4 import BeautifulSoup
@@ -12,6 +10,8 @@ from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
+
+from .models import PRAnalysisReport
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
@@ -173,9 +173,12 @@ def format_timedelta(td):
     minutes, seconds = divmod(remainder, 60)
     return f"{hours}h {minutes}m {seconds}s"
 
+
 import openai
+
 openai.api_key = os.getenv("OPENAI_API_KEY")
 GITHUB_API_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
+
 
 def fetch_github_data(owner, repo, endpoint, number):
     """
@@ -184,12 +187,13 @@ def fetch_github_data(owner, repo, endpoint, number):
     url = f"https://api.github.com/repos/{owner}/{repo}/{endpoint}/{number}"
     headers = {
         "Authorization": f"Bearer {GITHUB_API_TOKEN}",
-        "Accept": "application/vnd.github.v3+json"
+        "Accept": "application/vnd.github.v3+json",
     }
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
         return response.json()
     return {"error": f"Failed to fetch data: {response.status_code}"}
+
 
 def analyze_pr_content(pr_data, roadmap_data):
     """
@@ -208,11 +212,10 @@ def analyze_pr_content(pr_data, roadmap_data):
     {roadmap_data}
     """
     response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.7
+        model="gpt-4", messages=[{"role": "user", "content": prompt}], temperature=0.7
     )
-    return response['choices'][0]['message']['content']
+    return response["choices"][0]["message"]["content"]
+
 
 def save_analysis_report(pr_link, issue_link, analysis):
     """
@@ -227,5 +230,5 @@ def save_analysis_report(pr_link, issue_link, analysis):
         issue_link=issue_link,
         priority_alignment_score=priority_score,
         revision_score=revision_score,
-        recommendations=recommendations
+        recommendations=recommendations,
     )
