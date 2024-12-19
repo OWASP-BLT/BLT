@@ -117,11 +117,11 @@ MIDDLEWARE = (
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "blt.middleware.ip_restrict.IPRestrictMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "tz_detect.middleware.TimezoneMiddleware",
-    "blt.middleware.ip_restrict.IPRestrictMiddleware",
 )
 BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
 BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
@@ -398,18 +398,30 @@ LOGIN_REDIRECT_URL = "/"
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "exclude_blocked_requests": {
+            "()": "blt.middleware.logging_filters.ExcludeBlockedRequestsFilter",
+        },
+    },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
+            "filters": ["exclude_blocked_requests"],
         },
         "mail_admins": {
             "class": "django.utils.log.AdminEmailHandler",
+            "filters": ["exclude_blocked_requests"],
         },
     },
     "loggers": {
         "": {
             "handlers": ["console"],
             "level": "DEBUG",
+        },
+        "django.request": {
+            "handlers": ["console", "mail_admins"],
+            "level": "ERROR",
+            "propagate": True,
         },
     },
 }

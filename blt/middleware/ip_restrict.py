@@ -1,4 +1,5 @@
 import ipaddress
+import threading
 
 from django.core.cache import cache
 from django.db import models, transaction
@@ -7,6 +8,12 @@ from django.http import HttpResponseForbidden
 from website.models import IP, Blocked
 
 MAX_COUNT = 2147483647
+
+_thread_locals = threading.local()
+
+
+def get_current_request():
+    return getattr(_thread_locals, "request", None)
 
 
 class IPRestrictMiddleware:
@@ -111,6 +118,7 @@ class IPRestrictMiddleware:
                 blocked_entry.save(update_fields=["count"])
 
     def __call__(self, request):
+        _thread_locals.request = request
         ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get(
             "REMOTE_ADDR", ""
         )
@@ -122,6 +130,7 @@ class IPRestrictMiddleware:
 
         if self.ip_in_ips(ip, blocked_ips):
             self.increment_block_count(ip=ip)
+            request.blocked = True  # Indicate that the request was blocked
             return HttpResponseForbidden()
 
         if self.ip_in_range(ip, blocked_ip_network):
@@ -129,11 +138,13 @@ class IPRestrictMiddleware:
             for network in blocked_ip_network:
                 if ipaddress.ip_address(ip) in network:
                     self.increment_block_count(network=str(network))
+                    request.blocked = True
                     break
             return HttpResponseForbidden()
 
         if self.is_user_agent_blocked(agent, blocked_agents):
             self.increment_block_count(user_agent=agent)
+            request.blocked = True
             return HttpResponseForbidden()
 
         if ip:
