@@ -13,6 +13,8 @@ from django.core.validators import URLValidator
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
 
+from .models import PRAnalysisReport
+
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
     "jpg": "image/jpeg",
@@ -174,6 +176,7 @@ def format_timedelta(td):
     return f"{hours}h {minutes}m {seconds}s"
 
 
+
 def markdown_to_text(markdown_content):
     """Convert Markdown to plain text."""
     html_content = markdown.markdown(markdown_content)
@@ -182,6 +185,7 @@ def markdown_to_text(markdown_content):
 
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
+GITHUB_API_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
 
 def ai_summary(text, tags=None):
@@ -204,3 +208,59 @@ def ai_summary(text, tags=None):
         return summary
     except Exception as e:
         return f"Error generating summary: {str(e)}"
+
+
+
+def fetch_github_data(owner, repo, endpoint, number):
+    """
+    Fetch data from GitHub API for a given repository endpoint.
+    """
+    url = f"https://api.github.com/repos/{owner}/{repo}/{endpoint}/{number}"
+    headers = {
+        "Authorization": f"Bearer {GITHUB_API_TOKEN}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    return {"error": f"Failed to fetch data: {response.status_code}"}
+
+
+def analyze_pr_content(pr_data, roadmap_data):
+    """
+    Use OpenAI API to analyze PR content against roadmap priorities.
+    """
+    prompt = f"""
+    Compare the following pull request details with the roadmap priorities and provide:
+    1. A priority alignment score (1-10) with reasoning.
+    2. Key recommendations for improvement.
+    3. Assess the quality of the pull request based on its description, structure, and potential impact.
+
+    ### PR Data:
+    {pr_data}
+
+    ### Roadmap Data:
+    {roadmap_data}
+    """
+    response = openai.ChatCompletion.create(
+        model="gpt-4", messages=[{"role": "user", "content": prompt}], temperature=0.7
+    )
+    return response["choices"][0]["message"]["content"]
+
+
+def save_analysis_report(pr_link, issue_link, analysis):
+    """
+    Save the analysis report into the database.
+    """
+    priority_score = analysis.get("priority_score", 0)
+    revision_score = analysis.get("revision_score", 0)
+    recommendations = analysis.get("recommendations", "")
+
+    PRAnalysisReport.objects.create(
+        pr_link=pr_link,
+        issue_link=issue_link,
+        priority_alignment_score=priority_score,
+        revision_score=revision_score,
+        recommendations=recommendations,
+    )
+

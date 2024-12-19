@@ -26,6 +26,7 @@ from website.models import (
     Payment,
     Points,
     Post,
+    PRAnalysisReport,
     Project,
     SlackIntegration,
     Subscription,
@@ -465,4 +466,5 @@ admin.site.register(Tag, TagAdmin)
 admin.site.register(Integration)
 admin.site.register(SlackIntegration)
 admin.site.register(Activity)
+admin.site.register(PRAnalysisReport)
 admin.site.register(Post, PostAdmin)
