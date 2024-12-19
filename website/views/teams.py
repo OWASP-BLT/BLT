@@ -100,11 +100,12 @@ def join_requests(request):
     if request.method == "POST":
         team_id = request.POST.get("team_id")
         team = Organization.objects.get(id=team_id, type="team")
-        user_profile = request.user.userprofile
-        user_profile.team = team
-        user_profile.save()
-        team.managers.add(request.user)
-        JoinRequest.objects.filter(user=request.user, team=team).delete()
+        if request.user.is_authenticated:
+            user_profile = request.user.userprofile
+            user_profile.team = team
+            user_profile.save()
+            team.managers.add(request.user)
+            JoinRequest.objects.filter(user=request.user, team=team).delete()
         return redirect("team_overview")
 
     return render(request, "join_requests.html", {"join_requests": join_requests})
@@ -148,34 +149,36 @@ def send_join_request(team, requesting_user, target_username):
 
 @login_required
 def delete_team(request):
-    user_profile = request.user.userprofile
-    if user_profile.team and user_profile.team.admin == request.user:
-        team = user_profile.team
-        team.managers.clear()
-        team.delete()
-        user_profile.team = None
-        user_profile.save()
+    if request.user.is_authenticated:
+        user_profile = request.user.userprofile
+        if user_profile.team and user_profile.team.admin == request.user:
+            team = user_profile.team
+            team.managers.clear()
+            team.delete()
+            user_profile.team = None
+            user_profile.save()
     return redirect("team_overview")
 
 
 @login_required
 def leave_team(request):
-    user_profile = request.user.userprofile
-    if user_profile.team:
-        team = user_profile.team
-        if team.admin == request.user:
-            managers = team.managers.all()
-            if managers.exists():
-                new_admin = managers.first()
-                team.managers.remove(new_admin)
-                team.admin = new_admin
-                team.save()
+    if request.user.is_authenticated:
+        user_profile = request.user.userprofile
+        if user_profile.team:
+            team = user_profile.team
+            if team.admin == request.user:
+                managers = team.managers.all()
+                if managers.exists():
+                    new_admin = managers.first()
+                    team.managers.remove(new_admin)
+                    team.admin = new_admin
+                    team.save()
+                else:
+                    team.delete()
             else:
-                team.delete()
-        else:
-            team.managers.remove(request.user)
-        user_profile.team = None
-        user_profile.save()
+                team.managers.remove(request.user)
+            user_profile.team = None
+            user_profile.save()
     return redirect("team_overview")
 
 
@@ -225,24 +228,25 @@ class TeamChallenges(TemplateView):
     def get(self, request):
         # Get all team challenges
         team_challenges = Challenge.objects.filter(challenge_type="team")
-        user_profile = request.user.userprofile  # Get the user's profile
+        if request.user.is_authenticated:
+            user_profile = request.user.userprofile  # Get the user's profile
 
-        # Check if the user belongs to a team
-        if user_profile.team:
-            user_team = user_profile.team  # Get the user's team
+            # Check if the user belongs to a team
+            if user_profile.team:
+                user_team = user_profile.team  # Get the user's team
 
-            for challenge in team_challenges:
-                # Check if the team is a participant in this challenge
-                if user_team in challenge.team_participants.all():
-                    # Progress is already stored in the Challenge model
-                    challenge.progress = challenge.progress
-                else:
-                    # Team is not a participant, set progress to 0
+                for challenge in team_challenges:
+                    # Check if the team is a participant in this challenge
+                    if user_team in challenge.team_participants.all():
+                        # Progress is already stored in the Challenge model
+                        challenge.progress = challenge.progress
+                    else:
+                        # Team is not a participant, set progress to 0
+                        challenge.progress = 0
+            else:
+                # If the user is not part of a team, set progress to 0 for all challenges
+                for challenge in team_challenges:
                     challenge.progress = 0
-        else:
-            # If the user is not part of a team, set progress to 0 for all challenges
-            for challenge in team_challenges:
-                challenge.progress = 0
 
         # Render the team challenges template
         return render(request, "team_challenges.html", {"team_challenges": team_challenges})
