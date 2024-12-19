@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% include "includes/sidenav.html" %}
+<title>PR Analysis Reports</title>
+<style> 
+    .container { 
+        font-family: Arial, sans-serif; 
+        background-color: #f9f9f9; 
+        padding: 20px; 
+        max-width: 800px; 
+        margin: auto; 
+        border-radius: 8px; 
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+    } 
+    h1 { 
+        text-align: center; 
+        color: #333; 
+        margin-bottom: 30px; 
+    } 
+    .report { 
+        background-color: #ffffff; 
+        padding: 15px; 
+        margin-bottom: 20px; 
+        border: 1px solid #ddd; 
+        border-radius: 5px; 
+    } 
+    .report h3 { 
+        color: #555; 
+        font-size: 20px; 
+        margin-bottom: 10px; 
+    } 
+    .report p { 
+        color: #666; 
+        line-height: 1.6; 
+    } 
+    .report a { 
+        color: #007bff; 
+        text-decoration: none; 
+    } 
+    .report a:hover { 
+        text-decoration: underline; 
+    } 
+    .report hr { 
+        border: 0; 
+        height: 1px; 
+        background: #ddd; 
+        margin: 20px 0; 
+    } 
+    .no-reports { 
+        text-align: center; 
+        color: #999; 
+    } 
+</style>
+
+<div class="container">
+    <h1>PR Analysis Reports</h1>
+    {% for report in reports %}
+        <div class="report">
+            <h3>PR Analysis</h3>
+            <p><strong>PR Link:</strong> <a href="{{ report.pr_link }}" target="_blank">{{ report.pr_link }}</a></p>
+            <p><strong>Issue Link:</strong> <a href="{{ report.issue_link }}" target="_blank">{{ report.issue_link }}</a></p>
+            <p><strong>Priority Alignment Score:</strong> {{ report.priority_alignment_score }}</p>
+            <p><strong>Revision Score:</strong> {{ report.revision_score }}</p>
+            <p><strong>Recommendations:</strong></p>
+            <p>{{ report.recommendations }}</p>
+            <p><small><em>Created on: {{ report.created_at }}</em></small></p>
+        </div>
+        <hr>
+    {% empty %}
+        <p class="no-reports">No analysis reports available.</p>
+    {% endfor %}
+</div>
+{% endblock content %}
+
