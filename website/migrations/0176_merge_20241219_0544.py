@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0173_remove_company_admin_remove_company_integrations_and_more"),
         ("website", "0175_add_team_challenges"),

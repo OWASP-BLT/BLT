@@ -7,7 +7,7 @@ single_user_challenges = [
         "title": "Report 5 IPs",
         "description": "Report 5 different suspicious IPs to complete this challenge.",
         "challenge_type": "single",
-        "points": 1, 
+        "points": 1,
     },
     {
         "title": "Report 5 Issues",
@@ -23,9 +23,10 @@ single_user_challenges = [
     },
 ]
 
+
 def add_single_user_challenges(apps, schema_editor):
     # Get the Challenge model
-    Challenge = apps.get_model('website', 'Challenge')
+    Challenge = apps.get_model("website", "Challenge")
 
     # Loop through the challenges and create them
     for challenge_data in single_user_challenges:
@@ -33,11 +34,11 @@ def add_single_user_challenges(apps, schema_editor):
             title=challenge_data["title"],
             description=challenge_data["description"],
             challenge_type=challenge_data["challenge_type"],
-            points=challenge_data["points"]
+            points=challenge_data["points"],
         )
 
-class Migration(migrations.Migration):
 
+class Migration(migrations.Migration):
     dependencies = [
         ("website", "0173_challenge"),
     ]

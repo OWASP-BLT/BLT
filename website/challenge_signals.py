@@ -1,17 +1,9 @@
-from django.contrib.auth.models import User
-from django.contrib.contenttypes.models import ContentType
-from django.db.models.signals import post_save, pre_delete
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
-from .models import (
-    Challenge,
-    IpReport,
-    Issue,
-    Points,
-    TimeLog,
-    UserProfile,
-)
+from .models import Challenge, IpReport, Issue, Points, TimeLog, UserProfile
+
 
 def update_challenge_progress(
     user, challenge_title, model_class, reason, threshold=None, team_threshold=None
@@ -110,10 +102,8 @@ def handle_post_save(sender, instance, created, **kwargs):
                 )
 
 
-
 @receiver(post_save, sender=TimeLog)
 def update_user_streak(sender, instance, created, **kwargs):
-
     if created and instance.user and instance.user.is_authenticated:
         check_in_date = instance.start_time.date()  # Extract the date from TimeLog
         user = instance.user
@@ -137,7 +127,7 @@ def handle_sign_in_challenges(user, user_profile):
     """
     try:
         print("Handling user sign-in challenge...")
-        challenge_title = "Sign in for 5 Days"  
+        challenge_title = "Sign in for 5 Days"
         challenge = Challenge.objects.get(title=challenge_title, challenge_type="single")
 
         if user not in challenge.participants.all():
@@ -190,7 +180,7 @@ def handle_team_sign_in_challenges(team):
 
         if streaks:  # If the team has members
             min_streak = min(streaks)
-            progress = min((min_streak / 5) * 100, 100)  
+            progress = min((min_streak / 5) * 100, 100)
         else:
             min_streak = 0
             progress = 0
@@ -207,6 +197,5 @@ def handle_team_sign_in_challenges(team):
             team.team_points += challenge.points
             team.save()
     except Challenge.DoesNotExist:
-
         print(f"Challenge '{challenge_title}' does not exist.")
         pass

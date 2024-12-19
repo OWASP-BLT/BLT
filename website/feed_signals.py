@@ -17,9 +17,11 @@ from .models import (
     UserProfile,
 )
 
+
 def get_default_user():
     """Get or create a default 'anonymous' user."""
     return User.objects.get_or_create(username="anonymous")[0]
+
 
 # Helper function to assign the badge based on action
 def assign_first_action_badge(user, action_title):
@@ -30,6 +32,7 @@ def assign_first_action_badge(user, action_title):
         if not UserBadge.objects.filter(user=user, badge=badge).exists():
             UserBadge.objects.get_or_create(user=user, badge=badge)
             print(f"Assigned '{action_title}' badge to {user.username}")
+
 
 def create_activity(instance, action_type):
     """Generic function to create an activity for a given model instance."""
@@ -54,6 +57,7 @@ def create_activity(instance, action_type):
         description=getattr(instance, "description", getattr(instance, "content", ""))[:100],
         image=getattr(instance, "screenshot", getattr(instance, "image", None)),
     )
+
 
 @receiver(post_save)
 def handle_post_save(sender, instance, created, **kwargs):
@@ -92,11 +96,13 @@ def handle_post_save(sender, instance, created, **kwargs):
             description=f"Welcome to the community {instance.username}!",
         )
 
+
 @receiver(pre_delete)
 def handle_pre_delete(sender, instance, **kwargs):
     """Generic handler for pre_delete signal."""
     if sender in [Issue, Hunt, IpReport, Post]:
         create_activity(instance, "deleted")
+
 
 @receiver(post_save, sender=TimeLog)
 def update_user_streak(sender, instance, created, **kwargs):
