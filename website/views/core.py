@@ -41,12 +41,18 @@ from website.models import (
     ChatBotLog,
     Domain,
     Issue,
+    PRAnalysisReport,
     Suggestion,
     SuggestionVotes,
     UserProfile,
     Wallet,
 )
-from website.utils import safe_redirect_allowed
+from website.utils import (
+    analyze_pr_content,
+    fetch_github_data,
+    safe_redirect_allowed,
+    save_analysis_report,
+)
 
 vector_store = None
 DAILY_REQUEST_LIMIT = 10
@@ -644,6 +650,49 @@ def get_last_commit_date():
         )
     except FileNotFoundError:
         return "Not available"
+
+
+def submit_roadmap_pr(request):
+    if request.method == "POST":
+        pr_link = request.POST.get("pr_link")
+        issue_link = request.POST.get("issue_link")
+
+        if not pr_link or not issue_link:
+            return JsonResponse({"error": "Both PR and issue links are required."}, status=400)
+
+        pr_parts = pr_link.split("/")
+        issue_parts = issue_link.split("/")
+        owner, repo = pr_parts[3], pr_parts[4]
+        pr_number, issue_number = pr_parts[-1], issue_parts[-1]
+
+        print(pr_parts)
+        print(issue_parts)
+
+        print(f"rrepo: {repo}")
+        print(f"pr_number: {pr_number}")
+
+        pr_data = fetch_github_data(owner, repo, "pulls", pr_number)
+        roadmap_data = fetch_github_data(owner, repo, "issues", issue_number)
+
+        if "error" in pr_data or "error" in roadmap_data:
+            return JsonResponse(
+                {
+                    "error": f"Failed to fetch PR or roadmap data: {pr_data.get('error', 'Unknown error')}"
+                },
+                status=500,
+            )
+
+        analysis = analyze_pr_content(pr_data, roadmap_data)
+
+        save_analysis_report(pr_link, issue_link, analysis)
+        return JsonResponse({"message": "PR submitted successfully"})
+
+    return render(request, "submit_roadmap_pr.html")
+
+
+def view_pr_analysis(request):
+    reports = PRAnalysisReport.objects.all()
+    return render(request, "view_pr_analysis.html", {"reports": reports})
 
 
 def home(request):
