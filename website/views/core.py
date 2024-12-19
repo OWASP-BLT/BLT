@@ -46,6 +46,7 @@ from website.models import (
     SuggestionVotes,
     UserProfile,
     Wallet,
+    Company
 )
 from website.utils import (
     analyze_pr_content,
@@ -384,21 +385,57 @@ def set_vote_status(request):
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
 
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.contrib import messages
+import json
+import os
+import requests
+
 @login_required
 def add_suggestions(request):
-    if request.method == "POST":
-        user = request.user
-        data = json.loads(request.body)
-        title = data.get("title")
-        description = data.get("description", "")
-        if title and description and user:
-            suggestion = Suggestion(user=user, title=title, description=description)
+    if request.method == "POST": 
+        user = request.user 
+        data = json.loads(request.body) 
+        title = data.get("title") 
+        description = data.get("description", "") 
+        company_id = data.get("company") 
+        if title and description and user: 
+            company = Company.objects.get(id=company_id) 
+            suggestion = Suggestion(user=user, title=title, description=description, company=company) 
             suggestion.save()
-            messages.success(request, "Suggestion added successfully.")
+
+            # GitHub issue creation
+            github_repo_url = os.environ.get("GITHUB_REPO_URL")
+            github_token = os.environ.get("GITHUB_ACCESS_TOKEN")
+            issue = {
+                "title": title,
+                "body": description,
+                "milestone": "💡 Suggestions",  # Assuming '💡 Suggestions' is the correct milestone
+                "labels": ["suggestion"]
+            }
+            
+            if github_repo_url and github_token:
+                headers = {"Authorization": f"token {github_token}"}
+                response = requests.post(f"{github_repo_url}/issues", json=issue, headers=headers)
+                
+                if response.status_code == 201:
+                    messages.success(request, "Suggestion added successfully and GitHub issue created.")
+                else:
+                    messages.warning(request, "Suggestion added but failed to create GitHub issue.")
+            else:
+                messages.warning(request, "Suggestion added but GitHub settings are missing.")
+
             return JsonResponse({"status": "success"})
         else:
             messages.error(request, "Please fill all the fields.")
             return JsonResponse({"status": "error"}, status=400)
+
+    companies = Company.objects.all() 
+    print(companies)
+    return render(request, "suggestions/add_suggestion.html", {"companies": companies})
+
 
 
 class GoogleLogin(SocialLoginView):
@@ -588,7 +625,8 @@ class StatsDetailView(TemplateView):
 
 def view_suggestions(request):
     suggestion = Suggestion.objects.all()
-    return render(request, "feature_suggestion.html", {"suggestions": suggestion})
+    companies = Company.objects.all()
+    return render(request, "feature_suggestion.html", {"suggestions": suggestion, "companies": companies})
 
 
 def sitemap(request):
