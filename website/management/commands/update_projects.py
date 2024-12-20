@@ -1,9 +1,12 @@
+import base64
+
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 
-from website.models import Project
+from website.models import Project, Tag
+from website.utils import ai_summary, markdown_to_text
 
 
 class Command(BaseCommand):
@@ -50,6 +53,55 @@ class Command(BaseCommand):
                 project.updated_at = parse_datetime(repo_data.get("updated_at"))
                 project.size = repo_data.get("size", 0)
                 project.last_commit_date = parse_datetime(repo_data.get("pushed_at"))
+
+                tags = []
+                for topic in repo_data.get("topics", []):
+                    tag, created = Tag.objects.get_or_create(name=topic)
+                    tags.append(tag)
+
+                project.tags.set(tags)  # This assigns the tags to the project
+
+                # Fetch README
+                url = f"https://api.github.com/repos/{repo_name}/readme"
+                response = requests.get(url, headers=headers)
+                if response.status_code == 200:
+                    readme_data = response.json()
+                    readme_content_encoded = readme_data.get("content", "")
+
+                    # Decode the Base64 content
+                    try:
+                        readme_content = base64.b64decode(readme_content_encoded).decode("utf-8")
+                        project.readme_content = readme_content
+                        readme_text = markdown_to_text(readme_content)
+                        project_tags = [tag.name for tag in project.tags.all()]
+                        project.ai_summary = ai_summary(readme_text, project_tags)
+
+                    except (base64.binascii.Error, UnicodeDecodeError) as e:
+                        self.stdout.write(
+                            self.style.WARNING(f"Failed to decode README for {repo_name}: {e}")
+                        )
+                        project.readme_content = ""
+                        project.ai_summary = ""
+                else:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"Failed to fetch README for {repo_name}: {response.status_code}"
+                        )
+                    )
+
+                # Fetch Recent Commit Messages
+                url = f"https://api.github.com/repos/{repo_name}/commits"
+                response = requests.get(url, headers=headers)
+                if response.status_code == 200:
+                    commits_data = response.json()
+                    commit_messages = [commit["commit"]["message"] for commit in commits_data[:5]]
+                    project.recent_commit_messages = "\n".join(commit_messages)
+                else:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"Failed to fetch recent commits for {repo_name}: {response.status_code}"
+                        )
+                    )
 
                 # Fetch counts of issues and pull requests using the Search API
                 def get_issue_count(repo_name, query, headers):
