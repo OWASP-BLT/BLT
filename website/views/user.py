@@ -41,6 +41,7 @@ from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
     Badge,
+    Challenge,
     Domain,
     Hunt,
     InviteFriend,
@@ -1019,3 +1020,28 @@ def validate_signature(payload, signature):
     computed_signature = f"sha256={computed_hmac.hexdigest()}"
 
     return hmac.compare_digest(computed_signature, signature)
+
+
+@method_decorator(login_required, name="dispatch")
+class UserChallengeListView(View):
+    """View to display all challenges and handle updates inline."""
+
+    def get(self, request):
+        challenges = Challenge.objects.filter(challenge_type="single")  # All single-user challenges
+        user_challenges = challenges.filter(
+            participants=request.user
+        )  # Challenges the user is participating in
+
+        for challenge in challenges:
+            if challenge in user_challenges:
+                # If the user is participating, show their progress
+                challenge.progress = challenge.progress
+            else:
+                # If the user is not participating, set progress to 0
+                challenge.progress = 0
+
+        return render(
+            request,
+            "user_challenges.html",
+            {"challenges": challenges, "user_challenges": user_challenges},
+        )
