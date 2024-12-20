@@ -1830,19 +1830,16 @@ class CodeSimilarityAnalyze(APIView):
         type1 = request.data.get("type1")  # 'github' or 'zip'
         type2 = request.data.get("type2")  # 'github' or 'zip'
 
-        # Handle repo1
         if type1 == "github":
             repo1 = request.data.get("repo1")  # GitHub URL
         elif type1 == "zip":
             repo1 = request.FILES.get("repo1")  # ZIP file
 
-        # Handle repo2
         if type2 == "github":
             repo2 = request.data.get("repo2")  # GitHub URL
         elif type2 == "zip":
             repo2 = request.FILES.get("repo2")  # ZIP file
 
-        # Validate input
         if not repo1 or not repo2 or not type1 or not type2:
             return Response(
                 {"error": "Both repositories and their types are required."},
@@ -1856,22 +1853,23 @@ class CodeSimilarityAnalyze(APIView):
             )
 
         try:
-            # Step 1: Download or extract repository files
             temp_dir = tempfile.mkdtemp()
             repo1_path = self.download_or_extract(repo1, type1, temp_dir, "repo1")
             repo2_path = self.download_or_extract(repo2, type2, temp_dir, "repo2")
 
-            # Step 2: Perform similarity analysis
             matching_details, csv_file = process_similarity_analysis(repo1_path, repo2_path)
 
         except ValueError as e:
             return Response(
-                {"error": f"ValueError: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": "An unexpected error occurred, please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        # Step 3: Return the full report and similarity details as JSON and CSV
+            # return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": "An unexpected error occurred, please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         response = Response(
             {
                 "status": "success",
