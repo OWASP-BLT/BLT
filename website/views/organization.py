@@ -2,7 +2,6 @@ import ipaddress
 import json
 import os
 import tempfile
-import zipfile
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -16,7 +15,6 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.core.files.storage import FileSystemStorage
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, Q, Sum
@@ -1864,9 +1862,7 @@ class CodeSimilarityAnalyze(APIView):
             repo2_path = self.download_or_extract(repo2, type2, temp_dir, "repo2")
 
             # Step 2: Perform similarity analysis
-            similarity_score, matching_details = process_similarity_analysis(
-                repo1_path, repo2_path
-            )
+            matching_details, csv_file = process_similarity_analysis(repo1_path, repo2_path)
 
         except ValueError as e:
             return Response(
@@ -1875,15 +1871,20 @@ class CodeSimilarityAnalyze(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # Step 3: Return the full report and similarity details as JSON
-        return Response(
+        # Step 3: Return the full report and similarity details as JSON and CSV
+        response = Response(
             {
                 "status": "success",
-                "similarity_score": similarity_score,
                 "matching_details": matching_details,  # Detailed function/model similarity
             },
             status=status.HTTP_200_OK,
         )
+
+        # response["Content-Disposition"] = 'attachment; filename="similarity_report.csv"'
+        # response["Content-Type"] = "text/csv"
+        # response.content = csv_file
+
+        return response
 
     def download_or_extract(self, source, source_type, temp_dir, repo_name):
         """
@@ -1896,20 +1897,11 @@ class CodeSimilarityAnalyze(APIView):
         """
 
         dest_path = os.path.join(temp_dir, repo_name)
-        print(dest_path)
         if source_type == "github":
             # Clone the GitHub repository
             Repo.clone_from(source, dest_path)
 
         elif source_type == "zip":
-            repo_name_dir = os.path.join(temp_dir, repo_name)
-            os.makedirs(repo_name_dir, exist_ok=True)
-            fs = FileSystemStorage(location=repo_name_dir)
-            zip_file_path = fs.save(repo_name, source)
-
-            with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
-                zip_ref.extractall(dest_path)
-
-            os.remove(zip_file_path)
+            pass
 
         return dest_path

@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Red, White, and Black Theme */
+        .container {
+            width: 80%;
+            margin: 50px auto;
+            padding: 20px;
+            border: 1px solid #000;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        h1 {
+            text-align: center;
+            color: #000; /* Black color for the title */
+            font-size: 36px; /* Bigger font size */
+            font-weight: bold; /* Bold font weight */
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: #d32f2f; /* Red button */
+            color: #fff;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #b71c1c; /* Darker red on hover */
+        }
+
+        .results-container {
+            margin-top: 30px;
+        }
+
+        .chart-container {
+            margin-top: 20px;
+        }
+
+        .legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #fff;
+            border: 1px solid #000;
+            border-radius: 4px;
+            padding: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .legend div {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .legend div span {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+
+        .legend .high-similarity {
+            background-color: #008000; /* Green */
+        }
+
+        .legend .medium-similarity {
+            background-color: #ffa500; /* Orange */
+        }
+
+        .legend .low-similarity {
+            background-color: #ff0000; /* Red */
+        }
+        #cancelRequest {
+            display: none;
+        }
+        #downloadCsv {
+            display: none;
+        }
+    </style>
+    <div class="container">
+        <h1>Similarity Check</h1>
+        <!-- Legend -->
+        <div class="legend">
+            <div>
+                <span class="high-similarity"></span>High Similarity
+            </div>
+            <div>
+                <span class="medium-similarity"></span>Medium Similarity
+            </div>
+            <div>
+                <span class="low-similarity"></span>Low/No Similarity
+            </div>
+        </div>
+        <!-- Input fields -->
+        <form id="similarityForm">
+            <div class="flex gap-4">
+                <div>
+                    <input id="repo1"
+                           name="repo1"
+                           type="text"
+                           placeholder="Enter first repository URL or path"
+                           class="border border-gray-300 p-2 rounded-md w-full"
+                           required>
+                </div>
+                <div>
+                    <select id="type1"
+                            name="type1"
+                            class="border border-gray-300 p-2 rounded-md w-full">
+                        <option value="github">GitHub</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-4 mt-4">
+                <div>
+                    <input id="repo2"
+                           name="repo2"
+                           type="text"
+                           placeholder="Enter second repository URL or path"
+                           class="border border-gray-300 p-2 rounded-md w-full"
+                           required>
+                </div>
+                <div>
+                    <select id="type2"
+                            name="type2"
+                            class="border border-gray-300 p-2 rounded-md w-full">
+                        <option value="github">GitHub</option>
+                    </select>
+                </div>
+            </div>
+            <button type="button" id="fetchReports" class="btn">Fetch Reports</button>
+            <button type="button" id="cancelRequest" class="btn">Cancel</button>
+        </form>
+        <!-- Results Section -->
+        <div class="results-container">
+            <h2>Results</h2>
+            <div id="results"></div>
+            <div class="chart-container">
+                <canvas id="similarityChart"></canvas>
+            </div>
+            <button id="downloadCsv" class="btn">Download CSV</button>
+        </div>
+    </div>
+    <script>
+        let similarityChart;
+        let controller;
+
+        document.getElementById("fetchReports").addEventListener("click", async () => {
+            const fetchButton = document.getElementById("fetchReports");
+            const cancelButton = document.getElementById("cancelRequest");
+            const downloadButton = document.getElementById("downloadCsv");
+            fetchButton.innerHTML = "Loading...";
+            fetchButton.disabled = true;
+            cancelButton.style.display = "inline-block";
+
+            const repo1 = document.getElementById("repo1").value;
+            const type1 = document.getElementById("type1").value;
+            const repo2 = document.getElementById("repo2").value;
+            const type2 = document.getElementById("type2").value;
+
+            // Validate input
+            if (!repo1 || !repo2) {
+                alert("Both repositories are required!");
+                fetchButton.innerHTML = "Fetch Reports";
+                fetchButton.disabled = false;
+                cancelButton.style.display = "none";
+                return;
+            }
+
+            // Create FormData object
+            const formData = new FormData();
+            formData.append("repo1", repo1);
+            formData.append("type1", type1);
+            formData.append("repo2", repo2);
+            formData.append("type2", type2);
+
+            // Initialize AbortController
+            controller = new AbortController();
+            const signal = controller.signal;
+
+            try {
+                const apiUrl = "{% url 'code_similarity_analyze' %}";
+
+                const response = await fetch(apiUrl, {
+                    method: "POST",
+                    body: formData,
+                    signal: signal,
+                });
+
+                const data = await response.json();
+
+                if (data.status === "success") {
+                    // Process and visualize results
+                    displayResults(data.matching_details);
+                    // Show download button for CSV
+                    downloadButton.style.display = "inline-block";
+                    downloadButton.addEventListener("click", () => {
+                        downloadCsv(data.matching_details);
+                    });
+                } else {
+                    alert("Error: " + (data.message || "Unknown error occurred."));
+                }
+            } catch (error) {
+                if (error.name === "AbortError") {
+                    console.log("Fetch request canceled");
+                } else {
+                    console.error("Error fetching similarity report:", error);
+                    alert("An error occurred while fetching the similarity report.");
+                }
+            } finally {
+                fetchButton.innerHTML = "Fetch Reports";
+                fetchButton.disabled = false;
+                cancelButton.style.display = "none";
+            }
+        });
+
+        document.getElementById("cancelRequest").addEventListener("click", () => {
+            if (controller) {
+                controller.abort();
+            }
+        });
+
+        window.addEventListener("beforeunload", () => {
+            if (controller) {
+                controller.abort();
+            }
+        });
+
+        function displayResults(matchingDetails) {
+            const { functions, models } = matchingDetails;
+
+            // Display functions similarity
+            let resultsHTML = "<h3>Function Similarities</h3>";
+            functions.forEach((func) => {
+                resultsHTML += `
+                    <p><b>${func.name1}</b> vs <b>${func.name2}</b></p>
+                    <p>Name Similarity: ${func.name_similarity.toFixed(2)}%</p>
+                    <p>Signature Similarity: ${func.signature_similarity.toFixed(2)}%</p>
+                    <p>Content Similarity: ${func.content_similarity.toFixed(2)}%</p>
+                    <p>Overall Similarity: ${func.similarity.toFixed(2)}%</p>
+                    <hr>
+                `;
+            });
+
+            // Display models similarity
+            resultsHTML += "<h3>Model Similarities</h3>";
+            models.forEach((model) => {
+                resultsHTML += `
+                    <p><b>${model.name1}</b> vs <b>${model.name2}</b></p>
+                    <p>Model Name Similarity: ${model.similarity.toFixed(2)}%</p>
+                    <p>Overall Field Similarity: ${model.field_comparison.overall_field_similarity.toFixed(2)}%</p>
+                    <hr>
+                `;
+            });
+
+            document.getElementById("results").innerHTML = resultsHTML;
+
+            // Prepare data for the chart
+            const functionData = functions.length ? functions[0] : null;
+            const modelData = models.length ? models[0] : null;
+
+            const labels = [];
+            const data = [];
+            const backgroundColors = [];
+
+            if (functionData) {
+                labels.push("Function Name Similarity", "Function Signature Similarity", "Function Content Similarity", "Function Overall Similarity");
+                data.push(functionData.name_similarity, functionData.signature_similarity, functionData.content_similarity, functionData.similarity);
+                backgroundColors.push(getColor(functionData.name_similarity), getColor(functionData.signature_similarity), getColor(functionData.content_similarity), getColor(functionData.similarity));
+            }
+
+            if (modelData) {
+                labels.push("Model Name Similarity", "Model Overall Field Similarity");
+                data.push(modelData.similarity, modelData.field_comparison.overall_field_similarity);
+                backgroundColors.push(getColor(modelData.similarity, true), getColor(modelData.field_comparison.overall_field_similarity, true));
+            }
+
+            // Use Chart.js to visualize overall similarities
+            const ctx = document.getElementById("similarityChart").getContext("2d");
+            if (similarityChart) {
+                similarityChart.destroy();
+            }
+            similarityChart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Similarity (%)",
+                            data: data,
+                            backgroundColor: backgroundColors,
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        function getColor(similarity, isModel = false) {
+            if (isModel) {
+                if (similarity < 50) return "#ff0000"; // Red for less/no similarity
+                if (similarity < 80) return "#ffa500"; // Orange for medium similarity
+                return "#008000"; // Green for high similarity
+            } else {
+                if (similarity < 50) return "#ff0000"; // Red for less/no similarity
+                if (similarity < 70) return "#ffa500"; // Orange for medium similarity
+                return "#008000"; // Green for high similarity
+            }
+        }
+        function downloadCsv(matchingDetails) {
+            console.log("Debug: Matching details:", matchingDetails); // Debug log
+
+            if (!matchingDetails) {
+                alert("Invalid matching details object!");
+                return;
+            }
+
+            const csvRows = [];
+
+
+            // Add Function Similarities
+            const functions = matchingDetails.functions;
+            if (functions && Array.isArray(functions)) {
+                csvRows.push("\nFunction Similarities");
+                csvRows.push("Name1,Name2,Name Similarity,Signature Similarity,Content Similarity,Overall Similarity");
+                functions.forEach((func) => {
+                    csvRows.push(
+                        `${func.name1 || ""},${func.name2 || ""},${func.name_similarity || 0},${func.signature_similarity || 0},${func.content_similarity || 0},${func.similarity || 0}`
+                    );
+                });
+            } else {
+                csvRows.push("\nFunction Similarities");
+                csvRows.push("No function similarities available.");
+            }
+
+            // Add Model Similarities
+            const models = matchingDetails.models;
+            if (models && Array.isArray(models)) {
+                csvRows.push("\nModel Similarities");
+                csvRows.push("Name1,Name2,Model Name Similarity,Overall Field Similarity");
+                models.forEach((model) => {
+                    csvRows.push(
+                        `${model.name1 || ""},${model.name2 || ""},${model.field_comparison?.model_name_similarity || 0},${model.field_comparison?.overall_field_similarity || 0}`
+                    );
+
+                    // Add Field Comparison Details
+                    const fieldDetails = model.field_comparison?.field_comparison_details;
+                    if (fieldDetails && Array.isArray(fieldDetails)) {
+                        csvRows.push("Field1 Name,Field1 Type,Field2 Name,Field2 Type,Field Name Similarity,Field Type Similarity,Overall Similarity");
+                        fieldDetails.forEach((field) => {
+                            csvRows.push(
+                                `${field.field1_name || ""},${field.field1_type || ""},${field.field2_name || ""},${field.field2_type || ""},${field.field_name_similarity || 0},${field.field_type_similarity || 0},${field.overall_similarity || 0}`
+                            );
+                        });
+                    }
+                });
+            } else {
+                csvRows.push("\nModel Similarities");
+                csvRows.push("No model similarities available.");
+            }
+
+            // Convert rows to CSV and download
+            const csvString = csvRows.join("\n");
+            const blob = new Blob([csvString], { type: "text/csv" });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.style.display = "none";
+            a.href = url;
+            a.download = "similarity_report.csv";
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+{% endblock content %}
