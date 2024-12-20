@@ -7,7 +7,7 @@ license = "AGPLv3"
 
 [tool.poetry.dependencies]
 
-python = "3.11.*"
+python = "3.11.2"
 python-dotenv = "^1.0.1"
 toml = "^0.10.2"
 Django = "^5.1.3"
