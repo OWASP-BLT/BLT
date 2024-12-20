@@ -33,39 +33,41 @@ from blt import settings
 from website.forms import CaptchaForm, HuntForm, IpReportForm, UserProfileForm
 from website.models import (
     Activity,
-    Company,
-    CompanyAdmin,
     DailyStatusReport,
     Domain,
     Hunt,
     IpReport,
     Issue,
     IssueScreenshot,
+    Organization,
+    OrganizationAdmin,
     Subscription,
     TimeLog,
     User,
+    UserBadge,
     Wallet,
     Winner,
 )
+from website.services.blue_sky_service import BlueSkyService
 from website.utils import format_timedelta, get_client_ip, get_github_issue_title
 
 
-def add_domain_to_company(request):
+def add_domain_to_organization(request):
     if request.method == "POST":
         domain = request.POST.get("domain")
         domain = Domain.objects.get(id=domain)
-        company_name = request.POST.get("company")
-        company = Company.objects.filter(name=company_name).first()
+        organization_name = request.POST.get("company")
+        organization = Organization.objects.filter(name=organization_name).first()
 
-        if not company:
+        if not organization:
             url = domain.url
             if not url.startswith(("http://", "https://")):
                 url = "http://" + url
             response = requests.get(url)
             soup = BeautifulSoup(response.text, "html.parser")
-            if company_name in soup.get_text():
-                company = Company.objects.create(name=company_name)
-                domain.company = company
+            if organization_name in soup.get_text():
+                organization = Organization.objects.create(name=organization_name)
+                domain.organization = organization
                 domain.save()
                 messages.success(request, "Organization added successfully")
                 return redirect("domain", slug=domain.url)
@@ -73,7 +75,7 @@ def add_domain_to_company(request):
                 messages.error(request, "Organization not found in the domain")
                 return redirect("domain", slug=domain.url)
         else:
-            domain.company = company
+            domain.organization = organization
             domain.save()
             messages.success(request, "Organization added successfully")
             return redirect("domain", slug=domain.url)
@@ -82,12 +84,12 @@ def add_domain_to_company(request):
 
 
 @login_required(login_url="/accounts/login")
-def company_dashboard(request, template="index_company.html"):
+def organization_dashboard(request, template="index_company.html"):
     try:
-        company_admin = CompanyAdmin.objects.get(user=request.user)
-        if not company_admin.is_active:
+        organization_admin = OrganizationAdmin.objects.get(user=request.user)
+        if not organization_admin.is_active:
             return HttpResponseRedirect("/")
-        hunts = Hunt.objects.filter(is_published=True, domain=company_admin.domain)
+        hunts = Hunt.objects.filter(is_published=True, domain=organization_admin.domain)
         upcoming_hunt = []
         ongoing_hunt = []
         previous_hunt = []
@@ -109,26 +111,28 @@ def company_dashboard(request, template="index_company.html"):
 
 
 @login_required(login_url="/accounts/login")
-def admin_company_dashboard(request, template="admin_dashboard_company.html"):
+def admin_organization_dashboard(request, template="admin_dashboard_company.html"):
     user = request.user
     if user.is_superuser:
         if not user.is_active:
             return HttpResponseRedirect("/")
-        company = Company.objects.all()
-        context = {"companys": company}
+        organization = Organization.objects.all()
+        context = {"organizations": organization}
         return render(request, template, context)
     else:
         return redirect("/")
 
 
 @login_required(login_url="/accounts/login")
-def admin_company_dashboard_detail(request, pk, template="admin_dashboard_company_detail.html"):
+def admin_organization_dashboard_detail(
+    request, pk, template="admin_dashboard_company_detail.html"
+):
     user = request.user
     if user.is_superuser:
         if not user.is_active:
             return HttpResponseRedirect("/")
-        company = get_object_or_404(Company, pk=pk)
-        return render(request, template, {"company": company})
+        organization = get_object_or_404(Organization, pk=pk)
+        return render(request, template, {"organization": organization})
     else:
         return redirect("/")
 
@@ -136,7 +140,7 @@ def admin_company_dashboard_detail(request, pk, template="admin_dashboard_compan
 def weekly_report(request):
     domains = Domain.objects.all()
     report_data = [
-        "Hey This is a weekly report from OWASP BLT regarding the bugs reported for your company!"
+        "Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"
     ]
     try:
         for domain in domains:
@@ -146,8 +150,8 @@ def weekly_report(request):
             issues = Issue.objects.filter(domain=domain)
             email = domain.email
             report_data.append(
-                "Hey This is a weekly report from OWASP BLT regarding the bugs reported for your company!"
-                f"\n\nCompany Name: {domain.name}"
+                "Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"
+                f"\n\norganization Name: {domain.name}"
                 f"Open issues: {open_issues.count()}"
                 f"Closed issues: {closed_issues.count()}"
                 f"Total issues: {total_issues}"
@@ -175,7 +179,7 @@ def weekly_report(request):
 
 
 @login_required(login_url="/accounts/login")
-def company_hunt_results(request, pk, template="company_hunt_results.html"):
+def organization_hunt_results(request, pk, template="company_hunt_results.html"):
     hunt = get_object_or_404(Hunt, pk=pk)
     issues = Issue.objects.filter(hunt=hunt).exclude(
         Q(is_hidden=True) & ~Q(user_id=request.user.id)
@@ -317,20 +321,20 @@ class DomainList(TemplateView):
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
-        domain_admin = CompanyAdmin.objects.get(user=request.user)
+        domain_admin = OrganizationAdmin.objects.get(user=request.user)
         if not domain_admin.is_active:
             return HttpResponseRedirect("/")
         domain = []
         if domain_admin.role == 0:
-            domain = self.model.objects.filter(company=domain_admin.company)
+            domain = self.model.objects.filter(organization=domain_admin.organization)
         else:
             domain = self.model.objects.filter(pk=domain_admin.domain.pk)
         context = {"domains": domain}
         return render(request, self.template_name, context)
 
 
-class JoinCompany(TemplateView):
-    model = Company
+class Joinorganization(TemplateView):
+    model = Organization
     template_name = "join.html"
 
     @method_decorator(login_required)
@@ -342,7 +346,7 @@ class JoinCompany(TemplateView):
     def post(self, request, *args, **kwargs):
         name = request.POST["company"]
         try:
-            company_exists = Company.objects.get(name=name)
+            organization_exists = Organization.objects.get(name=name)
             return JsonResponse({"status": "There was some error"})
         except:
             pass
@@ -358,17 +362,17 @@ class JoinCompany(TemplateView):
             if wallet.current_balance < sub.charge_per_month:
                 return JsonResponse({"error": "insufficient balance in Wallet"})
             wallet.withdraw(sub.charge_per_month)
-            company = Company()
-            company.admin = request.user
-            company.name = name
-            company.url = url
-            company.email = email
-            company.subscription = sub
-            company.save()
-            admin = CompanyAdmin()
+            organization = Organization()
+            organization.admin = request.user
+            organization.name = name
+            organization.url = url
+            organization.email = email
+            organization.subscription = sub
+            organization.save()
+            admin = OrganizationAdmin()
             admin.user = request.user
             admin.role = 0
-            admin.company = company
+            admin.organization = organization
             admin.is_active = True
             admin.save()
             return JsonResponse({"status": "Success"})
@@ -383,17 +387,17 @@ class JoinCompany(TemplateView):
                 description="Example charge",
                 source=request.POST["stripeToken"],
             )
-            company = Company()
-            company.admin = request.user
-            company.name = name
-            company.url = url
-            company.email = email
-            company.subscription = sub
-            company.save()
-            admin = CompanyAdmin()
+            organization = Organization()
+            organization.admin = request.user
+            organization.name = name
+            organization.url = url
+            organization.email = email
+            organization.subscription = sub
+            organization.save()
+            admin = OrganizationAdmin()
             admin.user = request.user
             admin.role = 0
-            admin.company = company
+            admin.organization = organization
             admin.is_active = True
             admin.save()
             return JsonResponse({"status": "Success"})
@@ -477,7 +481,7 @@ class DraftHunts(TemplateView):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            domain_admin = CompanyAdmin.objects.get(user=request.user)
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
             if not domain_admin.is_active:
                 return HttpResponseRedirect("/")
             if domain_admin.role == 0:
@@ -498,7 +502,7 @@ class UpcomingHunts(TemplateView):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            domain_admin = CompanyAdmin.objects.get(user=request.user)
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
             if not domain_admin.is_active:
                 return HttpResponseRedirect("/")
 
@@ -524,7 +528,7 @@ class OngoingHunts(TemplateView):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            domain_admin = CompanyAdmin.objects.get(user=request.user)
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
             if not domain_admin.is_active:
                 return HttpResponseRedirect("/")
             if domain_admin.role == 0:
@@ -549,7 +553,7 @@ class PreviousHunts(TemplateView):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            domain_admin = CompanyAdmin.objects.get(user=request.user)
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
             if not domain_admin.is_active:
                 return HttpResponseRedirect("/")
             if domain_admin.role == 0:
@@ -577,25 +581,25 @@ class PreviousHunts(TemplateView):
         return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
 
 
-class CompanySettings(TemplateView):
-    model = CompanyAdmin
+class OrganizationSettings(TemplateView):
+    model = OrganizationAdmin
     fields = ["user", "domain", "role", "is_active"]
     template_name = "company_settings.html"
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            domain_admin = CompanyAdmin.objects.get(user=request.user)
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
             if not domain_admin.is_active:
                 return HttpResponseRedirect("/")
             domain_admins = []
-            domain_list = Domain.objects.filter(company=domain_admin.company)
+            domain_list = Domain.objects.filter(organization=domain_admin.organization)
             if domain_admin.role == 0:
-                domain_admins = CompanyAdmin.objects.filter(
-                    company=domain_admin.company, is_active=True
+                domain_admins = OrganizationAdmin.objects.filter(
+                    organization=domain_admin.organization, is_active=True
                 )
             else:
-                domain_admins = CompanyAdmin.objects.filter(
+                domain_admins = OrganizationAdmin.objects.filter(
                     domain=domain_admin.domain, is_active=True
                 )
             context = {
@@ -788,12 +792,12 @@ class CreateHunt(TemplateView):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            domain_admin = CompanyAdmin.objects.get(user=request.user)
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
             if not domain_admin.is_active:
                 return HttpResponseRedirect("/")
             domain = []
             if domain_admin.role == 0:
-                domain = Domain.objects.filter(company=domain_admin.company)
+                domain = Domain.objects.filter(organization=domain_admin.organization)
             else:
                 domain = Domain.objects.filter(pk=domain_admin.domain.pk)
 
@@ -805,7 +809,7 @@ class CreateHunt(TemplateView):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         try:
-            domain_admin = CompanyAdmin.objects.get(user=request.user)
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
             if (
                 domain_admin.role == 1
                 and (
@@ -906,12 +910,14 @@ def user_sizzle_report(request, username):
         issue_title = get_github_issue_title(first_log.github_issue_url)
 
         start_time = first_log.start_time.strftime("%I:%M %p")
+        end_time = first_log.end_time.strftime("%I:%M %p")
         formatted_date = first_log.created.strftime("%d %B %Y")
 
         day_data = {
             "issue_title": issue_title,
             "duration": formatted_duration,
             "start_time": start_time,
+            "end_time": end_time,
             "date": formatted_date,
         }
 
@@ -933,7 +939,9 @@ def sizzle_daily_log(request):
             previous_work = request.POST.get("previous_work")
             next_plan = request.POST.get("next_plan")
             blockers = request.POST.get("blockers")
-            print(previous_work, next_plan, blockers)
+            goal_accomplished = request.POST.get("goal_accomplished") == "on"
+            current_mood = request.POST.get("feeling")
+            print(previous_work, next_plan, blockers, goal_accomplished, current_mood)
 
             DailyStatusReport.objects.create(
                 user=request.user,
@@ -941,10 +949,14 @@ def sizzle_daily_log(request):
                 previous_work=previous_work,
                 next_plan=next_plan,
                 blockers=blockers,
+                goal_accomplished=goal_accomplished,
+                current_mood=current_mood,
             )
 
             messages.success(request, "Daily status report submitted successfully.")
-            return redirect("sizzle")
+            return JsonResponse(
+                {"success": "true", "message": "Daily status report submitted successfully."}
+            )
 
     except Exception as e:
         messages.error(request, f"An error occurred: {e}")
@@ -960,10 +972,10 @@ def TimeLogListView(request):
 
     # print the all details of the active time log
     token, created = Token.objects.get_or_create(user=request.user)
-    organizations_list_queryset = Company.objects.all().values("url", "name")
+    organizations_list_queryset = Organization.objects.all().values("url", "name")
     organizations_list = list(organizations_list_queryset)
     organization_url = None
-    if active_time_log:
+    if active_time_log and active_time_log.organization:
         organization_url = active_time_log.organization.url
     return render(
         request,
@@ -1157,10 +1169,10 @@ def view_hunt(request, pk, template="view_hunt.html"):
 
 
 @login_required(login_url="/accounts/login")
-def company_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_edit.html"):
+def organization_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_edit.html"):
     if request.method == "GET":
         hunt = get_object_or_404(Hunt, pk=pk)
-        domain_admin = CompanyAdmin.objects.get(user=request.user)
+        domain_admin = OrganizationAdmin.objects.get(user=request.user)
         if not domain_admin.is_active:
             return HttpResponseRedirect("/")
         if domain_admin.role == 1:
@@ -1168,7 +1180,7 @@ def company_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_ed
                 return HttpResponseRedirect("/")
         domain = []
         if domain_admin.role == 0:
-            domain = Domain.objects.filter(company=domain_admin.company)
+            domain = Domain.objects.filter(organization=domain_admin.organization)
         else:
             domain = Domain.objects.filter(pk=domain_admin.domain.pk)
         initial = {"content": hunt.description}
@@ -1183,7 +1195,7 @@ def company_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_ed
         if not form.is_valid():
             return HttpResponse("failed")
         hunt = get_object_or_404(Hunt, pk=pk)
-        domain_admin = CompanyAdmin.objects.get(user=request.user)
+        domain_admin = OrganizationAdmin.objects.get(user=request.user)
         if not domain_admin.is_active:
             return HttpResponse("failed")
         if domain_admin.role == 1:
@@ -1226,7 +1238,7 @@ def company_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_ed
 
 
 @login_required(login_url="/accounts/login")
-def company_dashboard_hunt_detail(request, pk, template="company_dashboard_hunt_detail.html"):
+def organization_dashboard_hunt_detail(request, pk, template="company_dashboard_hunt_detail.html"):
     hunt = get_object_or_404(Hunt, pk=pk)
     return render(request, template, {"hunt": hunt})
 
@@ -1238,9 +1250,11 @@ def hunt_results(request, pk, template="hunt_results.html"):
 
 
 @login_required(login_url="/accounts/login")
-def company_dashboard_domain_detail(request, pk, template="company_dashboard_domain_detail.html"):
+def organization_dashboard_domain_detail(
+    request, pk, template="company_dashboard_domain_detail.html"
+):
     user = request.user
-    domain_admin = CompanyAdmin.objects.get(user=request.user)
+    domain_admin = OrganizationAdmin.objects.get(user=request.user)
     try:
         if (Domain.objects.get(pk=pk)) == domain_admin.domain:
             if not user.is_active:
@@ -1256,9 +1270,9 @@ def company_dashboard_domain_detail(request, pk, template="company_dashboard_dom
 @login_required(login_url="/accounts/login")
 def add_or_update_domain(request):
     if request.method == "POST":
-        company_admin = CompanyAdmin.objects.get(user=request.user)
-        subscription = company_admin.company.subscription
-        count_domain = Domain.objects.filter(company=company_admin.company).count()
+        organization_admin = OrganizationAdmin.objects.get(user=request.user)
+        subscription = organization_admin.organization.subscription
+        count_domain = Domain.objects.filter(organization=organization_admin.organization).count()
         try:
             try:
                 domain_pk = request.POST["id"]
@@ -1276,7 +1290,7 @@ def add_or_update_domain(request):
                 if count_domain == subscription.number_of_domains:
                     return HttpResponse("Domains Reached Limit")
                 else:
-                    if company_admin.role == 0:
+                    if organization_admin.role == 0:
                         domain = Domain()
                         domain.name = request.POST["name"]
                         domain.url = request.POST["url"]
@@ -1286,7 +1300,7 @@ def add_or_update_domain(request):
                             domain.logo = request.FILES["logo"]
                         except:
                             pass
-                        domain.company = company_admin.company
+                        domain.organization = organization_admin.organization
                         domain.save()
                         return HttpResponse("Domain Created")
                     else:
@@ -1296,49 +1310,51 @@ def add_or_update_domain(request):
 
 
 @login_required(login_url="/accounts/login")
-def add_or_update_company(request):
+def add_or_update_organization(request):
     user = request.user
     if user.is_superuser:
         if not user.is_active:
             return HttpResponseRedirect("/")
         if request.method == "POST":
             domain_pk = request.POST["id"]
-            company = Company.objects.get(pk=domain_pk)
-            user = company.admin
+            organization = Organization.objects.get(pk=domain_pk)
+            user = organization.admin
             if user != User.objects.get(email=request.POST["admin"]):
                 try:
-                    admin = CompanyAdmin.objects.get(user=user, company=company)
+                    admin = OrganizationAdmin.objects.get(user=user, organization=organization)
                     admin.user = User.objects.get(email=request.POST["admin"])
                     admin.save()
                 except:
-                    admin = CompanyAdmin()
+                    admin = OrganizationAdmin()
                     admin.user = User.objects.get(email=request.POST["admin"])
                     admin.role = 0
-                    admin.company = company
+                    admin.organization = organization
                     admin.is_active = True
                     admin.save()
-            company.name = request.POST["name"]
-            company.email = request.POST["email"]
-            company.url = request.POST["url"]
-            company.admin = User.objects.get(email=request.POST["admin"])
-            company.github = request.POST["github"]
+            organization.name = request.POST["name"]
+            organization.email = request.POST["email"]
+            organization.url = request.POST["url"]
+            organization.admin = User.objects.get(email=request.POST["admin"])
+            organization.github = request.POST["github"]
             try:
                 is_verified = request.POST["verify"]
                 if is_verified == "on":
-                    company.is_active = True
+                    organization.is_active = True
                 else:
-                    company.is_active = False
+                    organization.is_active = False
             except:
-                company.is_active = False
+                organization.is_active = False
             try:
-                company.subscription = Subscription.objects.get(name=request.POST["subscription"])
+                organization.subscription = Subscription.objects.get(
+                    name=request.POST["subscription"]
+                )
             except:
                 pass
             try:
-                company.logo = request.FILES["logo"]
+                organization.logo = request.FILES["logo"]
             except:
                 pass
-            company.save()
+            organization.save()
             return HttpResponse("success")
 
         else:
@@ -1350,15 +1366,15 @@ def add_or_update_company(request):
 @login_required(login_url="/accounts/login")
 def add_role(request):
     if request.method == "POST":
-        domain_admin = CompanyAdmin.objects.get(user=request.user)
+        domain_admin = OrganizationAdmin.objects.get(user=request.user)
         if domain_admin.role == 0 and domain_admin.is_active:
             email = request.POST["email"]
             user = User.objects.get(email=email)
             if request.user == user:
                 return HttpResponse("success")
             try:
-                admin = CompanyAdmin.objects.get(user=user)
-                if admin.company == domain_admin.company:
+                admin = OrganizationAdmin.objects.get(user=user)
+                if admin.organization == domain_admin.organization:
                     admin.is_active = True
                     admin.save()
                     return HttpResponse("success")
@@ -1366,10 +1382,10 @@ def add_role(request):
                     return HttpResponse("already admin of another domain")
             except:
                 try:
-                    admin = CompanyAdmin()
+                    admin = OrganizationAdmin()
                     admin.user = user
                     admin.role = 1
-                    admin.company = domain_admin.company
+                    admin.organization = domain_admin.organization
                     admin.is_active = True
                     admin.save()
                     return HttpResponse("success")
@@ -1384,14 +1400,14 @@ def add_role(request):
 @login_required(login_url="/accounts/login")
 def update_role(request):
     if request.method == "POST":
-        domain_admin = CompanyAdmin.objects.get(user=request.user)
+        domain_admin = OrganizationAdmin.objects.get(user=request.user)
         if domain_admin.role == 0 and domain_admin.is_active:
             for key, value in request.POST.items():
                 if key.startswith("user@"):
                     user = User.objects.get(username=value)
-                    if domain_admin.company.admin == request.user:
+                    if domain_admin.organization.admin == request.user:
                         pass
-                    domain_admin = CompanyAdmin.objects.get(user=user)
+                    domain_admin = OrganizationAdmin.objects.get(user=user)
                     if request.POST["role@" + value] != "9":
                         domain_admin.role = request.POST["role@" + value]
                     elif request.POST["role@" + value] == "9":
@@ -1406,9 +1422,9 @@ def update_role(request):
             for key, value in request.POST.items():
                 if key.startswith("user@"):
                     user = User.objects.get(username=value)
-                    if domain_admin.company.admin == request.user:
+                    if domain_admin.organization.admin == request.user:
                         pass
-                    domain_admin = CompanyAdmin.objects.get(user=user)
+                    domain_admin = OrganizationAdmin.objects.get(user=user)
                     if request.POST["role@" + value] == "1":
                         domain_admin.role = request.POST["role@" + value]
                     elif request.POST["role@" + value] == "9":
@@ -1590,11 +1606,213 @@ def feed(request):
     # Determine if pagination is required
     is_paginated = page_obj.has_other_pages()
 
+    # Check if the user has the mentor badge
+    if request.user.is_authenticated:
+        is_mentor = UserBadge.objects.filter(user=request.user, badge__title="Mentor").exists()
+    else:
+        is_mentor = False
+
     return render(
         request,
         "feed.html",
         {
             "page_obj": page_obj,
             "is_paginated": is_paginated,  # Pass this flag to the template
+            "is_mentor": is_mentor,  # Add is_mentor to the context
         },
     )
+
+
+@login_required
+@require_POST
+def like_activity(request, id):
+    activity = get_object_or_404(Activity, id=id)
+    user = request.user
+
+    if activity.dislikes.filter(id=user.id).exists():
+        activity.dislikes.remove(user)
+        activity.dislike_count -= 1
+
+    if activity.likes.filter(id=user.id).exists():
+        activity.likes.remove(user)
+        activity.like_count -= 1
+    else:
+        activity.likes.add(user)
+        activity.like_count += 1
+
+    activity.save()
+
+    # Check if the activity meets the approval criteria
+    if activity.like_count >= 3 and activity.dislike_count < 3 and not activity.is_approved:
+        activity.is_approved = True
+        activity.save()
+
+        # Trigger posting on BlueSky
+        blue_sky_service = BlueSkyService()
+        try:
+            activity.post_to_bluesky(blue_sky_service)
+        except Exception:
+            return JsonResponse({"success": False})
+
+    return JsonResponse(
+        {
+            "success": True,
+            "like_count": activity.like_count,
+            "dislike_count": activity.dislike_count,
+        }
+    )
+
+
+@login_required
+@require_POST
+def dislike_activity(request, id):
+    activity = get_object_or_404(Activity, id=id)
+    user = request.user
+
+    if activity.likes.filter(id=user.id).exists():
+        activity.likes.remove(user)
+        activity.like_count -= 1
+
+    if activity.dislikes.filter(id=user.id).exists():
+        activity.dislikes.remove(user)
+        activity.dislike_count -= 1
+    else:
+        activity.dislikes.add(user)
+        activity.dislike_count += 1
+
+    activity.save()
+
+    # Check if the activity meets the approval criteria
+    if activity.like_count >= 3 and activity.dislike_count < 3 and not activity.is_approved:
+        activity.is_approved = True
+        activity.save()
+
+        # Trigger posting on BlueSky
+        blue_sky_service = BlueSkyService()
+        try:
+            activity.post_to_bluesky(blue_sky_service)
+        except Exception:
+            return JsonResponse({"success": False})
+
+    return JsonResponse(
+        {
+            "success": True,
+            "like_count": activity.like_count,
+            "dislike_count": activity.dislike_count,
+        }
+    )
+
+
+@login_required
+@require_POST
+def approve_activity(request, id):
+    activity = get_object_or_404(Activity, id=id)
+    user = request.user
+
+    # Check if the user has the "Mentor" badge
+    if (
+        UserBadge.objects.filter(user=user, badge__title="Mentor").exists()
+        and not activity.is_approved
+    ):
+        activity.is_approved = True
+        activity.save()
+
+        # Trigger posting on BlueSky
+        blue_sky_service = BlueSkyService()
+        try:
+            activity.post_to_bluesky(blue_sky_service)
+            return JsonResponse({"success": True, "is_approved": activity.is_approved})
+        except Exception:
+            return JsonResponse({"success": False})
+    else:
+        return JsonResponse({"success": False, "error": "Not authorized"})
+
+
+def truncate_text(text, length=15):
+    return text if len(text) <= length else text[:length] + "..."
+
+
+@login_required
+def add_sizzle_checkIN(request):
+    # Fetch yesterday's report
+    yesterday = now().date() - timedelta(days=1)
+    yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
+
+    return render(request, "sizzle/add_sizzle_checkin.html", {"yesterday_report": yesterday_report})
+
+
+def checkIN(request):
+    from datetime import date
+
+    # Find the most recent date that has data
+    last_report = DailyStatusReport.objects.order_by("-date").first()
+    if last_report:
+        default_start_date = last_report.date
+        default_end_date = last_report.date
+    else:
+        # If no data at all, fallback to today
+        default_start_date = date.today()
+        default_end_date = date.today()
+
+    start_date_str = request.GET.get("start_date")
+    end_date_str = request.GET.get("end_date")
+
+    if start_date_str and end_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            start_date = default_start_date
+            end_date = default_end_date
+    else:
+        # No date range provided, use the default (most recent date with data)
+        start_date = default_start_date
+        end_date = default_end_date
+
+    reports = (
+        DailyStatusReport.objects.filter(date__range=(start_date, end_date))
+        .select_related("user")
+        .order_by("date", "created")
+    )
+
+    data = []
+    for r in reports:
+        data.append(
+            {
+                "id": r.id,
+                "username": r.user.username,
+                "previous_work": truncate_text(r.previous_work),
+                "next_plan": truncate_text(r.next_plan),
+                "blockers": truncate_text(r.blockers),
+                "goal_accomplished": r.goal_accomplished,  # Add this line
+                "current_mood": r.current_mood,  # Add this line
+                "date": r.date.strftime("%d %B %Y"),
+            }
+        )
+
+    # Return JSON if AJAX
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse(data, safe=False)
+
+    # Render template with initial data if needed
+    return render(
+        request,
+        "sizzle/checkin.html",
+        {
+            "data": data,
+            "default_start_date": default_start_date.isoformat(),
+            "default_end_date": default_end_date.isoformat(),
+        },
+    )
+
+
+def checkIN_detail(request, report_id):
+    report = get_object_or_404(DailyStatusReport, pk=report_id)
+    context = {
+        "username": report.user.username,
+        "date": report.date.strftime("%d %B %Y"),
+        "previous_work": report.previous_work,
+        "next_plan": report.next_plan,
+        "blockers": report.blockers,
+    }
+    return render(request, "sizzle/checkin_detail.html", context)

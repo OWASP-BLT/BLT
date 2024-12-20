@@ -78,6 +78,16 @@
                             <span>Sizzle (timer)</span>
                         </a>
                     </li>
+                    <!-- here we have to add another tab for "check-in"  -->
+                    <li class="mb-2 {% if request.path == '/check-in/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'checkIN' %}"
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/check-in/' %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="icon text-blue-500">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                            <span>Check-In</span>
+                        </a>
+                    </li>
                     <li class="mb-2 {% if request.path == '/scoreboard/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'scoreboard' %}"
                            class="flex items-center w-full no-underline p-2 {% if request.path == '/scoreboard/' %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
@@ -198,6 +208,39 @@
                             <span>Takedowns</span>
                         </a>
                     </li>
+                    <li class="mb-2 {% if request.path == '/badges/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'badges' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/badges/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                            <div class="icon text-red-500">
+                                <i class="fas fa-certificate fa-lg"></i>
+                            </div>
+                            <span>Badges</span>
+                        </a>
+                    </li>
+                </ul>
+                <!-- Spacer -->
+                <div class="my-4 border-t border-gray-300"></div>
+                <!-- Teams (Gamification) Static Item -->
+                <li class="mb-2">
+                    <div class="flex items-center w-full p-2 hover:text-red-500 text-black ">
+                        <div class="icon text-purple-500">
+                            <i class="fas fa-trophy fa-lg"></i> <!-- Gamification Icon -->
+                        </div>
+                        <span class="ml-2 font-semibold">Teams</span>
+                    </div>
+                </li>
+                <!-- Submenu Items -->
+                <ul class="pl-8">
+                    <!-- Team Overview -->
+                    <li class="mb-2 {% if request.path == 'teams/overview/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'team_overview' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/teams/overview/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                            <div class="icon text-blue-500">
+                                <i class="fas fa-users fa-lg"></i> <!-- Team Icon -->
+                            </div>
+                            <span>Team</span>
+                        </a>
+                    </li>
                 </ul>
                 <!-- Spacer -->
                 <div class="my-4 border-t border-gray-300"></div>
@@ -302,6 +345,15 @@
                                 <i class="fas fa-sun-o fa-lg"></i>
                             </div>
                             <span>GSOC</span>
+                        </a>
+                    </li>
+                    <li class="mb-2 {% if '/submit-roadmap-pr/' in request.path %}bg-gray-200{% endif %}">
+                        <a href="{% url 'submit-roadmap-pr' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/submit-roadmap-pr/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="icon text-red-500">
+                                <i class="fas fa-code-branch fa-lg"></i>
+                            </div>
+                            <span>Submit PR for review</span>
                         </a>
                     </li>
                 </ul>

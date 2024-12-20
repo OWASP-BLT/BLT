@@ -23,7 +23,6 @@ from rest_framework.views import APIView
 
 from website.models import (
     ActivityLog,
-    Company,
     Contributor,
     Domain,
     Hunt,
@@ -31,6 +30,7 @@ from website.models import (
     InviteFriend,
     Issue,
     IssueScreenshot,
+    Organization,
     Points,
     Project,
     Tag,
@@ -43,10 +43,10 @@ from website.serializers import (
     ActivityLogSerializer,
     BugHuntPrizeSerializer,
     BugHuntSerializer,
-    CompanySerializer,
     ContributorSerializer,
     DomainSerializer,
     IssueSerializer,
+    OrganizationSerializer,
     ProjectSerializer,
     TagSerializer,
     TimeLogSerializer,
@@ -462,14 +462,14 @@ class LeaderboardApiViewSet(APIView):
         elif group_by_month:
             return self.group_by_month(request, *args, **kwargs)
         elif leaderboard_type == "companies":
-            return self.company_leaderboard(request, *args, **kwargs)
+            return self.organization_leaderboard(request, *args, **kwargs)
         else:
             return self.global_leaderboard(request, *args, **kwargs)
 
-    def company_leaderboard(self, request, *args, **kwargs):
+    def organization_leaderboard(self, request, *args, **kwargs):
         paginator = PageNumberPagination()
         companies = (
-            Company.objects.values()
+            Organization.objects.values()
             .annotate(issue_count=Count("domain__issue"))
             .order_by("-issue_count")
         )
@@ -680,7 +680,7 @@ class InviteFriendApiViewset(APIView):
             mail_status
             and InviteFriend.objects.filter(sender=self.request.user, sent=True).count() == 2
         ):
-            Points.objects.create(user=self.request.user, score=1)
+            Points.objects.create(user=self.request.user, score=1, reason="Invited friend")
             InviteFriend.objects.filter(sender=self.request.user).delete()
 
         return Response(
@@ -693,9 +693,9 @@ class InviteFriendApiViewset(APIView):
         )
 
 
-class CompanyViewSet(viewsets.ModelViewSet):
-    queryset = Company.objects.all()
-    serializer_class = CompanySerializer
+class OrganizationViewSet(viewsets.ModelViewSet):
+    queryset = Organization.objects.all()
+    serializer_class = OrganizationSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ("id", "name")
@@ -856,13 +856,16 @@ class TimeLogViewSet(viewsets.ModelViewSet):
 
                 # Normalize the URL in the Company model (remove the protocol if present)
                 try:
-                    organization = Company.objects.get(
+                    organization = Organization.objects.get(
                         Q(url__iexact=normalized_url)
                         | Q(url__iexact=f"http://{normalized_url}")
                         | Q(url__iexact=f"https://{normalized_url}")
                     )
-                except Company.DoesNotExist:
+                except Organization.DoesNotExist:
                     raise ParseError(detail="Organization not found for the given URL.")
+
+            else:
+                organization = None
 
             # Save the TimeLog with the user and organization (if found, or None)
             serializer.save(user=self.request.user, organization=organization)

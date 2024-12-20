@@ -1,4 +1,17 @@
 {% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}What is GSOC?{% endblock %}
+{% block description %}
+    Learn about the Google Summer of Code (GSoC) program, its benefits, and its partnership with OWASP {% env 'PROJECT_NAME' %}.
+{% endblock %}
+{% block keywords %}
+    Google Summer of Code, GSoC, OWASP, open source, student program, software development
+{% endblock %}
+{% block og_title %}What is GSOC?{% endblock %}
+{% block og_description %}
+    Learn about the Google Summer of Code (GSoC) program, its benefits, and its partnership with OWASP {% env 'PROJECT_NAME' %}.
+{% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <style>

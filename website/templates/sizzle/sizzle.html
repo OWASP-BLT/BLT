@@ -1,5 +1,20 @@
 {% extends "base.html" %}
 {% load static %}
+{% block title %}
+    Sizzle
+{% endblock title %}
+{% block description %}
+    View and manage your Sizzle reports. Track your time, review daily status updates, and see leaderboard rankings to monitor your progress.
+{% endblock description %}
+{% block keywords %}
+    Sizzle Report, Time Tracking, Daily Status Report, Leaderboard, Work Progress, Track Time
+{% endblock keywords %}
+{% block og_title %}
+    Sizzle Report - Monitor Your Progress
+{% endblock og_title %}
+{% block og_description %}
+    Access your Sizzle reports to track time, review daily status updates, and view leaderboard rankings. Stay on top of your work progress.
+{% endblock og_description %}
 {% block content %}
     <link rel="stylesheet"
           type="text/css"
@@ -74,6 +89,7 @@
                                         <th class="text-left py-3 px-4 border-b border-gray-200">Issue Title</th>
                                         <th class="text-left py-3 px-4 border-b border-gray-200">Started</th>
                                         <th class="text-left py-3 px-4 border-b border-gray-200">Total</th>
+                                        <th class="text-left py-3 px-4 border-b border-gray-200">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -179,6 +195,7 @@
                                         <th class="text-left py-3 px-4 border-b border-gray-200">Issue Title</th>
                                         <th class="text-left py-3 px-4 border-b border-gray-200">Started</th>
                                         <th class="text-left py-3 px-4 border-b border-gray-200">Total</th>
+                                        <th class="text-left py-3 px-4 border-b border-gray-200">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>

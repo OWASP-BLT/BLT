@@ -1028,6 +1028,15 @@ transform: scale(1);
   }
     </style>
 {% endblock style %}
+{% block title %}User Profile - {{ user.username|title }}{% endblock %}
+{% block description %}
+    View the profile of {{ user.username|title }}. Includes their activity, current tasks, and wallet balance.
+{% endblock %}
+{% block keywords %}user profile, activity, tasks, bug reports, wallet, follow, unfollow{% endblock %}
+{% block og_title %}User Profile - {{ user.username|title }}{% endblock %}
+{% block og_description %}
+    Check out {{ user.username|title }}'s profile, including their activities, tasks, and wallet balance.
+{% endblock %}
 {% block content %}
     <!-- Begin page -->
     <section>

@@ -81,7 +81,6 @@ INSTALLED_APPS = (
     "django.contrib.sites",
     "django.contrib.humanize",
     "website",
-    "company",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
@@ -106,7 +105,6 @@ INSTALLED_APPS = (
     "captcha",
     "dj_rest_auth",
     "dj_rest_auth.registration",
-    "blog",
     "storages",
 )
 
@@ -125,7 +123,8 @@ MIDDLEWARE = (
     "tz_detect.middleware.TimezoneMiddleware",
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
 )
-
+BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
+BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
 TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
 
 if DEBUG and not TESTING:
@@ -384,10 +383,7 @@ STATIC_ROOT = os.path.join(PROJECT_ROOT, "staticfiles")
 STATIC_URL = "/static/"
 
 # Extra places for collectstatic to find static files.
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "website", "static"),
-    os.path.join(BASE_DIR, "company", "static"),
-)
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "website", "static"),)
 
 ABSOLUTE_URL_OVERRIDES = {
     "auth.user": lambda u: "/profile/%s/" % u.username,

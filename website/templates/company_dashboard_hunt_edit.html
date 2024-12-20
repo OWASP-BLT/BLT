@@ -2,6 +2,23 @@
 {% load static %}
 <!-- {% load tz_detect %} -->
 <!-- {% load tz %} -->
+{% load custom_tags %}
+{% load static %}
+{% block title %}
+    Edit Hunt: {{ hunt.name }} - {% env 'PROJECT_NAME' %} Dashboard
+{% endblock title %}
+{% block description %}
+    Edit the details of the hunt "{{ hunt.name }}" in the {% env 'PROJECT_NAME' %} dashboard. Update the description, start time, and end time of the hunt.
+{% endblock description %}
+{% block keywords %}
+    {% env 'PROJECT_NAME' %}, hunt, edit, update, description, time, schedule, "{{ hunt.name }}", dashboard
+{% endblock keywords %}
+{% block og_title %}
+    Edit Hunt: {{ hunt.name }} - {% env 'PROJECT_NAME' %} Dashboard
+{% endblock og_title %}
+{% block og_description %}
+    Update the hunt "{{ hunt.name }}" details including name, description, start and end times in the {% env 'PROJECT_NAME' %} dashboard.
+{% endblock og_description %}
 {% block style %}
     <style>
   .row .col-md-6:nth-child(1) .panel {

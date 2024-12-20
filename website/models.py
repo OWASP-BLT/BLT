@@ -1,6 +1,7 @@
 import logging
 import os
 import uuid
+from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 from urllib.parse import urlparse
@@ -18,11 +19,12 @@ from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Count
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
+from django.urls import reverse
 from django.utils import timezone
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
@@ -73,13 +75,13 @@ class Integration(models.Model):
         null=True,
         blank=True,
     )
-    company = models.ForeignKey(
-        "Company", on_delete=models.CASCADE, related_name="company_integrations"
+    organization = models.ForeignKey(
+        "Organization", on_delete=models.CASCADE, related_name="organization_integrations"
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.company.name} - {self.service_name} Integration"
+        return f"{self.organization.name} - {self.service_name} Integration"
 
 
 class SlackIntegration(models.Model):
@@ -103,15 +105,21 @@ class SlackIntegration(models.Model):
     )
 
     def __str__(self):
-        return f"Slack Integration for {self.integration.company.name}"
+        return f"Slack Integration for {self.integration.organization.name}"
 
 
-class Company(models.Model):
+class OrganisationType(Enum):
+    ORGANIZATION = "organization"
+    INDIVIDUAL = "individual"
+    TEAM = "team"
+
+
+class Organization(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    managers = models.ManyToManyField(User, related_name="user_companies")
+    managers = models.ManyToManyField(User, related_name="user_organizations")
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=500, null=True, blank=True)
-    logo = models.ImageField(upload_to="company_logos", null=True, blank=True)
+    logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
     url = models.URLField(unique=True)
     email = models.EmailField(null=True, blank=True)
     twitter = models.CharField(max_length=30, null=True, blank=True)
@@ -121,14 +129,29 @@ class Company(models.Model):
     subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=False)
     tags = models.ManyToManyField(Tag, blank=True)
-    integrations = models.ManyToManyField(Integration, related_name="companies")
+    integrations = models.ManyToManyField(Integration, related_name="organizations")
+    trademark_count = models.IntegerField(default=0)
+    trademark_check_date = models.DateTimeField(null=True, blank=True)
+    team_points = models.IntegerField(default=0)
+    type = models.CharField(
+        max_length=15,
+        choices=[(tag.value, tag.name) for tag in OrganisationType],
+        default=OrganisationType.ORGANIZATION.value,
+    )
 
     def __str__(self):
         return self.name
 
 
+class JoinRequest(models.Model):
+    team = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_accepted = models.BooleanField(default=False)
+
+
 class Domain(models.Model):
-    company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_domains", blank=True)
     name = models.CharField(max_length=255, unique=True)
     url = models.URLField()
@@ -331,7 +354,7 @@ class Issue(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     is_hidden = models.BooleanField(default=False)
-    rewarded = models.PositiveIntegerField(default=0)  # money rewarded by the company
+    rewarded = models.PositiveIntegerField(default=0)  # money rewarded by the organization
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
     cve_id = models.CharField(max_length=16, null=True, blank=True)
     cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
@@ -521,6 +544,7 @@ class Points(models.Model):
     score = models.IntegerField()
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
+    reason = models.TextField(null=True, blank=True)
 
 
 class InviteFriend(models.Model):
@@ -580,6 +604,16 @@ class UserProfile(models.Model):
     discounted_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     modified = models.DateTimeField(auto_now=True)
     visit_count = models.PositiveIntegerField(default=0)
+    team = models.ForeignKey(
+        Organization, on_delete=models.SET_NULL, related_name="user_profiles", null=True, blank=True
+    )
+
+    def check_team_membership(self):
+        return self.team is not None
+
+    current_streak = models.IntegerField(default=0)
+    longest_streak = models.IntegerField(default=0)
+    last_check_in = models.DateField(null=True, blank=True)
 
     def avatar(self, size=36):
         if self.user_avatar:
@@ -593,6 +627,92 @@ class UserProfile(models.Model):
 
     def __unicode__(self):
         return self.user.email
+
+    def update_streak_and_award_points(self, check_in_date=None):
+        """
+        Update streak based on consecutive daily check-ins and award points
+        """
+        # Use current date if no check-in date provided
+        if check_in_date is None:
+            check_in_date = timezone.now().date()
+
+        try:
+            with transaction.atomic():
+                # Streak logic
+                if not self.last_check_in or check_in_date == self.last_check_in + timedelta(
+                    days=1
+                ):
+                    self.current_streak += 1
+                    self.longest_streak = max(self.current_streak, self.longest_streak)
+                # If check-in is not consecutive, reset streak
+                elif check_in_date > self.last_check_in + timedelta(days=1):
+                    self.current_streak = 1
+
+                Points.objects.get_or_create(
+                    user=self.user,
+                    reason="Daily check-in",
+                    created__date=datetime.today().date(),
+                    defaults={"score": 5},
+                )
+
+                points_awarded = 0
+                if self.current_streak == 7:
+                    points_awarded += 20
+                    reason = "7-day streak milestone achieved!"
+                elif self.current_streak == 15:
+                    points_awarded += 30
+                    reason = "15-day streak milestone achieved!"
+                elif self.current_streak == 30:
+                    points_awarded += 50
+                    reason = "30-day streak milestone achieved!"
+                elif self.current_streak == 90:
+                    points_awarded += 150
+                    reason = "90-day streak milestone achieved!"
+                elif self.current_streak == 180:
+                    points_awarded += 300
+                    reason = "180-day streak milestone achieved!"
+                elif self.current_streak == 365:
+                    points_awarded += 500
+                    reason = "365-day streak milestone achieved!"
+
+                if points_awarded != 0:
+                    Points.objects.create(user=self.user, score=points_awarded, reason=reason)
+
+                # Update last check-in and save
+                self.last_check_in = check_in_date
+                self.save()
+
+                self.award_streak_badges()
+
+        except Exception as e:
+            # Log the error or handle it appropriately
+            logger.error(f"Error in check-in process: {e}")
+            return False
+
+        return True
+
+    def award_streak_badges(self):
+        """
+        Award badges for streak milestones
+        """
+        streak_badges = {
+            7: "Weekly Streak",
+            15: "Half-Month Streak",
+            30: "Monthly Streak",
+            90: "Three Month Streak",
+            180: "Six Month Streak",
+            365: "Yearly Streak",
+        }
+
+        for milestone, badge_title in streak_badges.items():
+            if self.current_streak >= milestone:
+                badge, _ = Badge.objects.get(
+                    title=badge_title,
+                )
+
+                # Avoid duplicate badge awards
+                if not UserBadge.objects.filter(user=self.user, badge=badge).exists():
+                    UserBadge.objects.create(user=self.user, badge=badge)
 
 
 def create_profile(sender, **kwargs):
@@ -617,14 +737,14 @@ class IP(models.Model):
     referer = models.CharField(max_length=255, null=True, blank=True)
 
 
-class CompanyAdmin(models.Model):
+class OrganizationAdmin(models.Model):
     role = (
         (0, "Admin"),
         (1, "Moderator"),
     )
     role = models.IntegerField(choices=role, default=0)
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
@@ -911,7 +1031,7 @@ class TimeLog(models.Model):
     )
     # associate organization with sizzle
     organization = models.ForeignKey(
-        Company, on_delete=models.CASCADE, related_name="organization", null=True, blank=True
+        Organization, on_delete=models.CASCADE, related_name="time_logs", null=True, blank=True
     )
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
@@ -947,6 +1067,8 @@ class DailyStatusReport(models.Model):
     previous_work = models.TextField()
     next_plan = models.TextField()
     blockers = models.TextField()
+    goal_accomplished = models.BooleanField(default=False)
+    current_mood = models.CharField(max_length=50, default="Happy 😊")
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -989,19 +1111,56 @@ class Activity(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     image = models.ImageField(null=True, blank=True, upload_to="activity_images/")
-    timestamp = models.DateTimeField(auto_now_add=True)
     url = models.URLField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    # Approval and Posting
+    like_count = models.PositiveIntegerField(default=0)
+    dislike_count = models.PositiveIntegerField(default=0)
+    is_approved = models.BooleanField(default=False)  # Whether activity is approved
+    is_posted_to_bluesky = models.BooleanField(default=False)  # Whether posted to BlueSky
 
     # Generic foreign key fields
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     related_object = GenericForeignKey("content_type", "object_id")
 
+    # New fields for likes and dislikes
+    likes = models.ManyToManyField(User, related_name="liked_activities", blank=True)
+    dislikes = models.ManyToManyField(User, related_name="disliked_activities", blank=True)
+
     def __str__(self):
         return f"{self.title} by {self.user.username} at {self.timestamp}"
 
     class Meta:
         ordering = ["-timestamp"]
+
+    # Approve the activity
+    def approve_activity(self):
+        # Check auto-approval criteria
+        if self.like_count >= 3 and self.dislike_count < 3:
+            self.is_approved = True
+        self.save()
+
+    # Post to BlueSky
+    def post_to_bluesky(self, bluesky_service):
+        if not self.is_approved:
+            raise ValueError("Activity must be approved before posting to BlueSky.")
+
+        try:
+            post_data = f"{self.title}\n\n{self.description}"
+            # If image exists, include it
+            if self.image:
+                bluesky_service.post_with_image(text=post_data, image_path=self.image.path)
+            else:
+                bluesky_service.post_text(text=post_data)
+
+            # Mark activity as posted
+            self.is_posted_to_bluesky = True
+            self.save()
+            return True
+        except Exception as e:
+            print(e)
 
 
 class Badge(models.Model):
@@ -1032,3 +1191,49 @@ class UserBadge(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.badge.title}"
+
+
+class Post(models.Model):
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True, blank=True, max_length=255)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    image = models.ImageField(upload_to="blog_posts")
+
+    class Meta:
+        db_table = "blog_post"
+
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        return reverse("post_detail", kwargs={"slug": self.slug})
+
+
+class PRAnalysisReport(models.Model):
+    pr_link = models.URLField()
+    issue_link = models.URLField()
+    priority_alignment_score = models.IntegerField()
+    revision_score = models.IntegerField()
+    recommendations = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.pr_link
+
+
+@receiver(post_save, sender=Post)
+def verify_file_upload(sender, instance, **kwargs):
+    from django.core.files.storage import default_storage
+
+    print("Verifying file upload...")
+    print(f"Default storage backend: {default_storage.__class__.__name__}")
+    if instance.image:
+        print(f"Checking if image '{instance.image.name}' exists in the storage backend...")
+        if not default_storage.exists(instance.image.name):
+            print(f"Image '{instance.image.name}' was not uploaded to the storage backend.")
+            raise ValidationError(
+                f"Image '{instance.image.name}' was not uploaded to the storage backend."
+            )

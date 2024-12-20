@@ -1,4 +1,21 @@
 {% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}
+    Bid on Issues - Submit and Manage Bids
+{% endblock title %}
+{% block description %}
+    Place bids on issues by providing a GitHub issue link, view current bids, and submit new bids. Manage and track your bids efficiently.
+{% endblock description %}
+{% block keywords %}
+    bids, GitHub issues, bidding platform, submit bid, bid status, manage bids, pull requests
+{% endblock keywords %}
+{% block og_title %}
+    Bid on Issues - Submit and Manage Bids
+{% endblock og_title %}
+{% block og_description %}
+    Place bids on GitHub issues, view current bids, and manage your submissions. An efficient platform to submit, track, and update your bids.
+{% endblock og_description %}
 {% block content %}
     <style>
 body {
