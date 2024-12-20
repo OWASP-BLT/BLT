@@ -903,11 +903,37 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
         @atomic
         def create_issue(self, form):
+            # Validate screenshots first before any database operations
+            if len(self.request.FILES.getlist("screenshots")) == 0 and not self.request.POST.get("screenshot-hash"):
+                messages.error(self.request, "Screenshot is needed!")
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": CaptchaForm()},
+                )
+            
+            if len(self.request.FILES.getlist("screenshots")) > 5:
+                messages.error(self.request, "Max limit of 5 images!")
+                return render(
+                    self.request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": CaptchaForm()},
+                )
+
+            for screenshot in self.request.FILES.getlist("screenshots"):
+                img_valid = image_validator(screenshot)
+                if img_valid is not True:
+                    messages.error(self.request, img_valid)
+                    return render(
+                        self.request,
+                        "report.html",
+                        {"form": self.get_form(), "captcha_form": CaptchaForm()},
+                    )
+
             tokenauth = False
             obj = form.save(commit=False)
             report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
 
-            # If report_anonymous is true, set user to None
             if report_anonymous:
                 obj.user = None
             elif self.request.user.is_authenticated:
@@ -921,16 +947,15 @@ class IssueCreate(IssueBaseCreate, CreateView):
             captcha_form = CaptchaForm(self.request.POST)
             if not captcha_form.is_valid() and not settings.TESTING:
                 messages.error(self.request, "Invalid Captcha!")
-
                 return render(
                     self.request,
                     "report.html",
                     {"form": self.get_form(), "captcha_form": captcha_form},
                 )
+
             parsed_url = urlparse(obj.url)
             clean_domain = parsed_url.netloc
             domain = Domain.objects.filter(url=clean_domain).first()
-
             domain_exists = False if domain is None else True
 
             if not domain_exists:
@@ -945,12 +970,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 obj.hunt = hunt
 
             obj.domain = domain
-            # obj.is_hidden = bool(self.request.POST.get("private", False))
             obj.cve_score = obj.get_cve_score()
+            obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
             obj.save()
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):
-                p = Points.objects.create(
+                Points.objects.create(
                     user=self.request.user, domain=domain, score=1, reason="Domain added"
                 )
                 messages.success(self.request, "Domain added! + 1")
@@ -966,55 +991,25 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     django_file,
                     save=True,
                 )
-            obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
-            if len(self.request.FILES.getlist("screenshots")) == 0:
-                messages.error(self.request, "Screenshot is needed!")
-                obj.delete()
-                return render(
-                    self.request,
-                    "report.html",
-                    {"form": self.get_form(), "captcha_form": captcha_form},
-                )
-            if len(self.request.FILES.getlist("screenshots")) > 5:
-                messages.error(self.request, "Max limit of 5 images!")
-                obj.delete()
-                return render(
-                    self.request,
-                    "report.html",
-                    {"form": self.get_form(), "captcha_form": captcha_form},
-                )
+
+            # Save screenshots
             for screenshot in self.request.FILES.getlist("screenshots"):
-                img_valid = image_validator(screenshot)
-                if img_valid is True:
-                    filename = screenshot.name
-                    extension = filename.split(".")[-1]
-                    screenshot.name = (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
-                    default_storage.save(f"screenshots/{screenshot.name}", screenshot)
-                    IssueScreenshot.objects.create(
-                        image=f"screenshots/{screenshot.name}", issue=obj
-                    )
-                else:
-                    messages.error(self.request, img_valid)
-                    return render(
-                        self.request,
-                        "report.html",
-                        {"form": self.get_form(), "captcha_form": captcha_form},
-                    )
+                filename = screenshot.name
+                extension = filename.split(".")[-1]
+                screenshot.name = (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
+                default_storage.save(f"screenshots/{screenshot.name}", screenshot)
+                IssueScreenshot.objects.create(
+                    image=f"screenshots/{screenshot.name}", issue=obj
+                )
 
-            obj_screenshots = IssueScreenshot.objects.filter(issue_id=obj.id)
-            screenshot_text = ""
-            for screenshot in obj_screenshots:
-                screenshot_text += "![0](" + screenshot.image.url + ") "
-
+            # Handle team members
             team_members_id = [
                 member["id"]
                 for member in User.objects.values("id").filter(
                     email__in=self.request.POST.getlist("team_members")
                 )
             ] + [self.request.user.id]
-            for member_id in team_members_id:
-                if member_id is None:
-                    team_members_id.remove(member_id)  # remove None values if user not exists
+            team_members_id = [member_id for member_id in team_members_id if member_id is not None]
             obj.team_members.set(team_members_id)
 
             obj.save()
