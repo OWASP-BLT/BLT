@@ -1212,6 +1212,18 @@ class Post(models.Model):
         return reverse("post_detail", kwargs={"slug": self.slug})
 
 
+class PRAnalysisReport(models.Model):
+    pr_link = models.URLField()
+    issue_link = models.URLField()
+    priority_alignment_score = models.IntegerField()
+    revision_score = models.IntegerField()
+    recommendations = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.pr_link
+
+
 @receiver(post_save, sender=Post)
 def verify_file_upload(sender, instance, **kwargs):
     from django.core.files.storage import default_storage

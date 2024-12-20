@@ -87,6 +87,8 @@ from website.views.core import (
     set_vote_status,
     sitemap,
     sponsor_view,
+    submit_roadmap_pr,
+    view_pr_analysis,
     view_suggestions,
     vote_suggestions,
 )
@@ -757,6 +759,8 @@ urlpatterns = [
         user_sizzle_report,
         name="user_sizzle_report",
     ),
+    path("submit-roadmap-pr/", submit_roadmap_pr, name="submit-roadmap-pr"),
+    path("view-pr-analysis/", view_pr_analysis, name="view_pr_analysis"),
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
     path("assign-badge/<str:username>/", assign_badge, name="assign_badge"),
     path("github-webhook/", github_webhook, name="github-webhook"),
