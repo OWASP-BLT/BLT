@@ -589,7 +589,7 @@
                     {% endfor %}
                 </div>
                 <div class="text-2xl font-bold my-4">
-                    Recommendation
+                    About Me
                     <hr>
                 </div>
                 <!-- Recommendation Blurb Section -->
@@ -650,6 +650,9 @@
                                                                                     &nbsp; <a href="{% url 'profile' slug=i.recommender.username %}">{{ i.recommender.username }}</a>
                                                                                 {% endif %}
                                                                             </td>
+                                                                            <td>
+                                                                                <small>{{ i.created_at|date:"F j, Y" }}</small>
+                                                                            </td>
                                                                         </tr>
                                                                     {% endfor %}
                                                                 {% else %}
@@ -675,7 +678,9 @@
                                                                                             &nbsp; <a href="{% url 'profile' slug=recommendation.recommender.username %}">{{ recommendation.recommender.username }}</a>
                                                                                         {% endif %}
                                                                                     </td>
-                                                                                    {#                                           <b>{{ recommendation }}</b> from {{ recommendation.recommender.username }}#}
+                                                                                    <td>
+                                                                                        <small>{{ recommendation.created_at|date:"F j, Y" }}</small>
+                                                                                    </td>
                                                                                 </tr>
                                                                             {% endif %}
                                                                         {% endfor %}
@@ -861,6 +866,9 @@
                                                         <td>
                                                             &nbsp; <a href="{% url 'profile' slug=user.username %}">{{ user.username }}</a>
                                                         </td>
+                                                        <td>
+                                                            <small>{{ recommendation.created_at|date:"F j, Y" }}</small>
+                                                        </td>
                                                     </tr>
                                                 {% endfor %}
                                             </tbody>
@@ -976,6 +984,9 @@
                                                             {% if recommendation.recommended_user.username %}
                                                                 &nbsp; <a href="{% url 'profile' slug=recommendation.recommended_user.username %}">{{ recommendation.recommended_user.username }}</a>
                                                             {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            <small>{{ recommendation.created_at|date:"F j, Y" }}</small>
                                                         </td>
                                                     </tr>
                                                 {% endfor %}
