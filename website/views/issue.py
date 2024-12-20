@@ -904,14 +904,16 @@ class IssueCreate(IssueBaseCreate, CreateView):
         @atomic
         def create_issue(self, form):
             # Validate screenshots first before any database operations
-            if len(self.request.FILES.getlist("screenshots")) == 0 and not self.request.POST.get("screenshot-hash"):
+            if len(self.request.FILES.getlist("screenshots")) == 0 and not self.request.POST.get(
+                "screenshot-hash"
+            ):
                 messages.error(self.request, "Screenshot is needed!")
                 return render(
                     self.request,
                     "report.html",
                     {"form": self.get_form(), "captcha_form": CaptchaForm()},
                 )
-            
+
             if len(self.request.FILES.getlist("screenshots")) > 5:
                 messages.error(self.request, "Max limit of 5 images!")
                 return render(
@@ -998,9 +1000,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 extension = filename.split(".")[-1]
                 screenshot.name = (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
                 default_storage.save(f"screenshots/{screenshot.name}", screenshot)
-                IssueScreenshot.objects.create(
-                    image=f"screenshots/{screenshot.name}", issue=obj
-                )
+                IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}", issue=obj)
 
             # Handle team members
             team_members_id = [
