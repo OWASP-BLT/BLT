@@ -68,7 +68,7 @@
                     <div class="py-1" role="none">
                         <p class="text-gray-700 block px-4 py-2 text-lg font-semibold">Organizations</p>
                         {% for company in companies %}
-                            <a href="{% url 'company_analytics' company.id %}"
+                            <a href="{% url 'organization_analytics' company.id %}"
                                class="text-gray-700 block pl-10 py-2 text-sm hover:bg-[#F3F4F6]"
                                role="menuitem"
                                tabindex="-1"

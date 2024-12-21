@@ -245,7 +245,7 @@
         var domainId = button.getAttribute('data-domain-id'); // Make sure to pass domain_id in the button
 
         if (confirm("Are you sure you want to remove this manager?")) {
-            fetch(`/company/delete_manager/${managerId}/${domainId}/`, {
+            fetch(`/organization/delete_manager/${managerId}/${domainId}/`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRFToken': getCookie('csrftoken'),
