@@ -51,7 +51,7 @@ def validate_organization_user(func):
         organization = Organization.objects.filter(id=id).first()
 
         if not organization:
-            return redirect("company_view")
+            return redirect("organization_view")
 
         # Check if the user is the admin of the organization
         if organization.admin == request.user:
@@ -68,7 +68,7 @@ def validate_organization_user(func):
         if user_domains.filter(organization=organization).exists():
             return func(self, request, organization.id, *args, **kwargs)
 
-        return redirect("company_view")
+        return redirect("organization_view")
 
     return wrapper
 
@@ -83,7 +83,7 @@ def check_organization_or_manager(func):
         # Check if the user is an admin or manager of any organization
         if not Organization.objects.filter(Q(admin=user) | Q(managers=user)).exists():
             messages.error(request, "You are not authorized to access this resource.")
-            return redirect("company_view")
+            return redirect("organization_view")
 
         return func(self, request, *args, **kwargs)
 
@@ -116,12 +116,12 @@ def Organization_view(request, *args, **kwargs):
         companies_with_user_domains = Organization.objects.filter(domain__in=user_domains)
         if not companies_with_user_domains.exists():
             messages.error(request, "You do not have a organization, create one.")
-            return redirect("register_company")
+            return redirect("register_organization")
 
     # Get the organization to redirect to
     organization = user_companies.first() or companies_with_user_domains.first()
 
-    return redirect("company_analytics", id=organization.id)
+    return redirect("organization_analytics", id=organization.id)
 
 
 class RegisterOrganizationView(View):
@@ -152,11 +152,11 @@ class RegisterOrganizationView(View):
 
         if organization_name == "" or Organization.objects.filter(name=organization_name).exists():
             messages.error(request, "organization name is invalid or already exists.")
-            return redirect("register_company")
+            return redirect("register_organization")
 
         if organization_url == "" or Organization.objects.filter(url=organization_url).exists():
             messages.error(request, "organization URL is invalid or already exists.")
-            return redirect("register_company")
+            return redirect("register_organization")
 
         organization_logo = request.FILES.get("logo")
         if organization_logo:
@@ -194,7 +194,7 @@ class RegisterOrganizationView(View):
             return render(request, "company/register_company.html")
 
         messages.success(request, "organization registered successfully.")
-        return redirect("company_analytics", id=organization.id)
+        return redirect("organization_analytics", id=organization.id)
 
 
 class OrganizationDashboardAnalyticsView(View):
@@ -633,7 +633,7 @@ class AddDomainView(View):
         domain.managers.set(domain_managers)
         domain.save()
 
-        return redirect("company_manage_domains", id=id)
+        return redirect("organization_manage_domains", id=id)
 
     @validate_organization_user
     @check_organization_or_manager
@@ -748,7 +748,7 @@ class AddDomainView(View):
         domain.managers.set(domain_managers)
         domain.save()
 
-        return redirect("company_manage_domains", id=id)
+        return redirect("organization_manage_domains", id=id)
 
     @validate_organization_user
     @check_organization_or_manager
@@ -757,10 +757,10 @@ class AddDomainView(View):
         domain = get_object_or_404(Domain, id=domain_id)
         if domain is None:
             messages.error(request, "Domain not found.")
-            return redirect("company_manage_domains", id=id)
+            return redirect("organization_manage_domains", id=id)
         domain.delete()
         messages.success(request, "Domain deleted successfully")
-        return redirect("company_manage_domains", id=id)
+        return redirect("organization_manage_domains", id=id)
 
 
 class AddSlackIntegrationView(View):
@@ -861,7 +861,7 @@ class AddSlackIntegrationView(View):
             slack_integration.daily_update_time = slack_data["daily_sizzle_timelogs_hour"]
             slack_integration.save()
 
-        return redirect("company_manage_integrations", id=id)
+        return redirect("organization_manage_integrations", id=id)
 
     def get_channel_id(self, app, channel_name):
         """Fetches a Slack channel ID by name."""
@@ -894,7 +894,7 @@ class AddSlackIntegrationView(View):
         if slack_integration:
             slack_integration.delete()
 
-        return redirect("company_manage_integrations", id=id)
+        return redirect("organization_manage_integrations", id=id)
 
 
 class SlackCallbackView(View):
@@ -926,7 +926,7 @@ class SlackCallbackView(View):
                 bot_access_token=access_token,
             )
 
-            dashboard_url = reverse("company_manage_integrations", args=[organization_id])
+            dashboard_url = reverse("organization_manage_integrations", args=[organization_id])
             return redirect(dashboard_url)
 
         except Exception as e:
@@ -1153,11 +1153,11 @@ class OrganizationDashboardManageRolesView(View):
 
         if domain is None:
             messages.error("you are not manager of this domain.")
-            return redirect("company_manage_roles", id)
+            return redirect("organization_manage_roles", id)
 
         if not request.POST.getlist("user[]"):
             messages.error(request, "No user selected.")
-            return redirect("company_manage_roles", id)
+            return redirect("organization_manage_roles", id)
 
         managers_list = request.POST.getlist("user[]")
         domain_managers = User.objects.filter(username__in=managers_list, is_active=True)
@@ -1171,10 +1171,10 @@ class OrganizationDashboardManageRolesView(View):
                 domain.managers.add(manager.id)
             else:
                 messages.error(request, f"Manager: {manager.email} does not match domain email.")
-                return redirect("company_manage_roles", id)
+                return redirect("organization_manage_roles", id)
 
         messages.success(request, "successfully added the managers")
-        return redirect("company_manage_roles", id)
+        return redirect("organization_manage_roles", id)
 
 
 class ShowBughuntView(View):
@@ -1323,7 +1323,7 @@ class EndBughuntView(View):
         organization = hunt.domain.organization.id
 
         messages.success(request, f"successfully Ended Bughunt {hunt.name}")
-        return redirect("company_manage_bughunts", id=organization)
+        return redirect("organization_manage_bughunts", id=organization)
 
 
 class AddHuntView(View):
@@ -1460,7 +1460,7 @@ class AddHuntView(View):
             )
 
         messages.success(request, "successfully added the managers")
-        return redirect("company_manage_bughunts", id)
+        return redirect("organization_manage_bughunts", id)
 
 
 class OrganizationDashboardManageBughuntView(View):

@@ -221,7 +221,7 @@ function removePrize(event, prizeId, companyId) {
     prizeContainer.appendChild(loadingIndicator);
 
     // Make AJAX call to delete the prize with company_id
-    fetch(`/company/delete_prize/${prizeId}/${companyId}`, {
+    fetch(`/organization/delete_prize/${prizeId}/${companyId}`, {
         method: 'DELETE',
         headers: {
             'X-CSRFToken': getCookie('csrftoken')
@@ -284,7 +284,7 @@ function updatePrize(prizeId, companyId) {
     }
 
     // Make AJAX call to update the prize with company_id
-    fetch(`/company/edit_prize/${prizeId}/${companyId}`, {
+    fetch(`/organization/edit_prize/${prizeId}/${companyId}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
