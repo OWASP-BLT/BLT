@@ -81,6 +81,10 @@ matplotlib = "^3.10.0"
 openpyxl = "^3.1.5"
 atproto = "^0.0.55"
 slack-bolt = "^1.22.0"
+gitpython = "^3.1.43"
+transformers = "^4.47.1"
+torch = "^2.5.1"
+scikit-learn = "^1.6.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"

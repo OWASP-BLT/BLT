@@ -125,6 +125,7 @@ from website.views.issue import (
     vote_count,
 )
 from website.views.organization import (
+    CodeSimilarityAnalyze,
     CreateHunt,
     DomainDetailView,
     DomainList,
@@ -778,6 +779,16 @@ urlpatterns = [
     path("teams/delete-team/", delete_team, name="delete_team"),
     path("teams/leave-team/", leave_team, name="leave_team"),
     path("teams/kick-member/", kick_member, name="kick_member"),
+    path(
+        "similarity-check/",
+        TemplateView.as_view(template_name="similarity.html"),
+        name="similarity_check",
+    ),
+    path(
+        "api/code-similarity/analyze/",
+        CodeSimilarityAnalyze.as_view(),
+        name="code_similarity_analyze",
+    ),
 ]
 
 if settings.DEBUG:
