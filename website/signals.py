@@ -74,9 +74,20 @@ def handle_post_save(sender, instance, created, **kwargs):
         assign_first_action_badge(instance.user, "First Bug Reported")
         create_activity(instance, "created")
 
-    elif sender == Hunt and created:  # Track first bid placed
-        assign_first_action_badge(instance.user, "First Bug Bounty")
-        create_activity(instance, "created")
+    elif sender == Hunt and created:  # Track first bug bounty
+        # Attempt to get the user from Domain managers or Organization
+        user = None
+        if instance.domain:
+            # Try managers of the domain
+            user = instance.domain.managers.first()
+            # Optionally, if Organization has a user, fetch it here
+            if not user and instance.domain.organization:
+                user = getattr(instance.domain.organization, "user", None)
+
+        # Assign badge and activity if a user is found
+        if user:
+            assign_first_action_badge(user, "First Bug Bounty")
+            create_activity(instance, "created")
 
     elif sender == Suggestion and created:  # Track first suggestion
         assign_first_action_badge(instance.user, "First Suggestion")
