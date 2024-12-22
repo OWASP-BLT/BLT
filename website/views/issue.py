@@ -971,6 +971,11 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 hunt = Hunt.objects.filter(id=hunt).first()
                 obj.hunt = hunt
 
+            obj_screenshots = IssueScreenshot.objects.filter(issue_id=obj.id)
+            screenshot_text = ""
+            for screenshot in obj_screenshots:
+                screenshot_text += "![0](" + screenshot.image.url + ") "
+
             obj.domain = domain
             obj.cve_score = obj.get_cve_score()
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
