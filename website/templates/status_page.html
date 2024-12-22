@@ -67,5 +67,20 @@
             <div class="status-dot {% if status.github %}green{% else %}red{% endif %}"></div>
             <span>GitHub API ({{ status.github }})</span>
         </div>
+        <div class="status-item">
+            <h3>Memory Usage</h3>
+            <p>Total: {{ status.memory_info.total|filesizeformat }}</p>
+            <p>Available: {{ status.memory_info.available|filesizeformat }}</p>
+            <p>Used: {{ status.memory_info.used|filesizeformat }}</p>
+            <p>Free: {{ status.memory_info.free|filesizeformat }}</p>
+        </div>
+        <div class="status-item">
+            <h3>Top Memory Consumers</h3>
+            <ul>
+                {% for proc in status.top_memory_consumers %}
+                    <li>{{ proc.name }} (PID: {{ proc.pid }}): {{ proc.memory_info.rss|filesizeformat }}</li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 {% endblock content %}
