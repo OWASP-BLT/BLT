@@ -1,57 +1,159 @@
 {% load custom_tags %}
 {% load i18n %}
-<div class="p-10">
-    <div class="text-6xl font-sans py-4 mx-auto font-normal">{% trans "About" %} {% env 'PROJECT_NAME' %}</div>
-    <div class="font-sans text-2xl py-2">
-        {% env 'PROJECT_NAME' %} is 100% {% trans "free to use" %}, {% trans "Open Source and a non-commercial" %}, {% trans "not for profit initiative" %}.
-        {% trans "All prize money goes directly to the bug hunter" %}.
-    </div>
-    <p class="font-sans text-2xl py-2">
-        {% trans "Software code allows us to buy a gift for Mom or Dad on amazon.com in 7 seconds" %}, {% trans "watch our favorite" %}
-        {% trans "“House of Cards” episode on Netflix or read Yelp reviews about a new restaurant" %}.
-    </p>
-    <p class="font-sans text-2xl py-2">
-        {% trans "When we can’t access the information we’re looking for on the internet within seconds" %}, <i>{% trans "we are not happy" %}.</i>
-    </p>
-    <p class="font-sans text-2xl py-2">{% trans "This is where you come into the picture" %}.</p>
-    <p class="font-sans text-2xl py-2">
-        {% env 'PROJECT_NAME' %} {% trans "wants you to identify the software (and hardware) bugs that delay downloads" %}, {% trans "freeze screens" %},
-        {% trans "create payloads that deliver malware to websites and generate other issues" %}.
-    </p>
-    <div class="font-sans text-6xl py-4 font-normal">
-        <div>{% trans "What’s in it for you" %}?</div>
-    </div>
-    <ul class="list-disc list-inside font-sans p-4">
-        <li>{% trans "Points" %}.</li>
-        <li>{% trans "Money if you join a" %} {% env 'PROJECT_NAME' %} {% trans "Sponsored Bug Hunt" %}.</li>
-        <li>{% trans "Jackpot money listed on the Leaderboard" %}.</li>
-        <li>{% trans "Money if someone tips you for finding a bug through the tip button" %}.</li>
-        <li>{% trans "Experience to add to your résumé or portfolio" %}.</li>
-    </ul>
-    <div class="text-5xl font-light py-4">
-        <div>{% trans "How it Works" %}</div>
-    </div>
-    <div>
-        <p class="text-3xl py-2 font-sans">{% trans "Testers" %}</p>
-    </div>
-    <ol class="list-disc list-inside font-sans py-2">
-        <li>{% trans "Create a User Account to log into" %} {% env 'PROJECT_NAME' %}.</li>
-        <li>{% trans "Describe the software or hardware bug you found" %}.</li>
-        <li>{% trans "Attach a screenshot of the bug" %}.</li>
-        <li>{% trans "Submit the information" %}.</li>
-        <li>
-            {% trans "Win money through Organization-sponsored Bug Bounties" %}, {% trans "tips or the Grand Prize/Jackpot" %}.{% trans "We may also have \"heists\" where each bug is worth a specific amount based on what the Organization sets" %}.
-        </li>
-        <li>
-            {% trans "If you participate in" %} {% env 'PROJECT_NAME' %}’s {% trans "sponsored Bug Bounties" %}, {% trans "you could win prize money known as tips" %}.
-        </li>
-    </ol>
-    <div>
-        <p class="text-3xl py-2 font-sans">{% trans "Organizations" %}</p>
-    </div>
-    <p class="font-sans font-medium">{% trans "We want everyone to love your website" %}.</p>
-    <p class="font-sans py-1">
-        {% trans "You want to keep your customers happy by giving them a consistent bug-free user experience" %}. {% env 'PROJECT_NAME' %}
-        {% trans "offers monthly Bug Bounties through 4 different subscription plans to help you achieve this" %}.
-    </p>
-</div>
+<h1>{% trans "About" %} {% env 'PROJECT_NAME' %}</h1>
+<h2>
+    {% env 'PROJECT_NAME' %} is 100% {% trans "free to use" %}, {% trans "Open Source and a non-commercial" %}, {% trans "not for profit initiative" %}.
+    {% trans "All prize money goes directly to the bug hunter" %}.
+</h2>
+<p>
+    {% trans "Software code allows us to buy a gift for Mom or Dad on amazon.com in 7 seconds" %}, {% trans "watch our favorite" %}
+    {% trans "“House of Cards” episode on Netflix or read Yelp reviews about a new restaurant" %}.
+</p>
+<p>
+    {% trans "When we can’t access the information we’re looking for on the internet within seconds" %}, <i>{% trans "we are not happy" %}.</i>
+</p>
+<p>{% trans "This is where you come into the picture" %}.</p>
+<p>
+    {% env 'PROJECT_NAME' %} {% trans "wants you to identify the software (and hardware) bugs that delay downloads" %}, {% trans "freeze screens" %},
+    {% trans "create payloads that deliver malware to websites and generate other issues" %}.
+</p>
+<h2>
+    <strong>{% trans "What’s in it for you" %}?</strong>
+</h2>
+<ul>
+    <li>{% trans "Points" %}.</li>
+    <li>{% trans "Money if you join a" %} {% env 'PROJECT_NAME' %} {% trans "Sponsored Bug Hunt" %}.</li>
+    <li>{% trans "Jackpot money listed on the Leaderboard" %}.</li>
+    <li>{% trans "Money if someone tips you for finding a bug through the tip button" %}.</li>
+    <li>{% trans "Experience to add to your résumé or portfolio" %}.</li>
+</ul>
+<h3>
+    <strong>{% trans "How it Works" %}</strong>
+</h3>
+<h4>
+    <strong>{% trans "Testers" %}</strong>
+</h4>
+<ol>
+    <li>{% trans "Create a User Account to log into" %} {% env 'PROJECT_NAME' %}.</li>
+    <li>{% trans "Describe the software or hardware bug you found" %}.</li>
+    <li>{% trans "Attach a screenshot of the bug" %}.</li>
+    <li>{% trans "Submit the information" %}.</li>
+    <li>
+        {% trans "Win money through Organization-sponsored Bug Bounties" %}, {% trans "tips or the Grand Prize/Jackpot" %}.{% trans "We may also have \"heists\" where each bug is worth a specific amount based on what the Organization sets" %}.
+    </li>
+    <li>
+        {% trans "If you participate in" %} {% env 'PROJECT_NAME' %}’s {% trans "sponsored Bug Bounties" %}, {% trans "you could win prize money known as tips" %}.
+    </li>
+</ol>
+<h4>
+    <strong>{% trans "Organizations" %}</strong>
+</h4>
+{% trans "We want everyone to love your website" %}.
+<p>
+    {% trans "You want to keep your customers happy by giving them a consistent bug-free user experience" %}. {% env 'PROJECT_NAME' %}
+    {% trans "offers monthly Bug Bounties through 4 different subscription plans to help you achieve this" %}.
+</p>
+<h2>
+    <strong>{% trans "Features of BLT" %}</strong>
+</h2>
+<p>{% trans "BLT provides a wide range of features to enhance the bug reporting and tracking experience:" %}</p>
+<ul>
+    <li>{% trans "Bug Reporting: Users can report software or hardware bugs found on any website." %}</li>
+    <li>{% trans "Verification Process: Bugs are verified through a community-driven process." %}</li>
+    <li>
+        {% trans "Rewards System: Users earn points for reporting bugs, which can be verified for extra points. Organizations can launch bug hunts with prize pools." %}
+    </li>
+    <li>{% trans "Leaderboard: Ranks users based on their contributions to bug reporting." %}</li>
+    <li>{% trans "User Profiles: Allows users to manage their bug reporting activities and personal information." %}</li>
+    <li>{% trans "Community Engagement: Encourages collaboration and knowledge sharing among users." %}</li>
+    <li>{% trans "Accessibility Features: Ensures the platform is accessible to users with disabilities." %}</li>
+    <li>{% trans "Performance Optimizations: Designed to load quickly and provide a smooth user experience." %}</li>
+</ul>
+<h2>
+    <strong>{% trans "Introduction" %}</strong>
+</h2>
+<p>
+    {% trans "OWASP BLT (Bug Logging Tool) is a powerful tool designed to allow everyone who uses the internet to help improve it. With BLT, users can submit any type of issue they encounter, whether it’s a simple design flaw like a button being the wrong color, or a serious security vulnerability. By following responsible disclosure ethics, BLT helps to ensure that reported issues are addressed in a timely and appropriate manner." %}
+</p>
+<p>
+    {% trans "One unique feature of BLT is that it rewards users for reporting bugs. As users report more issues, they earn more points, which can be verified for extra points. Additionally, companies and organizations can get involved with BLT and launch their own bughunt programs with prize pools. This not only incentivizes users to report bugs but also encourages companies to actively seek out and address vulnerabilities before they can be exploited." %}
+</p>
+<p>
+    {% trans "Overall, OWASP BLT is an important tool for improving internet security and promoting responsible disclosure practices. By allowing anyone to report issues, rewarding users for their contributions, and providing a platform for companies to launch bughunt programs, BLT empowers individuals and organizations to work together towards a safer and more secure online environment." %}
+</p>
+<h2>
+    <strong>{% trans "Contributors" %}</strong>
+</h2>
+<p>
+    {% trans "The OWASP Bug Logging Tool Project is a community-driven initiative that relies on the contributions of volunteers from all over the world. These dedicated individuals generously donate their time and expertise to help improve the security of the internet for everyone." %}
+</p>
+<p>
+    {% trans "We understand that without the invaluable contributions of our volunteers, the OWASP BLT Project would not be possible. Therefore, we would like to express our sincere gratitude to all the contributors and supporters who have helped make this project a success." %}
+</p>
+<p>
+    {% trans "We are proud of the diverse and dedicated community that has grown around this project. We recognize that each contributor brings their unique perspective, skills, and experiences to the table, and we value each and every one of them." %}
+</p>
+<p>
+    {% trans "At OWASP, we strive to foster a welcoming and inclusive environment where everyone can contribute and thrive. We believe that diversity is essential to the success of the OWASP BLT Project, and we are committed to providing a safe and supportive space for all our volunteers." %}
+</p>
+<p>
+    {% trans "Once again, we would like to extend our heartfelt thanks to all the contributors and supporters of the OWASP Bug Logging Tool Project. Your efforts are truly appreciated, and we look forward to continuing our work together to make the internet a safer place for everyone." %}
+</p>
+<h2>
+    <strong>{% trans "Recent News" %}</strong>
+</h2>
+<ul>
+    <li>{% trans "May 24 2023: BLT becomes an OWASP production project" %}</li>
+    <li>{% trans "May 10, 2023: BLT participating in GSoC 2023" %}</li>
+    <li>{% trans "September 12, 2016: BLT becomes an official OWASP project." %}</li>
+    <li>{% trans "July 18, 2016: The project was submitted to be an OWASP project." %}</li>
+    <li>{% trans "May 9, 2016: Logo created." %}</li>
+    <li>{% trans "Dec 8, 2015: A friend of OWASP suggested that the project become an OWASP project." %}</li>
+    <li>
+        {% trans "Jan 12, 2012: The idea was born to have a website to make a game out of bug finding and the first mockup was created." %}
+    </li>
+</ul>
+<h2>
+    <strong>{% trans "Frequently Asked Questions (FAQs)" %}</strong>
+</h2>
+<ul>
+    <li>
+        <strong>{% trans "What is OWASP BLT?" %}</strong> {% trans "OWASP BLT (Bug Logging Tool) is a free and open-source web-based application that allows anyone to report software or hardware bugs found on any website." %}
+    </li>
+    <li>
+        <strong>{% trans "How does OWASP BLT work?" %}</strong> {% trans "Users can submit a bug report through the BLT platform, and they can earn points for each bug they find. Companies can launch their own bug hunts and reward users for finding issues on their websites. Bug hunters can win money through company-sponsored Bug Hunts, tips, or the Grand Prize/Jackpot." %}
+    </li>
+    <li>
+        <strong>{% trans "Who can use OWASP BLT?" %}</strong> {% trans "OWASP BLT is available for anyone to use, regardless of their technical background." %}
+    </li>
+    <li>
+        <strong>{% trans "How do I report an issue using OWASP BLT?" %}</strong> {% trans "To report an issue using OWASP BLT, you need to:" %}
+        <ol>
+            <li>{% trans "Create a user account to log into BLT." %}</li>
+            <li>{% trans "Describe the software or hardware bug you found." %}</li>
+            <li>{% trans "Attach a screenshot of the bug." %}</li>
+            <li>{% trans "Submit the information." %}</li>
+        </ol>
+    </li>
+    <li>
+        <strong>{% trans "How can I win rewards for reporting bugs on OWASP BLT?" %}</strong> {% trans "You can win rewards by participating in company-sponsored Bug Hunts, where you can earn prize money known as tips. The prize pool can include a Grand Prize/Jackpot, and in some cases, there may be “heists” where each bug is worth a specific amount based on what the company sets." %}
+    </li>
+    <li>
+        <strong>{% trans "How are bugs verified on OWASP BLT?" %}</strong> {% trans "Bugs are verified through a community-driven process, where other users can verify the issue, and the company can confirm the validity of the bug report." %}
+    </li>
+    <li>
+        <strong>{% trans "What kind of bugs can be reported on OWASP BLT?" %}</strong> {% trans "Any kind of software or hardware bug found on a website can be reported through OWASP BLT, including security vulnerabilities, broken links, incorrect display of content, and more." %}
+    </li>
+    <li>
+        <strong>{% trans "Can organizations launch bug hunt programs with prize pools using OWASP BLT?" %}</strong> {% trans "Yes, organizations can launch their own bug hunts and reward users for finding issues on their websites." %}
+    </li>
+    <li>
+        <strong>{% trans "Is OWASP BLT free to use?" %}</strong> {% trans "Yes, OWASP BLT is free and open-source software licensed under the GNU Affero General Public License 3.0." %}
+    </li>
+    <li>
+        <strong>{% trans "How can I get involved with the OWASP BLT project?" %}</strong> {% trans "Contributions to OWASP BLT are always welcome and appreciated! You can check out the Contribution Guidelines for more information, or join the OWASP Slack Channel and ask questions in the #project-blt channel. You can contribute to the project by offering your skills and expertise, such as research, writing, graphic design, or project administration." %}
+    </li>
+    <li>
+        <strong>{% trans "Can non-technical people participate in the OWASP BLT project?" %}</strong> {% trans "Yes, non-technical people can participate in the project. The project needs different skills and expertise at different times during its development. Currently, the project is looking for researchers, writers, graphic designers, and a project administrator. See the Road Map and Getting Involved tab for more details." %}
+    </li>
+</ul>
