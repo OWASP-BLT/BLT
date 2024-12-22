@@ -1,42 +1,45 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
 {% block title %}
-    Manage Organizations | {% env 'PROJECT_NAME' %}
+    Manage Domains - {% env 'PROJECT_NAME' %} Dashboard
 {% endblock title %}
 {% block description %}
-    Manage and create organizations in {% env 'PROJECT_NAME' %}
+    Manage and create new domains in the {% env 'PROJECT_NAME' %} dashboard. Add domain details such as name, URL, logo, email, and GitHub link.
 {% endblock description %}
 {% block keywords %}
-    manage, organizations, create, admin
+    {% env 'PROJECT_NAME' %}, domains, manage, create, add, dashboard, name, url, logo, email, github
 {% endblock keywords %}
 {% block og_title %}
-    Manage Organizations - {% env 'PROJECT_NAME' %}
+    Manage Domains - {% env 'PROJECT_NAME' %} Dashboard
 {% endblock og_title %}
 {% block og_description %}
-    Manage and create new organizations in {% env 'PROJECT_NAME' %}. View active and inactive organizations, and perform administrative tasks.
+    Manage and create new domains with details like name, URL, logo, email, and GitHub in the {% env 'PROJECT_NAME' %} dashboard.
 {% endblock og_description %}
 {% block content %}
     <section>
-        {% include "includes/admin_sidenav.html" %}
+        {% include "includes/organization_sidenav.html" %}
     </section>
     <div>
         <div class="col_3">
-            {% if companys %}
-                <div class="list-group">
-                    <a href="#" class="list-group-item active">Organization</a>
-                    {% for company in companys %}
-                        {% if company.is_active %}
-                            <a href="{% url 'admin_organization_dashboard_detail' pk=company.pk %}"
-                               class="list-group-item">{{ company.name }}</a>
-                        {% else %}
-                            <a href="{% url 'admin_organization_dashboard_detail' pk=company.pk %}"
-                               class="list-group-item list-group-item-danger ">{{ company.name }}</a>
-                        {% endif %}
-                    {% endfor %}
-                </div>
+            {% if domains %}
+                {% for domain in domains %}
+                    <div class="col-md-3 widget widget1">
+                        <div class="r3_counter_box">
+                            <a href="{% url 'organization_dashboard_domain_detail' domain.pk %}"><i class="fa fa-pencil"></i></a>
+                            <div class="stats">
+                                <h5>{{ domain.name }}</h5>
+                                <div class="hunt">
+                                    <p>
+                                        {{ domain.email }}<span>$</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
             {% else %}
             </br>
-            no Organization found !
+            no domain found !
         {% endif %}
         <div class="clearfix"></div>
     </div>
@@ -44,12 +47,12 @@
 <div id="addDomainModal" class="modal fade" role="dialog">
     <div class="modal-dialog">
         <!-- Modal content-->
-        <form id="add-or-update-company">
+        <form id="add-or-update-domain">
             {% csrf_token %}
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">×</button>
-                    <h4 class="modal-title">Create Organization</h4>
+                    <h4 class="modal-title">Create Domain</h4>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
@@ -62,12 +65,8 @@
                                value="">
                     </div>
                     <div class="form-group">
-                        <label for="url">Website:</label>
+                        <label for="url">Url:</label>
                         <input type="url" name="url" class="form-control" id="url" value="">
-                    </div>
-                    <div class="form-group">
-                        <label for="admin">Admin:</label>
-                        <input type="email" name="admin" class="form-control" id="admin" value="">
                     </div>
                     <div class="form-group">
                         <label for="logo">Logo:</label>
@@ -85,14 +84,6 @@
                     <div class="form-group">
                         <label for="github">Github:</label>
                         <input type="url" name="github" class="form-control" id="github" value="">
-                    </div>
-                    <div class="form-group">
-                        <label for="subscription">Subscription:</label>
-                        <input type="text"
-                               name="subscription"
-                               class="form-control"
-                               id="subscription"
-                               value="">
                     </div>
                 </div>
                 <div class="modal-footer">
