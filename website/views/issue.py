@@ -163,29 +163,21 @@ def create_github_issue(request, id):
     if issue.domain.github:
         screenshot_text = ""
         for screenshot in screenshot_all:
-            screenshot_text += "![0](" + settings.FQDN + screenshot.image.url + ") \n"
+            screenshot_text += (
+                f"![{screenshot.image.name}]({settings.FQDN}{screenshot.image.url})\n"
+            )
 
         github_url = issue.domain.github.replace("https", "git").replace("http", "git") + ".git"
         from giturlparse import parse as parse_github_url
 
         p = parse_github_url(github_url)
 
-        url = "https://api.github.com/repos/%s/%s/issues" % (p.owner, p.repo)
+        url = f"https://api.github.com/repos/{p.owner}/{p.repo}/issues"
         the_user = request.user.username if request.user.is_authenticated else "Anonymous"
 
         issue_data = {
             "title": issue.description,
-            "body": issue.markdown_description
-            + "\n\n"
-            + screenshot_text
-            + "Read More: https://"
-            + settings.FQDN
-            + "/issue/"
-            + str(id)
-            + "\n found by "
-            + str(the_user)
-            + "\n at url: "
-            + issue.url,
+            "body": f"{issue.markdown_description}\n\n{screenshot_text}\nRead More: https://{settings.FQDN}/issue/{id}\n found by {the_user}\n at url: {issue.url}",
             "labels": ["Bug", settings.PROJECT_NAME_LOWER, issue.domain_name],
         }
 
@@ -193,7 +185,7 @@ def create_github_issue(request, id):
             response = requests.post(
                 url,
                 data=json.dumps(issue_data),
-                headers={"Authorization": "token " + os.environ.get("GITHUB_ACCESS_TOKEN")},
+                headers={"Authorization": f"token {os.environ.get('GITHUB_ACCESS_TOKEN')}"},
             )
             if response.status_code == 201:
                 response_data = response.json()
@@ -202,21 +194,17 @@ def create_github_issue(request, id):
                 return JsonResponse({"status": "ok", "github_url": issue.github_url})
             else:
                 return JsonResponse(
-                    {"status": "Failed", "status_reason": "Issue with Github:" + response.reason}
+                    {"status": "Failed", "status_reason": f"Issue with Github: {response.reason}"}
                 )
         except Exception as e:
             send_mail(
-                "Error in GitHub issue creation for Issue ID " + str(issue.id),
-                "Error in GitHub issue creation, check your GitHub settings\n"
-                + "Your current settings are: "
-                + str(issue.github_url)
-                + " and the error is: "
-                + str(e),
+                f"Error in GitHub issue creation for Issue ID {issue.id}",
+                f"Error in GitHub issue creation, check your GitHub settings\nYour current settings are: {issue.github_url} and the error is: {e}",
                 settings.EMAIL_TO_STRING,
                 [request.user.email],
                 fail_silently=True,
             )
-            return JsonResponse({"status": "Failed", "status_reason": "Failed: error is " + str(e)})
+            return JsonResponse({"status": "Failed", "status_reason": f"Failed: error is {e}"})
     else:
         return JsonResponse(
             {"status": "Failed", "status_reason": "No Github URL for this domain, please add it."}
