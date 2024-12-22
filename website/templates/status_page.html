@@ -18,69 +18,97 @@
 {% block content %}
     <style>
         .status-container {
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
+            padding: 30px;
+            max-width: 800px;
+            margin: auto;
         }
-        .status-item {
-            display: flex;
-            align-items: center;
+        .status-header {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .status-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .status-card h3 {
             margin-bottom: 10px;
         }
         .status-dot {
             width: 15px;
             height: 15px;
             border-radius: 50%;
+            display: inline-block;
             margin-right: 10px;
         }
         .status-dot.green {
-            background-color: green;
+            background-color: #28a745;
         }
         .status-dot.red {
-            background-color: red;
+            background-color: #dc3545;
         }
-        .block-info {
-            margin-left: 20px;
-            font-weight: bold;
+        .memory-info, .memory-consumers {
+            margin-top: 10px;
         }
-        .explorer-link {
-            margin-left: 10px;
+        .memory-consumers ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .memory-consumers li {
+            margin-bottom: 5px;
         }
     </style>
-    {% include "includes/sidenav.html" %}
     <div class="status-container">
-        <div class="status-item">
-            <div class="status-dot {% if status.bitcoin %}green{% else %}red{% endif %}"></div>
-            <span>Bitcoin Node ({{ status.bitcoin }})</span>
-            {% if status.bitcoin %}
-                <span class="block-info">Block: {{ status.bitcoin_block }}</span>
-                <a class="explorer-link"
-                   href="https://mempool.space/block/{{ status.bitcoin_block }}"
-                   target="_blank">View on Mempool</a>
-            {% endif %}
+        <div class="status-header">Service Status</div>
+        <div class="status-card">
+            <h3>Bitcoin Node</h3>
+            <div class="status-item">
+                <div class="status-dot {% if status.bitcoin %}green{% else %}red{% endif %}"></div>
+                <span>{{ "Operational" if status.bitcoin else "Not Operational" }}</span>
+                {% if status.bitcoin %}<p>Block Height: {{ status.bitcoin_block }}</p>{% endif %}
+            </div>
         </div>
-        <div class="status-item">
-            <div class="status-dot {% if status.sendgrid %}green{% else %}red{% endif %}"></div>
-            <span>SendGrid API ({{ status.sendgrid }})</span>
+        <div class="status-card">
+            <h3>SendGrid API</h3>
+            <div class="status-item">
+                <div class="status-dot {% if status.sendgrid %}green{% else %}red{% endif %}"></div>
+                <span>{{ "Operational" if status.sendgrid else "Not Operational" }}</span>
+            </div>
         </div>
-        <div class="status-item">
-            <div class="status-dot {% if status.github %}green{% else %}red{% endif %}"></div>
-            <span>GitHub API ({{ status.github }})</span>
+        <div class="status-card">
+            <h3>GitHub API</h3>
+            <div class="status-item">
+                <div class="status-dot {% if status.github %}green{% else %}red{% endif %}"></div>
+                <span>{{ "Operational" if status.github else "Not Operational" }}</span>
+            </div>
         </div>
-        <div class="status-item">
+        <div class="status-card">
             <h3>Memory Usage</h3>
-            <p>Total: {{ status.memory_info.total|filesizeformat }}</p>
-            <p>Available: {{ status.memory_info.available|filesizeformat }}</p>
-            <p>Used: {{ status.memory_info.used|filesizeformat }}</p>
-            <p>Free: {{ status.memory_info.free|filesizeformat }}</p>
+            <div class="memory-info">
+                <p>Total: {{ status.memory_info.total|filesizeformat }}</p>
+                <p>Available: {{ status.memory_info.available|filesizeformat }}</p>
+                <p>Used: {{ status.memory_info.used|filesizeformat }}</p>
+                <p>Free: {{ status.memory_info.free|filesizeformat }}</p>
+            </div>
         </div>
-        <div class="status-item">
+        <div class="status-card">
+            <h3>Memory Profiling</h3>
+            <p>Current Usage: {{ status.memory_profiling.current|filesizeformat }}</p>
+            <p>Peak Usage: {{ status.memory_profiling.peak|filesizeformat }}</p>
+        </div>
+        <div class="status-card">
             <h3>Top Memory Consumers</h3>
-            <ul>
-                {% for proc in status.top_memory_consumers %}
-                    <li>{{ proc.name }} (PID: {{ proc.pid }}): {{ proc.memory_info.rss|filesizeformat }}</li>
-                {% endfor %}
-            </ul>
+            <div class="memory-consumers">
+                <ul>
+                    {% for proc in status.top_memory_consumers %}
+                        <li>{{ proc.name }} (PID: {{ proc.pid }}): {{ proc.memory_info.rss|filesizeformat }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
     </div>
 {% endblock content %}

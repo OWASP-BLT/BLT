@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import tracemalloc
 import urllib
 from datetime import datetime, timezone
 
@@ -63,6 +64,8 @@ def check_status(request):
     status = cache.get("service_status")
 
     if not status:
+        tracemalloc.start()  # Start memory profiling
+
         status = {
             "bitcoin": False,
             "bitcoin_block": None,
@@ -70,6 +73,7 @@ def check_status(request):
             "github": False,
             "memory_info": psutil.virtual_memory()._asdict(),
             "top_memory_consumers": [],
+            "memory_profiling": {},
         }
 
         bitcoin_rpc_user = os.getenv("BITCOIN_RPC_USER")
@@ -144,6 +148,12 @@ def check_status(request):
             key=lambda x: x["memory_info"]["rss"],
             reverse=True,
         )[:5]
+
+        # Add memory profiling information
+        current, peak = tracemalloc.get_traced_memory()
+        status["memory_profiling"]["current"] = current
+        status["memory_profiling"]["peak"] = peak
+        tracemalloc.stop()
 
         cache.set("service_status", status, timeout=60)
 
