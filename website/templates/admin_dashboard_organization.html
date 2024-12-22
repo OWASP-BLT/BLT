@@ -1,19 +1,19 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
 {% block title %}
-    Manage Organizations | {% env 'PROJECT_NAME' %}
+    Manage Organizations
 {% endblock title %}
 {% block description %}
-    Manage and create organizations in {% env 'PROJECT_NAME' %}
+    Manage and create organizations
 {% endblock description %}
 {% block keywords %}
     manage, organizations, create, admin
 {% endblock keywords %}
 {% block og_title %}
-    Manage Organizations - {% env 'PROJECT_NAME' %}
+    Manage Organizations
 {% endblock og_title %}
 {% block og_description %}
-    Manage and create new organizations in {% env 'PROJECT_NAME' %}. View active and inactive organizations, and perform administrative tasks.
+    Manage and create new organizations. View active and inactive organizations, and perform administrative tasks.
 {% endblock og_description %}
 {% block content %}
     <section>
@@ -21,16 +21,16 @@
     </section>
     <div>
         <div class="col_3">
-            {% if companys %}
+            {% if organizations %}
                 <div class="list-group">
                     <a href="#" class="list-group-item active">Organization</a>
-                    {% for company in companys %}
-                        {% if company.is_active %}
-                            <a href="{% url 'admin_organization_dashboard_detail' pk=company.pk %}"
-                               class="list-group-item">{{ company.name }}</a>
+                    {% for organization in organizations %}
+                        {% if organization.is_active %}
+                            <a href="{% url 'admin_organization_dashboard_detail' pk=organization.pk %}"
+                               class="list-group-item">{{ organization.name }}</a>
                         {% else %}
-                            <a href="{% url 'admin_organization_dashboard_detail' pk=company.pk %}"
-                               class="list-group-item list-group-item-danger ">{{ company.name }}</a>
+                            <a href="{% url 'admin_organization_dashboard_detail' pk=organization.pk %}"
+                               class="list-group-item list-group-item-danger ">{{ organization.name }}</a>
                         {% endif %}
                     {% endfor %}
                 </div>
@@ -44,7 +44,7 @@
 <div id="addDomainModal" class="modal fade" role="dialog">
     <div class="modal-dialog">
         <!-- Modal content-->
-        <form id="add-or-update-company">
+        <form id="add-or-update-organization">
             {% csrf_token %}
             <div class="modal-content">
                 <div class="modal-header">
