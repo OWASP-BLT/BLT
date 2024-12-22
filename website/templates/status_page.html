@@ -3,18 +3,6 @@
 {% block title %}
     Service Status
 {% endblock title %}
-{% block description %}
-    Check the status of various services including Bitcoin Node, SendGrid API, and GitHub API. Stay informed about their current operational status and block information.
-{% endblock description %}
-{% block keywords %}
-    Service Status, Bitcoin Node, SendGrid API, GitHub API, Operational Status, Block Information
-{% endblock keywords %}
-{% block og_title %}
-    Service Status - Monitor Operational Status
-{% endblock og_title %}
-{% block og_description %}
-    View the current status of services such as Bitcoin Node, SendGrid API, and GitHub API. Stay updated on their operational status and block information.
-{% endblock og_description %}
 {% block content %}
     <style>
         .status-container {
@@ -64,48 +52,84 @@
     </style>
     <div class="status-container">
         <div class="status-header">Service Status</div>
+        <!-- Bitcoin Node Status -->
         <div class="status-card">
             <h3>Bitcoin Node</h3>
             <div class="status-item">
                 <div class="status-dot {% if status.bitcoin %}green{% else %}red{% endif %}"></div>
-                <span>{{ "Operational" if status.bitcoin else "Not Operational" }}</span>
-                {% if status.bitcoin %}<p>Block Height: {{ status.bitcoin_block }}</p>{% endif %}
+                {% if status.bitcoin %}
+                    <span>Operational</span>
+                    <p>Block Height: {{ status.bitcoin_block }}</p>
+                    <a class="explorer-link"
+                       href="https://mempool.space/block/{{ status.bitcoin_block }}"
+                       target="_blank">View on Mempool</a>
+                {% else %}
+                    <span>Not Operational</span>
+                {% endif %}
             </div>
         </div>
+        <!-- SendGrid API Status -->
         <div class="status-card">
             <h3>SendGrid API</h3>
             <div class="status-item">
                 <div class="status-dot {% if status.sendgrid %}green{% else %}red{% endif %}"></div>
-                <span>{{ "Operational" if status.sendgrid else "Not Operational" }}</span>
+                {% if status.sendgrid %}
+                    <span>Operational</span>
+                {% else %}
+                    <span>Not Operational</span>
+                {% endif %}
             </div>
         </div>
+        <!-- GitHub API Status -->
         <div class="status-card">
             <h3>GitHub API</h3>
             <div class="status-item">
                 <div class="status-dot {% if status.github %}green{% else %}red{% endif %}"></div>
-                <span>{{ "Operational" if status.github else "Not Operational" }}</span>
+                {% if status.github %}
+                    <span>Operational</span>
+                {% else %}
+                    <span>Not Operational</span>
+                {% endif %}
             </div>
         </div>
+        <!-- Memory Usage -->
         <div class="status-card">
             <h3>Memory Usage</h3>
             <div class="memory-info">
-                <p>Total: {{ status.memory_info.total|filesizeformat }}</p>
-                <p>Available: {{ status.memory_info.available|filesizeformat }}</p>
-                <p>Used: {{ status.memory_info.used|filesizeformat }}</p>
-                <p>Free: {{ status.memory_info.free|filesizeformat }}</p>
+                <p>
+                    <strong>Total:</strong> {{ status.memory_info.total|filesizeformat }}
+                </p>
+                <p>
+                    <strong>Available:</strong> {{ status.memory_info.available|filesizeformat }}
+                </p>
+                <p>
+                    <strong>Used:</strong> {{ status.memory_info.used|filesizeformat }}
+                </p>
+                <p>
+                    <strong>Free:</strong> {{ status.memory_info.free|filesizeformat }}
+                </p>
             </div>
         </div>
+        <!-- Memory Profiling -->
         <div class="status-card">
             <h3>Memory Profiling</h3>
-            <p>Current Usage: {{ status.memory_profiling.current|filesizeformat }}</p>
-            <p>Peak Usage: {{ status.memory_profiling.peak|filesizeformat }}</p>
+            <p>
+                <strong>Current Usage:</strong> {{ status.memory_profiling.current|filesizeformat }}
+            </p>
+            <p>
+                <strong>Peak Usage:</strong> {{ status.memory_profiling.peak|filesizeformat }}
+            </p>
         </div>
+        <!-- Top Memory Consumers -->
         <div class="status-card">
             <h3>Top Memory Consumers</h3>
             <div class="memory-consumers">
                 <ul>
                     {% for proc in status.top_memory_consumers %}
-                        <li>{{ proc.name }} (PID: {{ proc.pid }}): {{ proc.memory_info.rss|filesizeformat }}</li>
+                        <li>
+                            <strong>{{ proc.name }}</strong> (PID: {{ proc.pid }}):
+                            {{ proc.memory_info.rss|filesizeformat }}
+                        </li>
                     {% endfor %}
                 </ul>
             </div>
