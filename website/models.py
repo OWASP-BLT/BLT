@@ -24,6 +24,7 @@ from django.db.models import Count
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
+from django.urls import reverse
 from django.utils import timezone
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
@@ -74,13 +75,13 @@ class Integration(models.Model):
         null=True,
         blank=True,
     )
-    company = models.ForeignKey(
-        "Company", on_delete=models.CASCADE, related_name="company_integrations"
+    organization = models.ForeignKey(
+        "Organization", on_delete=models.CASCADE, related_name="organization_integrations"
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.company.name} - {self.service_name} Integration"
+        return f"{self.organization.name} - {self.service_name} Integration"
 
 
 class SlackIntegration(models.Model):
@@ -104,15 +105,21 @@ class SlackIntegration(models.Model):
     )
 
     def __str__(self):
-        return f"Slack Integration for {self.integration.company.name}"
+        return f"Slack Integration for {self.integration.organization.name}"
 
 
-class Company(models.Model):
+class OrganisationType(Enum):
+    ORGANIZATION = "organization"
+    INDIVIDUAL = "individual"
+    TEAM = "team"
+
+
+class Organization(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    managers = models.ManyToManyField(User, related_name="user_companies")
+    managers = models.ManyToManyField(User, related_name="user_organizations")
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=500, null=True, blank=True)
-    logo = models.ImageField(upload_to="company_logos", null=True, blank=True)
+    logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
     url = models.URLField(unique=True)
     email = models.EmailField(null=True, blank=True)
     twitter = models.CharField(max_length=30, null=True, blank=True)
@@ -122,14 +129,29 @@ class Company(models.Model):
     subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=False)
     tags = models.ManyToManyField(Tag, blank=True)
-    integrations = models.ManyToManyField(Integration, related_name="companies")
+    integrations = models.ManyToManyField(Integration, related_name="organizations")
+    trademark_count = models.IntegerField(default=0)
+    trademark_check_date = models.DateTimeField(null=True, blank=True)
+    team_points = models.IntegerField(default=0)
+    type = models.CharField(
+        max_length=15,
+        choices=[(tag.value, tag.name) for tag in OrganisationType],
+        default=OrganisationType.ORGANIZATION.value,
+    )
 
     def __str__(self):
         return self.name
 
 
+class JoinRequest(models.Model):
+    team = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_accepted = models.BooleanField(default=False)
+
+
 class Domain(models.Model):
-    company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_domains", blank=True)
     name = models.CharField(max_length=255, unique=True)
     url = models.URLField()
@@ -332,7 +354,7 @@ class Issue(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     is_hidden = models.BooleanField(default=False)
-    rewarded = models.PositiveIntegerField(default=0)  # money rewarded by the company
+    rewarded = models.PositiveIntegerField(default=0)  # money rewarded by the organization
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
     cve_id = models.CharField(max_length=16, null=True, blank=True)
     cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
@@ -582,6 +604,13 @@ class UserProfile(models.Model):
     discounted_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     modified = models.DateTimeField(auto_now=True)
     visit_count = models.PositiveIntegerField(default=0)
+    team = models.ForeignKey(
+        Organization, on_delete=models.SET_NULL, related_name="user_profiles", null=True, blank=True
+    )
+
+    def check_team_membership(self):
+        return self.team is not None
+
     current_streak = models.IntegerField(default=0)
     longest_streak = models.IntegerField(default=0)
     last_check_in = models.DateField(null=True, blank=True)
@@ -708,14 +737,14 @@ class IP(models.Model):
     referer = models.CharField(max_length=255, null=True, blank=True)
 
 
-class CompanyAdmin(models.Model):
+class OrganizationAdmin(models.Model):
     role = (
         (0, "Admin"),
         (1, "Moderator"),
     )
     role = models.IntegerField(choices=role, default=0)
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    company = models.ForeignKey(Company, null=True, blank=True, on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
@@ -1003,7 +1032,7 @@ class TimeLog(models.Model):
     )
     # associate organization with sizzle
     organization = models.ForeignKey(
-        Company, on_delete=models.CASCADE, related_name="organization", null=True, blank=True
+        Organization, on_delete=models.CASCADE, related_name="time_logs", null=True, blank=True
     )
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
@@ -1163,3 +1192,49 @@ class UserBadge(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.badge.title}"
+
+
+class Post(models.Model):
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True, blank=True, max_length=255)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    image = models.ImageField(upload_to="blog_posts")
+
+    class Meta:
+        db_table = "blog_post"
+
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        return reverse("post_detail", kwargs={"slug": self.slug})
+
+
+class PRAnalysisReport(models.Model):
+    pr_link = models.URLField()
+    issue_link = models.URLField()
+    priority_alignment_score = models.IntegerField()
+    revision_score = models.IntegerField()
+    recommendations = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.pr_link
+
+
+@receiver(post_save, sender=Post)
+def verify_file_upload(sender, instance, **kwargs):
+    from django.core.files.storage import default_storage
+
+    print("Verifying file upload...")
+    print(f"Default storage backend: {default_storage.__class__.__name__}")
+    if instance.image:
+        print(f"Checking if image '{instance.image.name}' exists in the storage backend...")
+        if not default_storage.exists(instance.image.name):
+            print(f"Image '{instance.image.name}' was not uploaded to the storage backend.")
+            raise ValidationError(
+                f"Image '{instance.image.name}' was not uploaded to the storage backend."
+            )

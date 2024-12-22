@@ -42,12 +42,18 @@ from website.models import (
     Company,
     Domain,
     Issue,
+    PRAnalysisReport,
     Suggestion,
     SuggestionVotes,
     UserProfile,
     Wallet,
 )
-from website.utils import safe_redirect_allowed
+from website.utils import (
+    analyze_pr_content,
+    fetch_github_data,
+    safe_redirect_allowed,
+    save_analysis_report,
+)
 
 vector_store = None
 DAILY_REQUEST_LIMIT = 10
@@ -79,12 +85,13 @@ def check_status(request):
                     "params": [],
                 },
                 auth=HTTPBasicAuth(bitcoin_rpc_user, bitcoin_rpc_password),
+                timeout=2,  # Set a timeout to avoid hanging
             )
             if response.status_code == 200:
                 data = response.json().get("result", {})
                 status["bitcoin"] = True
                 status["bitcoin_block"] = data.get("blocks", None)
-        except Exception as e:
+        except requests.exceptions.RequestException as e:
             print(f"Bitcoin Core Node Error: {e}")
 
         try:
@@ -105,14 +112,12 @@ def check_status(request):
         else:
             try:
                 headers = {"Authorization": f"token {github_token}"}
-                response = requests.get("https://api.github.com/user/repos", headers=headers)
-
-                print(f"Response Status Code: {response.status_code}")
-                print(f"Response Content: {response.json()}")
+                response = requests.get(
+                    "https://api.github.com/user/repos", headers=headers, timeout=5
+                )
 
                 if response.status_code == 200:
                     status["github"] = True
-                    print("GitHub API token has repository access.")
                 else:
                     status["github"] = False
                     print(
@@ -223,7 +228,8 @@ def chatbot_conversation(request):
 
         if request_count >= DAILY_REQUEST_LIMIT:
             return Response(
-                {"error": "Daily request limit exceeded."}, status=status.HTTP_429_TOO_MANY_REQUESTS
+                {"error": "Daily request limit exceeded."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
         question = request.data.get("question", "")
@@ -316,7 +322,10 @@ def vote_suggestions(request):
 
             if up_vote or down_vote:
                 voted = SuggestionVotes.objects.create(
-                    user=user, suggestion=suggestion, up_vote=up_vote, down_vote=down_vote
+                    user=user,
+                    suggestion=suggestion,
+                    up_vote=up_vote,
+                    down_vote=down_vote,
                 )
 
                 if up_vote:
@@ -531,7 +540,7 @@ class StatsDetailView(TemplateView):
             "Comment": "created_date",
             "Hunt": "created",
             "Domain": "created",
-            "Company": "created",
+            "Organization": "created",
             "Project": "created",
             "Contribution": "created",
             "TimeLog": "created",
@@ -585,7 +594,7 @@ class StatsDetailView(TemplateView):
             "Domain": "fas fa-globe",
             "ExtensionUser": "fas fa-puzzle-piece",
             "Subscription": "fas fa-envelope",
-            "Company": "fas fa-building",
+            "Organization": "fas fa-building",
             "HuntPrize": "fas fa-gift",
             "IssueScreenshot": "fas fa-camera",
             "Winner": "fas fa-trophy",
@@ -593,7 +602,7 @@ class StatsDetailView(TemplateView):
             "InviteFriend": "fas fa-envelope-open",
             "UserProfile": "fas fa-id-badge",
             "IP": "fas fa-network-wired",
-            "CompanyAdmin": "fas fa-user-tie",
+            "OrganizationAdmin": "fas fa-user-tie",
             "Transaction": "fas fa-exchange-alt",
             "Payment": "fas fa-credit-card",
             "ContributorStats": "fas fa-chart-bar",
@@ -696,13 +705,57 @@ def get_last_commit_date():
     try:
         return (
             subprocess.check_output(
-                ["git", "log", "-1", "--format=%cd"], cwd=os.path.dirname(os.path.dirname(__file__))
+                ["git", "log", "-1", "--format=%cd"],
+                cwd=os.path.dirname(os.path.dirname(__file__)),
             )
             .decode("utf-8")
             .strip()
         )
     except FileNotFoundError:
         return "Not available"
+
+
+def submit_roadmap_pr(request):
+    if request.method == "POST":
+        pr_link = request.POST.get("pr_link")
+        issue_link = request.POST.get("issue_link")
+
+        if not pr_link or not issue_link:
+            return JsonResponse({"error": "Both PR and issue links are required."}, status=400)
+
+        pr_parts = pr_link.split("/")
+        issue_parts = issue_link.split("/")
+        owner, repo = pr_parts[3], pr_parts[4]
+        pr_number, issue_number = pr_parts[-1], issue_parts[-1]
+
+        print(pr_parts)
+        print(issue_parts)
+
+        print(f"rrepo: {repo}")
+        print(f"pr_number: {pr_number}")
+
+        pr_data = fetch_github_data(owner, repo, "pulls", pr_number)
+        roadmap_data = fetch_github_data(owner, repo, "issues", issue_number)
+
+        if "error" in pr_data or "error" in roadmap_data:
+            return JsonResponse(
+                {
+                    "error": f"Failed to fetch PR or roadmap data: {pr_data.get('error', 'Unknown error')}"
+                },
+                status=500,
+            )
+
+        analysis = analyze_pr_content(pr_data, roadmap_data)
+
+        save_analysis_report(pr_link, issue_link, analysis)
+        return JsonResponse({"message": "PR submitted successfully"})
+
+    return render(request, "submit_roadmap_pr.html")
+
+
+def view_pr_analysis(request):
+    reports = PRAnalysisReport.objects.all()
+    return render(request, "view_pr_analysis.html", {"reports": reports})
 
 
 def home(request):

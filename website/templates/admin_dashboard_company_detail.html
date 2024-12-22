@@ -29,7 +29,7 @@
                         <h4 class="modal-title">Edit Organization</h4>
                     </div>
                     <div class="modal-body">
-                        <input type="hidden" name="id" value="{{ company.pk }}" />
+                        <input type="hidden" name="id" value="{{ organization.pk }}" />
                         <div class="form-group">
                             <label for="name">Name:</label>
                             <input type="text"
@@ -37,7 +37,7 @@
                                    required
                                    class="form-control"
                                    id="name"
-                                   value="{{ company.name }}">
+                                   value="{{ organization.name }}">
                         </div>
                         <div class="form-group">
                             <label for="url">Website:</label>
@@ -45,7 +45,7 @@
                                    name="url"
                                    class="form-control"
                                    id="url"
-                                   value="{{ company.url }}">
+                                   value="{{ organization.url }}">
                         </div>
                         <div class="form-group">
                             <label for="admin">Admin:</label>
@@ -53,7 +53,7 @@
                                    name="admin"
                                    class="form-control"
                                    id="admin"
-                                   value="{{ company.admin.email }}">
+                                   value="{{ organization.admin.email }}">
                         </div>
                         <div class="form-group">
                             <label for="logo">Logo:</label>
@@ -66,7 +66,7 @@
                                    required
                                    class="form-control"
                                    id="email"
-                                   value="{{ company.email }}">
+                                   value="{{ organization.email }}">
                         </div>
                         <div class="form-group">
                             <label for="github">Github:</label>
@@ -74,7 +74,7 @@
                                    name="github"
                                    class="form-control"
                                    id="github"
-                                   value="{{ company.github }}">
+                                   value="{{ organization.github }}">
                         </div>
                         <div class="form-group">
                             <label for="subscription">Subscription:</label>
@@ -82,11 +82,11 @@
                                    name="subscription"
                                    class="form-control"
                                    id="subscription"
-                                   value="{{ company.subscription.name }}">
+                                   value="{{ organization.subscription.name }}">
                         </div>
                         <div class="form-group">
                             <label class="checkbox-inline col-sm-12">
-                                {% if company.is_active %}
+                                {% if organization.is_active %}
                                     <input name="verify" type="checkbox" checked>
                                     Verify
                                 </label>

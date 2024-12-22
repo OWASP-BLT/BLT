@@ -1,7 +1,7 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
 {% block title %}
-    Hunt Results - {{ hunt.domain.company.name }} - {% env 'PROJECT_NAME' %} Dashboard
+    Hunt Results - {{ hunt.domain.organization.name }} - {% env 'PROJECT_NAME' %} Dashboard
 {% endblock title %}
 {% block description %}
     View the results of the hunt in the {% env 'PROJECT_NAME' %} dashboard. Check the top winners and manage results if not published yet.
@@ -10,7 +10,7 @@
     {% env 'PROJECT_NAME' %}, hunt, results, publish, winner, runner, second runner, dashboard, company, domain
 {% endblock keywords %}
 {% block og_title %}
-    Hunt Results - {{ hunt.domain.company.name }} - {% env 'PROJECT_NAME' %} Dashboard
+    Hunt Results - {{ hunt.domain.organization.name }} - {% env 'PROJECT_NAME' %} Dashboard
 {% endblock og_title %}
 {% block og_description %}
     View the published results of the hunt or manage the results before publishing in the {% env 'PROJECT_NAME' %} dashboard.
@@ -126,7 +126,7 @@ table.table tbody tr.selected {
         <article id="banner" class="jumbotron jumbotron-fluid">
             <div class="font-italic pl-4 mt-4 text-light">
                 <h1 class="display-1 font-italic">
-                    {{ hunt.domain.company.name }}
+                    {{ hunt.domain.organization.name }}
                     <span class="badge-company badge-primary shadow">{{ hunt.domain.name }}</span>
                 </h1>
                 <p class="lead mt-5">Ended</p>
