@@ -1,19 +1,19 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
 {% block title %}
-    Edit Organization | {% env 'PROJECT_NAME' %}
+    Edit Organization
 {% endblock title %}
 {% block description %}
-    Edit details for the organization in {% env 'PROJECT_NAME' %}
+    Edit details for the organization
 {% endblock description %}
 {% block keywords %}
-    edit, organization, company, admin, subscription
+    edit, organization, organization, admin, subscription
 {% endblock keywords %}
 {% block og_title %}
-    Edit Organization - {% env 'PROJECT_NAME' %}
+    Edit Organization
 {% endblock og_title %}
 {% block og_description %}
-    Edit your organization's details, including name, website, email, logo, and subscription on {% env 'PROJECT_NAME' %}
+    Edit your organization's details, including name, website, email, logo, and subscription
 {% endblock og_description %}
 {% block content %}
     <section>
@@ -21,7 +21,7 @@
     </section>
     <div>
         <div class="col_3">
-            <form id="add-or-update-company">
+            <form id="add-or-update-organization">
                 {% csrf_token %}
                 <div class="modal-content">
                     <div class="modal-header">

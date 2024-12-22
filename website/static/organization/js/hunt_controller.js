@@ -208,7 +208,7 @@ function displayBannerPreview() {
     }
 }
 
-function removePrize(event, prizeId, companyId) {
+function removePrize(event, prizeId, organizationId) {
     event.preventDefault();
     if (!confirm("Are you sure you want to delete this prize?")) {
         return;
@@ -220,8 +220,8 @@ function removePrize(event, prizeId, companyId) {
     loadingIndicator.innerText = "Loading...";
     prizeContainer.appendChild(loadingIndicator);
 
-    // Make AJAX call to delete the prize with company_id
-    fetch(`/organization/delete_prize/${prizeId}/${companyId}`, {
+    // Make AJAX call to delete the prize with organization_id
+    fetch(`/organization/delete_prize/${prizeId}/${organizationId}`, {
         method: 'DELETE',
         headers: {
             'X-CSRFToken': getCookie('csrftoken')
@@ -243,7 +243,7 @@ function removePrize(event, prizeId, companyId) {
     });
 }
 
-function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubmissions, description, companyId) {
+function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubmissions, description, organizationId) {
     event.preventDefault(); // Prevent the form from submitting
     alert("Edit the prize details in the form above and click the 'Update Prize' button to save changes.");
     document.getElementById('prize_name').value = prizeName;
@@ -257,12 +257,12 @@ function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubm
     document.getElementById('prize_description').value = description;
     document.getElementById('every_valid_submissions').checked = validSubmissions ? true : false;
     document.getElementById('add_prize_button').innerText = 'Update Prize';
-    document.getElementById('add_prize_button').setAttribute('onclick', `updatePrize(${prizeId}, ${companyId})`);
+    document.getElementById('add_prize_button').setAttribute('onclick', `updatePrize(${prizeId}, ${organizationId})`);
     // hive the cryptocurrencyDiv 
     document.getElementById('cryptocurrencyDiv').style.display = "none";
 }
 
-function updatePrize(prizeId, companyId) {
+function updatePrize(prizeId, organizationId) {
     let prize_name = document.getElementById("prize_name");
     let cash_value = document.getElementById("cash_value");
     let number_of_winning_projects = document.getElementById("number_of_winning_projects");
@@ -283,8 +283,8 @@ function updatePrize(prizeId, companyId) {
         prize_description: prize_description.value,
     }
 
-    // Make AJAX call to update the prize with company_id
-    fetch(`/organization/edit_prize/${prizeId}/${companyId}`, {
+    // Make AJAX call to update the prize with organization_id
+    fetch(`/organization/edit_prize/${prizeId}/${organizationId}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -310,7 +310,7 @@ function updatePrize(prizeId, companyId) {
             prize_data.prize_description = prize_data.prize_description.trim().substring(0, 55) + '...';
             paragraph[7].innerText = prize_data.prize_description;
             // we should have to update the edit button to update the editPrize function attributes
-            prizeContainer.querySelector('#EditPrizeButton').setAttribute('onclick', `editPrize(event, ${prizeId}, '${prize_data.prize_name}', ${prize_data.cash_value}, ${prize_data.number_of_winning_projects}, ${prize_data.every_valid_submissions}, '${prize_data.prize_description}', ${companyId})`);
+            prizeContainer.querySelector('#EditPrizeButton').setAttribute('onclick', `editPrize(event, ${prizeId}, '${prize_data.prize_name}', ${prize_data.cash_value}, ${prize_data.number_of_winning_projects}, ${prize_data.every_valid_submissions}, '${prize_data.prize_description}', ${organizationId})`);
             // and then reset the form
             prize_name.value = "";
             cash_value.value = 0;

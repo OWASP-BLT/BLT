@@ -144,7 +144,7 @@
     });
 
 
-  $("#add-or-update-company").submit(function(e){
+  $("#add-or-update-organization").submit(function(e){
     e.preventDefault();
       var serializedData = $(this).serialize();
       console.log(serializedData)
