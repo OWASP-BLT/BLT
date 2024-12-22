@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="join-requests-container">
+        <h2>Join Requests</h2>
+        {% if user.userprofile.team %}
+            <p>
+                You are currently in the team: <strong>{{ user.userprofile.team.name }}</strong>
+            </p>
+            <!-- Leave Team Form -->
+            <form method="post" action="{% url 'leave_team' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Leave Current Team</button>
+            </form>
+        {% endif %}
+        {% if join_requests %}
+            <ul>
+                {% for request in join_requests %}
+                    <li>
+                        <span>{{ request.team.name }}</span>
+                        <!-- Join Team Form -->
+                        <form method="post" action="{% url 'join_requests' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="team_id" value="{{ request.team.id }}">
+                            <button type="submit" {% if user.userprofile.team %}disabled{% endif %}>Join</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No join requests.</p>
+        {% endif %}
+    </div>
+{% endblock content %}

@@ -12,8 +12,6 @@ from website.models import (
     Bid,
     Blocked,
     ChatBotLog,
-    Company,
-    CompanyAdmin,
     Contribution,
     Domain,
     Hunt,
@@ -23,8 +21,12 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
+    Organization,
+    OrganizationAdmin,
     Payment,
     Points,
+    Post,
+    PRAnalysisReport,
     Project,
     SlackIntegration,
     Subscription,
@@ -54,14 +56,14 @@ class SubscriptionResource(resources.ModelResource):
         model = Subscription
 
 
-class CompanyAdminResource(resources.ModelResource):
+class OrganizationAdminResource(resources.ModelResource):
     class Meta:
-        model = CompanyAdmin
+        model = OrganizationAdmin
 
 
-class CompanyResource(resources.ModelResource):
+class OrganizationResource(resources.ModelResource):
     class Meta:
-        model = Company
+        model = Organization
 
 
 class WalletResource(resources.ModelResource):
@@ -152,7 +154,7 @@ class DomainAdminPanel(ImportExportModelAdmin):
     resource_class = DomainResource
     list_display = (
         "name",
-        "company",
+        "get_organization",
         "url",
         "logo",
         "clicks",
@@ -164,12 +166,22 @@ class DomainAdminPanel(ImportExportModelAdmin):
         "created",
         "modified",
     )
-    search_fields = ["name", "company__name", "url"]
+    search_fields = ["name", "organization__name", "url"]
+
+    def get_organization(self, obj):
+        return obj.organization.name if obj.organization else "N/A"
+
+    get_organization.short_description = "Organization"
 
 
-class CompanyUserAdmin(ImportExportModelAdmin):
-    resource_class = CompanyAdminResource
-    list_display = ("role", "user", "company", "domain", "is_active")
+class OrganizationUserAdmin(ImportExportModelAdmin):
+    resource_class = OrganizationAdminResource
+    list_display = ("role", "user", "get_organization", "domain", "is_active")
+
+    def get_organization(self, obj):
+        return obj.organization.name if obj.organization else "N/A"
+
+    get_organization.short_description = "Organization"
 
 
 class SubscriptionAdmin(ImportExportModelAdmin):
@@ -183,8 +195,8 @@ class SubscriptionAdmin(ImportExportModelAdmin):
     )
 
 
-class CompanyAdmins(ImportExportModelAdmin):
-    resource_class = CompanyResource
+class OrganizationAdmins(ImportExportModelAdmin):
+    resource_class = OrganizationResource
     list_display = (
         "admin",
         "name",
@@ -419,6 +431,11 @@ class ContributionAdmin(admin.ModelAdmin):
     date_hierarchy = "created"
 
 
+class PostAdmin(admin.ModelAdmin):
+    list_display = ("title", "author", "created_at", "image")
+    prepopulated_fields = {"slug": ("title",)}
+
+
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Bid, BidAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)
@@ -427,8 +444,8 @@ admin.site.register(Domain, DomainAdminPanel)
 admin.site.register(Issue, IssueAdmin)
 admin.site.register(Points, PointsAdmin)
 admin.site.register(Hunt, HuntAdmin)
-admin.site.register(CompanyAdmin, CompanyUserAdmin)
-admin.site.register(Company, CompanyAdmins)
+admin.site.register(OrganizationAdmin, OrganizationUserAdmin)
+admin.site.register(Organization, OrganizationAdmins)
 admin.site.register(Subscription, SubscriptionAdmin)
 admin.site.register(Wallet, WalletAdmin)
 admin.site.register(Winner, WinnerAdmin)
@@ -449,3 +466,5 @@ admin.site.register(Tag, TagAdmin)
 admin.site.register(Integration)
 admin.site.register(SlackIntegration)
 admin.site.register(Activity)
+admin.site.register(PRAnalysisReport)
+admin.site.register(Post, PostAdmin)

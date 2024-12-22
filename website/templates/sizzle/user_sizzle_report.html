@@ -22,19 +22,21 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th>Date</th>
+                    <th nowrap>Date</th>
                     <th>Issue Title</th>
-                    <th>Duration</th>
-                    <th>Start Time</th>
+                    <th nowrap>Duration</th>
+                    <th nowrap>Start Time</th>
+                    <th nowrap>End Time</th>
                 </tr>
             </thead>
             <tbody>
                 {% for log in response_data %}
                     <tr>
-                        <td>{{ log.date }}</td>
+                        <td nowrap>{{ log.date }}</td>
                         <td>{{ log.issue_title }}</td>
-                        <td>{{ log.duration }}</td>
-                        <td>{{ log.start_time }}</td>
+                        <td nowrap>{{ log.duration }}</td>
+                        <td nowrap>{{ log.start_time }}</td>
+                        <td nowrap>{{ log.end_time }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
