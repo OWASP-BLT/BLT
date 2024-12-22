@@ -35,7 +35,7 @@
         <div class="flex items-center md:justify-between w-full md:h-max mt-5 flex-col md:flex-row">
             <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Domains</p>
             <div class="w-full md:w-[15%] flex justify-center md:justify-end mr-10">
-                <a href="{% url 'add_domain' company %}"
+                <a href="{% url 'add_domain' organization %}"
                    class="flex items-center justify-center md:justify-center px-16 py-7 bg-[#DC4654] rounded-xl hover:bg-red-600 transition-all">
                     <i class="fa-sharp fa-solid fa-plus fa-xl text-white"></i>
                 </a>
@@ -64,10 +64,10 @@
                                     <p class="text-sm text-gray-500 truncate dark:text-gray-400">{{ domain.url }}</p>
                                 </div>
                                 <div class="inline-flex items-center text-base font-semibold text-gray-900 ">
-                                    <a href="{% url 'edit_domain' company domain.id %}">Edit</a>
+                                    <a href="{% url 'edit_domain' organization domain.id %}">Edit</a>
                                     <a class="ml-4" href="{% url 'view_domain' domain.id %}">View</a>
                                     <form id="deleteForm"
-                                          action="{% url 'add_domain' company %}"
+                                          action="{% url 'add_domain' organization %}"
                                           method="post"
                                           class="inline">
                                         {% csrf_token %}

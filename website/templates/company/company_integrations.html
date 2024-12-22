@@ -35,7 +35,7 @@
         <div class="flex items-center md:justify-between w-full md:h-max mt-5 flex-col md:flex-row">
             <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Integrations</p>
             <div class="w-full md:w-[15%] flex justify-center md:justify-end mr-10">
-                <a href="{% url 'add_slack_integration' company %}"
+                <a href="{% url 'add_slack_integration' organization %}"
                    class="flex items-center justify-center md:justify-center rounded-xl p-8 hover:opacity-80 transition-all">
                     <img src="{% static 'images/slack_icon.png' %}"
                          alt="BACON Project Image"
@@ -70,10 +70,10 @@
                                     <span class="font-bold">Channel Name:</span> #{{ slack_integration.default_channel_name }}
                                 </p>
                             {% endif %}
-                            <a href="{% url 'add_slack_integration' company %}"
+                            <a href="{% url 'add_slack_integration' organization %}"
                                class="font-normal text-base">Edit <i class="fa fa-pencil" aria-hidden="true"></i></a>
                             <form method="post"
-                                  action="{% url 'add_slack_integration' company %}"
+                                  action="{% url 'add_slack_integration' organization %}"
                                   class="mt-2">
                                 {% csrf_token %}
                                 <input type="hidden" name="_method" value="delete">

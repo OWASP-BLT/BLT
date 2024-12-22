@@ -21,7 +21,7 @@
             <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Edit Domain</p>
         </div>
         <form method="post"
-              action="{% url 'edit_domain' company domain.id %}"
+              action="{% url 'edit_domain' organization domain.id %}"
               enctype="multipart/form-data"
               class="w-[96%] bg-white rounded-2xl p-10 my-10 shadow-md">
             {% csrf_token %}
@@ -64,13 +64,13 @@
                                class="block text-sm font-medium leading-6 text-gray-900">Organization</label>
                         <div class="mt-2">
                             <select id="company"
-                                    name="company"
-                                    autocomplete="company-name"
+                                    name="organization"
+                                    autocomplete="organization-name"
                                     class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:max-w-xs sm:text-sm sm:leading-6">
-                                {% for company in companies %}
-                                    <option value="{{ company.id }}"
-                                            {% if domain.company.id == company.id %}selected{% endif %}>
-                                        {{ company.name }}
+                                {% for organization in organizations %}
+                                    <option value="{{ organization.id }}"
+                                            {% if domain.organization.id == organization.id %}selected{% endif %}>
+                                        {{ organization.name }}
                                     </option>
                                 {% endfor %}
                             </select>
