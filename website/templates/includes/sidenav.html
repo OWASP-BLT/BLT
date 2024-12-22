@@ -40,9 +40,9 @@
         <div class="overflow-auto no-scrollbar">
             <ul class="font-medium text-2xl mt-6 mb-0">
                 <!-- Organizations Header Link -->
-                <li class="mb-2 {% if '/companies/' in request.path %}bg-gray-200{% endif %}">
+                <li class="mb-2 {% if '/organizations/' in request.path %}bg-gray-200{% endif %}">
                     <a href="{% url 'domain_lists' %}"
-                       class="flex items-center w-full no-underline p-2 {% if '/companies/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                       class="flex items-center w-full no-underline p-2 {% if '/organizations/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                         <div class="icon text-red-500">
                             <i class="fas fa-building fa-lg"></i>
                         </div>

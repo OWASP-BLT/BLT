@@ -272,9 +272,9 @@
                                     <!-- edit button for edit existing stuff -->
                                     <button id="EditPrizeButton"
                                             type="button"
-                                            onclick="editPrize(event, {{ prize.id }}, '{{ prize.name }}', {{ prize.value }}, {{ prize.no_of_eligible_projects }}, {{ prize.valid_submissions_eligible|yesno:"true,false" }}, '{{ prize.description }}', {{ company }})"
+                                            onclick="editPrize(event, {{ prize.id }}, '{{ prize.name }}', {{ prize.value }}, {{ prize.no_of_eligible_projects }}, {{ prize.valid_submissions_eligible|yesno:"true,false" }}, '{{ prize.description }}', {{ organization }})"
                                             class="absolute top-2 left-2 text-red-500">Edit</button>
-                                    <button onclick="removePrize(event, {{ prize.id }}, {{ company }})"
+                                    <button onclick="removePrize(event, {{ prize.id }}, {{ organization }})"
                                             class="absolute top-2 right-2 text-red-500">x</button>
                                     <br>
                                     <h2 class="text-2xl font-bold mb-4 text-gray-800">{{ prize.name|slice:8 }}...</h2>

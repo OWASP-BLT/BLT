@@ -3,7 +3,7 @@
 {% load gravatar %}
 {% load static %}
 {% block title %}
-    Admin Management - {{ company.name }} - {% env 'PROJECT_NAME' %} Dashboard
+    Admin Management - {{ organization.name }} - {% env 'PROJECT_NAME' %} Dashboard
 {% endblock title %}
 {% block description %}
     Manage admins and their roles within the {% env 'PROJECT_NAME' %} dashboard. You can update, assign new roles, and more.
@@ -12,7 +12,7 @@
     admin management, {% env 'PROJECT_NAME' %}, role management, company, dashboard, user roles, moderator, admin, user profile
 {% endblock keywords %}
 {% block og_title %}
-    Admin Management - {{ company.name }} - {% env 'PROJECT_NAME' %} Dashboard
+    Admin Management - {{ organization.name }} - {% env 'PROJECT_NAME' %} Dashboard
 {% endblock og_title %}
 {% block og_description %}
     View and manage admins and their roles within the company using the {% env 'PROJECT_NAME' %} dashboard.

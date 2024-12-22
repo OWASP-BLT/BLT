@@ -26,8 +26,8 @@
                         <i class="fa-solid fa-bug fa-2x text-black"></i>
                     </div>
                     <div>
-                        <a href="{% url 'company_manage_bugs' company %}">
-                            <p class="text-black text-3xl font-bold">{{ total_info.total_company_bugs }}</p>
+                        <a href="{% url 'organization_manage_bugs' organization %}">
+                            <p class="text-black text-3xl font-bold">{{ total_info.total_organization_bugs }}</p>
                             <p class="text-black text-md font-extralight">Total Bugs</p>
                         </a>
                     </div>
@@ -39,7 +39,7 @@
                         <i class="fa-sharp fa-solid fa-flag fa-2x text-black"></i>
                     </div>
                     <div>
-                        <a href="{% url 'company_manage_bughunts' company %}">
+                        <a href="{% url 'organization_manage_bughunts' organization %}">
                             <p class="text-black text-3xl font-bold">{{ total_info.total_bug_hunts }}</p>
                             <p class="text-black text-md font-extralight">Bug Bounties</p>
                         </a>
@@ -52,7 +52,7 @@
                         <i class="fa-sharp fa-solid fa-globe fa-2x text-black"></i>
                     </div>
                     <div>
-                        <a href="{% url 'company_manage_domains' company %}">
+                        <a href="{% url 'organization_manage_domains' organization %}">
                             <p class="text-black text-3xl font-bold">{{ total_info.total_domains }}</p>
                             <p class="text-black text-md font-extralight">Domains</p>
                         </a>
