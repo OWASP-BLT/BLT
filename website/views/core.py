@@ -39,13 +39,13 @@ from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 from website.models import (
     Badge,
     ChatBotLog,
+    Company,
     Domain,
     Issue,
     Suggestion,
     SuggestionVotes,
     UserProfile,
     Wallet,
-    Company
 )
 from website.utils import safe_redirect_allowed
 
@@ -379,43 +379,64 @@ def set_vote_status(request):
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
 
 
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from django.http import JsonResponse
-from django.contrib import messages
 import json
 import os
+
 import requests
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.shortcuts import render
+from giturlparse import parse
+
 
 @login_required
 def add_suggestions(request):
-    if request.method == "POST": 
-        user = request.user 
-        data = json.loads(request.body) 
-        title = data.get("title") 
-        description = data.get("description", "") 
-        company_id = data.get("company") 
-        if title and description and user: 
-            company = Company.objects.get(id=company_id) 
-            suggestion = Suggestion(user=user, title=title, description=description, company=company) 
+    if request.method == "POST":
+        user = request.user
+        data = json.loads(request.body)
+        title = data.get("title")
+        description = data.get("description", "")
+        company_id = data.get("company")
+        if title and description and user:
+            if company_id:
+                try:
+                    company = Company.objects.get(id=company_id)
+                except Company.DoesNotExist:
+                    company = None
+            else:
+                company = None
+            suggestion = Suggestion(
+                user=user, title=title, description=description, company=company
+            )
             suggestion.save()
 
             # GitHub issue creation
             github_repo_url = os.environ.get("GITHUB_REPO_URL")
             github_token = os.environ.get("GITHUB_ACCESS_TOKEN")
-            issue = {
+
+            github_url = github_repo_url.replace("https", "git").replace("http", "git") + ".git"
+            p = parse(github_url)
+
+            url = "https://api.github.com/repos/%s/%s/issues" % (p.owner, p.repo)
+
+            company_name = company.name if company else ""
+            company_text = f" for company: {company_name}" if company else ""
+            suggestion = {
                 "title": title,
-                "body": description,
-                "milestone": "💡 Suggestions",  # Assuming '💡 Suggestions' is the correct milestone
-                "labels": ["suggestion"]
+                "body": description + "\n\n" + " Suggested by " + str(user) + company_text,
+                "milestone": 42,
             }
-            
+
             if github_repo_url and github_token:
-                headers = {"Authorization": f"token {github_token}"}
-                response = requests.post(f"{github_repo_url}/issues", json=issue, headers=headers)
-                
+                response = requests.post(
+                    url, json.dumps(suggestion), headers={"Authorization": "token " + github_token}
+                )
+
                 if response.status_code == 201:
-                    messages.success(request, "Suggestion added successfully and GitHub issue created.")
+                    messages.success(
+                        request, "Suggestion added successfully and GitHub issue created."
+                    )
                 else:
                     messages.warning(request, "Suggestion added but failed to create GitHub issue.")
             else:
@@ -426,10 +447,8 @@ def add_suggestions(request):
             messages.error(request, "Please fill all the fields.")
             return JsonResponse({"status": "error"}, status=400)
 
-    companies = Company.objects.all() 
-    print(companies)
+    companies = Company.objects.all()
     return render(request, "suggestions/add_suggestion.html", {"companies": companies})
-
 
 
 class GoogleLogin(SocialLoginView):
@@ -620,7 +639,9 @@ class StatsDetailView(TemplateView):
 def view_suggestions(request):
     suggestion = Suggestion.objects.all()
     companies = Company.objects.all()
-    return render(request, "feature_suggestion.html", {"suggestions": suggestion, "companies": companies})
+    return render(
+        request, "feature_suggestion.html", {"suggestions": suggestion, "companies": companies}
+    )
 
 
 def sitemap(request):
