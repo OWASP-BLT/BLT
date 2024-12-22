@@ -1238,7 +1238,9 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
 
 
 @login_required(login_url="/accounts/login")
-def organization_dashboard_hunt_detail(request, pk, template="organization_dashboard_hunt_detail.html"):
+def organization_dashboard_hunt_detail(
+    request, pk, template="organization_dashboard_hunt_detail.html"
+):
     hunt = get_object_or_404(Hunt, pk=pk)
     return render(request, template, {"hunt": hunt})
 
