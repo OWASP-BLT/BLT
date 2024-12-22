@@ -103,7 +103,7 @@
                                 <p class="text-center font-bold text-md mt-1 group-hover:opacity-100">{{ manager.username }}</p>
                                 <p class="text-sm text-gray-500 text-center group-hover:opacity-100">Domain Manager</p>
                             </a>
-                            {% if domain.company_admin == request.user %}
+                            {% if domain.organization_admin == request.user %}
                                 <button class="hove_button p-2 bg-red-500 text-white opacity-0 group-hover:opacity-100 hover:bg-red-700"
                                         data-manager-id="{{ manager.id }}"
                                         data-domain-id="{{ domain.id }}"
@@ -183,7 +183,7 @@
 
     function getUserOptions(excludeList) {
         let optionsHtml = '<option value="" disabled selected>Select a user</option>';
-        {% for user in company_users %}
+        {% for user in organization_users %}
             if (!assignedUsers.includes('{{ user.username }}') && !excludeList.includes('{{ user.username }}')) {
                 optionsHtml += `<option value="{{ user.username }}">{{ user.username }} ({{ user.email }})</option>`;
             }

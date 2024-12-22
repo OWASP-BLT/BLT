@@ -62,7 +62,7 @@ def add_domain_to_organization(request):
     if request.method == "POST":
         domain = request.POST.get("domain")
         domain = Domain.objects.get(id=domain)
-        organization_name = request.POST.get("company")
+        organization_name = request.POST.get("organization")
         organization = Organization.objects.filter(name=organization_name).first()
 
         if not organization:
@@ -350,7 +350,7 @@ class Joinorganization(TemplateView):
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
-        name = request.POST["company"]
+        name = request.POST["organization"]
         try:
             organization_exists = Organization.objects.get(name=name)
             return JsonResponse({"status": "There was some error"})

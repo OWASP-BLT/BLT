@@ -20,7 +20,7 @@
         <div class="flex items-center md:justify-between w-full md:h-max mt-5 flex-col md:flex-row">
             <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Bughunts</p>
             <div class="w-full md:w-[15%] flex justify-center md:justify-end mr-10">
-                <a href="{% url 'add_bughunt' company %}"
+                <a href="{% url 'add_bughunt' organization %}"
                    class="flex items-center justify-center md:justify-center px-16 py-7 bg-[#DC4654] rounded-xl hover:bg-red-600 transition-all">
                     <i class="fa-sharp fa-solid fa-plus fa-xl text-white"></i>
                 </a>
@@ -51,19 +51,19 @@
                                 <ul class="py-2 text-sm text-gray-700 dark:text-gray-200"
                                     aria-labelledby="dropdownDefaultButton">
                                     <li>
-                                        <a href="{% url 'organization_manage_bughunts' company %}"
+                                        <a href="{% url 'organization_manage_bughunts' organization %}"
                                            class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">All</a>
                                     </li>
                                     <li>
-                                        <a href="{% url 'organization_manage_bughunts' company %}?filter=ongoing"
+                                        <a href="{% url 'organization_manage_bughunts' organization %}?filter=ongoing"
                                            class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Ongoing</a>
                                     </li>
                                     <li>
-                                        <a href="{% url 'organization_manage_bughunts' company %}?filter=draft"
+                                        <a href="{% url 'organization_manage_bughunts' organization %}?filter=draft"
                                            class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Draft</a>
                                     </li>
                                     <li>
-                                        <a href="{% url 'organization_manage_bughunts' company %}?filter=ended"
+                                        <a href="{% url 'organization_manage_bughunts' organization %}?filter=ended"
                                            class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Ended</a>
                                     </li>
                                 </ul>
@@ -114,7 +114,7 @@
                                         </td>
                                     {% else %}
                                         <td class="px-6 py-4 text-right">
-                                            <a href="{% url 'add_bughunt' company %}?hunt={{ hunt.id }}"
+                                            <a href="{% url 'add_bughunt' organization %}?hunt={{ hunt.id }}"
                                                class="font-medium text-blue-600 hover:underline">Edit</a>
                                         </td>
                                     {% endif %}
