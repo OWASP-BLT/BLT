@@ -39,9 +39,9 @@ from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 from website.models import (
     Badge,
     ChatBotLog,
-    Company,
     Domain,
     Issue,
+    Organization,
     PRAnalysisReport,
     Suggestion,
     SuggestionVotes,
@@ -406,17 +406,17 @@ def add_suggestions(request):
         data = json.loads(request.body)
         title = data.get("title")
         description = data.get("description", "")
-        company_id = data.get("company")
+        organization_id = data.get("organization")
         if title and description and user:
-            if company_id:
+            if organization_id:
                 try:
-                    company = Company.objects.get(id=company_id)
-                except Company.DoesNotExist:
-                    company = None
+                    organization = Organization.objects.get(id=organization_id)
+                except Organization.DoesNotExist:
+                    organization = None
             else:
-                company = None
+                organization = None
             suggestion = Suggestion(
-                user=user, title=title, description=description, company=company
+                user=user, title=title, description=description, organization=organization
             )
             suggestion.save()
 
@@ -429,11 +429,11 @@ def add_suggestions(request):
 
             url = "https://api.github.com/repos/%s/%s/issues" % (p.owner, p.repo)
 
-            company_name = company.name if company else ""
-            company_text = f" for company: {company_name}" if company else ""
+            organization_name = organization.name if organization else ""
+            organization_text = f" for company: {organization_name}" if organization else ""
             suggestion = {
                 "title": title,
-                "body": description + "\n\n" + " Suggested by " + str(user) + company_text,
+                "body": description + "\n\n" + " Suggested by " + str(user) + organization_text,
                 "milestone": 42,
             }
 
