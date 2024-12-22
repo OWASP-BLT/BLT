@@ -84,12 +84,13 @@ def check_status(request):
                     "params": [],
                 },
                 auth=HTTPBasicAuth(bitcoin_rpc_user, bitcoin_rpc_password),
+                timeout=2,  # Set a timeout to avoid hanging
             )
             if response.status_code == 200:
                 data = response.json().get("result", {})
                 status["bitcoin"] = True
                 status["bitcoin_block"] = data.get("blocks", None)
-        except Exception as e:
+        except requests.exceptions.RequestException as e:
             print(f"Bitcoin Core Node Error: {e}")
 
         try:
@@ -110,14 +111,12 @@ def check_status(request):
         else:
             try:
                 headers = {"Authorization": f"token {github_token}"}
-                response = requests.get("https://api.github.com/user/repos", headers=headers)
-
-                print(f"Response Status Code: {response.status_code}")
-                print(f"Response Content: {response.json()}")
+                response = requests.get(
+                    "https://api.github.com/user/repos", headers=headers, timeout=5
+                )
 
                 if response.status_code == 200:
                     status["github"] = True
-                    print("GitHub API token has repository access.")
                 else:
                     status["github"] = False
                     print(
@@ -228,7 +227,8 @@ def chatbot_conversation(request):
 
         if request_count >= DAILY_REQUEST_LIMIT:
             return Response(
-                {"error": "Daily request limit exceeded."}, status=status.HTTP_429_TOO_MANY_REQUESTS
+                {"error": "Daily request limit exceeded."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
         question = request.data.get("question", "")
@@ -321,7 +321,10 @@ def vote_suggestions(request):
 
             if up_vote or down_vote:
                 voted = SuggestionVotes.objects.create(
-                    user=user, suggestion=suggestion, up_vote=up_vote, down_vote=down_vote
+                    user=user,
+                    suggestion=suggestion,
+                    up_vote=up_vote,
+                    down_vote=down_vote,
                 )
 
                 if up_vote:
@@ -643,7 +646,8 @@ def get_last_commit_date():
     try:
         return (
             subprocess.check_output(
-                ["git", "log", "-1", "--format=%cd"], cwd=os.path.dirname(os.path.dirname(__file__))
+                ["git", "log", "-1", "--format=%cd"],
+                cwd=os.path.dirname(os.path.dirname(__file__)),
             )
             .decode("utf-8")
             .strip()
