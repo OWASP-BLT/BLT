@@ -618,13 +618,15 @@ BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "yourpassword")
 BITCOIN_RPC_HOST = os.environ.get("BITCOIN_RPC_HOST", "localhost")
 BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")
 
-ASGI_APPLICATION = 'blt.asgi.application'
+ASGI_APPLICATION = "blt.asgi.application"
 
 CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('localhost', 6379)],  # Or use the appropriate Redis service address if deployed
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [
+                ("localhost", 6379)
+            ],  # Or use the appropriate Redis service address if deployed
         },
     },
 }

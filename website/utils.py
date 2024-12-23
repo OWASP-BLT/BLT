@@ -1,13 +1,14 @@
+import ast
+import difflib
 import os
 import re
 import time
 from collections import deque
 from urllib.parse import urlparse, urlsplit, urlunparse
-import ast
-import difflib
-import numpy as np
-import requests
 
+import numpy as np
+import openai
+import requests
 from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
@@ -15,7 +16,6 @@ from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
 
 from .models import PRAnalysisReport
-import openai
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 GITHUB_API_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
@@ -190,6 +190,7 @@ def format_timedelta(td):
     minutes, seconds = divmod(remainder, 60)
     return f"{hours}h {minutes}m {seconds}s"
 
+
 def fetch_github_data(owner, repo, endpoint, number):
     """
     Fetch data from GitHub API for a given repository endpoint.
@@ -253,9 +254,7 @@ def generate_embedding(text, retries=2, backoff_factor=2):
     for attempt in range(retries):
         try:
             response = openai.embeddings.create(
-                model="text-embedding-ada-002",
-                input=text,
-                encoding_format="float"
+                model="text-embedding-ada-002", input=text, encoding_format="float"
             )
             # response = {
             # "object": "list",
@@ -277,13 +276,13 @@ def generate_embedding(text, retries=2, backoff_factor=2):
             #     }
             # }
             # Extract the embedding from the response
-            embedding = response['data'][0]['embedding']
+            embedding = response["data"][0]["embedding"]
             return np.array(embedding)
-        
+
         except openai.RateLimitError as e:
             # If rate-limiting error occurs, wait and retry
             print(f"Rate-limiting error encountered: {e}. Retrying in {2 ** attempt} seconds.")
-            time.sleep(2 ** attempt)  # Exponential backoff
+            time.sleep(2**attempt)  # Exponential backoff
 
         except Exception as e:
             # For other errors, print the error and return None
@@ -292,6 +291,7 @@ def generate_embedding(text, retries=2, backoff_factor=2):
 
     print(f"Failed to complete request after {retries} attempts.")
     return None
+
 
 def cosine_similarity(embedding1, embedding2):
     """
@@ -306,6 +306,7 @@ def cosine_similarity(embedding1, embedding2):
 
     similarity_score = similarity * 100  # Scale similarity to 0-100
     return round(similarity_score, 2)
+
 
 def extract_function_signatures_and_content(repo_path):
     """

@@ -1,15 +1,23 @@
-import json
 import asyncio
-import tempfile
-import os
-from git import Repo
-from channels.generic.websocket import AsyncWebsocketConsumer
 import difflib
-from website.utils import extract_function_signatures_and_content, extract_django_models, generate_embedding, cosine_similarity, compare_model_fields
+import json
+import os
 import subprocess
+import tempfile
+
+from channels.generic.websocket import AsyncWebsocketConsumer
+from git import Repo
+
+from website.utils import (
+    compare_model_fields,
+    cosine_similarity,
+    extract_django_models,
+    extract_function_signatures_and_content,
+    generate_embedding,
+)
+
 
 class SimilarityConsumer(AsyncWebsocketConsumer):
-
     async def connect(self):
         # Accept the WebSocket connection
         self.room_group_name = "similarity_check"
@@ -40,15 +48,13 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
         repo2 = data.get("repo2")  # GitHub URL or ZIP file path
 
         if not repo1 or not repo2 or not type1 or not type2:
-            await self.send(json.dumps({
-                "error": "Both repositories and their types are required."
-            }))
+            await self.send(
+                json.dumps({"error": "Both repositories and their types are required."})
+            )
             return
 
         if type1 not in ["github", "zip"] or type2 not in ["github", "zip"]:
-            await self.send(json.dumps({
-                "error": "Invalid type. Must be 'github' or 'zip'."
-            }))
+            await self.send(json.dumps({"error": "Invalid type. Must be 'github' or 'zip'."}))
             return
 
         try:
@@ -63,26 +69,28 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
             matching_details = await self.run_similarity_analysis(repo1_path, repo2_path)
 
             if not matching_details:
-                await self.send(json.dumps({
-                    "status": "error",
-                    "error": "No matching details found between the repositories."
-                }))
+                await self.send(
+                    json.dumps(
+                        {
+                            "status": "error",
+                            "error": "No matching details found between the repositories.",
+                        }
+                    )
+                )
                 await self.close()
                 return
 
             # Send the result back to the client
-            await self.send(json.dumps({
-                "status": "success",
-                "matching_details": matching_details
-            }))
+            await self.send(json.dumps({"status": "success", "matching_details": matching_details}))
             await self.close()
 
         except Exception as e:
             # Handle unexpected errors and send an error message
-            await self.send(json.dumps({
-                "status": "error",
-                "error": "Please check the repositories and try again."
-            }))
+            await self.send(
+                json.dumps(
+                    {"status": "error", "error": "Please check the repositories and try again."}
+                )
+            )
             await self.close()
 
         finally:
@@ -127,7 +135,6 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
             except Exception as e:
                 # General error handling for unexpected issues
                 raise Exception(f"Unexpected error during GitHub cloning: {str(e)}")
-
 
         elif source_type == "zip":
             # Handle ZIP extraction (Add your ZIP handling logic here)
@@ -180,7 +187,9 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
             if i % 5 == 0:
                 # Ping the frontend every 5 iterations
                 try:
-                    asyncio.run(self.send(json.dumps({"ping": "ping"})))  # Send ping from the worker thread
+                    asyncio.run(
+                        self.send(json.dumps({"ping": "ping"}))
+                    )  # Send ping from the worker thread
                 except Exception as e:
                     return None  # Stop the analysis if the connection is lost
             i += 1
@@ -203,8 +212,12 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
                 )
 
                 # Signature similarity using difflib
-                signature1 = f"{func1['signature']['name']}({', '.join(func1['signature']['args'])})"
-                signature2 = f"{func2['signature']['name']}({', '.join(func2['signature']['args'])})"
+                signature1 = (
+                    f"{func1['signature']['name']}({', '.join(func1['signature']['args'])})"
+                )
+                signature2 = (
+                    f"{func2['signature']['name']}({', '.join(func2['signature']['args'])})"
+                )
 
                 signature_similarity = (
                     difflib.SequenceMatcher(None, signature1, signature2).ratio() * 100
@@ -220,9 +233,9 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
 
                 # Aggregate similarity
                 overall_similarity = (
-                    (name_similarity * 0.25) +  # 25% for name similarity
-                    (signature_similarity * 0.25) +  # 25% for signature similarity
-                    (content_similarity_openai * 0.5)  # 50% for content similarity
+                    (name_similarity * 0.25)  # 25% for name similarity
+                    + (signature_similarity * 0.25)  # 25% for signature similarity
+                    + (content_similarity_openai * 0.5)  # 50% for content similarity
                 )
 
                 matching_details["functions"].append(
@@ -260,12 +273,10 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
                         "field_comparison": model_fields_similarity,
                     }
                 )
-         # Notify progress after completing all comparisons (100% progress)
+        # Notify progress after completing all comparisons (100% progress)
         try:
             asyncio.run(self.send(json.dumps({"progress": 100, "status": "progress"})))
         except Exception as e:
             return None
 
         return matching_details
-
-
