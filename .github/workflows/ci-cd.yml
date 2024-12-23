@@ -154,8 +154,6 @@ jobs:
         run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
 
   docker-test:
-    name: Docker Test
-    needs: code-ql
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
