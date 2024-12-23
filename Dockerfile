@@ -8,8 +8,10 @@ WORKDIR /blt
 RUN apt-get update && \
     apt-get install -y postgresql-client libpq-dev \
     libmemcached11 libmemcachedutil2 libmemcached-dev libz-dev \
-    dos2unix xvfb && \
+    dos2unix && \
+    apt-get install -y xvfb && \
     rm -rf /var/lib/apt/lists/*
+
 
 # Install wget and add Google Chrome repository
 # RUN apt-get install -y wget
