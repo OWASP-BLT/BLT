@@ -66,7 +66,8 @@ COPY . /blt
 
 # Convert line endings and set permissions
 RUN dos2unix Dockerfile docker-compose.yml entrypoint.sh ./blt/settings.py
-RUN [ -f .env ] && dos2unix .env 
+# Check if .env exists and run dos2unix on it, otherwise skip
+RUN if [ -f /blt/.env ]; then dos2unix /blt/.env; fi
 RUN chmod +x /blt/entrypoint.sh
 
 ENTRYPOINT ["/blt/entrypoint.sh"]
