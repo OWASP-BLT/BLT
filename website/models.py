@@ -888,21 +888,19 @@ class Contributor(models.Model):
 
 class Project(models.Model):
     organization = models.ForeignKey(
-        Organization,
-        null=True,
-        blank=True,
-        related_name="projects",
-        on_delete=models.CASCADE
+        Organization, null=True, blank=True, related_name="projects", on_delete=models.CASCADE
     )
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
-    url = models.URLField(unique=True, null=True, blank=True)  # Made url nullable in case of no website
+    url = models.URLField(
+        unique=True, null=True, blank=True
+    )  # Made url nullable in case of no website
     twitter = models.CharField(max_length=30, null=True, blank=True)
     facebook = models.URLField(null=True, blank=True)
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
-    modified = models.DateTimeField(auto_now=True)     # Standardized field name
+    modified = models.DateTimeField(auto_now=True)  # Standardized field name
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -1224,11 +1222,7 @@ def verify_file_upload(sender, instance, **kwargs):
 
 
 class Repo(models.Model):
-    project = models.ForeignKey(
-        Project,
-        related_name="repos",
-        on_delete=models.CASCADE
-    )
+    project = models.ForeignKey(Project, related_name="repos", on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField(null=True, blank=True)  # Made nullable for optional descriptions
@@ -1239,7 +1233,7 @@ class Repo(models.Model):
     stars = models.IntegerField(default=0)
     forks = models.IntegerField(default=0)
     open_issues = models.IntegerField(default=0)
-    tags = models.ManyToManyField('Tag', blank=True)
+    tags = models.ManyToManyField("Tag", blank=True)
     last_updated = models.DateTimeField(null=True, blank=True)
     total_issues = models.IntegerField(default=0)
     project_visit_count = models.IntegerField(default=0)
