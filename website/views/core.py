@@ -1,9 +1,11 @@
 import json
 import os
 import subprocess
+import tracemalloc
 import urllib
 from datetime import datetime, timezone
 
+import psutil
 import requests
 import requests.exceptions
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
@@ -62,11 +64,16 @@ def check_status(request):
     status = cache.get("service_status")
 
     if not status:
+        tracemalloc.start()  # Start memory profiling
+
         status = {
             "bitcoin": False,
             "bitcoin_block": None,
             "sendgrid": False,
             "github": False,
+            "memory_info": psutil.virtual_memory()._asdict(),
+            "top_memory_consumers": [],
+            "memory_profiling": {},
         }
 
         bitcoin_rpc_user = os.getenv("BITCOIN_RPC_USER")
@@ -84,12 +91,13 @@ def check_status(request):
                     "params": [],
                 },
                 auth=HTTPBasicAuth(bitcoin_rpc_user, bitcoin_rpc_password),
+                timeout=2,  # Set a timeout to avoid hanging
             )
             if response.status_code == 200:
                 data = response.json().get("result", {})
                 status["bitcoin"] = True
                 status["bitcoin_block"] = data.get("blocks", None)
-        except Exception as e:
+        except requests.exceptions.RequestException as e:
             print(f"Bitcoin Core Node Error: {e}")
 
         try:
@@ -110,14 +118,12 @@ def check_status(request):
         else:
             try:
                 headers = {"Authorization": f"token {github_token}"}
-                response = requests.get("https://api.github.com/user/repos", headers=headers)
-
-                print(f"Response Status Code: {response.status_code}")
-                print(f"Response Content: {response.json()}")
+                response = requests.get(
+                    "https://api.github.com/user/repos", headers=headers, timeout=5
+                )
 
                 if response.status_code == 200:
                     status["github"] = True
-                    print("GitHub API token has repository access.")
                 else:
                     status["github"] = False
                     print(
@@ -127,6 +133,27 @@ def check_status(request):
             except requests.exceptions.RequestException as e:
                 status["github"] = False
                 print(f"GitHub API Error: {e}")
+
+        # Get the top 5 processes by memory usage
+        for proc in psutil.process_iter(["pid", "name", "memory_info"]):
+            try:
+                proc_info = proc.info
+                proc_info["memory_info"] = proc_info["memory_info"]._asdict()
+                status["top_memory_consumers"].append(proc_info)
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+
+        status["top_memory_consumers"] = sorted(
+            status["top_memory_consumers"],
+            key=lambda x: x["memory_info"]["rss"],
+            reverse=True,
+        )[:5]
+
+        # Add memory profiling information
+        current, peak = tracemalloc.get_traced_memory()
+        status["memory_profiling"]["current"] = current
+        status["memory_profiling"]["peak"] = peak
+        tracemalloc.stop()
 
         cache.set("service_status", status, timeout=60)
 
@@ -228,7 +255,8 @@ def chatbot_conversation(request):
 
         if request_count >= DAILY_REQUEST_LIMIT:
             return Response(
-                {"error": "Daily request limit exceeded."}, status=status.HTTP_429_TOO_MANY_REQUESTS
+                {"error": "Daily request limit exceeded."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
         question = request.data.get("question", "")
@@ -321,7 +349,10 @@ def vote_suggestions(request):
 
             if up_vote or down_vote:
                 voted = SuggestionVotes.objects.create(
-                    user=user, suggestion=suggestion, up_vote=up_vote, down_vote=down_vote
+                    user=user,
+                    suggestion=suggestion,
+                    up_vote=up_vote,
+                    down_vote=down_vote,
                 )
 
                 if up_vote:
@@ -481,7 +512,7 @@ class StatsDetailView(TemplateView):
             "Comment": "created_date",
             "Hunt": "created",
             "Domain": "created",
-            "Company": "created",
+            "Organization": "created",
             "Project": "created",
             "Contribution": "created",
             "TimeLog": "created",
@@ -535,7 +566,7 @@ class StatsDetailView(TemplateView):
             "Domain": "fas fa-globe",
             "ExtensionUser": "fas fa-puzzle-piece",
             "Subscription": "fas fa-envelope",
-            "Company": "fas fa-building",
+            "Organization": "fas fa-building",
             "HuntPrize": "fas fa-gift",
             "IssueScreenshot": "fas fa-camera",
             "Winner": "fas fa-trophy",
@@ -543,7 +574,7 @@ class StatsDetailView(TemplateView):
             "InviteFriend": "fas fa-envelope-open",
             "UserProfile": "fas fa-id-badge",
             "IP": "fas fa-network-wired",
-            "CompanyAdmin": "fas fa-user-tie",
+            "OrganizationAdmin": "fas fa-user-tie",
             "Transaction": "fas fa-exchange-alt",
             "Payment": "fas fa-credit-card",
             "ContributorStats": "fas fa-chart-bar",
@@ -643,7 +674,8 @@ def get_last_commit_date():
     try:
         return (
             subprocess.check_output(
-                ["git", "log", "-1", "--format=%cd"], cwd=os.path.dirname(os.path.dirname(__file__))
+                ["git", "log", "-1", "--format=%cd"],
+                cwd=os.path.dirname(os.path.dirname(__file__)),
             )
             .decode("utf-8")
             .strip()
