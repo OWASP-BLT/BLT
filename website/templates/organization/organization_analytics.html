@@ -1,4 +1,4 @@
-{% extends "company/company_dashboard_base.html" %}
+{% extends "organization/organization_dashboard_base.html" %}
 {% load static %}
 {% load custom_tags %}
 {% block title %}
@@ -7,7 +7,7 @@
 {% block body %}
     {% block edit_link %}
         <div class="bottom-right">
-            <a href="https://github.com/OWASP-BLT/BLT/blob/main/company/templates/company/company_analytics.html">
+            <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_analytics.html">
                 <i class="fab fa-github"></i>
             </a>
             <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
@@ -273,7 +273,7 @@
             integrity="sha384-+94tm/qgImqyuSRr1vU2PjQIoot8h3qdaFB/xTawzWLRkcCWPricrBj5Xr45hCP1"
             crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="{% static 'company/js/index.js' %}"></script>
+    <script src="{% static 'organization/js/index.js' %}"></script>
     <script>
   // populate Chart (PIE): Bug Report  Type
   function populateBugTypePie() {

@@ -12,14 +12,14 @@
                 {% endblock title %}
             </title>
             <meta name="description"
-                  content="{% block description %}{% env 'PROJECT_NAME' %} make company bug tracking easy{% endblock description %}">
+                  content="{% block description %}{% env 'PROJECT_NAME' %} make organization bug tracking easy{% endblock description %}">
             <meta name="keywords"
-                  content="{% block keywords %}{% env 'PROJECT_NAME' %}, bug, tracking, company, easy{% endblock keywords %}">
+                  content="{% block keywords %}{% env 'PROJECT_NAME' %}, bug, tracking, organization, easy{% endblock keywords %}">
             <!-- Author Meta Tag -->
             <meta name="author" content="">
             <!-- Open Graph Meta Tags -->
             <meta property="og:title"
-                  content="{% block og_title %} {% env 'PROJECT_NAME' %} Company Dashboard{% endblock og_title %}" />
+                  content="{% block og_title %} {% env 'PROJECT_NAME' %} organization Dashboard{% endblock og_title %}" />
             <meta property="og:image" content="" />
             <meta property="og:description"
                   content="{% block og_description %} Create and manage your own Bughunt contest with ease! Add enticing prizes, specify the domain and timeline, and upload essential assets like logos and banners. Start your competition today and engage participants with a well-organized, detailed setup. {% endblock og_description %}" />
@@ -30,7 +30,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap"
               rel="stylesheet">
-        <link rel="stylesheet" href="{% static 'company/css/style.css' %}">
+        <link rel="stylesheet" href="{% static 'organization/css/style.css' %}">
         <link rel="stylesheet"
               href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
               integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
@@ -49,7 +49,7 @@
             }
         </style>
         <div class="bottom-right">
-            <a href="https://github.com/OWASP-BLT/BLT/blob/main/company/templates/company/company_dashboard_base.html">
+            <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_dashboard_base.html">
                 <i class="fab fa-github"></i>
             </a>
             <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
@@ -57,9 +57,9 @@
             </a>
         </div>
         <div class="container max-w-full min-w-full">
-            {% include "company/company_includes/sidebar.html" %}
+            {% include "organization/organization_includes/sidebar.html" %}
             <main class="main-content w-[100vw]">
-                {% include "company/company_includes/navbar.html" %}
+                {% include "organization/organization_includes/navbar.html" %}
                 {% block body %}
                 {% endblock body %}
                 {% if messages %}

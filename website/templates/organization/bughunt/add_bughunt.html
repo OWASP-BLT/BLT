@@ -1,24 +1,24 @@
-{% extends "company/company_dashboard_base.html" %}
+{% extends "organization/organization_dashboard_base.html" %}
 {% load static %}
 {% block title %}
-    Edit Bughunt
+    Add Bughunt
 {% endblock title %}
 {% block description %}
-    Update and modify your existing Bughunt details. Adjust timelines, prizes, and contest assets to keep your competition current.
+    Create a new Bughunt and add prizes for the contest. Specify the domain, timeline, and upload related assets like logos and banners.
 {% endblock description %}
 {% block keywords %}
-    Edit Bughunt, Update Bughunt, Modify Contest, Adjust Timeline, Change Prizes, Update Assets
+    Bughunt, Add Bughunt, Online Contest, Domain URL, Create Bughunt, Hunt Prizes
 {% endblock keywords %}
 {% block og_title %}
-    Edit Bughunt - Update Your Online Contest
+    Add Bughunt - Create a New Online Contest
 {% endblock og_title %}
 {% block og_description %}
-    Make changes to your Bughunt contest. Update timelines, prizes, and upload new logos and banners to keep your competition engaging.
+    Set up a Bughunt contest, add prizes, and upload logos and banners to start the competition. Specify timelines and contest details.
 {% endblock og_description %}
 {% block body %}
     <div class="bg-[#F3F5F7] flex flex-col items-center">
         <div class="w-full mt-5">
-            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Edit Bughunt</p>
+            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Add Bughunt</p>
         </div>
         <form method='post'
               action="#"
@@ -26,7 +26,6 @@
               enctype="multipart/form-data"
               class="w-[96%] bg-white rounded-2xl p-10 my-10 shadow-md">
             {% csrf_token %}
-            <input type="text" name="hunt_id" id="hunt_id" hidden value="{{ hunt.id }}">
             <div class="pb-12">
                 <h2 class="text-base font-semibold leading-7 text-gray-900">Create new online Bughunt</h2>
                 <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
@@ -39,10 +38,8 @@
                                    id="bughunt_name"
                                    autocomplete="bughunt_name"
                                    placeholder="Hunt 1.0"
-                                   value="{{ hunt.name }}"
                                    required
-                                   class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
-                                   {% if hunt.is_published %}disabled{% endif %} />
+                                   class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                         </div>
                     </div>
                     <div class="sm:col-span-3">
@@ -54,7 +51,6 @@
                                    id="domain_url"
                                    autocomplete="domain_url"
                                    placeholder="https://domain.xyz"
-                                   value="{{ hunt.url }}"
                                    required
                                    class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                         </div>
@@ -65,15 +61,9 @@
                         <div class="mt-2">
                             <select id="domain"
                                     name="domain"
-                                    value="{{ hunt.domain.id }}"
                                     autocomplete="domain-name"
                                     class="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:max-w-xs sm:text-sm sm:leading-6">
-                                {% for domain in domains %}
-                                    <option value="{{ domain.id }}"
-                                            {% if domain.id == hunt.domain.id %}selected{% endif %}>
-                                        {{ domain.name }}
-                                    </option>
-                                {% endfor %}
+                                {% for domain in domains %}<option value="{{ domain.id }}">{{ domain.name }}</option>{% endfor %}
                             </select>
                         </div>
                     </div>
@@ -94,11 +84,9 @@
                                         <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z" />
                                     </svg>
                                 </div>
-                                <input {% if hunt.is_published %}disabled{% endif %}
-                                       name="start_date"
+                                <input name="start_date"
                                        required
                                        type="text"
-                                       value="{{ hunt.starts_on }}"
                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5  "
                                        placeholder="Select date start">
                             </div>
@@ -116,7 +104,6 @@
                                 <input name="end_date"
                                        required
                                        type="text"
-                                       value="{{ hunt.end_on }}"
                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5  "
                                        placeholder="Select date end">
                             </div>
@@ -131,17 +118,9 @@
                             <div class="mt-2 flex items-center gap-x-3" id="previewLogo">
                                 <div id="previewLogoDiv"
                                      class="h-16 w-16 text-gray-300 overflow-hidden rounded-2xl text-red-500">
-                                    {% if hunt.logo %}
-                                        <img src="{{ MEDIA_URL }}/{{ hunt.logo }}"
-                                             alt=""
-                                             width="100%"
-                                             height="100%">
-                                    {% else %}
-                                        <img src="https://via.placeholder.com/100?text=No+Logo"
-                                             alt=""
-                                             width="100%"
-                                             height="100%">
-                                    {% endif %}
+                                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" />
+                                    </svg>
                                 </div>
                                 <label for="logo"
                                        class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
@@ -180,19 +159,11 @@
                                     <p class="text-xs leading-5 text-gray-600">PNG, JPG, GIF up to 10MB</p>
                                 </div>
                             </div>
-                            <div id="bannerPreview" class="mt-4">
-                                {% if hunt.banner %}
-                                    <img class="m-auto"
-                                         src="{{ MEDIA_URL }}/{{ hunt.banner }}"
-                                         alt=""
-                                         width="25%"
-                                         height="25%">
-                                {% endif %}
-                            </div>
+                            <div id="bannerPreview" class="mt-4"></div>
                         </div>
                     </div>
                 </div>
-                <div class="w-full ">{% include "company/company_includes/md_editor.html" %}</div>
+                <div class="w-full ">{% include "organization/organization_includes/md_editor.html" %}</div>
                 <div class="border-b border-gray-900/10 pb-12 mt-5">
                     <h2 class="text-base font-semibold leading-7 text-gray-900">Bughunt Prizes</h2>
                     <div class="bg-gray-100 w-full p-7">
@@ -234,7 +205,9 @@
                                    name="every_valid_submissions"
                                    id="every_valid_submissions"
                                    class="w-4 h-4">
-                            <label for="every_valid_submissions" class="ml-2">Every Valid Submissions are eligible for this prize</label>
+                            <label for="every_valid_submissions" class="ml-2">
+                                Every Valid Submissions are eligible for this prize (Cash Value Per Accepted Bug)
+                            </label>
                         </div>
                         <div class="mt-3">
                             <label for="prize_description" class="font-bold">Prize Description</label>
@@ -243,7 +216,7 @@
                                       id="prize_description"
                                       class="w-full mt-2 px-2 py-2 mb-2 border-[1px] border-gray-200 outline-none"></textarea>
                         </div>
-                        <div class="mt-3 flex flex-col" id="cryptocurrencyDiv">
+                        <div class="mt-3 flex flex-col">
                             <label class="font-bold">Will this prize will be paid in cryptocurrency?</label>
                             <p class="text-[12px] text-gray-700 ml-1">
                                 Check below if your prize is paid in cryptocurrency, and list the cash value of the cryptocurrenty and specify the crypto name in Hunt description eg: $100 USD in ETH
@@ -257,63 +230,23 @@
                             </div>
                         </div>
                         <button onclick="add_prize()"
-                                id="add_prize_button"
                                 type="button"
                                 class="w-[120px] h-[40px] mt-8 bg-red-500 text-white font-bold rounded-md hover:bg-red-600 transition-all">
                             Add Prize
                         </button>
                     </div>
                     <div class="sm:col-span-4 flex overflow-x-scroll"
-                         id="list-prize-container">
-                        {% for prize in prizes %}
-                            <div>
-                                <div id="prize-container-{{ prize.id }}"
-                                     class="bg-white rounded-lg shadow-lg p-6 w-72 mr-5 relative">
-                                    <!-- edit button for edit existing stuff -->
-                                    <button id="EditPrizeButton"
-                                            type="button"
-                                            onclick="editPrize(event, {{ prize.id }}, '{{ prize.name }}', {{ prize.value }}, {{ prize.no_of_eligible_projects }}, {{ prize.valid_submissions_eligible|yesno:"true,false" }}, '{{ prize.description }}', {{ organization }})"
-                                            class="absolute top-2 left-2 text-red-500">Edit</button>
-                                    <button onclick="removePrize(event, {{ prize.id }}, {{ organization }})"
-                                            class="absolute top-2 right-2 text-red-500">x</button>
-                                    <br>
-                                    <h2 class="text-2xl font-bold mb-4 text-gray-800">{{ prize.name|slice:8 }}...</h2>
-                                    <div class="mb-4">
-                                        <p class="text-red-500 font-bold">Cash Value (USD)</p>
-                                        <p class="text-gray-800">${{ prize.value }}</p>
-                                    </div>
-                                    <div class="mb-4">
-                                        <p class="text-gray-800 font-bold">Number of Winning Projects</p>
-                                        {% if prize.valid_submissions_eligible %}
-                                            <p class="text-gray-600">All Valid Submissions</p>
-                                        {% else %}
-                                            <p class="text-gray-600">{{ prize.no_of_eligible_projects }}</p>
-                                        {% endif %}
-                                    </div>
-                                    <div class="mb-4">
-                                        <p class="text-gray-800 font-bold">Reward Valid Submissions</p>
-                                        <p class="text-gray-600">{{ prize.valid_submissions_eligible }}</p>
-                                    </div>
-                                    <div class="mb-4">
-                                        <p class="text-red-500 font-bold">Prize Description</p>
-                                        <p class="text-gray-800">{{ prize.description|slice:55 }}...</p>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
+                         id="list-prize-container"></div>
                 </div>
                 <div class="mt-6 flex items-center justify-end gap-x-6">
                     <button type="button"
                             onclick="cancelForm()"
                             class="text-md font-semibold leading-6 text-gray-900">Cancel</button>
-                    {% if not hunt.is_published %}
-                        <button type="submit"
-                                onclick="PublishBughunt('false')"
-                                class="rounded-md bg-gray-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600">
-                            Draft
-                        </button>
-                    {% endif %}
+                    <button type="submit"
+                            onclick="PublishBughunt('false')"
+                            class="rounded-md bg-gray-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-gray-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600">
+                        Draft
+                    </button>
                     <button type="button"
                             onclick="PublishBughunt('true')"
                             class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
@@ -325,5 +258,5 @@
     </div>
 {% endblock body %}
 {% block js %}
-    <script src="{% static 'company/js/hunt_controller.js' %}"></script>
+    <script src="{% static 'organization/js/hunt_controller.js' %}"></script>
 {% endblock js %}

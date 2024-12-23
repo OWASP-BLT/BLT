@@ -81,6 +81,7 @@ matplotlib = "^3.10.0"
 openpyxl = "^3.1.5"
 atproto = "^0.0.55"
 slack-bolt = "^1.22.0"
+django-redis = "^5.4.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"

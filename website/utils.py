@@ -72,6 +72,10 @@ def get_email_from_domain(domain_name):
         return False
 
 
+import numpy as np
+from PIL import Image
+
+
 def image_validator(img):
     try:
         filesize = img.file.size
@@ -87,10 +91,16 @@ def image_validator(img):
     elif filesize > megabyte_limit * 1024 * 1024:
         error = "Max file size is %sMB" % str(megabyte_limit)
         return error
-
     elif content_type not in WHITELISTED_IMAGE_TYPES.values():
-        error = "invalid image content-type"
+        error = "Invalid image content-type"
         return error
+
+    # Images must not be single color
+    img_array = np.array(Image.open(img))
+    if img_array.std() < 10:
+        error = "Image appears to be a single color"
+        return error
+
     else:
         return True
 
