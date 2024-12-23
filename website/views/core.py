@@ -1,9 +1,11 @@
 import json
 import os
 import subprocess
+import tracemalloc
 import urllib
 from datetime import datetime, timezone
 
+import psutil
 import requests
 import requests.exceptions
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
@@ -62,11 +64,16 @@ def check_status(request):
     status = cache.get("service_status")
 
     if not status:
+        tracemalloc.start()  # Start memory profiling
+
         status = {
             "bitcoin": False,
             "bitcoin_block": None,
             "sendgrid": False,
             "github": False,
+            "memory_info": psutil.virtual_memory()._asdict(),
+            "top_memory_consumers": [],
+            "memory_profiling": {},
         }
 
         bitcoin_rpc_user = os.getenv("BITCOIN_RPC_USER")
@@ -126,6 +133,27 @@ def check_status(request):
             except requests.exceptions.RequestException as e:
                 status["github"] = False
                 print(f"GitHub API Error: {e}")
+
+        # Get the top 5 processes by memory usage
+        for proc in psutil.process_iter(["pid", "name", "memory_info"]):
+            try:
+                proc_info = proc.info
+                proc_info["memory_info"] = proc_info["memory_info"]._asdict()
+                status["top_memory_consumers"].append(proc_info)
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+
+        status["top_memory_consumers"] = sorted(
+            status["top_memory_consumers"],
+            key=lambda x: x["memory_info"]["rss"],
+            reverse=True,
+        )[:5]
+
+        # Add memory profiling information
+        current, peak = tracemalloc.get_traced_memory()
+        status["memory_profiling"]["current"] = current
+        status["memory_profiling"]["peak"] = peak
+        tracemalloc.stop()
 
         cache.set("service_status", status, timeout=60)
 
