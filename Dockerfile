@@ -33,6 +33,7 @@ RUN curl -sS -o - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-ke
     apt-get -yqq install google-chrome-stable && \
     rm -rf /var/lib/apt/lists/*
 
+RUN ln -s /usr/bin/google-chrome-stable /usr/local/bin/google-chrome
 
 
 # Install Poetry and dependencies
