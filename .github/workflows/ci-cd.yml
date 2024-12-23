@@ -175,6 +175,10 @@ jobs:
         run: |
           docker run -d --name my-container my-app
 
+      - name: Install dependencies inside Docker container
+        run: |
+          docker exec my-container poetry install --no-dev --no-interaction
+
       - name: Run tests inside Docker container
         run: |
           docker exec my-container poetry run python manage.py test -v 3 --failfast
