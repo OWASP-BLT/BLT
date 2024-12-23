@@ -9,15 +9,7 @@ RUN apt-get update && \
     apt-get install -y postgresql-client libpq-dev \
     libmemcached11 libmemcachedutil2 libmemcached-dev libz-dev \
     dos2unix && \
-    apt-get install -y xvfb && \
     rm -rf /var/lib/apt/lists/*
-
-
-# Install wget and add Google Chrome repository
-# RUN apt-get install -y wget
-# RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \ 
-#     && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list
-# RUN apt-get update && apt-get -y install google-chrome-stable
 
 # # Install Chrome WebDriver
 # RUN CHROMEDRIVER_VERSION=`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE` && \
@@ -36,7 +28,6 @@ RUN curl -sS -o - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-ke
     rm -rf /var/lib/apt/lists/*
 
 RUN ln -s /usr/bin/google-chrome-stable /usr/local/bin/google-chrome
-
 
 # Install Poetry and dependencies
 RUN pip install poetry
