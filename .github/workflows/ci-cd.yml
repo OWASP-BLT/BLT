@@ -152,3 +152,24 @@ jobs:
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
         run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
+        
+  docker-test:
+    name: Run Tests (Docker)
+    needs: code-ql
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install docker.io
+
+      - name: Build Docker image
+        run: |
+          docker build -t my-docker-image .
+
+      - name: Run tests inside Docker
+        run: |
+          docker run --rm my-docker-image poetry run python manage.py test -v 3 --failfast
