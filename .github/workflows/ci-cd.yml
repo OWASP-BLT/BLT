@@ -181,7 +181,7 @@ jobs:
 
       - name: Run tests inside Docker container
         run: |
-          docker exec my-container poetry run python manage.py test -v 3 --failfast
+          docker exec my-container poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
 
       - name: Clean up
         run: |
