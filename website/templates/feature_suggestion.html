@@ -171,11 +171,9 @@
         text-align: center;
     }
     </style>
-
     <div class="page-title">
         <h1>Suggest Features</h1>
     </div>
-
     <div class="container">
         <div class="list-section">
             <ul class="suggestion-list">
@@ -186,7 +184,13 @@
                             <p>{{ suggestion.description }}</p>
                         </div>
                         <div class="suggestion-meta">
-                            <span>Posted by {% if suggestion.user %}{{ suggestion.user }}{% else %}Anonymous{% endif %}</span>
+                            <span>Posted by
+                                {% if suggestion.user %}
+                                    {{ suggestion.user }}
+                                {% else %}
+                                    Anonymous
+                                {% endif %}
+                            </span>
                             <div class="vote-buttons">
                                 <button type="button"
                                         class="vote-button"
@@ -207,16 +211,15 @@
                 {% endfor %}
             </ul>
         </div>
-
         <div class="form-section">
             <h2>Submit Your Suggestion</h2>
             <form id="suggestionForm" class="suggestion-form">
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="title">Title</label>
-                    <input type="text" 
-                           id="title" 
-                           name="title" 
+                    <input type="text"
+                           id="title"
+                           name="title"
                            placeholder="Enter your suggestion title"
                            required>
                 </div>
@@ -231,7 +234,6 @@
             </form>
         </div>
     </div>
-
     <script>
     window.onload = function() {
         setvote();
