@@ -18,12 +18,6 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key
 RUN apt-get update && apt-get -y install google-chrome-stable
 
 
-# Install chromedriver (matching installed chrome version)
-RUN CHROME_VERSION=$(google-chrome-stable --version | awk '{print $3}' | sed 's/\..*//') && \
-    wget https://chromedriver.storage.googleapis.com/${CHROME_VERSION}.0/chromedriver_linux64.zip && \
-    unzip chromedriver_linux64.zip -d /usr/local/bin/ && \
-    rm chromedriver_linux64.zip
-
 # Install Poetry and dependencies
 RUN pip install poetry
 RUN poetry config virtualenvs.create false
