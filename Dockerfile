@@ -17,14 +17,14 @@ RUN apt-get update && \
 #     && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list
 # RUN apt-get update && apt-get -y install google-chrome-stable
 
-# Install Chrome WebDriver
-RUN CHROMEDRIVER_VERSION=`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE` && \
-    mkdir -p /opt/chromedriver-$CHROMEDRIVER_VERSION && \
-    curl -sS -o /tmp/chromedriver_linux64.zip http://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip && \
-    unzip -qq /tmp/chromedriver_linux64.zip -d /opt/chromedriver-$CHROMEDRIVER_VERSION && \
-    rm /tmp/chromedriver_linux64.zip && \
-    chmod +x /opt/chromedriver-$CHROMEDRIVER_VERSION/chromedriver && \
-    ln -fs /opt/chromedriver-$CHROMEDRIVER_VERSION/chromedriver /usr/local/bin/chromedriver
+# # Install Chrome WebDriver
+# RUN CHROMEDRIVER_VERSION=`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE` && \
+#     mkdir -p /opt/chromedriver-$CHROMEDRIVER_VERSION && \
+#     curl -sS -o /tmp/chromedriver_linux64.zip http://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip && \
+#     unzip -qq /tmp/chromedriver_linux64.zip -d /opt/chromedriver-$CHROMEDRIVER_VERSION && \
+#     rm /tmp/chromedriver_linux64.zip && \
+#     chmod +x /opt/chromedriver-$CHROMEDRIVER_VERSION/chromedriver && \
+#     ln -fs /opt/chromedriver-$CHROMEDRIVER_VERSION/chromedriver /usr/local/bin/chromedriver
 
 # Install Google Chrome
 RUN curl -sS -o - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
@@ -66,6 +66,7 @@ COPY . /blt
 
 # Convert line endings and set permissions
 RUN dos2unix Dockerfile docker-compose.yml entrypoint.sh ./blt/settings.py
+RUN [ -f .env ] && dos2unix .env 
 RUN chmod +x /blt/entrypoint.sh
 
 ENTRYPOINT ["/blt/entrypoint.sh"]
