@@ -3,8 +3,11 @@ import re
 import time
 from collections import deque
 from urllib.parse import urlparse, urlsplit, urlunparse
-
+import ast
+import difflib
+import numpy as np
 import requests
+
 from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
@@ -12,6 +15,10 @@ from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
 
 from .models import PRAnalysisReport
+import openai
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
+GITHUB_API_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
@@ -72,6 +79,10 @@ def get_email_from_domain(domain_name):
         return False
 
 
+import numpy as np
+from PIL import Image
+
+
 def image_validator(img):
     try:
         filesize = img.file.size
@@ -87,10 +98,16 @@ def image_validator(img):
     elif filesize > megabyte_limit * 1024 * 1024:
         error = "Max file size is %sMB" % str(megabyte_limit)
         return error
-
     elif content_type not in WHITELISTED_IMAGE_TYPES.values():
-        error = "invalid image content-type"
+        error = "Invalid image content-type"
         return error
+
+    # Images must not be single color
+    img_array = np.array(Image.open(img))
+    if img_array.std() < 10:
+        error = "Image appears to be a single color"
+        return error
+
     else:
         return True
 
@@ -173,13 +190,6 @@ def format_timedelta(td):
     minutes, seconds = divmod(remainder, 60)
     return f"{hours}h {minutes}m {seconds}s"
 
-
-import openai
-
-openai.api_key = os.getenv("OPENAI_API_KEY")
-GITHUB_API_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
-
-
 def fetch_github_data(owner, repo, endpoint, number):
     """
     Fetch data from GitHub API for a given repository endpoint.
@@ -232,3 +242,229 @@ def save_analysis_report(pr_link, issue_link, analysis):
         revision_score=revision_score,
         recommendations=recommendations,
     )
+
+
+def generate_embedding(text, retries=2, backoff_factor=2):
+    """
+    Generate embedding for a function's full text using OpenAI's embeddings API.
+    :param function_text: The full text of the function.
+    :return: The embedding vector for the function text.
+    """
+    for attempt in range(retries):
+        try:
+            response = openai.embeddings.create(
+                model="text-embedding-ada-002",
+                input=text,
+                encoding_format="float"
+            )
+            # response = {
+            # "object": "list",
+            # "data": [
+            #     {
+            #     "object": "embedding",
+            #     "embedding": [
+            #         0.0023064255,
+            #         -0.009327292,
+            #         -0.0028842222,
+            #     ],
+            #     "index": 0
+            #     }
+            #     ],
+            #     "model": "text-embedding-ada-002",
+            #     "usage": {
+            #         "prompt_tokens": 8,
+            #         "total_tokens": 8
+            #     }
+            # }
+            # Extract the embedding from the response
+            embedding = response['data'][0]['embedding']
+            return np.array(embedding)
+        
+        except openai.RateLimitError as e:
+            # If rate-limiting error occurs, wait and retry
+            print(f"Rate-limiting error encountered: {e}. Retrying in {2 ** attempt} seconds.")
+            time.sleep(2 ** attempt)  # Exponential backoff
+
+        except Exception as e:
+            # For other errors, print the error and return None
+            print(f"An error occurred: {e}")
+            return None
+
+    print(f"Failed to complete request after {retries} attempts.")
+    return None
+
+def cosine_similarity(embedding1, embedding2):
+    """
+    Compute the cosine similarity between two embeddings.
+    :param embedding1: The first embedding vector.
+    :param embedding2: The second embedding vector.
+    :return: The cosine similarity score between the two embeddings.
+    """
+    similarity = np.dot(embedding1, embedding2) / (
+        np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
+    )
+
+    similarity_score = similarity * 100  # Scale similarity to 0-100
+    return round(similarity_score, 2)
+
+def extract_function_signatures_and_content(repo_path):
+    """
+    Extract function signatures (name, parameters) and full text from Python files.
+    :param repo_path: Path to the repository
+    :return: List of function metadata (signature + full text)
+    """
+    functions = []
+    for root, dirs, files in os.walk(repo_path):
+        for file in files:
+            if file.endswith(".py"):
+                file_path = os.path.join(root, file)
+                with open(file_path, "r") as f:
+                    try:
+                        file_content = f.read()
+                        tree = ast.parse(file_content, filename=file)
+                        for node in ast.walk(tree):
+                            if isinstance(node, ast.FunctionDef):
+                                signature = {
+                                    "name": node.name,
+                                    "args": [arg.arg for arg in node.args.args],
+                                    "defaults": [
+                                        ast.dump(default) for default in node.args.defaults
+                                    ],
+                                }
+                                # Extract function body as full text
+                                function_text = ast.get_source_segment(file_content, node)
+                                function_data = {
+                                    "signature": signature,
+                                    "full_text": function_text,  # Full text of the function
+                                }
+                                functions.append(function_data)
+                    except Exception as e:
+                        print(f"Error parsing {file_path}: {e}")
+    return functions
+
+
+def extract_django_models(repo_path):
+    """
+    Extract Django model names and fields from the given repository.
+    :param repo_path: Path to the repository
+    :return: List of models with their fields
+    """
+    models = []
+
+    # Walk through the repository directory
+    for root, dirs, files in os.walk(repo_path):
+        for file in files:
+            if file.endswith(".py"):  # Only process Python files
+                file_path = os.path.join(root, file)
+
+                # Open the file and read its contents
+                with open(file_path, "r") as f:
+                    lines = f.readlines()
+                    model_name = None
+                    fields = []
+
+                    for line in lines:
+                        line = line.strip()
+                        # Look for class definition that inherits from models.Model
+                        if line.startswith("class ") and "models.Model" in line:
+                            if model_name:  # Save the previous model if exists
+                                models.append({"name": model_name, "fields": fields})
+                            model_name = line.split("(")[0].replace("class ", "").strip()
+                            fields = []  # Reset fields when a new model starts
+
+                        else:
+                            # Match field definitions like: name = models.CharField(max_length=...)
+                            match = re.match(r"^\s*(\w+)\s*=\s*models\.(\w+)", line)
+                            if match:
+                                field_name = match.group(1)
+                                field_type = match.group(2)
+                                fields.append({"field_name": field_name, "field_type": field_type})
+
+                            # Match other field types like ForeignKey, ManyToManyField, etc.
+                            match_complex = re.match(
+                                r"^\s*(\w+)\s*=\s*models\.(ForeignKey|ManyToManyField|OneToOneField)\((.*)\)",
+                                line,
+                            )
+                            if match_complex:
+                                field_name = match_complex.group(1)
+                                field_type = match_complex.group(2)
+                                field_params = match_complex.group(3).strip()
+                                fields.append(
+                                    {
+                                        "field_name": field_name,
+                                        "field_type": field_type,
+                                        "parameters": field_params,
+                                    }
+                                )
+
+                    # Add the last model if the file ends without another class
+                    if model_name:
+                        models.append({"name": model_name, "fields": fields})
+
+    return models
+
+
+def compare_model_fields(model1, model2):
+    """
+    Compare the names and fields of two Django models using difflib.
+    Compares model names, field names, and field types to calculate similarity scores.
+
+    :param model1: First model's details (e.g., {'name': 'User', 'fields': [...]})
+    :param model2: Second model's details (e.g., {'name': 'Account', 'fields': [...]})
+    :return: Dictionary containing name and field similarity details
+    """
+    # Compare model names
+    model_name_similarity = (
+        difflib.SequenceMatcher(None, model1["name"], model2["name"]).ratio() * 100
+    )
+
+    # Initialize field comparison details
+    field_comparison_details = []
+
+    # Get fields from both models
+    fields1 = model1.get("fields", [])
+    fields2 = model2.get("fields", [])
+
+    for field1 in fields1:
+        for field2 in fields2:
+            # Compare field names
+            field_name_similarity = (
+                difflib.SequenceMatcher(None, field1["field_name"], field2["field_name"]).ratio()
+                * 100
+            )
+
+            # Compare field types
+            field_type_similarity = (
+                difflib.SequenceMatcher(None, field1["field_type"], field2["field_type"]).ratio()
+                * 100
+            )
+
+            # Average similarity between the field name and type
+            overall_similarity = (field_name_similarity + field_type_similarity) / 2
+
+            # Append details for each field comparison
+            if overall_similarity > 50:
+                field_comparison_details.append(
+                    {
+                        "field1_name": field1["field_name"],
+                        "field1_type": field1["field_type"],
+                        "field2_name": field2["field_name"],
+                        "field2_type": field2["field_type"],
+                        "field_name_similarity": round(field_name_similarity, 2),
+                        "field_type_similarity": round(field_type_similarity, 2),
+                        "overall_similarity": round(overall_similarity, 2),
+                    }
+                )
+
+    # Calculate overall similarity across all fields
+    if field_comparison_details:
+        total_similarity = sum([entry["overall_similarity"] for entry in field_comparison_details])
+        overall_field_similarity = total_similarity / len(field_comparison_details)
+    else:
+        overall_field_similarity = 0.0
+
+    return {
+        "model_name_similarity": round(model_name_similarity, 2),
+        "field_comparison_details": field_comparison_details,
+        "overall_field_similarity": round(overall_field_similarity, 2),
+    }

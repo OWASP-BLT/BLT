@@ -461,19 +461,19 @@ class LeaderboardApiViewSet(APIView):
 
         elif group_by_month:
             return self.group_by_month(request, *args, **kwargs)
-        elif leaderboard_type == "companies":
+        elif leaderboard_type == "organizations":
             return self.organization_leaderboard(request, *args, **kwargs)
         else:
             return self.global_leaderboard(request, *args, **kwargs)
 
     def organization_leaderboard(self, request, *args, **kwargs):
         paginator = PageNumberPagination()
-        companies = (
+        organizations = (
             Organization.objects.values()
             .annotate(issue_count=Count("domain__issue"))
             .order_by("-issue_count")
         )
-        page = paginator.paginate_queryset(companies, request)
+        page = paginator.paginate_queryset(organizations, request)
 
         return paginator.get_paginated_response(page)
 

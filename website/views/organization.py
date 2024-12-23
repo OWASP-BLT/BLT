@@ -1,7 +1,5 @@
 import ipaddress
 import json
-import os
-import tempfile
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -28,11 +26,8 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django.views.generic import FormView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
-from git import Repo  # Requires GitPython library
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from blt import settings
 from website.forms import CaptchaForm, HuntForm, IpReportForm, UserProfileForm
@@ -54,7 +49,6 @@ from website.models import (
     Winner,
 )
 from website.services.blue_sky_service import BlueSkyService
-from website.similarity_utils import process_similarity_analysis
 from website.utils import format_timedelta, get_client_ip, get_github_issue_title
 
 
@@ -62,7 +56,7 @@ def add_domain_to_organization(request):
     if request.method == "POST":
         domain = request.POST.get("domain")
         domain = Domain.objects.get(id=domain)
-        organization_name = request.POST.get("company")
+        organization_name = request.POST.get("organization")
         organization = Organization.objects.filter(name=organization_name).first()
 
         if not organization:
@@ -90,7 +84,7 @@ def add_domain_to_organization(request):
 
 
 @login_required(login_url="/accounts/login")
-def organization_dashboard(request, template="index_company.html"):
+def organization_dashboard(request, template="index_organization.html"):
     try:
         organization_admin = OrganizationAdmin.objects.get(user=request.user)
         if not organization_admin.is_active:
@@ -117,7 +111,7 @@ def organization_dashboard(request, template="index_company.html"):
 
 
 @login_required(login_url="/accounts/login")
-def admin_organization_dashboard(request, template="admin_dashboard_company.html"):
+def admin_organization_dashboard(request, template="admin_dashboard_organization.html"):
     user = request.user
     if user.is_superuser:
         if not user.is_active:
@@ -131,7 +125,7 @@ def admin_organization_dashboard(request, template="admin_dashboard_company.html
 
 @login_required(login_url="/accounts/login")
 def admin_organization_dashboard_detail(
-    request, pk, template="admin_dashboard_company_detail.html"
+    request, pk, template="admin_dashboard_organization_detail.html"
 ):
     user = request.user
     if user.is_superuser:
@@ -185,7 +179,7 @@ def weekly_report(request):
 
 
 @login_required(login_url="/accounts/login")
-def organization_hunt_results(request, pk, template="company_hunt_results.html"):
+def organization_hunt_results(request, pk, template="organization_hunt_results.html"):
     hunt = get_object_or_404(Hunt, pk=pk)
     issues = Issue.objects.filter(hunt=hunt).exclude(
         Q(is_hidden=True) & ~Q(user_id=request.user.id)
@@ -323,7 +317,7 @@ def subscribe_to_domains(request, pk):
 
 class DomainList(TemplateView):
     model = Domain
-    template_name = "company_domain_lists.html"
+    template_name = "organization_domain_lists.html"
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
@@ -350,7 +344,7 @@ class Joinorganization(TemplateView):
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
-        name = request.POST["company"]
+        name = request.POST["organization"]
         try:
             organization_exists = Organization.objects.get(name=name)
             return JsonResponse({"status": "There was some error"})
@@ -590,7 +584,7 @@ class PreviousHunts(TemplateView):
 class OrganizationSettings(TemplateView):
     model = OrganizationAdmin
     fields = ["user", "domain", "role", "is_active"]
-    template_name = "company_settings.html"
+    template_name = "organization_settings.html"
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
@@ -1175,7 +1169,7 @@ def view_hunt(request, pk, template="view_hunt.html"):
 
 
 @login_required(login_url="/accounts/login")
-def organization_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_edit.html"):
+def organization_dashboard_hunt_edit(request, pk, template="organization_dashboard_hunt_edit.html"):
     if request.method == "GET":
         hunt = get_object_or_404(Hunt, pk=pk)
         domain_admin = OrganizationAdmin.objects.get(user=request.user)
@@ -1244,7 +1238,9 @@ def organization_dashboard_hunt_edit(request, pk, template="company_dashboard_hu
 
 
 @login_required(login_url="/accounts/login")
-def organization_dashboard_hunt_detail(request, pk, template="company_dashboard_hunt_detail.html"):
+def organization_dashboard_hunt_detail(
+    request, pk, template="organization_dashboard_hunt_detail.html"
+):
     hunt = get_object_or_404(Hunt, pk=pk)
     return render(request, template, {"hunt": hunt})
 
@@ -1257,7 +1253,7 @@ def hunt_results(request, pk, template="hunt_results.html"):
 
 @login_required(login_url="/accounts/login")
 def organization_dashboard_domain_detail(
-    request, pk, template="company_dashboard_domain_detail.html"
+    request, pk, template="organization_dashboard_domain_detail.html"
 ):
     user = request.user
     domain_admin = OrganizationAdmin.objects.get(user=request.user)
@@ -1822,84 +1818,3 @@ def checkIN_detail(request, report_id):
         "blockers": report.blockers,
     }
     return render(request, "sizzle/checkin_detail.html", context)
-
-
-class CodeSimilarityAnalyze(APIView):
-    def post(self, request, *args, **kwargs):
-        # Extract and validate data from request
-        type1 = request.data.get("type1")  # 'github' or 'zip'
-        type2 = request.data.get("type2")  # 'github' or 'zip'
-
-        if type1 == "github":
-            repo1 = request.data.get("repo1")  # GitHub URL
-        elif type1 == "zip":
-            repo1 = request.FILES.get("repo1")  # ZIP file
-
-        if type2 == "github":
-            repo2 = request.data.get("repo2")  # GitHub URL
-        elif type2 == "zip":
-            repo2 = request.FILES.get("repo2")  # ZIP file
-
-        if not repo1 or not repo2 or not type1 or not type2:
-            return Response(
-                {"error": "Both repositories and their types are required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if type1 not in ["github", "zip"] or type2 not in ["github", "zip"]:
-            return Response(
-                {"error": "Invalid type. Must be 'github' or 'zip'."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            temp_dir = tempfile.mkdtemp()
-            repo1_path = self.download_or_extract(repo1, type1, temp_dir, "repo1")
-            repo2_path = self.download_or_extract(repo2, type2, temp_dir, "repo2")
-
-            matching_details, csv_file = process_similarity_analysis(repo1_path, repo2_path)
-
-        except ValueError as e:
-            return Response(
-                {"error": "An unexpected error occurred, please try again later."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-        except Exception as e:
-            # return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            return Response(
-                {"error": "An unexpected error occurred, please try again later."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-        response = Response(
-            {
-                "status": "success",
-                "matching_details": matching_details,  # Detailed function/model similarity
-            },
-            status=status.HTTP_200_OK,
-        )
-
-        # response["Content-Disposition"] = 'attachment; filename="similarity_report.csv"'
-        # response["Content-Type"] = "text/csv"
-        # response.content = csv_file
-
-        return response
-
-    def download_or_extract(self, source, source_type, temp_dir, repo_name):
-        """
-        Download or extract the repository based on the type (GitHub or ZIP).
-        :param source: GitHub URL or ZIP file path
-        :param source_type: "github" or "zip"
-        :param temp_dir: Temporary directory for processing
-        :param repo_name: Prefix for naming (repo1 or repo2)
-        :return: Path to the extracted repository
-        """
-
-        dest_path = os.path.join(temp_dir, repo_name)
-        if source_type == "github":
-            # Clone the GitHub repository
-            Repo.clone_from(source, dest_path)
-
-        elif source_type == "zip":
-            pass
-
-        return dest_path

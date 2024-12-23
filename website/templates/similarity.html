@@ -17,9 +17,9 @@
 
         h1 {
             text-align: center;
-            color: #000; /* Black color for the title */
-            font-size: 36px; /* Bigger font size */
-            font-weight: bold; /* Bold font weight */
+            color: #000;
+            font-size: 36px;
+            font-weight: bold;
         }
 
         label {
@@ -110,6 +110,7 @@
         </div>
         <!-- Input fields -->
         <form id="similarityForm">
+            {% csrf_token %}
             <div class="flex gap-4">
                 <div>
                     <input id="repo1"
@@ -150,7 +151,6 @@
         <!-- Results Section -->
         <div class="results-container">
             <h2>Results</h2>
-            <div id="results"></div>
             <div class="chart-container">
                 <canvas id="similarityChart"></canvas>
             </div>
@@ -159,12 +159,78 @@
     </div>
     <script>
         let similarityChart;
-        let controller;
+        let socket;
+
+        const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+        const wsUrl = `${protocol}${window.location.host}/ws/similarity/`;
+        const fetchButton = document.getElementById("fetchReports");
+        
+        // Connect to WebSocket server
+        function connectWebSocket() {
+            return new Promise((resolve, reject) => {
+                socket = new WebSocket(wsUrl);
+
+                socket.onopen = () => {
+
+                    resolve(); // Resolve the promise when the connection is established
+                };
+
+                socket.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    handleSocketMessage(data);
+                };
+
+                socket.onerror = (error) => {
+
+                    reject(error); // Reject the promise if there's an error
+                };
+
+                socket.onclose = () => {
+
+                };
+            });
+        }
+
+        // Handle WebSocket messages
+        function handleSocketMessage(data) {
+            switch (data.status) {
+                case "progress":
+                    updateProgress(data);
+                    break;
+                case "success":
+                    displayChart(data.matching_details);
+                    fetchButton.innerHTML = "Fetch Reports";
+                    fetchButton.disabled = false;
+                    document.getElementById("cancelRequest").style.display = "none";
+                    cancelRequest();    
+                    break;
+                case "error":
+                    alert(data.error);
+                    fetchButton.innerHTML = "Fetch Reports";
+                    fetchButton.disabled = false;
+                    document.getElementById("cancelRequest").style.display = "none";
+                    cancelRequest();
+                    break;  
+
+            }
+        }
+
+        // Function to update progress
+        function updateProgress(data) {
+            const fetchButton = document.getElementById("fetchReports");
+            const progress = data.progress;
+            fetchButton.innerHTML = `Processing... ${progress}%`;
+        }
+
+        function cancelRequest() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.close();
+            }
+        }
 
         document.getElementById("fetchReports").addEventListener("click", async () => {
             const fetchButton = document.getElementById("fetchReports");
             const cancelButton = document.getElementById("cancelRequest");
-            const downloadButton = document.getElementById("downloadCsv");
             fetchButton.innerHTML = "Loading...";
             fetchButton.disabled = true;
             cancelButton.style.display = "inline-block";
@@ -182,48 +248,20 @@
                 cancelButton.style.display = "none";
                 return;
             }
-
-            // Create FormData object
-            const formData = new FormData();
-            formData.append("repo1", repo1);
-            formData.append("type1", type1);
-            formData.append("repo2", repo2);
-            formData.append("type2", type2);
-
-            // Initialize AbortController
-            controller = new AbortController();
-            const signal = controller.signal;
-
             try {
-                const apiUrl = "{% url 'code_similarity_analyze' %}";
+                await connectWebSocket();
 
-                const response = await fetch(apiUrl, {
-                    method: "POST",
-                    body: formData,
-                    signal: signal,
-                });
-
-                const data = await response.json();
-
-                if (data.status === "success") {
-                    // Process and visualize results
-                    displayResults(data.matching_details);
-                    // Show download button for CSV
-                    downloadButton.style.display = "inline-block";
-                    downloadButton.addEventListener("click", () => {
-                        downloadCsv(data.matching_details);
-                    });
-                } else {
-                    alert("Error: " + (data.message || "Unknown error occurred."));
-                }
+                // Send the initial data via WebSocket
+                socket.send(JSON.stringify({
+                    action: "start_similarity_check",
+                    repo1: repo1,
+                    type1: type1,
+                    repo2: repo2,
+                    type2: type2
+                }));
             } catch (error) {
-                if (error.name === "AbortError") {
-                    console.log("Fetch request canceled");
-                } else {
-                    console.error("Error fetching similarity report:", error);
-                    alert("An error occurred while fetching the similarity report.");
-                }
-            } finally {
+
+                alert("An error occurred. Please try again.");
                 fetchButton.innerHTML = "Fetch Reports";
                 fetchButton.disabled = false;
                 cancelButton.style.display = "none";
@@ -231,61 +269,36 @@
         });
 
         document.getElementById("cancelRequest").addEventListener("click", () => {
-            if (controller) {
-                controller.abort();
-            }
+            cancelRequest();
+            alert("Request canceled.");
+            const fetchButton = document.getElementById("fetchReports");
+            fetchButton.innerHTML = "Fetch Reports";
+            fetchButton.disabled = false;
+            document.getElementById("cancelRequest").style.display = "none";
         });
 
         window.addEventListener("beforeunload", () => {
-            if (controller) {
-                controller.abort();
-            }
+            cancelRequest();  
         });
 
-        function displayResults(matchingDetails) {
+        // Function to display the chart with results
+        function displayChart(matchingDetails) {
             const { functions, models } = matchingDetails;
-
-            // Display functions similarity
-            let resultsHTML = "<h3>Function Similarities</h3>";
-            functions.forEach((func) => {
-                resultsHTML += `
-                    <p><b>${func.name1}</b> vs <b>${func.name2}</b></p>
-                    <p>Name Similarity: ${func.name_similarity.toFixed(2)}%</p>
-                    <p>Signature Similarity: ${func.signature_similarity.toFixed(2)}%</p>
-                    <p>Content Similarity: ${func.content_similarity.toFixed(2)}%</p>
-                    <p>Overall Similarity: ${func.similarity.toFixed(2)}%</p>
-                    <hr>
-                `;
-            });
-
-            // Display models similarity
-            resultsHTML += "<h3>Model Similarities</h3>";
-            models.forEach((model) => {
-                resultsHTML += `
-                    <p><b>${model.name1}</b> vs <b>${model.name2}</b></p>
-                    <p>Model Name Similarity: ${model.similarity.toFixed(2)}%</p>
-                    <p>Overall Field Similarity: ${model.field_comparison.overall_field_similarity.toFixed(2)}%</p>
-                    <hr>
-                `;
-            });
-
-            document.getElementById("results").innerHTML = resultsHTML;
-
+            const downloadButton = document.getElementById("downloadCsv");
             // Prepare data for the chart
-            const functionData = functions.length ? functions[0] : null;
-            const modelData = models.length ? models[0] : null;
-
             const labels = [];
             const data = [];
             const backgroundColors = [];
 
-            if (functionData) {
+            if (functions.length) {
+                const functionData = functions[0];
                 labels.push("Function Name Similarity", "Function Signature Similarity", "Function Content Similarity", "Function Overall Similarity");
                 data.push(functionData.name_similarity, functionData.signature_similarity, functionData.content_similarity, functionData.similarity);
                 backgroundColors.push(getColor(functionData.name_similarity), getColor(functionData.signature_similarity), getColor(functionData.content_similarity), getColor(functionData.similarity));
             }
 
-            if (modelData) {
+            if (models.length) {
+                const modelData = models[0];
                 labels.push("Model Name Similarity", "Model Overall Field Similarity");
                 data.push(modelData.similarity, modelData.field_comparison.overall_field_similarity);
                 backgroundColors.push(getColor(modelData.similarity, true), getColor(modelData.field_comparison.overall_field_similarity, true));
@@ -317,8 +330,12 @@
                     }
                 }
             });
+            downloadButton.style.display = "inline-block";
+            downloadButton.addEventListener("click", () => downloadCsv(matchingDetails));
+
         }
 
+        // Function to determine the color based on similarity
         function getColor(similarity, isModel = false) {
             if (isModel) {
                 if (similarity < 50) return "#ff0000"; // Red for less/no similarity
@@ -330,16 +347,15 @@
                 return "#008000"; // Green for high similarity
             }
         }
-        function downloadCsv(matchingDetails) {
-            console.log("Debug: Matching details:", matchingDetails); // Debug log
 
+        // Function to download CSV
+        function downloadCsv(matchingDetails) {
             if (!matchingDetails) {
                 alert("Invalid matching details object!");
                 return;
             }
 
             const csvRows = [];
-
 
             // Add Function Similarities
             const functions = matchingDetails.functions;

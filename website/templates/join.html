@@ -425,7 +425,7 @@
             <h1>Create Organization</h1>
             <section>
                 <p>Organization information</p>
-                <input type="text" name="company" placeholder="Organization's Name" />
+                <input type="text" name="organization" placeholder="Organization's Name" />
                 <input type="url" name="url" placeholder="Website" />
                 <input type="file" name="file" placeholder="Logo" />
                 <input type="email" name="email" placeholder="Email Address" />
@@ -514,33 +514,33 @@
 </div>
 </section>
 <section class="p-8 max-w-[500px]">
-    {% ifnotequal wallet.current_balance 0 %}
-    <div class="formHolder wallet">
-        <h3>Wallet</h3>
-        Current Balance : {{ wallet.current_balance }}$
-        <div type="submit" class="btn btn-sm btn-link cardButton" id="showcard">Use Card</div>
-    </div>
-{% endifnotequal %}
-<div class="formHolder card">
-    <h3>Card</h3>
-    <script src="https://js.stripe.com/v3/"></script>
-    <div class="col-md-12" id="card-element-container">
-        <div>
-            <label for="card-element">Credit or debit card</label>
-            <div id="card-element">
-                <!-- A Stripe Element will be inserted here. -->
-            </div>
-            <!-- Used to display form errors. -->
-            <div id="card-errors" role="alert"></div>
+    {% if wallet.current_balance != 0 %}
+        <div class="formHolder wallet">
+            <h3>Wallet</h3>
+            Current Balance : {{ wallet.current_balance }}$
+            <div type="submit" class="btn btn-sm btn-link cardButton" id="showcard">Use Card</div>
         </div>
-        <button>Submit Payment</button>
+    {% endif %}
+    <div class="formHolder card">
+        <h3>Card</h3>
+        <script src="https://js.stripe.com/v3/"></script>
+        <div class="col-md-12" id="card-element-container">
+            <div>
+                <label for="card-element">Credit or debit card</label>
+                <div id="card-element">
+                    <!-- A Stripe Element will be inserted here. -->
+                </div>
+                <!-- Used to display form errors. -->
+                <div id="card-errors" role="alert"></div>
+            </div>
+            <button>Submit Payment</button>
+        </div>
+        {% if wallet.current_balance != 0 %}
+            <div type="submit"
+                 class="btn btn-sm btn-link newAccButton"
+                 id="showwallet">Use Wallet</div>
+        {% endif %}
     </div>
-    {% ifnotequal wallet.current_balance 0 %}
-    <div type="submit"
-         class="btn btn-sm btn-link newAccButton"
-         id="showwallet">Use Wallet</div>
-{% endifnotequal %}
-</div>
 </section>
 <section>
     <p>General condtitions</p>
