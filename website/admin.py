@@ -400,7 +400,6 @@ class ProjectAdmin(admin.ModelAdmin):
         "name",
         "slug",
         "description",
-        "homepage_url",
         "created",
         "modified",
     )
