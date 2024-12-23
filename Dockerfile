@@ -12,16 +12,19 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 
-# Install Google Chrome (latest stable version)
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    dpkg -i google-chrome-stable_current_amd64.deb; apt-get -y install -f
+# Add Google Chrome repository and install Chrome
+RUN curl -sSL https://dl-ssl.google.com/linux/linux_signing_key.pub | tee /etc/apt/trusted.gpg.d/google.asc
+RUN DISTRO=$(lsb_release -c | awk '{print $2}') && \
+    echo "deb [signed-by=/etc/apt/trusted.gpg.d/google.asc] http://dl.google.com/linux/chrome/deb/ $DISTRO main" | tee /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && \
+    apt-get install -y google-chrome-stable
 
 # Install chromedriver (matching installed chrome version)
 RUN CHROME_VERSION=$(google-chrome-stable --version | awk '{print $3}' | sed 's/\..*//') && \
     wget https://chromedriver.storage.googleapis.com/${CHROME_VERSION}.0/chromedriver_linux64.zip && \
     unzip chromedriver_linux64.zip -d /usr/local/bin/ && \
     rm chromedriver_linux64.zip
-    
+
 # Install Poetry and dependencies
 RUN pip install poetry
 RUN poetry config virtualenvs.create false
