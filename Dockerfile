@@ -40,7 +40,7 @@ RUN apt-get update && \
 COPY . /blt
 
 # Convert line endings and set permissions
-RUN dos2unix .env Dockerfile docker-compose.yml entrypoint.sh ./blt/settings.py
+RUN dos2unix Dockerfile docker-compose.yml entrypoint.sh ./blt/settings.py
 RUN chmod +x /blt/entrypoint.sh
 
 ENTRYPOINT ["/blt/entrypoint.sh"]
