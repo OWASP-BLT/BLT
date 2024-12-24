@@ -85,6 +85,7 @@ django-redis = "^5.4.0"
 uvicorn = "^0.34.0"
 channels = "^4.2.0"
 channels-redis = "^4.2.1"
+gitpython = "^3.1.43"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
