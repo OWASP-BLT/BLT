@@ -175,9 +175,10 @@ jobs:
         run: |
           docker run -d --name my-container my-app
 
-      - name: Install dependencies inside Docker container to test the env
-        run: |
-          docker exec my-container poetry install --no-dev --no-interaction
+      - run: docker exec my-container pip install poetry
+      - run: docker exec my-container poetry lock --no-update
+
+      - run: docker exec my-container poetry install --no-dev --no-interaction
 
       - name: Clean up
         run: |
