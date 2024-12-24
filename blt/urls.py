@@ -790,6 +790,11 @@ urlpatterns = [
     path("teams/delete-team/", delete_team, name="delete_team"),
     path("teams/leave-team/", leave_team, name="leave_team"),
     path("teams/kick-member/", kick_member, name="kick_member"),
+    path(
+        "similarity-scan",
+        TemplateView.as_view(template_name="similarity.html"),
+        name="similarity_scan",
+    ),
 ]
 
 if settings.DEBUG:
