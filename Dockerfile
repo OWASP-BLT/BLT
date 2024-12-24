@@ -33,6 +33,7 @@ RUN ln -s /usr/bin/google-chrome-stable /usr/local/bin/google-chrome
 RUN pip install poetry
 RUN poetry config virtualenvs.create false
 COPY pyproject.toml poetry.lock* ./
+RUN poetry lock --no-update
 RUN poetry install
 
 # Install additional Python packages
