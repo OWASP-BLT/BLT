@@ -1251,8 +1251,9 @@ class Repo(models.Model):
     commit_count = models.IntegerField(default=0)
     release_name = models.CharField(max_length=255, null=True, blank=True)
     release_datetime = models.DateTimeField(null=True, blank=True)
+    logo_url = models.URLField(null=True, blank=True)
     contributor_count = models.IntegerField(default=0)
-    Contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True)
+    contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
