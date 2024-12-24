@@ -728,8 +728,8 @@ def view_pr_analysis(request):
 
 
 def home(request):
-    last_commit = get_last_commit_date()
-    return render(request, "home.html", {"last_commit": last_commit})
+    #last_commit = get_last_commit_date()
+    return render(request, "home.html", {"last_commit": ""})
 
 
 def handler404(request, exception):
