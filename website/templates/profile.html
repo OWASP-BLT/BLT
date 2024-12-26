@@ -375,19 +375,74 @@
                     </form>
                 {% endif %}
             </div>
-            <div class="flex items-center justify-between w-[17vw] max-sm:w-[70vw]">
-                <span class="text-[25px] font-['Poppins']">{{ my_score|default:0 }} <span class="text-[19px] text-[#909090]">{% trans "POINTS" %}</span></span>
-                {% if request.user != user and request.user.is_authenticated %}
-                    <span class="text-[25px]">●</span>
-                    <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl follow_unfollow"
-                            name="{{ user.username }}">
-                        {% if request.user.userprofile in user.userprofile.followers.all %}
-                            Unfollow
-                        {% else %}
-                            Follow
-                        {% endif %}
-                    </button>
-                {% endif %}
+            <div class="flex flex-col items-center lg:items-start text-center lg:text-left bg-[#f7fafc] text-[#2d3748] p-5 rounded-lg shadow-sm w-[22vw] max-sm:w-full  gap-4 cursor-pointer">
+                <!-- Points Section -->
+                <div class="score-container flex items-center justify-center bg-[#f7fafc] text-[#1a202c] p-4 rounded-md shadow-sm w-full transition-transform transform hover:scale-105">
+                    <i class="fa fa-star text-yellow-500 mr-2"></i>
+                    <span class="text-[36px] font-bold text-yellow-500">{{ my_score|default:0 }}</span>
+                    <span class="text-[14px] text-[#4a5568] ml-2">{% trans "POINTS" %}</span>
+                    <i class="fa fa-chevron-down ml-2 transition-transform duration-200"
+                       id="accordion-toggle"></i>
+                </div>
+                <!-- Accordion Content -->
+                <div class="accordion-content hidden p-2 mt-4 rounded-md justify-center">
+                    <table class="min-w-full rounded-lg">
+                        <thead class="bg-[#4a5568] text-white">
+                            <tr>
+                                <th class="py-3 px-4 text-left">Score</th>
+                                <th class="py-3 px-4 text-left">Reason</th>
+                                <th class="py-3 px-4 text-left">Created</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-[#1a202c]">
+                            {% for point in user_points %}
+                                <tr class="border-b border-[#edf2f7]">
+                                    <td class="py-2 px-4 text-yellow-500 font-bold text-center">+ {{ point.score }}</td>
+                                    <td class="py-2 px-4">
+                                        {% if point.issue %}
+                                            <span>Issue created</span>
+                                        {% elif point.domain %}
+                                            <span>Domain added</span>
+                                        {% elif point.reason %}
+                                            <span>{{ point.reason }}</span>
+                                        {% else %}
+                                            <p class="mt-2 text-gray-500">No reason provided</p>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-2 px-4 text-md">{{ point.created|date:"Y-m-d H:i" }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="3" class="py-2 px-4 text-center text-[#4a5568]">No points available.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Streak Section -->
+                <div class="flex flex-col items-center lg:items-start bg-[#f7fafc] text-[#2d3748] p-4 rounded-md shadow-sm w-full">
+                    <h4 class="text-[16px] font-semibold uppercase tracking-wide mb-2">
+                        <i class="fa fa-fire text-red-500"></i> Streak Details
+                    </h4>
+                    <hr class="border-t-[1px] border-[#e2e8f0] opacity-70 w-full mb-3">
+                    <!-- Current Streak -->
+                    <div class="flex items-center justify-between w-full text-[14px] font-medium mb-2 transition-transform transform hover:scale-105">
+                        <span><i class="fa fa-bolt mr-2 text-red-500"></i> Current Streak:</span>
+                        <span class="font-bold text-red-500">{{ user.userprofile.current_streak|default:"0" }}</span>
+                    </div>
+                    <hr class="border-t-[1px] border-[#e2e8f0] opacity-50 w-full mb-2">
+                    <!-- Longest Streak -->
+                    <div class="flex items-center justify-between w-full text-[14px] font-medium mb-2 transition-transform transform hover:scale-105">
+                        <span><i class="fa fa-trophy mr-2 text-red-500"></i> Longest Streak:</span>
+                        <span class="font-bold text-red-500">{{ user.userprofile.longest_streak|default:"0" }}</span>
+                    </div>
+                    <hr class="border-t-[1px] border-[#e2e8f0] opacity-50 w-full mb-2">
+                    <!-- Last Sizzle Check-in -->
+                    <div class="flex items-center justify-between w-full text-[14px] font-medium transition-transform transform hover:scale-105">
+                        <span><i class="fa fa-calendar-check mr-2 text-red-500"></i> Last Sizzle Check-in:</span>
+                        <span class="font-bold text-red-500">{{ user.userprofile.last_check_in|default:"N/A" }}</span>
+                    </div>
+                </div>
             </div>
             <!--add a link here to edit the profile /profile/edit -->
             {% if request.user == user %}
@@ -600,15 +655,21 @@
                         <p class="text-gray-500 italic mb-3">No recommendation blurb yet.</p>
                     {% endif %}
                     {% if request.user.is_authenticated and request.user != object %}
-                        <button class="recommend-blurb-btn text-sm px-3 py-1.5 rounded-md focus:outline-none {% if has_recommended_via_blurb %}bg-red-500 text-white{% else %}bg-blue-500 text-white{% endif %}"
-                                data-username="{{ object.username }}"
-                                onclick="recommendViaBlurb(this)">
-                            {% if has_recommended_via_blurb %}
-                                Remove Recommendation
-                            {% else %}
-                                Recommend User
-                            {% endif %}
-                        </button>
+                        <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                            <input type="text"
+                                      id="recommend_message"
+                                      class="flex-grow w-full sm:w-auto py-2 px-3 text-sm border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      placeholder="Optional message...">
+                            <button class="recommend-blurb-btn w-full sm:w-auto text-sm px-4 py-2 rounded-lg transition-colors duration-200 focus:outline-none {% if has_recommended_via_blurb %}bg-red-500 hover:bg-red-600{% else %}bg-blue-500 hover:bg-blue-600{% endif %} text-white"
+                                        data-username="{{ object.username }}"
+                                        onclick="recommendViaBlurb(this)">
+                                  {% if has_recommended_via_blurb %}
+                                        Remove Recommendation
+                                  {% else %}
+                                        Recommend User
+                                  {% endif %}
+                             </button>
+                        </div>
                     {% endif %}
                     <div id="recommends"
                          class="hidden relative z-10"
@@ -652,6 +713,11 @@
                                                                             </td>
                                                                             <td>
                                                                                 <small>{{ i.created_at|date:"F j, Y" }}</small>
+                                                                            </td>
+                                                                            <td>
+                                                                                <i class="fa fa-comment cursor-pointer toggle-recommend-msg text-gray-600 hover:text-black"
+                                                                                   data-message="{{ i.recommendation_message|default_if_none:'' }}"></i>
+                                                                                <div class="recommendation-msg hidden text-black bg-gray-100 p-2 mt-2"></div>
                                                                             </td>
                                                                         </tr>
                                                                     {% endfor %}
@@ -706,6 +772,8 @@
                 <script>
                 function recommendViaBlurb(button) {
                     const username = button.getAttribute('data-username');
+                    const messageElement = document.getElementById('recommend_message');
+                    const message = messageElement ? messageElement.value : '';
                     
                     fetch(`/recommend/${username}/blurb/`, {
                         method: 'POST',
@@ -714,23 +782,28 @@
                             'X-Requested-With': 'XMLHttpRequest',
                             'Content-Type': 'application/json'
                         },
+                        body: JSON.stringify({ message: message })
                     })
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
                             // Update button state
                             if (data.action === 'added') {
-                                button.classList.remove('bg-blue-500');
-                                button.classList.add('bg-red-500');
+                                button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                                button.classList.add('bg-red-500', 'hover:bg-red-600');
                                 button.textContent = 'Remove Recommendation';
                             } else {
-                                button.classList.remove('bg-red-500');
-                                button.classList.add('bg-blue-500');
+                                button.classList.remove('bg-red-500', 'hover:bg-red-600');
+                                button.classList.add('bg-blue-500', 'hover:bg-blue-600');
                                 button.textContent = 'Recommend User';
                             }
+                            
+                            if (messageElement) {
+                                messageElement.value = '';
+                            }
                             // Update recommends count if element exists
-                            const countElement = document.getElementsByClassName('recommendation-count');
-                            for(let element of countElements) {
+                            const countElements = document.getElementsByClassName('recommendation-count');
+                            for (let element of countElements) {
                                 element.textContent = data.total_count;
                             }
                         }
@@ -738,6 +811,35 @@
                     .catch(error => console.error('Error:', error));
                        console.error('Error:', error);
                 }
+                document.addEventListener('DOMContentLoaded', () => {
+                    document.querySelectorAll('.toggle-recommend-msg').forEach(icon => {
+                        icon.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const container = icon.nextElementSibling;
+                            const message = icon.getAttribute('data-message') || 'No message provided.';
+                            
+                            document.querySelectorAll('.recommendation-msg').forEach(msg => {
+                                if (msg !== container && !msg.classList.contains('hidden')) {
+                                    msg.classList.add('hidden');
+                                }
+                            });
+                            if (container) {
+                                if (container.classList.contains('hidden')) {
+                                    container.textContent = message;
+                                    container.classList.remove('hidden');
+                                } else {
+                                    container.classList.add('hidden');
+                                }
+                            }
+                        });
+                    });
+                    document.querySelectorAll('.recommendation-msg').forEach(container => {
+                        container.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                        });
+                    });
+                });
+                
                 function getCookie(name) {
                     let cookieValue = null;
                     if (document.cookie && document.cookie !== '') {

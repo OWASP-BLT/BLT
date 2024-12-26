@@ -625,16 +625,16 @@ urlpatterns = [
     path("sizzle-docs/", sizzle_docs, name="sizzle-docs"),
     path("api/timelogsreport/", TimeLogListAPIView, name="timelogsreport"),
     path("time-logs/", TimeLogListView, name="time_logs"),
-    path("sizzle-daily-log/", sizzle_daily_log, name="sizzle_daily_log"),
     path("blog/", include("blog.urls")),
-    path("recommend/<int:user_id>/", recommend_user, name="recommend_user"),
-    path("recommend/<str:username>/blurb/", recommend_via_blurb, name="recommend_via_blurb"),
+    path("sizzle-daily-log/", sizzle_daily_log, name="sizzle_daily_log"),
     path(
         "user-sizzle-report/<str:username>/",
         user_sizzle_report,
         name="user_sizzle_report",
     ),
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
+    path("recommend/<int:user_id>/", recommend_user, name="recommend_user"),
+    path("recommend/<str:username>/blurb/", recommend_via_blurb, name="recommend_via_blurb"),
 ]
 
 if settings.DEBUG:

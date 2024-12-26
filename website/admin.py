@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.template.defaultfilters import truncatechars
 from django.utils import timezone
@@ -211,24 +212,22 @@ class PointsAdmin(admin.ModelAdmin):
 admin.site.unregister(User)
 
 
+# class UserAdmin(ImportExportModelAdmin):
+#     resource_class = UserResource
+#     list_display = (
+#         "id",
+#         "username",
+#         "email",
+#         "first_name",
+#         "last_name",
+#         "is_active",
+#         "date_joined",
+#         "is_staff",
+#     )
+
 class RecommendationAdmin(admin.ModelAdmin):
     list_display = ("recommender", "recommended_user", "created_at")
     search_fields = ("recommender__username", "recommended_user__username")
-
-
-class UserAdmin(ImportExportModelAdmin):
-    resource_class = UserResource
-    list_display = (
-        "id",
-        "username",
-        "email",
-        "first_name",
-        "last_name",
-        "is_active",
-        "date_joined",
-        "is_staff",
-    )
-
 
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = (

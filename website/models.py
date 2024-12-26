@@ -909,6 +909,7 @@ class Recommendation(models.Model):
     recommended_user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="received_recommendations"
     )
+    recommendation_message = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

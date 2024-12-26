@@ -13,7 +13,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
-from django.db.models import Count, Q, Sum
+from django.core.mail import send_mail
+from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
 from django.http import (
@@ -23,10 +24,12 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DetailView, ListView, TemplateView, View
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -275,8 +278,8 @@ class UserProfileDetailView(DetailView):
             ).exists()
         context["all_users"] = User.objects.exclude(id=self.request.user.id)
         context["total_recommendations"] = (
-            Recommendation.objects.filter(recommended_user=user).count()
-            + Recommendation.objects.filter(recommender=user).count()
+                Recommendation.objects.filter(recommended_user=user).count()
+                + Recommendation.objects.filter(recommender=user).count()
         )
 
         return context
@@ -290,8 +293,8 @@ class UserProfileDetailView(DetailView):
             messages.success(request, "Profile updated successfully!")
 
         if (
-            request.headers.get("X-Requested-With") == "XMLHttpRequest"
-            and "recommend_via_blurb" in request.POST
+                request.headers.get("X-Requested-With") == "XMLHttpRequest"
+                and "recommend_via_blurb" in request.POST
         ):
             if request.user.userprofile != user.userprofile:
                 recommendation, created = Recommendation.objects.get_or_create(
@@ -304,9 +307,9 @@ class UserProfileDetailView(DetailView):
                     action = "removed"
 
                 total_count = (
-                    Recommendation.objects.filter(recommended_user=user).count()
-                    + Recommendation.objects.filter(recommender=user).count()
-                    + (1 if user.userprofile.recommendation_blurb else 0)
+                        Recommendation.objects.filter(recommended_user=user).count()
+                        + Recommendation.objects.filter(recommender=user).count()
+                        + (1 if user.userprofile.recommendation_blurb else 0)
                 )
                 return JsonResponse({"success": True, "action": action, "count": total_count})
             return JsonResponse({"success": False, "error": "Cannot recommend yourself"})
@@ -316,7 +319,7 @@ class UserProfileDetailView(DetailView):
             try:
                 recommended_user = User.objects.get(id=recommended_user_id)
                 if Recommendation.objects.filter(
-                    recommender=request.user, recommended_user=recommended_user
+                        recommender=request.user, recommended_user=recommended_user
                 ).exists():
                     messages.error(request, "You have already recommended this user.")
                 else:
@@ -362,34 +365,44 @@ def recommend_user(request, user_id):
 @require_POST
 @login_required
 def recommend_via_blurb(request, username):
-    try:
-        target_user = User.objects.get(username=username)
-        if request.user == target_user:
-            return JsonResponse({"success": False, "error": "Cannot recommend yourself"})
 
-        recommendation, created = Recommendation.objects.get_or_create(
-            recommender=request.user, recommended_user=target_user
-        )
-        if created:
-            action = "added"
-        else:
-            recommendation.delete()
-            action = "removed"
+    recommended_user = get_object_or_404(User, username=username)
+    if request.user == recommended_user:
+        return JsonResponse({"success": False, "error": "You cannot recommend yourself."})
 
-        total_count = (
-            Recommendation.objects.filter(recommended_user=target_user).count()
-            + Recommendation.objects.filter(recommender=target_user).count()
-        )
+    data = json.loads(request.body.decode("utf-8"))
+    message = data.get("message", "")
 
-        return JsonResponse(
-            {
-                "success": True,
-                "action": action,
-                "total_count": total_count,
-            }
+    recommendation = Recommendation.objects.filter(
+        recommender=request.user,
+        recommended_user=recommended_user
+    ).first()
+
+    if recommendation:
+        recommendation.delete()
+        action = "removed"
+    else:
+        Recommendation.objects.create(
+            recommender=request.user,
+            recommended_user=recommended_user,
+            recommendation_message=message,
         )
-    except User.DoesNotExist:
-        return JsonResponse({"success": False, "error": "User not found"})
+        action = "added"
+
+    # recommended_user.userprofile.recommendation_count = Recommendation.objects.filter(
+    #     recommended_user=recommended_user
+    # ).count()
+    # recommended_user.userprofile.save()
+
+    total_count = Recommendation.objects.filter(recommended_user=recommended_user).count()
+    recommended_user.userprofile.save()
+
+    return JsonResponse(
+        {
+            "success": True,
+            "action": action,
+            "total_count": total_count,
+        })
 
 
 class UserProfileDetailsView(DetailView):
@@ -807,9 +820,9 @@ def withdraw(request):
                     account_links = stripe.AccountLink.create(
                         account=account,
                         return_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/stripe/connected/"
-                        + request.user.username,
+                                   + request.user.username,
                         refresh_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/profile/"
-                        + request.user.username,
+                                    + request.user.username,
                         type="account_onboarding",
                     )
                     return JsonResponse({"redirect": account_links.url, "status": "success"})
@@ -822,9 +835,9 @@ def withdraw(request):
                 account_links = stripe.AccountLink.create(
                     account=account,
                     return_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/stripe/connected/"
-                    + request.user.username,
+                               + request.user.username,
                     refresh_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/profile/"
-                    + request.user.username,
+                                + request.user.username,
                     type="account_onboarding",
                 )
                 return JsonResponse({"redirect": account_links.url, "status": "success"})
