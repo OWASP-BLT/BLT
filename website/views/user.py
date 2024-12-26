@@ -24,7 +24,7 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -38,8 +38,9 @@ __all__ = [
     "csrf_exempt",
     "render_to_string",
     "send_mail",
-    "Count, F, Q, Sum",
+    "F",
     "User",
+    "get_object_or_404"
 ]
 from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
@@ -59,6 +60,7 @@ from website.models import (
     Wallet,
 )
 from website.utils import is_valid_https_url, rebuild_safe_url
+
 
 @receiver(user_signed_up)
 def handle_user_signup(request, user, **kwargs):
@@ -365,6 +367,7 @@ def recommend_user(request, user_id):
     except User.DoesNotExist:
         messages.error(request, "User not found.")
     return redirect(request.META.get("HTTP_REFERER", "/"))
+
 
 @login_required
 def recommend_via_blurb(request, username):
