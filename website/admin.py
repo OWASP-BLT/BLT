@@ -24,6 +24,7 @@ from website.models import (
     Payment,
     Points,
     Project,
+    Recommendation,
     Subscription,
     Suggestion,
     SuggestionVotes,
@@ -33,7 +34,6 @@ from website.models import (
     UserProfile,
     Wallet,
     Winner,
-    Recommendation,
 )
 
 
@@ -226,12 +226,14 @@ admin.site.unregister(User)
 #         "is_staff",
 #     )
 
+
 class RecommendationAdmin(admin.ModelAdmin):
     list_display = ("recommender", "recommended_user", "created_at")
     search_fields = ("recommender__username", "recommended_user__username")
 
 
 admin.site.register(Recommendation, RecommendationAdmin)
+
 
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = (
