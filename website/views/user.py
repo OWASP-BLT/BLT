@@ -11,10 +11,10 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import User # noqa: F401
+from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import send_mail # noqa: F401
-from django.db.models import Count, F, Q, Sum # noqa: F401
+from django.core.mail import send_mail
+from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
 from django.http import (
@@ -24,16 +24,23 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
-from django.shortcuts import get_object_or_404, redirect, render
-from django.template.loader import render_to_string # noqa: F401
+from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt # noqa: F401
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DetailView, ListView, TemplateView, View
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 
+__all__ = [
+    "csrf_exempt",
+    "render_to_string",
+    "send_mail",
+    "Count, F, Q, Sum",
+    "User",
+]
 from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
@@ -52,7 +59,6 @@ from website.models import (
     Wallet,
 )
 from website.utils import is_valid_https_url, rebuild_safe_url
-
 
 @receiver(user_signed_up)
 def handle_user_signup(request, user, **kwargs):
@@ -277,8 +283,8 @@ class UserProfileDetailView(DetailView):
             ).exists()
         context["all_users"] = User.objects.exclude(id=self.request.user.id)
         context["total_recommendations"] = (
-                Recommendation.objects.filter(recommended_user=user).count()
-                + Recommendation.objects.filter(recommender=user).count()
+            Recommendation.objects.filter(recommended_user=user).count()
+            + Recommendation.objects.filter(recommender=user).count()
         )
 
         return context
@@ -292,8 +298,8 @@ class UserProfileDetailView(DetailView):
             messages.success(request, "Profile updated successfully!")
 
         if (
-                request.headers.get("X-Requested-With") == "XMLHttpRequest"
-                and "recommend_via_blurb" in request.POST
+            request.headers.get("X-Requested-With") == "XMLHttpRequest"
+            and "recommend_via_blurb" in request.POST
         ):
             if request.user.userprofile != user.userprofile:
                 recommendation, created = Recommendation.objects.get_or_create(
@@ -306,9 +312,9 @@ class UserProfileDetailView(DetailView):
                     action = "removed"
 
                 total_count = (
-                        Recommendation.objects.filter(recommended_user=user).count()
-                        + Recommendation.objects.filter(recommender=user).count()
-                        + (1 if user.userprofile.recommendation_blurb else 0)
+                    Recommendation.objects.filter(recommended_user=user).count()
+                    + Recommendation.objects.filter(recommender=user).count()
+                    + (1 if user.userprofile.recommendation_blurb else 0)
                 )
                 return JsonResponse({"success": True, "action": action, "count": total_count})
             return JsonResponse({"success": False, "error": "Cannot recommend yourself"})
@@ -318,7 +324,7 @@ class UserProfileDetailView(DetailView):
             try:
                 recommended_user = User.objects.get(id=recommended_user_id)
                 if Recommendation.objects.filter(
-                        recommender=request.user, recommended_user=recommended_user
+                    recommender=request.user, recommended_user=recommended_user
                 ).exists():
                     messages.error(request, "You have already recommended this user.")
                 else:
@@ -360,8 +366,6 @@ def recommend_user(request, user_id):
         messages.error(request, "User not found.")
     return redirect(request.META.get("HTTP_REFERER", "/"))
 
-
-@require_POST
 @login_required
 def recommend_via_blurb(request, username):
     from django.shortcuts import get_object_or_404
@@ -374,8 +378,7 @@ def recommend_via_blurb(request, username):
     message = data.get("message", "")
 
     recommendation = Recommendation.objects.filter(
-        recommender=request.user,
-        recommended_user=recommended_user
+        recommender=request.user, recommended_user=recommended_user
     ).first()
 
     if recommendation:
@@ -396,12 +399,7 @@ def recommend_via_blurb(request, username):
 
     total_count = Recommendation.objects.filter(recommended_user=recommended_user).count()
 
-    return JsonResponse(
-        {
-            "success": True,
-            "action": action,
-            "total_count": total_count
-        })
+    return JsonResponse({"success": True, "action": action, "total_count": total_count})
 
 
 class UserProfileDetailsView(DetailView):
@@ -819,9 +817,9 @@ def withdraw(request):
                     account_links = stripe.AccountLink.create(
                         account=account,
                         return_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/stripe/connected/"
-                                   + request.user.username,
+                        + request.user.username,
                         refresh_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/profile/"
-                                    + request.user.username,
+                        + request.user.username,
                         type="account_onboarding",
                     )
                     return JsonResponse({"redirect": account_links.url, "status": "success"})
@@ -834,9 +832,9 @@ def withdraw(request):
                 account_links = stripe.AccountLink.create(
                     account=account,
                     return_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/stripe/connected/"
-                               + request.user.username,
+                    + request.user.username,
                     refresh_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/profile/"
-                                + request.user.username,
+                    + request.user.username,
                     type="account_onboarding",
                 )
                 return JsonResponse({"redirect": account_links.url, "status": "success"})
