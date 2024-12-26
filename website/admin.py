@@ -211,9 +211,11 @@ class PointsAdmin(admin.ModelAdmin):
 
 admin.site.unregister(User)
 
+
 class RecommendationAdmin(admin.ModelAdmin):
     list_display = ("recommender", "recommended_user", "created_at")
     search_fields = ("recommender__username", "recommended_user__username")
+
 
 # class UserAdmin(ImportExportModelAdmin):
 #     resource_class = UserResource
@@ -225,8 +227,9 @@ class RecommendationAdmin(admin.ModelAdmin):
 #         "last_name",
 #         "is_active",
 #         "date_joined",
-#         "is_staff"
+#         "is_staff",
 #     )
+
 
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = (
