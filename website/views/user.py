@@ -28,7 +28,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.decorators import method_decorator
-from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DetailView, ListView, TemplateView, View
 from rest_framework.authtoken.models import Token
@@ -362,7 +361,6 @@ def recommend_user(request, user_id):
     return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
-@require_POST
 @login_required
 def recommend_via_blurb(request, username):
     recommended_user = get_object_or_404(User, username=username)
