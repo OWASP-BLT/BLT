@@ -13,8 +13,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import send_mail
-from django.db.models import Count, F, Q, Sum
+from django.db.models import Count, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
 from django.http import (
@@ -25,7 +24,6 @@ from django.http import (
     JsonResponse,
 )
 from django.shortcuts import get_object_or_404, redirect, render
-from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.generic import DetailView, ListView, TemplateView, View
