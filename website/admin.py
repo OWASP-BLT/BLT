@@ -225,9 +225,11 @@ admin.site.unregister(User)
 #         "is_staff",
 #     )
 
+
 class RecommendationAdmin(admin.ModelAdmin):
     list_display = ("recommender", "recommended_user", "created_at")
     search_fields = ("recommender__username", "recommended_user__username")
+
 
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = (

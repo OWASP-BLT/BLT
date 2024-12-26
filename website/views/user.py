@@ -34,14 +34,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 
-__all__ = [
-    "csrf_exempt",
-    "render_to_string",
-    "send_mail",
-    "F",
-    "User",
-    "get_object_or_404"
-]
+__all__ = ["csrf_exempt", "render_to_string", "send_mail", "F", "User", "get_object_or_404"]
+
 from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
