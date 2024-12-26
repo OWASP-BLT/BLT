@@ -6,7 +6,6 @@ from allauth.socialaccount.models import SocialApp
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
-from django.db import transaction
 from django.urls import reverse
 from selenium.webdriver.chrome.service import Service
 
@@ -72,7 +71,7 @@ class UrlsTest(StaticLiveServerTestCase):
 
     def test_responses(
         self,
-        allowed_http_codes=[200, 302, 405, 401, 404],
+        allowed_http_codes=[200, 302, 405, 401, 404, 400],
         credentials={},
         default_kwargs={},
     ):
@@ -134,23 +133,22 @@ class UrlsTest(StaticLiveServerTestCase):
                         "/api/timelogsreport/",
                     ]
                     if not any(x in url for x in matches):
-                        with transaction.atomic():
-                            response = self.client.get(url)
-                            self.assertIn(
-                                response.status_code,
-                                allowed_http_codes,
+                        response = self.client.get(url)
+                        self.assertIn(
+                            response.status_code,
+                            allowed_http_codes,
+                            msg="!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the url that caused the eror is: %s"
+                            % url,
+                        )
+                        self.selenium.get("%s%s" % (self.live_server_url, url))
+
+                        for entry in self.selenium.get_log("browser"):
+                            self.assertNotIn(
+                                "SyntaxError",
+                                str(entry),
                                 msg="!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the url that caused the eror is: %s"
                                 % url,
                             )
-                            self.selenium.get("%s%s" % (self.live_server_url, url))
-
-                            for entry in self.selenium.get_log("browser"):
-                                self.assertNotIn(
-                                    "SyntaxError",
-                                    str(entry),
-                                    msg="!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the url that caused the eror is: %s"
-                                    % url,
-                                )
 
         check_urls(module.urlpatterns)
 

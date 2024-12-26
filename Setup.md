@@ -17,37 +17,84 @@ cp .env.example .env
 - Modify the .env file as per your local setup.
 
 ## Step 2: Choose your setup method (Docker recommended)
-### 1.Recommended method: Setting up development server using docker-compose
+#### Prerequisites for Docker method
+Ensure the following are installed on your system before proceeding:
 
-- Install docker
+- Docker  
+- Docker Compose  
+- PostgreSQL client (optional, for manual database interaction)  
 
+---
 
-```sh
- # --- build the docker container ---
- docker-compose build
+### 1. Ensure LF Line Endings
+Before building the Docker images, ensure all files, especially scripts like `entrypoint.sh`, `.env`, `docker-compose.yml`, `Dockerfile`, `settings.py` use LF line endings. Using CRLF can cause build failures. To verify and correct line endings:
 
- # --- Run the docker container ---
- docker-compose up
+1. If you're working on a Windows machine or collaborating across different operating systems, ensure consistent line endings:
+   - Set `core.autocrlf=input` in Git configurations to enforce LF-style line endings in the repository while preserving your local OS line endings.
+     ```bash
+     git config --global core.autocrlf input
+     ```
+   - Alternatively, in VS Code, you can manually change the line endings:
+     - Open the file in the editor.
+     - Look for the line ending type displayed in the bottom-right corner of the VS Code window (e.g., CRLF or LF).
+     - Click it and select "LF: Unix" from the dropdown to switch the line endings to LF.
 
- # --- Collect static files ---
+2. If the browser **automatically redirects to HTTPS** even in incognito mode, you can try the following:  
+   For **local development**, make these adjustments in `/blt/settings.py` to enable access over **HTTP**:
+   - Set:
+     ```python
+     SECURE_SSL_REDIRECT = False
+     SECURE_PROXY_SSL_HEADER = None
+     ```
 
- ### open container bash terminal
- # `app` is the service name in docker-compose.yml
- docker exec -it app /bin/bash
+3. To convert to LF (if needed):  
+   - Using `dos2unix`:
+     ```bash
+     dos2unix entrypoint.sh
+     ```
 
- # Below commands are for container shell
- ### migrate SQL commands in the database file
- python manage.py migrate
+⚠️ **Important:**  
+- If line endings are not set to LF, running `docker-compose build` may fail.  
+- Avoid creating a PR to commit these local changes back to the repository.
 
- ### collect staticfiles
- python manage.py collectstatic
+### 2. PostgreSQL Setup
+The PostgreSQL database listens on a port specified in the .env file.
+Default is 5432 and
+If you encounter conflicts, it might be set to another port (e.g., 5433 in some cases). Adjust the .env file accordingly.
 
- # --- exit out of container shell ---
- exit
+---
 
-```
+## Commands to Set Up the Project
 
-### 2.Setting up development server using vagrant
+- **Copy and configure the `.env` file:**  
+   ```bash
+   cp .env.example .env
+Update credentials and settings as needed.
+
+- #### Build the Docker images:
+  ```bash
+  docker-compose build
+- #### Start the containers:
+  ```bash
+  docker-compose up
+- #### Access the application:
+
+- Open your browser and navigate to:
+http://localhost:8000/
+- #### Prevent Automatic Redirects to HTTPS: 
+- Use Incognito Mode (Private Browsing): Open the browser in incognito mode and access the application using http://localhost:8000.
+- Ensure you're explicitly using http:// instead of https:// in the URL.
+### Notes
+- The project listens on port 8000 over the HTTP protocol.
+- Ensure all required configurations in .env are correct for seamless setup.
+
+### Error Edge Cases
+- If container fails execute ./entrypoint.sh due to permission error, use `chmod +x ./entrypoint.sh`
+- If you encounter ./entrypoint.sh was not found, then make sure you are using `LF` line ending in place of `CRLF`
+- If you encounter ERR_SSL_PROTOCOL_ERROR when you try to access the server on http://localhost:8000, make sure the Browser doesn't automatically redirect to https://localhost:8000. If it keeps doing this behaviour, then you can set `SECURE_SSL_REDIRECT` to `False` locally only(search for it  /blt/settings.py), stop the container and start it again.
+- If you encounter the same error indicating SSL_REDIRECT in the logs while building the container, set `SECURE_SSL_REDIRECT` to `False`
+
+### Option 2.Setting up development server using vagrant
 
 -Install [vagrant](https://www.vagrantup.com/)
 
@@ -89,7 +136,7 @@ Add a Domain `http://127.0.0.1:8000/admin/website/domain/` with the name 'owasp.
 **Note:** In case you encounter an error with vagrant's vbguest module, run `vagrant plugin install vagrant-vbguest`
 from the host machine.
 
-### 3.Setting up development server using python virtual environment
+### Option 3.Setting up development server using python virtual environment
 
 #### Setup correct python version
 

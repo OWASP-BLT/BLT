@@ -1,6 +1,7 @@
 import json
 import uuid
 from datetime import datetime
+from urllib.parse import urlparse
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
@@ -23,7 +24,6 @@ from rest_framework.views import APIView
 
 from website.models import (
     ActivityLog,
-    Company,
     Contributor,
     Domain,
     Hunt,
@@ -31,6 +31,7 @@ from website.models import (
     InviteFriend,
     Issue,
     IssueScreenshot,
+    Organization,
     Points,
     Project,
     Tag,
@@ -43,10 +44,10 @@ from website.serializers import (
     ActivityLogSerializer,
     BugHuntPrizeSerializer,
     BugHuntSerializer,
-    CompanySerializer,
     ContributorSerializer,
     DomainSerializer,
     IssueSerializer,
+    OrganizationSerializer,
     ProjectSerializer,
     TagSerializer,
     TimeLogSerializer,
@@ -459,19 +460,19 @@ class LeaderboardApiViewSet(APIView):
 
         elif group_by_month:
             return self.group_by_month(request, *args, **kwargs)
-        elif leaderboard_type == "companies":
-            return self.company_leaderboard(request, *args, **kwargs)
+        elif leaderboard_type == "organizations":
+            return self.organization_leaderboard(request, *args, **kwargs)
         else:
             return self.global_leaderboard(request, *args, **kwargs)
 
-    def company_leaderboard(self, request, *args, **kwargs):
+    def organization_leaderboard(self, request, *args, **kwargs):
         paginator = PageNumberPagination()
-        companies = (
-            Company.objects.values()
+        organizations = (
+            Organization.objects.values()
             .annotate(issue_count=Count("domain__issue"))
             .order_by("-issue_count")
         )
-        page = paginator.paginate_queryset(companies, request)
+        page = paginator.paginate_queryset(organizations, request)
 
         return paginator.get_paginated_response(page)
 
@@ -678,7 +679,7 @@ class InviteFriendApiViewset(APIView):
             mail_status
             and InviteFriend.objects.filter(sender=self.request.user, sent=True).count() == 2
         ):
-            Points.objects.create(user=self.request.user, score=1)
+            Points.objects.create(user=self.request.user, score=1, reason="Invited friend")
             InviteFriend.objects.filter(sender=self.request.user).delete()
 
         return Response(
@@ -691,9 +692,9 @@ class InviteFriendApiViewset(APIView):
         )
 
 
-class CompanyViewSet(viewsets.ModelViewSet):
-    queryset = Company.objects.all()
-    serializer_class = CompanySerializer
+class OrganizationViewSet(viewsets.ModelViewSet):
+    queryset = Organization.objects.all()
+    serializer_class = OrganizationSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ("id", "name")
@@ -845,8 +846,29 @@ class TimeLogViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
+        organization_url = self.request.data.get("organization_url")
+
         try:
-            serializer.save(user=self.request.user)
+            if organization_url:
+                parsed_url = urlparse(organization_url)
+                normalized_url = parsed_url.netloc + parsed_url.path
+
+                # Normalize the URL in the Company model (remove the protocol if present)
+                try:
+                    organization = Organization.objects.get(
+                        Q(url__iexact=normalized_url)
+                        | Q(url__iexact=f"http://{normalized_url}")
+                        | Q(url__iexact=f"https://{normalized_url}")
+                    )
+                except Organization.DoesNotExist:
+                    raise ParseError(detail="Organization not found for the given URL.")
+
+            else:
+                organization = None
+
+            # Save the TimeLog with the user and organization (if found, or None)
+            serializer.save(user=self.request.user, organization=organization)
+
         except ValidationError as e:
             raise ParseError(detail=str(e))
         except Exception as e:

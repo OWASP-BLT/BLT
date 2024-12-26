@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+{% block style %}
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;600&display=swap"
+          rel="stylesheet">
+    <style>
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f4f6f9;
+    }
+    </style>
+{% endblock style %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-12">
+        <div class="bg-white rounded-2xl shadow-md max-w-7xl mx-auto">
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 md:p-10">
+                <div class="flex items-center space-x-6">
+                    {% if badge.icon %}
+                        <img src="{{ badge.icon.url }}"
+                             alt="{{ badge.title }} Badge"
+                             class="w-28 h-28 object-contain rounded-xl border-4 border-white shadow-lg"
+                             height="96px"
+                             width="96px">
+                    {% else %}
+                        <div class="w-24 h-24 bg-white/20 rounded-xl flex items-center justify-center text-white text-3xl font-bold">
+                            {{ badge.title|slice:":1" }}
+                        </div>
+                    {% endif %}
+                    <div>
+                        <h1 class="text-4xl font-bold text-white mb-2">{{ badge.title }} Badge</h1>
+                        <p class="text-white/80 text-lg font-medium">{{ badge.description }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 md:p-10">
+                {% if profiles %}
+                    <div class="grid grid-cols-1">
+                        {% for profile in profiles %}
+                            <div class="w-full bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg">
+                                <div class="flex items-center justify-between space-x-6">
+                                    <div class="flex items-center space-x-6">
+                                        <div class="flex-shrink-0">
+                                            {% if profile.user_avatar %}
+                                                <img src="{{ profile.user_avatar.url }}"
+                                                     alt="{{ profile.user.username }}'s avatar"
+                                                     class="w-32 h-32 object-cover border-4 border-indigo-500 shadow-md rounded-lg"
+                                                     height="108px"
+                                                     width="108px">
+                                            {% else %}
+                                                <div class="w-32 h-32 flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg text-white text-5xl font-semibold shadow-lg">
+                                                    {{ profile.user.username|slice:":1"|upper }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <a href="{% url 'profile' slug=profile.user.username %}"
+                                               class="font-bold text-gray-800 text-3xl hover:text-indigo-600 transition">
+                                                {{ profile.user.username }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center font-semibold">
+                                        <span class="text-indigo-600 text-2xl">Awarded on:</span>
+                                        <span class="ml-2 text-2xl">{{ profile.awarded_at|date:"F d, Y" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-12 bg-gray-50 rounded-2xl">
+                        <p class="text-2xl text-gray-500 font-semibold">No users have been awarded this badge yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="bg-gray-100 p-6 md:p-10 text-center">
+                <a href="{% url 'badges' %}"
+                   class="inline-block text-3xl px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition">
+                    Back to Badges
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

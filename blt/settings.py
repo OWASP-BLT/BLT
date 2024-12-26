@@ -8,12 +8,14 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
 # from google.oauth2 import service_account
+import json
 import os
 import sys
 
 import dj_database_url
 import environ
 from django.utils.translation import gettext_lazy as _
+from google.oauth2 import service_account
 
 # reading .env file
 environ.Env.read_env()
@@ -79,7 +81,6 @@ INSTALLED_APPS = (
     "django.contrib.sites",
     "django.contrib.humanize",
     "website",
-    "company",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
@@ -104,7 +105,7 @@ INSTALLED_APPS = (
     "captcha",
     "dj_rest_auth",
     "dj_rest_auth.registration",
-    "blog",
+    "storages",
 )
 
 
@@ -122,7 +123,8 @@ MIDDLEWARE = (
     "tz_detect.middleware.TimezoneMiddleware",
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
 )
-
+BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
+BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
 TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
 
 if DEBUG and not TESTING:
@@ -263,8 +265,10 @@ EMAIL_PORT = 1025
 
 REPORT_EMAIL = os.environ.get("REPORT_EMAIL", "blank")
 REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "blank")
-DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
-if "DATABASE_URL" in os.environ:
+
+# these settings are only for production / Heroku
+if "DYNO" in os.environ:
+    print("database url detected in settings")
     DEBUG = False
     EMAIL_HOST = "smtp.sendgrid.net"
     EMAIL_HOST_USER = os.environ.get("SENDGRID_USERNAME", "blank")
@@ -274,15 +278,54 @@ if "DATABASE_URL" in os.environ:
     if not TESTING:
         SECURE_SSL_REDIRECT = True
 
-    GS_ACCESS_KEY_ID = os.environ.get("GS_ACCESS_KEY_ID", "blank")
-    GS_SECRET_ACCESS_KEY = os.environ.get("GS_SECRET_ACCESS_KEY", "blank")
-    GOOGLE_APPLICATION_CREDENTIALS = "/app/google-credentials.json"
+    import logging
+
+    logging.basicConfig(level=logging.DEBUG)
+    # GS_ACCESS_KEY_ID = os.environ.get("GS_ACCESS_KEY_ID", "blank")
+    # GS_SECRET_ACCESS_KEY = os.environ.get("GS_SECRET_ACCESS_KEY", "blank")
+    # GOOGLE_APPLICATION_CREDENTIALS = "/app/google-credentials.json"
 
     GS_BUCKET_NAME = "bhfiles"
-    DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+    # DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+
+    # GS_CREDENTIALS = None
+
+    # # Ensure credentials file is valid
+    # try:
+    #     GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
+    #         GOOGLE_APPLICATION_CREDENTIALS
+    #     )
+    #     print("Google Cloud Storage credentials loaded successfully.")
+    # except Exception as e:
+    #     print(f"Error loading Google Cloud Storage credentials: {e}")
+
+    GOOGLE_CREDENTIALS = os.getenv("GOOGLE_CREDENTIALS")
+
+    if not GOOGLE_CREDENTIALS:
+        raise Exception("GOOGLE_CREDENTIALS environment variable is not set.")
+
+    GS_CREDENTIALS = service_account.Credentials.from_service_account_info(
+        json.loads(GOOGLE_CREDENTIALS)
+    )
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+            "OPTIONS": {
+                "credentials": GS_CREDENTIALS,
+                "bucket_name": GS_BUCKET_NAME,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+        },
+    }
+
     GS_FILE_OVERWRITE = False
     GS_QUERYSTRING_AUTH = False
+    GS_DEFAULT_ACL = None
     MEDIA_URL = "https://bhfiles.storage.googleapis.com/"
+    # add debugging info for google storage
 
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
@@ -297,6 +340,17 @@ if "DATABASE_URL" in os.environ:
     )
 
 else:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+        },
+    }
+    DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+    # DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+    print("no database url detected in settings, using sqlite")
     if not TESTING:
         DEBUG = True
 
@@ -329,10 +383,7 @@ STATIC_ROOT = os.path.join(PROJECT_ROOT, "staticfiles")
 STATIC_URL = "/static/"
 
 # Extra places for collectstatic to find static files.
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "website", "static"),
-    os.path.join(BASE_DIR, "company", "static"),
-)
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "website", "static"),)
 
 ABSOLUTE_URL_OVERRIDES = {
     "auth.user": lambda u: "/profile/%s/" % u.username,
@@ -340,7 +391,7 @@ ABSOLUTE_URL_OVERRIDES = {
 
 # Simplified static file serving.
 # https://warehouse.python.org/project/whitenoise/
-STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+# STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
 LOGIN_REDIRECT_URL = "/"
 
@@ -398,12 +449,23 @@ else:
     else:
         CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "unique-snowflake",
+if DEBUG or TESTING:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "unique-snowflake",
+        }
     }
-}
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": os.environ.get("REDISCLOUD_URL"),
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+        }
+    }
 
 if DEBUG or TESTING:
     anon_throttle = 100000
@@ -555,3 +617,14 @@ BITCOIN_RPC_USER = os.environ.get("BITCOIN_RPC_USER", "yourusername")
 BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "yourpassword")
 BITCOIN_RPC_HOST = os.environ.get("BITCOIN_RPC_HOST", "localhost")
 BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")
+
+ASGI_APPLICATION = "blt.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ.get("REDISCLOUD_URL")],
+        },
+    },
+}

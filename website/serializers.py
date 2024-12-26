@@ -3,13 +3,13 @@ from rest_framework import serializers
 
 from website.models import (
     ActivityLog,
-    Company,
     Contributor,
     Domain,
     Hunt,
     HuntPrize,
     Issue,
     IssueScreenshot,
+    Organization,
     Points,
     Project,
     Tag,
@@ -119,9 +119,9 @@ class BugHuntSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class CompanySerializer(serializers.ModelSerializer):
+class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Company
+        model = Organization
         fields = "__all__"
 
 
@@ -150,7 +150,16 @@ class ContributorSerializer(serializers.ModelSerializer):
 class TimeLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = TimeLog
-        fields = ["id", "user", "start_time", "end_time", "duration", "github_issue_url", "created"]
+        fields = [
+            "id",
+            "user",
+            "organization",
+            "start_time",
+            "end_time",
+            "duration",
+            "github_issue_url",
+            "created",
+        ]
         read_only_fields = [
             "id",
             "user",
