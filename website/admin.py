@@ -33,6 +33,7 @@ from website.models import (
     UserProfile,
     Wallet,
     Winner,
+    Recommendation,
 )
 
 
@@ -212,11 +213,6 @@ class PointsAdmin(admin.ModelAdmin):
 admin.site.unregister(User)
 
 
-class RecommendationAdmin(admin.ModelAdmin):
-    list_display = ("recommender", "recommended_user", "created_at")
-    search_fields = ("recommender__username", "recommended_user__username")
-
-
 # class UserAdmin(ImportExportModelAdmin):
 #     resource_class = UserResource
 #     list_display = (
@@ -230,6 +226,12 @@ class RecommendationAdmin(admin.ModelAdmin):
 #         "is_staff",
 #     )
 
+class RecommendationAdmin(admin.ModelAdmin):
+    list_display = ("recommender", "recommended_user", "created_at")
+    search_fields = ("recommender__username", "recommended_user__username")
+
+
+admin.site.register(Recommendation, RecommendationAdmin)
 
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = (
