@@ -665,9 +665,9 @@ class UserProfile(models.Model):
                 elif self.current_streak == 30:
                     points_awarded += 50
                     reason = "30-day streak milestone achieved!"
-                elif self.current_streak == 90:
+                elif self.current_streak == 100:
                     points_awarded += 150
-                    reason = "90-day streak milestone achieved!"
+                    reason = "100-day streak milestone achieved!"
                 elif self.current_streak == 180:
                     points_awarded += 300
                     reason = "180-day streak milestone achieved!"
@@ -699,7 +699,7 @@ class UserProfile(models.Model):
             7: "Weekly Streak",
             15: "Half-Month Streak",
             30: "Monthly Streak",
-            90: "Three Month Streak",
+            100: "100 Day Streak",
             180: "Six Month Streak",
             365: "Yearly Streak",
         }
