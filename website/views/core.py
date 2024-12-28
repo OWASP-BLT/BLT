@@ -429,6 +429,8 @@ def add_suggestions(request):
         else:
             messages.error(request, "Please fill all the fields.")
             return JsonResponse({"status": "error"}, status=400)
+    else:
+        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
 
 
 class GoogleLogin(SocialLoginView):
