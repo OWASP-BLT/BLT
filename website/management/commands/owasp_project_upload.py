@@ -46,7 +46,7 @@ class Command(BaseCommand):
         if not github_token:
             self.stderr.write(
                 self.style.ERROR("GITHUB_TOKEN is not configured in settings. Aborting.")
-            )            
+            )
             return
 
         headers = {
