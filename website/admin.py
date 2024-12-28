@@ -40,6 +40,7 @@ from website.models import (
     UserProfile,
     Wallet,
     Winner,
+    Recommendation,
 )
 
 
@@ -242,6 +243,12 @@ admin.site.unregister(User)
 #         "is_staff",
 #     )
 
+class RecommendationAdmin(admin.ModelAdmin):
+    list_display = ("recommender", "recommended_user", "created_at")
+    search_fields = ("recommender__username", "recommended_user__username")
+
+
+admin.site.register(Recommendation, RecommendationAdmin)
 
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = (
@@ -263,6 +270,8 @@ class UserProfileAdmin(admin.ModelAdmin):
         "flagged_count",
         "subscribed_domains_count",
         "subscribed_users_count",
+        "recommendation_count",
+        "recommendation_blurb",
         "x_username",
         "linkedin_url",
         "github_url",
@@ -290,6 +299,9 @@ class UserProfileAdmin(admin.ModelAdmin):
 
     def subscribed_users_count(self, obj):
         return obj.subscribed_users.count()
+
+    def recommendation_count(self, obj):
+        return obj.recommendations.count()
 
 
 class IssueScreenshotAdmin(admin.ModelAdmin):

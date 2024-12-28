@@ -215,6 +215,8 @@ from website.views.user import (
     invite_friend,
     profile,
     profile_edit,
+    recommend_user,
+    recommend_via_blurb,
     referral_signup,
     stripe_connected,
     update_bch_address,
@@ -764,6 +766,8 @@ urlpatterns = [
     path("sizzle-docs/", sizzle_docs, name="sizzle-docs"),
     path("api/timelogsreport/", TimeLogListAPIView, name="timelogsreport"),
     path("time-logs/", TimeLogListView, name="time_logs"),
+    path("recommend/<int:user_id>/", recommend_user, name="recommend_user"),
+    path("recommend/<str:username>/blurb/", recommend_via_blurb, name="recommend_via_blurb"),
     path("sizzle-daily-log/", sizzle_daily_log, name="sizzle_daily_log"),
     path(
         "user-sizzle-report/<str:username>/",
