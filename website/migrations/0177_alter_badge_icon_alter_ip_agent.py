@@ -4,7 +4,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0161_alter_badge_icon"),
+        ("website", "0176_repo_contributor_repo_contributor_count_and_more"),
     ]
 
     operations = [
