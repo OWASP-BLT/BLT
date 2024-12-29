@@ -453,22 +453,31 @@ def create_project(request):
                 if not hostname:
                     return False
 
-                resolved_ip = socket.gethostbyname(hostname)
-                ip_obj = ipaddress.ip_address(resolved_ip)
-
-                if (
-                    ip_obj.is_private
-                    or ip_obj.is_loopback
-                    or ip_obj.is_reserved
-                    or ip_obj.is_multicast
-                    or ip_obj.is_link_local
-                ):
+                try:
+                    addr_info = socket.getaddrinfo(hostname, None)
+                except socket.gaierror:
+                    # DNS resolution failed; hostname is not resolvable
                     return False
+                for info in addr_info:
+                    ip = info[4][0]
+                    try:
+                        ip_obj = ipaddress.ip_address(ip)
+                        if (
+                            ip_obj.is_private
+                            or ip_obj.is_loopback
+                            or ip_obj.is_reserved
+                            or ip_obj.is_multicast
+                            or ip_obj.is_link_local
+                            or ip_obj.is_unspecified
+                        ):
+                            # Disallowed IP range detected
+                            return False
+                    except ValueError:
+                        # Invalid IP address format
+                        return False
+                return True
 
-                response = requests.head(url, timeout=5, allow_redirects=False, verify=True)
-                return response.status_code in [200, 201, 301, 302]
-
-            except (ValidationError, requests.RequestException, socket.gaierror):
+            except (ValidationError, ValueError):
                 return False
 
         # Validate project URL
