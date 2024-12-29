@@ -1,3 +1,4 @@
+import ipaddress
 import json
 import logging
 import re
@@ -5,6 +6,7 @@ import time
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
+from urllib.parse import urlparse
 
 import django_filters
 import matplotlib.pyplot as plt
@@ -445,14 +447,23 @@ def create_project(request):
             # Validate URL format
             try:
                 URLValidator(schemes=["http", "https"])(url)
-            except ValidationError:
-                return False
+                parsed = urlparse(url)
+                hostname = parsed.hostname
 
-            # Check if URL is accessible
-            try:
-                response = requests.head(url, timeout=5, allow_redirects=True)
-                return response.status_code == 200
-            except requests.RequestException:
+                # Block private/internal IP addresses and localhost
+                try:
+                    ip = ipaddress.ip_address(hostname)
+                    if ip.is_private or ip.is_loopback:
+                        return False
+                except ValueError:
+                    # Not an IP - continue with hostname check
+                    if hostname.startswith(("localhost", "127.", "0.", "internal.")):
+                        return False
+
+                # Check if URL is accessible
+                response = requests.head(url, timeout=5, allow_redirects=False, verify=True)
+                return response.status_code in [200, 201, 301, 302]
+            except (ValidationError, requests.RequestException):
                 return False
 
         # Validate project URL
@@ -738,5 +749,5 @@ def create_project(request):
             },
             status=403,
         )
-    except Exception as e:
-        return JsonResponse({"error": str(e), "code": "UNKNOWN_ERROR"}, status=400)
+    except ValidationError as e:
+        return JsonResponse({"error": str(e), "code": "VALIDATION_ERROR"}, status=400)
