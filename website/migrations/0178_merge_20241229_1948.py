@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0176_repo_contributor_repo_contributor_count_and_more"),
         ("website", "0177_alter_challenge_team_participants"),
