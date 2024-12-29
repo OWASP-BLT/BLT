@@ -179,6 +179,7 @@ from website.views.project import (
     ProjectBadgeView,
     ProjectDetailView,
     ProjectListView,
+    ProjectView,
     blt_tomato,
     distribute_bacon,
     select_contribution,
@@ -536,6 +537,7 @@ urlpatterns = [
         name="googleplayapp",
     ),
     re_path(r"^projects/$", ProjectListView.as_view(), name="project_list"),
+    re_path(r"^allprojects/$", ProjectView.as_view(), name="project_view"),
     re_path(r"^apps/$", TemplateView.as_view(template_name="apps.html"), name="apps"),
     re_path(
         r"^deletions/$",

@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -904,7 +905,15 @@ class Project(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            slug = slugify(self.name)
+            # Replace dots with dashes and limit length
+            slug = slug.replace(".", "-")
+            if len(slug) > 50:
+                slug = slug[:50]
+            # Ensure we have a valid slug
+            if not slug:
+                slug = f"project-{int(time.time())}"
+            self.slug = slug
         super(Project, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -1259,7 +1268,26 @@ class Repo(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            base_slug = slugify(self.name)
+            # Replace dots with dashes and limit length
+            base_slug = base_slug.replace(".", "-")
+            if len(base_slug) > 50:
+                base_slug = base_slug[:50]
+            # Ensure we have a valid slug
+            if not base_slug:
+                base_slug = f"repo-{int(time.time())}"
+
+            unique_slug = base_slug
+            counter = 1
+            while Repo.objects.filter(slug=unique_slug).exists():
+                suffix = f"-{counter}"
+                # Make sure base_slug + suffix doesn't exceed 50 chars
+                if len(base_slug) + len(suffix) > 50:
+                    base_slug = base_slug[: 50 - len(suffix)]
+                unique_slug = f"{base_slug}{suffix}"
+                counter += 1
+
+            self.slug = unique_slug
         super(Repo, self).save(*args, **kwargs)
 
     def __str__(self):
