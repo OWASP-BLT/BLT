@@ -5,21 +5,23 @@ from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
 
+import django_filters
 import matplotlib.pyplot as plt
 import requests
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
 from django.views.generic import DetailView, ListView
+from django_filters.views import FilterView
 from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
 from website.forms import GitHubURLForm
-from website.models import IP, BaconToken, Contribution, Project
+from website.models import IP, BaconToken, Contribution, Organization, Project, Repo
 from website.utils import admin_required
 
 logging.getLogger("matplotlib").setLevel(logging.ERROR)
@@ -312,3 +314,104 @@ class ProjectListView(ListView):
             sort_by = f"-{sort_by}"
 
         return queryset.order_by(sort_by)
+
+
+class ProjectRepoFilter(django_filters.FilterSet):
+    search = django_filters.CharFilter(method="filter_search", label="Search")
+    repo_type = django_filters.ChoiceFilter(
+        choices=[
+            ("all", "All"),
+            ("main", "Main"),
+            ("wiki", "Wiki"),
+            ("normal", "Normal"),
+        ],
+        method="filter_repo_type",
+        label="Repo Type",
+    )
+    sort = django_filters.ChoiceFilter(
+        choices=[
+            ("stars", "Stars"),
+            ("forks", "Forks"),
+            ("open_issues", "Open Issues"),
+            ("last_updated", "Recently Updated"),
+            ("contributor_count", "Contributors"),
+        ],
+        method="filter_sort",
+        label="Sort By",
+    )
+    order = django_filters.ChoiceFilter(
+        choices=[
+            ("asc", "Ascending"),
+            ("desc", "Descending"),
+        ],
+        method="filter_order",
+        label="Order",
+    )
+
+    class Meta:
+        model = Repo
+        fields = ["search", "repo_type", "sort", "order"]
+
+    def filter_search(self, queryset, name, value):
+        return queryset.filter(Q(project__name__icontains=value) | Q(name__icontains=value))
+
+    def filter_repo_type(self, queryset, name, value):
+        if value == "main":
+            return queryset.filter(is_main=True)
+        elif value == "wiki":
+            return queryset.filter(is_wiki=True)
+        elif value == "normal":
+            return queryset.filter(is_main=False, is_wiki=False)
+        return queryset
+
+    def filter_sort(self, queryset, name, value):
+        sort_mapping = {
+            "stars": "stars",
+            "forks": "forks",
+            "open_issues": "open_issues",
+            "last_updated": "last_updated",
+            "contributor_count": "contributor_count",
+        }
+        return queryset.order_by(sort_mapping.get(value, "stars"))
+
+    def filter_order(self, queryset, name, value):
+        if value == "desc":
+            return queryset.reverse()
+        return queryset
+
+
+class ProjectView(FilterView):
+    model = Repo
+    template_name = "projects/project_list.html"
+    context_object_name = "repos"
+    filterset_class = ProjectRepoFilter
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        organization_id = self.request.GET.get("organization")
+
+        if organization_id:
+            queryset = queryset.filter(project__organization_id=organization_id)
+        return queryset.select_related("project").prefetch_related("tags", "contributor")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get organizations that have projects
+        context["organizations"] = Organization.objects.filter(projects__isnull=False).distinct()
+
+        # Add counts
+        context["total_projects"] = Project.objects.count()
+        context["total_repos"] = Repo.objects.count()
+        context["filtered_count"] = context["repos"].count()
+
+        # Group repos by project
+        projects = {}
+        for repo in context["repos"]:
+            if repo.project not in projects:
+                projects[repo.project] = []
+            projects[repo.project].append(repo)
+        context["projects"] = projects
+
+        return context
