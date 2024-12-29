@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -56,8 +57,8 @@ class Tag(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        # make the slug using slugify
-        self.slug = slugify(self.name)
+        if not self.slug:
+            self.slug = slugify(self.name)
         super(Tag, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -890,46 +891,36 @@ class Contributor(models.Model):
 
 
 class Project(models.Model):
+    organization = models.ForeignKey(
+        Organization, null=True, blank=True, related_name="projects", on_delete=models.CASCADE
+    )
     name = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
-    github_url = models.URLField()
-    wiki_url = models.URLField(null=True, blank=True)
-    homepage_url = models.URLField(null=True, blank=True)
-    logo_url = models.URLField()
-    stars = models.IntegerField(default=0)
-    forks = models.IntegerField(default=0)
-    contributor_count = models.IntegerField(default=0)
-    release_name = models.CharField(max_length=255, null=True, blank=True)
-    release_datetime = models.DateTimeField(null=True, blank=True)
-    external_links = models.JSONField(default=list, blank=True)
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True)
-    contributors = models.ManyToManyField(Contributor, related_name="projects", blank=True)
-    tags = models.ManyToManyField(Tag, blank=True)
-    last_updated = models.DateTimeField(null=True, blank=True)
-    total_issues = models.IntegerField(default=0)
-    repo_visit_count = models.IntegerField(default=0)
-    project_visit_count = models.IntegerField(default=0)
-    watchers = models.IntegerField(default=0)
-    open_pull_requests = models.IntegerField(default=0)
-    primary_language = models.CharField(max_length=50, null=True, blank=True)
-    license = models.CharField(max_length=100, null=True, blank=True)
-    last_commit_date = models.DateTimeField(null=True, blank=True)
-    updated_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(null=True, blank=True)
-    network_count = models.IntegerField(default=0)
-    subscribers_count = models.IntegerField(default=0)
-    open_issues = models.IntegerField(default=0)
-    closed_issues = models.IntegerField(default=0)
-    size = models.IntegerField(default=0)
-    commit_count = models.IntegerField(default=0)
+    url = models.URLField(
+        unique=True, null=True, blank=True
+    )  # Made url nullable in case of no website
+    twitter = models.CharField(max_length=30, null=True, blank=True)
+    facebook = models.URLField(null=True, blank=True)
+    logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)  # Standardized field name
+    modified = models.DateTimeField(auto_now=True)  # Standardized field name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            slug = slugify(self.name)
+            # Replace dots with dashes and limit length
+            slug = slug.replace(".", "-")
+            if len(slug) > 50:
+                slug = slug[:50]
+            # Ensure we have a valid slug
+            if not slug:
+                slug = f"project-{int(time.time())}"
+            self.slug = slug
+        super(Project, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.name
-
-    def get_top_contributors(self, limit=30):
-        return self.contributors.order_by("-contributions")[:limit]
 
 
 # class ContributorStats(models.Model):
@@ -1215,6 +1206,18 @@ class Post(models.Model):
         return reverse("post_detail", kwargs={"slug": self.slug})
 
 
+class PRAnalysisReport(models.Model):
+    pr_link = models.URLField()
+    issue_link = models.URLField()
+    priority_alignment_score = models.IntegerField()
+    revision_score = models.IntegerField()
+    recommendations = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.pr_link
+
+
 @receiver(post_save, sender=Post)
 def verify_file_upload(sender, instance, **kwargs):
     from django.core.files.storage import default_storage
@@ -1228,6 +1231,70 @@ def verify_file_upload(sender, instance, **kwargs):
             raise ValidationError(
                 f"Image '{instance.image.name}' was not uploaded to the storage backend."
             )
+
+
+class Repo(models.Model):
+    project = models.ForeignKey(Project, related_name="repos", on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True, blank=True)
+    description = models.TextField(null=True, blank=True)  # Made nullable for optional descriptions
+    repo_url = models.URLField(unique=True)
+    homepage_url = models.URLField(null=True, blank=True)
+    is_main = models.BooleanField(default=False)
+    is_wiki = models.BooleanField(default=False)
+    stars = models.IntegerField(default=0)
+    forks = models.IntegerField(default=0)
+    open_issues = models.IntegerField(default=0)
+    tags = models.ManyToManyField("Tag", blank=True)
+    last_updated = models.DateTimeField(null=True, blank=True)
+    total_issues = models.IntegerField(default=0)
+    project_visit_count = models.IntegerField(default=0)
+    watchers = models.IntegerField(default=0)
+    open_pull_requests = models.IntegerField(default=0)
+    primary_language = models.CharField(max_length=50, null=True, blank=True)
+    license = models.CharField(max_length=100, null=True, blank=True)
+    last_commit_date = models.DateTimeField(null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+    network_count = models.IntegerField(default=0)
+    subscribers_count = models.IntegerField(default=0)
+    closed_issues = models.IntegerField(default=0)
+    size = models.IntegerField(default=0)
+    commit_count = models.IntegerField(default=0)
+    release_name = models.CharField(max_length=255, null=True, blank=True)
+    release_datetime = models.DateTimeField(null=True, blank=True)
+    logo_url = models.URLField(null=True, blank=True)
+    contributor_count = models.IntegerField(default=0)
+    contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.name)
+            # Replace dots with dashes and limit length
+            base_slug = base_slug.replace(".", "-")
+            if len(base_slug) > 50:
+                base_slug = base_slug[:50]
+            # Ensure we have a valid slug
+            if not base_slug:
+                base_slug = f"repo-{int(time.time())}"
+
+            unique_slug = base_slug
+            counter = 1
+            while Repo.objects.filter(slug=unique_slug).exists():
+                suffix = f"-{counter}"
+                # Make sure base_slug + suffix doesn't exceed 50 chars
+                if len(base_slug) + len(suffix) > 50:
+                    base_slug = base_slug[: 50 - len(suffix)]
+                unique_slug = f"{base_slug}{suffix}"
+                counter += 1
+
+            self.slug = unique_slug
+        super(Repo, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.project.name}/{self.name}"
 
 
 class Challenge(models.Model):

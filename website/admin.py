@@ -13,6 +13,7 @@ from website.models import (
     Blocked,
     ChatBotLog,
     Contribution,
+    Contributor,
     Domain,
     Hunt,
     HuntPrize,
@@ -26,7 +27,9 @@ from website.models import (
     Payment,
     Points,
     Post,
+    PRAnalysisReport,
     Project,
+    Repo,
     SlackIntegration,
     Subscription,
     Suggestion,
@@ -399,11 +402,26 @@ class ProjectAdmin(admin.ModelAdmin):
         "name",
         "slug",
         "description",
-        "homepage_url",
         "created",
         "modified",
     )
     search_fields = ["name", "description", "slug"]
+
+
+class RepoAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "name",
+        "description",
+        "created",
+        "modified",
+    )
+    search_fields = ["name", "description"]
+
+
+class ContributorAdmin(admin.ModelAdmin):
+    list_display = ("name", "github_id", "created")
+    search_fields = ["name", "github_id"]
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -436,6 +454,8 @@ class PostAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Project, ProjectAdmin)
+admin.site.register(Repo, RepoAdmin)
+admin.site.register(Contributor, ContributorAdmin)
 admin.site.register(Bid, BidAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(User, UserAdmin)
@@ -465,4 +485,5 @@ admin.site.register(Tag, TagAdmin)
 admin.site.register(Integration)
 admin.site.register(SlackIntegration)
 admin.site.register(Activity)
+admin.site.register(PRAnalysisReport)
 admin.site.register(Post, PostAdmin)

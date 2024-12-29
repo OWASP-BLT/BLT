@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-8 mt-10">
+        <h1 class="text-3xl font-bold mb-8">Submit Pull Request For Analysis</h1>
+        {% if request.user.is_superuser %}
+            <a href="/view-pr-analysis/" class="inline-block">
+                <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-3 px-6 rounded focus:outline-none focus:shadow-outline">
+                    View PR analysis
+                </button>
+            </a>
+        {% endif %}
+        <form method="post"
+              action="{% url 'submit-roadmap-pr' %}"
+              class="bg-white shadow-md rounded px-8 pt-8 pb-8 mb-6">
+            {% csrf_token %}
+            <div class="mb-6">
+                <label for="pr-link" class="block text-gray-700 text-2xl font-semibold mb-3">GitHub PR Link</label>
+                <input type="url"
+                       id="pr-link"
+                       name="pr_link"
+                       placeholder="Enter GitHub PR link"
+                       class="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                       required>
+            </div>
+            <div class="mb-6">
+                <label for="issue-link"
+                       class="block text-gray-700 text-2xl font-semibold mb-3">GitHub Issue Link (Roadmap)</label>
+                <input type="url"
+                       id="issue-link"
+                       name="issue_link"
+                       placeholder="Enter GitHub issue link"
+                       class="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                       required>
+            </div>
+            <div class="flex items-center justify-center">
+                <button type="submit"
+                        class="bg-red-500 hover:bg-red-700 text-white font-bold py-3 px-6 rounded focus:outline-none focus:shadow-outline">
+                    Submit
+                </button>
+            </div>
+        </form>
+    </div>
+{% endblock %}
