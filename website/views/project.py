@@ -2,6 +2,7 @@ import ipaddress
 import json
 import logging
 import re
+import socket
 import time
 from datetime import datetime, timedelta
 from io import BytesIO
@@ -449,21 +450,25 @@ def create_project(request):
                 URLValidator(schemes=["http", "https"])(url)
                 parsed = urlparse(url)
                 hostname = parsed.hostname
+                if not hostname:
+                    return False
 
-                # Block private/internal IP addresses and localhost
-                try:
-                    ip = ipaddress.ip_address(hostname)
-                    if ip.is_private or ip.is_loopback:
-                        return False
-                except ValueError:
-                    # Not an IP - continue with hostname check
-                    if hostname.startswith(("localhost", "127.", "0.", "internal.")):
-                        return False
+                resolved_ip = socket.gethostbyname(hostname)
+                ip_obj = ipaddress.ip_address(resolved_ip)
 
-                # Check if URL is accessible
+                if (
+                    ip_obj.is_private
+                    or ip_obj.is_loopback
+                    or ip_obj.is_reserved
+                    or ip_obj.is_multicast
+                    or ip_obj.is_link_local
+                ):
+                    return False
+
                 response = requests.head(url, timeout=5, allow_redirects=False, verify=True)
                 return response.status_code in [200, 201, 301, 302]
-            except (ValidationError, requests.RequestException):
+
+            except (ValidationError, requests.RequestException, socket.gaierror):
                 return False
 
         # Validate project URL
@@ -749,5 +754,3 @@ def create_project(request):
             },
             status=403,
         )
-    except ValidationError as e:
-        return JsonResponse({"error": str(e), "code": "VALIDATION_ERROR"}, status=400)
