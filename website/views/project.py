@@ -1,10 +1,13 @@
+import ipaddress
 import json
 import logging
 import re
+import socket
 import time
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
+from urllib.parse import urlparse
 
 import django_filters
 import matplotlib.pyplot as plt
@@ -445,14 +448,36 @@ def create_project(request):
             # Validate URL format
             try:
                 URLValidator(schemes=["http", "https"])(url)
-            except ValidationError:
-                return False
+                parsed = urlparse(url)
+                hostname = parsed.hostname
+                if not hostname:
+                    return False
 
-            # Check if URL is accessible
-            try:
-                response = requests.head(url, timeout=5, allow_redirects=True)
-                return response.status_code == 200
-            except requests.RequestException:
+                try:
+                    addr_info = socket.getaddrinfo(hostname, None)
+                except socket.gaierror:
+                    # DNS resolution failed; hostname is not resolvable
+                    return False
+                for info in addr_info:
+                    ip = info[4][0]
+                    try:
+                        ip_obj = ipaddress.ip_address(ip)
+                        if (
+                            ip_obj.is_private
+                            or ip_obj.is_loopback
+                            or ip_obj.is_reserved
+                            or ip_obj.is_multicast
+                            or ip_obj.is_link_local
+                            or ip_obj.is_unspecified
+                        ):
+                            # Disallowed IP range detected
+                            return False
+                    except ValueError:
+                        # Invalid IP address format
+                        return False
+                return True
+
+            except (ValidationError, ValueError):
                 return False
 
         # Validate project URL
@@ -738,5 +763,3 @@ def create_project(request):
             },
             status=403,
         )
-    except Exception as e:
-        return JsonResponse({"error": str(e), "code": "UNKNOWN_ERROR"}, status=400)
