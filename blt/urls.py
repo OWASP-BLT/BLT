@@ -185,6 +185,8 @@ from website.views.project import (
     select_contribution,
 )
 from website.views.teams import (
+    TeamChallenges,
+    TeamLeaderboard,
     TeamOverview,
     add_member,
     create_team,
@@ -200,6 +202,7 @@ from website.views.user import (
     GlobalLeaderboardView,
     InviteCreate,
     SpecificMonthLeaderboardView,
+    UserChallengeListView,
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
@@ -797,6 +800,9 @@ urlpatterns = [
         TemplateView.as_view(template_name="similarity.html"),
         name="similarity_scan",
     ),
+    path("teams/challenges/", TeamChallenges.as_view(), name="team_challenges"),
+    path("teams/leaderboard/", TeamLeaderboard.as_view(), name="team_leaderboard"),
+    path("challenges/", UserChallengeListView.as_view(), name="user_challenges"),
 ]
 
 if settings.DEBUG:
