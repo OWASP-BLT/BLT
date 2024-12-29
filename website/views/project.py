@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+import time
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
@@ -8,13 +9,19 @@ from pathlib import Path
 import django_filters
 import matplotlib.pyplot as plt
 import requests
+from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.dateparse import parse_datetime
+from django.utils.text import slugify
 from django.utils.timezone import now
+from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView, ListView
 from django_filters.views import FilterView
 from rest_framework.views import APIView
@@ -398,6 +405,12 @@ class ProjectView(FilterView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        if self.request.user.is_authenticated:
+            # Get organizations where user is admin or manager
+            context["user_organizations"] = Organization.objects.filter(
+                Q(admin=self.request.user) | Q(managers=self.request.user)
+            ).distinct()
+
         # Get organizations that have projects
         context["organizations"] = Organization.objects.filter(projects__isnull=False).distinct()
 
@@ -415,3 +428,315 @@ class ProjectView(FilterView):
         context["projects"] = projects
 
         return context
+
+
+@login_required
+@require_http_methods(["POST"])
+def create_project(request):
+    try:
+        max_retries = 5
+        delay = 20
+
+        def validate_url(url):
+            """Validate URL format and accessibility"""
+            if not url:
+                return True  # URLs are optional
+
+            # Validate URL format
+            try:
+                URLValidator(schemes=["http", "https"])(url)
+            except ValidationError:
+                return False
+
+            # Check if URL is accessible
+            try:
+                response = requests.head(url, timeout=5, allow_redirects=True)
+                return response.status_code == 200
+            except requests.RequestException:
+                return False
+
+        # Validate project URL
+        project_url = request.POST.get("url")
+        if project_url and not validate_url(project_url):
+            return JsonResponse(
+                {
+                    "error": "Project URL is not accessible or returns an error",
+                    "code": "INVALID_PROJECT_URL",
+                },
+                status=400,
+            )
+
+        # Validate social media URLs
+        twitter = request.POST.get("twitter")
+        if twitter:
+            if twitter.startswith(("http://", "https://")):
+                if not validate_url(twitter):
+                    return JsonResponse(
+                        {"error": "Twitter URL is not accessible", "code": "INVALID_TWITTER_URL"},
+                        status=400,
+                    )
+            elif not twitter.startswith("@"):
+                twitter = f"@{twitter}"
+
+        facebook = request.POST.get("facebook")
+        if facebook:
+            if not validate_url(facebook) or "facebook.com" not in facebook:
+                return JsonResponse(
+                    {
+                        "error": "Invalid or inaccessible Facebook URL",
+                        "code": "INVALID_FACEBOOK_URL",
+                    },
+                    status=400,
+                )
+
+        # Validate repository URLs
+        repo_urls = request.POST.getlist("repo_urls[]")
+        for url in repo_urls:
+            if not url:
+                continue
+
+            # Validate GitHub URL format
+            if not url.startswith("https://github.com/"):
+                return JsonResponse(
+                    {
+                        "error": f"Repository URL must be a GitHub URL: {url}",
+                        "code": "NON_GITHUB_URL",
+                    },
+                    status=400,
+                )
+
+            # Verify GitHub URL format and accessibility
+            if not re.match(r"https://github\.com/[^/]+/[^/]+/?$", url):
+                return JsonResponse(
+                    {
+                        "error": f"Invalid GitHub repository URL format: {url}",
+                        "code": "INVALID_GITHUB_URL_FORMAT",
+                    },
+                    status=400,
+                )
+
+            if not validate_url(url):
+                return JsonResponse(
+                    {
+                        "error": f"GitHub repository is not accessible: {url}",
+                        "code": "INACCESSIBLE_REPO",
+                    },
+                    status=400,
+                )
+
+        # Check if project already exists by name
+        project_name = request.POST.get("name")
+        if Project.objects.filter(name__iexact=project_name).exists():
+            return JsonResponse(
+                {"error": "A project with this name already exists", "code": "NAME_EXISTS"},
+                status=409,
+            )  # 409 Conflict
+
+        # Check if project URL already exists
+        project_url = request.POST.get("url")
+        if project_url and Project.objects.filter(url=project_url).exists():
+            return JsonResponse(
+                {"error": "A project with this URL already exists", "code": "URL_EXISTS"},
+                status=409,
+            )
+
+        # Check if any of the repository URLs are already linked to other projects
+        repo_urls = request.POST.getlist("repo_urls[]")
+        existing_repos = Repo.objects.filter(repo_url__in=repo_urls)
+        if existing_repos.exists():
+            existing_urls = list(existing_repos.values_list("repo_url", flat=True))
+            return JsonResponse(
+                {
+                    "error": "One or more repositories are already linked to other projects",
+                    "code": "REPOS_EXIST",
+                    "existing_repos": existing_urls,
+                },
+                status=409,
+            )
+
+        # Extract project data
+        project_data = {
+            "name": project_name,
+            "description": request.POST.get("description"),
+            "url": project_url,
+            "twitter": request.POST.get("twitter"),
+            "facebook": request.POST.get("facebook"),
+        }
+
+        # Handle logo file
+        if request.FILES.get("logo"):
+            project_data["logo"] = request.FILES["logo"]
+
+        # Handle organization association
+        org_id = request.POST.get("organization")
+        if org_id:
+            try:
+                org = Organization.objects.get(id=org_id)
+                if not (request.user == org.admin):
+                    return JsonResponse(
+                        {
+                            "error": "You do not have permission to add projects to this organization"
+                        },
+                        status=403,
+                    )
+                project_data["organization"] = org
+            except Organization.DoesNotExist:
+                return JsonResponse({"error": "Organization not found"}, status=404)
+
+        # Create project
+        project = Project.objects.create(**project_data)
+
+        # GitHub API configuration
+        github_token = getattr(settings, "GITHUB_TOKEN", None)
+        if not github_token:
+            return JsonResponse({"error": "GitHub token not configured"}, status=500)
+
+        headers = {
+            "Authorization": f"token {github_token}",
+            "Accept": "application/vnd.github.v3+json",
+        }
+
+        # Handle repositories
+        repo_urls = request.POST.getlist("repo_urls[]")
+        repo_types = request.POST.getlist("repo_types[]")
+
+        def api_get(url):
+            for i in range(max_retries):
+                try:
+                    response = requests.get(url, headers=headers, timeout=10)
+                except requests.exceptions.RequestException:
+                    time.sleep(delay)
+                    continue
+                if response.status_code in (403, 429):
+                    time.sleep(delay)
+                    continue
+                return response
+
+        def get_issue_count(full_name, query):
+            search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
+            resp = api_get(search_url)
+            if resp.status_code == 200:
+                return resp.json().get("total_count", 0)
+            return 0
+
+        for url, repo_type in zip(repo_urls, repo_types):
+            if not url:
+                continue
+
+            # Convert GitHub URL to API URL
+            match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", url)
+            if not match:
+                continue
+
+            owner, repo_name = match.groups()
+            api_url = f"https://api.github.com/repos/{owner}/{repo_name}"
+
+            try:
+                # Fetch repository data
+                response = requests.get(api_url, headers=headers)
+                if response.status_code != 200:
+                    continue
+
+                repo_data = response.json()
+
+                # Generate unique slug
+                base_slug = slugify(repo_data["name"])
+                base_slug = base_slug.replace(".", "-")
+                if len(base_slug) > 50:
+                    base_slug = base_slug[:50]
+                if not base_slug:
+                    base_slug = f"repo-{int(time.time())}"
+
+                unique_slug = base_slug
+                counter = 1
+                while Repo.objects.filter(slug=unique_slug).exists():
+                    suffix = f"-{counter}"
+                    if len(base_slug) + len(suffix) > 50:
+                        base_slug = base_slug[: 50 - len(suffix)]
+                    unique_slug = f"{base_slug}{suffix}"
+                    counter += 1
+
+                # Fetch additional data
+                # Contributors count and commits count
+                commit_count = 0
+                all_contributors = []
+                page = 1
+                while True:
+                    contrib_url = f"{api_url}/contributors?anon=true&per_page=100&page={page}"
+                    c_resp = api_get(contrib_url)
+                    if c_resp.status_code != 200:
+                        break
+                    contributors_data = c_resp.json()
+                    if not contributors_data:
+                        break
+                    commit_count += sum(c.get("contributions", 0) for c in contributors_data)
+                    all_contributors.extend(contributors_data)
+                    page += 1
+
+                # Issues count - Fixed
+                full_name = repo_data.get("full_name")
+                open_issues = get_issue_count(full_name, "type:issue+state:open")
+                closed_issues = get_issue_count(full_name, "type:issue+state:closed")
+                open_pull_requests = get_issue_count(full_name, "type:pr+state:open")
+                total_issues = open_issues + closed_issues
+
+                # Latest release
+                releases_url = f"{api_url}/releases/latest"
+                release_response = requests.get(releases_url, headers=headers)
+                release_name = None
+                release_datetime = None
+                if release_response.status_code == 200:
+                    release_data = release_response.json()
+                    release_name = release_data.get("name") or release_data.get("tag_name")
+                    release_datetime = release_data.get("published_at")
+
+                # Create repository with fixed issues count
+                repo = Repo.objects.create(
+                    project=project,
+                    slug=unique_slug,
+                    name=repo_data["name"],
+                    description=repo_data.get("description", ""),
+                    repo_url=url,
+                    homepage_url=repo_data.get("homepage", ""),
+                    is_wiki=(repo_type == "wiki"),
+                    is_main=(repo_type == "main"),
+                    stars=repo_data.get("stargazers_count", 0),
+                    forks=repo_data.get("forks_count", 0),
+                    last_updated=parse_datetime(repo_data.get("updated_at")),
+                    watchers=repo_data.get("watchers_count", 0),
+                    primary_language=repo_data.get("language"),
+                    license=repo_data.get("license", {}).get("name"),
+                    last_commit_date=parse_datetime(repo_data.get("pushed_at")),
+                    network_count=repo_data.get("network_count", 0),
+                    subscribers_count=repo_data.get("subscribers_count", 0),
+                    size=repo_data.get("size", 0),
+                    logo_url=repo_data.get("owner", {}).get("avatar_url", ""),
+                    open_issues=open_issues,
+                    closed_issues=closed_issues,
+                    total_issues=total_issues,
+                    contributor_count=len(all_contributors),
+                    commit_count=commit_count,
+                    release_name=release_name,
+                    release_datetime=parse_datetime(release_datetime) if release_datetime else None,
+                    open_pull_requests=open_pull_requests,
+                )
+
+            except requests.exceptions.RequestException as e:
+                continue
+
+        return JsonResponse({"message": "Project created successfully"}, status=201)
+
+    except Organization.DoesNotExist:
+        return JsonResponse(
+            {"error": "Organization not found", "code": "ORG_NOT_FOUND"}, status=404
+        )
+    except PermissionError:
+        return JsonResponse(
+            {
+                "error": "You do not have permission to add projects to this organization",
+                "code": "PERMISSION_DENIED",
+            },
+            status=403,
+        )
+    except Exception as e:
+        return JsonResponse({"error": str(e), "code": "UNKNOWN_ERROR"}, status=400)
