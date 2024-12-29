@@ -706,26 +706,3 @@ def handler404(request, exception):
 
 def handler500(request, exception=None):
     return render(request, "500.html", {}, status=500)
-
-
-@csrf_exempt
-def slack_discover(request):
-    if request.method == "POST":
-        data = request.POST
-        user_id = data.get("user_id")
-        text = data.get("text")
-
-        # Fetch projects from OWASP GitHub
-        response = requests.get("https://api.github.com/orgs/OWASP/repos")
-        projects = response.json()
-
-        project_list = "\n".join(
-            [f"- {project['name']}: {project['html_url']}" for project in projects]
-        )
-
-        response_data = {
-            "response_type": "in_channel",
-            "text": f"Here are some OWASP projects you can work on:\n{project_list}",
-        }
-        return JsonResponse(response_data)
-    return JsonResponse({"error": "Invalid request method"}, status=405)

@@ -939,7 +939,9 @@ class SlackCallbackView(View):
         client_secret = os.getenv("SLACK_CLIENT_SECRET")
         host = request.get_host()
         scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
-        redirect_uri = f"{scheme}://{host}/oauth/slack/callback"
+        redirect_uri = os.environ.get(
+            "OAUTH_REDIRECT_URL", f"{request.scheme}://{request.get_host()}/oauth/slack/callback"
+        )
 
         url = "https://slack.com/api/oauth.v2.access"
         data = {
