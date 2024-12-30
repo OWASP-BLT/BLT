@@ -41,6 +41,8 @@
                         <div class="flex items-center gap-6">
                             {% if project.organization.logo %}
                                 <img src="{{ project.organization.logo.url }}"
+                                     width="50"
+                                     height="50"
                                      alt="{{ project.organization.name }}"
                                      class="w-20 h-20 rounded-lg ring-4 ring-white/10 shadow-xl">
                             {% else %}
@@ -70,20 +72,11 @@
         <!-- Project Header -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 mb-8">
             <div class="bg-gradient-to-r from-red-500 to-red-600 p-6">
-                <!-- Add organization info if exists -->
-                {% if project.organization %}
-                    <div class="flex items-center gap-3 mb-4 bg-white/10 w-fit px-3 py-2 rounded-lg">
-                        {% if project.organization.logo %}
-                            <img src="{{ project.organization.logo.url }}"
-                                 alt="{{ project.organization.name }}"
-                                 class="w-6 h-6 rounded-full">
-                        {% endif %}
-                        <span class="text-white/90 text-sm font-medium">{{ project.organization.name }}</span>
-                    </div>
-                {% endif %}
                 <div class="flex items-start gap-6">
                     {% if project.logo %}
                         <img src="{{ project.logo.url }}"
+                             width="60"
+                             height="60"
                              alt="{{ project.name }}"
                              class="w-24 h-24 rounded-lg shadow-lg">
                     {% else %}
@@ -164,23 +157,6 @@
                 </div>
             </div>
         </div>
-        <!-- Organization Details (if applicable) -->
-        {% if organization and show_org_details %}
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-                <h2 class="text-xl font-bold text-gray-900 mb-4">Organization Details</h2>
-                <div class="flex items-center gap-4">
-                    {% if organization.logo %}
-                        <img src="{{ organization.logo.url }}"
-                             alt="{{ organization.name }}"
-                             class="w-16 h-16 rounded-full">
-                    {% endif %}
-                    <div>
-                        <h3 class="text-lg font-semibold">{{ organization.name }}</h3>
-                        {% if organization.description %}<p class="text-gray-600">{{ organization.description }}</p>{% endif %}
-                    </div>
-                </div>
-            </div>
-        {% endif %}
         <!-- Associated Repositories -->
         <div class="grid gap-6">
             <h2 class="text-2xl font-bold text-gray-900">Associated Repositories</h2>
