@@ -150,20 +150,24 @@
                     <!-- Project Header -->
                     <div class="bg-gradient-to-r from-red-500 to-red-600 p-6">
                         <div class="flex items-start gap-6">
-                            {% if project.logo %}
-                                <img src="{{ project.logo.url }}"
-                                     alt="{{ project.name }}"
-                                     height="50"
-                                     width="50"
-                                     class="w-20 h-20 rounded-lg shadow-lg flex-shrink-0">
-                            {% else %}
-                                <div class="w-20 h-20 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
-                                    <span class="text-2xl text-white font-bold">{{ project.name|slice:":1"|upper }}</span>
-                                </div>
-                            {% endif %}
+                            <a href="{% url 'projects_detail' project.slug %}" class="block">
+                                {% if project.logo %}
+                                    <img src="{{ project.logo.url }}"
+                                         alt="{{ project.name }}"
+                                         height="50"
+                                         width="50"
+                                         class="w-20 h-20 rounded-lg shadow-lg flex-shrink-0 hover:opacity-80 transition-opacity">
+                                {% else %}
+                                    <div class="w-20 h-20 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0 hover:bg-white/30 transition-colors">
+                                        <span class="text-2xl text-white font-bold">{{ project.name|slice:":1"|upper }}</span>
+                                    </div>
+                                {% endif %}
+                            </a>
                             <div class="flex-grow">
-                                <h2 class="text-3xl font-bold text-white mb-2">{{ project.name }}</h2>
-                                <p class="text-lg text-white/90 leading-relaxed">{{ project.description|truncatechars:200 }}</p>
+                                <a href="{% url 'projects_detail' project.slug %}" class="block group">
+                                    <h2 class="text-3xl font-bold text-white mb-2 group-hover:underline">{{ project.name }}</h2>
+                                    <p class="text-lg text-white/90 leading-relaxed group-hover:text-white">{{ project.description|truncatechars:200 }}</p>
+                                </a>
                             </div>
                         </div>
                     </div>

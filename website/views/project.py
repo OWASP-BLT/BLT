@@ -15,15 +15,16 @@ import requests
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
-from django.utils.timezone import now
+from django.utils.timezone import localtime, now
 from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView, ListView
 from django_filters.views import FilterView
@@ -763,3 +764,69 @@ def create_project(request):
             },
             status=403,
         )
+
+
+class ProjectsDetailView(DetailView):
+    model = Project
+    template_name = "projects/project_detail.html"
+    context_object_name = "project"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        project = self.get_object()
+
+        # Get all repositories associated with the project
+        repositories = (
+            Repo.objects.select_related("project")
+            .filter(project=project)
+            .prefetch_related("tags", "contributor")
+        )
+
+        # Calculate aggregate metrics
+        repo_metrics = repositories.aggregate(
+            total_stars=Sum("stars"),
+            total_forks=Sum("forks"),
+            total_issues=Sum("total_issues"),
+            total_contributors=Sum("contributor_count"),
+            total_commits=Sum("commit_count"),
+            total_prs=Sum("open_pull_requests"),
+        )
+
+        # Format dates for display
+        created_date = localtime(project.created)
+        modified_date = localtime(project.modified)
+
+        # Add computed context
+        context.update(
+            {
+                "repositories": repositories,
+                "repo_metrics": repo_metrics,
+                "created_date": {
+                    "full": created_date.strftime("%B %d, %Y"),
+                    "relative": naturaltime(created_date),
+                },
+                "modified_date": {
+                    "full": modified_date.strftime("%B %d, %Y"),
+                    "relative": naturaltime(modified_date),
+                },
+                "show_org_details": self.request.user.is_authenticated
+                and (
+                    project.organization
+                    and (
+                        self.request.user == project.organization.admin
+                        or project.organization.managers.filter(id=self.request.user.id).exists()
+                    )
+                ),
+            }
+        )
+
+        # Add organization context if it exists
+        if project.organization:
+            context["organization"] = project.organization
+
+        return context
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+
+        return response
