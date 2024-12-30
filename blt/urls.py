@@ -181,6 +181,7 @@ from website.views.project import (
     ProjectListView,
     ProjectView,
     blt_tomato,
+    create_project,
     distribute_bacon,
     select_contribution,
 )
@@ -797,6 +798,7 @@ urlpatterns = [
         TemplateView.as_view(template_name="similarity.html"),
         name="similarity_scan",
     ),
+    path("projects/create/", create_project, name="create_project"),
 ]
 
 if settings.DEBUG:
