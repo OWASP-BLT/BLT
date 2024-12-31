@@ -2,11 +2,12 @@ import asyncio
 import difflib
 import json
 import os
-import subprocess
 import tempfile
+import zipfile
+from pathlib import Path
 
+import aiohttp
 from channels.generic.websocket import AsyncWebsocketConsumer
-from git import Repo
 
 from website.utils import (
     compare_model_fields,
@@ -14,6 +15,7 @@ from website.utils import (
     extract_django_models,
     extract_function_signatures_and_content,
     generate_embedding,
+    git_url_to_zip_url,
 )
 
 
@@ -46,6 +48,8 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
         type2 = data.get("type2")  # 'github' or 'zip'
         repo1 = data.get("repo1")  # GitHub URL or ZIP file path
         repo2 = data.get("repo2")  # GitHub URL or ZIP file path
+        branch1 = data.get("branch1")  # Branch name for the first repository
+        branch2 = data.get("branch2")  # Branch name for the second repository
 
         if not repo1 or not repo2 or not type1 or not type2:
             await self.send(
@@ -58,12 +62,14 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
             return
 
         try:
-            # Create a temporary directory for repository processing
             temp_dir = tempfile.mkdtemp()
 
             # Download or extract the repositories
-            repo1_path = await self.download_or_extract(repo1, type1, temp_dir, "repo1")
-            repo2_path = await self.download_or_extract(repo2, type2, temp_dir, "repo2")
+
+            zip_repo1 = git_url_to_zip_url(repo1, branch1)
+            zip_repo2 = git_url_to_zip_url(repo2, branch2)
+            repo1_path = await self.download_or_extract(zip_repo1, type1, temp_dir, "repo1")
+            repo2_path = await self.download_or_extract(zip_repo2, type2, temp_dir, "repo2")
 
             # Process similarity analysis
             matching_details = await self.run_similarity_analysis(repo1_path, repo2_path)
@@ -88,7 +94,10 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
             # Handle unexpected errors and send an error message
             await self.send(
                 json.dumps(
-                    {"status": "error", "error": "Please check the repositories and try again."}
+                    {
+                        "status": "error",
+                        "error": "Please check the repositories/branches and try again.",
+                    }
                 )
             )
             await self.close()
@@ -125,29 +134,62 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
         """
         dest_path = os.path.join(temp_dir, repo_name)
         if source_type == "github":
-            try:
-                # Clone the GitHub repository
-                process = await self.clone_github_repo(source, dest_path)
-                return dest_path
-            except subprocess.CalledProcessError as e:
-                # Handle errors during the cloning process
-                raise Exception(f"Error cloning GitHub repository: {e.stderr.decode('utf-8')}")
-            except Exception as e:
-                # General error handling for unexpected issues
-                raise Exception(f"Unexpected error during GitHub cloning: {str(e)}")
+            repo_path = await self.download_and_extract_zip(source, temp_dir, repo_name)
+            return repo_path
 
         elif source_type == "zip":
-            # Handle ZIP extraction (Add your ZIP handling logic here)
-            pass
+            # Assume `repo_url_or_path` is a direct path to a ZIP file
+            repo_path = await self.extract_zip(source, temp_dir, repo_name)
+            return repo_path
 
         return dest_path
 
-    async def clone_github_repo(self, repo_url, dest_path):
+    async def download_and_extract_zip(self, zip_url, temp_dir, repo_name):
         """
-        Clones a GitHub repository asynchronously.
+        Downloads and extracts a ZIP file from a URL.
         """
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, Repo.clone_from, repo_url, dest_path)
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(zip_url) as response:
+                    if response.status != 200:
+                        raise Exception(
+                            f"Failed to download ZIP file. Status code: {response.status}"
+                        )
+
+                    # Extract the ZIP file
+                    zip_file_path = Path(temp_dir) / f"{repo_name}.zip"
+                    with open(zip_file_path, "wb") as zip_file:
+                        zip_data = await response.read()
+                        zip_file.write(zip_data)
+
+                    # Extract to a directory
+                    extraction_path = Path(temp_dir) / repo_name
+                    try:
+                        with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
+                            zip_ref.extractall(extraction_path)
+                    except zipfile.BadZipFile as e:
+                        raise Exception(f"Failed to extract ZIP file: {e}")
+
+                    return str(extraction_path)
+        except Exception as e:
+            raise
+
+    async def extract_zip(self, zip_file_path, temp_dir, repo_name):
+        """
+        Extracts a local ZIP file.
+
+        Args:
+            zip_file_path (str): Path to the local ZIP file.
+            temp_dir (str): Temporary directory to store files.
+            repo_name (str): Repository identifier.
+
+        Returns:
+            str: Path to the extracted contents.
+        """
+        extraction_path = Path(temp_dir) / repo_name
+        with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
+            zip_ref.extractall(extraction_path)
+        return str(extraction_path)
 
     def process_similarity_analysis(self, repo1_path, repo2_path):
         """
