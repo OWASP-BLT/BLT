@@ -830,3 +830,98 @@ class ProjectsDetailView(DetailView):
         response = super().get(request, *args, **kwargs)
 
         return response
+
+
+class RepoDetailView(DetailView):
+    model = Repo
+    template_name = "projects/repo_detail.html"
+    context_object_name = "repo"
+
+    def get_github_top_contributors(self, repo_url):
+        """Fetch top contributors directly from GitHub API"""
+        try:
+            # Extract owner/repo from GitHub URL
+            owner_repo = repo_url.rstrip("/").split("github.com/")[-1]
+            api_url = f"https://api.github.com/repos/{owner_repo}/contributors?per_page=6"
+
+            headers = {
+                "Authorization": f"token {settings.GITHUB_TOKEN}",
+                "Accept": "application/vnd.github.v3+json",
+            }
+
+            response = requests.get(api_url, headers=headers)
+            if response.status_code == 200:
+                return response.json()
+            return []
+        except Exception as e:
+            print(f"Error fetching GitHub contributors: {e}")
+            return []
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        repo = self.get_object()
+
+        # Get other repos from same project
+        context["related_repos"] = (
+            Repo.objects.filter(project=repo.project)
+            .exclude(id=repo.id)
+            .select_related("project")[:5]
+        )
+
+        # Get top contributors from GitHub
+        github_contributors = self.get_github_top_contributors(repo.repo_url)
+
+        if github_contributors:
+            # Match by github_id instead of username
+            github_ids = [str(c["id"]) for c in github_contributors]
+            verified_contributors = repo.contributor.filter(
+                github_id__in=github_ids
+            ).select_related()
+
+            # Create a mapping of github_id to database contributor
+            contributor_map = {str(c.github_id): c for c in verified_contributors}
+
+            # Merge GitHub and database data
+            merged_contributors = []
+            for gh_contrib in github_contributors:
+                gh_id = str(gh_contrib["id"])
+                db_contrib = contributor_map.get(gh_id)
+                if db_contrib:
+                    merged_contributors.append(
+                        {
+                            "name": db_contrib.name,
+                            "github_id": db_contrib.github_id,
+                            "avatar_url": db_contrib.avatar_url,
+                            "contributions": gh_contrib["contributions"],
+                            "github_url": db_contrib.github_url,
+                            "verified": True,
+                        }
+                    )
+                else:
+                    merged_contributors.append(
+                        {
+                            "name": gh_contrib["login"],
+                            "github_id": gh_contrib["id"],
+                            "avatar_url": gh_contrib["avatar_url"],
+                            "contributions": gh_contrib["contributions"],
+                            "github_url": gh_contrib["html_url"],
+                            "verified": False,
+                        }
+                    )
+
+            context["top_contributors"] = merged_contributors
+        else:
+            # Fallback to database contributors if GitHub API fails
+            context["top_contributors"] = [
+                {
+                    "name": c.name,
+                    "github_id": c.github_id,
+                    "avatar_url": c.avatar_url,
+                    "contributions": c.contributions,
+                    "github_url": c.github_url,
+                    "verified": True,
+                }
+                for c in repo.contributor.all()[:6]
+            ]
+
+        return context
