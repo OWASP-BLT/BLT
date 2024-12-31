@@ -179,6 +179,7 @@ from website.views.project import (
     ProjectBadgeView,
     ProjectDetailView,
     ProjectListView,
+    ProjectsDetailView,
     ProjectView,
     blt_tomato,
     create_project,
@@ -799,6 +800,7 @@ urlpatterns = [
         name="similarity_scan",
     ),
     path("projects/create/", create_project, name="create_project"),
+    path("projects/<slug:slug>/", ProjectsDetailView.as_view(), name="projects_detail"),
 ]
 
 if settings.DEBUG:
