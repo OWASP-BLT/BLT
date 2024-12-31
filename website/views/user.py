@@ -219,9 +219,19 @@ class UserProfileDetailView(DetailView):
 
         user = self.object
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
+        milestones = [7, 15, 30, 100, 180, 365]
+        base_milestone = 0
+        next_milestone = 0
+        for milestone in milestones:
+            if user.userprofile.current_streak >= milestone:
+                base_milestone = milestone
+            elif user.userprofile.current_streak < milestone:
+                next_milestone = milestone
+                break
+        context["base_milestone"] = base_milestone
+        context["next_milestone"] = next_milestone
         # Fetch badges
         user_badges = UserBadge.objects.filter(user=user).select_related("badge")
-
         context["user_badges"] = user_badges  # Add badges to context
         context["is_mentor"] = UserBadge.objects.filter(user=user, badge__title="Mentor").exists()
         context["available_badges"] = Badge.objects.all()

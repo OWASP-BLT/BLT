@@ -152,3 +152,34 @@ jobs:
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
         run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
+
+  docker-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker
+        run: |
+          docker --version
+          # Install docker-compose
+          curl -sSL https://github.com/docker/compose/releases/download/v2.17.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+
+      - name: Build Docker image
+        run: |
+          docker build -t my-app .
+
+      - name: Run Docker container
+        run: |
+          docker run -d --name my-container my-app
+
+      - run: docker exec my-container pip install poetry
+      - run: docker exec my-container poetry lock --no-update
+      - run: docker exec my-container poetry install --no-dev --no-interaction
+
+      - name: Clean up
+        run: |
+          docker stop my-container
+          docker rm my-container

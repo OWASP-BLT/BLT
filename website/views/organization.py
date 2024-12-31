@@ -84,7 +84,7 @@ def add_domain_to_organization(request):
 
 
 @login_required(login_url="/accounts/login")
-def organization_dashboard(request, template="index_company.html"):
+def organization_dashboard(request, template="index_organization.html"):
     try:
         organization_admin = OrganizationAdmin.objects.get(user=request.user)
         if not organization_admin.is_active:
@@ -111,7 +111,7 @@ def organization_dashboard(request, template="index_company.html"):
 
 
 @login_required(login_url="/accounts/login")
-def admin_organization_dashboard(request, template="admin_dashboard_company.html"):
+def admin_organization_dashboard(request, template="admin_dashboard_organization.html"):
     user = request.user
     if user.is_superuser:
         if not user.is_active:
@@ -125,7 +125,7 @@ def admin_organization_dashboard(request, template="admin_dashboard_company.html
 
 @login_required(login_url="/accounts/login")
 def admin_organization_dashboard_detail(
-    request, pk, template="admin_dashboard_company_detail.html"
+    request, pk, template="admin_dashboard_organization_detail.html"
 ):
     user = request.user
     if user.is_superuser:
@@ -179,7 +179,7 @@ def weekly_report(request):
 
 
 @login_required(login_url="/accounts/login")
-def organization_hunt_results(request, pk, template="company_hunt_results.html"):
+def organization_hunt_results(request, pk, template="organization_hunt_results.html"):
     hunt = get_object_or_404(Hunt, pk=pk)
     issues = Issue.objects.filter(hunt=hunt).exclude(
         Q(is_hidden=True) & ~Q(user_id=request.user.id)
@@ -317,7 +317,7 @@ def subscribe_to_domains(request, pk):
 
 class DomainList(TemplateView):
     model = Domain
-    template_name = "company_domain_lists.html"
+    template_name = "organization_domain_lists.html"
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
@@ -584,7 +584,7 @@ class PreviousHunts(TemplateView):
 class OrganizationSettings(TemplateView):
     model = OrganizationAdmin
     fields = ["user", "domain", "role", "is_active"]
-    template_name = "company_settings.html"
+    template_name = "organization_settings.html"
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
@@ -1169,7 +1169,7 @@ def view_hunt(request, pk, template="view_hunt.html"):
 
 
 @login_required(login_url="/accounts/login")
-def organization_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_edit.html"):
+def organization_dashboard_hunt_edit(request, pk, template="organization_dashboard_hunt_edit.html"):
     if request.method == "GET":
         hunt = get_object_or_404(Hunt, pk=pk)
         domain_admin = OrganizationAdmin.objects.get(user=request.user)
@@ -1238,7 +1238,9 @@ def organization_dashboard_hunt_edit(request, pk, template="company_dashboard_hu
 
 
 @login_required(login_url="/accounts/login")
-def organization_dashboard_hunt_detail(request, pk, template="company_dashboard_hunt_detail.html"):
+def organization_dashboard_hunt_detail(
+    request, pk, template="organization_dashboard_hunt_detail.html"
+):
     hunt = get_object_or_404(Hunt, pk=pk)
     return render(request, template, {"hunt": hunt})
 
@@ -1251,7 +1253,7 @@ def hunt_results(request, pk, template="hunt_results.html"):
 
 @login_required(login_url="/accounts/login")
 def organization_dashboard_domain_detail(
-    request, pk, template="company_dashboard_domain_detail.html"
+    request, pk, template="organization_dashboard_domain_detail.html"
 ):
     user = request.user
     domain_admin = OrganizationAdmin.objects.get(user=request.user)

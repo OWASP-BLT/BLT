@@ -126,7 +126,7 @@ def Organization_view(request, *args, **kwargs):
 
 class RegisterOrganizationView(View):
     def get(self, request, *args, **kwargs):
-        return render(request, "company/register_company.html")
+        return render(request, "organization/register_organization.html")
 
     def post(self, request, *args, **kwargs):
         user = request.user
@@ -191,7 +191,7 @@ class RegisterOrganizationView(View):
             messages.error(request, f"Error saving organization: {e}")
             if logo_path:
                 default_storage.delete(logo_path)
-            return render(request, "company/register_company.html")
+            return render(request, "organization/register_organization.html")
 
         messages.success(request, "organization registered successfully.")
         return redirect("organization_analytics", id=organization.id)
@@ -405,7 +405,7 @@ class OrganizationDashboardAnalyticsView(View):
             "spent_on_bugtypes": self.get_spent_on_bugtypes(id),
         }
         self.get_spent_on_bugtypes(id)
-        return render(request, "company/company_analytics.html", context=context)
+        return render(request, "organization/organization_analytics.html", context=context)
 
 
 class OrganizationDashboardIntegrations(View):
@@ -427,7 +427,7 @@ class OrganizationDashboardIntegrations(View):
         )
 
         context = {"organization": id, "slack_integration": slack_integration}
-        return render(request, "company/company_integrations.html", context=context)
+        return render(request, "organization/organization_integrations.html", context=context)
 
 
 class OrganizationDashboardManageBugsView(View):
@@ -453,7 +453,7 @@ class OrganizationDashboardManageBugsView(View):
             "organization_obj": organization_obj,
             "issues": issues,
         }
-        return render(request, "company/company_manage_bugs.html", context=context)
+        return render(request, "organization/organization_manage_bugs.html", context=context)
 
 
 class OrganizationDashboardManageDomainsView(View):
@@ -478,7 +478,7 @@ class OrganizationDashboardManageDomainsView(View):
             "domains": domains,
         }
 
-        return render(request, "company/company_manage_domains.html", context=context)
+        return render(request, "organization/organization_manage_domains.html", context=context)
 
 
 class AddDomainView(View):
@@ -513,9 +513,9 @@ class AddDomainView(View):
         }
 
         if domain:
-            return render(request, "company/edit_domain.html", context=context)
+            return render(request, "organization/edit_domain.html", context=context)
         else:
-            return render(request, "company/add_domain.html", context=context)
+            return render(request, "organization/add_domain.html", context=context)
 
     @validate_organization_user
     @check_organization_or_manager
@@ -784,7 +784,7 @@ class AddSlackIntegrationView(View):
             hours = range(24)
             return render(
                 request,
-                "company/add_slack_integration.html",
+                "organization/add_slack_integration.html",
                 context={
                     "organization": id,
                     "slack_integration": slack_integration,
@@ -1096,7 +1096,7 @@ class DomainView(View):
             "ongoing_bughunts": ongoing_bughunts,
         }
 
-        return render(request, "company/view_domain.html", context)
+        return render(request, "organization/view_domain.html", context)
 
 
 class OrganizationDashboardManageRolesView(View):
@@ -1148,7 +1148,7 @@ class OrganizationDashboardManageRolesView(View):
             "organization_users": organization_users_list,  # Use the converted list
         }
 
-        return render(request, "company/company_manage_roles.html", context)
+        return render(request, "organization/organization_manage_roles.html", context)
 
     def post(self, request, id, *args, **kwargs):
         domain = Domain.objects.filter(
@@ -1306,7 +1306,7 @@ class ShowBughuntView(View):
             "is_hunt_manager": is_hunt_manager,
         }
 
-        return render(request, "company/bughunt/view_bughunt.html", context)
+        return render(request, "organization/bughunt/view_bughunt.html", context)
 
 
 class EndBughuntView(View):
@@ -1347,7 +1347,7 @@ class AddHuntView(View):
             "markdown_value": hunt.description,
         }
 
-        return render(request, "company/bughunt/edit_bughunt.html", context)
+        return render(request, "organization/bughunt/edit_bughunt.html", context)
 
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
@@ -1371,7 +1371,7 @@ class AddHuntView(View):
             "domains": domains,
         }
 
-        return render(request, "company/bughunt/add_bughunt.html", context)
+        return render(request, "organization/bughunt/add_bughunt.html", context)
 
     @validate_organization_user
     @check_organization_or_manager
@@ -1507,7 +1507,7 @@ class OrganizationDashboardManageBughuntView(View):
             "bughunts": filtered_bughunts.get(filter_type, []),
         }
 
-        return render(request, "company/bughunt/company_manage_bughunts.html", context)
+        return render(request, "organization/bughunt/organization_manage_bughunts.html", context)
 
 
 @require_http_methods(["DELETE"])

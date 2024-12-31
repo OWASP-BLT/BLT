@@ -179,7 +179,10 @@ from website.views.project import (
     ProjectBadgeView,
     ProjectDetailView,
     ProjectListView,
+    ProjectsDetailView,
+    ProjectView,
     blt_tomato,
+    create_project,
     distribute_bacon,
     select_contribution,
 )
@@ -536,6 +539,7 @@ urlpatterns = [
         name="googleplayapp",
     ),
     re_path(r"^projects/$", ProjectListView.as_view(), name="project_list"),
+    re_path(r"^allprojects/$", ProjectView.as_view(), name="project_view"),
     re_path(r"^apps/$", TemplateView.as_view(template_name="apps.html"), name="apps"),
     re_path(
         r"^deletions/$",
@@ -790,6 +794,13 @@ urlpatterns = [
     path("teams/delete-team/", delete_team, name="delete_team"),
     path("teams/leave-team/", leave_team, name="leave_team"),
     path("teams/kick-member/", kick_member, name="kick_member"),
+    path(
+        "similarity-scan",
+        TemplateView.as_view(template_name="similarity.html"),
+        name="similarity_scan",
+    ),
+    path("projects/create/", create_project, name="create_project"),
+    path("projects/<slug:slug>/", ProjectsDetailView.as_view(), name="projects_detail"),
 ]
 
 if settings.DEBUG:
