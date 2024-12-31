@@ -127,6 +127,14 @@
                         <option value="github">GitHub</option>
                     </select>
                 </div>
+                <div>
+                    <input id="branch1"
+                           name="branch1"
+                           type="text"
+                           placeholder="Enter the branch name"
+                           class="border border-gray-300 p-2 rounded-md w-full"
+                           required>
+                </div>
             </div>
             <div class="flex gap-4 mt-4">
                 <div>
@@ -143,6 +151,14 @@
                             class="border border-gray-300 p-2 rounded-md w-full">
                         <option value="github">GitHub</option>
                     </select>
+                </div>
+                <div>
+                    <input id="branch2"
+                           name="branch2"
+                           type="text"
+                           placeholder="Enter the branch name"
+                           class="border border-gray-300 p-2 rounded-md w-full"
+                           required>
                 </div>
             </div>
             <button type="button" id="fetchReports" class="btn">Fetch Reports</button>
@@ -237,8 +253,12 @@
 
             const repo1 = document.getElementById("repo1").value;
             const type1 = document.getElementById("type1").value;
+            const branch1 = document.getElementById("branch1").value;
+
             const repo2 = document.getElementById("repo2").value;
             const type2 = document.getElementById("type2").value;
+            const branch2 = document.getElementById("branch2").value;
+
 
             // Validate input
             if (!repo1 || !repo2) {
@@ -257,7 +277,10 @@
                     repo1: repo1,
                     type1: type1,
                     repo2: repo2,
-                    type2: type2
+                    type2: type2,
+                    branch1: branch1,   
+                    branch2: branch2
+
                 }));
             } catch (error) {
 
