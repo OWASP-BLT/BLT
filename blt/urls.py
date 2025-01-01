@@ -179,7 +179,11 @@ from website.views.project import (
     ProjectBadgeView,
     ProjectDetailView,
     ProjectListView,
+    ProjectsDetailView,
+    ProjectView,
+    RepoDetailView,
     blt_tomato,
+    create_project,
     distribute_bacon,
     select_contribution,
 )
@@ -536,6 +540,7 @@ urlpatterns = [
         name="googleplayapp",
     ),
     re_path(r"^projects/$", ProjectListView.as_view(), name="project_list"),
+    re_path(r"^allprojects/$", ProjectView.as_view(), name="project_view"),
     re_path(r"^apps/$", TemplateView.as_view(template_name="apps.html"), name="apps"),
     re_path(
         r"^deletions/$",
@@ -587,6 +592,7 @@ urlpatterns = [
     re_path(r"^api/v1/contributors/$", contributors, name="api_contributor"),
     path("project/<slug:slug>/", ProjectDetailView.as_view(), name="project_view"),
     path("projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"),
+    path("repository/<slug:slug>/", RepoDetailView.as_view(), name="repo_detail"),
     re_path(r"^report-ip/$", ReportIpView.as_view(), name="report_ip"),
     re_path(r"^reported-ips/$", ReportedIpListView.as_view(), name="reported_ips_list"),
     re_path(r"^feed/$", feed, name="feed"),
@@ -795,6 +801,8 @@ urlpatterns = [
         TemplateView.as_view(template_name="similarity.html"),
         name="similarity_scan",
     ),
+    path("projects/create/", create_project, name="create_project"),
+    path("projects/<slug:slug>/", ProjectsDetailView.as_view(), name="projects_detail"),
 ]
 
 if settings.DEBUG:

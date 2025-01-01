@@ -469,3 +469,12 @@ def compare_model_fields(model1, model2):
         "field_comparison_details": field_comparison_details,
         "overall_field_similarity": round(overall_field_similarity, 2),
     }
+
+
+def git_url_to_zip_url(git_url, branch="master"):
+    if git_url.endswith(".git"):
+        base_url = git_url[:-4]
+        zip_url = f"{base_url}/archive/refs/heads/{branch}.zip"
+        return zip_url
+    else:
+        raise ValueError("Invalid .git URL provided")

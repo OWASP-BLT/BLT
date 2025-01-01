@@ -21,6 +21,7 @@ from django.core.cache import cache
 from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.db import connection
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
@@ -30,6 +31,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import TemplateView, View
+from django_redis import get_redis_connection
 from requests.auth import HTTPBasicAuth
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -74,6 +76,8 @@ def check_status(request):
             "memory_info": psutil.virtual_memory()._asdict(),
             "top_memory_consumers": [],
             "memory_profiling": {},
+            "db_connection_count": 0,
+            "redis_stats": {},
         }
 
         bitcoin_rpc_user = os.getenv("BITCOIN_RPC_USER")
@@ -148,6 +152,15 @@ def check_status(request):
             key=lambda x: x["memory_info"]["rss"],
             reverse=True,
         )[:5]
+
+        # Get database connection count
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
+            status["db_connection_count"] = cursor.fetchone()[0]
+
+        # Get Redis stats using django-redis
+        redis_client = get_redis_connection("default")
+        status["redis_stats"] = redis_client.info()
 
         # Add memory profiling information
         current, peak = tracemalloc.get_traced_memory()
@@ -665,9 +678,6 @@ def robots_txt(request):
         "Allow: /",
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain")
-
-
-import os
 
 
 def get_last_commit_date():

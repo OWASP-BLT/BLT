@@ -1,25 +1,38 @@
+import ipaddress
 import json
 import logging
 import re
+import socket
+import time
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
+from urllib.parse import urlparse
 
+import django_filters
 import matplotlib.pyplot as plt
 import requests
+from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.decorators import user_passes_test
-from django.db.models import Count
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.humanize.templatetags.humanize import naturaltime
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
+from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils.timezone import now
+from django.utils.dateparse import parse_datetime
+from django.utils.text import slugify
+from django.utils.timezone import localtime, now
+from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView, ListView
+from django_filters.views import FilterView
 from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
 from website.forms import GitHubURLForm
-from website.models import IP, BaconToken, Contribution, Project
+from website.models import IP, BaconToken, Contribution, Organization, Project, Repo
 from website.utils import admin_required
 
 logging.getLogger("matplotlib").setLevel(logging.ERROR)
@@ -312,3 +325,603 @@ class ProjectListView(ListView):
             sort_by = f"-{sort_by}"
 
         return queryset.order_by(sort_by)
+
+
+class ProjectRepoFilter(django_filters.FilterSet):
+    search = django_filters.CharFilter(method="filter_search", label="Search")
+    repo_type = django_filters.ChoiceFilter(
+        choices=[
+            ("all", "All"),
+            ("main", "Main"),
+            ("wiki", "Wiki"),
+            ("normal", "Normal"),
+        ],
+        method="filter_repo_type",
+        label="Repo Type",
+    )
+    sort = django_filters.ChoiceFilter(
+        choices=[
+            ("stars", "Stars"),
+            ("forks", "Forks"),
+            ("open_issues", "Open Issues"),
+            ("last_updated", "Recently Updated"),
+            ("contributor_count", "Contributors"),
+        ],
+        method="filter_sort",
+        label="Sort By",
+    )
+    order = django_filters.ChoiceFilter(
+        choices=[
+            ("asc", "Ascending"),
+            ("desc", "Descending"),
+        ],
+        method="filter_order",
+        label="Order",
+    )
+
+    class Meta:
+        model = Repo
+        fields = ["search", "repo_type", "sort", "order"]
+
+    def filter_search(self, queryset, name, value):
+        return queryset.filter(Q(project__name__icontains=value) | Q(name__icontains=value))
+
+    def filter_repo_type(self, queryset, name, value):
+        if value == "main":
+            return queryset.filter(is_main=True)
+        elif value == "wiki":
+            return queryset.filter(is_wiki=True)
+        elif value == "normal":
+            return queryset.filter(is_main=False, is_wiki=False)
+        return queryset
+
+    def filter_sort(self, queryset, name, value):
+        sort_mapping = {
+            "stars": "stars",
+            "forks": "forks",
+            "open_issues": "open_issues",
+            "last_updated": "last_updated",
+            "contributor_count": "contributor_count",
+        }
+        return queryset.order_by(sort_mapping.get(value, "stars"))
+
+    def filter_order(self, queryset, name, value):
+        if value == "desc":
+            return queryset.reverse()
+        return queryset
+
+
+class ProjectView(FilterView):
+    model = Repo
+    template_name = "projects/project_list.html"
+    context_object_name = "repos"
+    filterset_class = ProjectRepoFilter
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        organization_id = self.request.GET.get("organization")
+
+        if organization_id:
+            queryset = queryset.filter(project__organization_id=organization_id)
+        return queryset.select_related("project").prefetch_related("tags", "contributor")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        if self.request.user.is_authenticated:
+            # Get organizations where user is admin or manager
+            context["user_organizations"] = Organization.objects.filter(
+                Q(admin=self.request.user) | Q(managers=self.request.user)
+            ).distinct()
+
+        # Get organizations that have projects
+        context["organizations"] = Organization.objects.filter(projects__isnull=False).distinct()
+
+        # Add counts
+        context["total_projects"] = Project.objects.count()
+        context["total_repos"] = Repo.objects.count()
+        context["filtered_count"] = context["repos"].count()
+
+        # Group repos by project
+        projects = {}
+        for repo in context["repos"]:
+            if repo.project not in projects:
+                projects[repo.project] = []
+            projects[repo.project].append(repo)
+        context["projects"] = projects
+
+        return context
+
+
+@login_required
+@require_http_methods(["POST"])
+def create_project(request):
+    try:
+        max_retries = 5
+        delay = 20
+
+        def validate_url(url):
+            """Validate URL format and accessibility"""
+            if not url:
+                return True  # URLs are optional
+
+            # Validate URL format
+            try:
+                URLValidator(schemes=["http", "https"])(url)
+                parsed = urlparse(url)
+                hostname = parsed.hostname
+                if not hostname:
+                    return False
+
+                try:
+                    addr_info = socket.getaddrinfo(hostname, None)
+                except socket.gaierror:
+                    # DNS resolution failed; hostname is not resolvable
+                    return False
+                for info in addr_info:
+                    ip = info[4][0]
+                    try:
+                        ip_obj = ipaddress.ip_address(ip)
+                        if (
+                            ip_obj.is_private
+                            or ip_obj.is_loopback
+                            or ip_obj.is_reserved
+                            or ip_obj.is_multicast
+                            or ip_obj.is_link_local
+                            or ip_obj.is_unspecified
+                        ):
+                            # Disallowed IP range detected
+                            return False
+                    except ValueError:
+                        # Invalid IP address format
+                        return False
+                return True
+
+            except (ValidationError, ValueError):
+                return False
+
+        # Validate project URL
+        project_url = request.POST.get("url")
+        if project_url and not validate_url(project_url):
+            return JsonResponse(
+                {
+                    "error": "Project URL is not accessible or returns an error",
+                    "code": "INVALID_PROJECT_URL",
+                },
+                status=400,
+            )
+
+        # Validate social media URLs
+        twitter = request.POST.get("twitter")
+        if twitter:
+            if twitter.startswith(("http://", "https://")):
+                if not validate_url(twitter):
+                    return JsonResponse(
+                        {"error": "Twitter URL is not accessible", "code": "INVALID_TWITTER_URL"},
+                        status=400,
+                    )
+            elif not twitter.startswith("@"):
+                twitter = f"@{twitter}"
+
+        facebook = request.POST.get("facebook")
+        if facebook:
+            if not validate_url(facebook) or "facebook.com" not in facebook:
+                return JsonResponse(
+                    {
+                        "error": "Invalid or inaccessible Facebook URL",
+                        "code": "INVALID_FACEBOOK_URL",
+                    },
+                    status=400,
+                )
+
+        # Validate repository URLs
+        repo_urls = request.POST.getlist("repo_urls[]")
+        for url in repo_urls:
+            if not url:
+                continue
+
+            # Validate GitHub URL format
+            if not url.startswith("https://github.com/"):
+                return JsonResponse(
+                    {
+                        "error": f"Repository URL must be a GitHub URL: {url}",
+                        "code": "NON_GITHUB_URL",
+                    },
+                    status=400,
+                )
+
+            # Verify GitHub URL format and accessibility
+            if not re.match(r"https://github\.com/[^/]+/[^/]+/?$", url):
+                return JsonResponse(
+                    {
+                        "error": f"Invalid GitHub repository URL format: {url}",
+                        "code": "INVALID_GITHUB_URL_FORMAT",
+                    },
+                    status=400,
+                )
+
+            if not validate_url(url):
+                return JsonResponse(
+                    {
+                        "error": f"GitHub repository is not accessible: {url}",
+                        "code": "INACCESSIBLE_REPO",
+                    },
+                    status=400,
+                )
+
+        # Check if project already exists by name
+        project_name = request.POST.get("name")
+        if Project.objects.filter(name__iexact=project_name).exists():
+            return JsonResponse(
+                {"error": "A project with this name already exists", "code": "NAME_EXISTS"},
+                status=409,
+            )  # 409 Conflict
+
+        # Check if project URL already exists
+        project_url = request.POST.get("url")
+        if project_url and Project.objects.filter(url=project_url).exists():
+            return JsonResponse(
+                {"error": "A project with this URL already exists", "code": "URL_EXISTS"},
+                status=409,
+            )
+
+        # Check if any of the repository URLs are already linked to other projects
+        repo_urls = request.POST.getlist("repo_urls[]")
+        existing_repos = Repo.objects.filter(repo_url__in=repo_urls)
+        if existing_repos.exists():
+            existing_urls = list(existing_repos.values_list("repo_url", flat=True))
+            return JsonResponse(
+                {
+                    "error": "One or more repositories are already linked to other projects",
+                    "code": "REPOS_EXIST",
+                    "existing_repos": existing_urls,
+                },
+                status=409,
+            )
+
+        # Extract project data
+        project_data = {
+            "name": project_name,
+            "description": request.POST.get("description"),
+            "url": project_url,
+            "twitter": request.POST.get("twitter"),
+            "facebook": request.POST.get("facebook"),
+        }
+
+        # Handle logo file
+        if request.FILES.get("logo"):
+            project_data["logo"] = request.FILES["logo"]
+
+        # Handle organization association
+        org_id = request.POST.get("organization")
+        if org_id:
+            try:
+                org = Organization.objects.get(id=org_id)
+                if not (request.user == org.admin):
+                    return JsonResponse(
+                        {
+                            "error": "You do not have permission to add projects to this organization"
+                        },
+                        status=403,
+                    )
+                project_data["organization"] = org
+            except Organization.DoesNotExist:
+                return JsonResponse({"error": "Organization not found"}, status=404)
+
+        # Create project
+        project = Project.objects.create(**project_data)
+
+        # GitHub API configuration
+        github_token = getattr(settings, "GITHUB_TOKEN", None)
+        if not github_token:
+            return JsonResponse({"error": "GitHub token not configured"}, status=500)
+
+        headers = {
+            "Authorization": f"token {github_token}",
+            "Accept": "application/vnd.github.v3+json",
+        }
+
+        # Handle repositories
+        repo_urls = request.POST.getlist("repo_urls[]")
+        repo_types = request.POST.getlist("repo_types[]")
+
+        def api_get(url):
+            for i in range(max_retries):
+                try:
+                    response = requests.get(url, headers=headers, timeout=10)
+                except requests.exceptions.RequestException:
+                    time.sleep(delay)
+                    continue
+                if response.status_code in (403, 429):
+                    time.sleep(delay)
+                    continue
+                return response
+
+        def get_issue_count(full_name, query):
+            search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
+            resp = api_get(search_url)
+            if resp.status_code == 200:
+                return resp.json().get("total_count", 0)
+            return 0
+
+        for url, repo_type in zip(repo_urls, repo_types):
+            if not url:
+                continue
+
+            # Convert GitHub URL to API URL
+            match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", url)
+            if not match:
+                continue
+
+            owner, repo_name = match.groups()
+            api_url = f"https://api.github.com/repos/{owner}/{repo_name}"
+
+            try:
+                # Fetch repository data
+                response = requests.get(api_url, headers=headers)
+                if response.status_code != 200:
+                    continue
+
+                repo_data = response.json()
+
+                # Generate unique slug
+                base_slug = slugify(repo_data["name"])
+                base_slug = base_slug.replace(".", "-")
+                if len(base_slug) > 50:
+                    base_slug = base_slug[:50]
+                if not base_slug:
+                    base_slug = f"repo-{int(time.time())}"
+
+                unique_slug = base_slug
+                counter = 1
+                while Repo.objects.filter(slug=unique_slug).exists():
+                    suffix = f"-{counter}"
+                    if len(base_slug) + len(suffix) > 50:
+                        base_slug = base_slug[: 50 - len(suffix)]
+                    unique_slug = f"{base_slug}{suffix}"
+                    counter += 1
+
+                # Fetch additional data
+                # Contributors count and commits count
+                commit_count = 0
+                all_contributors = []
+                page = 1
+                while True:
+                    contrib_url = f"{api_url}/contributors?anon=true&per_page=100&page={page}"
+                    c_resp = api_get(contrib_url)
+                    if c_resp.status_code != 200:
+                        break
+                    contributors_data = c_resp.json()
+                    if not contributors_data:
+                        break
+                    commit_count += sum(c.get("contributions", 0) for c in contributors_data)
+                    all_contributors.extend(contributors_data)
+                    page += 1
+
+                # Issues count - Fixed
+                full_name = repo_data.get("full_name")
+                open_issues = get_issue_count(full_name, "type:issue+state:open")
+                closed_issues = get_issue_count(full_name, "type:issue+state:closed")
+                open_pull_requests = get_issue_count(full_name, "type:pr+state:open")
+                total_issues = open_issues + closed_issues
+
+                # Latest release
+                releases_url = f"{api_url}/releases/latest"
+                release_response = requests.get(releases_url, headers=headers)
+                release_name = None
+                release_datetime = None
+                if release_response.status_code == 200:
+                    release_data = release_response.json()
+                    release_name = release_data.get("name") or release_data.get("tag_name")
+                    release_datetime = release_data.get("published_at")
+
+                # Create repository with fixed issues count
+                repo = Repo.objects.create(
+                    project=project,
+                    slug=unique_slug,
+                    name=repo_data["name"],
+                    description=repo_data.get("description", ""),
+                    repo_url=url,
+                    homepage_url=repo_data.get("homepage", ""),
+                    is_wiki=(repo_type == "wiki"),
+                    is_main=(repo_type == "main"),
+                    stars=repo_data.get("stargazers_count", 0),
+                    forks=repo_data.get("forks_count", 0),
+                    last_updated=parse_datetime(repo_data.get("updated_at")),
+                    watchers=repo_data.get("watchers_count", 0),
+                    primary_language=repo_data.get("language"),
+                    license=repo_data.get("license", {}).get("name"),
+                    last_commit_date=parse_datetime(repo_data.get("pushed_at")),
+                    network_count=repo_data.get("network_count", 0),
+                    subscribers_count=repo_data.get("subscribers_count", 0),
+                    size=repo_data.get("size", 0),
+                    logo_url=repo_data.get("owner", {}).get("avatar_url", ""),
+                    open_issues=open_issues,
+                    closed_issues=closed_issues,
+                    total_issues=total_issues,
+                    contributor_count=len(all_contributors),
+                    commit_count=commit_count,
+                    release_name=release_name,
+                    release_datetime=parse_datetime(release_datetime) if release_datetime else None,
+                    open_pull_requests=open_pull_requests,
+                )
+
+            except requests.exceptions.RequestException as e:
+                continue
+
+        return JsonResponse({"message": "Project created successfully"}, status=201)
+
+    except Organization.DoesNotExist:
+        return JsonResponse(
+            {"error": "Organization not found", "code": "ORG_NOT_FOUND"}, status=404
+        )
+    except PermissionError:
+        return JsonResponse(
+            {
+                "error": "You do not have permission to add projects to this organization",
+                "code": "PERMISSION_DENIED",
+            },
+            status=403,
+        )
+
+
+class ProjectsDetailView(DetailView):
+    model = Project
+    template_name = "projects/project_detail.html"
+    context_object_name = "project"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        project = self.get_object()
+
+        # Get all repositories associated with the project
+        repositories = (
+            Repo.objects.select_related("project")
+            .filter(project=project)
+            .prefetch_related("tags", "contributor")
+        )
+
+        # Calculate aggregate metrics
+        repo_metrics = repositories.aggregate(
+            total_stars=Sum("stars"),
+            total_forks=Sum("forks"),
+            total_issues=Sum("total_issues"),
+            total_contributors=Sum("contributor_count"),
+            total_commits=Sum("commit_count"),
+            total_prs=Sum("open_pull_requests"),
+        )
+
+        # Format dates for display
+        created_date = localtime(project.created)
+        modified_date = localtime(project.modified)
+
+        # Add computed context
+        context.update(
+            {
+                "repositories": repositories,
+                "repo_metrics": repo_metrics,
+                "created_date": {
+                    "full": created_date.strftime("%B %d, %Y"),
+                    "relative": naturaltime(created_date),
+                },
+                "modified_date": {
+                    "full": modified_date.strftime("%B %d, %Y"),
+                    "relative": naturaltime(modified_date),
+                },
+                "show_org_details": self.request.user.is_authenticated
+                and (
+                    project.organization
+                    and (
+                        self.request.user == project.organization.admin
+                        or project.organization.managers.filter(id=self.request.user.id).exists()
+                    )
+                ),
+            }
+        )
+
+        # Add organization context if it exists
+        if project.organization:
+            context["organization"] = project.organization
+
+        return context
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+
+        return response
+
+
+class RepoDetailView(DetailView):
+    model = Repo
+    template_name = "projects/repo_detail.html"
+    context_object_name = "repo"
+
+    def get_github_top_contributors(self, repo_url):
+        """Fetch top contributors directly from GitHub API"""
+        try:
+            # Extract owner/repo from GitHub URL
+            owner_repo = repo_url.rstrip("/").split("github.com/")[-1]
+            api_url = f"https://api.github.com/repos/{owner_repo}/contributors?per_page=6"
+
+            headers = {
+                "Authorization": f"token {settings.GITHUB_TOKEN}",
+                "Accept": "application/vnd.github.v3+json",
+            }
+
+            response = requests.get(api_url, headers=headers)
+            if response.status_code == 200:
+                return response.json()
+            return []
+        except Exception as e:
+            print(f"Error fetching GitHub contributors: {e}")
+            return []
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        repo = self.get_object()
+
+        # Get other repos from same project
+        context["related_repos"] = (
+            Repo.objects.filter(project=repo.project)
+            .exclude(id=repo.id)
+            .select_related("project")[:5]
+        )
+
+        # Get top contributors from GitHub
+        github_contributors = self.get_github_top_contributors(repo.repo_url)
+
+        if github_contributors:
+            # Match by github_id instead of username
+            github_ids = [str(c["id"]) for c in github_contributors]
+            verified_contributors = repo.contributor.filter(
+                github_id__in=github_ids
+            ).select_related()
+
+            # Create a mapping of github_id to database contributor
+            contributor_map = {str(c.github_id): c for c in verified_contributors}
+
+            # Merge GitHub and database data
+            merged_contributors = []
+            for gh_contrib in github_contributors:
+                gh_id = str(gh_contrib["id"])
+                db_contrib = contributor_map.get(gh_id)
+                if db_contrib:
+                    merged_contributors.append(
+                        {
+                            "name": db_contrib.name,
+                            "github_id": db_contrib.github_id,
+                            "avatar_url": db_contrib.avatar_url,
+                            "contributions": gh_contrib["contributions"],
+                            "github_url": db_contrib.github_url,
+                            "verified": True,
+                        }
+                    )
+                else:
+                    merged_contributors.append(
+                        {
+                            "name": gh_contrib["login"],
+                            "github_id": gh_contrib["id"],
+                            "avatar_url": gh_contrib["avatar_url"],
+                            "contributions": gh_contrib["contributions"],
+                            "github_url": gh_contrib["html_url"],
+                            "verified": False,
+                        }
+                    )
+
+            context["top_contributors"] = merged_contributors
+        else:
+            # Fallback to database contributors if GitHub API fails
+            context["top_contributors"] = [
+                {
+                    "name": c.name,
+                    "github_id": c.github_id,
+                    "avatar_url": c.avatar_url,
+                    "contributions": c.contributions,
+                    "github_url": c.github_url,
+                    "verified": True,
+                }
+                for c in repo.contributor.all()[:6]
+            ]
+
+        return context
