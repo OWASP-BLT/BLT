@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
     <style>
         /* Styling for the Team Overview Page */
@@ -35,6 +36,7 @@
             object-fit: cover;
         }
 
+        /* Slider / Members */
         .slider-container {
             display: flex;
             align-items: center;
@@ -348,6 +350,47 @@
         .kick-button:hover {
             background-color: #e53935;
         }
+        .kudos-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .kudos-list {
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .kudos-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            background-color: #f8f9fa;
+            margin-bottom: 10px;
+            border-radius: 4px;
+
+        }
+        .kudos-count-badge {
+            display: inline-block;
+            background-color: #17a2b8;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 8px;
+        }
+        .kudos-submit-btn {
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .kudos-submit-btn:hover {
+            background-color: #218838;
+        }
     </style>
     {% include "includes/sidenav.html" %}
     <div class="team-overview-container">
@@ -365,18 +408,33 @@
                 <!-- Team Leader -->
                 <div class="team-leader">
                     <strong>Team Leader:</strong> {{ user.userprofile.team.admin.username }}
+                    {% if user.userprofile.team.admin.kudos_count %}
+                        <span class="kudos-count-badge">{{ user.userprofile.team.admin.kudos_count }} kudos</span>
+                    {% endif %}
                 </div>
                 <!-- Team Members Slider -->
                 <div class="slider-container">
                     <button class="slider-nav left" onclick="prevMember()">‹</button>
                     <!-- Always display the team leader -->
-                    <div class="member-card active" id="admin-card">
-                        <span>{{ user.userprofile.team.admin.username }}</span>
-                    </div>
-                    {% for member in user.userprofile.team.managers.all %}
-                        <div class="member-card"
-                             id="member-{{ member.username }}"
-                             onclick="setActiveMember('{{ member.username }}')">
+                    {#                    <div class="member-card active" id="admin-card">#}
+                    {#                        <span>{{ user.userprofile.team.admin.username }}</span>#}
+                    {#                        {% if user.userprofile.team.admin != user %}#}
+                    {#                            <button class="kudos-button"#}
+                    {#                                    type="button"#}
+                    {#                                    onclick="openKudosModal('{{ user.userprofile.team.admin.username }}')">#}
+                    {#                                <img src="{% static 'img/kudos_icon.png' %}" #}
+                    {#                                     alt="Kudos"#}
+                    {#                                     width="24"#}
+                    {#                                     height="24">#}
+                    {#                                {% if user.userprofile.team.admin.kudos_count > 0 %}#}
+                    {#                                <span class="kudos-count">{{ user.userprofile.team.admin.kudos_count }}</span>#}
+                    {#                                {% endif %}#}
+                    {#                            </button>#}
+                    {#                        {% endif %}#}
+                    {#                    </div>#}
+                    {% for member in team_members %}
+                        <div class="member-card {% if member.username == user.userprofile.team.admin.username %}active{% endif %}"
+                             id="member-{{ member.username }}">
                             <span>{{ member.username }}</span>
                             <!-- Show "Kick" button for all members except the admin -->
                             {% if user.userprofile.team.admin == user and user.userprofile.team.admin != member %}
@@ -384,9 +442,52 @@
                                         id="kick-{{ member.username }}"
                                         onclick="kickMember('{{ member.username }}')">Kick</button>
                             {% endif %}
+                            <!-- Kudos Button -->
+                            {% if member != user %}
+                                <button class="kudos-button"
+                                        type="button"
+                                        onclick="openKudosModal('{{ member.username }}')">
+                                    <img src="{% static 'img/kudos_icon.png' %}"
+                                         alt="Kudos"
+                                         width="24"
+                                         height="24">
+                                    {% if member.kudos_count > 0 %}<span class="kudos-count">{{ member.kudos_count }}</span>{% endif %}
+                                </button>
+                            {% endif %}
                         </div>
                     {% endfor %}
                     <button class="slider-nav right" onclick="nextMember()">›</button>
+                </div>
+                <div class="kudos-section">
+                    <h3>Your Received Kudos</h3>
+                    {% if received_kudos.exists %}
+                        <div class="kudos-list">
+                            {% for kudos in received_kudos %}
+                                <div class="kudos-item">
+                                    <p class="kudos-message">
+                                        <strong>{{ kudos.sender.username }}</strong>: {{ kudos.message }}
+                                    </p>
+                                    <small class="kudos-timestamp">{{ kudos.timestamp|date:"M d, Y H:i" }}</small>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="no-kudos">No kudos received yet.</p>
+                    {% endif %}
+                </div>
+                <!-- Display all team kudos -->
+                <div class="kudos-section">
+                    <h3>Team Kudos</h3>
+                    <div class="kudos-list">
+                        {% for kudos in team_kudos %}
+                            <div class="kudos-item">
+                                <p class="kudos-message">
+                                    <strong>{{ kudos.sender.username }} → {{ kudos.receiver.username }}</strong>: {{ kudos.message }}
+                                </p>
+                                <small class="kudos-timestamp">{{ kudos.timestamp|date:"M d, Y H:i" }}</small>
+                            </div>
+                        {% endfor %}
+                    </div>
                 </div>
                 <!-- Team Achievements -->
                 <div class="achievements"></div>
@@ -481,6 +582,52 @@
                 </div>
                 <div class="form-group">
                     <button type="submit">Send Join Request</button>
+                    <button type="button" class="btn btn-warning" onclick="closeAddMemberModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Kudos member card that shows kudos count -->
+    {% for member in team_members %}
+        <div class="member-card" id="member-{{ member.username }}">
+            <div class="member-info">
+                <span>{{ member.username }}</span>
+                <span class="kudos-count-badge"
+                      {% if not member.kudos_count %}style="display:none"{% endif %}>
+                    {{ member.kudos_count|default:"0" }} kudos
+                </span>
+            </div>
+            {% if member != user %}
+                <button class="kudos-button"
+                        type="button"
+                        onclick="openKudosModal('{{ member.username }}')">
+                    <img src="{% static 'img/kudos_icon.png' %}"
+                         alt="Kudos"
+                         width="24"
+                         height="24">
+                </button>
+            {% endif %}
+        </div>
+    {% endfor %}
+    <!-- Add Kudos Modal and relevant scripts -->
+    <div id="kudosModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeKudosModal()">×</span>
+            <h2>Send Kudos</h2>
+            <form method="post" onsubmit="sendKudos(event)" class="kudos-form">
+                {% csrf_token %}
+                <input type="hidden" id="kudosReceiver" name="kudosReceiver">
+                <div class="form-group">
+                    <label for="kudosMessage">Message:</label>
+                    <textarea id="kudosMessage"
+                              name="kudosMessage"
+                              rows="2"
+                              class="kudos-textarea"
+                              required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="kudos-submit-btn">Send Kudos</button>
+                    <button type="button" class="btn-secondary" onclick="closeKudosModal()">Cancel</button>
                 </div>
             </form>
         </div>
@@ -720,6 +867,89 @@
         function selectNewMember(username) {
             document.getElementById('newMember').value = username;
             document.getElementById('newMemberDropdown').innerHTML = "";
+        }
+
+        // Kudos Modal functions
+        function openKudosModal(username) {
+          document.getElementById('kudosReceiver').value = username;
+          document.getElementById('kudosMessage').value = '';
+          document.getElementById('kudosModal').style.display = 'block';
+        }
+        function closeKudosModal() {
+          document.getElementById('kudosModal').style.display = 'none';
+          document.getElementById('kudosMessage').value = '';
+        }
+        function sendKudos(e) {
+          e.preventDefault();
+          const receiver = document.getElementById('kudosReceiver').value;
+          const message = document.getElementById('kudosMessage').value;
+
+          if (!message.trim()) {
+            alert("Please enter a kudos message.");
+            return;
+          }
+
+          fetch("/teams/give-kudos/", {
+            method: "POST",
+            headers: {
+              "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+              "Content-Type": "application/json"
+            },
+             body: JSON.stringify({
+                kudosReceiver: receiver,
+                kudosMessage: message
+          })
+            })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              closeKudosModal();
+              updateKudosCount(receiver);
+              showSuccessMessage("Kudos sent successfully!");
+            } else {
+              alert(data.error || "Failed to send kudos.");
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert("Failed to send kudos. Please try again.");
+          });
+        }
+        function updateKudosCount(username) {
+            const memberCard = document.getElementById(`member-${username}`);
+            if (!memberCard) return;
+            
+            const countBadge = memberCard.querySelector('.kudos-count-badge');
+            const currentCount = countBadge ? 
+                parseInt(countBadge.textContent.split(' ')[0]) : 0;
+
+            if (countBadge) {
+                countBadge.textContent = `${currentCount + 1} kudos`;
+                countBadge.style.display = 'inline-block';
+            } else {
+                const newBadge = document.createElement('span');
+                newBadge.className = 'kudos-count-badge';
+                newBadge.textContent = '1 kudos';
+                memberCard.querySelector('.member-info').appendChild(newBadge);
+            }
+        }
+
+        function showSuccessMessage(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success';
+            alert.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 10px 20px;
+                border-radius: 4px;
+                background-color: #28a745;
+                color: white;
+                z-index: 1000;
+            `;
+            alert.textContent = message;
+            document.body.appendChild(alert);
+            setTimeout(() => alert.remove(), 3000);
         }
     </script>
 {% endblock content %}
