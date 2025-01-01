@@ -61,7 +61,7 @@ from website.utils import (
 # ----------------------------------------------------------------------------------
 
 
-def memory_usage_by_module(limit=100):
+def memory_usage_by_module(limit=20):
     """
     Returns a list of (filename, size_in_bytes) for the top
     `limit` files by allocated memory, using tracemalloc.
@@ -267,7 +267,7 @@ def check_status(request):
         # Memory usage by module (via tracemalloc)
         # -------------------------------------------------------
         print("Calculating memory usage by module...")
-        top_modules = memory_usage_by_module(limit=100)
+        top_modules = memory_usage_by_module(limit=20)
         status_data["memory_by_module"] = top_modules
 
         # -------------------------------------------------------
