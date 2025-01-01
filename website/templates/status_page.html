@@ -147,5 +147,19 @@
                 </ul>
             </div>
         </div>
+        <div class="status-card">
+            <h3>Database Connection Count</h3>
+            <p>{{ status.db_connection_count }}</p>
+        </div>
+        <div class="status-card">
+            <h3>Redis Stats</h3>
+            <ul>
+                {% for key, value in status.redis_stats.items %}
+                    <li>
+                        <strong>{{ key }}</strong>: {{ value }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 {% endblock content %}

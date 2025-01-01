@@ -21,6 +21,7 @@ from django.core.cache import cache
 from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.db import connection
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
@@ -74,6 +75,8 @@ def check_status(request):
             "memory_info": psutil.virtual_memory()._asdict(),
             "top_memory_consumers": [],
             "memory_profiling": {},
+            "db_connection_count": 0,
+            "redis_stats": {},
         }
 
         bitcoin_rpc_user = os.getenv("BITCOIN_RPC_USER")
@@ -148,6 +151,13 @@ def check_status(request):
             key=lambda x: x["memory_info"]["rss"],
             reverse=True,
         )[:5]
+
+        # Get database connection count
+        status["db_connection_count"] = len(connection.queries)
+
+        # Get Redis stats
+        redis_client = redis.StrictRedis(host="localhost", port=6379, db=0)
+        status["redis_stats"] = redis_client.info()
 
         # Add memory profiling information
         current, peak = tracemalloc.get_traced_memory()
