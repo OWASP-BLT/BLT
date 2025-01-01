@@ -152,7 +152,7 @@
             <h3>Memory Usage by Module</h3>
             <div class="memory-by-module">
                 <ul>
-                    {% for module, memory in status.memory_by_module.items %}
+                    {% for module, memory in status.memory_by_module %}
                         <li>
                             <strong>{{ module }}</strong>: {{ memory|filesizeformat }}
                         </li>
