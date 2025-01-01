@@ -61,19 +61,21 @@ from website.utils import (
 # ----------------------------------------------------------------------------------
 
 
-def memory_usage_by_module(limit=10):
+def memory_usage_by_module(limit=100):
     """
     Returns a list of (filename, size_in_bytes) for the top
     `limit` files by allocated memory, using tracemalloc.
     """
-    tracemalloc.start()
+    # tracemalloc.start()
     snapshot = tracemalloc.take_snapshot()
+    print("Memory snapshot taken. and it is: ", snapshot)
 
     # Group memory usage by filename
     stats = snapshot.statistics("filename")
     module_usage = {}
 
     for stat in stats:
+        print("stat is: ", stat)
         if stat.traceback:
             filename = stat.traceback[0].filename
             # Accumulate memory usage
@@ -265,7 +267,7 @@ def check_status(request):
         # Memory usage by module (via tracemalloc)
         # -------------------------------------------------------
         print("Calculating memory usage by module...")
-        top_modules = memory_usage_by_module(limit=10)
+        top_modules = memory_usage_by_module(limit=100)
         status_data["memory_by_module"] = top_modules
 
         # -------------------------------------------------------
@@ -281,8 +283,11 @@ def check_status(request):
         # Redis stats
         # -------------------------------------------------------
         print("Getting Redis stats...")
-        redis_client = get_redis_connection("default")
-        status_data["redis_stats"] = redis_client.info()
+        try:
+            redis_client = get_redis_connection("default")
+            status_data["redis_stats"] = redis_client.info()
+        except Exception as e:
+            print(f"Redis error or not supported: {e}")
 
         # -------------------------------------------------------
         # Memory profiling info (current, peak) - optional
