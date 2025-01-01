@@ -52,14 +52,14 @@
         .status-dot.red {
             background-color: #dc3545;
         }
-        .memory-info, .memory-consumers {
+        .memory-info, .memory-consumers, .memory-by-module {
             margin-top: 10px;
         }
-        .memory-consumers ul {
+        .memory-consumers ul, .memory-by-module ul {
             list-style-type: none;
             padding: 0;
         }
-        .memory-consumers li {
+        .memory-consumers li, .memory-by-module li {
             margin-bottom: 5px;
         }
     </style>
@@ -147,6 +147,19 @@
                 </ul>
             </div>
         </div>
+        <!-- Memory Usage by Module -->
+        <div class="status-card">
+            <h3>Memory Usage by Module</h3>
+            <div class="memory-by-module">
+                <ul>
+                    {% for module, memory in status.memory_by_module.items %}
+                        <li>
+                            <strong>{{ module }}</strong>: {{ memory|filesizeformat }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
         <div class="status-card">
             <h3>Database Connection Count</h3>
             <p>{{ status.db_connection_count }}</p>
@@ -160,6 +173,17 @@
                     </li>
                 {% endfor %}
             </ul>
+        </div>
+        <div class="status-card">
+            <h3>OpenAI API</h3>
+            <div class="status-item">
+                <div class="status-dot {% if status.openai %}green{% else %}red{% endif %}"></div>
+                {% if status.openai %}
+                    <span>Operational</span>
+                {% else %}
+                    <span>Not Operational</span>
+                {% endif %}
+            </div>
         </div>
     </div>
 {% endblock content %}

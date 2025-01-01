@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import sys
 import tracemalloc
 import urllib
 from datetime import datetime, timezone
@@ -73,6 +74,7 @@ def check_status(request):
             "bitcoin_block": None,
             "sendgrid": False,
             "github": False,
+            "openai": False,
             "memory_info": psutil.virtual_memory()._asdict(),
             "top_memory_consumers": [],
             "memory_profiling": {},
@@ -138,6 +140,26 @@ def check_status(request):
                 status["github"] = False
                 print(f"GitHub API Error: {e}")
 
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        if openai_api_key:
+            try:
+                headers = {"Authorization": f"Bearer {openai_api_key}"}
+                response = requests.get(
+                    "https://api.openai.com/v1/models", headers=headers, timeout=5
+                )
+
+                if response.status_code == 200:
+                    status["openai"] = True
+                else:
+                    status["openai"] = False
+                    print(
+                        f"OpenAI API token check failed with status code {response.status_code}: {response.json().get('message', 'No message provided')}"
+                    )
+
+            except requests.exceptions.RequestException as e:
+                status["openai"] = False
+                print(f"OpenAI API Error: {e}")
+
         # Get the top 5 processes by memory usage
         for proc in psutil.process_iter(["pid", "name", "memory_info"]):
             try:
@@ -146,6 +168,23 @@ def check_status(request):
                 status["top_memory_consumers"].append(proc_info)
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 pass
+
+        # Get memory usage by module for the current Python process
+        current_process = psutil.Process(os.getpid())
+        memory_info_by_module = {}
+        for module in sys.modules.values():
+            try:
+                module_name = getattr(module, "__name__", "unknown")
+                module_memory = sum(
+                    obj.nbytes for obj in gc.get_objects() if isinstance(obj, type(module))
+                )
+                memory_info_by_module[module_name] = module_memory
+            except Exception:
+                pass
+
+        status["memory_by_module"] = sorted(
+            memory_info_by_module.items(), key=lambda x: x[1], reverse=True
+        )[:10]  # Top 10 modules by memory usage
 
         status["top_memory_consumers"] = sorted(
             status["top_memory_consumers"],
