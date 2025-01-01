@@ -89,6 +89,7 @@ def check_status(request):
     status = cache.get("service_status")
 
     if not status:
+        print("Starting memory profiling...")
         tracemalloc.start()  # Start memory profiling
 
         status = {
@@ -112,6 +113,7 @@ def check_status(request):
         bitcoin_rpc_port = os.getenv("BITCOIN_RPC_PORT", "8332")
 
         try:
+            print("Checking Bitcoin RPC...")
             response = requests.post(
                 f"http://{bitcoin_rpc_host}:{bitcoin_rpc_port}",
                 json={
@@ -127,8 +129,10 @@ def check_status(request):
             if response.status_code == 200:
                 status["bitcoin"] = True
                 status["bitcoin_block"] = response.json().get("result", {}).get("blocks")
+                print("Bitcoin RPC check successful.")
             else:
                 status["bitcoin"] = False
+                print("Bitcoin RPC check failed.")
 
         except requests.exceptions.RequestException as e:
             status["bitcoin"] = False
@@ -138,6 +142,7 @@ def check_status(request):
         sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
         if sendgrid_api_key:
             try:
+                print("Checking SendGrid API...")
                 response = requests.get(
                     "https://api.sendgrid.com/v3/user/account",
                     headers={"Authorization": f"Bearer {sendgrid_api_key}"},
@@ -146,6 +151,7 @@ def check_status(request):
 
                 if response.status_code == 200:
                     status["sendgrid"] = True
+                    print("SendGrid API check successful.")
                 else:
                     status["sendgrid"] = False
                     print(
@@ -160,13 +166,23 @@ def check_status(request):
         github_token = os.getenv("GITHUB_TOKEN")
         if github_token:
             try:
+                print("Checking GitHub API...")
                 headers = {"Authorization": f"token {github_token}"}
-                response = requests.get(
-                    "https://api.github.com/user/repos", headers=headers, timeout=5
-                )
+                try:
+                    response = requests.get(
+                        "https://api.github.com/user/repos", headers=headers, timeout=2
+                    )
+                except requests.exceptions.Timeout:
+                    status["github"] = False
+                    print("GitHub API request timed out")
+
+                except requests.exceptions.RequestException as e:
+                    status["github"] = False
+                    print(f"GitHub API Error: {e}")
 
                 if response.status_code == 200:
                     status["github"] = True
+                    print("GitHub API check successful.")
                 else:
                     status["github"] = False
                     print(
@@ -181,6 +197,7 @@ def check_status(request):
         openai_api_key = os.getenv("OPENAI_API_KEY")
         if openai_api_key:
             try:
+                print("Checking OpenAI API...")
                 headers = {"Authorization": f"Bearer {openai_api_key}"}
                 response = requests.get(
                     "https://api.openai.com/v1/models", headers=headers, timeout=5
@@ -188,6 +205,7 @@ def check_status(request):
 
                 if response.status_code == 200:
                     status["openai"] = True
+                    print("OpenAI API check successful.")
                 else:
                     status["openai"] = False
                     print(
@@ -199,6 +217,7 @@ def check_status(request):
                 print(f"OpenAI API Error: {e}")
 
         # Get the top 5 processes by memory usage
+        print("Getting top memory consumers...")
         for proc in psutil.process_iter(["pid", "name", "memory_info"]):
             try:
                 proc_info = proc.info
@@ -214,6 +233,7 @@ def check_status(request):
         )[:5]
 
         # Get memory usage by module for the current Python process
+        print("Calculating memory usage by module...")
         current_process = psutil.Process(os.getpid())
         memory_info_by_module = {}
         for module in sys.modules.values():
@@ -232,20 +252,25 @@ def check_status(request):
         status["memory_by_module"] = memory_by_module  # Top 10 modules by memory usage
 
         # Get database connection count
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
-            status["db_connection_count"] = cursor.fetchone()[0]
+        print("Getting database connection count...")
+        if settings.DATABASES.get("default", {}).get("ENGINE") == "django.db.backends.postgresql":
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
+                status["db_connection_count"] = cursor.fetchone()[0]
 
         # Get Redis stats using django-redis
+        print("Getting Redis stats...")
         redis_client = get_redis_connection("default")
         status["redis_stats"] = redis_client.info()
 
         # Add memory profiling information
+        print("Adding memory profiling information...")
         current, peak = tracemalloc.get_traced_memory()
         status["memory_profiling"]["current"] = current
         status["memory_profiling"]["peak"] = peak
         tracemalloc.stop()
 
+        print("Caching service status...")
         cache.set("service_status", status, timeout=60)
 
     return render(request, "status_page.html", {"status": status})
