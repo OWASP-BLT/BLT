@@ -177,7 +177,8 @@
                             <div class="bg-white rounded-xl border-2 border-gray-200 hover:border-red-500 transition-all duration-200 hover:shadow-lg">
                                 <div class="p-6">
                                     <!-- Repository Header -->
-                                    <div class="flex items-center justify-between mb-4">
+                                    <a href="{% url 'repo_detail' repo.slug %}"
+                                       class="flex items-center justify-between mb-4">
                                         <h3 class="text-xl font-bold text-gray-800">{{ repo.name }}</h3>
                                         {% if repo.is_main %}
                                             <span class="px-4 py-1.5 bg-green-100 text-green-800 rounded-full text-sm font-medium">Main</span>
@@ -186,7 +187,7 @@
                                         {% else %}
                                             <span class="px-4 py-1.5 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">Normal</span>
                                         {% endif %}
-                                    </div>
+                                    </a>
                                     <!-- Repository Description -->
                                     <p class="text-gray-600 text-base leading-relaxed mb-6">
                                         {{ repo.description|default:"No description available."|truncatechars:150 }}

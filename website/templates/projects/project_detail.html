@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% load humanize %}
 {% load static %}
-{% block title %}{{ project.name }} - Project Details{% endblock %}
+{% block title %}
+    {{ project.name }} - Project Details
+{% endblock title %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8 max-w-7xl">
@@ -164,14 +166,15 @@
                 {% for repo in repositories %}
                     <div class="bg-white rounded-xl border-2 border-gray-200 hover:border-red-500 transition-all duration-200 hover:shadow-lg">
                         <div class="p-6">
-                            <div class="flex items-center justify-between mb-4">
+                            <a href="{% url 'repo_detail' repo.slug %}"
+                               class="flex items-center justify-between mb-4">
                                 <h3 class="text-xl font-bold text-gray-800">{{ repo.name }}</h3>
                                 {% if repo.is_main %}
                                     <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">Main</span>
                                 {% elif repo.is_wiki %}
                                     <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">Wiki</span>
                                 {% endif %}
-                            </div>
+                            </a>
                             {% if repo.description %}<p class="text-gray-600 text-base leading-relaxed mb-6">{{ repo.description }}</p>{% endif %}
                             <!-- Repository Stats -->
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
