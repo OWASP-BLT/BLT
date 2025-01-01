@@ -54,13 +54,14 @@ class Command(BaseCommand):
             "Accept": "application/vnd.github.v3+json",
         }
 
-        # Check if OWASP organization exists
-        try:
-            org = Organization.objects.get(name__iexact="OWASP")
+        # Get or create OWASP organization
+        org, created = Organization.objects.get_or_create(
+            name__iexact="OWASP", defaults={"name": "OWASP"}
+        )
+        if created:
+            self.stdout.write(self.style.SUCCESS(f"Created Organization: {org.name}"))
+        else:
             self.stdout.write(self.style.SUCCESS(f"Found Organization: {org.name}"))
-        except Organization.DoesNotExist:
-            self.stderr.write(self.style.ERROR("Organization 'OWASP' does not exist. Aborting."))
-            return
 
         # Prompt user for confirmation
         confirm = (
@@ -76,7 +77,14 @@ class Command(BaseCommand):
         try:
             with open(csv_file, newline="", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
-                required_fields = ["Name", "Tag", "License(s)", "Repo", "Website URL", "Code URL"]
+                required_fields = [
+                    "Name",
+                    "Tag",
+                    "License(s)",
+                    "Repo",
+                    "Website URL",
+                    "Code URL",
+                ]
                 for field in required_fields:
                     if field not in reader.fieldnames:
                         raise CommandError(f"Missing required field in CSV: {field}")
@@ -270,15 +278,19 @@ class Command(BaseCommand):
                             is_main=False,
                             stars=repo_info.get("stars", 0),
                             forks=repo_info.get("forks", 0),
-                            last_updated=parse_datetime(repo_info.get("last_updated"))
-                            if repo_info.get("last_updated")
-                            else None,
+                            last_updated=(
+                                parse_datetime(repo_info.get("last_updated"))
+                                if repo_info.get("last_updated")
+                                else None
+                            ),
                             watchers=repo_info.get("watchers", 0),
                             primary_language=repo_info.get("primary_language", ""),
                             license=repo_info.get("license", ""),
-                            last_commit_date=parse_datetime(repo_info.get("last_commit_date"))
-                            if repo_info.get("last_commit_date")
-                            else None,
+                            last_commit_date=(
+                                parse_datetime(repo_info.get("last_commit_date"))
+                                if repo_info.get("last_commit_date")
+                                else None
+                            ),
                             network_count=repo_info.get("network_count", 0),
                             subscribers_count=repo_info.get("subscribers_count", 0),
                             size=repo_info.get("size", 0),
@@ -290,9 +302,11 @@ class Command(BaseCommand):
                             contributor_count=repo_info.get("contributor_count", 0),
                             commit_count=repo_info.get("commit_count", 0),
                             release_name=repo_info.get("release_name", ""),
-                            release_datetime=parse_datetime(repo_info.get("release_datetime"))
-                            if repo_info.get("release_datetime")
-                            else None,
+                            release_datetime=(
+                                parse_datetime(repo_info.get("release_datetime"))
+                                if repo_info.get("release_datetime")
+                                else None
+                            ),
                         )
                     except IntegrityError:
                         self.stdout.write(
@@ -376,17 +390,19 @@ class Command(BaseCommand):
                                 is_main=idx == 1,
                                 stars=code_repo_info["stars"],
                                 forks=code_repo_info["forks"],
-                                last_updated=parse_datetime(code_repo_info.get("last_updated"))
-                                if code_repo_info.get("last_updated")
-                                else None,
+                                last_updated=(
+                                    parse_datetime(code_repo_info.get("last_updated"))
+                                    if code_repo_info.get("last_updated")
+                                    else None
+                                ),
                                 watchers=code_repo_info["watchers"],
                                 primary_language=code_repo_info["primary_language"],
                                 license=code_repo_info["license"],
-                                last_commit_date=parse_datetime(
-                                    code_repo_info.get("last_commit_date")
-                                )
-                                if code_repo_info.get("last_commit_date")
-                                else None,
+                                last_commit_date=(
+                                    parse_datetime(code_repo_info.get("last_commit_date"))
+                                    if code_repo_info.get("last_commit_date")
+                                    else None
+                                ),
                                 created=code_repo_info["created"],
                                 modified=code_repo_info["modified"],
                                 network_count=code_repo_info["network_count"],
@@ -400,11 +416,11 @@ class Command(BaseCommand):
                                 contributor_count=code_repo_info["contributor_count"],
                                 commit_count=code_repo_info["commit_count"],
                                 release_name=code_repo_info.get("release_name", ""),
-                                release_datetime=parse_datetime(
-                                    code_repo_info.get("release_datetime")
-                                )
-                                if code_repo_info.get("release_datetime")
-                                else None,
+                                release_datetime=(
+                                    parse_datetime(code_repo_info.get("release_datetime"))
+                                    if code_repo_info.get("release_datetime")
+                                    else None
+                                ),
                             )
                         except IntegrityError:
                             self.stdout.write(
@@ -429,7 +445,10 @@ class Command(BaseCommand):
                     # Handle contributors only for newly created repos
                     if code_repo:
                         code_contributors_data = self.fetch_contributors_data(
-                            code_url, headers, delay_on_rate_limit, max_rate_limit_retries
+                            code_url,
+                            headers,
+                            delay_on_rate_limit,
+                            max_rate_limit_retries,
                         )
                         if code_contributors_data:
                             self.handle_contributors(code_repo, code_contributors_data)
@@ -555,9 +574,9 @@ class Command(BaseCommand):
             "last_updated": repo_data.get("updated_at"),
             "watchers": repo_data.get("watchers_count", 0),
             "primary_language": repo_data.get("language", ""),
-            "license": repo_data.get("license", {}).get("name")
-            if repo_data.get("license")
-            else None,
+            "license": (
+                repo_data.get("license", {}).get("name") if repo_data.get("license") else None
+            ),
             "last_commit_date": repo_data.get("pushed_at"),
             "created": repo_data.get("created_at", ""),
             "modified": repo_data.get("updated_at", ""),
