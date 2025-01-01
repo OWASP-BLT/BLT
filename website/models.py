@@ -1316,3 +1316,17 @@ class Repo(models.Model):
 
     def __str__(self):
         return f"{self.project.name}/{self.name}"
+
+
+class Kudos(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="kudos_sent")
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="kudos_received")
+    message = models.TextField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+        verbose_name_plural = "Kudos"
+
+    def __str__(self):
+        return f"Kudos from {self.sender.username} to {self.receiver.username}"
