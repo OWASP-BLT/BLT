@@ -129,7 +129,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     stars = serializers.IntegerField()
     forks = serializers.IntegerField()
     external_links = serializers.JSONField()
-    project_visit_count = serializers.IntegerField()
+    # project_visit_count = serializers.IntegerField()
 
     class Meta:
         model = Project
@@ -172,4 +172,9 @@ class ActivityLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = ActivityLog
         fields = ["id", "user", "window_title", "url", "recorded_at", "created"]
-        read_only_fields = ["id", "user", "recorded_at", "created"]  # Auto-filled fields
+        read_only_fields = [
+            "id",
+            "user",
+            "recorded_at",
+            "created",
+        ]  # Auto-filled fields

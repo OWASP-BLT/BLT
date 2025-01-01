@@ -77,7 +77,9 @@ class Integration(models.Model):
         blank=True,
     )
     organization = models.ForeignKey(
-        "Organization", on_delete=models.CASCADE, related_name="organization_integrations"
+        "Organization",
+        on_delete=models.CASCADE,
+        related_name="organization_integrations",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -456,6 +458,7 @@ if is_using_gcs():
                 logger.error(
                     f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}"
                 )
+
 else:
 
     @receiver(post_delete, sender=Issue)
@@ -489,6 +492,7 @@ if is_using_gcs():
                 logger.error(
                     f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}"
                 )
+
 else:
 
     @receiver(post_delete, sender=IssueScreenshot)
@@ -606,7 +610,11 @@ class UserProfile(models.Model):
     modified = models.DateTimeField(auto_now=True)
     visit_count = models.PositiveIntegerField(default=0)
     team = models.ForeignKey(
-        Organization, on_delete=models.SET_NULL, related_name="user_profiles", null=True, blank=True
+        Organization,
+        on_delete=models.SET_NULL,
+        related_name="user_profiles",
+        null=True,
+        blank=True,
     )
 
     def check_team_membership(self):
@@ -889,7 +897,11 @@ class Contributor(models.Model):
 
 class Project(models.Model):
     organization = models.ForeignKey(
-        Organization, null=True, blank=True, related_name="projects", on_delete=models.CASCADE
+        Organization,
+        null=True,
+        blank=True,
+        related_name="projects",
+        on_delete=models.CASCADE,
     )
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
@@ -897,11 +909,14 @@ class Project(models.Model):
     url = models.URLField(
         unique=True, null=True, blank=True
     )  # Made url nullable in case of no website
+    project_visit_count = models.IntegerField(default=0)
     twitter = models.CharField(max_length=30, null=True, blank=True)
     facebook = models.URLField(null=True, blank=True)
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
+    # add languages
+    # add tags
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -1022,7 +1037,11 @@ class TimeLog(models.Model):
     )
     # associate organization with sizzle
     organization = models.ForeignKey(
-        Organization, on_delete=models.CASCADE, related_name="time_logs", null=True, blank=True
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="time_logs",
+        null=True,
+        blank=True,
     )
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
@@ -1175,7 +1194,11 @@ class UserBadge(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
     awarded_by = models.ForeignKey(
-        User, null=True, blank=True, related_name="awarded_badges", on_delete=models.SET_NULL
+        User,
+        null=True,
+        blank=True,
+        related_name="awarded_badges",
+        on_delete=models.SET_NULL,
     )
     awarded_at = models.DateTimeField(auto_now_add=True)
     reason = models.TextField(blank=True, null=True)
@@ -1245,6 +1268,7 @@ class Repo(models.Model):
     tags = models.ManyToManyField("Tag", blank=True)
     last_updated = models.DateTimeField(null=True, blank=True)
     total_issues = models.IntegerField(default=0)
+    # rename this to repo_visit_count and make sure the github badge works with this
     project_visit_count = models.IntegerField(default=0)
     watchers = models.IntegerField(default=0)
     open_pull_requests = models.IntegerField(default=0)
