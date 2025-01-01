@@ -1,3 +1,4 @@
+import gc
 import json
 import os
 import subprocess
@@ -59,6 +60,29 @@ from website.utils import (
 
 vector_store = None
 DAILY_REQUEST_LIMIT = 10
+
+
+def calculate_memory_by_module():
+    memory_info_by_module = {}
+    all_objects = gc.get_objects()  # Get all objects tracked by the garbage collector
+
+    for obj in all_objects:
+        try:
+            module_name = getattr(obj, "__module__", None)
+            if module_name and module_name in sys.modules:
+                if module_name not in memory_info_by_module:
+                    memory_info_by_module[module_name] = 0
+                memory_info_by_module[module_name] += sys.getsizeof(obj)
+        except Exception:
+            # Ignore objects that cannot have their size determined
+            pass
+
+    # Sort by memory usage and take the top 10
+    sorted_memory_info = sorted(memory_info_by_module.items(), key=lambda x: x[1], reverse=True)[
+        :10
+    ]
+
+    return sorted_memory_info
 
 
 def check_status(request):
@@ -204,9 +228,8 @@ def check_status(request):
             except Exception:
                 pass
 
-        status["memory_by_module"] = sorted(
-            memory_info_by_module.items(), key=lambda x: x[1], reverse=True
-        )[:10]  # Top 10 modules by memory usage
+        memory_by_module = calculate_memory_by_module()
+        status["memory_by_module"] = memory_by_module  # Top 10 modules by memory usage
 
         # Get database connection count
         with connection.cursor() as cursor:
