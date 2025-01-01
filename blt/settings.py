@@ -352,20 +352,9 @@ LOGIN_REDIRECT_URL = "/"
 
 LOGGING = {
     "version": 1,
-    "disable_existing_loggers": True,
-    "handlers": {},  # No handlers are defined
-    "loggers": {
-        "": {
-            "handlers": [],  # No handlers attached
-            "level": "CRITICAL",  # Minimal logging level
-            "propagate": False,  # Prevent propagation to parent loggers
-        },
-        "django.request": {
-            "handlers": [],  # Disable request logging
-            "level": "CRITICAL",  # Only log critical errors
-            "propagate": False,  # Prevent propagation to parent loggers
-        },
-    },
+    "disable_existing_loggers": True,  # Disable all existing loggers
+    "handlers": {},  # No handlers defined
+    "loggers": {},  # No loggers defined
 }
 
 
