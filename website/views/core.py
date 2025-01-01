@@ -31,6 +31,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import TemplateView, View
+from django_redis import get_redis_connection
 from requests.auth import HTTPBasicAuth
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -155,8 +156,8 @@ def check_status(request):
         # Get database connection count
         status["db_connection_count"] = len(connection.queries)
 
-        # Get Redis stats
-        redis_client = redis.StrictRedis(host="localhost", port=6379, db=0)
+        # Get Redis stats using django-redis
+        redis_client = get_redis_connection("default")
         status["redis_stats"] = redis_client.info()
 
         # Add memory profiling information
@@ -675,9 +676,6 @@ def robots_txt(request):
         "Allow: /",
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain")
-
-
-import os
 
 
 def get_last_commit_date():
