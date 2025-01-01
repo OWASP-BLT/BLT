@@ -33,11 +33,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import TemplateView, View
 from django_redis import get_redis_connection
-from requests.auth import HTTPBasicAuth
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from sendgrid import SendGridAPIClient
 
 from blt import settings
 from website.bot import conversation_chain, is_api_key_valid, load_vector_store
@@ -80,8 +78,10 @@ def check_status(request):
             "memory_profiling": {},
             "db_connection_count": 0,
             "redis_stats": {},
+            "memory_by_module": {},
         }
 
+        # Bitcoin RPC check
         bitcoin_rpc_user = os.getenv("BITCOIN_RPC_USER")
         bitcoin_rpc_password = os.getenv("BITCOIN_RPC_PASSWORD")
         bitcoin_rpc_host = os.getenv("BITCOIN_RPC_HOST", "127.0.0.1")
@@ -96,32 +96,45 @@ def check_status(request):
                     "method": "getblockchaininfo",
                     "params": [],
                 },
-                auth=HTTPBasicAuth(bitcoin_rpc_user, bitcoin_rpc_password),
-                timeout=2,  # Set a timeout to avoid hanging
+                auth=(bitcoin_rpc_user, bitcoin_rpc_password),
+                timeout=5,
             )
+
             if response.status_code == 200:
-                data = response.json().get("result", {})
                 status["bitcoin"] = True
-                status["bitcoin_block"] = data.get("blocks", None)
+                status["bitcoin_block"] = response.json().get("result", {}).get("blocks")
+            else:
+                status["bitcoin"] = False
+
         except requests.exceptions.RequestException as e:
-            print(f"Bitcoin Core Node Error: {e}")
+            status["bitcoin"] = False
+            print(f"Bitcoin RPC Error: {e}")
 
-        try:
-            sg = SendGridAPIClient(os.getenv("SENDGRID_PASSWORD"))
-            response = sg.client.api_keys._(sg.api_key).get()
-            if response.status_code == 200:
-                status["sendgrid"] = True
-        except Exception as e:
-            print(f"SendGrid Error: {e}")
+        # SendGrid API check
+        sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
+        if sendgrid_api_key:
+            try:
+                response = requests.get(
+                    "https://api.sendgrid.com/v3/user/account",
+                    headers={"Authorization": f"Bearer {sendgrid_api_key}"},
+                    timeout=5,
+                )
 
-        github_token = os.getenv("GITHUB_ACCESS_TOKEN")
+                if response.status_code == 200:
+                    status["sendgrid"] = True
+                else:
+                    status["sendgrid"] = False
+                    print(
+                        f"SendGrid API token check failed with status code {response.status_code}: {response.json().get('message', 'No message provided')}"
+                    )
 
-        if not github_token:
-            print(
-                "GitHub Access Token not found. Please set the GITHUB_ACCESS_TOKEN environment variable."
-            )
-            status["github"] = False
-        else:
+            except requests.exceptions.RequestException as e:
+                status["sendgrid"] = False
+                print(f"SendGrid API Error: {e}")
+
+        # GitHub API check
+        github_token = os.getenv("GITHUB_TOKEN")
+        if github_token:
             try:
                 headers = {"Authorization": f"token {github_token}"}
                 response = requests.get(
@@ -140,6 +153,7 @@ def check_status(request):
                 status["github"] = False
                 print(f"GitHub API Error: {e}")
 
+        # OpenAI API check
         openai_api_key = os.getenv("OPENAI_API_KEY")
         if openai_api_key:
             try:
@@ -169,6 +183,12 @@ def check_status(request):
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 pass
 
+        status["top_memory_consumers"] = sorted(
+            status["top_memory_consumers"],
+            key=lambda x: x["memory_info"]["rss"],
+            reverse=True,
+        )[:5]
+
         # Get memory usage by module for the current Python process
         current_process = psutil.Process(os.getpid())
         memory_info_by_module = {}
@@ -176,7 +196,9 @@ def check_status(request):
             try:
                 module_name = getattr(module, "__name__", "unknown")
                 module_memory = sum(
-                    obj.nbytes for obj in gc.get_objects() if isinstance(obj, type(module))
+                    obj.nbytes
+                    for obj in gc.get_objects()
+                    if getattr(obj, "__module__", None) == module_name
                 )
                 memory_info_by_module[module_name] = module_memory
             except Exception:
@@ -185,12 +207,6 @@ def check_status(request):
         status["memory_by_module"] = sorted(
             memory_info_by_module.items(), key=lambda x: x[1], reverse=True
         )[:10]  # Top 10 modules by memory usage
-
-        status["top_memory_consumers"] = sorted(
-            status["top_memory_consumers"],
-            key=lambda x: x["memory_info"]["rss"],
-            reverse=True,
-        )[:5]
 
         # Get database connection count
         with connection.cursor() as cursor:
