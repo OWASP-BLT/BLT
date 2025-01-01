@@ -226,9 +226,9 @@ if "DYNO" in os.environ:  # for Heroku
     if not TESTING:
         SECURE_SSL_REDIRECT = True
 
-    import logging
+    # import logging
 
-    logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
 
     GS_BUCKET_NAME = "bhfiles"
 
@@ -358,6 +358,11 @@ LOGGING = {
         "": {
             "handlers": [],  # No handlers attached
             "level": "CRITICAL",  # Minimal logging level
+            "propagate": False,  # Prevent propagation to parent loggers
+        },
+        "django.request": {
+            "handlers": [],  # Disable request logging
+            "level": "CRITICAL",  # Only log critical errors
             "propagate": False,  # Prevent propagation to parent loggers
         },
     },
