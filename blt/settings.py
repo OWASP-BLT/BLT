@@ -353,18 +353,12 @@ LOGIN_REDIRECT_URL = "/"
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": True,
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-        },
-        "mail_admins": {
-            "class": "django.utils.log.AdminEmailHandler",
-        },
-    },
+    "handlers": {},  # No handlers are defined
     "loggers": {
         "": {
-            "handlers": [],  # Disable logging by setting handlers to an empty list
-            "level": "CRITICAL",  # Only log critical errors
+            "handlers": [],  # No handlers attached
+            "level": "CRITICAL",  # Minimal logging level
+            "propagate": False,  # Prevent propagation to parent loggers
         },
     },
 }
