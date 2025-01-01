@@ -1,8 +1,6 @@
-import gc
 import json
 import os
 import subprocess
-import sys
 import tracemalloc
 import urllib
 from datetime import datetime, timezone
@@ -58,41 +56,60 @@ from website.utils import (
     save_analysis_report,
 )
 
-vector_store = None
+# ----------------------------------------------------------------------------------
+# 1) Helper function to measure memory usage by module using tracemalloc
+# ----------------------------------------------------------------------------------
+
+
+def memory_usage_by_module(limit=10):
+    """
+    Returns a list of (filename, size_in_bytes) for the top
+    `limit` files by allocated memory, using tracemalloc.
+    """
+    tracemalloc.start()
+    snapshot = tracemalloc.take_snapshot()
+
+    # Group memory usage by filename
+    stats = snapshot.statistics("filename")
+    module_usage = {}
+
+    for stat in stats:
+        if stat.traceback:
+            filename = stat.traceback[0].filename
+            # Accumulate memory usage
+            module_usage[filename] = module_usage.get(filename, 0) + stat.size
+
+    # Sort by highest usage
+    sorted_by_usage = sorted(module_usage.items(), key=lambda x: x[1], reverse=True)[:limit]
+
+    tracemalloc.stop()
+    return sorted_by_usage
+
+
+# ----------------------------------------------------------------------------------
+# 2) Example: Calculate your service/application status
+# ----------------------------------------------------------------------------------
+
 DAILY_REQUEST_LIMIT = 10
-
-
-def calculate_memory_by_module():
-    memory_info_by_module = {}
-    all_objects = gc.get_objects()  # Get all objects tracked by the garbage collector
-
-    for obj in all_objects:
-        try:
-            module_name = getattr(obj, "__module__", None)
-            if module_name and module_name in sys.modules:
-                if module_name not in memory_info_by_module:
-                    memory_info_by_module[module_name] = 0
-                memory_info_by_module[module_name] += sys.getsizeof(obj)
-        except Exception:
-            # Ignore objects that cannot have their size determined
-            pass
-
-    # Sort by memory usage and take the top 10
-    sorted_memory_info = sorted(memory_info_by_module.items(), key=lambda x: x[1], reverse=True)[
-        :10
-    ]
-
-    return sorted_memory_info
+vector_store = None
 
 
 def check_status(request):
-    status = cache.get("service_status")
+    """
+    Example status check that includes:
+      - External service checks (Bitcoin, SendGrid, GitHub, OpenAI, etc.)
+      - Top 5 processes by RSS memory usage
+      - Database connection count
+      - Redis info
+      - Memory usage by module (via tracemalloc)
+    This result is cached for 60 seconds to avoid expensive repeated checks.
+    """
+    status_data = cache.get("service_status")
 
-    if not status:
+    if not status_data:
         print("Starting memory profiling...")
-        tracemalloc.start()  # Start memory profiling
 
-        status = {
+        status_data = {
             "bitcoin": False,
             "bitcoin_block": None,
             "sendgrid": False,
@@ -103,10 +120,12 @@ def check_status(request):
             "memory_profiling": {},
             "db_connection_count": 0,
             "redis_stats": {},
-            "memory_by_module": {},
+            "memory_by_module": [],
         }
 
+        # -------------------------------------------------------
         # Bitcoin RPC check
+        # -------------------------------------------------------
         bitcoin_rpc_user = os.getenv("BITCOIN_RPC_USER")
         bitcoin_rpc_password = os.getenv("BITCOIN_RPC_PASSWORD")
         bitcoin_rpc_host = os.getenv("BITCOIN_RPC_HOST", "127.0.0.1")
@@ -125,20 +144,21 @@ def check_status(request):
                 auth=(bitcoin_rpc_user, bitcoin_rpc_password),
                 timeout=5,
             )
-
             if response.status_code == 200:
-                status["bitcoin"] = True
-                status["bitcoin_block"] = response.json().get("result", {}).get("blocks")
+                status_data["bitcoin"] = True
+                status_data["bitcoin_block"] = response.json().get("result", {}).get("blocks")
                 print("Bitcoin RPC check successful.")
             else:
-                status["bitcoin"] = False
+                status_data["bitcoin"] = False
                 print("Bitcoin RPC check failed.")
 
         except requests.exceptions.RequestException as e:
-            status["bitcoin"] = False
+            status_data["bitcoin"] = False
             print(f"Bitcoin RPC Error: {e}")
 
+        # -------------------------------------------------------
         # SendGrid API check
+        # -------------------------------------------------------
         sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
         if sendgrid_api_key:
             try:
@@ -150,19 +170,22 @@ def check_status(request):
                 )
 
                 if response.status_code == 200:
-                    status["sendgrid"] = True
+                    status_data["sendgrid"] = True
                     print("SendGrid API check successful.")
                 else:
-                    status["sendgrid"] = False
+                    status_data["sendgrid"] = False
                     print(
-                        f"SendGrid API token check failed with status code {response.status_code}: {response.json().get('message', 'No message provided')}"
+                        f"SendGrid API token check failed with status code {response.status_code}: "
+                        f"{response.json().get('message', 'No message provided')}"
                     )
 
             except requests.exceptions.RequestException as e:
-                status["sendgrid"] = False
+                status_data["sendgrid"] = False
                 print(f"SendGrid API Error: {e}")
 
+        # -------------------------------------------------------
         # GitHub API check
+        # -------------------------------------------------------
         github_token = os.getenv("GITHUB_TOKEN")
         if github_token:
             try:
@@ -173,27 +196,30 @@ def check_status(request):
                         "https://api.github.com/user/repos", headers=headers, timeout=2
                     )
                 except requests.exceptions.Timeout:
-                    status["github"] = False
+                    status_data["github"] = False
                     print("GitHub API request timed out")
 
                 except requests.exceptions.RequestException as e:
-                    status["github"] = False
+                    status_data["github"] = False
                     print(f"GitHub API Error: {e}")
 
                 if response.status_code == 200:
-                    status["github"] = True
+                    status_data["github"] = True
                     print("GitHub API check successful.")
                 else:
-                    status["github"] = False
+                    status_data["github"] = False
                     print(
-                        f"GitHub API token check failed with status code {response.status_code}: {response.json().get('message', 'No message provided')}"
+                        f"GitHub API token check failed with status code {response.status_code}: "
+                        f"{response.json().get('message', 'No message provided')}"
                     )
 
             except requests.exceptions.RequestException as e:
-                status["github"] = False
+                status_data["github"] = False
                 print(f"GitHub API Error: {e}")
 
+        # -------------------------------------------------------
         # OpenAI API check
+        # -------------------------------------------------------
         openai_api_key = os.getenv("OPENAI_API_KEY")
         if openai_api_key:
             try:
@@ -204,76 +230,84 @@ def check_status(request):
                 )
 
                 if response.status_code == 200:
-                    status["openai"] = True
+                    status_data["openai"] = True
                     print("OpenAI API check successful.")
                 else:
-                    status["openai"] = False
+                    status_data["openai"] = False
                     print(
-                        f"OpenAI API token check failed with status code {response.status_code}: {response.json().get('message', 'No message provided')}"
+                        f"OpenAI API token check failed with status code {response.status_code}: "
+                        f"{response.json().get('message', 'No message provided')}"
                     )
 
             except requests.exceptions.RequestException as e:
-                status["openai"] = False
+                status_data["openai"] = False
                 print(f"OpenAI API Error: {e}")
 
-        # Get the top 5 processes by memory usage
+        # -------------------------------------------------------
+        # Top memory consumers (process-level) via psutil
+        # -------------------------------------------------------
         print("Getting top memory consumers...")
         for proc in psutil.process_iter(["pid", "name", "memory_info"]):
             try:
                 proc_info = proc.info
                 proc_info["memory_info"] = proc_info["memory_info"]._asdict()
-                status["top_memory_consumers"].append(proc_info)
+                status_data["top_memory_consumers"].append(proc_info)
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 pass
 
-        status["top_memory_consumers"] = sorted(
-            status["top_memory_consumers"],
+        status_data["top_memory_consumers"] = sorted(
+            status_data["top_memory_consumers"],
             key=lambda x: x["memory_info"]["rss"],
             reverse=True,
         )[:5]
 
-        # Get memory usage by module for the current Python process
+        # -------------------------------------------------------
+        # Memory usage by module (via tracemalloc)
+        # -------------------------------------------------------
         print("Calculating memory usage by module...")
-        current_process = psutil.Process(os.getpid())
-        memory_info_by_module = {}
-        for module in sys.modules.values():
-            try:
-                module_name = getattr(module, "__name__", "unknown")
-                module_memory = sum(
-                    obj.nbytes
-                    for obj in gc.get_objects()
-                    if getattr(obj, "__module__", None) == module_name
-                )
-                memory_info_by_module[module_name] = module_memory
-            except Exception:
-                pass
+        top_modules = memory_usage_by_module(limit=10)
+        status_data["memory_by_module"] = top_modules
 
-        memory_by_module = calculate_memory_by_module()
-        status["memory_by_module"] = memory_by_module  # Top 10 modules by memory usage
-
-        # Get database connection count
+        # -------------------------------------------------------
+        # Database connection count
+        # -------------------------------------------------------
         print("Getting database connection count...")
         if settings.DATABASES.get("default", {}).get("ENGINE") == "django.db.backends.postgresql":
             with connection.cursor() as cursor:
                 cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
-                status["db_connection_count"] = cursor.fetchone()[0]
+                status_data["db_connection_count"] = cursor.fetchone()[0]
 
-        # Get Redis stats using django-redis
+        # -------------------------------------------------------
+        # Redis stats
+        # -------------------------------------------------------
         print("Getting Redis stats...")
         redis_client = get_redis_connection("default")
-        status["redis_stats"] = redis_client.info()
+        status_data["redis_stats"] = redis_client.info()
 
-        # Add memory profiling information
-        print("Adding memory profiling information...")
+        # -------------------------------------------------------
+        # Memory profiling info (current, peak) - optional
+        # -------------------------------------------------------
+        # If you want an overall snapshot: start tracemalloc before
+        # the function call, or simply do an extra measure here.
+        # For example:
+        tracemalloc.start()
         current, peak = tracemalloc.get_traced_memory()
-        status["memory_profiling"]["current"] = current
-        status["memory_profiling"]["peak"] = peak
+        status_data["memory_profiling"]["current"] = current
+        status_data["memory_profiling"]["peak"] = peak
         tracemalloc.stop()
 
+        # -------------------------------------------------------
+        # Cache the status data for 60s to avoid repeated overhead
+        # -------------------------------------------------------
         print("Caching service status...")
-        cache.set("service_status", status, timeout=60)
+        cache.set("service_status", status_data, timeout=60)
 
-    return render(request, "status_page.html", {"status": status})
+    return render(request, "status_page.html", {"status": status_data})
+
+
+# ----------------------------------------------------------------------------------
+# 3) The rest of your existing views remain the same
+# ----------------------------------------------------------------------------------
 
 
 def github_callback(request):
@@ -436,7 +470,6 @@ def chatbot_conversation(request):
         request.session["buffer"] = memory.buffer
 
         ChatBotLog.objects.create(question=question, answer=response["answer"])
-
         return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
 
     except Exception as e:
@@ -612,7 +645,7 @@ class UploadCreate(View):
     def post(self, request, *args, **kwargs):
         data = request.FILES.get("image")
         result = default_storage.save(
-            "uploads\/" + self.kwargs["hash"] + ".png", ContentFile(data.read())
+            "uploads/" + self.kwargs["hash"] + ".png", ContentFile(data.read())
         )
         return JsonResponse({"status": result})
 
@@ -621,10 +654,9 @@ class StatsDetailView(TemplateView):
     template_name = "stats.html"
 
     def get_historical_counts(self, model):
-        # Map models to their date fields
         date_field_map = {
             "Issue": "created",
-            "UserProfile": "created",  # From user creation
+            "UserProfile": "created",
             "Comment": "created_date",
             "Hunt": "created",
             "Domain": "created",
@@ -647,7 +679,6 @@ class StatsDetailView(TemplateView):
             "BaconToken": "date_awarded",
             "IP": "created",
             "ChatBotLog": "created",
-            # Add other models as needed
         }
 
         date_field = date_field_map.get(model.__name__, "created")
@@ -655,7 +686,6 @@ class StatsDetailView(TemplateView):
         counts = []
 
         try:
-            # Annotate and count by truncated date
             date_counts = (
                 model.objects.annotate(date=TruncDate(date_field))
                 .values("date")
@@ -666,7 +696,6 @@ class StatsDetailView(TemplateView):
                 dates.append(entry["date"].strftime("%Y-%m-%d"))
                 counts.append(entry["count"])
         except FieldError:
-            # If the date field doesn't exist, return empty lists
             return [], []
 
         return dates, counts
@@ -708,8 +737,8 @@ class StatsDetailView(TemplateView):
         for model in apps.get_models():
             if model._meta.abstract or model._meta.proxy:
                 continue
-
             model_name = model.__name__
+
             try:
                 dates, counts = self.get_historical_counts(model)
                 trend = counts[-1] - counts[-2] if len(counts) >= 2 else 0
@@ -720,13 +749,12 @@ class StatsDetailView(TemplateView):
                         "label": model_name,
                         "count": total_count,
                         "icon": known_icons.get(model_name, "fas fa-database"),
-                        "history": json.dumps(counts),  # Serialize counts to JSON
-                        "dates": json.dumps(dates),  # Serialize dates to JSON
+                        "history": json.dumps(counts),
+                        "dates": json.dumps(dates),
                         "trend": trend,
                     }
                 )
-            except Exception as e:
-                # Optionally log the exception
+            except Exception:
                 continue
 
         context["stats"] = sorted(stats_data, key=lambda x: x["count"], reverse=True)
@@ -762,7 +790,6 @@ def sponsor_view(request):
             return None
 
     bch_address = "bitcoincash:qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc"
-
     balance = get_bch_balance(bch_address)
     if balance is not None:
         print(f"Balance of {bch_address}: {balance} BCH")
@@ -810,25 +837,21 @@ def submit_roadmap_pr(request):
         owner, repo = pr_parts[3], pr_parts[4]
         pr_number, issue_number = pr_parts[-1], issue_parts[-1]
 
-        print(pr_parts)
-        print(issue_parts)
-
-        print(f"rrepo: {repo}")
-        print(f"pr_number: {pr_number}")
-
         pr_data = fetch_github_data(owner, repo, "pulls", pr_number)
         roadmap_data = fetch_github_data(owner, repo, "issues", issue_number)
 
         if "error" in pr_data or "error" in roadmap_data:
             return JsonResponse(
                 {
-                    "error": f"Failed to fetch PR or roadmap data: {pr_data.get('error', 'Unknown error')}"
+                    "error": (
+                        f"Failed to fetch PR or roadmap data: "
+                        f"{pr_data.get('error', 'Unknown error')}"
+                    )
                 },
                 status=500,
             )
 
         analysis = analyze_pr_content(pr_data, roadmap_data)
-
         save_analysis_report(pr_link, issue_link, analysis)
         return JsonResponse({"message": "PR submitted successfully"})
 
