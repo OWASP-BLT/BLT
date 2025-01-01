@@ -154,7 +154,9 @@ def check_status(request):
         )[:5]
 
         # Get database connection count
-        status["db_connection_count"] = len(connection.queries)
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
+            status["db_connection_count"] = cursor.fetchone()[0]
 
         # Get Redis stats using django-redis
         redis_client = get_redis_connection("default")
