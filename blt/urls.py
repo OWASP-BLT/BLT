@@ -177,8 +177,6 @@ from website.views.organization import (
 )
 from website.views.project import (
     ProjectBadgeView,
-    ProjectDetailView,
-    ProjectListView,
     ProjectsDetailView,
     ProjectView,
     RepoDetailView,
@@ -539,8 +537,7 @@ urlpatterns = [
         TemplateView.as_view(template_name="coming_soon.html"),
         name="googleplayapp",
     ),
-    re_path(r"^projects/$", ProjectListView.as_view(), name="project_list"),
-    re_path(r"^allprojects/$", ProjectView.as_view(), name="project_view"),
+    re_path(r"^projects/$", ProjectView.as_view(), name="project_view"),
     re_path(r"^apps/$", TemplateView.as_view(template_name="apps.html"), name="apps"),
     re_path(
         r"^deletions/$",
@@ -590,7 +587,6 @@ urlpatterns = [
     re_path(r"^api/v1/createwallet/$", create_wallet, name="create_wallet"),
     re_path(r"^api/v1/count/$", issue_count, name="api_count"),
     re_path(r"^api/v1/contributors/$", contributors, name="api_contributor"),
-    path("project/<slug:slug>/", ProjectDetailView.as_view(), name="project_view"),
     path("projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"),
     path("repository/<slug:slug>/", RepoDetailView.as_view(), name="repo_detail"),
     re_path(r"^report-ip/$", ReportIpView.as_view(), name="report_ip"),
@@ -802,7 +798,7 @@ urlpatterns = [
         name="similarity_scan",
     ),
     path("projects/create/", create_project, name="create_project"),
-    path("projects/<slug:slug>/", ProjectsDetailView.as_view(), name="projects_detail"),
+    path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="projects_detail"),
 ]
 
 if settings.DEBUG:

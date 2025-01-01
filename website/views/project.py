@@ -4,7 +4,6 @@ import logging
 import re
 import socket
 import time
-from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
@@ -24,14 +23,13 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
-from django.utils.timezone import localtime, now
+from django.utils.timezone import localtime
 from django.views.decorators.http import require_http_methods
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView
 from django_filters.views import FilterView
 from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
-from website.forms import GitHubURLForm
 from website.models import IP, BaconToken, Contribution, Organization, Project, Repo
 from website.utils import admin_required
 
@@ -83,105 +81,6 @@ def distribute_bacon(request, contribution_id):
         id__in=BaconToken.objects.values_list("contribution_id", flat=True)
     )
     return render(request, "select_contribution.html", {"contributions": contributions})
-
-
-class ProjectDetailView(DetailView):
-    model = Project
-    period = None
-    selected_year = None
-
-    def post(self, request, *args, **kwargs):
-        from django.core.management import call_command
-
-        project = self.get_object()
-
-        if "refresh_stats" in request.POST:
-            call_command("update_projects", "--project_id", project.pk)
-            messages.success(request, f"Refreshing stats for {project.name}")
-
-        elif "refresh_contributor_stats" in request.POST:
-            owner_repo = project.github_url.rstrip("/").split("/")[-2:]
-            repo = f"{owner_repo[0]}/{owner_repo[1]}"
-            call_command("fetch_contributor_stats", "--repo", repo)
-            messages.success(request, f"Refreshing contributor stats for {project.name}")
-
-        elif "refresh_contributors" in request.POST:
-            call_command("fetch_contributors", "--project_id", project.pk)
-        return redirect("project_view", slug=project.slug)
-
-    def get(self, request, *args, **kwargs):
-        project = self.get_object()
-        project.project_visit_count += 1
-        project.save()
-        return super().get(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        end_date = now()
-        display_end_date = end_date.date()
-        selected_year = self.request.GET.get("year", None)
-        if selected_year:
-            start_date = datetime(int(selected_year), 1, 1)
-            display_end_date = datetime(int(selected_year), 12, 31)
-        else:
-            self.period = self.request.GET.get("period", "30")
-            days = int(self.period)
-            start_date = end_date - timedelta(days=days)
-            start_date = start_date.date()
-
-        contributions = Contribution.objects.filter(
-            created__date__gte=start_date,
-            created__date__lte=display_end_date,
-            repository=self.get_object(),
-        )
-
-        user_stats = {}
-        for contribution in contributions:
-            username = contribution.github_username
-            if username not in user_stats:
-                user_stats[username] = {
-                    "commits": 0,
-                    "issues_opened": 0,
-                    "issues_closed": 0,
-                    "prs": 0,
-                    "comments": 0,
-                    "total": 0,
-                }
-            if contribution.contribution_type == "commit":
-                user_stats[username]["commits"] += 1
-            elif contribution.contribution_type == "issue_opened":
-                user_stats[username]["issues_opened"] += 1
-            elif contribution.contribution_type == "issue_closed":
-                user_stats[username]["issues_closed"] += 1
-            elif contribution.contribution_type == "pull_request":
-                user_stats[username]["prs"] += 1
-            elif contribution.contribution_type == "comment":
-                user_stats[username]["comments"] += 1
-            total = (
-                user_stats[username]["commits"] * 5
-                + user_stats[username]["prs"] * 3
-                + user_stats[username]["issues_opened"] * 2
-                + user_stats[username]["issues_closed"] * 2
-                + user_stats[username]["comments"]
-            )
-            user_stats[username]["total"] = total
-
-        user_stats = dict(sorted(user_stats.items(), key=lambda x: x[1]["total"], reverse=True))
-
-        current_year = now().year
-        year_list = list(range(current_year, current_year - 10, -1))
-
-        context.update(
-            {
-                "user_stats": user_stats,
-                "period": self.period,
-                "start_date": start_date.strftime("%Y-%m-%d"),
-                "end_date": display_end_date.strftime("%Y-%m-%d"),
-                "year_list": year_list,
-                "selected_year": selected_year,
-            }
-        )
-        return context
 
 
 class ProjectBadgeView(APIView):
@@ -237,94 +136,6 @@ class ProjectBadgeView(APIView):
         response["Expires"] = "0"
 
         return response
-
-
-class ProjectListView(ListView):
-    model = Project
-    context_object_name = "projects"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["form"] = GitHubURLForm()
-        context["sort_by"] = self.request.GET.get("sort_by", "-created")
-        context["order"] = self.request.GET.get("order", "desc")
-        return context
-
-    def post(self, request, *args, **kwargs):
-        if "refresh_stats" in request.POST:
-            from django.core.management import call_command
-
-            call_command("update_projects")
-            messages.success(request, "Refreshing project statistics...")
-            return redirect("project_list")
-
-        if "refresh_contributors" in request.POST:
-            from django.core.management import call_command
-
-            projects = Project.objects.all()
-            for project in projects:
-                owner_repo = project.github_url.rstrip("/").split("/")[-2:]
-                repo = f"{owner_repo[0]}/{owner_repo[1]}"
-                call_command("fetch_contributor_stats", "--repo", repo)
-            messages.success(request, "Refreshing contributor data...")
-            return redirect("project_list")
-
-        form = GitHubURLForm(request.POST)
-        if form.is_valid():
-            github_url = form.cleaned_data["github_url"]
-            # Extract the repository part of the URL
-            match = re.match(r"https://github.com/([^/]+/[^/]+)", github_url)
-            if match:
-                repo_path = match.group(1)
-                api_url = f"https://api.github.com/repos/{repo_path}"
-                response = requests.get(api_url)
-                if response.status_code == 200:
-                    data = response.json()
-                    # if the description is empty, use the name as the description
-                    if not data["description"]:
-                        data["description"] = data["name"]
-
-                    # Check if a project with the same slug already exists
-                    slug = data["name"].lower()
-                    if Project.objects.filter(slug=slug).exists():
-                        messages.error(request, "A project with this slug already exists.")
-                        return redirect("project_list")
-
-                    project, created = Project.objects.get_or_create(
-                        github_url=github_url,
-                        defaults={
-                            "name": data["name"],
-                            "slug": slug,
-                            "description": data["description"],
-                            "wiki_url": data["html_url"],
-                            "homepage_url": data.get("homepage", ""),
-                            "logo_url": data["owner"]["avatar_url"],
-                        },
-                    )
-                    if created:
-                        messages.success(request, "Project added successfully.")
-                    else:
-                        messages.info(request, "Project already exists.")
-                else:
-                    messages.error(request, "Failed to fetch project from GitHub.")
-            else:
-                messages.error(request, "Invalid GitHub URL.")
-            return redirect("project_list")
-        context = self.get_context_data()
-        context["form"] = form
-        return self.render_to_response(context)
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        sort_by = self.request.GET.get("sort_by", "-created")
-        order = self.request.GET.get("order", "desc")
-
-        if order == "asc" and sort_by.startswith("-"):
-            sort_by = sort_by[1:]
-        elif order == "desc" and not sort_by.startswith("-"):
-            sort_by = f"-{sort_by}"
-
-        return queryset.order_by(sort_by)
 
 
 class ProjectRepoFilter(django_filters.FilterSet):
@@ -925,3 +736,210 @@ class RepoDetailView(DetailView):
             ]
 
         return context
+
+    def post(self, request, *args, **kwargs):
+        def get_issue_count(full_name, query, headers):
+            search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
+            resp = requests.get(search_url, headers=headers)
+            if resp.status_code == 200:
+                return resp.json().get("total_count", 0)
+            return 0
+
+        repo = self.get_object()
+        section = request.POST.get("section")
+
+        if section == "basic":
+            try:
+                # Get GitHub API token
+                github_token = getattr(settings, "GITHUB_TOKEN", None)
+                if not github_token:
+                    return JsonResponse(
+                        {"status": "error", "message": "GitHub token not configured"}, status=500
+                    )
+
+                # Extract owner/repo from GitHub URL
+                match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo.repo_url)
+                if not match:
+                    return JsonResponse(
+                        {"status": "error", "message": "Invalid repository URL"}, status=400
+                    )
+
+                owner, repo_name = match.groups()
+                api_url = f"https://api.github.com/repos/{owner}/{repo_name}"
+
+                # Make GitHub API request
+                headers = {
+                    "Authorization": f"token {github_token}",
+                    "Accept": "application/vnd.github.v3+json",
+                }
+                response = requests.get(api_url, headers=headers)
+
+                if response.status_code == 200:
+                    data = response.json()
+
+                    # Update repo with fresh data
+                    repo.stars = data.get("stargazers_count", 0)
+                    repo.forks = data.get("forks_count", 0)
+                    repo.watchers = data.get("watchers_count", 0)
+                    repo.open_issues = data.get("open_issues_count", 0)
+                    repo.network_count = data.get("network_count", 0)
+                    repo.subscribers_count = data.get("subscribers_count", 0)
+                    repo.last_updated = parse_datetime(data.get("updated_at"))
+                    repo.save()
+
+                    return JsonResponse(
+                        {
+                            "status": "success",
+                            "message": "Basic information updated successfully",
+                            "data": {
+                                "stars": repo.stars,
+                                "forks": repo.forks,
+                                "watchers": repo.watchers,
+                                "network_count": repo.network_count,
+                                "subscribers_count": repo.subscribers_count,
+                                "last_updated": naturaltime(repo.last_updated).replace(
+                                    "\xa0", " "
+                                ),  # Fix unicode space
+                            },
+                        }
+                    )
+                else:
+                    return JsonResponse(
+                        {"status": "error", "message": f"GitHub API error: {response.status_code}"},
+                        status=response.status_code,
+                    )
+
+            except requests.RequestException as e:
+                return JsonResponse(
+                    {"status": "error", "message": f"Network error: {str(e)}"}, status=503
+                )
+            except requests.HTTPError as e:
+                return JsonResponse(
+                    {"status": "error", "message": f"GitHub API error: {str(e)}"},
+                    status=e.response.status_code,
+                )
+            except ValueError as e:
+                return JsonResponse(
+                    {"status": "error", "message": f"Data parsing error: {str(e)}"}, status=400
+                )
+
+        elif section == "metrics":
+            try:
+                github_token = getattr(settings, "GITHUB_TOKEN", None)
+                if not github_token:
+                    return JsonResponse(
+                        {"status": "error", "message": "GitHub token not configured"}, status=500
+                    )
+
+                match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo.repo_url)
+                if not match:
+                    return JsonResponse(
+                        {"status": "error", "message": "Invalid repository URL"}, status=400
+                    )
+
+                # Extract owner and repo from API call
+                owner, repo_name = match.groups()
+                api_url = f"https://api.github.com/repos/{owner}/{repo_name}"
+                headers = {
+                    "Authorization": f"token {github_token}",
+                    "Accept": "application/vnd.github.v3+json",
+                }
+                response = requests.get(api_url, headers=headers)
+
+                if response.status_code != 200:
+                    return JsonResponse(
+                        {"status": "error", "message": "Failed to fetch repository data"},
+                        status=500,
+                    )
+
+                repo_data = response.json()
+                full_name = repo_data.get("full_name")
+                default_branch = repo_data.get("default_branch")
+                if not full_name:
+                    return JsonResponse(
+                        {"status": "error", "message": "Could not get repository full name"},
+                        status=500,
+                    )
+
+                full_name = full_name.replace(" ", "+")
+
+                # get the total commit
+                url = f"https://api.github.com/repos/{full_name}/commits"
+                params = {"per_page": 1, "page": 1}
+                response = requests.get(url, headers=headers, params=params)
+                if response.status_code == 200:
+                    if "Link" in response.headers:
+                        links = response.headers["Link"]
+                        last_page = 1
+                        for link in links.split(","):
+                            if 'rel="last"' in link:
+                                last_page = int(link.split("&page=")[1].split(">")[0])
+                        commit_count = last_page
+                    else:
+                        commits = response.json()
+                        total_commits = len(commits)
+                        commit_count = total_commits
+                else:
+                    commit_count = 0
+
+                # Get open issues and PRs
+                open_issues = get_issue_count(full_name, "type:issue+state:open", headers)
+                closed_issues = get_issue_count(full_name, "type:issue+state:closed", headers)
+                open_pull_requests = get_issue_count(full_name, "type:pr+state:open", headers)
+                total_issues = open_issues + closed_issues
+
+                if (
+                    repo.open_issues != open_issues
+                    or repo.closed_issues != closed_issues
+                    or repo.total_issues != total_issues
+                    or repo.open_pull_requests != open_pull_requests
+                    or repo.commit_count != commit_count
+                ):
+                    # Update repository metrics
+                    repo.open_issues = open_issues
+                    repo.closed_issues = closed_issues
+                    repo.total_issues = total_issues
+                    repo.open_pull_requests = open_pull_requests
+                    repo.commit_count = commit_count
+
+                commits_url = f"{api_url}/commits?sha={default_branch}&per_page=1"
+                commits_response = requests.get(commits_url, headers=headers)
+                if commits_response.status_code == 200:
+                    commit_data = commits_response.json()
+                    if commit_data:
+                        date_str = commit_data[0]["commit"]["committer"]["date"]
+                        repo.last_commit_date = parse_datetime(date_str)
+                repo.save()
+
+                return JsonResponse(
+                    {
+                        "status": "success",
+                        "message": "Activity metrics updated successfully",
+                        "data": {
+                            "open_issues": repo.open_issues,
+                            "closed_issues": repo.closed_issues,
+                            "total_issues": repo.total_issues,
+                            "open_pull_requests": repo.open_pull_requests,
+                            "commit_count": repo.commit_count,
+                            "last_commit_date": repo.last_commit_date.strftime("%b %d, %Y")
+                            if repo.last_commit_date
+                            else "",
+                        },
+                    }
+                )
+
+            except requests.RequestException as e:
+                return JsonResponse(
+                    {"status": "error", "message": f"Network error: {str(e)}"}, status=503
+                )
+            except requests.HTTPError as e:
+                return JsonResponse(
+                    {"status": "error", "message": f"GitHub API error: {str(e)}"},
+                    status=e.response.status_code,
+                )
+            except ValueError as e:
+                return JsonResponse(
+                    {"status": "error", "message": f"Data parsing error: {str(e)}"}, status=400
+                )
+
+        return super().post(request, *args, **kwargs)

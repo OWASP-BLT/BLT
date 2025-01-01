@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% load humanize %}
 {% load static %}
-{% block title %}{{ repo.name }} - Repo Details{% endblock %}
+{% block title %}
+    {{ repo.name }} - Repo Details
+{% endblock title %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <!-- Loading Overlay -->
@@ -95,18 +97,26 @@
                             Standard Repository
                         </span>
                     {% endif %}
-                    {% if repo.tags.all %}
-                        <div class="flex items-center gap-2">
-                            <span class="text-gray-500">Tags:</span>
-                            {% for tag in repo.tags.all %}
-                                <span class="px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600">{{ tag.name }}</span>
-                            {% endfor %}
+                    <div class="flex items-center gap-2 relative">
+                        <span class="text-gray-500">Tags:</span>
+                        {% for tag in repo.tags.all %}
+                            <span class="px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600">{{ tag.name }}</span>
+                        {% endfor %}
+                        <div class="refresh-container relative inline-flex">
+                            <button class="refresh-btn ml-2"
+                                    data-section="basic"
+                                    onclick="refreshSection(this, 'basic')"
+                                    title="Refresh basic information">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </button>
                         </div>
-                    {% endif %}
+                    </div>
                 </div>
                 <div class="text-sm text-gray-500">
                     <div>Created {{ repo.created|date:"M d, Y" }}</div>
-                    <div>Updated {{ repo.last_updated|naturaltime }}</div>
+                    <div data-stat="last-updated">Updated {{ repo.last_updated|naturaltime }}</div>
                 </div>
             </div>
             <!-- Quick Stats -->
@@ -120,7 +130,7 @@
                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                         </svg>
                     </div>
-                    <p class="text-2xl font-bold mt-2">{{ repo.stars|intcomma }}</p>
+                    <p class="text-2xl font-bold mt-2" data-stat="stars">{{ repo.stars|intcomma }}</p>
                 </div>
                 <div class="bg-gray-50 p-4 rounded-lg">
                     <div class="flex items-center justify-between">
@@ -129,7 +139,7 @@
                             <path d="M8.4 17.143c-1.914-.572-3.426-2-4.4-3.715v2.572c0 2.286 3.714 4 8 4s8-1.714 8-4v-2.572c-.974 1.715-2.486 3.143-4.4 3.715-1.143.286-2.857.286-4 .286s-2.857 0-4-.286zM12 3.429c-4.286 0-8 1.714-8 4s3.714 4 8 4 8-1.714 8-4-3.714-4-8-4zM12 13.429c-4.286 0-8-1.714-8-4v2.571c0 2.286 3.714 4 8 4s8-1.714 8-4V9.429c0 2.286-3.714 4-8 4z" />
                         </svg>
                     </div>
-                    <p class="text-2xl font-bold mt-2">{{ repo.forks|intcomma }}</p>
+                    <p class="text-2xl font-bold mt-2" data-stat="forks">{{ repo.forks|intcomma }}</p>
                 </div>
                 <div class="bg-gray-50 p-4 rounded-lg">
                     <div class="flex items-center justify-between">
@@ -141,7 +151,7 @@
                             <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
                         </svg>
                     </div>
-                    <p class="text-2xl font-bold mt-2">{{ repo.watchers|intcomma }}</p>
+                    <p class="text-2xl font-bold mt-2" data-stat="watchers">{{ repo.watchers|intcomma }}</p>
                 </div>
                 <div class="bg-gray-50 p-4 rounded-lg">
                     <div class="flex items-center justify-between">
@@ -152,7 +162,7 @@
                             <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd" />
                         </svg>
                     </div>
-                    <p class="text-2xl font-bold mt-2">{{ repo.network_count|intcomma }}</p>
+                    <p class="text-2xl font-bold mt-2" data-stat="network">{{ repo.network_count|intcomma }}</p>
                 </div>
                 <div class="bg-gray-50 p-4 rounded-lg">
                     <div class="flex items-center justify-between">
@@ -163,7 +173,7 @@
                             <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
                         </svg>
                     </div>
-                    <p class="text-2xl font-bold mt-2">{{ repo.subscribers_count|intcomma }}</p>
+                    <p class="text-2xl font-bold mt-2" data-stat="subscribers">{{ repo.subscribers_count|intcomma }}</p>
                 </div>
             </div>
         </div>
@@ -174,14 +184,26 @@
                 <!-- Activity Metrics -->
                 <section class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                     <div class="p-6">
-                        <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                            <svg class="w-6 h-6 text-red-500 mr-2"
-                                 fill="currentColor"
-                                 viewBox="0 0 20 20">
-                                <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
-                            </svg>
-                            Activity Metrics
-                        </h2>
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-bold text-gray-900 flex items-center">
+                                <svg class="w-6 h-6 text-red-500 mr-2"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                                </svg>
+                                Activity Metrics
+                            </h2>
+                            <div class="refresh-container relative inline-flex">
+                                <button class="refresh-btn ml-2"
+                                        data-section="metrics"
+                                        onclick="refreshSection(this, 'metrics')"
+                                        title="Refresh metrics">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                             <!-- Issues Card -->
                             <div class="relative group">
@@ -202,17 +224,17 @@
                                     <div class="space-y-3">
                                         <div class="flex items-center justify-between">
                                             <span class="text-gray-600">Open</span>
-                                            <span class="font-semibold text-gray-900">{{ repo.open_issues|intcomma }}</span>
+                                            <span class="font-semibold text-gray-900" data-stat="open_issues">{{ repo.open_issues|intcomma }}</span>
                                         </div>
                                         <div class="flex items-center justify-between">
                                             <span class="text-gray-600">Closed</span>
-                                            <span class="font-semibold text-gray-900">{{ repo.closed_issues|intcomma }}</span>
+                                            <span class="font-semibold text-gray-900" data-stat="closed_issues">{{ repo.closed_issues|intcomma }}</span>
                                         </div>
                                     </div>
                                     <div class="mt-4 pt-3 border-t border-gray-200">
                                         <div class="flex items-center justify-between">
                                             <span class="text-sm font-medium text-gray-500">Total</span>
-                                            <span class="text-xl font-bold text-gray-900">{{ repo.total_issues|intcomma }}</span>
+                                            <span class="text-xl font-bold text-gray-900" data-stat="total_issues">{{ repo.total_issues|intcomma }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -235,7 +257,10 @@
                                     </div>
                                     <div class="flex items-center justify-center py-4">
                                         <div class="text-center">
-                                            <div class="text-3xl font-bold text-gray-900">{{ repo.open_pull_requests|intcomma }}</div>
+                                            <div class="text-3xl font-bold text-gray-900"
+                                                 data-stat="open_pull_requests">
+                                                {{ repo.open_pull_requests|intcomma }}
+                                            </div>
                                             <div class="text-sm text-gray-500 mt-1">Open PRs</div>
                                         </div>
                                     </div>
@@ -259,7 +284,7 @@
                                     </div>
                                     <div class="space-y-3">
                                         <div class="flex flex-col">
-                                            <div class="text-3xl font-bold text-gray-900">{{ repo.commit_count|intcomma }}</div>
+                                            <div class="text-3xl font-bold text-gray-900" data-stat="commit_count">{{ repo.commit_count|intcomma }}</div>
                                             <div class="text-sm text-gray-500">Total Commits</div>
                                         </div>
                                         <div class="flex items-center text-sm text-gray-600 mt-2">
@@ -268,7 +293,8 @@
                                                  viewBox="0 0 20 20">
                                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
                                             </svg>
-                                            Last: {{ repo.last_commit_date|date:"M d, Y" }}
+                                            Last:
+                                            <span data-stat="last_commit_date">{{ repo.last_commit_date|date:"M d, Y" }}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -279,14 +305,24 @@
                 <!-- Community Section -->
                 <section class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                     <div class="p-6">
-                        <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                            <svg class="w-6 h-6 text-red-500 mr-2"
-                                 fill="currentColor"
-                                 viewBox="0 0 20 20">
-                                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-                            </svg>
-                            Community
-                        </h2>
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-bold text-gray-900 flex items-center">
+                                <svg class="w-6 h-6 text-red-500 mr-2"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                                </svg>
+                                Community
+                            </h2>
+                            <button class="refresh-btn"
+                                    data-section="community"
+                                    onclick="refreshSection(this, 'community')"
+                                    title="Refresh community data">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </button>
+                        </div>
                         <div class="space-y-6">
                             <!-- Contributors Summary -->
                             <div class="flex items-center justify-between">
@@ -357,14 +393,24 @@
                 <!-- Technical Details Section -->
                 <section class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                     <div class="p-6">
-                        <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                            <svg class="w-6 h-6 text-red-500 mr-2"
-                                 fill="currentColor"
-                                 viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd" />
-                            </svg>
-                            Technical Overview
-                        </h2>
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-bold text-gray-900 flex items-center">
+                                <svg class="w-6 h-6 text-red-500 mr-2"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd" />
+                                </svg>
+                                Technical Overview
+                            </h2>
+                            <button class="refresh-btn"
+                                    data-section="technical"
+                                    onclick="refreshSection(this, 'technical')"
+                                    title="Refresh technical data">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </button>
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Language and Stack -->
                             <div class="bg-gray-50 rounded-lg p-5 border border-gray-200">
@@ -524,4 +570,128 @@
             </div>
         </div>
     </div>
-{% endblock %}
+    <style>
+.refresh_spinner {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    width: 1.5rem;
+    height: 1.5rem;
+    animation: spin 1s linear infinite;
+}
+.refresh-container {
+    position: relative;
+}
+.refresh-message {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    z-index: 10;
+}
+    </style>
+{% endblock content %}
+{% block after_js %}
+    <script>
+const refreshSection = async (button, section) => {
+    if (button.classList.contains('refresh_spinner')) {
+        return;
+    }
+
+    // Show loading state
+    button.classList.add('refresh_spinner');
+    
+    // Create message container if it doesn't exist
+    const container = button.closest('.refresh-container');
+    let messageContainer = container.querySelector('.refresh-message');
+    if (!messageContainer) {
+        messageContainer = document.createElement('div');
+        messageContainer.className = 'refresh-message';
+        container.appendChild(messageContainer);
+    }
+
+    try {
+        const response = await fetch('', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `section=${section}`
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to refresh data');
+        }
+
+        if (section === 'basic') {
+            // Update stats with new data
+            const updates = {
+                'stars': data.data.stars,
+                'forks': data.data.forks,
+                'watchers': data.data.watchers,
+                'network': data.data.network_count,
+                'subscribers': data.data.subscribers_count,
+                'last-updated': `Updated ${data.data.last_updated.replace('\u00a0', ' ')}`
+            };
+
+            // Update each stat if the element exists
+            for (const [key, value] of Object.entries(updates)) {
+                const element = document.querySelector(`[data-stat="${key}"]`);
+                if (element) {
+                    element.textContent = value;
+                }
+            }
+
+            // Show success message
+            messageContainer.className = 'refresh-message text-sm text-green-600';
+            messageContainer.textContent = data.message;
+        } else if (section === 'metrics') {
+            // Update metrics with new data
+            const updates = {
+                'open_issues': data.data.open_issues,
+                'closed_issues': data.data.closed_issues,
+                'total_issues': data.data.total_issues,
+                'open_pull_requests': data.data.open_pull_requests,
+                'commit_count': data.data.commit_count,
+                'last_commit_date': data.data.last_commit_date
+            };
+
+            // Update each stat if the element exists
+            for (const [key, value] of Object.entries(updates)) {
+                const element = document.querySelector(`[data-stat="${key}"]`);
+                if (element) {
+                    element.textContent = value.toLocaleString();
+                }
+            }
+
+            // Show success message
+            messageContainer.className = 'refresh-message text-sm text-green-600';
+            messageContainer.textContent = data.message;
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        messageContainer.className = 'refresh-message text-sm text-red-600';
+        messageContainer.textContent = error.message;
+    } finally {
+        // Remove loading state only after all UI updates are done
+        requestAnimationFrame(() => {
+            button.classList.remove('refresh_spinner');
+        });
+        
+        // Remove message after 5 seconds
+        setTimeout(() => {
+            if (messageContainer && messageContainer.parentElement) {
+                messageContainer.remove();
+            }
+        }, 5000);
+    }
+};
+    </script>
+{% endblock after_js %}
