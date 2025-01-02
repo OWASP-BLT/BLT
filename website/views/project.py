@@ -1008,16 +1008,24 @@ class RepoDetailView(DetailView):
 
             except requests.RequestException as e:
                 return JsonResponse(
-                    {"status": "error", "message": "Network error: A network error occurred. Please try again later."}, status=503
+                    {
+                        "status": "error",
+                        "message": "Network error: A network error occurred. Please try again later.",
+                    },
+                    status=503,
                 )
             except requests.HTTPError as e:
                 return JsonResponse(
-                    {"status": "error", "message": "A GitHub API error occurred. Please try again later."},
+                    {
+                        "status": "error",
+                        "message": "A GitHub API error occurred. Please try again later.",
+                    },
                     status=e.response.status_code,
                 )
             except ValueError as e:
                 return JsonResponse(
-                    {"status": "error", "message": "There was an error processing your data."}, status=400
+                    {"status": "error", "message": "There was an error processing your data."},
+                    status=400,
                 )
 
         elif section == "metrics":
@@ -1127,16 +1135,24 @@ class RepoDetailView(DetailView):
 
             except requests.RequestException as e:
                 return JsonResponse(
-                    {"status": "error", "message": "Network error: A network error occurred. Please try again later."}, status=503
+                    {
+                        "status": "error",
+                        "message": "Network error: A network error occurred. Please try again later.",
+                    },
+                    status=503,
                 )
             except requests.HTTPError as e:
                 return JsonResponse(
-                    {"status": "error", "message": "A GitHub API error occurred. Please try again later."},
+                    {
+                        "status": "error",
+                        "message": "A GitHub API error occurred. Please try again later.",
+                    },
                     status=e.response.status_code,
                 )
             except ValueError as e:
                 return JsonResponse(
-                    {"status": "error", "message": "There was an error processing your data."}, status=400
+                    {"status": "error", "message": "There was an error processing your data."},
+                    status=400,
                 )
 
         return super().post(request, *args, **kwargs)
