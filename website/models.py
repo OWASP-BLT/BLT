@@ -1341,7 +1341,6 @@ class ContributorStats(models.Model):
 class Kudos(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="kudos_sent")
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="kudos_received")
-    message = models.TextField(null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:

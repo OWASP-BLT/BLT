@@ -350,26 +350,6 @@
         .kick-button:hover {
             background-color: #e53935;
         }
-        .kudos-section {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .kudos-list {
-            margin-top: 10px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .kudos-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            background-color: #f8f9fa;
-            margin-bottom: 10px;
-            border-radius: 4px;
-
-        }
         .kudos-count-badge {
             display: inline-block;
             background-color: #17a2b8;
@@ -391,8 +371,34 @@
         .kudos-submit-btn:hover {
             background-color: #218838;
         }
+        .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+    }
+    
+    .toast {
+        padding: 15px 25px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        color: white;
+        opacity: 1;
+        transition: opacity 1.0s ease-in;
+    }
+    
+    .toast-success {
+        background-color: #28a745;
+    }
+    
+    .toast-error {
+        background-color: #dc3545;
+    }
+    
     </style>
     {% include "includes/sidenav.html" %}
+    <aside id="toast-container">
+    </aside>
     <div class="team-overview-container">
         {% if user.is_authenticated %}
             {% if user.userprofile.team %}
@@ -418,19 +424,6 @@
                     <!-- Always display the team leader -->
                     {#                    <div class="member-card active" id="admin-card">#}
                     {#                        <span>{{ user.userprofile.team.admin.username }}</span>#}
-                    {#                        {% if user.userprofile.team.admin != user %}#}
-                    {#                            <button class="kudos-button"#}
-                    {#                                    type="button"#}
-                    {#                                    onclick="openKudosModal('{{ user.userprofile.team.admin.username }}')">#}
-                    {#                                <img src="{% static 'img/kudos_icon.png' %}" #}
-                    {#                                     alt="Kudos"#}
-                    {#                                     width="24"#}
-                    {#                                     height="24">#}
-                    {#                                {% if user.userprofile.team.admin.kudos_count > 0 %}#}
-                    {#                                <span class="kudos-count">{{ user.userprofile.team.admin.kudos_count }}</span>#}
-                    {#                                {% endif %}#}
-                    {#                            </button>#}
-                    {#                        {% endif %}#}
                     {#                    </div>#}
                     {% for member in team_members %}
                         <div class="member-card {% if member.username == user.userprofile.team.admin.username %}active{% endif %}"
@@ -451,43 +444,11 @@
                                          alt="Kudos"
                                          width="24"
                                          height="24">
-                                    {% if member.kudos_count > 0 %}<span class="kudos-count">{{ member.kudos_count }}</span>{% endif %}
                                 </button>
                             {% endif %}
                         </div>
                     {% endfor %}
                     <button class="slider-nav right" onclick="nextMember()">›</button>
-                </div>
-                <div class="kudos-section">
-                    <h3>Your Received Kudos</h3>
-                    {% if received_kudos.exists %}
-                        <div class="kudos-list">
-                            {% for kudos in received_kudos %}
-                                <div class="kudos-item">
-                                    <p class="kudos-message">
-                                        <strong>{{ kudos.sender.username }}</strong>: {{ kudos.message }}
-                                    </p>
-                                    <small class="kudos-timestamp">{{ kudos.timestamp|date:"M d, Y H:i" }}</small>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="no-kudos">No kudos received yet.</p>
-                    {% endif %}
-                </div>
-                <!-- Display all team kudos -->
-                <div class="kudos-section">
-                    <h3>Team Kudos</h3>
-                    <div class="kudos-list">
-                        {% for kudos in team_kudos %}
-                            <div class="kudos-item">
-                                <p class="kudos-message">
-                                    <strong>{{ kudos.sender.username }} → {{ kudos.receiver.username }}</strong>: {{ kudos.message }}
-                                </p>
-                                <small class="kudos-timestamp">{{ kudos.timestamp|date:"M d, Y H:i" }}</small>
-                            </div>
-                        {% endfor %}
-                    </div>
                 </div>
                 <!-- Team Achievements -->
                 <div class="achievements"></div>
@@ -588,43 +549,25 @@
         </div>
     </div>
     <!-- Kudos member card that shows kudos count -->
-    {% for member in team_members %}
-        <div class="member-card" id="member-{{ member.username }}">
-            <div class="member-info">
-                <span>{{ member.username }}</span>
-                <span class="kudos-count-badge"
-                      {% if not member.kudos_count %}style="display:none"{% endif %}>
-                    {{ member.kudos_count|default:"0" }} kudos
-                </span>
-            </div>
-            {% if member != user %}
-                <button class="kudos-button"
-                        type="button"
-                        onclick="openKudosModal('{{ member.username }}')">
-                    <img src="{% static 'img/kudos_icon.png' %}"
-                         alt="Kudos"
-                         width="24"
-                         height="24">
-                </button>
-            {% endif %}
-        </div>
-    {% endfor %}
-    <!-- Add Kudos Modal and relevant scripts -->
+    {#    {% for member in team_members %}#}
+    {#        <div class="member-card" id="member-{{ member.username }}">#}
+    {#            <div class="member-info">#}
+    {#                <span>{{ member.username }}</span>#}
+    {#                <span class="kudos-count-badge"#}
+    {#                      {% if not member.kudos_count %}style="display:none"{% endif %}>#}
+    {#                    {{ member.kudos_count|default:"0" }} kudos#}
+    {#                </span>#}
+    {#            </div>#}
+    {#        </div>#}
+    {#    {% endfor %}#}
+    <!-- Kudos Modal -->
     <div id="kudosModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeKudosModal()">×</span>
-            <h2>Send Kudos</h2>
+            <h2>Send Appreciation</h2>
             <form method="post" onsubmit="sendKudos(event)" class="kudos-form">
                 {% csrf_token %}
                 <input type="hidden" id="kudosReceiver" name="kudosReceiver">
-                <div class="form-group">
-                    <label for="kudosMessage">Message:</label>
-                    <textarea id="kudosMessage"
-                              name="kudosMessage"
-                              rows="2"
-                              class="kudos-textarea"
-                              required></textarea>
-                </div>
                 <div class="form-actions">
                     <button type="submit" class="kudos-submit-btn">Send Kudos</button>
                     <button type="button" class="btn-secondary" onclick="closeKudosModal()">Cancel</button>
@@ -635,7 +578,6 @@
     <script>
         // JavaScript for Slider Navigation
         let currentIndex = 0;
-
         function updateSlider() {
             const members = document.querySelectorAll('.member-card');
             members.forEach((member, index) => {
@@ -871,55 +813,60 @@
 
         // Kudos Modal functions
         function openKudosModal(username) {
-          document.getElementById('kudosReceiver').value = username;
-          document.getElementById('kudosMessage').value = '';
-          document.getElementById('kudosModal').style.display = 'block';
+            document.getElementById('kudosReceiver').value = username;
+            document.getElementById('kudosModal').style.display = 'block';
         }
+
         function closeKudosModal() {
-          document.getElementById('kudosModal').style.display = 'none';
-          document.getElementById('kudosMessage').value = '';
+            document.getElementById('kudosModal').style.display = 'none';
         }
+
         function sendKudos(e) {
-          e.preventDefault();
-          const receiver = document.getElementById('kudosReceiver').value;
-          const message = document.getElementById('kudosMessage').value;
-
-          if (!message.trim()) {
-            alert("Please enter a kudos message.");
-            return;
-          }
-
-          fetch("/teams/give-kudos/", {
-            method: "POST",
-            headers: {
-              "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
-              "Content-Type": "application/json"
-            },
-             body: JSON.stringify({
-                kudosReceiver: receiver,
-                kudosMessage: message
-          })
+            e.preventDefault();
+            const receiver = document.getElementById('kudosReceiver').value;
+            fetch("/teams/give-kudos/", { 
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": document.querySelector("#kudosModal [name=csrfmiddlewaretoken]").value,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    kudosReceiver: receiver
+                })
             })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              closeKudosModal();
-              updateKudosCount(receiver);
-              showSuccessMessage("Kudos sent successfully!");
-            } else {
-              alert(data.error || "Failed to send kudos.");
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            alert("Failed to send kudos. Please try again.");
-          });
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    closeKudosModal();
+                    updateKudosCount(receiver);
+                    showMessage("Kudos sent successfully!", false);
+                } else {
+                    throw new Error(data.error || "Failed to send kudos.");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                showMessage(error.message, true);
+            });
         }
+
         function updateKudosCount(username) {
-            const memberCard = document.getElementById(`member-${username}`);
-            if (!memberCard) return;
-            
-            const countBadge = memberCard.querySelector('.kudos-count-badge');
+            const kudosMemberCard = document.getElementById(`member-${username}`);
+            if (!kudosMemberCard) {
+                console.error(`Member card not found for ${username}`);
+                return;
+            } 
+            let memberInfo = kudosMemberCard.querySelector('.member-info');
+            if (!memberInfo) {
+                memberInfo = document.createElement('div');
+                memberInfo.className = 'member-info';
+            }
+            let countBadge = memberInfo.querySelector('.kudos-count-badge');
             const currentCount = countBadge ? 
                 parseInt(countBadge.textContent.split(' ')[0]) : 0;
 
@@ -927,29 +874,28 @@
                 countBadge.textContent = `${currentCount + 1} kudos`;
                 countBadge.style.display = 'inline-block';
             } else {
-                const newBadge = document.createElement('span');
-                newBadge.className = 'kudos-count-badge';
-                newBadge.textContent = '1 kudos';
-                memberCard.querySelector('.member-info').appendChild(newBadge);
+                countBadge = document.createElement('span');
+                countBadge.className = 'kudos-count-badge';
+                countBadge.textContent = '1 kudos';
+                memberInfo.appendChild(countBadge);
             }
         }
 
-        function showSuccessMessage(message) {
-            const alert = document.createElement('div');
-            alert.className = 'alert alert-success';
-            alert.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 10px 20px;
-                border-radius: 4px;
-                background-color: #28a745;
-                color: white;
-                z-index: 1000;
-            `;
-            alert.textContent = message;
-            document.body.appendChild(alert);
-            setTimeout(() => alert.remove(), 3000);
+        function showMessage(message, isError = false) {
+            const container = document.getElementById('toast-container');
+            container.innerHTML = '';
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${isError ? 'toast-error' : 'toast-success'}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                     toast.style.opacity = '0';
+                     setTimeout(() => toast.remove(), 3000);
+                });
+            });
         }
     </script>
 {% endblock content %}
