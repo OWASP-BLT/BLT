@@ -933,3 +933,226 @@ class RepoDetailView(DetailView):
             ]
 
         return context
+
+    def post(self, request, *args, **kwargs):
+        def get_issue_count(full_name, query, headers):
+            search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
+            resp = requests.get(search_url, headers=headers)
+            if resp.status_code == 200:
+                return resp.json().get("total_count", 0)
+            return 0
+
+        repo = self.get_object()
+        section = request.POST.get("section")
+
+        if section == "basic":
+            try:
+                # Get GitHub API token
+                github_token = getattr(settings, "GITHUB_TOKEN", None)
+                if not github_token:
+                    return JsonResponse(
+                        {"status": "error", "message": "GitHub token not configured"}, status=500
+                    )
+
+                # Extract owner/repo from GitHub URL
+                match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo.repo_url)
+                if not match:
+                    return JsonResponse(
+                        {"status": "error", "message": "Invalid repository URL"}, status=400
+                    )
+
+                owner, repo_name = match.groups()
+                api_url = f"https://api.github.com/repos/{owner}/{repo_name}"
+
+                # Make GitHub API request
+                headers = {
+                    "Authorization": f"token {github_token}",
+                    "Accept": "application/vnd.github.v3+json",
+                }
+                response = requests.get(api_url, headers=headers)
+
+                if response.status_code == 200:
+                    data = response.json()
+
+                    # Update repo with fresh data
+                    repo.stars = data.get("stargazers_count", 0)
+                    repo.forks = data.get("forks_count", 0)
+                    repo.watchers = data.get("watchers_count", 0)
+                    repo.open_issues = data.get("open_issues_count", 0)
+                    repo.network_count = data.get("network_count", 0)
+                    repo.subscribers_count = data.get("subscribers_count", 0)
+                    repo.last_updated = parse_datetime(data.get("updated_at"))
+                    repo.save()
+
+                    return JsonResponse(
+                        {
+                            "status": "success",
+                            "message": "Basic information updated successfully",
+                            "data": {
+                                "stars": repo.stars,
+                                "forks": repo.forks,
+                                "watchers": repo.watchers,
+                                "network_count": repo.network_count,
+                                "subscribers_count": repo.subscribers_count,
+                                "last_updated": naturaltime(repo.last_updated).replace(
+                                    "\xa0", " "
+                                ),  # Fix unicode space
+                            },
+                        }
+                    )
+                else:
+                    return JsonResponse(
+                        {"status": "error", "message": f"GitHub API error: {response.status_code}"},
+                        status=response.status_code,
+                    )
+
+            except requests.RequestException as e:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "Network error: A network error occurred. Please try again later.",
+                    },
+                    status=503,
+                )
+            except requests.HTTPError as e:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "A GitHub API error occurred. Please try again later.",
+                    },
+                    status=e.response.status_code,
+                )
+            except ValueError as e:
+                return JsonResponse(
+                    {"status": "error", "message": "There was an error processing your data."},
+                    status=400,
+                )
+
+        elif section == "metrics":
+            try:
+                github_token = getattr(settings, "GITHUB_TOKEN", None)
+                if not github_token:
+                    return JsonResponse(
+                        {"status": "error", "message": "GitHub token not configured"}, status=500
+                    )
+
+                match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo.repo_url)
+                if not match:
+                    return JsonResponse(
+                        {"status": "error", "message": "Invalid repository URL"}, status=400
+                    )
+
+                # Extract owner and repo from API call
+                owner, repo_name = match.groups()
+                api_url = f"https://api.github.com/repos/{owner}/{repo_name}"
+                headers = {
+                    "Authorization": f"token {github_token}",
+                    "Accept": "application/vnd.github.v3+json",
+                }
+                response = requests.get(api_url, headers=headers)
+
+                if response.status_code != 200:
+                    return JsonResponse(
+                        {"status": "error", "message": "Failed to fetch repository data"},
+                        status=500,
+                    )
+
+                repo_data = response.json()
+                full_name = repo_data.get("full_name")
+                default_branch = repo_data.get("default_branch")
+                if not full_name:
+                    return JsonResponse(
+                        {"status": "error", "message": "Could not get repository full name"},
+                        status=500,
+                    )
+
+                full_name = full_name.replace(" ", "+")
+
+                # get the total commit
+                url = f"https://api.github.com/repos/{full_name}/commits"
+                params = {"per_page": 1, "page": 1}
+                response = requests.get(url, headers=headers, params=params)
+                if response.status_code == 200:
+                    if "Link" in response.headers:
+                        links = response.headers["Link"]
+                        last_page = 1
+                        for link in links.split(","):
+                            if 'rel="last"' in link:
+                                last_page = int(link.split("&page=")[1].split(">")[0])
+                        commit_count = last_page
+                    else:
+                        commits = response.json()
+                        total_commits = len(commits)
+                        commit_count = total_commits
+                else:
+                    commit_count = 0
+
+                # Get open issues and PRs
+                open_issues = get_issue_count(full_name, "type:issue+state:open", headers)
+                closed_issues = get_issue_count(full_name, "type:issue+state:closed", headers)
+                open_pull_requests = get_issue_count(full_name, "type:pr+state:open", headers)
+                total_issues = open_issues + closed_issues
+
+                if (
+                    repo.open_issues != open_issues
+                    or repo.closed_issues != closed_issues
+                    or repo.total_issues != total_issues
+                    or repo.open_pull_requests != open_pull_requests
+                    or repo.commit_count != commit_count
+                ):
+                    # Update repository metrics
+                    repo.open_issues = open_issues
+                    repo.closed_issues = closed_issues
+                    repo.total_issues = total_issues
+                    repo.open_pull_requests = open_pull_requests
+                    repo.commit_count = commit_count
+
+                commits_url = f"{api_url}/commits?sha={default_branch}&per_page=1"
+                commits_response = requests.get(commits_url, headers=headers)
+                if commits_response.status_code == 200:
+                    commit_data = commits_response.json()
+                    if commit_data:
+                        date_str = commit_data[0]["commit"]["committer"]["date"]
+                        repo.last_commit_date = parse_datetime(date_str)
+                repo.save()
+
+                return JsonResponse(
+                    {
+                        "status": "success",
+                        "message": "Activity metrics updated successfully",
+                        "data": {
+                            "open_issues": repo.open_issues,
+                            "closed_issues": repo.closed_issues,
+                            "total_issues": repo.total_issues,
+                            "open_pull_requests": repo.open_pull_requests,
+                            "commit_count": repo.commit_count,
+                            "last_commit_date": repo.last_commit_date.strftime("%b %d, %Y")
+                            if repo.last_commit_date
+                            else "",
+                        },
+                    }
+                )
+
+            except requests.RequestException as e:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "Network error: A network error occurred. Please try again later.",
+                    },
+                    status=503,
+                )
+            except requests.HTTPError as e:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "A GitHub API error occurred. Please try again later.",
+                    },
+                    status=e.response.status_code,
+                )
+            except ValueError as e:
+                return JsonResponse(
+                    {"status": "error", "message": "There was an error processing your data."},
+                    status=400,
+                )
+
+        return super().post(request, *args, **kwargs)
