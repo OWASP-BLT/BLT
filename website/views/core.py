@@ -123,13 +123,19 @@ def check_status(request):
             "sendgrid": False,
             "github": False,
             "openai": False,
-            "memory_info": psutil.virtual_memory()._asdict(),
-            "top_memory_consumers": [],
-            "memory_profiling": {},
             "db_connection_count": 0,
             "redis_stats": {},
-            "memory_by_module": [],
         }
+
+        if settings.DEBUG:
+            status_data.update(
+                {
+                    "memory_info": psutil.virtual_memory()._asdict(),
+                    "top_memory_consumers": [],
+                    "memory_profiling": {},
+                    "memory_by_module": [],
+                }
+            )
 
         # -------------------------------------------------------
         # Bitcoin RPC check
@@ -251,30 +257,47 @@ def check_status(request):
                 status_data["openai"] = False
                 print(f"OpenAI API Error: {e}")
 
-        # -------------------------------------------------------
-        # Top memory consumers (process-level) via psutil
-        # -------------------------------------------------------
-        print("Getting top memory consumers...")
-        for proc in psutil.process_iter(["pid", "name", "memory_info"]):
-            try:
-                proc_info = proc.info
-                proc_info["memory_info"] = proc_info["memory_info"]._asdict()
-                status_data["top_memory_consumers"].append(proc_info)
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-                pass
+        if settings.DEBUG:
+            # -------------------------------------------------------
+            # Top memory consumers (process-level) via psutil
+            # -------------------------------------------------------
+            print("Getting top memory consumers...")
+            for proc in psutil.process_iter(["pid", "name", "memory_info"]):
+                try:
+                    proc_info = proc.info
+                    proc_info["memory_info"] = proc_info["memory_info"]._asdict()
+                    status_data["top_memory_consumers"].append(proc_info)
+                except (
+                    psutil.NoSuchProcess,
+                    psutil.AccessDenied,
+                    psutil.ZombieProcess,
+                ):
+                    pass
 
-        status_data["top_memory_consumers"] = sorted(
-            status_data["top_memory_consumers"],
-            key=lambda x: x["memory_info"]["rss"],
-            reverse=True,
-        )[:5]
+            status_data["top_memory_consumers"] = sorted(
+                status_data["top_memory_consumers"],
+                key=lambda x: x["memory_info"]["rss"],
+                reverse=True,
+            )[:5]
 
-        # -------------------------------------------------------
-        # Memory usage by module (via tracemalloc)
-        # -------------------------------------------------------
-        print("Calculating memory usage by module...")
-        top_modules = memory_usage_by_module(limit=1000)
-        status_data["memory_by_module"] = top_modules
+            # -------------------------------------------------------
+            # Memory usage by module (via tracemalloc)
+            # -------------------------------------------------------
+            print("Calculating memory usage by module...")
+            top_modules = memory_usage_by_module(limit=1000)
+            status_data["memory_by_module"] = top_modules
+
+            # -------------------------------------------------------
+            # Memory profiling info (current, peak) - optional
+            # -------------------------------------------------------
+            # If you want an overall snapshot: start tracemalloc before
+            # the function call, or simply do an extra measure here.
+            # For example:
+            tracemalloc.start()
+            current, peak = tracemalloc.get_traced_memory()
+            status_data["memory_profiling"]["current"] = current
+            status_data["memory_profiling"]["peak"] = peak
+            tracemalloc.stop()
 
         # -------------------------------------------------------
         # Database connection count
@@ -294,18 +317,6 @@ def check_status(request):
             status_data["redis_stats"] = redis_client.info()
         except Exception as e:
             print(f"Redis error or not supported: {e}")
-
-        # -------------------------------------------------------
-        # Memory profiling info (current, peak) - optional
-        # -------------------------------------------------------
-        # If you want an overall snapshot: start tracemalloc before
-        # the function call, or simply do an extra measure here.
-        # For example:
-        tracemalloc.start()
-        current, peak = tracemalloc.get_traced_memory()
-        status_data["memory_profiling"]["current"] = current
-        status_data["memory_profiling"]["peak"] = peak
-        tracemalloc.stop()
 
         # -------------------------------------------------------
         # Cache the status data for 60s to avoid repeated overhead
