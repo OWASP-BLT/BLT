@@ -548,18 +548,6 @@
             </form>
         </div>
     </div>
-    <!-- Kudos member card that shows kudos count -->
-    {#    {% for member in team_members %}#}
-    {#        <div class="member-card" id="member-{{ member.username }}">#}
-    {#            <div class="member-info">#}
-    {#                <span>{{ member.username }}</span>#}
-    {#                <span class="kudos-count-badge"#}
-    {#                      {% if not member.kudos_count %}style="display:none"{% endif %}>#}
-    {#                    {{ member.kudos_count|default:"0" }} kudos#}
-    {#                </span>#}
-    {#            </div>#}
-    {#        </div>#}
-    {#    {% endfor %}#}
     <!-- Kudos Modal -->
     <div id="kudosModal" class="modal">
         <div class="modal-content">
