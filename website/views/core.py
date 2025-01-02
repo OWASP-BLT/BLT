@@ -71,6 +71,11 @@ def memory_usage_by_module(limit=1000):
         return []
     print("Memory snapshot taken. and it is: ", snapshot)
 
+    stats = snapshot.statistics("traceback")
+    for stat in stats[:10]:
+        print(stat.traceback.format())
+        print(f"Memory: {stat.size / 1024:.2f} KB")
+
     # Group memory usage by filename
     stats = snapshot.statistics("filename")
     module_usage = {}

@@ -7,7 +7,8 @@ from collections import deque
 from urllib.parse import urlparse, urlsplit, urlunparse
 
 import numpy as np
-import openai
+
+# import openai
 import requests
 from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
@@ -17,7 +18,7 @@ from django.shortcuts import redirect
 
 from .models import PRAnalysisReport
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# openai.api_key = os.getenv("OPENAI_API_KEY")
 GITHUB_API_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
 
 WHITELISTED_IMAGE_TYPES = {
