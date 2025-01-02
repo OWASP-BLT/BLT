@@ -3981,6 +3981,84 @@ files = [
 ]
 
 [[package]]
+name = "scout-apm"
+version = "3.2.1"
+description = "Scout Application Performance Monitoring Agent"
+optional = false
+python-versions = "<4,>=3.8"
+files = [
+    {file = "scout_apm-3.2.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:7f2b13d508f5d5dc590ea392066acd366696370a9866d50217bb6fbff385cf5b"},
+    {file = "scout_apm-3.2.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:386f6caa3db81211a7f197322da041c87d9623ee0eedf724b79ffd34867a7b22"},
+    {file = "scout_apm-3.2.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:fff3c9d05a099ab3c1c8390e8b9079aa7ee58a48793ba561163b14d228adc6d3"},
+    {file = "scout_apm-3.2.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:9757f4e2118385b7f91ee29cc15a55b5ae807044d9f035b1f066aeeb5ef9e784"},
+    {file = "scout_apm-3.2.1-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2fc81d7b65cd291ab022a32f3e5b0fa06b7108ced73f99bec712d7a7a973e385"},
+    {file = "scout_apm-3.2.1-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5a89c5e619b5505eb811a3aab6c0d2ea7eb117f503a234253b8a4a4f678f5216"},
+    {file = "scout_apm-3.2.1-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:2135c6e64813b424f38263f622f009a8f61555017aba235779d9088cc8c75e64"},
+    {file = "scout_apm-3.2.1-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:5ce0e8a60e9f3961272116fab862b0c61fbc73721281e061b352b376ad72441d"},
+    {file = "scout_apm-3.2.1-cp310-cp310-musllinux_1_2_i686.whl", hash = "sha256:5b5ef6fca89655eb7789d5a57857019f945a2cf96fffc955b76857386a6e8d98"},
+    {file = "scout_apm-3.2.1-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:6076a58b5390d93ab2e5ffe5f9ce72653123f4cde8cd0a7a320d5e617c5ae2c6"},
+    {file = "scout_apm-3.2.1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:78e480dae8ca233c563885f63743fcbf4551ccc5fd3d573e18442def6b985cdb"},
+    {file = "scout_apm-3.2.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:6cb7e9a37c513b85317f99d72d10dc6ef044df441496ae0fc576762931cf60e4"},
+    {file = "scout_apm-3.2.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:bbdfa1b8cda52fa87d787fc76a96a81e8da9872a6ad07d52631497c87bb44dd0"},
+    {file = "scout_apm-3.2.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:bf769369d6cfe03aa72762662cc2e07a3a71425675bb605ffae2f8b68acc9f2c"},
+    {file = "scout_apm-3.2.1-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:f7cd5ea92735e1651e8a5396493c3c6122268ed27bd6e6208e69386558befac1"},
+    {file = "scout_apm-3.2.1-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:87a6b2d5f1e5a34cf6928ea04680125026d366f1ebb25cb9d722f553c51d389c"},
+    {file = "scout_apm-3.2.1-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:8e59e9ea77af9ad23a9d09082326015a52be00e13fdc38aa291543d030b1bced"},
+    {file = "scout_apm-3.2.1-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:13c1cfb241b78b57c36a3dcfdd69567137ce4fb61cdfb3279dac926cd8028cde"},
+    {file = "scout_apm-3.2.1-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:337612cd915d11a6b8cc302edf8ee0da881fa00194a0c1b291ab07a4ef52d280"},
+    {file = "scout_apm-3.2.1-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:29bc0b7340b4775bb30a6d34f935130588d68483fec164c1de6d53ab64071542"},
+    {file = "scout_apm-3.2.1-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:9ce6aeb810acfe5ecc7f485257e1b19705db074e5c405c2f72e38efa64e59d4c"},
+    {file = "scout_apm-3.2.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:4f6b08defc72a3dd57791d02f9741be97e7b353c965f0f922360ec58e3ea6200"},
+    {file = "scout_apm-3.2.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:f35a5536c1eb32f6ea7b708462325bcdc99268e4145bc6a0afe886badd9cf18f"},
+    {file = "scout_apm-3.2.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:28148b6e61468dc6df0677516b06844d2fe8faa2b044567efc6b96d7da218a36"},
+    {file = "scout_apm-3.2.1-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:f45c61f75f83c21420327097c7780cd84c766b3a26ac1e83d4ec95dfa672ed9c"},
+    {file = "scout_apm-3.2.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e5582f9996ab71346513ad36a6fd19bf8ccdae44d503120dc68d86802dfb524b"},
+    {file = "scout_apm-3.2.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:07926e68e06fd9418a755c9ca78eb127ce677d85b5243b40d177af218c31c3bc"},
+    {file = "scout_apm-3.2.1-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:d67a8821ab6ab659dd6b0afa4d6345d61fe04b672d11c1150b5f2f1cd857c68b"},
+    {file = "scout_apm-3.2.1-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:7808c08c24d2e2be46835e547465574dfa5a0abfff164eef1dd581fe71168e67"},
+    {file = "scout_apm-3.2.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:93c09eb5052d14ebb0ea7f4541c22cbb21bf814fcf20263f21bed870748bd6cb"},
+    {file = "scout_apm-3.2.1-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:38ccb0a498e1d9d7579fb83965f60ae5837962cea0fa99a43cbedca1095df3f3"},
+    {file = "scout_apm-3.2.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:7a3dae1c79561eace8903f0650c1ffe56763db3352edf7f262c5e2c6dc7a190e"},
+    {file = "scout_apm-3.2.1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:cf1a5ba684ac2613759bd706b847df72645299fc3e365a6e12675d6f1ffe7396"},
+    {file = "scout_apm-3.2.1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:caf874e599ab7ddd09d6df6cdec16fed741159e170afd679b2379b5dbf194907"},
+    {file = "scout_apm-3.2.1-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:a9601011de7c2389934d9b535cab5e431e0428824624a391aa43a6cc803ec37b"},
+    {file = "scout_apm-3.2.1-cp313-cp313-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:95e428292d6158a0360d08be8215e0f7d6630b9b2429110ea839cf828de3e58e"},
+    {file = "scout_apm-3.2.1-cp313-cp313-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:5a35e88d190bdc501b217fb271c42ae3637184c8835b386f6751c34f00b579bf"},
+    {file = "scout_apm-3.2.1-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:d54ff09267d80fe189ae99b6739af8cf0a0085c7263055e716bdb51b8e4f23ad"},
+    {file = "scout_apm-3.2.1-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:24d0f1f0ec684829a3be3b36e00ec9663e45bbcd38d9c6acda6f4b6413a24d3d"},
+    {file = "scout_apm-3.2.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:3e733257b817e7fddd3d8f57e340d4765cf02c58a6a7fd8ad55823041ab34a42"},
+    {file = "scout_apm-3.2.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:f9b4f8c7b3bafd3a6650b5a52c6b5f30f554da20b1879e789eb929d37440fdcf"},
+    {file = "scout_apm-3.2.1-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:a2267be02c56738fe8056abfbf7ff4db0f18427b1124b3709c39c7d9ccfd3062"},
+    {file = "scout_apm-3.2.1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:b383eac6b96bae8732b7d8243ba1bf08d8bc04f7d5e4f0fe4dda92af4fed517f"},
+    {file = "scout_apm-3.2.1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d05780a6cfe6762a72493c9e3dad62311a96c4e37c883bb750d1c7405e985d1a"},
+    {file = "scout_apm-3.2.1-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:ce08a5d6bea569cf441f5dca87974f37e890307db10506aa8ad3c03d459e0f14"},
+    {file = "scout_apm-3.2.1-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ad7ac9eeda31f3ddd53fac0d5055e125055cc42d7618f971d37cd64eecb561ab"},
+    {file = "scout_apm-3.2.1-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:9933edef14c729c902a932c94a3b84da97c4aede197c0e8447f66c9eb601c4b0"},
+    {file = "scout_apm-3.2.1-cp38-cp38-musllinux_1_2_aarch64.whl", hash = "sha256:2d7aeb8fe127490fe2f0c366a92a4fd6073113c8fb62e15ecb744804fc9d3b2f"},
+    {file = "scout_apm-3.2.1-cp38-cp38-musllinux_1_2_i686.whl", hash = "sha256:2fb732f5ab0bfc200485f45a80d786efcc2881a2a4a7f03cde2df85bbe243464"},
+    {file = "scout_apm-3.2.1-cp38-cp38-musllinux_1_2_x86_64.whl", hash = "sha256:5beccd63927d6cbc67f894e86fe74ac10e96fbca7c925ec6e9db2c21f7f40673"},
+    {file = "scout_apm-3.2.1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:59dabfb4aa4917a96e9199c1749e329115987b789026e52c8db6f64e968616f1"},
+    {file = "scout_apm-3.2.1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:6015ad17b43624d6023b50675e0ac5d1c323ed29f969dc2a1a38d9192c7b3732"},
+    {file = "scout_apm-3.2.1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:db70fcfbd805892675561e413a38d1d0dbaec86bb1be24cc9a80372dccfa1074"},
+    {file = "scout_apm-3.2.1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:9fd6ee26378916548bbe422fe8c94bd1fbbcee0cb06ff64fd07855747cef6306"},
+    {file = "scout_apm-3.2.1-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:72af70a094f6c7082b54d0a677a31cd1615af70dfb5e8246a1491c6ffc3770d4"},
+    {file = "scout_apm-3.2.1-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4b8de2ebbdcc51039d977fefcfe9811efa680f65305a5dc3e0905ff27f7c2152"},
+    {file = "scout_apm-3.2.1-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:5c9452fa6ba1f4ed6111cc9e7d393842b023f747cd1977dab2fc55701ebb83c8"},
+    {file = "scout_apm-3.2.1-cp39-cp39-musllinux_1_2_aarch64.whl", hash = "sha256:8236bed9104b912b476d7769af354f14d4d5cdd0bf2f0ed029a74fc2896f0574"},
+    {file = "scout_apm-3.2.1-cp39-cp39-musllinux_1_2_i686.whl", hash = "sha256:aba37ce89dd9bf90b599f5a7ea7b12bad9386937d6fd5e41642b2b831377c469"},
+    {file = "scout_apm-3.2.1-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:0fbc8ee23f13b5d8a49567b5bb33d334b78f58b143b789c4608824a984adef08"},
+    {file = "scout_apm-3.2.1-py3-none-any.whl", hash = "sha256:b39016be3f84de6b92501dc735bd686129f4e2ed8c05eac4632e7b365d8c58d4"},
+    {file = "scout_apm-3.2.1.tar.gz", hash = "sha256:7f1da37cc1c0b3a5fceb279df635dd84a8b3537e3712df94749ff9ed1c52a28c"},
+]
+
+[package.dependencies]
+asgiref = "*"
+certifi = "*"
+psutil = ">=5,<6"
+urllib3 = "*"
+wrapt = ">=1.10,<2.0"
+
+[[package]]
 name = "selenium"
 version = "4.27.1"
 description = "Official Python bindings for Selenium WebDriver"
@@ -4890,4 +4968,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "8a9a652566a2be701d2c9a4d27e0cc5af74494cbef750c0a5e37e3fa68cddf4b"
+content-hash = "e3375faeef609c410a754e069631f0f8f7bfde91dbd0925c974b7c9489755ba2"
