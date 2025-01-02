@@ -1007,11 +1007,18 @@ class RepoDetailView(DetailView):
                     )
 
             except requests.RequestException as e:
-                return JsonResponse({"status": "error", "message": f"Network error: {str(e)}"}, status=503)
+                return JsonResponse(
+                    {"status": "error", "message": "Network error: A network error occurred. Please try again later."}, status=503
+                )
             except requests.HTTPError as e:
-                return JsonResponse({"status": "error", "message": f"GitHub API error: {str(e)}"}, status=e.response.status_code)
+                return JsonResponse(
+                    {"status": "error", "message": "A GitHub API error occurred. Please try again later."},
+                    status=e.response.status_code,
+                )
             except ValueError as e:
-                return JsonResponse({"status": "error", "message": f"Data parsing error: {str(e)}"}, status=400)
+                return JsonResponse(
+                    {"status": "error", "message": "There was an error processing your data."}, status=400
+                )
 
         elif section == "metrics":
             try:
@@ -1119,10 +1126,17 @@ class RepoDetailView(DetailView):
                 )
 
             except requests.RequestException as e:
-                return JsonResponse({"status": "error", "message": f"Network error: {str(e)}"}, status=503)
+                return JsonResponse(
+                    {"status": "error", "message": "Network error: A network error occurred. Please try again later."}, status=503
+                )
             except requests.HTTPError as e:
-                return JsonResponse({"status": "error", "message": f"GitHub API error: {str(e)}"}, status=e.response.status_code)
+                return JsonResponse(
+                    {"status": "error", "message": "A GitHub API error occurred. Please try again later."},
+                    status=e.response.status_code,
+                )
             except ValueError as e:
-                return JsonResponse({"status": "error", "message": f"Data parsing error: {str(e)}"}, status=400)
+                return JsonResponse(
+                    {"status": "error", "message": "There was an error processing your data."}, status=400
+                )
 
         return super().post(request, *args, **kwargs)
