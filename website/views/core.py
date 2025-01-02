@@ -61,13 +61,17 @@ from website.utils import (
 # ----------------------------------------------------------------------------------
 
 
-def memory_usage_by_module(limit=10):
+def memory_usage_by_module(limit=1000):
     """
     Returns a list of (filename, size_in_bytes) for the top
     `limit` files by allocated memory, using tracemalloc.
     """
     # tracemalloc.start()
-    snapshot = tracemalloc.take_snapshot()
+    try:
+        snapshot = tracemalloc.take_snapshot()
+    except Exception as e:
+        print("Error taking memory snapshot: ", e)
+        return []
     print("Memory snapshot taken. and it is: ", snapshot)
 
     # Group memory usage by filename
@@ -267,7 +271,7 @@ def check_status(request):
         # Memory usage by module (via tracemalloc)
         # -------------------------------------------------------
         print("Calculating memory usage by module...")
-        top_modules = memory_usage_by_module(limit=10)
+        top_modules = memory_usage_by_module(limit=1000)
         status_data["memory_by_module"] = top_modules
 
         # -------------------------------------------------------
