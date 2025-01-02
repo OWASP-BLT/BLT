@@ -63,7 +63,7 @@ from website.views.company import (
     delete_prize,
     edit_prize,
 )
-from website.views.core import (
+from website.views.core import (  # chatbot_conversation,
     FacebookConnect,
     FacebookLogin,
     GithubConnect,
@@ -74,7 +74,6 @@ from website.views.core import (
     UploadCreate,
     add_suggestions,
     badge_list,
-    chatbot_conversation,
     check_status,
     donate_view,
     facebook_callback,
@@ -795,7 +794,9 @@ urlpatterns = [
         update_bch_address,
         name="update_bch_address",
     ),
-    path("api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"),
+    # path(
+    #     "api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"
+    # ),
     path("blt-tomato/", blt_tomato, name="blt-tomato"),
     path(
         "api/v1/projects/",
