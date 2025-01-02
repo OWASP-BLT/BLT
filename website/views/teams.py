@@ -231,16 +231,14 @@ def give_kudos(request):
         try:
             data = json.loads(request.body)
             receiver_username = data.get("kudosReceiver")
-            message = data.get("kudosMessage")
         except json.JSONDecodeError:
             return JsonResponse({"success": False, "error": "Invalid request data"})
 
-        if receiver_username and message:
+        if receiver_username:
             try:
                 receiver = User.objects.get(username=receiver_username)
-                Kudos.objects.create(sender=request.user, receiver=receiver, message=message)
+                Kudos.objects.create(sender=request.user, receiver=receiver)
                 return JsonResponse({"success": True, "message": "Kudos sent successfully!"})
-
             except User.DoesNotExist:
                 return JsonResponse({"success": False, "error": "User does not exist"})
 
