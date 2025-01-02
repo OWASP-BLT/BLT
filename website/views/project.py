@@ -1,16 +1,15 @@
 import ipaddress
 import json
-import logging
 import re
 import socket
 import time
 from datetime import datetime, timedelta
-from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
 
 import django_filters
-import matplotlib.pyplot as plt
+
+# import matplotlib.pyplot as plt
 import requests
 from django.conf import settings
 from django.contrib import messages
@@ -18,24 +17,22 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
-from django.db.models import Count, Q, Sum
-from django.db.models.functions import TruncDate
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.db.models import Q, Sum
+from django.http import JsonResponse
+from django.shortcuts import redirect, render
 from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
 from django.utils.timezone import localtime, now
 from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView, ListView
 from django_filters.views import FilterView
-from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
 from website.forms import GitHubURLForm
-from website.models import IP, BaconToken, Contribution, Organization, Project, Repo
+from website.models import BaconToken, Contribution, Organization, Project, Repo
 from website.utils import admin_required
 
-logging.getLogger("matplotlib").setLevel(logging.ERROR)
+# logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
 
 def blt_tomato(request):
@@ -184,59 +181,59 @@ class ProjectDetailView(DetailView):
         return context
 
 
-class ProjectBadgeView(APIView):
-    def get(self, request, slug):
-        # Retrieve the project or return 404
-        project = get_object_or_404(Project, slug=slug)
+# class ProjectBadgeView(APIView):
+#     def get(self, request, slug):
+#         # Retrieve the project or return 404
+#         project = get_object_or_404(Project, slug=slug)
 
-        # Get unique visits, grouped by date
-        visit_counts = (
-            IP.objects.filter(path=request.path)
-            .annotate(date=TruncDate("created"))
-            .values("date")
-            .annotate(visit_count=Count("address"))
-            .order_by("date")  # Order from oldest to newest
-        )
+#         # Get unique visits, grouped by date
+#         visit_counts = (
+#             IP.objects.filter(path=request.path)
+#             .annotate(date=TruncDate("created"))
+#             .values("date")
+#             .annotate(visit_count=Count("address"))
+#             .order_by("date")  # Order from oldest to newest
+#         )
 
-        # Update project visit count
-        project.repo_visit_count += 1
-        project.save()
+#         # Update project visit count
+#         project.repo_visit_count += 1
+#         project.save()
 
-        # Extract dates and counts
-        dates = [entry["date"] for entry in visit_counts]
-        counts = [entry["visit_count"] for entry in visit_counts]
-        total_views = sum(counts)  # Calculate total views
+#         # Extract dates and counts
+#         dates = [entry["date"] for entry in visit_counts]
+#         counts = [entry["visit_count"] for entry in visit_counts]
+#         total_views = sum(counts)  # Calculate total views
 
-        fig = plt.figure(figsize=(4, 1))
-        plt.bar(dates, counts, width=0.5, color="red")
+#         fig = plt.figure(figsize=(4, 1))
+#         plt.bar(dates, counts, width=0.5, color="red")
 
-        plt.title(
-            f"{total_views}",
-            loc="left",
-            x=-0.36,
-            y=0.3,
-            fontsize=15,
-            fontweight="bold",
-            color="red",
-        )
+#         plt.title(
+#             f"{total_views}",
+#             loc="left",
+#             x=-0.36,
+#             y=0.3,
+#             fontsize=15,
+#             fontweight="bold",
+#             color="red",
+#         )
 
-        plt.gca().set_xticks([])  # Remove x-axis ticks
-        plt.gca().set_yticks([])
-        plt.box(False)
+#         plt.gca().set_xticks([])  # Remove x-axis ticks
+#         plt.gca().set_yticks([])
+#         plt.box(False)
 
-        # Save the plot to an in-memory file
-        buffer = BytesIO()
-        plt.savefig(buffer, format="png", bbox_inches="tight")
-        plt.close()
-        buffer.seek(0)
+#         # Save the plot to an in-memory file
+#         buffer = BytesIO()
+#         plt.savefig(buffer, format="png", bbox_inches="tight")
+#         plt.close()
+#         buffer.seek(0)
 
-        # Prepare the HTTP response with the bar graph image
-        response = HttpResponse(buffer, content_type="image/png")
-        response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-        response["Pragma"] = "no-cache"
-        response["Expires"] = "0"
+#         # Prepare the HTTP response with the bar graph image
+#         response = HttpResponse(buffer, content_type="image/png")
+#         response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+#         response["Pragma"] = "no-cache"
+#         response["Expires"] = "0"
 
-        return response
+#         return response
 
 
 class ProjectListView(ListView):
@@ -498,7 +495,10 @@ def create_project(request):
             if twitter.startswith(("http://", "https://")):
                 if not validate_url(twitter):
                     return JsonResponse(
-                        {"error": "Twitter URL is not accessible", "code": "INVALID_TWITTER_URL"},
+                        {
+                            "error": "Twitter URL is not accessible",
+                            "code": "INVALID_TWITTER_URL",
+                        },
                         status=400,
                     )
             elif not twitter.startswith("@"):
@@ -554,7 +554,10 @@ def create_project(request):
         project_name = request.POST.get("name")
         if Project.objects.filter(name__iexact=project_name).exists():
             return JsonResponse(
-                {"error": "A project with this name already exists", "code": "NAME_EXISTS"},
+                {
+                    "error": "A project with this name already exists",
+                    "code": "NAME_EXISTS",
+                },
                 status=409,
             )  # 409 Conflict
 
@@ -562,7 +565,10 @@ def create_project(request):
         project_url = request.POST.get("url")
         if project_url and Project.objects.filter(url=project_url).exists():
             return JsonResponse(
-                {"error": "A project with this URL already exists", "code": "URL_EXISTS"},
+                {
+                    "error": "A project with this URL already exists",
+                    "code": "URL_EXISTS",
+                },
                 status=409,
             )
 
@@ -743,7 +749,9 @@ def create_project(request):
                     contributor_count=len(all_contributors),
                     commit_count=commit_count,
                     release_name=release_name,
-                    release_datetime=parse_datetime(release_datetime) if release_datetime else None,
+                    release_datetime=(
+                        parse_datetime(release_datetime) if release_datetime else None
+                    ),
                     open_pull_requests=open_pull_requests,
                 )
 

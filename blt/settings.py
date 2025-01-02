@@ -330,32 +330,32 @@ ABSOLUTE_URL_OVERRIDES = {
 
 LOGIN_REDIRECT_URL = "/"
 
-# LOGGING = {
-#     "version": 1,
-#     "disable_existing_loggers": False,
-#     "handlers": {
-#         "console": {
-#             "class": "logging.StreamHandler",
-#         },
-#         "mail_admins": {
-#             "class": "django.utils.log.AdminEmailHandler",
-#         },
-#     },
-#     "loggers": {
-#         "": {
-#             "handlers": ["console"],
-#             "level": "DEBUG",
-#         },
-#     },
-# }
-# disable logging unless critical
-
 LOGGING = {
     "version": 1,
-    "disable_existing_loggers": True,  # Disable all existing loggers
-    "handlers": {},  # No handlers defined
-    "loggers": {},  # No loggers defined
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+        "mail_admins": {
+            "class": "django.utils.log.AdminEmailHandler",
+        },
+    },
+    "loggers": {
+        "": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+        },
+    },
 }
+# disable logging unless critical
+
+# LOGGING = {
+#     "version": 1,
+#     "disable_existing_loggers": True,  # Disable all existing loggers
+#     "handlers": {},  # No handlers defined
+#     "loggers": {},  # No loggers defined
+# }
 
 
 USERS_AVATAR_PATH = "avatars"
