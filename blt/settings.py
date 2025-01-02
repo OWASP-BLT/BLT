@@ -51,6 +51,18 @@ TESTING = sys.argv[1:2] == ["test"]
 
 SITE_ID = 1
 
+
+INSTALLED_APPS = [
+    "scout_apm.django",  # should be listed first
+    # ... other apps ...
+]
+
+# Scout settings
+SCOUT_MONITOR = True
+SCOUT_KEY = os.environ.get("SCOUT_KEY")
+SCOUT_NAME = PROJECT_NAME
+
+
 INSTALLED_APPS = (
     "django.contrib.admin",
     "django.contrib.auth",
