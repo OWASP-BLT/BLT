@@ -58,7 +58,7 @@ SCOUT_NAME = PROJECT_NAME
 
 
 INSTALLED_APPS = (
-    #"scout_apm.django",
+    # "scout_apm.django",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
