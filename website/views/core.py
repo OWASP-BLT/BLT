@@ -130,7 +130,7 @@ def check_status(request):
             "redis_stats": {} if not CHECK_REDIS else {},
         }
 
-        if CHECK_MEMORY and settings.DEBUG:
+        if CHECK_MEMORY:
             status_data.update(
                 {
                     "memory_info": psutil.virtual_memory()._asdict(),
