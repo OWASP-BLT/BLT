@@ -69,8 +69,11 @@
         <div class="status-card">
             <h3>Bitcoin Node</h3>
             <div class="status-item">
-                <div class="status-dot {% if status.bitcoin %}green{% else %}red{% endif %}"></div>
-                {% if status.bitcoin %}
+                <div class="status-dot {% if status.bitcoin == None %}gray{% elif status.bitcoin %}green{% else %}red{% endif %}">
+                </div>
+                {% if status.bitcoin == None %}
+                    <span>Status Unknown</span>
+                {% elif status.bitcoin %}
                     <span>Operational</span>
                     <p>Block Height: {{ status.bitcoin_block }}</p>
                     <a class="explorer-link"
@@ -85,8 +88,11 @@
         <div class="status-card">
             <h3>SendGrid API</h3>
             <div class="status-item">
-                <div class="status-dot {% if status.sendgrid %}green{% else %}red{% endif %}"></div>
-                {% if status.sendgrid %}
+                <div class="status-dot {% if status.sendgrid == None %}gray{% elif status.sendgrid %}green{% else %}red{% endif %}">
+                </div>
+                {% if status.sendgrid == None %}
+                    <span>Status Unknown</span>
+                {% elif status.sendgrid %}
                     <span>Operational</span>
                 {% else %}
                     <span>Not Operational</span>
@@ -97,8 +103,10 @@
         <div class="status-card">
             <h3>GitHub API</h3>
             <div class="status-item">
-                <div class="status-dot {% if status.github %}green{% else %}red{% endif %}"></div>
-                {% if status.github %}
+                <div class="status-dot {% if status.github == None %}gray{% elif status.github %}green{% else %}red{% endif %}"></div>
+                {% if status.github == None %}
+                    <span>Status Unknown</span>
+                {% elif status.github %}
                     <span>Operational</span>
                 {% else %}
                     <span>Not Operational</span>

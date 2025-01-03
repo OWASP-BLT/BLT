@@ -115,21 +115,19 @@ def check_status(request):
     CHECK_MEMORY = True
     CHECK_DATABASE = False
     CHECK_REDIS = False
-    CACHE_TIMEOUT = 60  # Cache timeout in seconds
+    CACHE_TIMEOUT = 60
 
     status_data = cache.get("service_status")
 
     if not status_data:
-        print("Starting status checks...")
-
         status_data = {
-            "bitcoin": False,
+            "bitcoin": None if not CHECK_BITCOIN else False,
             "bitcoin_block": None,
-            "sendgrid": False,
-            "github": False,
-            "openai": False,
-            "db_connection_count": 0,
-            "redis_stats": {},
+            "sendgrid": None if not CHECK_SENDGRID else False,
+            "github": None if not CHECK_GITHUB else False,
+            "openai": None if not CHECK_OPENAI else False,
+            "db_connection_count": None if not CHECK_DATABASE else 0,
+            "redis_stats": {} if not CHECK_REDIS else {},
         }
 
         if CHECK_MEMORY and settings.DEBUG:
