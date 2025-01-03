@@ -18,14 +18,16 @@ if os.getenv("ENV") != "production":
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN", "placeholder-token")
-SLACK_SIGNING_SECRET = os.environ.get("SLACK_SIGNING_SECRET", "placeholder-secret")
+SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
+SLACK_SIGNING_SECRET = os.environ.get("SLACK_SIGNING_SECRET")
 
-if SLACK_BOT_TOKEN == "placeholder-token" or SLACK_SIGNING_SECRET == "placeholder-secret":
-    logger.warning("Slack environment not set, using placeholder tokens for tests.")
-
-app = App(token=SLACK_BOT_TOKEN, signing_secret=SLACK_SIGNING_SECRET)
-handler = SlackRequestHandler(app)
+if not SLACK_BOT_TOKEN or not SLACK_SIGNING_SECRET:
+    logger.warning("Slack environment not set. Slack integration disabled.")
+    app = None
+    handler = None
+else:
+    app = App(token=SLACK_BOT_TOKEN, signing_secret=SLACK_SIGNING_SECRET)
+    handler = SlackRequestHandler(app)
 
 pagination_data = {}
 
@@ -388,10 +390,10 @@ def send_dm(client, user_id, text, blocks=None):
 @csrf_exempt
 def slack_commands(request):
     logger.debug(f"Received Slack command with content type: {request.content_type}")
-
+    if not handler:
+        return JsonResponse({"error": "Slack integration is disabled."}, status=400)
     if request.method == "POST":
         if request.content_type != "application/x-www-form-urlencoded":
             return JsonResponse({"error": "Invalid content type"}, status=415)
-
         return HttpResponse(handler.handle(request))
     return JsonResponse({"error": "Method not allowed"}, status=405)
