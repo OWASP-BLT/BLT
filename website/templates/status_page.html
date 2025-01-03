@@ -185,8 +185,10 @@
         <div class="status-card">
             <h3>OpenAI API</h3>
             <div class="status-item">
-                <div class="status-dot {% if status.openai %}green{% else %}red{% endif %}"></div>
-                {% if status.openai %}
+                <div class="status-dot {% if status.openai == None %}gray{% elif status.openai %}green{% else %}red{% endif %}"></div>
+                {% if status.openai == None %}
+                    <span>Status Unknown</span>
+                {% elif status.openai %}
                     <span>Operational</span>
                 {% else %}
                     <span>Not Operational</span>
