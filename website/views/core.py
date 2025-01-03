@@ -212,7 +212,7 @@ def check_status(request):
                     print(f"OpenAI API Error: {e}")
 
         # Memory usage checks
-        if CHECK_MEMORY and settings.DEBUG:
+        if CHECK_MEMORY:
             print("Getting memory usage information...")
             tracemalloc.start()
 
@@ -272,6 +272,9 @@ def github_callback(request):
     params = urllib.parse.urlencode(request.GET)
     url = f"{settings.CALLBACK_URL_FOR_GITHUB}?{params}"
     return safe_redirect_allowed(url, ALLOWED_HOSTS)
+
+
+s
 
 
 def google_callback(request):
