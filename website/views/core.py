@@ -274,9 +274,6 @@ def github_callback(request):
     return safe_redirect_allowed(url, ALLOWED_HOSTS)
 
 
-s
-
-
 def google_callback(request):
     ALLOWED_HOSTS = ["accounts.google.com"]
     params = urllib.parse.urlencode(request.GET)
