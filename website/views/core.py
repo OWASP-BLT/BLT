@@ -104,18 +104,23 @@ vector_store = None
 
 def check_status(request):
     """
-    Example status check that includes:
-      - External service checks (Bitcoin, SendGrid, GitHub, OpenAI, etc.)
-      - Top 5 processes by RSS memory usage
-      - Database connection count
-      - Redis info
-      - Memory usage by module (via tracemalloc)
-    This result is cached for 60 seconds to avoid expensive repeated checks.
+    Status check function with configurable components.
+    Enable/disable specific checks using the CONFIG constants.
     """
+    # Configuration flags
+    CHECK_BITCOIN = False
+    CHECK_SENDGRID = False
+    CHECK_GITHUB = False
+    CHECK_OPENAI = False
+    CHECK_MEMORY = False
+    CHECK_DATABASE = False
+    CHECK_REDIS = False
+    CACHE_TIMEOUT = 60  # Cache timeout in seconds
+
     status_data = cache.get("service_status")
 
     if not status_data:
-        print("Starting memory profiling...")
+        print("Starting status checks...")
 
         status_data = {
             "bitcoin": False,
@@ -127,7 +132,7 @@ def check_status(request):
             "redis_stats": {},
         }
 
-        if settings.DEBUG:
+        if CHECK_MEMORY and settings.DEBUG:
             status_data.update(
                 {
                     "memory_info": psutil.virtual_memory()._asdict(),
@@ -137,131 +142,83 @@ def check_status(request):
                 }
             )
 
-        # -------------------------------------------------------
         # Bitcoin RPC check
-        # -------------------------------------------------------
-        bitcoin_rpc_user = os.getenv("BITCOIN_RPC_USER")
-        bitcoin_rpc_password = os.getenv("BITCOIN_RPC_PASSWORD")
-        bitcoin_rpc_host = os.getenv("BITCOIN_RPC_HOST", "127.0.0.1")
-        bitcoin_rpc_port = os.getenv("BITCOIN_RPC_PORT", "8332")
+        if CHECK_BITCOIN:
+            bitcoin_rpc_user = os.getenv("BITCOIN_RPC_USER")
+            bitcoin_rpc_password = os.getenv("BITCOIN_RPC_PASSWORD")
+            bitcoin_rpc_host = os.getenv("BITCOIN_RPC_HOST", "127.0.0.1")
+            bitcoin_rpc_port = os.getenv("BITCOIN_RPC_PORT", "8332")
 
-        try:
-            print("Checking Bitcoin RPC...")
-            response = requests.post(
-                f"http://{bitcoin_rpc_host}:{bitcoin_rpc_port}",
-                json={
-                    "jsonrpc": "1.0",
-                    "id": "curltest",
-                    "method": "getblockchaininfo",
-                    "params": [],
-                },
-                auth=(bitcoin_rpc_user, bitcoin_rpc_password),
-                timeout=5,
-            )
-            if response.status_code == 200:
-                status_data["bitcoin"] = True
-                status_data["bitcoin_block"] = response.json().get("result", {}).get("blocks")
-                print("Bitcoin RPC check successful.")
-            else:
-                status_data["bitcoin"] = False
-                print("Bitcoin RPC check failed.")
-
-        except requests.exceptions.RequestException as e:
-            status_data["bitcoin"] = False
-            print(f"Bitcoin RPC Error: {e}")
-
-        # -------------------------------------------------------
-        # SendGrid API check
-        # -------------------------------------------------------
-        sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
-        if sendgrid_api_key:
             try:
-                print("Checking SendGrid API...")
-                response = requests.get(
-                    "https://api.sendgrid.com/v3/user/account",
-                    headers={"Authorization": f"Bearer {sendgrid_api_key}"},
+                print("Checking Bitcoin RPC...")
+                response = requests.post(
+                    f"http://{bitcoin_rpc_host}:{bitcoin_rpc_port}",
+                    json={
+                        "jsonrpc": "1.0",
+                        "id": "curltest",
+                        "method": "getblockchaininfo",
+                        "params": [],
+                    },
+                    auth=(bitcoin_rpc_user, bitcoin_rpc_password),
                     timeout=5,
                 )
-
                 if response.status_code == 200:
-                    status_data["sendgrid"] = True
-                    print("SendGrid API check successful.")
-                else:
-                    status_data["sendgrid"] = False
-                    print(
-                        f"SendGrid API token check failed with status code {response.status_code}: "
-                        f"{response.json().get('message', 'No message provided')}"
-                    )
-
+                    status_data["bitcoin"] = True
+                    status_data["bitcoin_block"] = response.json().get("result", {}).get("blocks")
             except requests.exceptions.RequestException as e:
-                status_data["sendgrid"] = False
-                print(f"SendGrid API Error: {e}")
+                print(f"Bitcoin RPC Error: {e}")
 
-        # -------------------------------------------------------
-        # GitHub API check
-        # -------------------------------------------------------
-        github_token = os.getenv("GITHUB_TOKEN")
-        if github_token:
-            try:
-                print("Checking GitHub API...")
-                headers = {"Authorization": f"token {github_token}"}
+        # SendGrid API check
+        if CHECK_SENDGRID:
+            sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
+            if sendgrid_api_key:
                 try:
+                    print("Checking SendGrid API...")
                     response = requests.get(
-                        "https://api.github.com/user/repos", headers=headers, timeout=2
+                        "https://api.sendgrid.com/v3/user/account",
+                        headers={"Authorization": f"Bearer {sendgrid_api_key}"},
+                        timeout=5,
                     )
-                except requests.exceptions.Timeout:
-                    status_data["github"] = False
-                    print("GitHub API request timed out")
-
+                    status_data["sendgrid"] = response.status_code == 200
                 except requests.exceptions.RequestException as e:
-                    status_data["github"] = False
+                    print(f"SendGrid API Error: {e}")
+
+        # GitHub API check
+        if CHECK_GITHUB:
+            github_token = os.getenv("GITHUB_TOKEN")
+            if github_token:
+                try:
+                    print("Checking GitHub API...")
+                    response = requests.get(
+                        "https://api.github.com/user/repos",
+                        headers={"Authorization": f"token {github_token}"},
+                        timeout=5,
+                    )
+                    status_data["github"] = response.status_code == 200
+                except requests.exceptions.RequestException as e:
                     print(f"GitHub API Error: {e}")
 
-                if response.status_code == 200:
-                    status_data["github"] = True
-                    print("GitHub API check successful.")
-                else:
-                    status_data["github"] = False
-                    print(
-                        f"GitHub API token check failed with status code {response.status_code}: "
-                        f"{response.json().get('message', 'No message provided')}"
-                    )
-
-            except requests.exceptions.RequestException as e:
-                status_data["github"] = False
-                print(f"GitHub API Error: {e}")
-
-        # -------------------------------------------------------
         # OpenAI API check
-        # -------------------------------------------------------
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        if openai_api_key:
-            try:
-                print("Checking OpenAI API...")
-                headers = {"Authorization": f"Bearer {openai_api_key}"}
-                response = requests.get(
-                    "https://api.openai.com/v1/models", headers=headers, timeout=5
-                )
-
-                if response.status_code == 200:
-                    status_data["openai"] = True
-                    print("OpenAI API check successful.")
-                else:
-                    status_data["openai"] = False
-                    print(
-                        f"OpenAI API token check failed with status code {response.status_code}: "
-                        f"{response.json().get('message', 'No message provided')}"
+        if CHECK_OPENAI:
+            openai_api_key = os.getenv("OPENAI_API_KEY")
+            if openai_api_key:
+                try:
+                    print("Checking OpenAI API...")
+                    response = requests.get(
+                        "https://api.openai.com/v1/models",
+                        headers={"Authorization": f"Bearer {openai_api_key}"},
+                        timeout=5,
                     )
+                    status_data["openai"] = response.status_code == 200
+                except requests.exceptions.RequestException as e:
+                    print(f"OpenAI API Error: {e}")
 
-            except requests.exceptions.RequestException as e:
-                status_data["openai"] = False
-                print(f"OpenAI API Error: {e}")
+        # Memory usage checks
+        if CHECK_MEMORY and settings.DEBUG:
+            print("Getting memory usage information...")
+            tracemalloc.start()
 
-        if settings.DEBUG:
-            # -------------------------------------------------------
-            # Top memory consumers (process-level) via psutil
-            # -------------------------------------------------------
-            print("Getting top memory consumers...")
+            # Get top memory consumers
             for proc in psutil.process_iter(["pid", "name", "memory_info"]):
                 try:
                     proc_info = proc.info
@@ -280,56 +237,36 @@ def check_status(request):
                 reverse=True,
             )[:5]
 
-            # -------------------------------------------------------
-            # Memory usage by module (via tracemalloc)
-            # -------------------------------------------------------
-            print("Calculating memory usage by module...")
-            top_modules = memory_usage_by_module(limit=1000)
-            status_data["memory_by_module"] = top_modules
-
-            # -------------------------------------------------------
-            # Memory profiling info (current, peak) - optional
-            # -------------------------------------------------------
-            # If you want an overall snapshot: start tracemalloc before
-            # the function call, or simply do an extra measure here.
-            # For example:
-            tracemalloc.start()
+            # Memory profiling info
             current, peak = tracemalloc.get_traced_memory()
             status_data["memory_profiling"]["current"] = current
             status_data["memory_profiling"]["peak"] = peak
             tracemalloc.stop()
 
-        # -------------------------------------------------------
-        # Database connection count
-        # -------------------------------------------------------
-        print("Getting database connection count...")
-        if settings.DATABASES.get("default", {}).get("ENGINE") == "django.db.backends.postgresql":
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
-                status_data["db_connection_count"] = cursor.fetchone()[0]
+        # Database connection check
+        if CHECK_DATABASE:
+            print("Getting database connection count...")
+            if (
+                settings.DATABASES.get("default", {}).get("ENGINE")
+                == "django.db.backends.postgresql"
+            ):
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
+                    status_data["db_connection_count"] = cursor.fetchone()[0]
 
-        # -------------------------------------------------------
         # Redis stats
-        # -------------------------------------------------------
-        print("Getting Redis stats...")
-        try:
-            redis_client = get_redis_connection("default")
-            status_data["redis_stats"] = redis_client.info()
-        except Exception as e:
-            print(f"Redis error or not supported: {e}")
+        if CHECK_REDIS:
+            print("Getting Redis stats...")
+            try:
+                redis_client = get_redis_connection("default")
+                status_data["redis_stats"] = redis_client.info()
+            except Exception as e:
+                print(f"Redis error or not supported: {e}")
 
-        # -------------------------------------------------------
-        # Cache the status data for 60s to avoid repeated overhead
-        # -------------------------------------------------------
-        print("Caching service status...")
-        cache.set("service_status", status_data, timeout=60)
+        # Cache the results
+        cache.set("service_status", status_data, timeout=CACHE_TIMEOUT)
 
     return render(request, "status_page.html", {"status": status_data})
-
-
-# ----------------------------------------------------------------------------------
-# 3) The rest of your existing views remain the same
-# ----------------------------------------------------------------------------------
 
 
 def github_callback(request):
