@@ -112,7 +112,7 @@ def check_status(request):
     CHECK_SENDGRID = False
     CHECK_GITHUB = False
     CHECK_OPENAI = False
-    CHECK_MEMORY = False
+    CHECK_MEMORY = True
     CHECK_DATABASE = False
     CHECK_REDIS = False
     CACHE_TIMEOUT = 60  # Cache timeout in seconds
