@@ -13,7 +13,7 @@ from captcha.fields import CaptchaField
 from colorthief import ColorThief
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
@@ -362,6 +362,7 @@ class Issue(models.Model):
     cve_id = models.CharField(max_length=16, null=True, blank=True)
     cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
+    comments = GenericRelation("comments.Comment")
 
     def __unicode__(self):
         return self.description
@@ -1215,6 +1216,7 @@ class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     image = models.ImageField(upload_to="blog_posts")
+    comments = GenericRelation("comments.Comment")
 
     class Meta:
         db_table = "blog_post"
