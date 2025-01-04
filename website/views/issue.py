@@ -1501,6 +1501,7 @@ def comment_on_content(request, content_pk):
     content_type = request.POST.get("content_type")
     content_type_obj = ContentType.objects.get(model=content_type)
     content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    VALID_CONTENT_TYPES = ["issue", "post"]
 
     if request.method == "POST" and isinstance(request.user, User):
         comment = escape(request.POST.get("comment", ""))
@@ -1514,6 +1515,10 @@ def comment_on_content(request, content_pk):
             replying_to_comment_id = replying_to_input[1]
 
             parent_comment = Comment.objects.filter(pk=replying_to_comment_id).first()
+
+            if content_type not in VALID_CONTENT_TYPES:
+                messages.error(request, "Invalid content type.")
+                return redirect("home")
 
             if parent_comment is None:
                 messages.error(request, "Parent comment doesn't exist.")
