@@ -1363,7 +1363,7 @@ class IssueView(DetailView):
         context["content_type"] = ContentType.objects.get_for_model(Issue).model
 
         return context
-#check
+
 
 @login_required(login_url="/accounts/login")
 def submit_bug(request, pk, template="hunt_submittion.html"):
