@@ -34,7 +34,7 @@ RUN pip install poetry
 RUN poetry config virtualenvs.create false
 COPY pyproject.toml poetry.lock* ./
 RUN poetry lock
-RUN poetry install
+RUN poetry install --no-root
 
 # Install additional Python packages
 RUN pip install opentelemetry-api opentelemetry-instrumentation
