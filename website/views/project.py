@@ -1155,4 +1155,125 @@ class RepoDetailView(DetailView):
                     status=400,
                 )
 
+        elif section == "technical":
+            try:
+                github_token = getattr(settings, "GITHUB_TOKEN", None)
+                if not github_token:
+                    return JsonResponse(
+                        {"status": "error", "message": "GitHub token not configured"}, status=500
+                    )
+
+                match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo.repo_url)
+                if not match:
+                    return JsonResponse(
+                        {"status": "error", "message": "Invalid repository URL"}, status=400
+                    )
+
+                owner, repo_name = match.groups()
+                api_url = f"https://api.github.com/repos/{owner}/{repo_name}"
+                headers = {
+                    "Authorization": f"token {github_token}",
+                    "Accept": "application/vnd.github.v3+json",
+                }
+
+                response = requests.get(api_url, headers=headers)
+                if response.status_code != 200:
+                    return JsonResponse(
+                        {"status": "error", "message": "Failed to fetch repository data"},
+                        status=500,
+                    )
+
+                repo_data = response.json()
+
+                # Update repository technical details
+                repo.primary_language = repo_data.get("language")
+                repo.size = repo_data.get("size", 0)
+                repo.license = repo_data.get("license", {}).get("name")
+
+                # Get latest release info
+                releases_url = f"{api_url}/releases/latest"
+                release_response = requests.get(releases_url, headers=headers)
+                if release_response.status_code == 200:
+                    release_data = release_response.json()
+                    repo.release_name = release_data.get("name") or release_data.get("tag_name")
+                    repo.release_datetime = parse_datetime(release_data.get("published_at"))
+
+                repo.save()
+
+                return JsonResponse(
+                    {
+                        "status": "success",
+                        "message": "Technical information updated successfully",
+                        "data": {
+                            "primary_language": repo.primary_language or "Not specified",
+                            "size": repo.size,
+                            "license": repo.license or "Not specified",
+                            "release_name": repo.release_name or "Not available",
+                            "release_date": repo.release_datetime.strftime("%b %d, %Y")
+                            if repo.release_datetime
+                            else "Not available",
+                            "last_commit_date": repo.last_commit_date.strftime("%b %d, %Y")
+                            if repo.last_commit_date
+                            else "Not available",
+                        },
+                    }
+                )
+
+            except requests.RequestException as e:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "Network error: A network error occurred. Please try again later.",
+                    },
+                    status=503,
+                )
+            except Exception as e:
+                return JsonResponse(
+                    {"status": "error", "message": "An unexpected error occurred."}, status=500
+                )
+
+        elif section == "community":
+            try:
+                from django.core.management import call_command
+
+                repo = self.get_object()
+
+                # Run sync command
+                call_command("sync_repo_contributors", "--repo_id", repo.id)
+
+                # Refresh repo instance to get updated contributor_count
+                repo.refresh_from_db()
+
+                # Fetch real-time top contributors from GitHub
+                github_contributors = self.get_github_top_contributors(repo.repo_url)
+                merged_contributors = []
+                for gh_contrib in github_contributors:
+                    merged_contributors.append(
+                        {
+                            "name": gh_contrib["login"],
+                            "github_id": gh_contrib["id"],
+                            "avatar_url": gh_contrib["avatar_url"],
+                            "contributions": gh_contrib["contributions"],
+                            "github_url": gh_contrib["html_url"],
+                            "verified": False,
+                        }
+                    )
+
+                return JsonResponse(
+                    {
+                        "status": "success",
+                        "message": "Fetched real-time contributor data from GitHub.",
+                        "data": {
+                            "contributors": merged_contributors,
+                            "total_contributors": repo.contributor_count,
+                        },
+                    }
+                )
+
+            except ValueError as e:
+                return JsonResponse(
+                    {"status": "error", "message": "There was an error processing your data."},
+                    status=400,
+                )
+
         return super().post(request, *args, **kwargs)
