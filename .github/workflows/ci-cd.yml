@@ -155,7 +155,7 @@ jobs:
         with:
           python-version: 3.11.2
       - run: pip install poetry
-      - run: poetry lock --no-update
+      - run: poetry lock
       - run: poetry install
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
@@ -186,7 +186,7 @@ jobs:
           docker run -d --name my-container my-app
 
       - run: docker exec my-container pip install poetry
-      - run: docker exec my-container poetry lock --no-update
+      - run: docker exec my-container poetry lock
       - run: docker exec my-container poetry install --no-dev --no-interaction
 
       - name: Clean up
