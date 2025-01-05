@@ -158,7 +158,10 @@ def create_github_issue(request, id):
         return JsonResponse({"status": "Failed", "status_reason": "GitHub Access Token is missing"})
     if issue.github_url:
         return JsonResponse(
-            {"status": "Failed", "status_reason": "GitHub Issue Exists at " + issue.github_url}
+            {
+                "status": "Failed",
+                "status_reason": "GitHub Issue Exists at " + issue.github_url,
+            }
         )
     if issue.domain.github:
         screenshot_text = ""
@@ -194,7 +197,10 @@ def create_github_issue(request, id):
                 return JsonResponse({"status": "ok", "github_url": issue.github_url})
             else:
                 return JsonResponse(
-                    {"status": "Failed", "status_reason": f"Issue with Github: {response.reason}"}
+                    {
+                        "status": "Failed",
+                        "status_reason": f"Issue with Github: {response.reason}",
+                    }
                 )
         except Exception as e:
             send_mail(
@@ -207,7 +213,10 @@ def create_github_issue(request, id):
             return JsonResponse({"status": "Failed", "status_reason": f"Failed: error is {e}"})
     else:
         return JsonResponse(
-            {"status": "Failed", "status_reason": "No Github URL for this domain, please add it."}
+            {
+                "status": "Failed",
+                "status_reason": "No Github URL for this domain, please add it.",
+            }
         )
 
 
@@ -329,7 +338,8 @@ def newhome(request, template="new_home.html"):
     current_time = now()
     leaderboard = (
         User.objects.filter(
-            points__created__month=current_time.month, points__created__year=current_time.year
+            points__created__month=current_time.month,
+            points__created__year=current_time.year,
         )
         .annotate(total_points=Sum("points__score"))
         .order_by("-total_points")
@@ -576,10 +586,10 @@ def submit_pr(request):
 
 class IssueBaseCreate(object):
     def form_valid(self, form):
-        print(
-            "processing form_valid IssueBaseCreate for ip address: ",
-            get_client_ip(self.request),
-        )
+        # print(
+        #     "processing form_valid IssueBaseCreate for ip address: ",
+        #     get_client_ip(self.request),
+        # )
         score = 3
         obj = form.save(commit=False)
         obj.user = self.request.user
@@ -610,7 +620,7 @@ class IssueBaseCreate(object):
         p = Points.objects.create(user=self.request.user, issue=obj, score=score)
 
     def process_issue(self, user, obj, created, domain, tokenauth=False, score=3):
-        print("processing process_issue for ip address: ", get_client_ip(self.request))
+        # print("processing process_issue for ip address: ", get_client_ip(self.request))
         p = Points.objects.create(user=user, issue=obj, score=score, reason="Issue reported")
         messages.success(self.request, "Bug added ! +" + str(score))
         try:
@@ -750,7 +760,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
     template_name = "report.html"
 
     def get_initial(self):
-        print("processing post for ip address: ", get_client_ip(self.request))
+        # print("processing post for ip address: ", get_client_ip(self.request))
         try:
             json_data = json.loads(self.request.body)
             if not self.request.GET._mutable:
@@ -806,7 +816,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return initial
 
     def post(self, request, *args, **kwargs):
-        print("processing post for ip address: ", get_client_ip(request))
+        # print("processing post for ip address: ", get_client_ip(request))
         url = request.POST.get("url").replace("www.", "").replace("https://", "")
 
         request.POST._mutable = True
@@ -871,10 +881,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        print(
-            "processing form_valid in IssueCreate for ip address: ",
-            get_client_ip(self.request),
-        )
+        # print(
+        #     "processing form_valid in IssueCreate for ip address: ",
+        #     get_client_ip(self.request),
+        # )
         reporter_ip = get_client_ip(self.request)
         form.instance.reporter_ip_address = reporter_ip
 
@@ -971,7 +981,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):
                 Points.objects.create(
-                    user=self.request.user, domain=domain, score=1, reason="Domain added"
+                    user=self.request.user,
+                    domain=domain,
+                    score=1,
+                    reason="Domain added",
                 )
                 messages.success(self.request, "Domain added! + 1")
 
@@ -1119,7 +1132,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
             self.request.POST = {}
             self.request.GET = {}
 
-        print("processing get_context_data for ip address: ", get_client_ip(self.request))
+        # print(
+        #     "processing get_context_data for ip address: ", get_client_ip(self.request)
+        # )
         context = super(IssueCreate, self).get_context_data(**kwargs)
         context["activities"] = Issue.objects.exclude(
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
@@ -1267,8 +1282,8 @@ class IssueView(DetailView):
     template_name = "issue.html"
 
     def get(self, request, *args, **kwargs):
-        print("getting issue id: ", self.kwargs["slug"])
-        print("getting issue id: ", self.kwargs)
+        # print("getting issue id: ", self.kwargs["slug"])
+        # print("getting issue id: ", self.kwargs)
         ipdetails = IP()
         try:
             id = int(self.kwargs["slug"])
@@ -1283,8 +1298,8 @@ class IssueView(DetailView):
         ipdetails.agent = request.META["HTTP_USER_AGENT"]
         ipdetails.referer = request.META.get("HTTP_REFERER", None)
 
-        print("IP Address: ", ipdetails.address)
-        print("Issue Number: ", ipdetails.issuenumber)
+        # print("IP Address: ", ipdetails.address)
+        # print("Issue Number: ", ipdetails.issuenumber)
 
         try:
             if self.request.user.is_authenticated:
@@ -1316,7 +1331,7 @@ class IssueView(DetailView):
         return super(IssueView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        print("getting context data")
+        # print("getting context data")
         context = super(IssueView, self).get_context_data(**kwargs)
         if self.object.user_agent:
             user_agent = parse(self.object.user_agent)
