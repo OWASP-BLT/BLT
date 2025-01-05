@@ -314,25 +314,28 @@
                                 </svg>
                                 Community
                             </h2>
-                            <button class="refresh-btn"
-                                    data-section="community"
-                                    onclick="refreshSection(this, 'community')"
-                                    title="Refresh community data">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                            </button>
+                            <div class="refresh-container relative inline-flex">
+                                <button class="refresh-btn"
+                                        data-section="community"
+                                        onclick="refreshSection(this, 'community')"
+                                        title="Refresh community data">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <div class="space-y-6">
                             <!-- Contributors Summary -->
                             <div class="flex items-center justify-between">
                                 <h3 class="text-lg font-semibold text-gray-900">Top Contributors</h3>
-                                <span class="px-3 py-1 bg-red-50 text-red-600 rounded-full text-sm font-medium">
+                                <span class="px-3 py-1 bg-red-50 text-red-600 rounded-full text-sm font-medium"
+                                      data-community="total-count">
                                     {{ repo.contributor_count|intcomma }} total contributors
                                 </span>
                             </div>
                             <!-- Top Contributors Grid -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 contributors-grid">
                                 {% for contributor in top_contributors %}
                                     <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
                                         <img src="{{ contributor.avatar_url }}"
@@ -402,14 +405,16 @@
                                 </svg>
                                 Technical Overview
                             </h2>
-                            <button class="refresh-btn"
-                                    data-section="technical"
-                                    onclick="refreshSection(this, 'technical')"
-                                    title="Refresh technical data">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                            </button>
+                            <div class="refresh-container relative inline-flex">
+                                <button class="refresh-btn"
+                                        data-section="technical"
+                                        onclick="refreshSection(this, 'technical')"
+                                        title="Refresh technical data">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Language and Stack -->
@@ -425,21 +430,20 @@
                                 <div class="space-y-3">
                                     <div class="flex items-center gap-2">
                                         <span class="text-gray-600 shrink-0">Primary Language:</span>
-                                        <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200 truncate">
+                                        <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200 truncate"
+                                              data-tech="primary_language">
                                             {{ repo.primary_language|default:"Not specified" }}
                                         </span>
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <span class="text-gray-600 shrink-0">Repository Size:</span>
-                                        <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200 truncate">
-                                            {{ repo.size|filesizeformat }}
-                                        </span>
+                                        <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200 truncate"
+                                              data-tech="size">{{ repo.size|filesizeformat }}</span>
                                     </div>
                                     <div class="flex items-start gap-2">
                                         <span class="text-gray-600 shrink-0 mt-1">License:</span>
-                                        <div class="font-medium text-gray-900 px-3 py-1 bg-white rounded-lg shadow-sm border border-gray-200 flex-1 break-words">
-                                            {{ repo.license|default:"Not specified" }}
-                                        </div>
+                                        <div class="font-medium text-gray-900 px-3 py-1 bg-white rounded-lg shadow-sm border border-gray-200 flex-1 break-words"
+                                             data-tech="license">{{ repo.license|default:"Not specified" }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -458,22 +462,23 @@
                                         {% if repo.release_name %}
                                             <div class="flex justify-between items-center">
                                                 <span class="text-gray-600">Version</span>
-                                                <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200">
-                                                    {{ repo.release_name }}
-                                                </span>
+                                                <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200"
+                                                      data-tech="release_name">{{ repo.release_name }}</span>
                                             </div>
                                         {% endif %}
                                         {% if repo.release_datetime %}
                                             <div class="flex justify-between items-center">
                                                 <span class="text-gray-600">Release Date</span>
-                                                <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200">
+                                                <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200"
+                                                      data-tech="release_date">
                                                     {{ repo.release_datetime|date:"M d, Y" }}
                                                 </span>
                                             </div>
                                         {% endif %}
                                         <div class="flex justify-between items-center">
                                             <span class="text-gray-600">Last Commit</span>
-                                            <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200">
+                                            <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200"
+                                                  data-tech="last_commit_date">
                                                 {{ repo.last_commit_date|date:"M d, Y" }}
                                             </span>
                                         </div>
@@ -669,6 +674,67 @@ const refreshSection = async (button, section) => {
                     element.textContent = value.toLocaleString();
                 }
             }
+
+            // Show success message
+            messageContainer.className = 'refresh-message text-sm text-green-600';
+            messageContainer.textContent = data.message;
+        } else if (section === 'technical') {
+            // Update technical details with new data
+            const technicalElements = {
+                'primary_language': data.data.primary_language,
+                'size': `${(data.data.size / 1024).toFixed(2)} MB`,
+                'license': data.data.license,
+                'release_name': data.data.release_name,
+                'release_date': data.data.release_date,
+                'last_commit_date': data.data.last_commit_date
+            };
+
+            // Update each technical element
+            for (const [key, value] of Object.entries(technicalElements)) {
+                const element = document.querySelector(`[data-tech="${key}"]`);
+                if (element) {
+                    element.textContent = value;
+                }
+            }
+
+            // Show success message
+            messageContainer.className = 'refresh-message text-sm text-green-600';
+            messageContainer.textContent = data.message;
+        } else if (section === 'community') {
+            const contributorsContainer = document.querySelector('.contributors-grid');
+            if (!contributorsContainer) return;
+
+            const communityData = data.data; 
+
+            // Update total count
+            const totalCountEl = document.querySelector('[data-community="total-count"]');
+            if (totalCountEl) {
+                totalCountEl.textContent = `${communityData.total_contributors.toLocaleString()} total contributors`;
+            }
+
+            // Update contributors grid
+            let contributorsHtml = '';
+            communityData.contributors.forEach(contributor => {
+                contributorsHtml += `
+                    <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
+                        <img src="${contributor.avatar_url}" width="30" height="30" alt="${contributor.name}" class="w-12 h-12 rounded-full border-2 border-white shadow-md group-hover:scale-110 transition-transform">
+                        <div class="flex-grow">
+                            <div class="font-medium text-gray-900">
+                                ${contributor.name}
+                                ${contributor.verified ? '<span class="ml-1 text-green-500" title="Verified Contributor">✓</span>' : ''}
+                            </div>
+                            <div class="text-sm text-gray-500">${contributor.contributions.toLocaleString()} commits</div>
+                        </div>
+                        <a href="${contributor.github_url}" target="_blank" class="p-2 text-gray-400 hover:text-gray-600">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                            </svg>
+                        </a>
+                    </div>
+                `;
+            });
+            
+            contributorsContainer.innerHTML = contributorsHtml;
 
             // Show success message
             messageContainer.className = 'refresh-message text-sm text-green-600';
