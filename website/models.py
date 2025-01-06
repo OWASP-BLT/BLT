@@ -935,17 +935,6 @@ class Project(models.Model):
         return self.name
 
 
-# class ContributorStats(models.Model):
-#     username = models.CharField(max_length=255, unique=True)
-#     commits = models.IntegerField(default=0)
-#     issues_opened = models.IntegerField(default=0)
-#     issues_closed = models.IntegerField(default=0)
-#     prs = models.IntegerField(default=0)
-#     comments = models.IntegerField(default=0)
-#     assigned_issues = models.IntegerField(default=0)
-#     created = models.DateTimeField(auto_now_add=True)
-
-
 class Contribution(models.Model):
     CONTRIBUTION_TYPES = [
         ("commit", "Commit"),
@@ -1316,3 +1305,32 @@ class Repo(models.Model):
 
     def __str__(self):
         return f"{self.project.name}/{self.name}"
+
+
+class ContributorStats(models.Model):
+    contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE, related_name="stats")
+    repo = models.ForeignKey(Repo, on_delete=models.CASCADE, related_name="stats")
+
+    # This will represent either a specific day or the first day of a month.
+    date = models.DateField()
+
+    # Store counts
+    commits = models.PositiveIntegerField(default=0)
+    issues_opened = models.PositiveIntegerField(default=0)
+    issues_closed = models.PositiveIntegerField(default=0)
+    pull_requests = models.PositiveIntegerField(default=0)
+    comments = models.PositiveIntegerField(default=0)
+
+    # "day" for daily entries, "month" for monthly entries
+    granularity = models.CharField(
+        max_length=10, choices=[("day", "Day"), ("month", "Month")], default="day"
+    )
+
+    class Meta:
+        # You can't have two different stats for the same date+granularity
+        unique_together = ("contributor", "repo", "date", "granularity")
+
+    def __str__(self):
+        return (
+            f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
+        )
