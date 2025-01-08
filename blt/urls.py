@@ -100,9 +100,9 @@ from website.views.issue import (
     SpecificIssuesView,
     UpdateIssue,
     change_bid_status,
-    comment_on_issue,
+    comment_on_content,
     create_github_issue,
-    delete_comment,
+    delete_content_comment,
     delete_issue,
     dislike_issue,
     fetch_current_bid,
@@ -120,7 +120,7 @@ from website.views.issue import (
     submit_bug,
     submit_pr,
     unsave_issue,
-    update_comment,
+    update_content_comment,
     vote_count,
 )
 from website.views.organization import (
@@ -458,19 +458,20 @@ urlpatterns = [
     ),
     re_path(r"^issue/edit/$", IssueEdit, name="edit_issue"),
     re_path(r"^issue/update/$", UpdateIssue, name="update_issue"),
+    # comment on content
     path(
-        "issue/<str:issue_pk>/comment/",
-        comment_on_issue,
-        name="comment_on_issue",
+        "content/<str:content_pk>/comment/",
+        comment_on_content,
+        name="comment_on_content",
     ),
-    # UPDATE COMMENT
+    # update comment
     path(
-        "issue/<str:issue_pk>/comment/update/<str:comment_pk>/",
-        update_comment,
-        name="update_comment",
+        "content/<str:content_pk>/comment/update/<str:comment_pk>/",
+        update_content_comment,
+        name="update_content_comment",
     ),
-    # delete_comment
-    path("issue2/comment/delete/", delete_comment, name="delete_comment"),
+    # delete comment
+    path("content/comment/delete/", delete_content_comment, name="delete_content_comment"),
     re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
     re_path(r"^follow/(?P<user>[^/]+)/", follow_user, name="follow_user"),
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),

@@ -1,5 +1,6 @@
 import markdown
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
 from django.views import generic
 
@@ -21,6 +22,12 @@ class PostDetailView(generic.DetailView):
         post = super().get_object()
         post.content = markdown.markdown(post.content)
         return post
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["content_type"] = ContentType.objects.get_for_model(Post).model
+        context["all_comment"] = self.object.comments.all()
+        return context
 
 
 class PostCreateView(LoginRequiredMixin, generic.CreateView):

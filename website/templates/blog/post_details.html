@@ -119,5 +119,6 @@
                 <a href="{% url 'post_delete' slug=post.slug %}" class="b-delete">Delete Post</a>
             </div>
         {% endif %}
+        <div class="px-10 rounded-lg bg-white">{% include "../comments2.html" %}</div>
     </article>
 {% endblock content %}
