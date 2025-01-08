@@ -7,3 +7,7 @@ class WebsiteConfig(AppConfig):
 
     def ready(self):
         import website.signals  # noqa
+
+        from . import scheduler_config
+
+        scheduler_config.start()
