@@ -1522,7 +1522,7 @@ def comment_on_content(request, content_pk):
 
             if parent_comment is None:
                 messages.error(request, "Parent comment doesn't exist.")
-                return redirect(f"/{content_type}/{content_pk}")
+                return redirect("home")
 
             Comment.objects.create(
                 parent=parent_comment,
