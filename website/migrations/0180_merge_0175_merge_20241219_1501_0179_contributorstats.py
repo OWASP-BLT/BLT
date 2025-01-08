@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0175_merge_20241219_1501"),
         ("website", "0179_contributorstats"),
