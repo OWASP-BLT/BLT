@@ -63,7 +63,7 @@ from website.views.company import (
     delete_prize,
     edit_prize,
 )
-from website.views.core import (
+from website.views.core import (  # chatbot_conversation,
     FacebookConnect,
     FacebookLogin,
     GithubConnect,
@@ -74,7 +74,6 @@ from website.views.core import (
     UploadCreate,
     add_suggestions,
     badge_list,
-    chatbot_conversation,
     check_status,
     donate_view,
     facebook_callback,
@@ -101,9 +100,9 @@ from website.views.issue import (
     SpecificIssuesView,
     UpdateIssue,
     change_bid_status,
-    comment_on_issue,
+    comment_on_content,
     create_github_issue,
-    delete_comment,
+    delete_content_comment,
     delete_issue,
     dislike_issue,
     fetch_current_bid,
@@ -121,7 +120,7 @@ from website.views.issue import (
     submit_bug,
     submit_pr,
     unsave_issue,
-    update_comment,
+    update_content_comment,
     vote_count,
 )
 from website.views.organization import (
@@ -175,12 +174,14 @@ from website.views.organization import (
     view_hunt,
     weekly_report,
 )
-from website.views.project import (
-    ProjectBadgeView,
+from website.views.project import (  # ProjectBadgeView,
     ProjectDetailView,
     ProjectListView,
+    ProjectsDetailView,
     ProjectView,
+    RepoDetailView,
     blt_tomato,
+    create_project,
     distribute_bacon,
     select_contribution,
 )
@@ -294,7 +295,9 @@ urlpatterns = [
     path("auth/facebook/url/", facebook_views.oauth2_callback),
     path("socialaccounts/", SocialAccountListView.as_view(), name="social_account_list"),
     path(
-        "add_domain_to_organization/", add_domain_to_organization, name="add_domain_to_organization"
+        "add_domain_to_organization/",
+        add_domain_to_organization,
+        name="add_domain_to_organization",
     ),
     path(
         "socialaccounts/<int:pk>/disconnect/",
@@ -375,9 +378,17 @@ urlpatterns = [
         admin_organization_dashboard_detail,
         name="admin_organization_dashboard_detail",
     ),
-    re_path(r"^dashboard/organization/hunt/create$", CreateHunt.as_view(), name="create_hunt"),
+    re_path(
+        r"^dashboard/organization/hunt/create$",
+        CreateHunt.as_view(),
+        name="create_hunt",
+    ),
     path("hunt/<int:pk>", ShowBughuntView.as_view(), name="show_bughunt"),
-    re_path(r"^dashboard/organization/hunt/drafts$", DraftHunts.as_view(), name="draft_hunts"),
+    re_path(
+        r"^dashboard/organization/hunt/drafts$",
+        DraftHunts.as_view(),
+        name="draft_hunts",
+    ),
     re_path(
         r"^dashboard/organization/hunt/upcoming$",
         UpcomingHunts.as_view(),
@@ -430,7 +441,11 @@ urlpatterns = [
     ),
     re_path(r"^flag_issue/(?P<issue_pk>\d+)/$", flag_issue, name="flag_issue"),
     re_path(r"^resolve/(?P<id>\w+)/$", resolve, name="resolve"),
-    re_path(r"^create_github_issue/(?P<id>\w+)/$", create_github_issue, name="create_github_issue"),
+    re_path(
+        r"^create_github_issue/(?P<id>\w+)/$",
+        create_github_issue,
+        name="create_github_issue",
+    ),
     re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
     re_path(r"^save_issue/(?P<issue_pk>\d+)/$", save_issue, name="save_issue"),
@@ -446,19 +461,20 @@ urlpatterns = [
     ),
     re_path(r"^issue/edit/$", IssueEdit, name="edit_issue"),
     re_path(r"^issue/update/$", UpdateIssue, name="update_issue"),
+    # comment on content
     path(
-        "issue/<str:issue_pk>/comment/",
-        comment_on_issue,
-        name="comment_on_issue",
+        "content/<str:content_pk>/comment/",
+        comment_on_content,
+        name="comment_on_content",
     ),
-    # UPDATE COMMENT
+    # update comment
     path(
-        "issue/<str:issue_pk>/comment/update/<str:comment_pk>/",
-        update_comment,
-        name="update_comment",
+        "content/<str:content_pk>/comment/update/<str:comment_pk>/",
+        update_content_comment,
+        name="update_content_comment",
     ),
-    # delete_comment
-    path("issue2/comment/delete/", delete_comment, name="delete_comment"),
+    # delete comment
+    path("content/comment/delete/", delete_content_comment, name="delete_content_comment"),
     re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
     re_path(r"^follow/(?P<user>[^/]+)/", follow_user, name="follow_user"),
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
@@ -591,7 +607,10 @@ urlpatterns = [
     re_path(r"^api/v1/count/$", issue_count, name="api_count"),
     re_path(r"^api/v1/contributors/$", contributors, name="api_contributor"),
     path("project/<slug:slug>/", ProjectDetailView.as_view(), name="project_view"),
-    path("projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"),
+    # path(
+    #     "projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"
+    # ),
+    path("repository/<slug:slug>/", RepoDetailView.as_view(), name="repo_detail"),
     re_path(r"^report-ip/$", ReportIpView.as_view(), name="report_ip"),
     re_path(r"^reported-ips/$", ReportedIpListView.as_view(), name="reported_ips_list"),
     re_path(r"^feed/$", feed, name="feed"),
@@ -658,7 +677,11 @@ urlpatterns = [
     # users
     path("users/", users_view, name="users"),
     # company specific urls :
-    path("organization/", RegisterOrganizationView.as_view(), name="register_organization"),
+    path(
+        "organization/",
+        RegisterOrganizationView.as_view(),
+        name="register_organization",
+    ),
     path("organization/dashboard/", Organization_view, name="organization_view"),
     path(
         "organization/<int:id>/dashboard/analytics/",
@@ -691,10 +714,20 @@ urlpatterns = [
         name="organization_manage_bughunts",
     ),
     path(
-        "organization/dashboard/end_bughunt/<int:pk>", EndBughuntView.as_view(), name="end_bughunt"
+        "organization/dashboard/end_bughunt/<int:pk>",
+        EndBughuntView.as_view(),
+        name="end_bughunt",
     ),
-    path("organization/<int:id>/dashboard/add_bughunt/", AddHuntView.as_view(), name="add_bughunt"),
-    path("organization/<int:id>/dashboard/add_domain/", AddDomainView.as_view(), name="add_domain"),
+    path(
+        "organization/<int:id>/dashboard/add_bughunt/",
+        AddHuntView.as_view(),
+        name="add_bughunt",
+    ),
+    path(
+        "organization/<int:id>/dashboard/add_domain/",
+        AddDomainView.as_view(),
+        name="add_domain",
+    ),
     path(
         "organization/<int:id>/dashboard/add_slack_integration/",
         AddSlackIntegrationView.as_view(),
@@ -705,7 +738,11 @@ urlpatterns = [
         AddDomainView.as_view(),
         name="edit_domain",
     ),
-    path("organization/domain/<int:pk>/", login_required(DomainView.as_view()), name="view_domain"),
+    path(
+        "organization/domain/<int:pk>/",
+        login_required(DomainView.as_view()),
+        name="view_domain",
+    ),
     path(
         "organization/delete_prize/<int:prize_id>/<int:organization_id>",
         delete_prize,
@@ -716,7 +753,11 @@ urlpatterns = [
         edit_prize,
         name="edit_prize",
     ),
-    path("organization/accept_bug/<int:issue_id>/<str:reward_id>/", accept_bug, name="accept_bug"),
+    path(
+        "organization/accept_bug/<int:issue_id>/<str:reward_id>/",
+        accept_bug,
+        name="accept_bug",
+    ),
     path(
         "organization/accept_bug/<int:issue_id>/<str:no_reward>/",
         accept_bug,
@@ -731,7 +772,11 @@ urlpatterns = [
     path("donate/", donate_view, name="donate"),
     path("organizations/", DomainListView.as_view(), name="domain_lists"),
     path("trademarks/", trademark_search, name="trademark_search"),
-    path("generate_bid_image/<int:bid_amount>/", generate_bid_image, name="generate_bid_image"),
+    path(
+        "generate_bid_image/<int:bid_amount>/",
+        generate_bid_image,
+        name="generate_bid_image",
+    ),
     path("bidding/", SaveBiddingData, name="BiddingData"),
     path("select_bid/", select_bid, name="select_bid"),
     path("get_unique_issues/", get_unique_issues, name="get_unique_issues"),
@@ -753,15 +798,25 @@ urlpatterns = [
         update_bch_address,
         name="update_bch_address",
     ),
-    path("api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"),
+    # path(
+    #     "api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"
+    # ),
     path("blt-tomato/", blt_tomato, name="blt-tomato"),
     path(
         "api/v1/projects/",
         ProjectViewSet.as_view({"get": "list", "post": "create", "patch": "update"}),
         name="projects_api",
     ),
-    path("auth/delete", AuthApiViewset.as_view({"delete": "delete"}), name="auth-delete-api"),
-    path("api/v1/tags", TagApiViewset.as_view({"get": "list", "post": "create"}), name="tags-api"),
+    path(
+        "auth/delete",
+        AuthApiViewset.as_view({"delete": "delete"}),
+        name="auth-delete-api",
+    ),
+    path(
+        "api/v1/tags",
+        TagApiViewset.as_view({"get": "list", "post": "create"}),
+        name="tags-api",
+    ),
     path("sizzle/", sizzle, name="sizzle"),
     path("check-in/", checkIN, name="checkIN"),
     path("add-sizzle-checkin/", add_sizzle_checkIN, name="add_sizzle_checkin"),
@@ -800,6 +855,8 @@ urlpatterns = [
         TemplateView.as_view(template_name="similarity.html"),
         name="similarity_scan",
     ),
+    path("projects/create/", create_project, name="create_project"),
+    path("projects/<slug:slug>/", ProjectsDetailView.as_view(), name="projects_detail"),
     path("teams/challenges/", TeamChallenges.as_view(), name="team_challenges"),
     path("teams/leaderboard/", TeamLeaderboard.as_view(), name="team_leaderboard"),
     path("challenges/", UserChallengeListView.as_view(), name="user_challenges"),

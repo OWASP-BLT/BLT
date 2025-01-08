@@ -172,4 +172,9 @@ class ActivityLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = ActivityLog
         fields = ["id", "user", "window_title", "url", "recorded_at", "created"]
-        read_only_fields = ["id", "user", "recorded_at", "created"]  # Auto-filled fields
+        read_only_fields = [
+            "id",
+            "user",
+            "recorded_at",
+            "created",
+        ]  # Auto-filled fields

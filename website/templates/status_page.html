@@ -52,14 +52,14 @@
         .status-dot.red {
             background-color: #dc3545;
         }
-        .memory-info, .memory-consumers {
+        .memory-info, .memory-consumers, .memory-by-module {
             margin-top: 10px;
         }
-        .memory-consumers ul {
+        .memory-consumers ul, .memory-by-module ul {
             list-style-type: none;
             padding: 0;
         }
-        .memory-consumers li {
+        .memory-consumers li, .memory-by-module li {
             margin-bottom: 5px;
         }
     </style>
@@ -69,8 +69,11 @@
         <div class="status-card">
             <h3>Bitcoin Node</h3>
             <div class="status-item">
-                <div class="status-dot {% if status.bitcoin %}green{% else %}red{% endif %}"></div>
-                {% if status.bitcoin %}
+                <div class="status-dot {% if status.bitcoin == None %}gray{% elif status.bitcoin %}green{% else %}red{% endif %}">
+                </div>
+                {% if status.bitcoin == None %}
+                    <span>Status Unknown</span>
+                {% elif status.bitcoin %}
                     <span>Operational</span>
                     <p>Block Height: {{ status.bitcoin_block }}</p>
                     <a class="explorer-link"
@@ -85,8 +88,11 @@
         <div class="status-card">
             <h3>SendGrid API</h3>
             <div class="status-item">
-                <div class="status-dot {% if status.sendgrid %}green{% else %}red{% endif %}"></div>
-                {% if status.sendgrid %}
+                <div class="status-dot {% if status.sendgrid == None %}gray{% elif status.sendgrid %}green{% else %}red{% endif %}">
+                </div>
+                {% if status.sendgrid == None %}
+                    <span>Status Unknown</span>
+                {% elif status.sendgrid %}
                     <span>Operational</span>
                 {% else %}
                     <span>Not Operational</span>
@@ -97,8 +103,10 @@
         <div class="status-card">
             <h3>GitHub API</h3>
             <div class="status-item">
-                <div class="status-dot {% if status.github %}green{% else %}red{% endif %}"></div>
-                {% if status.github %}
+                <div class="status-dot {% if status.github == None %}gray{% elif status.github %}green{% else %}red{% endif %}"></div>
+                {% if status.github == None %}
+                    <span>Status Unknown</span>
+                {% elif status.github %}
                     <span>Operational</span>
                 {% else %}
                     <span>Not Operational</span>
@@ -145,6 +153,46 @@
                         </li>
                     {% endfor %}
                 </ul>
+            </div>
+        </div>
+        <!-- Memory Usage by Module -->
+        <div class="status-card">
+            <h3>Memory Usage by Module</h3>
+            <div class="memory-by-module">
+                <ul>
+                    {% for module, memory in status.memory_by_module %}
+                        <li>
+                            <strong>{{ module }}</strong>: {{ memory|filesizeformat }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="status-card">
+            <h3>Database Connection Count</h3>
+            <p>{{ status.db_connection_count }}</p>
+        </div>
+        <div class="status-card">
+            <h3>Redis Stats</h3>
+            <ul>
+                {% for key, value in status.redis_stats.items %}
+                    <li>
+                        <strong>{{ key }}</strong>: {{ value }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="status-card">
+            <h3>OpenAI API</h3>
+            <div class="status-item">
+                <div class="status-dot {% if status.openai == None %}gray{% elif status.openai %}green{% else %}red{% endif %}"></div>
+                {% if status.openai == None %}
+                    <span>Status Unknown</span>
+                {% elif status.openai %}
+                    <span>Operational</span>
+                {% else %}
+                    <span>Not Operational</span>
+                {% endif %}
             </div>
         </div>
     </div>

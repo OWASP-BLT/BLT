@@ -50,7 +50,7 @@ class Migration(migrations.Migration):
                 (
                     "team_participants",
                     models.ManyToManyField(
-                        blank=True, related_name="team_challenges", to="website.company"
+                        blank=True, related_name="team_challenges", to="website.organization"
                     ),
                 ),
             ],

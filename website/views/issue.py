@@ -15,6 +15,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from django.core import serializers
 from django.core.files import File
 from django.core.files.base import ContentFile
@@ -158,7 +159,10 @@ def create_github_issue(request, id):
         return JsonResponse({"status": "Failed", "status_reason": "GitHub Access Token is missing"})
     if issue.github_url:
         return JsonResponse(
-            {"status": "Failed", "status_reason": "GitHub Issue Exists at " + issue.github_url}
+            {
+                "status": "Failed",
+                "status_reason": "GitHub Issue Exists at " + issue.github_url,
+            }
         )
     if issue.domain.github:
         screenshot_text = ""
@@ -194,7 +198,10 @@ def create_github_issue(request, id):
                 return JsonResponse({"status": "ok", "github_url": issue.github_url})
             else:
                 return JsonResponse(
-                    {"status": "Failed", "status_reason": f"Issue with Github: {response.reason}"}
+                    {
+                        "status": "Failed",
+                        "status_reason": f"Issue with Github: {response.reason}",
+                    }
                 )
         except Exception as e:
             send_mail(
@@ -207,7 +214,10 @@ def create_github_issue(request, id):
             return JsonResponse({"status": "Failed", "status_reason": f"Failed: error is {e}"})
     else:
         return JsonResponse(
-            {"status": "Failed", "status_reason": "No Github URL for this domain, please add it."}
+            {
+                "status": "Failed",
+                "status_reason": "No Github URL for this domain, please add it.",
+            }
         )
 
 
@@ -329,7 +339,8 @@ def newhome(request, template="new_home.html"):
     current_time = now()
     leaderboard = (
         User.objects.filter(
-            points__created__month=current_time.month, points__created__year=current_time.year
+            points__created__month=current_time.month,
+            points__created__year=current_time.year,
         )
         .annotate(total_points=Sum("points__score"))
         .order_by("-total_points")
@@ -576,10 +587,10 @@ def submit_pr(request):
 
 class IssueBaseCreate(object):
     def form_valid(self, form):
-        print(
-            "processing form_valid IssueBaseCreate for ip address: ",
-            get_client_ip(self.request),
-        )
+        # print(
+        #     "processing form_valid IssueBaseCreate for ip address: ",
+        #     get_client_ip(self.request),
+        # )
         score = 3
         obj = form.save(commit=False)
         obj.user = self.request.user
@@ -610,7 +621,7 @@ class IssueBaseCreate(object):
         p = Points.objects.create(user=self.request.user, issue=obj, score=score)
 
     def process_issue(self, user, obj, created, domain, tokenauth=False, score=3):
-        print("processing process_issue for ip address: ", get_client_ip(self.request))
+        # print("processing process_issue for ip address: ", get_client_ip(self.request))
         p = Points.objects.create(user=user, issue=obj, score=score, reason="Issue reported")
         messages.success(self.request, "Bug added ! +" + str(score))
         try:
@@ -750,7 +761,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
     template_name = "report.html"
 
     def get_initial(self):
-        print("processing post for ip address: ", get_client_ip(self.request))
+        # print("processing post for ip address: ", get_client_ip(self.request))
         try:
             json_data = json.loads(self.request.body)
             if not self.request.GET._mutable:
@@ -806,7 +817,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return initial
 
     def post(self, request, *args, **kwargs):
-        print("processing post for ip address: ", get_client_ip(request))
+        # print("processing post for ip address: ", get_client_ip(request))
         url = request.POST.get("url").replace("www.", "").replace("https://", "")
 
         request.POST._mutable = True
@@ -871,10 +882,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        print(
-            "processing form_valid in IssueCreate for ip address: ",
-            get_client_ip(self.request),
-        )
+        # print(
+        #     "processing form_valid in IssueCreate for ip address: ",
+        #     get_client_ip(self.request),
+        # )
         reporter_ip = get_client_ip(self.request)
         form.instance.reporter_ip_address = reporter_ip
 
@@ -971,7 +982,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             if not domain_exists and (self.request.user.is_authenticated or tokenauth):
                 Points.objects.create(
-                    user=self.request.user, domain=domain, score=1, reason="Domain added"
+                    user=self.request.user,
+                    domain=domain,
+                    score=1,
+                    reason="Domain added",
                 )
                 messages.success(self.request, "Domain added! + 1")
 
@@ -1119,7 +1133,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
             self.request.POST = {}
             self.request.GET = {}
 
-        print("processing get_context_data for ip address: ", get_client_ip(self.request))
+        # print(
+        #     "processing get_context_data for ip address: ", get_client_ip(self.request)
+        # )
         context = super(IssueCreate, self).get_context_data(**kwargs)
         context["activities"] = Issue.objects.exclude(
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
@@ -1267,8 +1283,8 @@ class IssueView(DetailView):
     template_name = "issue.html"
 
     def get(self, request, *args, **kwargs):
-        print("getting issue id: ", self.kwargs["slug"])
-        print("getting issue id: ", self.kwargs)
+        # print("getting issue id: ", self.kwargs["slug"])
+        # print("getting issue id: ", self.kwargs)
         ipdetails = IP()
         try:
             id = int(self.kwargs["slug"])
@@ -1283,8 +1299,8 @@ class IssueView(DetailView):
         ipdetails.agent = request.META["HTTP_USER_AGENT"]
         ipdetails.referer = request.META.get("HTTP_REFERER", None)
 
-        print("IP Address: ", ipdetails.address)
-        print("Issue Number: ", ipdetails.issuenumber)
+        # print("IP Address: ", ipdetails.address)
+        # print("Issue Number: ", ipdetails.issuenumber)
 
         try:
             if self.request.user.is_authenticated:
@@ -1316,7 +1332,7 @@ class IssueView(DetailView):
         return super(IssueView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        print("getting context data")
+        # print("getting context data")
         context = super(IssueView, self).get_context_data(**kwargs)
         if self.object.user_agent:
             user_agent = parse(self.object.user_agent)
@@ -1333,7 +1349,7 @@ class IssueView(DetailView):
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
-        context["all_comment"] = self.object.comments.all
+        context["all_comment"] = self.object.comments.all()
         context["all_users"] = User.objects.all()
         context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
         context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
@@ -1344,6 +1360,7 @@ class IssueView(DetailView):
         context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
+        context["content_type"] = ContentType.objects.get_for_model(Issue).model
 
         return context
 
@@ -1440,48 +1457,57 @@ def issue_count(request):
 
 
 @login_required(login_url="/accounts/login")
-def delete_comment(request):
-    int_issue_pk = int(request.POST["issue_pk"])
-    issue = get_object_or_404(Issue, pk=int_issue_pk)
+def delete_content_comment(request):
+    content_type = request.POST.get("content_type")
+    content_pk = int(request.POST.get("content_pk"))
+    content_type_obj = ContentType.objects.get(model=content_type)
+    content = content_type_obj.get_object_for_this_type(pk=content_pk)
+
     if request.method == "POST":
         comment = Comment.objects.get(
             pk=int(request.POST["comment_pk"]), author=request.user.username
         )
         comment.delete()
+
     context = {
-        "all_comments": Comment.objects.filter(issue__id=int_issue_pk).order_by("-created_date"),
-        "object": issue,
+        "all_comments": Comment.objects.filter(
+            content_type=content_type_obj, object_id=content_pk
+        ).order_by("-created_date"),
+        "object": content,
     }
     return render(request, "comments2.html", context)
 
 
-def update_comment(request, issue_pk, comment_pk):
-    issue = Issue.objects.filter(pk=issue_pk).first()
+def update_content_comment(request, content_pk, comment_pk):
+    content_type = request.POST.get("content_type")
+    content_type_obj = ContentType.objects.get(model=content_type)
+    content = content_type_obj.get_object_for_this_type(pk=content_pk)
     comment = Comment.objects.filter(pk=comment_pk).first()
+
     if request.method == "POST" and isinstance(request.user, User):
         comment.text = escape(request.POST.get("comment", ""))
         comment.save()
 
     context = {
-        "all_comment": Comment.objects.filter(issue__id=issue_pk).order_by("-created_date"),
-        "object": issue,
+        "all_comment": Comment.objects.filter(
+            content_type=content_type_obj, object_id=content_pk
+        ).order_by("-created_date"),
+        "object": content,
     }
     return render(request, "comments2.html", context)
 
 
-def comment_on_issue(request, issue_pk):
-    try:
-        issue_pk = int(issue_pk)
-    except ValueError:
-        raise Http404("Issue does not exist")
-    issue = Issue.objects.filter(pk=issue_pk).first()
+def comment_on_content(request, content_pk):
+    content_type = request.POST.get("content_type")
+    content_type_obj = ContentType.objects.get(model=content_type)
+    content = content_type_obj.get_object_for_this_type(pk=content_pk)
 
     if request.method == "POST" and isinstance(request.user, User):
         comment = escape(request.POST.get("comment", ""))
         replying_to_input = request.POST.get("replying_to_input", "").split("#")
 
-        if issue is None:
-            Http404("Issue does not exist, cannot comment")
+        if content is None:
+            raise Http404("Content does not exist, cannot comment")
 
         if len(replying_to_input) == 2:
             replying_to_user = replying_to_input[0]
@@ -1491,11 +1517,12 @@ def comment_on_issue(request, issue_pk):
 
             if parent_comment is None:
                 messages.error(request, "Parent comment doesn't exist.")
-                return redirect(f"/issue/{issue_pk}")
+                return redirect(f"/{content_type}/{content_pk}")
 
             Comment.objects.create(
                 parent=parent_comment,
-                issue=issue,
+                content_type=content_type_obj,
+                object_id=content_pk,
                 author=request.user.username,
                 author_fk=request.user.userprofile,
                 author_url=f"profile/{request.user.username}/",
@@ -1504,7 +1531,8 @@ def comment_on_issue(request, issue_pk):
 
         else:
             Comment.objects.create(
-                issue=issue,
+                content_type=content_type_obj,
+                object_id=content_pk,
                 author=request.user.username,
                 author_fk=request.user.userprofile,
                 author_url=f"profile/{request.user.username}/",
@@ -1512,8 +1540,10 @@ def comment_on_issue(request, issue_pk):
             )
 
     context = {
-        "all_comment": Comment.objects.filter(issue__id=issue_pk).order_by("-created_date"),
-        "object": issue,
+        "all_comment": Comment.objects.filter(
+            content_type=content_type_obj, object_id=content_pk
+        ).order_by("-created_date"),
+        "object": content,
     }
 
     return render(request, "comments2.html", context)

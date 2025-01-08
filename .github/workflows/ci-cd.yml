@@ -53,6 +53,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-poetry-
 
+      - name: Print memory usage
+        run: free -h
+
   pre-commit:
     name: Run pre-commit
     needs: setup
@@ -69,6 +72,8 @@ jobs:
           python-version: 3.11.2
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
+      - name: Print memory usage
+        run: free -h
 
   code-ql:
     name: Run CodeQL
@@ -132,6 +137,9 @@ jobs:
       - uses: github/codeql-action/analyze@v2
         if: ${{ steps.set-matrix.outputs.languages != '' }}
 
+      - name: Print memory usage
+        run: free -h
+
   test:
     name: Run Tests
     needs: code-ql
@@ -147,11 +155,13 @@ jobs:
         with:
           python-version: 3.11.2
       - run: pip install poetry
-      - run: poetry lock --no-update
+      - run: poetry lock
       - run: poetry install
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
         run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
+      - name: Print memory usage
+        run: free -h
 
   docker-test:
     runs-on: ubuntu-latest
@@ -176,10 +186,13 @@ jobs:
           docker run -d --name my-container my-app
 
       - run: docker exec my-container pip install poetry
-      - run: docker exec my-container poetry lock --no-update
-      - run: docker exec my-container poetry install --no-dev --no-interaction
+      - run: docker exec my-container poetry lock
+      - run: docker exec my-container poetry install --without dev --no-interaction
 
       - name: Clean up
         run: |
           docker stop my-container
           docker rm my-container
+
+      - name: Print memory usage
+        run: free -h
