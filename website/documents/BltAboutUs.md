@@ -42,35 +42,57 @@ The component is designed with several features to enhance performance and user 
 - **Efficient Data Retrieval**: Uses efficient data retrieval techniques to fetch and display information quickly, minimizing wait times and enhancing user satisfaction.
 - **Scalability**: The component is designed to handle a large amount of textual information, maintaining performance and user experience even with extensive content.
 
+About Us Content:
+# About Us - OWASP Bug Logging Tool (BLT)
 
+## Key Features
 
-About us Page content : 
-About BLT
-BLT is 100% free to use, Open Source and a non-commercial, not for profit initiative. All prize money goes directly to the bug hunter.
-Software code allows us to buy a gift for Mom or Dad on amazon.com in 7 seconds, watch our favorite “House of Cards” episode on Netflix or read Yelp reviews about a new restaurant.
+### Bug Reporting System
+- Simple bug submission process
+- Screenshot attachment capability
+- Detailed bug description support
+- Structured verification process
 
-When we can’t access the information we’re looking for on the internet within seconds, we are not happy.
+### Community Features
+- Community-driven bug verification
+- Knowledge sharing opportunities
+- Collaborative environment
+- Active engagement between researchers and organizations
 
-This is where you come into the picture.
+### Rewards System
+- Points-based recognition
+- Bug bounty rewards
+- Tipping system
+- Jackpot opportunities
 
-BLT wants you to identify the software (and hardware) bugs that delay downloads, freeze screens, create payloads that deliver malware to websites and generate other issues.
+### User Management
+- Comprehensive user profiles
+- Bug tracking capabilities
+- Personal information management
+- Reward history tracking
 
-What’s in it for you?
-Points.
-Money if you join a BLT Sponsored Bug Hunt.
-Jackpot money listed on the Leaderboard.
-Money if someone tips you for finding a bug through the tip button.
-Experience to add to your résumé or portfolio.
-How it Works
-Testers
-Create a User Account to log into BLT.
-Describe the software or hardware bug you found.
-Attach a screenshot of the bug.
-Submit the information.
-Win money through company-sponsored Bug Bounties, tips or the Grand Prize/Jackpot.We may also have "heists" where each bug is worth a specific amount based on what the company sets.
-If you participate in BLT’s sponsored Bug Bounties, you could win prize money known as tips.
-Organizations
-We want everyone to love your website.
-You want to keep your customers happy by giving them a consistent bug-free user experience. BLT offers monthly Bug Bounties through 4 different subscription plans to help you achieve this.
+### Leaderboard System
+- Track top contributors
+- Point rankings
+- Jackpot eligibility tracking
+- Community recognition
 
-BLT is 100% free to use, Open Source and a non-commercial, not for profit initiative.
+## 6. Technical Implementation
+- Responsive design for all devices
+- Keyboard navigation support
+- Screen reader compatibility
+- High-contrast visual elements
+- Clear error handling
+- Optimized performance
+- Efficient data retrieval
+- Scalable architecture
+
+## 7. Accessibility and Performance
+- Full keyboard navigation
+- Screen reader compatibility
+- High contrast text
+- Clear descriptive labels
+- Fast loading times
+- Responsive layout
+- Efficient data handling
+- Error recovery mechanisms

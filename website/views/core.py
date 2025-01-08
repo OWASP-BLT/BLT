@@ -1,9 +1,10 @@
 import json
 import os
 import subprocess
+import tracemalloc
 import urllib
-from datetime import datetime, timezone
 
+import psutil
 import requests
 import requests.exceptions
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
@@ -19,6 +20,7 @@ from django.core.cache import cache
 from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.db import connection
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
@@ -28,17 +30,11 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import TemplateView, View
-from requests.auth import HTTPBasicAuth
-from rest_framework import status
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from sendgrid import SendGridAPIClient
+from django_redis import get_redis_connection
 
 from blt import settings
-from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 from website.models import (
     Badge,
-    ChatBotLog,
     Domain,
     Issue,
     PRAnalysisReport,
@@ -54,83 +50,221 @@ from website.utils import (
     save_analysis_report,
 )
 
-vector_store = None
+# from website.bot import conversation_chain, is_api_key_valid, load_vector_store
+
+
+# ----------------------------------------------------------------------------------
+# 1) Helper function to measure memory usage by module using tracemalloc
+# ----------------------------------------------------------------------------------
+
+
+def memory_usage_by_module(limit=1000):
+    """
+    Returns a list of (filename, size_in_bytes) for the top
+    `limit` files by allocated memory, using tracemalloc.
+    """
+    # tracemalloc.start()
+    try:
+        snapshot = tracemalloc.take_snapshot()
+    except Exception as e:
+        print("Error taking memory snapshot: ", e)
+        return []
+    print("Memory snapshot taken. and it is: ", snapshot)
+
+    stats = snapshot.statistics("traceback")
+    for stat in stats[:10]:
+        print(stat.traceback.format())
+        print(f"Memory: {stat.size / 1024:.2f} KB")
+
+    # Group memory usage by filename
+    stats = snapshot.statistics("filename")
+    module_usage = {}
+
+    for stat in stats:
+        print("stat is: ", stat)
+        if stat.traceback:
+            filename = stat.traceback[0].filename
+            # Accumulate memory usage
+            module_usage[filename] = module_usage.get(filename, 0) + stat.size
+
+    # Sort by highest usage
+    sorted_by_usage = sorted(module_usage.items(), key=lambda x: x[1], reverse=True)[:limit]
+
+    tracemalloc.stop()
+    return sorted_by_usage
+
+
+# ----------------------------------------------------------------------------------
+# 2) Example: Calculate your service/application status
+# ----------------------------------------------------------------------------------
+
 DAILY_REQUEST_LIMIT = 10
+vector_store = None
 
 
 def check_status(request):
-    status = cache.get("service_status")
+    """
+    Status check function with configurable components.
+    Enable/disable specific checks using the CONFIG constants.
+    """
+    # Configuration flags
+    CHECK_BITCOIN = False
+    CHECK_SENDGRID = False
+    CHECK_GITHUB = False
+    CHECK_OPENAI = False
+    CHECK_MEMORY = True
+    CHECK_DATABASE = False
+    CHECK_REDIS = False
+    CACHE_TIMEOUT = 60
 
-    if not status:
-        status = {
-            "bitcoin": False,
+    status_data = cache.get("service_status")
+
+    if not status_data:
+        status_data = {
+            "bitcoin": None if not CHECK_BITCOIN else False,
             "bitcoin_block": None,
-            "sendgrid": False,
-            "github": False,
+            "sendgrid": None if not CHECK_SENDGRID else False,
+            "github": None if not CHECK_GITHUB else False,
+            "openai": None if not CHECK_OPENAI else False,
+            "db_connection_count": None if not CHECK_DATABASE else 0,
+            "redis_stats": {} if not CHECK_REDIS else {},
         }
 
-        bitcoin_rpc_user = os.getenv("BITCOIN_RPC_USER")
-        bitcoin_rpc_password = os.getenv("BITCOIN_RPC_PASSWORD")
-        bitcoin_rpc_host = os.getenv("BITCOIN_RPC_HOST", "127.0.0.1")
-        bitcoin_rpc_port = os.getenv("BITCOIN_RPC_PORT", "8332")
-
-        try:
-            response = requests.post(
-                f"http://{bitcoin_rpc_host}:{bitcoin_rpc_port}",
-                json={
-                    "jsonrpc": "1.0",
-                    "id": "curltest",
-                    "method": "getblockchaininfo",
-                    "params": [],
-                },
-                auth=HTTPBasicAuth(bitcoin_rpc_user, bitcoin_rpc_password),
+        if CHECK_MEMORY:
+            status_data.update(
+                {
+                    "memory_info": psutil.virtual_memory()._asdict(),
+                    "top_memory_consumers": [],
+                    "memory_profiling": {},
+                    "memory_by_module": [],
+                }
             )
-            if response.status_code == 200:
-                data = response.json().get("result", {})
-                status["bitcoin"] = True
-                status["bitcoin_block"] = data.get("blocks", None)
-        except Exception as e:
-            print(f"Bitcoin Core Node Error: {e}")
 
-        try:
-            sg = SendGridAPIClient(os.getenv("SENDGRID_PASSWORD"))
-            response = sg.client.api_keys._(sg.api_key).get()
-            if response.status_code == 200:
-                status["sendgrid"] = True
-        except Exception as e:
-            print(f"SendGrid Error: {e}")
+        # Bitcoin RPC check
+        if CHECK_BITCOIN:
+            bitcoin_rpc_user = os.getenv("BITCOIN_RPC_USER")
+            bitcoin_rpc_password = os.getenv("BITCOIN_RPC_PASSWORD")
+            bitcoin_rpc_host = os.getenv("BITCOIN_RPC_HOST", "127.0.0.1")
+            bitcoin_rpc_port = os.getenv("BITCOIN_RPC_PORT", "8332")
 
-        github_token = os.getenv("GITHUB_ACCESS_TOKEN")
-
-        if not github_token:
-            print(
-                "GitHub Access Token not found. Please set the GITHUB_ACCESS_TOKEN environment variable."
-            )
-            status["github"] = False
-        else:
             try:
-                headers = {"Authorization": f"token {github_token}"}
-                response = requests.get("https://api.github.com/user/repos", headers=headers)
-
-                print(f"Response Status Code: {response.status_code}")
-                print(f"Response Content: {response.json()}")
-
+                print("Checking Bitcoin RPC...")
+                response = requests.post(
+                    f"http://{bitcoin_rpc_host}:{bitcoin_rpc_port}",
+                    json={
+                        "jsonrpc": "1.0",
+                        "id": "curltest",
+                        "method": "getblockchaininfo",
+                        "params": [],
+                    },
+                    auth=(bitcoin_rpc_user, bitcoin_rpc_password),
+                    timeout=5,
+                )
                 if response.status_code == 200:
-                    status["github"] = True
-                    print("GitHub API token has repository access.")
-                else:
-                    status["github"] = False
-                    print(
-                        f"GitHub API token check failed with status code {response.status_code}: {response.json().get('message', 'No message provided')}"
-                    )
-
+                    status_data["bitcoin"] = True
+                    status_data["bitcoin_block"] = response.json().get("result", {}).get("blocks")
             except requests.exceptions.RequestException as e:
-                status["github"] = False
-                print(f"GitHub API Error: {e}")
+                print(f"Bitcoin RPC Error: {e}")
 
-        cache.set("service_status", status, timeout=60)
+        # SendGrid API check
+        if CHECK_SENDGRID:
+            sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
+            if sendgrid_api_key:
+                try:
+                    print("Checking SendGrid API...")
+                    response = requests.get(
+                        "https://api.sendgrid.com/v3/user/account",
+                        headers={"Authorization": f"Bearer {sendgrid_api_key}"},
+                        timeout=5,
+                    )
+                    status_data["sendgrid"] = response.status_code == 200
+                except requests.exceptions.RequestException as e:
+                    print(f"SendGrid API Error: {e}")
 
-    return render(request, "status_page.html", {"status": status})
+        # GitHub API check
+        if CHECK_GITHUB:
+            github_token = os.getenv("GITHUB_TOKEN")
+            if github_token:
+                try:
+                    print("Checking GitHub API...")
+                    response = requests.get(
+                        "https://api.github.com/user/repos",
+                        headers={"Authorization": f"token {github_token}"},
+                        timeout=5,
+                    )
+                    status_data["github"] = response.status_code == 200
+                except requests.exceptions.RequestException as e:
+                    print(f"GitHub API Error: {e}")
+
+        # OpenAI API check
+        if CHECK_OPENAI:
+            openai_api_key = os.getenv("OPENAI_API_KEY")
+            if openai_api_key:
+                try:
+                    print("Checking OpenAI API...")
+                    response = requests.get(
+                        "https://api.openai.com/v1/models",
+                        headers={"Authorization": f"Bearer {openai_api_key}"},
+                        timeout=5,
+                    )
+                    status_data["openai"] = response.status_code == 200
+                except requests.exceptions.RequestException as e:
+                    print(f"OpenAI API Error: {e}")
+
+        # Memory usage checks
+        if CHECK_MEMORY:
+            print("Getting memory usage information...")
+            tracemalloc.start()
+
+            # Get top memory consumers
+            for proc in psutil.process_iter(["pid", "name", "memory_info"]):
+                try:
+                    proc_info = proc.info
+                    proc_info["memory_info"] = proc_info["memory_info"]._asdict()
+                    status_data["top_memory_consumers"].append(proc_info)
+                except (
+                    psutil.NoSuchProcess,
+                    psutil.AccessDenied,
+                    psutil.ZombieProcess,
+                ):
+                    pass
+
+            status_data["top_memory_consumers"] = sorted(
+                status_data["top_memory_consumers"],
+                key=lambda x: x["memory_info"]["rss"],
+                reverse=True,
+            )[:5]
+
+            # Memory profiling info
+            current, peak = tracemalloc.get_traced_memory()
+            status_data["memory_profiling"]["current"] = current
+            status_data["memory_profiling"]["peak"] = peak
+            tracemalloc.stop()
+
+        # Database connection check
+        if CHECK_DATABASE:
+            print("Getting database connection count...")
+            if (
+                settings.DATABASES.get("default", {}).get("ENGINE")
+                == "django.db.backends.postgresql"
+            ):
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
+                    status_data["db_connection_count"] = cursor.fetchone()[0]
+
+        # Redis stats
+        if CHECK_REDIS:
+            print("Getting Redis stats...")
+            try:
+                redis_client = get_redis_connection("default")
+                status_data["redis_stats"] = redis_client.info()
+            except Exception as e:
+                print(f"Redis error or not supported: {e}")
+
+        # Cache the results
+        cache.set("service_status", status_data, timeout=CACHE_TIMEOUT)
+
+    return render(request, "status_page.html", {"status": status_data})
 
 
 def github_callback(request):
@@ -219,90 +353,90 @@ def search(request, template="search.html"):
     return render(request, template, context)
 
 
-@api_view(["POST"])
-def chatbot_conversation(request):
-    try:
-        today = datetime.now(timezone.utc).date()
-        rate_limit_key = f"global_daily_requests_{today}"
-        request_count = cache.get(rate_limit_key, 0)
+# @api_view(["POST"])
+# def chatbot_conversation(request):
+#     try:
+#         today = datetime.now(timezone.utc).date()
+#         rate_limit_key = f"global_daily_requests_{today}"
+#         request_count = cache.get(rate_limit_key, 0)
 
-        if request_count >= DAILY_REQUEST_LIMIT:
-            return Response(
-                {"error": "Daily request limit exceeded."}, status=status.HTTP_429_TOO_MANY_REQUESTS
-            )
+#         if request_count >= DAILY_REQUEST_LIMIT:
+#             return Response(
+#                 {"error": "Daily request limit exceeded."},
+#                 status=status.HTTP_429_TOO_MANY_REQUESTS,
+#             )
 
-        question = request.data.get("question", "")
-        if not question:
-            return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
-        check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
-        if not check_api:
-            ChatBotLog.objects.create(question=question, answer="Error: Invalid API Key")
-            return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
+#         question = request.data.get("question", "")
+#         if not question:
+#             return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
+#         check_api = is_api_key_valid(os.getenv("OPENAI_API_KEY"))
+#         if not check_api:
+#             ChatBotLog.objects.create(question=question, answer="Error: Invalid API Key")
+#             return Response({"error": "Invalid API Key"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not question or not isinstance(question, str):
-            ChatBotLog.objects.create(question=question, answer="Error: Invalid question")
-            return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
+#         if not question or not isinstance(question, str):
+#             ChatBotLog.objects.create(question=question, answer="Error: Invalid question")
+#             return Response({"error": "Invalid question"}, status=status.HTTP_400_BAD_REQUEST)
 
-        global vector_store
-        if not vector_store:
-            try:
-                vector_store = load_vector_store()
-            except FileNotFoundError as e:
-                ChatBotLog.objects.create(
-                    question=question, answer="Error: Vector store not found {e}"
-                )
-                return Response(
-                    {"error": "Vector store not found"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            except Exception as e:
-                ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
-                return Response(
-                    {"error": "Error loading vector store"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-            finally:
-                if not vector_store:
-                    ChatBotLog.objects.create(
-                        question=question, answer="Error: Vector store not loaded"
-                    )
-                    return Response(
-                        {"error": "Vector store not loaded"},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    )
+#         global vector_store
+#         if not vector_store:
+#             try:
+#                 vector_store = load_vector_store()
+#             except FileNotFoundError as e:
+#                 ChatBotLog.objects.create(
+#                     question=question, answer="Error: Vector store not found {e}"
+#                 )
+#                 return Response(
+#                     {"error": "Vector store not found"},
+#                     status=status.HTTP_400_BAD_REQUEST,
+#                 )
+#             except Exception as e:
+#                 ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
+#                 return Response(
+#                     {"error": "Error loading vector store"},
+#                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#                 )
+#             finally:
+#                 if not vector_store:
+#                     ChatBotLog.objects.create(
+#                         question=question, answer="Error: Vector store not loaded"
+#                     )
+#                     return Response(
+#                         {"error": "Vector store not loaded"},
+#                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#                     )
 
-        if question.lower() == "exit":
-            if "buffer" in request.session:
-                del request.session["buffer"]
-            return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
+#         if question.lower() == "exit":
+#             if "buffer" in request.session:
+#                 del request.session["buffer"]
+#             return Response({"answer": "Conversation memory cleared."}, status=status.HTTP_200_OK)
 
-        crc, memory = conversation_chain(vector_store)
-        if "buffer" in request.session:
-            memory.buffer = request.session["buffer"]
+#         crc, memory = conversation_chain(vector_store)
+#         if "buffer" in request.session:
+#             memory.buffer = request.session["buffer"]
 
-        try:
-            response = crc.invoke({"question": question})
-        except Exception as e:
-            ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
-            return Response(
-                {"error": "An internal error has occurred."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-        cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
-        request.session["buffer"] = memory.buffer
+#         try:
+#             response = crc.invoke({"question": question})
+#         except Exception as e:
+#             ChatBotLog.objects.create(question=question, answer=f"Error: {str(e)}")
+#             return Response(
+#                 {"error": "An internal error has occurred."},
+#                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             )
+#         cache.set(rate_limit_key, request_count + 1, timeout=86400)  # Timeout set to one day
+#         request.session["buffer"] = memory.buffer
 
-        ChatBotLog.objects.create(question=question, answer=response["answer"])
+#         ChatBotLog.objects.create(question=question, answer=response["answer"])
+#         return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
 
-        return Response({"answer": response["answer"]}, status=status.HTTP_200_OK)
-
-    except Exception as e:
-        ChatBotLog.objects.create(
-            question=request.data.get("question", ""), answer=f"Error: {str(e)}"
-        )
-        return Response(
-            {"error": "An internal error has occurred."},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
+#     except Exception as e:
+#         ChatBotLog.objects.create(
+#             question=request.data.get("question", ""), answer=f"Error: {str(e)}"
+#         )
+#         return Response(
+#             {"error": "An internal error has occurred."},
+#             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#         )
 
 
 @login_required
@@ -321,7 +455,10 @@ def vote_suggestions(request):
 
             if up_vote or down_vote:
                 voted = SuggestionVotes.objects.create(
-                    user=user, suggestion=suggestion, up_vote=up_vote, down_vote=down_vote
+                    user=user,
+                    suggestion=suggestion,
+                    up_vote=up_vote,
+                    down_vote=down_vote,
                 )
 
                 if up_vote:
@@ -465,7 +602,7 @@ class UploadCreate(View):
     def post(self, request, *args, **kwargs):
         data = request.FILES.get("image")
         result = default_storage.save(
-            "uploads\/" + self.kwargs["hash"] + ".png", ContentFile(data.read())
+            "uploads/" + self.kwargs["hash"] + ".png", ContentFile(data.read())
         )
         return JsonResponse({"status": result})
 
@@ -474,14 +611,13 @@ class StatsDetailView(TemplateView):
     template_name = "stats.html"
 
     def get_historical_counts(self, model):
-        # Map models to their date fields
         date_field_map = {
             "Issue": "created",
-            "UserProfile": "created",  # From user creation
+            "UserProfile": "created",
             "Comment": "created_date",
             "Hunt": "created",
             "Domain": "created",
-            "Company": "created",
+            "Organization": "created",
             "Project": "created",
             "Contribution": "created",
             "TimeLog": "created",
@@ -500,7 +636,6 @@ class StatsDetailView(TemplateView):
             "BaconToken": "date_awarded",
             "IP": "created",
             "ChatBotLog": "created",
-            # Add other models as needed
         }
 
         date_field = date_field_map.get(model.__name__, "created")
@@ -508,7 +643,6 @@ class StatsDetailView(TemplateView):
         counts = []
 
         try:
-            # Annotate and count by truncated date
             date_counts = (
                 model.objects.annotate(date=TruncDate(date_field))
                 .values("date")
@@ -519,7 +653,6 @@ class StatsDetailView(TemplateView):
                 dates.append(entry["date"].strftime("%Y-%m-%d"))
                 counts.append(entry["count"])
         except FieldError:
-            # If the date field doesn't exist, return empty lists
             return [], []
 
         return dates, counts
@@ -535,7 +668,7 @@ class StatsDetailView(TemplateView):
             "Domain": "fas fa-globe",
             "ExtensionUser": "fas fa-puzzle-piece",
             "Subscription": "fas fa-envelope",
-            "Company": "fas fa-building",
+            "Organization": "fas fa-building",
             "HuntPrize": "fas fa-gift",
             "IssueScreenshot": "fas fa-camera",
             "Winner": "fas fa-trophy",
@@ -543,7 +676,7 @@ class StatsDetailView(TemplateView):
             "InviteFriend": "fas fa-envelope-open",
             "UserProfile": "fas fa-id-badge",
             "IP": "fas fa-network-wired",
-            "CompanyAdmin": "fas fa-user-tie",
+            "OrganizationAdmin": "fas fa-user-tie",
             "Transaction": "fas fa-exchange-alt",
             "Payment": "fas fa-credit-card",
             "ContributorStats": "fas fa-chart-bar",
@@ -561,8 +694,8 @@ class StatsDetailView(TemplateView):
         for model in apps.get_models():
             if model._meta.abstract or model._meta.proxy:
                 continue
-
             model_name = model.__name__
+
             try:
                 dates, counts = self.get_historical_counts(model)
                 trend = counts[-1] - counts[-2] if len(counts) >= 2 else 0
@@ -573,13 +706,12 @@ class StatsDetailView(TemplateView):
                         "label": model_name,
                         "count": total_count,
                         "icon": known_icons.get(model_name, "fas fa-database"),
-                        "history": json.dumps(counts),  # Serialize counts to JSON
-                        "dates": json.dumps(dates),  # Serialize dates to JSON
+                        "history": json.dumps(counts),
+                        "dates": json.dumps(dates),
                         "trend": trend,
                     }
                 )
-            except Exception as e:
-                # Optionally log the exception
+            except Exception:
                 continue
 
         context["stats"] = sorted(stats_data, key=lambda x: x["count"], reverse=True)
@@ -615,7 +747,6 @@ def sponsor_view(request):
             return None
 
     bch_address = "bitcoincash:qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc"
-
     balance = get_bch_balance(bch_address)
     if balance is not None:
         print(f"Balance of {bch_address}: {balance} BCH")
@@ -636,14 +767,12 @@ def robots_txt(request):
     return HttpResponse("\n".join(lines), content_type="text/plain")
 
 
-import os
-
-
 def get_last_commit_date():
     try:
         return (
             subprocess.check_output(
-                ["git", "log", "-1", "--format=%cd"], cwd=os.path.dirname(os.path.dirname(__file__))
+                ["git", "log", "-1", "--format=%cd"],
+                cwd=os.path.dirname(os.path.dirname(__file__)),
             )
             .decode("utf-8")
             .strip()
@@ -665,25 +794,21 @@ def submit_roadmap_pr(request):
         owner, repo = pr_parts[3], pr_parts[4]
         pr_number, issue_number = pr_parts[-1], issue_parts[-1]
 
-        print(pr_parts)
-        print(issue_parts)
-
-        print(f"rrepo: {repo}")
-        print(f"pr_number: {pr_number}")
-
         pr_data = fetch_github_data(owner, repo, "pulls", pr_number)
         roadmap_data = fetch_github_data(owner, repo, "issues", issue_number)
 
         if "error" in pr_data or "error" in roadmap_data:
             return JsonResponse(
                 {
-                    "error": f"Failed to fetch PR or roadmap data: {pr_data.get('error', 'Unknown error')}"
+                    "error": (
+                        f"Failed to fetch PR or roadmap data: "
+                        f"{pr_data.get('error', 'Unknown error')}"
+                    )
                 },
                 status=500,
             )
 
         analysis = analyze_pr_content(pr_data, roadmap_data)
-
         save_analysis_report(pr_link, issue_link, analysis)
         return JsonResponse({"message": "PR submitted successfully"})
 
@@ -696,8 +821,8 @@ def view_pr_analysis(request):
 
 
 def home(request):
-    last_commit = get_last_commit_date()
-    return render(request, "home.html", {"last_commit": last_commit})
+    # last_commit = get_last_commit_date()
+    return render(request, "home.html", {"last_commit": ""})
 
 
 def handler404(request, exception):
