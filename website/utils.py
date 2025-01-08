@@ -6,14 +6,12 @@ import time
 from collections import deque
 from urllib.parse import urlparse, urlsplit, urlunparse
 
-
 import markdown
 from openai import OpenAI
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 import numpy as np
-
 import requests
 from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
