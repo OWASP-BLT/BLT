@@ -8,5 +8,5 @@ def MonitorJob():
 
 def start():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(MonitorJob, "interval", seconds=10)
+    scheduler.add_job(MonitorJob, "interval", weeks=1)
     scheduler.start()
