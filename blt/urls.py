@@ -174,11 +174,13 @@ from website.views.organization import (
     view_hunt,
     weekly_report,
 )
-from website.views.project import (  # ProjectBadgeView,
+from website.views.project import (
+    ProjectBadgeView,
     ProjectDetailView,
     ProjectListView,
     ProjectsDetailView,
     ProjectView,
+    RepoBadgeView,
     RepoDetailView,
     blt_tomato,
     create_project,
@@ -604,9 +606,8 @@ urlpatterns = [
     re_path(r"^api/v1/count/$", issue_count, name="api_count"),
     re_path(r"^api/v1/contributors/$", contributors, name="api_contributor"),
     path("project/<slug:slug>/", ProjectDetailView.as_view(), name="project_view"),
-    # path(
-    #     "projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"
-    # ),
+    path("projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"),
+    path("repos/<slug:slug>/badge/", RepoBadgeView.as_view(), name="repo-badge"),
     path("repository/<slug:slug>/", RepoDetailView.as_view(), name="repo_detail"),
     re_path(r"^report-ip/$", ReportIpView.as_view(), name="report_ip"),
     re_path(r"^reported-ips/$", ReportedIpListView.as_view(), name="reported_ips_list"),
