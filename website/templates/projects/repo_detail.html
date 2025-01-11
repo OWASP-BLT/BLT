@@ -72,6 +72,27 @@
                     </a>
                 </div>
             </div>
+            <!-- Badge URL Section -->
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Repository View Count Badge</h3>
+                <div class="flex flex-col gap-4">
+                    <!-- HTML Format -->
+                    <div class="space-y-2">
+                        <div class="text-gray-700 font-medium">HTML:</div>
+                        <div class="relative">
+                            <input type="text"
+                                   readonly
+                                   value='<img alt="Views" src="{{ request.scheme }}://{{ request.get_host }}{% url 'repo-badge' repo.slug %}">'
+                                   class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg pr-24 font-mono text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                   id="badge-url-html">
+                            <button onclick="copyToClipboard('badge-url-html')"
+                                    class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md transition-colors">
+                                Copy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- Repository Type & Metadata -->
             <div class="mt-6 flex items-center justify-between border-t border-gray-200 pt-6">
                 <div class="flex items-center gap-6">
@@ -740,7 +761,38 @@
 {% endblock content %}
 {% block after_js %}
     <script>
-const refreshSection = async (button, section) => {
+    function copyToClipboard(elementId) {
+        const element = document.getElementById(elementId);
+        
+        // Select the text
+        element.select();
+        element.setSelectionRange(0, 99999); // For mobile devices
+
+        // Copy the text
+        try {
+            navigator.clipboard.writeText(element.value).then(() => {
+                // Get the button
+                const button = element.nextElementSibling;
+                const originalText = button.textContent;
+                
+                // Change button style to show success
+                button.textContent = 'Copied!';
+                button.classList.remove('bg-red-500', 'hover:bg-red-600');
+                button.classList.add('bg-green-500', 'hover:bg-green-600');
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    button.classList.add('bg-red-500', 'hover:bg-red-600');
+                }, 2000);
+            });
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+        }
+    }
+
+    const refreshSection = async (button, section) => {
     if (button.classList.contains('refresh_spinner')) {
         return;
     }
