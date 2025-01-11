@@ -867,6 +867,7 @@ class Suggestion(models.Model):
     up_votes = models.IntegerField(null=True, blank=True, default=0)
     down_votes = models.IntegerField(null=True, blank=True, default=0)
     created = models.DateTimeField(auto_now_add=True)
+    organization = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.title} by {self.user}"

@@ -126,6 +126,11 @@
                         <p>
                             <strong>User:</strong>{{ suggestion.user }}
                         </p>
+                        {% if suggestion.organization %}
+                            <p>
+                                <strong>Organization:</strong>{{ suggestion.organization.name }}
+                            </p>
+                        {% endif %}
                         <p hidden id="suggestion-id---{{ suggestion.suggestion_id }}">{{ suggestion.suggestion_id }}</p>
                         <div class="suggestion-vote">
                             <button type="button"
@@ -152,6 +157,13 @@
                           name="description"
                           rows="4"
                           placeholder="Description of your suggestion"></textarea>
+                <label>Organization</label>
+                <select id="organization" name="organization">
+                    <option value="" selected>-- None --</option>
+                    {% for organization in organizations %}
+                        <option value="{{ organization.id }}">{{ organization.name }}</option>
+                    {% endfor %}
+                </select>
                 <br>
                 <button type="submit" onclick="Savefeature()">Post Suggestion</button>
             </form>

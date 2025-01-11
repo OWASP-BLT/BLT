@@ -37,6 +37,7 @@ from website.models import (
     Badge,
     Domain,
     Issue,
+    Organization,
     PRAnalysisReport,
     Suggestion,
     SuggestionVotes,
@@ -521,6 +522,17 @@ def set_vote_status(request):
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
 
 
+import json
+import os
+
+import requests
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.shortcuts import render
+from giturlparse import parse
+
+
 @login_required
 def add_suggestions(request):
     if request.method == "POST":
@@ -528,14 +540,60 @@ def add_suggestions(request):
         data = json.loads(request.body)
         title = data.get("title")
         description = data.get("description", "")
+        organization_id = data.get("organization")
         if title and description and user:
             suggestion = Suggestion(user=user, title=title, description=description)
+            if organization_id:
+                try:
+                    organization = Organization.objects.get(id=organization_id)
+                except Organization.DoesNotExist:
+                    organization = None
+            else:
+                organization = None
+            suggestion = Suggestion(
+                user=user, title=title, description=description, organization=organization
+            )
             suggestion.save()
             messages.success(request, "Suggestion added successfully.")
+
+            # GitHub issue creation
+            github_repo_url = os.environ.get("GITHUB_REPO_URL")
+            github_token = os.environ.get("GITHUB_ACCESS_TOKEN")
+
+            github_url = github_repo_url.replace("https", "git").replace("http", "git") + ".git"
+            p = parse(github_url)
+
+            url = "https://api.github.com/repos/%s/%s/issues" % (p.owner, p.repo)
+
+            organization_name = organization.name if organization else ""
+            organization_text = f" for company: {organization_name}" if organization else ""
+            suggestion = {
+                "title": title,
+                "body": description + "\n\n" + " Suggested by " + str(user) + organization_text,
+                "milestone": 42,
+            }
+
+            if github_repo_url and github_token:
+                response = requests.post(
+                    url, json.dumps(suggestion), headers={"Authorization": "token " + github_token}
+                )
+
+                if response.status_code == 201:
+                    messages.success(
+                        request, "Suggestion added successfully and GitHub issue created."
+                    )
+                else:
+                    messages.warning(request, "Suggestion added but failed to create GitHub issue.")
+            else:
+                messages.warning(request, "Suggestion added but GitHub settings are missing.")
+
             return JsonResponse({"status": "success"})
         else:
             messages.error(request, "Please fill all the fields.")
             return JsonResponse({"status": "error"}, status=400)
+
+    organizations = Organization.objects.all()
+    return render(request, "suggestions/add_suggestion.html", {"organizations": organizations})
 
 
 class GoogleLogin(SocialLoginView):
@@ -720,7 +778,12 @@ class StatsDetailView(TemplateView):
 
 def view_suggestions(request):
     suggestion = Suggestion.objects.all()
-    return render(request, "feature_suggestion.html", {"suggestions": suggestion})
+    organizations = Organization.objects.all()
+    return render(
+        request,
+        "feature_suggestion.html",
+        {"suggestions": suggestion, "organizations": organizations},
+    )
 
 
 def sitemap(request):
