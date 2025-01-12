@@ -4,7 +4,7 @@ import re
 import socket
 import time
 from calendar import monthrange
-from datetime import datetime, timedelta
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
@@ -28,12 +28,11 @@ from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
 from django.utils.timezone import localtime, now
 from django.views.decorators.http import require_http_methods
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView
 from django_filters.views import FilterView
 from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
-from website.forms import GitHubURLForm
 from website.models import (
     IP,
     BaconToken,
