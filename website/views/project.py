@@ -5,12 +5,12 @@ import socket
 import time
 from calendar import monthrange
 from datetime import datetime, timedelta
+from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
 
 import django_filters
-
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import requests
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
@@ -20,9 +20,9 @@ from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.exceptions import ValidationError
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import URLValidator
-from django.db.models import Q, Sum
-from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.db.models import F, Q, Sum
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
@@ -30,10 +30,12 @@ from django.utils.timezone import localtime, now
 from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView, ListView
 from django_filters.views import FilterView
+from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
 from website.forms import GitHubURLForm
 from website.models import (
+    IP,
     BaconToken,
     Contribution,
     Contributor,
@@ -193,59 +195,79 @@ class ProjectDetailView(DetailView):
         return context
 
 
-# class ProjectBadgeView(APIView):
-#     def get(self, request, slug):
-#         # Retrieve the project or return 404
-#         project = get_object_or_404(Project, slug=slug)
+class ProjectBadgeView(APIView):
+    def get(self, request, slug):
+        # Retrieve the project or return 404
+        project = get_object_or_404(Project, slug=slug)
 
-#         # Get unique visits, grouped by date
-#         visit_counts = (
-#             IP.objects.filter(path=request.path)
-#             .annotate(date=TruncDate("created"))
-#             .values("date")
-#             .annotate(visit_count=Count("address"))
-#             .order_by("date")  # Order from oldest to newest
-#         )
+        # Get today's date
+        today = now().date()
 
-#         # Update project visit count
-#         project.repo_visit_count += 1
-#         project.save()
+        # Get the client's IP address
+        user_ip = request.META.get("REMOTE_ADDR", "")
 
-#         # Extract dates and counts
-#         dates = [entry["date"] for entry in visit_counts]
-#         counts = [entry["visit_count"] for entry in visit_counts]
-#         total_views = sum(counts)  # Calculate total views
+        # get the data of this IP has visited this path today
+        visited_data = IP.objects.filter(address=user_ip, path=request.path).first()
 
-#         fig = plt.figure(figsize=(4, 1))
-#         plt.bar(dates, counts, width=0.5, color="red")
+        if visited_data:
+            # If the creation date is today
+            if visited_data.created.date() == today:
+                # If the visit count is 1, update the project visit count
+                if visited_data.count == 1:
+                    project.project_visit_count = F("project_visit_count") + 1
+                    project.save()
+            else:
+                # If the creation date is not today, reset the creation date and count
+                visited_data.created = now()
+                visited_data.count = 1
+                visited_data.save()
 
-#         plt.title(
-#             f"{total_views}",
-#             loc="left",
-#             x=-0.36,
-#             y=0.3,
-#             fontsize=15,
-#             fontweight="bold",
-#             color="red",
-#         )
+                # Increment the project visit count
+                project.project_visit_count = F("project_visit_count") + 1
+                project.save()
+        else:
+            # If no record exists, create a new one
+            IP.objects.create(address=user_ip, path=request.path, created=now(), count=1)
 
-#         plt.gca().set_xticks([])  # Remove x-axis ticks
-#         plt.gca().set_yticks([])
-#         plt.box(False)
+            # Increment the project's visit count
+            project.project_visit_count = F("project_visit_count") + 1
+            project.save()
 
-#         # Save the plot to an in-memory file
-#         buffer = BytesIO()
-#         plt.savefig(buffer, format="png", bbox_inches="tight")
-#         plt.close()
-#         buffer.seek(0)
+        # Refresh project to get the latest visit count
+        project.refresh_from_db()
 
-#         # Prepare the HTTP response with the bar graph image
-#         response = HttpResponse(buffer, content_type="image/png")
-#         response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-#         response["Pragma"] = "no-cache"
-#         response["Expires"] = "0"
+        total_views = project.project_visit_count
 
-#         return response
+        fig = plt.figure(figsize=(4, 1))
+        plt.bar(0, total_views, color="red", width=0.5)
+
+        plt.title(
+            f"{total_views}",
+            loc="left",
+            x=-0.36,
+            y=0.3,
+            fontsize=15,
+            fontweight="bold",
+            color="red",
+        )
+
+        plt.gca().set_xticks([])  # Remove x-axis ticks
+        plt.gca().set_yticks([])
+        plt.box(False)
+
+        # Save the plot to an in-memory file
+        buffer = BytesIO()
+        plt.savefig(buffer, format="png", bbox_inches="tight")
+        plt.close()
+        buffer.seek(0)
+
+        # Prepare the HTTP response with the bar graph image
+        response = HttpResponse(buffer, content_type="image/png")
+        response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response["Pragma"] = "no-cache"
+        response["Expires"] = "0"
+
+        return response
 
 
 class ProjectListView(ListView):
@@ -1454,3 +1476,78 @@ class RepoDetailView(DetailView):
                 )
 
         return super().post(request, *args, **kwargs)
+
+
+class RepoBadgeView(APIView):
+    def get(self, request, slug):
+        # Retrieve the repo or return 404
+        Repo_instance = get_object_or_404(Repo, slug=slug)
+
+        # Get today's date
+        today = now().date()
+
+        # Get the client's IP address
+        user_ip = request.META.get("REMOTE_ADDR", "")
+
+        # get the data of this IP has visited this path today
+        visited_data = IP.objects.filter(address=user_ip, path=request.path).first()
+
+        if visited_data:
+            # If the creation date is today
+            if visited_data.created.date() == today:
+                # If the visit count is 1, update the repo visit count
+                if visited_data.count == 1:
+                    Repo_instance.repo_visit_count = F("repo_visit_count") + 1
+                    Repo_instance.save()
+            else:
+                # If the creation date is not today, reset the creation date and count
+                visited_data.created = now()
+                visited_data.count = 1
+                visited_data.save()
+
+                # Increment the repo visit count
+                Repo_instance.repo_visit_count = F("repo_visit_count") + 1
+                Repo_instance.save()
+        else:
+            # If no record exists, create a new one
+            IP.objects.create(address=user_ip, path=request.path, created=now(), count=1)
+
+            # Increment the repo's visit count
+            Repo_instance.repo_visit_count = F("repo_visit_count") + 1
+            Repo_instance.save()
+
+        # Refresh project to get the latest visit count
+        Repo_instance.refresh_from_db()
+
+        total_views = Repo_instance.repo_visit_count
+
+        fig = plt.figure(figsize=(4, 1))
+        plt.bar(0, total_views, color="red", width=0.5)
+
+        plt.title(
+            f"{total_views}",
+            loc="left",
+            x=-0.36,
+            y=0.3,
+            fontsize=15,
+            fontweight="bold",
+            color="red",
+        )
+
+        plt.gca().set_xticks([])  # Remove x-axis ticks
+        plt.gca().set_yticks([])
+        plt.box(False)
+
+        # Save the plot to an in-memory file
+        buffer = BytesIO()
+        plt.savefig(buffer, format="png", bbox_inches="tight")
+        plt.close()
+        buffer.seek(0)
+
+        # Prepare the HTTP response with the bar graph image
+        response = HttpResponse(buffer, content_type="image/png")
+        response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response["Pragma"] = "no-cache"
+        response["Expires"] = "0"
+
+        return response
