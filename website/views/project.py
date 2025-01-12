@@ -196,18 +196,37 @@ class ProjectDetailView(DetailView):
 
 
 class ProjectBadgeView(APIView):
+    def get_client_ip(self, request):
+        # Check X-Forwarded-For header first
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            # Return first IP in chain (real client IP)
+            ip = x_forwarded_for.split(",")[0].strip()
+            return ip
+
+        # Try X-Real-IP header next
+        x_real_ip = request.META.get("HTTP_X_REAL_IP")
+        if x_real_ip:
+            return x_real_ip
+
+        # Finally fall back to REMOTE_ADDR
+        remote_addr = request.META.get("REMOTE_ADDR")
+        return remote_addr
+
     def get(self, request, slug):
-        # Retrieve the project or return 404
+        # Get the project or return 404
         project = get_object_or_404(Project, slug=slug)
 
         # Get today's date
         today = now().date()
 
-        # Get the client's IP address
-        user_ip = request.META.get("REMOTE_ADDR", "")
+        # Get the real client IP
+        user_ip = self.get_client_ip(request)
 
-        # get the data of this IP has visited this path today
-        visited_data = IP.objects.filter(address=user_ip, path=request.path).first()
+        # Continue with existing code but use the new user_ip
+        visited_data = IP.objects.filter(
+            address=user_ip, path=request.path, created__date=today
+        ).last()
 
         if visited_data:
             # If the creation date is today
@@ -1479,26 +1498,45 @@ class RepoDetailView(DetailView):
 
 
 class RepoBadgeView(APIView):
+    def get_client_ip(self, request):
+        # Check X-Forwarded-For header first
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            # Return first IP in chain (real client IP)
+            ip = x_forwarded_for.split(",")[0].strip()
+            return ip
+
+        # Try X-Real-IP header next
+        x_real_ip = request.META.get("HTTP_X_REAL_IP")
+        if x_real_ip:
+            return x_real_ip
+
+        # Finally fall back to REMOTE_ADDR
+        remote_addr = request.META.get("REMOTE_ADDR")
+        return remote_addr
+
     def get(self, request, slug):
-        # Retrieve the repo or return 404
-        Repo_instance = get_object_or_404(Repo, slug=slug)
+        # Get the repo or return 404
+        repo = get_object_or_404(Repo, slug=slug)
 
         # Get today's date
         today = now().date()
 
-        # Get the client's IP address
-        user_ip = request.META.get("REMOTE_ADDR", "")
+        # Get the real client IP
+        user_ip = self.get_client_ip(request)
 
-        # get the data of this IP has visited this path today
-        visited_data = IP.objects.filter(address=user_ip, path=request.path).first()
+        # Continue with existing code but use the new user_ip
+        visited_data = IP.objects.filter(
+            address=user_ip, path=request.path, created__date=today
+        ).last()
 
         if visited_data:
             # If the creation date is today
             if visited_data.created.date() == today:
                 # If the visit count is 1, update the repo visit count
                 if visited_data.count == 1:
-                    Repo_instance.repo_visit_count = F("repo_visit_count") + 1
-                    Repo_instance.save()
+                    repo.repo_visit_count = F("repo_visit_count") + 1
+                    repo.save()
             else:
                 # If the creation date is not today, reset the creation date and count
                 visited_data.created = now()
@@ -1506,20 +1544,20 @@ class RepoBadgeView(APIView):
                 visited_data.save()
 
                 # Increment the repo visit count
-                Repo_instance.repo_visit_count = F("repo_visit_count") + 1
-                Repo_instance.save()
+                repo.repo_visit_count = F("repo_visit_count") + 1
+                repo.save()
         else:
             # If no record exists, create a new one
             IP.objects.create(address=user_ip, path=request.path, created=now(), count=1)
 
             # Increment the repo's visit count
-            Repo_instance.repo_visit_count = F("repo_visit_count") + 1
-            Repo_instance.save()
+            repo.repo_visit_count = F("repo_visit_count") + 1
+            repo.save()
 
         # Refresh project to get the latest visit count
-        Repo_instance.refresh_from_db()
+        repo.refresh_from_db()
 
-        total_views = Repo_instance.repo_visit_count
+        total_views = repo.repo_visit_count
 
         fig = plt.figure(figsize=(4, 1))
         plt.bar(0, total_views, color="red", width=0.5)
