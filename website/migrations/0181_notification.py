@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0180_rename_project_visit_count_repo_repo_visit_count"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
