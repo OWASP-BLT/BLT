@@ -710,7 +710,7 @@ class InviteFriendApiViewset(APIView):
         except smtplib.SMTPException as e:
             return Response(
                 {
-                    "error": f"Failed to send invitation: {str(e)}",
+                    "error": "Failed to send invitation email for an unexpected reason",
                     "email_status": "error",
                 },
                 status=500,
