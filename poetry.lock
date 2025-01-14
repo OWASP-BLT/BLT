@@ -4507,13 +4507,13 @@ files = [
 
 [[package]]
 name = "unstructured"
-version = "0.16.12"
+version = "0.16.13"
 description = "A library that prepares raw documents for downstream ML tasks."
 optional = false
 python-versions = "<3.13,>=3.9.0"
 files = [
-    {file = "unstructured-0.16.12-py3-none-any.whl", hash = "sha256:bcac29ac1b38fba4228c5a1a7721d1aa7c48220f7c1dd43b563645c56e978c49"},
-    {file = "unstructured-0.16.12.tar.gz", hash = "sha256:c3133731c6edb9c2f474e62cb2b560cd0a8d578c4532ec14d8c0941e401770b0"},
+    {file = "unstructured-0.16.13-py3-none-any.whl", hash = "sha256:d578d3ebd78c6bf3ea837a13b7e2942671920f9e7361e8532c5eb00f9cf359e6"},
+    {file = "unstructured-0.16.13.tar.gz", hash = "sha256:6195744a203e65bf6b8460cbfccd9bef67a1f5d44e79229a13e7e37f528abbcd"},
 ]
 
 [package.dependencies]
@@ -5019,4 +5019,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "77c46220820ef144546bb34066934d074e18af0e97d81222800a16ae24a6c3d3"
+content-hash = "333f0c47ee52afb629da139bd425089b95086fbf25446e1c7b9e38e96dca8fcf"
