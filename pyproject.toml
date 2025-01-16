@@ -81,7 +81,7 @@ channels = "^4.2.0"
 channels-redis = "^4.2.1"
 async-timeout = "^5.0.1"
 aiohttp = "^3.11.11"
-scout-apm = "^3.2.1"
+scout-apm = "^3.3.0"
 newrelic = "^10.4.0"
 
 [tool.poetry.group.dev.dependencies]
