@@ -12,7 +12,14 @@ jobs:
     name: autoupdate
     runs-on: ubuntu-20.04
     steps:
+     - name: Check triggering user
+        run: |
+          if [ "${{ github.actor }}" = "github-actions[bot]" ]; then
+            echo "Triggered by GitHub Actions bot, exiting..."
+            exit 0
+          fi
       - uses: docker://chinthakagodawita/autoupdate-action:v1
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
           MERGE_CONFLICT_ACTION: "ignore"
+
