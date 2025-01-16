@@ -8,6 +8,7 @@ from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
+from django.views.generic.list import ListView
 
 import django_filters
 import matplotlib.pyplot as plt
