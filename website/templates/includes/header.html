@@ -475,55 +475,56 @@
 </script>
 <!--Script for Dropdown button-->
 <script>
+    const organizationsBtn = document.getElementById("organizations-btn");
+    const organizationsDropdown = document.getElementById("organizations-dropdown");
+
+    if (organizationsBtn && organizationsDropdown) {
+        organizationsBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const isHidden = organizationsDropdown.classList.toggle('hidden');
+                           
+            if (!isHidden) {
+                const btnRect = organizationsBtn.getBoundingClientRect();
+                Object.assign(organizationsDropdown.style, {
+                    position: 'fixed',
+                    top: `${btnRect.bottom}px`,
+                    left: `${btnRect.left}px`,
+                    minWidth: `${btnRect.width}px`,
+                    display: 'block',
+                });
+            } else {
+                organizationsDropdown.style.display = 'none';
+            }
+        });
         
-        const organizationsBtn = document.getElementById("organizations-btn");
-        const organizationsDropdown = document.getElementById("organizations-dropdown");
-
-        if (organizationsBtn && organizationsDropdown) {
-            organizationsBtn.addEventListener("click", function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const isHidden = organizationsDropdown.classList.toggle('hidden');
-                               
-                if (!isHidden) {
-                    const btnRect = organizationsBtn.getBoundingClientRect();
-                    Object.assign(organizationsDropdown.style, {
-                        position: 'fixed',
-                        top: `${btnRect.bottom}px`,
-                        left: `${btnRect.left}px`,
-                        minWidth: `${btnRect.width}px`,
-                        display: 'block',
-                    });
-                } else{
-                    organizationsDropdown.style.display = 'none';
-                }
-            });
-            // Close dropdown when clicking outside
-            document.addEventListener("click", function (e) {
-                if (!organizationsBtn.contains(e.target) && !organizationsDropdown.contains(e.target)) {
-                    organizationsDropdown.classList.add('hidden');
-                    organizationsDropdown.style.display = 'none';
-                }
-            });
-        } else {
-            console.error('Required elements not found!');
-        }
-        document.querySelectorAll('.filter-option').forEach(option => {
-            option.addEventListener('click', function(e) {
-                e.preventDefault();
-                const iconElement = this.querySelector('i');
-                const textContent = this.textContent.trim();
-                
-                const selectedIcon = document.getElementById('selected-icon');
-                const selectedFilter = document.getElementById('selected-filter');
-
-                selectedIcon.className = iconElement.className + ' mr-2';
-                selectedFilter.textContent = textContent;
-                
+        // Close dropdown when clicking outside
+        document.addEventListener("click", function (e) {
+            if (!organizationsBtn.contains(e.target) && !organizationsDropdown.contains(e.target)) {
                 organizationsDropdown.classList.add('hidden');
                 organizationsDropdown.style.display = 'none';
-            });
+            }
+        });
+    } else {
+        console.error('Required elements not found!');
+    }
+
+    // Fix: Remove extra closing parenthesis here
+    document.querySelectorAll('.filter-option').forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.preventDefault();
+            const iconElement = this.querySelector('i');
+            const textContent = this.textContent.trim();
+            
+            const selectedIcon = document.getElementById('selected-icon');
+            const selectedFilter = document.getElementById('selected-filter');
+
+            selectedIcon.className = iconElement.className + ' mr-2';
+            selectedFilter.textContent = textContent;
+            
+            organizationsDropdown.classList.add('hidden');
+            organizationsDropdown.style.display = 'none';
         });
     });
 </script>
