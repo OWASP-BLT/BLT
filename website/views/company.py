@@ -435,7 +435,7 @@ class OrganizationDashboardIntegrations(View):
 class OrganizationDashboardTeamOverviewView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        sort_field = request.GET.get("sort", "date") 
+        sort_field = request.GET.get("sort", "date")
         sort_direction = request.GET.get("direction", "desc")
 
         organizations = (

@@ -102,11 +102,15 @@
                                         {% if member.user_avatar %}
                                             <img src="{{ member.user_avatar.url }}"
                                                  alt="User Avatar"
-                                                 class="w-10 h-10 rounded-full mr-3">
+                                                 class="rounded-full mr-3"
+                                                 width="40"
+                                                 height="40">
                                         {% else %}
                                             <img src="{% static 'images/dummy-user.png' %}"
                                                  alt="Default Avatar"
-                                                 class="w-10 h-10 rounded-full mr-3">
+                                                 class="rounded-full mr-3"
+                                                 width="40"
+                                                 height="40">
                                         {% endif %}
                                         {{ member.user.username }}
                                     </th>
@@ -234,11 +238,15 @@
                                         {% if report.user.userprofile.user_avatar %}
                                             <img src="{{ report.user.userprofile.user_avatar.url }}"
                                                  alt="User Avatar"
-                                                 class="w-10 h-10 rounded-full mr-3">
+                                                 class="rounded-full mr-3"
+                                                 width="40"
+                                                 height="40">
                                         {% else %}
                                             <img src="{% static 'images/dummy-user.png' %}"
                                                  alt="Default Avatar"
-                                                 class="w-10 h-10 rounded-full mr-3">
+                                                 class="rounded-full mr-3"
+                                                 width="40"
+                                                 height="40">
                                         {% endif %}
                                         {{ report.user.username }}
                                     </th>
