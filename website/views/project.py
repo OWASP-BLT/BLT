@@ -128,7 +128,6 @@ class ProjectBadgeView(APIView):
             address=user_ip, path=request.path, created__date=today
         ).last()
 
-<<<<<<< HEAD
         if visited_data:
             # If the creation date is today
             if visited_data.created.date() == today:
@@ -136,7 +135,7 @@ class ProjectBadgeView(APIView):
                 if visited_data.count == 1:
                     project.project_visit_count = F("project_visit_count") + 1
                     project.save()
-=======
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         project = self.get_object()
@@ -335,7 +334,6 @@ class ProjectListView(ListView):
                         messages.info(request, "Project already exists.")
                 else:
                     messages.error(request, "Failed to fetch project from GitHub.")
->>>>>>> 56d95813 (Added slack field in models.py and slack link display project_detail.html. Also a csv of slack project channels of OWASP is added.)
             else:
                 # If the creation date is not today, reset the creation date and count
                 visited_data.created = now()
