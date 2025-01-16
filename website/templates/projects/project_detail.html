@@ -6,6 +6,7 @@
 {% endblock title %}
 {% block content %}
     {% include "includes/sidenav.html" %}
+    <h1> This is where you edited</h1>
     <div class="container mx-auto px-4 py-8 max-w-7xl">
         <!-- Breadcrumb Navigation -->
         <nav class="mb-8 text-sm">
@@ -123,6 +124,17 @@
                                         <path d="M12 2C6.48 2 2 6.48 2 12c0 4.94 3.63 9.02 8.35 9.8V15.5H7.5v-3h2.85V10.7c0-2.82 1.68-4.38 4.25-4.38 1.23 0 2.55.22 2.55.22v2.82h-1.43c-1.41 0-1.85.87-1.85 1.77v2.13h3l-.3 3h-2.7v6.5C18.37 21.02 22 16.94 22 12c0-5.52-4.48-10-10-10z" />
                                     </svg>
                                     Facebook
+                                </a>
+                            {% endif %}
+                            {% if project.slack %}
+                                <a href="{{ project.slack }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition">
+                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12c0 4.94 3.63 9.02 8.35 9.8V15.5H7.5v-3h2.85V10.7c0-2.82 1.68-4.38 4.25-4.38 1.23 0 2.55.22 2.55.22v2.82h-1.43c-1.41 0-1.85.87-1.85 1.77v2.13h3l-.3 3h-2.7v6.5C18.37 21.02 22 16.94 22 12c0-5.52-4.48-10-10-10z" />
+                                    </svg>
+                                    Slack
                                 </a>
                             {% endif %}
                         </div>
