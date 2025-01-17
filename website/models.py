@@ -1359,6 +1359,8 @@ class Kudos(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="kudos_sent")
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="kudos_received")
     timestamp = models.DateTimeField(auto_now_add=True)
+    link = models.URLField(blank=True, null=True)
+    comment = models.TextField(blank=True, null=True)
 
     class Meta:
         ordering = ["-timestamp"]
