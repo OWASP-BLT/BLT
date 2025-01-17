@@ -916,8 +916,7 @@ class Project(models.Model):
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
-    # add languages
-    # add tags
+    slack_url = models.URLField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -934,17 +933,6 @@ class Project(models.Model):
 
     def __str__(self):
         return self.name
-
-
-# class ContributorStats(models.Model):
-#     username = models.CharField(max_length=255, unique=True)
-#     commits = models.IntegerField(default=0)
-#     issues_opened = models.IntegerField(default=0)
-#     issues_closed = models.IntegerField(default=0)
-#     prs = models.IntegerField(default=0)
-#     comments = models.IntegerField(default=0)
-#     assigned_issues = models.IntegerField(default=0)
-#     created = models.DateTimeField(auto_now_add=True)
 
 
 class Contribution(models.Model):
@@ -1271,7 +1259,7 @@ class Repo(models.Model):
     last_updated = models.DateTimeField(null=True, blank=True)
     total_issues = models.IntegerField(default=0)
     # rename this to repo_visit_count and make sure the github badge works with this
-    project_visit_count = models.IntegerField(default=0)
+    repo_visit_count = models.IntegerField(default=0)
     watchers = models.IntegerField(default=0)
     open_pull_requests = models.IntegerField(default=0)
     primary_language = models.CharField(max_length=50, null=True, blank=True)
@@ -1291,6 +1279,9 @@ class Repo(models.Model):
     contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created']  # Order by creation date by default
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -1318,3 +1309,32 @@ class Repo(models.Model):
 
     def __str__(self):
         return f"{self.project.name}/{self.name}"
+
+
+class ContributorStats(models.Model):
+    contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE, related_name="stats")
+    repo = models.ForeignKey(Repo, on_delete=models.CASCADE, related_name="stats")
+
+    # This will represent either a specific day or the first day of a month.
+    date = models.DateField()
+
+    # Store counts
+    commits = models.PositiveIntegerField(default=0)
+    issues_opened = models.PositiveIntegerField(default=0)
+    issues_closed = models.PositiveIntegerField(default=0)
+    pull_requests = models.PositiveIntegerField(default=0)
+    comments = models.PositiveIntegerField(default=0)
+
+    # "day" for daily entries, "month" for monthly entries
+    granularity = models.CharField(
+        max_length=10, choices=[("day", "Day"), ("month", "Month")], default="day"
+    )
+
+    class Meta:
+        # You can't have two different stats for the same date+granularity
+        unique_together = ("contributor", "repo", "date", "granularity")
+
+    def __str__(self):
+        return (
+            f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
+        )

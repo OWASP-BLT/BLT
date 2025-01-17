@@ -102,7 +102,7 @@
                                 </li>
                                 <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                     <i class="fas fa-folder w-5 h-5 mr-1 align-middle"></i>
-                                    <a href="{% url 'project_list' %}">Projects</a>
+                                    <a href="{% url 'project_view' %}">Projects</a>
                                 </li>
                                 <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                     <i class="fas fa-mobile-alt w-5 h-5 mr-1 align-middle"></i>
@@ -208,11 +208,11 @@
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-comment-dots w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'comment_on_issue' 1 %}">Comment on Issue // 1</a>
+                                <a href="{% url 'comment_on_content' 1 %}">Comment on Content // 1</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-sync-alt w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'update_comment' 1 1 %}">Update Comment // 1</a>
+                                <a href="{% url 'update_content_comment' 1 1 %}">Update Comment // 1</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-trash-alt w-5 h-5 mr-1 align-middle"></i>

@@ -313,7 +313,13 @@
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Project URL</label>
                                         <input type="url"
-                                               name="url"
+                                               name="project_url"
+                                               class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Slack URL</label>
+                                        <input type="url"
+                                               name="slack_url"
                                                class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" />
                                     </div>
                                     {% if user.is_authenticated %}
