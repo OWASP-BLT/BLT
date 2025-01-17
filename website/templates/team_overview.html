@@ -552,10 +552,24 @@
     <div id="kudosModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeKudosModal()">×</span>
-            <h2>Send Appreciation</h2>
+            <h2>Send Kudos</h2>
             <form method="post" onsubmit="sendKudos(event)" class="kudos-form">
                 {% csrf_token %}
                 <input type="hidden" id="kudosReceiver" name="kudosReceiver">
+                <div class="form-group">
+                    <label for="kudosLink">Link (optional)</label>
+                    <input type="url"
+                           id="kudosLink"
+                           name="kudosLink"
+                           placeholder="Enter an optional link" />
+                </div>
+                <div class="form-group">
+                    <label for="kudosComment">Comment (optional)</label>
+                    <textarea id="kudosComment"
+                              name="kudosComment"
+                              rows="3"
+                              placeholder="Add an optional note"></textarea>
+                </div>
                 <div class="form-actions">
                     <button type="submit" class="kudos-submit-btn">Send Kudos</button>
                     <button type="button" class="btn-secondary" onclick="closeKudosModal()">Cancel</button>
@@ -812,6 +826,8 @@
         function sendKudos(e) {
             e.preventDefault();
             const receiver = document.getElementById('kudosReceiver').value;
+            const linkUrl = document.getElementById('kudosLink').value.trim();
+            const commentText = document.getElementById('kudosComment').value.trim();
             fetch("/teams/give-kudos/", { 
                 method: "POST",
                 headers: {
@@ -819,7 +835,9 @@
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    kudosReceiver: receiver
+                    kudosReceiver: receiver,
+                    link: linkUrl,
+                    comment: commentText
                 })
             })
             .then(response => {
