@@ -185,6 +185,7 @@ from website.views.project import (
     distribute_bacon,
     select_contribution,
 )
+from website.views.slack_handlers import slack_events
 from website.views.teams import (
     TeamOverview,
     add_member,
@@ -851,6 +852,7 @@ urlpatterns = [
     ),
     path("projects/create/", create_project, name="create_project"),
     path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="projects_detail"),
+    path("slack/events", slack_events, name="slack_events"),
 ]
 
 if settings.DEBUG:
