@@ -7,6 +7,8 @@ from decimal import Decimal
 from enum import Enum
 from urllib.parse import urlparse
 
+import cv2
+import numpy as np
 import requests
 from annoying.fields import AutoOneToOneField
 from captcha.fields import CaptchaField
@@ -30,6 +32,8 @@ from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
 from rest_framework.authtoken.models import Token
+
+from .views.privacy import overlay_faces
 
 logger = logging.getLogger(__name__)
 
@@ -293,12 +297,39 @@ class Trademark(models.Model):
 
 def validate_image(fieldfile_obj):
     try:
+        fieldfile_obj.file.seek(0)
+
+        # Read image data
         filesize = fieldfile_obj.file.size
-    except:
-        filesize = fieldfile_obj.size
+        np_img = np.frombuffer(fieldfile_obj.file.read(), np.uint8)
+        img = cv2.imdecode(np_img, cv2.IMREAD_UNCHANGED)
+
+        if img is None:
+            raise ValueError("Failed to decode image")
+
+        # Apply face blurring
+        img_with_faces_hidden = overlay_faces(img)
+
+        # Encode back to file
+        ext = os.path.splitext(fieldfile_obj.name)[1].lower()
+        if ext in [".jpg", ".jpeg"]:
+            _, buffer = cv2.imencode(".jpg", img_with_faces_hidden, [cv2.IMWRITE_JPEG_QUALITY, 90])
+        else:
+            _, buffer = cv2.imencode(".png", img_with_faces_hidden)
+
+        # Reset file with processed image
+        fieldfile_obj.file = ContentFile(buffer.tobytes())
+        fieldfile_obj.file.seek(0)
+
+    except Exception as e:
+        print(f"Image validation error: {str(e)}")
+        return False
+
     megabyte_limit = 3.0
     if filesize > megabyte_limit * 1024 * 1024:
-        raise ValidationError("Max file size is %sMB" % str(megabyte_limit))
+        raise ValidationError(f"Max file size is {str(megabyte_limit)}MB")
+
+    return True
 
 
 class Hunt(models.Model):

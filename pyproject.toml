@@ -62,6 +62,10 @@ aiohttp = "^3.11.11"
 drf-yasg = "^1.21.8"
 slack-bolt = "^1.22.0"
 tld = "0.13"
+scout-apm = "^3.3.0"
+newrelic = "^10.4.0"
+opencv-python = "^4.8.0"
+numpy = "^1.24.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
