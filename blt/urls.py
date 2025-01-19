@@ -187,6 +187,7 @@ from website.views.project import (
     select_contribution,
 )
 from website.views.slack_handlers import slack_events
+from website.views.slackbot import slack_commands
 from website.views.teams import (
     TeamOverview,
     add_member,
@@ -289,7 +290,8 @@ urlpatterns = [
     re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
     re_path(r"^auth/google/connect/$", GoogleConnect.as_view(), name="google_connect"),
     path("auth/github/url/", github_views.oauth2_login),
-    path("oauth/slack/callback/", SlackCallbackView.as_view(), name="slack_callback"),
+    path("oauth/slack/callback/", SlackCallbackView.as_view(), name="slack_oauth_callback"),
+    path("slack/commands/", slack_commands, name="slack_commands"),
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),
     path("socialaccounts/", SocialAccountListView.as_view(), name="social_account_list"),
