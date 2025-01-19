@@ -149,6 +149,7 @@
                           action="{% url 'search' %}"
                           method="get">
                         <i class="lg:!flex hidden fa fa-search absolute left-4 text-[#9CA3AF] z-10 my-auto"></i>
+                        <input type="hidden" name="type" id="filter-type" value="organizations">
                         <!-- Search Input -->
                         <input type="text"
                                name="query"
@@ -181,6 +182,21 @@
                                        data-value="users"
                                        class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
                                         <i class="fas fa-user-friends mr-2"></i> {% trans "Users" %}
+                                    </a>
+                                    <a href="#"
+                                       data-value="issues"
+                                       class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
+                                        <i class="fas fa-exclamation-circle mr-2"></i> {% trans "Issues" %}
+                                    </a>
+                                    <a href="#"
+                                       data-value="domains"
+                                       class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
+                                        <i class="fas fa-globe mr-2"></i> {% trans "Domains" %}
+                                    </a>
+                                    <a href="#"
+                                       data-value="labels"
+                                       class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
+                                        <i class="fas fa-tag mr-2"></i> {% trans "Labels" %}
                                     </a>
                                     <a href="#"
                                        data-value="tags"
@@ -380,21 +396,21 @@
             console.error('Required elements not found!');
         }
         document.querySelectorAll('.filter-option').forEach(option => {
-            option.addEventListener('click', function(e) {
+            option.addEventListener('click', function (e) {
                 e.preventDefault();
                 const iconElement = this.querySelector('i');
                 const textContent = this.textContent.trim();
-                
-                const selectedIcon = document.getElementById('selected-icon');
-                const selectedFilter = document.getElementById('selected-filter');
+                const filterValue = this.getAttribute('data-value');
 
-                selectedIcon.className = iconElement.className + ' mr-2';
-                selectedFilter.textContent = textContent;
-                
+                document.getElementById('selected-icon').className = iconElement.className + ' mr-2';
+                document.getElementById('selected-filter').textContent = textContent;
+                document.getElementById('filter-type').value = filterValue; // Update the hidden input
+
                 organizationsDropdown.classList.add('hidden');
                 organizationsDropdown.style.display = 'none';
             });
         });
+
     });
 </script>
 <script>

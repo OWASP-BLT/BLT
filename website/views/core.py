@@ -300,24 +300,13 @@ def find_key(request, token):
 
 def search(request, template="search.html"):
     query = request.GET.get("query")
-    stype = request.GET.get("type")
+    stype = request.GET.get("type", "organizations")
     context = None
     if query is None:
         return render(request, template)
     query = query.strip()
-    if query[:6] == "issue:":
-        stype = "issue"
-        query = query[6:]
-    elif query[:7] == "domain:":
-        stype = "domain"
-        query = query[7:]
-    elif query[:5] == "user:":
-        stype = "user"
-        query = query[5:]
-    elif query[:6] == "label:":
-        stype = "label"
-        query = query[6:]
-    if stype == "issue" or stype is None:
+    
+    if stype == "issues":
         context = {
             "query": query,
             "type": stype,
@@ -325,13 +314,13 @@ def search(request, template="search.html"):
                 Q(is_hidden=True) & ~Q(user_id=request.user.id)
             )[0:20],
         }
-    elif stype == "domain":
+    elif stype == "domains":
         context = {
             "query": query,
             "type": stype,
             "domains": Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20],
         }
-    elif stype == "user":
+    elif stype == "users":
         context = {
             "query": query,
             "type": stype,
@@ -339,13 +328,29 @@ def search(request, template="search.html"):
             .annotate(total_score=Sum("user__points__score"))
             .order_by("-total_score")[0:20],
         }
-    elif stype == "label":
+    elif stype == "labels":
         context = {
             "query": query,
             "type": stype,
             "issues": Issue.objects.filter(Q(label__icontains=query), hunt=None).exclude(
                 Q(is_hidden=True) & ~Q(user_id=request.user.id)
             )[0:20],
+        }
+    elif stype == "organizations":
+        context = {
+            
+        }
+    elif stype == "projects":
+        context = {
+
+        }
+    elif stype == "tags":
+        context = {
+
+        }
+    elif stype == "languages":
+        context = {
+
         }
 
     if request.user.is_authenticated:
